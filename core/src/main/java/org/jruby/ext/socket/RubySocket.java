@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.socket;
 
 import java.io.IOException;
@@ -698,22 +699,20 @@ public class RubySocket extends RubyBasicSocket {
         return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
     }
 
+    @Override
     @JRubyMethod
-    public IRubyObject close() {
+    public IRubyObject close(final ThreadContext context) {
         if (getOpenFile() != null) {
-            Ruby runtime = getRuntime();
-            if (isClosed()) {
-                return runtime.getNil();
-            }
+            if (isClosed()) return context.nil;
             openFile.checkClosed();
-            return rbIoClose(runtime);
+            return rbIoClose(context);
         }
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Override
     public RubyBoolean closed_p(ThreadContext context) {
-        if (getOpenFile() == null) return context.runtime.getFalse();
+        if (getOpenFile() == null) return context.fals;
 
         return super.closed_p(context);
     }

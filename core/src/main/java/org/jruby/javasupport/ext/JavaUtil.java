@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport.ext;
 
 import org.jruby.*;
@@ -41,6 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 
 import static org.jruby.javasupport.JavaUtil.CAN_SET_ACCESSIBLE;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
@@ -623,18 +625,25 @@ public abstract class JavaUtil {
             Helpers.throwException(e.getTargetException()); return null;
         }
 
+        final java.util.Collection clone;
         try {
-            java.util.Collection clone = klass.newInstance();
-            clone.addAll(coll);
-            return clone;
+            clone = klass.newInstance();
         }
         catch (IllegalAccessException e) {
             // can not clone - most of Collections. returned types (e.g. EMPTY_LIST)
             return coll;
         }
         catch (InstantiationException e) {
-            return coll;
+            Helpers.throwException(e); return null;
         }
+
+        //try {
+            clone.addAll(coll);
+        //}
+        //catch (UnsupportedOperationException|IllegalStateException e) {
+            // NOTE: maybe its better not mapping into a Ruby TypeError ?!
+        //}
+        return clone;
     }
 
 }

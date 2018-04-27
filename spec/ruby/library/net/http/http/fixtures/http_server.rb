@@ -42,17 +42,29 @@ module NetHTTPSpecs
     end
   end
 
+  class RequestBasicAuthServlet < SpecServlet
+    def reply(req, res)
+      res.content_type = "text/plain"
+
+      WEBrick::HTTPAuth.basic_auth(req, res, "realm") do |user, pass|
+        res.body = "username: #{user}\npassword: #{pass}"
+        true
+      end
+    end
+  end
+
   class << self
     @server = nil
     @server_thread = nil
 
     def port
-      @server ? @server.config[:Port] : 3333
+      raise "server not started" unless @server
+      @server.config[:Port]
     end
 
     def start_server
       server_config = {
-        BindAddress: "localhost",
+        BindAddress: "127.0.0.1",
         Port: 0,
         Logger: WEBrick::Log.new(NullWriter.new),
         AccessLog: [],
@@ -68,6 +80,7 @@ module NetHTTPSpecs
       @server.mount('/request', RequestServlet)
       @server.mount("/request/body", RequestBodyServlet)
       @server.mount("/request/header", RequestHeaderServlet)
+      @server.mount("/request/basic_auth", RequestBasicAuthServlet)
 
       @server_thread = @server.start
     end
@@ -79,9 +92,11 @@ module NetHTTPSpecs
         rescue Errno::EPIPE
           # Because WEBrick is not thread-safe and only catches IOError
         end
+        @server = nil
       end
       if @server_thread
         @server_thread.join
+        @server_thread = nil
       end
       timeout = WEBrick::Utils::TimeoutHandler
       timeout.terminate if timeout.respond_to?(:terminate)

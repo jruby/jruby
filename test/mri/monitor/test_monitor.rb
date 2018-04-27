@@ -1,10 +1,11 @@
 # frozen_string_literal: false
 require "monitor"
-require "thread"
 
 require "test/unit"
 
 class TestMonitor < Test::Unit::TestCase
+  Queue = Thread::Queue
+
   def setup
     @monitor = Monitor.new
   end
@@ -142,6 +143,35 @@ class TestMonitor < Test::Unit::TestCase
       @monitor.exit
     }
     assert_join_threads([th, th2])
+  end
+
+  def test_mon_locked_and_owned
+    queue1 = Queue.new
+    queue2 = Queue.new
+    th = Thread.start {
+      @monitor.enter
+      queue1.enq(nil)
+      queue2.deq
+      @monitor.exit
+      queue1.enq(nil)
+    }
+    queue1.deq
+    assert(@monitor.mon_locked?)
+    assert(!@monitor.mon_owned?)
+
+    queue2.enq(nil)
+    queue1.deq
+    assert(!@monitor.mon_locked?)
+
+    @monitor.enter
+    assert @monitor.mon_locked?
+    assert @monitor.mon_owned?
+    @monitor.exit
+
+    @monitor.synchronize do
+      assert @monitor.mon_locked?
+      assert @monitor.mon_owned?
+    end
   end
 
   def test_cond

@@ -22,7 +22,6 @@ project 'JRuby Core' do
 
               'jruby.basedir' => '${basedir}/..',
               'jruby.test.memory' => '3G',
-              'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G',
 
               'create.sources.jar' => false )
@@ -52,14 +51,13 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.15'
+  jar 'org.jruby.joni:joni:2.1.16'
   jar 'org.jruby.extras:bytelist:1.0.15'
-  jar 'org.jruby.jcodings:jcodings:1.0.27'
+  jar 'org.jruby.jcodings:jcodings:1.0.30'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.10'
+  jar 'com.headius:invokebinder:1.11'
   jar 'com.headius:options:1.4'
-  jar 'com.headius:unsafe-fences:1.0'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
@@ -168,8 +166,8 @@ project 'JRuby Core' do
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '1.7' ],
-          'target' => [ '${base.javac.version}', '1.7' ],
+          'source' => [ '${base.java.version}', '1.8' ],
+          'target' => [ '${base.javac.version}', '1.8' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
@@ -185,6 +183,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
+                   'debug' => 'true',
                    'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
@@ -194,6 +193,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
+                   'debug' => 'true',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
@@ -225,7 +225,7 @@ project 'JRuby Core' do
           'systemProperties' => {
             'jruby.home' =>  '${basedir}/..'
           },
-          'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
                           'org/jruby/embed/**/*Test*.java',
                           'org/jruby/util/**/*Test*.java',

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport;
 
 import java.lang.reflect.Constructor;
@@ -1609,7 +1610,7 @@ public class Java implements Library {
                     Object.class.getMethod(method.getName(), method.getParameterTypes());
                     continue; // abstract but implemented by java.lang.Object
                 }
-                catch (NoSuchMethodException e) { /* fall-thorough */ }
+                catch (NoSuchMethodException e) { /* fall-through */ }
                 catch (SecurityException e) {
                     // NOTE: we could try check for FunctionalInterface on Java 8
                 }
@@ -1619,35 +1620,6 @@ public class Java implements Library {
             else return null; // not a functional iface
         }
         return single;
-    }
-
-    static final boolean JAVA8;
-    static {
-        boolean java8 = false;
-        final String version = SafePropertyAccessor.getProperty("java.version", "0.0");
-        if ( version.length() > 2 ) {
-            int v = Character.getNumericValue( version.charAt(0) );
-            if ( v > 8 ) java8 = true; // 9.0
-            else if ( v == 1 ) {
-                v = Character.getNumericValue( version.charAt(2) ); // 1.8
-                if ( v < 10 && v >= 8 ) java8 = true;
-            }
-            // seems as no Java 10 support ... yet :)
-        }
-        JAVA8 = java8;
-    }
-
-    // TODO if about to compile against Java 8 this does not need to be reflective
-    static boolean isDefaultMethod(final Method method) {
-        if ( JAVA8 ) {
-            try {
-                return (Boolean) Method.class.getMethod("isDefault").invoke(method);
-            }
-            catch (NoSuchMethodException ex) { throw new RuntimeException(ex); }
-            catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
-            catch (Exception ex) { /* noop */ }
-        }
-        return false;
     }
 
     /**

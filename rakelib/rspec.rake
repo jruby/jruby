@@ -22,8 +22,8 @@ namespace :spec do
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
-    :jit => ["-Xjit.threshold=0", "-J-XX:MaxPermSize=256M"],
-    :aot => ["-X+C", "-J-XX:MaxPermSize=256M"],
+    :jit => ["-Xjit.threshold=0"],
+    :aot => ["-X+C"],
     :all => [:int, :jit, :aot]
   }
 

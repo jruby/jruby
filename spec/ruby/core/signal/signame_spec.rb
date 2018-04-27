@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Signal.signame" do
   it "takes a signal name with a well known signal number" do
@@ -19,5 +19,12 @@ describe "Signal.signame" do
 
   it "raises a TypeError when the passed argument can't be coerced to Integer" do
     lambda { Signal.signame("hello") }.should raise_error(TypeError)
+  end
+
+  platform_is_not :windows do
+    it "the original should take precendence over alias when looked up by number" do
+      Signal.signame(Signal.list["ABRT"]).should == "ABRT"
+      Signal.signame(Signal.list["CHLD"]).should == "CHLD"
+    end
   end
 end

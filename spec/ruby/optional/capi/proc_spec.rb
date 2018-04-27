@@ -1,5 +1,5 @@
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../fixtures/proc', __FILE__)
+require_relative 'spec_helper'
+require_relative 'fixtures/proc'
 
 load_extension("proc")
 
@@ -40,6 +40,20 @@ describe "C-API Proc function" do
       @prc.source_location.should == nil
     end
   end
+
+  describe "rb_proc_arity" do
+    it "returns the correct arity" do
+      prc = Proc.new {|a,b,c|}
+      @p.rb_proc_arity(prc).should == 3
+    end
+  end
+
+  describe "rb_proc_call" do
+    it "calls the Proc" do
+      prc = Proc.new {|a,b| a * b }
+      @p.rb_proc_call(prc, [6, 7]).should == 42
+    end
+  end
 end
 
 describe "C-API when calling Proc.new from a C function" do
@@ -50,7 +64,7 @@ describe "C-API when calling Proc.new from a C function" do
   # In the scenarios below: X -> Y means execution context X called to Y.
   # For example: Ruby -> C means a Ruby code called a C function.
   #
-  # X -> Y <- X -> Z means exection context X called Y which returned to X,
+  # X -> Y <- X -> Z means execution context X called Y which returned to X,
   # then X called Z.
   # For example: C -> Ruby <- C -> Ruby means a C function called into Ruby
   # code which returned to C, then C called into Ruby code again.

@@ -1,7 +1,13 @@
 package org.jruby.anno;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * Utility methods for generating bindings at build time. Used by AnnotationBinder.
@@ -15,19 +21,19 @@ public class AnnotationHelper {
 
     private AnnotationHelper() { /* no instances */ }
 
-	public static void addMethodNamesToSet(Set<String> set, JRubyMethod jrubyMethod, String simpleName) {
-	    addMethodNamesToSet(set, simpleName, jrubyMethod.name(), jrubyMethod.alias());
+	public static void addMethodNamesToMap(Map<String, JRubyMethod> map, JRubyMethod jrubyMethod, String simpleName) {
+	    addMethodNamesToMap(map, jrubyMethod, simpleName, jrubyMethod.name(), jrubyMethod.alias());
 	}
 
-    public static void addMethodNamesToSet(final Collection<String> set, final String simpleName,
-        final String[] names, final String[] aliases) {
-        if ( names.length == 0 ) set.add(simpleName);
+    public static void addMethodNamesToMap(final Map<String, JRubyMethod> map, JRubyMethod anno, final String simpleName,
+                                           final String[] names, final String[] aliases) {
+        if ( names.length == 0 ) map.put(simpleName, anno);
         else {
-            for ( String name : names ) set.add(name);
+            for ( String name : names ) map.put(name, anno);
         }
 
         if ( aliases.length > 0 ) {
-            for ( String alias : aliases ) set.add(alias);
+            for ( String alias : aliases ) map.put(alias, anno);
         }
     }
 
@@ -69,6 +75,44 @@ public class AnnotationHelper {
             return scope ? "FrameFullScopeFull" : "FrameFullScopeNone";
         }
         return scope ? "FrameNoneScopeFull" : "FrameNoneScopeNone";
+    }
+
+    public static void groupFrameFields(Map<Set<FrameField>, List<String>> readGroups, Map<Set<FrameField>, List<String>> writeGroups, JRubyMethod anno, String simpleName) {
+        if (anno.reads().length > 0) {
+            Set<FrameField> reads = new HashSet<>(Arrays.asList(anno.reads()));
+            List<String> nameList = readGroups.get(reads);
+            if (nameList == null) readGroups.put(reads, nameList = new ArrayList<>());
+            if (anno.name().length == 0) {
+                nameList.add(simpleName);
+            } else {
+                nameList.addAll(Arrays.asList(anno.name()));
+            }
+        }
+
+        if (anno.writes().length > 0) {
+            Set<FrameField> writes = new HashSet<>(Arrays.asList(anno.writes()));
+            List<String> nameList = writeGroups.get(writes);
+            if (nameList == null) writeGroups.put(writes, nameList = new ArrayList<>());
+            if (anno.name().length == 0) {
+                nameList.add(simpleName);
+            } else {
+                nameList.addAll(Arrays.asList(anno.name()));
+            }
+        }
+    }
+
+    public static void populateMethodIndex(Map<Set<FrameField>, List<String>> accessGroups, BiConsumer<Integer, String> action) {
+        if (!accessGroups.isEmpty()) {
+            for (Map.Entry<Set<FrameField>, List<String>> accessEntry : accessGroups.entrySet()) {
+                Set<FrameField> reads = accessEntry.getKey();
+                List<String> names = accessEntry.getValue();
+
+                int bits = FrameField.pack(reads.stream().toArray(n -> new FrameField[n]));
+                String namesJoined = names.stream().distinct().collect(Collectors.joining(";"));
+
+                action.accept(bits, namesJoined);
+            }
+        }
     }
 }
 

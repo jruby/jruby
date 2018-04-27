@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -21,12 +22,12 @@ import org.jruby.runtime.opto.Invalidator;
 // this call to the parent scope.
 
 public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String   constName;
+    private RubySymbol constName;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName) {
+    public InheritanceSearchConstInstr(Variable result, Operand currentModule, RubySymbol constName) {
         super(Operation.INHERITANCE_SEARCH_CONST, result, currentModule);
 
         assert result != null: "InheritanceSearchConstInstr result is null";
@@ -34,16 +35,15 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         this.constName = constName;
     }
 
-    @Deprecated
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean unused) {
-        this(result, currentModule, constName);
-    }
-
     public Operand getCurrentModule() {
         return getOperand1();
     }
 
-    public String getConstName() {
+    public String getId() {
+        return constName.idString();
+    }
+
+    public RubySymbol getName() {
         return constName;
     }
 
@@ -54,21 +54,22 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), getCurrentModule().cloneForInlining(ii), constName);
+        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), getCurrentModule().cloneForInlining(ii), getName());
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + constName };
+        return new String[] { "name: " + getName() };
     }
 
     private Object cache(Ruby runtime, RubyModule module) {
-        Object constant = module.getConstantNoConstMissingSKipAutoload(constName);
+        String id = getId();
+        Object constant = module.getConstantNoConstMissingSKipAutoload(id);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = runtime.getConstantInvalidator(id);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
@@ -78,11 +79,11 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getCurrentModule());
-        e.encode(getConstName());
+        e.encode(getId());
     }
 
     public static InheritanceSearchConstInstr decode(IRReaderDecoder d) {
-        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol());
     }
 
     @Override

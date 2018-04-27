@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel#freeze" do
   it "prevents self from being further modified" do
@@ -48,6 +48,24 @@ describe "Kernel#freeze" do
       nil.freeze
       true.freeze
       false.freeze
+    end
+  end
+
+  ruby_version_is "2.5" do
+    describe "on a Complex" do
+      it "has no effect since it is already frozen" do
+        c = Complex(1.3, 3.1)
+        c.frozen?.should be_true
+        c.freeze
+      end
+    end
+
+    describe "on a Rational" do
+      it "has no effect since it is already frozen" do
+        r = Rational(1, 3)
+        r.frozen?.should be_true
+        r.freeze
+      end
     end
   end
 

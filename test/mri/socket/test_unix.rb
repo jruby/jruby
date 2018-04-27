@@ -9,7 +9,6 @@ require "test/unit"
 require "tempfile"
 require "timeout"
 require "tmpdir"
-require "thread"
 require "io/nonblock"
 
 class TestSocket_UNIXSocket < Test::Unit::TestCase
@@ -142,7 +141,7 @@ class TestSocket_UNIXSocket < Test::Unit::TestCase
     r1, w = IO.pipe
     s1, s2 = UNIXSocket.pair
     s1.nonblock = s2.nonblock = true
-    lock = Mutex.new
+    lock = Thread::Mutex.new
     nr = 0
     x = 2
     y = 1000

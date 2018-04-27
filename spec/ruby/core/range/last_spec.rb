@@ -1,8 +1,8 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/end', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/end'
 
 describe "Range#last" do
-  it_behaves_like(:range_end, :last)
+  it_behaves_like :range_end, :last
 
   it "returns the specified number of elements from the end" do
     (1..5).last(3).should == [3, 4, 5]

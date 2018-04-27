@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'stringio'
-require File.expand_path('../shared/getc', __FILE__)
+require_relative 'shared/getc'
 
 # This method is added by io/console on require.
 describe "StringIO#getch" do
@@ -9,7 +9,7 @@ describe "StringIO#getch" do
 
   it_behaves_like :stringio_getc, :getch
 
-  it "returns the charactor at the current position" do
+  it "returns the character at the current position" do
     io = StringIO.new("example")
 
     io.send(@method).should == ?e

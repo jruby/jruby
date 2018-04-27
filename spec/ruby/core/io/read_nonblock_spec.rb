@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#read_nonblock" do
   before :each do
@@ -40,6 +40,16 @@ describe "IO#read_nonblock" do
           @read.read_nonblock(5, exception: false).should be_nil
         end
       end
+    end
+  end
+
+  platform_is_not :windows do
+    it 'sets the IO in nonblock mode' do
+      require 'io/nonblock'
+      @read.nonblock?.should == false
+      @write.write "abc"
+      @read.read_nonblock(1).should == "a"
+      @read.nonblock?.should == true
     end
   end
 

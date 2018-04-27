@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/send', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/send'
 
 # Why so many fixed arg tests?  JRuby and I assume other Ruby impls have
 # separate call paths for simple fixed arity methods.  Testing up to five
@@ -401,6 +401,29 @@ describe "Invoking a method" do
     specs.rest_len(*a,*d,6,*b).should == 7
     specs.rest_len(*a,*a,*a).should == 9
     specs.rest_len(0,*a,4,*5,6,7,*c,-1).should == 11
+  end
+
+  it "expands the Array elements from the splat after executing the arguments and block if no other arguments follow the splat" do
+    def self.m(*args, &block)
+      [args, block]
+    end
+
+    args = [1, nil]
+    m(*args, &args.pop).should == [[1], nil]
+
+    args = [1, nil]
+    order = []
+    m(*(order << :args; args), &(order << :block; args.pop)).should == [[1], nil]
+    order.should == [:args, :block]
+  end
+
+  it "evaluates the splatted arguments before the block if there are other arguments after the splat" do
+    def self.m(*args, &block)
+      [args, block]
+    end
+
+    args = [1, nil]
+    m(*args, 2, &args.pop).should == [[1, nil, 2], nil]
   end
 
   it "expands an array to arguments grouped in parentheses" do

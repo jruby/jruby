@@ -258,9 +258,9 @@ class TestEval < Test::Unit::TestCase
   #
 
   def make_test_binding
-    local1 = "local1"
+    local1 = local1 = "local1"
     lambda {
-      local2 = "local2"
+      local2 = local2 = "local2"
       return binding
     }.call
   end
@@ -271,11 +271,9 @@ class TestEval < Test::Unit::TestCase
     eval 'while false; bad = true; print "foo\n" end'
     assert(!bad)
 
-    assert(eval('TRUE'))
+    assert(eval('Object'))
     assert(eval('true'))
-    assert(!eval('NIL'))
     assert(!eval('nil'))
-    assert(!eval('FALSE'))
     assert(!eval('false'))
 
     $foo = 'assert(true)'
@@ -287,7 +285,7 @@ class TestEval < Test::Unit::TestCase
 
     assert_equal('assert(true)', eval("$foo"))
     assert_equal(true, eval("true"))
-    i = 5
+    i = i = 5
     assert(eval("i == 5"))
     assert_equal(5, eval("i"))
     assert(eval("defined? i"))
@@ -308,6 +306,7 @@ class TestEval < Test::Unit::TestCase
       module EvTest
 	EVTEST1 = 25
 	evtest2 = 125
+	evtest2 = evtest2
 	binding
       end
     )
@@ -354,7 +353,7 @@ class TestEval < Test::Unit::TestCase
       p = binding
       eval "foo11 = 1", p
       foo22 = 5
-      proc{foo11=22}.call
+      proc{foo11=22;foo11}.call
       proc{foo22=55}.call
       # assert_equal(eval("foo11"), eval("foo11", p))
       # assert_equal(1, eval("foo11"))
@@ -401,10 +400,10 @@ class TestEval < Test::Unit::TestCase
 
   def test_cvar_scope_with_instance_eval
     # TODO: check
-    Fixnum.class_eval "@@test_cvar_scope_with_instance_eval = 1" # depends on [ruby-dev:24229]
+    Integer.class_eval "@@test_cvar_scope_with_instance_eval = 1" # depends on [ruby-dev:24229]
     @@test_cvar_scope_with_instance_eval = 4
     assert_equal(4, 1.instance_eval("@@test_cvar_scope_with_instance_eval"), "[ruby-dev:24223]")
-    Fixnum.__send__(:remove_class_variable, :@@test_cvar_scope_with_instance_eval)
+    Integer.__send__(:remove_class_variable, :@@test_cvar_scope_with_instance_eval)
   end
 
   def test_eval_and_define_method
@@ -504,6 +503,14 @@ class TestEval < Test::Unit::TestCase
     assert_same a, b
   end
 
+  def test_fstring_instance_eval
+    bug = "[ruby-core:78116] [Bug #12930]".freeze
+    assert_same bug, (bug.instance_eval {self})
+    assert_raise(FrozenError) {
+      bug.instance_eval {@ivar = true}
+    }
+  end
+
   def test_gced_binding_block
     assert_normal_exit %q{
       def m
@@ -517,5 +524,23 @@ class TestEval < Test::Unit::TestCase
       0.times.to_a
       b.eval('yield')
     }, '[Bug #10368]'
+  end
+
+  def orphan_proc
+    proc {eval("return :ng")}
+  end
+
+  def orphan_lambda
+    lambda {eval("return :ok")}
+  end
+
+  def test_return_in_eval_proc
+    x = orphan_proc
+    assert_raise(LocalJumpError) {x.call}
+  end
+
+  def test_return_in_eval_lambda
+    x = orphan_lambda
+    assert_equal(:ok, x.call)
   end
 end

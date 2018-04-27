@@ -38,6 +38,8 @@ default_gems =
    ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
    ImportedGem.new( 'net-telnet', '0.1.1'),
    ImportedGem.new( 'did_you_mean', '1.0.1'),
+   ImportedGem.new( 'rake-ant', '1.0.4'),
+   ImportedGem.new( 'ipaddr', '1.2.0'),
   ]
 
 project 'JRuby Lib Setup' do

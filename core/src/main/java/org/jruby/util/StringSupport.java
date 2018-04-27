@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,14 +23,19 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
+import org.jcodings.Config;
 import org.jcodings.Encoding;
+import org.jcodings.IntHolder;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
+import org.jcodings.exception.EncodingError;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
@@ -41,13 +46,18 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,6 +87,7 @@ public final class StringSupport {
 
     public static final int TRANS_SIZE = 256;
 
+    public static final ByteList[] EMPTY_BYTELIST_ARRAY = new ByteList[0];
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     /**
@@ -117,6 +128,39 @@ public final class StringSupport {
         if ( s < len || ( s == len && lim > 0 ) ) result.add(str.substring(s));
 
         return result;
+    }
+
+    // String.startsWith for a CharSequence
+    public static boolean startsWith(final CharSequence str, final String prefix) {
+        int p = prefix.length();
+        if ( p > str.length() ) return false;
+        int i = 0;
+        while ( --p >= 0 ) {
+            if (str.charAt(i) != prefix.charAt(i)) return false;
+            i++;
+        }
+        return true;
+    }
+
+    public static boolean startsWith(final CharSequence str, final char c) {
+        return str.length() >= 1 && str.charAt(0) == c;
+    }
+
+    public static boolean startsWith(final CharSequence str, final char c1, final char c2) {
+        return str.length() >= 2 && str.charAt(0) == c1 && str.charAt(1) == c2;
+    }
+
+    // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
+    public static int lastIndexOf(final CharSequence str, final char c, int index) {
+        while ( index >= 0 ) {
+            if ( str.charAt(index) == c ) return index;
+            index--;
+        }
+        return -1;
+    }
+
+    public static boolean contentEquals(final CharSequence str, final int chr) {
+        return (str.length() == 1) && str.charAt(0) == chr;
     }
 
     public static String codeRangeAsString(int codeRange) {
@@ -442,7 +486,16 @@ public final class StringSupport {
     }
 
     public static int codeLength(Encoding enc, int c) {
-        return enc.codeToMbcLength(c);
+        int i = enc.codeToMbcLength(c);
+        return checkCodepointError(i);
+    }
+
+    public static int checkCodepointError(int i) {
+        if (i < 0) {
+            // for backward compat with code expecting exceptions
+            throw new EncodingException(EncodingError.fromCode(i));
+        }
+        return i;
     }
 
     public static long getAscii(Encoding enc, byte[]bytes, int p, int end) {
@@ -557,10 +610,12 @@ public final class StringSupport {
         return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
     }
 
+    @Deprecated
     public static int toLower(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
     }
 
+    @Deprecated
     public static int toUpper(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
     }
@@ -792,10 +847,14 @@ public final class StringSupport {
     /**
      * rb_str_dump
      */
+    public static ByteList dumpCommon(Ruby runtime, ByteList bytelist) {
+        return dumpCommon(runtime, bytelist, false);
+    }
 
-    public static ByteList dumpCommon(Ruby runtime, ByteList byteList) {
+    public static ByteList dumpCommon(Ruby runtime, ByteList byteList, boolean quoteOnlyIfNeeded) {
         ByteList buf = null;
         Encoding enc = byteList.getEncoding();
+        boolean includingsNonprintable = false;
 
         int p = byteList.getBegin();
         int end = p + byteList.getRealSize();
@@ -817,15 +876,19 @@ public final class StringSupport {
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                     len++;
                 } else {
-                    if (enc.isUTF8()) {
+                    includingsNonprintable = true;
+                    if (enc.isUTF8() && c > 0x7F) {
                         int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                        if (n > 0) {
-                            if (buf == null) buf = new ByteList();
+                        if (MBCLEN_CHARFOUND_LEN(n) > 0) {
                             int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                            Sprintf.sprintf(runtime, buf, "%x", cc);
-                            len += buf.getRealSize() + 4;
-                            buf.setRealSize(0);
-                            p += n;
+                            if (cc <= 0xFFFF) {
+                                len += 6;
+                            } else if (cc <= 0xFFFFF) {
+                                len += 9;
+                            } else {
+                                len += 10;
+                            }
+                            p += MBCLEN_CHARFOUND_LEN(n) - 1;
                             break;
                         }
                     }
@@ -845,7 +908,7 @@ public final class StringSupport {
         p = byteList.getBegin();
         end = p + byteList.getRealSize();
 
-        out[q++] = '"';
+        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
         while (p < end) {
             int c = bytes[p++] & 0xff;
             if (c == '"' || c == '\\') {
@@ -882,23 +945,27 @@ public final class StringSupport {
                 out[q++] = (byte)c;
             } else {
                 out[q++] = '\\';
+                outBytes.setRealSize(q);
                 if (enc.isUTF8()) {
                     int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                    if (n > 0) {
+                    if (MBCLEN_CHARFOUND_LEN(n) > 0) {
                         int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                        p += n;
                         outBytes.setRealSize(q);
-                        Sprintf.sprintf(runtime, outBytes, "u{%x}", cc);
+                        p += n;
+                        if (cc <= 0xFFFF) {
+                            Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
+                        } else {
+                            Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
+                        }
                         q = outBytes.getRealSize();
                         continue;
                     }
                 }
-                outBytes.setRealSize(q);
                 Sprintf.sprintf(runtime, outBytes, "x%02X", c);
                 q = outBytes.getRealSize();
             }
         }
-        out[q++] = '"';
+        if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
         outBytes.setRealSize(q);
         assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
@@ -960,48 +1027,40 @@ public final class StringSupport {
 
         final ByteList subString = subStringCodeRangeable.getByteList();
 
-        int sourceSize = source.realSize();
-        int subSize = subString.realSize();
+        final int srcLen = source.getRealSize();
+        final int subLen = subString.getRealSize();
 
-        if (sourceChars < subChars || sourceSize < subSize) return -1;
+        if (sourceChars < subChars || srcLen < subLen) return -1;
         if (sourceChars - pos < subChars) pos = sourceChars - subChars;
         if (sourceChars == 0) return pos;
 
-        byte[] sourceBytes = source.getUnsafeBytes();
-        int sbeg = source.getBegin();
-        int end = sbeg + source.getRealSize();
+        byte[] srcBytes = source.getUnsafeBytes();
+        final int srcBeg = source.getBegin();
 
         if (pos == 0) {
-            if (ByteList.memcmp(sourceBytes, sbeg, subString.getUnsafeBytes(), subString.begin(), subString.getRealSize()) == 0) {
+            if (ByteList.memcmp(srcBytes, srcBeg, subString.getUnsafeBytes(), subString.getBegin(), subLen) == 0) {
                 return 0;
-            } else {
-                return -1;
             }
+            return -1;
         }
 
-        int s = nth(enc, sourceBytes, sbeg, end, pos);
+        int s = nth(enc, srcBytes, srcBeg, srcBeg + srcLen, pos);
 
-        return strRindex(source, subString, s, pos, enc);
+        return strRindex(srcBytes, srcBeg, srcLen, subString.getUnsafeBytes(), subString.getBegin(), subLen, s, pos, enc);
     }
 
-    private static int strRindex(ByteList str, ByteList sub, int s, int pos, Encoding enc) {
-        int slen;
-        byte[] strBytes = str.unsafeBytes();
-        byte[] subBytes = sub.unsafeBytes();
-        int sbeg, e, t;
+    private static int strRindex(final byte[] strBytes, final int strBeg, final int strLen,
+                                 final byte[] subBytes, final int subBeg, final int subLen,
+                                 int s, int pos, final Encoding enc) {
 
-        sbeg = str.begin();
-        e = str.begin() + str.realSize();
-        t = sub.begin();
-        slen = sub.realSize();
+        final int e = strBeg + strLen;
 
-        while (s >= sbeg && s + slen <= sbeg + str.realSize()) {
-            if (ByteList.memcmp(strBytes, s, subBytes, t, slen) == 0) {
+        while (s >= strBeg) {
+            if (s + subLen <= e && ByteList.memcmp(strBytes, s, subBytes, subBeg, subLen) == 0) {
                 return pos;
             }
-            if (pos == 0) break;
-            pos--;
-            s = enc.prevCharHead(strBytes, sbeg, s, e);
+            if (pos == 0) break; pos--;
+            s = enc.prevCharHead(strBytes, strBeg, s, e);
         }
 
         return -1;
@@ -1589,7 +1648,7 @@ public final class StringSupport {
     /**
      * rb_str_delete_bang
      */
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
+    static CodeRangeable strDeleteBang(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         rubyString.modify();
         rubyString.keepCodeRange();
 
@@ -1631,9 +1690,9 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
-    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+    public static CodeRangeable strDeleteBang(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
         try {
-            return delete_bangCommon19(rubyString, squeeze, tables, enc);
+            return strDeleteBang(rubyString, squeeze, tables, enc);
         } catch (IllegalArgumentException e) {
             throw runtime.newArgumentError(e.getMessage());
         }
@@ -1708,6 +1767,17 @@ public final class StringSupport {
     }
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
+        if (opts.isNil()) {
+            return rbStrEnumerateLines(str, context, name, arg, context.nil, block, wantarray);
+        } else {
+            return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
+        }
+    }
+
+    private static int NULL_POINTER = -1;
+
+    public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, IRubyObject opts, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
 
         Encoding enc;
@@ -1715,10 +1785,17 @@ public final class StringSupport {
         int ptr, pend, subptr, subend, rsptr, hit, adjusted;
         int pos, len, rslen;
         boolean paragraph_mode = false;
+        boolean rsnewline = false;
+        boolean chomp = false;
 
         IRubyObject ary = null;
 
         rs = arg;
+
+        if (!opts.isNil()) {
+            IRubyObject _chomp = ArgsUtil.extractKeywordArg(context, "chomp", opts);
+            chomp = _chomp != null || _chomp.isTrue();
+        }
 
         if (block.isGiven()) {
             if (wantarray) {
@@ -1736,7 +1813,7 @@ public final class StringSupport {
             if (wantarray) {
                 ary = runtime.newEmptyArray();
             } else {
-                return enumeratorize(runtime, str, name, arg);
+                return enumeratorize(runtime, str, name, Helpers.arrayOf(arg, opts));
             }
         }
 
@@ -1751,74 +1828,131 @@ public final class StringSupport {
             }
         }
 
-        str = str.newFrozen();
-        byte[] strBytes = str.getByteList().unsafeBytes();
-        ptr = subptr = str.getByteList().begin();
-        pend = ptr + str.size();
-        len = str.size();
-        rs = rs.convertToString();
-        rslen = ((RubyString)rs).size();
+        // simulate jump to end
+        end: do {
+            str = str.newFrozen();
+            byte[] strBytes = str.getByteList().unsafeBytes();
+            ptr = subptr = str.getByteList().begin();
+            pend = ptr + str.size();
+            len = str.size();
+            rs = rs.convertToString();
+            rslen = ((RubyString) rs).size();
 
-        if (rs == context.runtime.getGlobalVariables().get("$/"))
-            enc = str.getEncoding();
-        else
-            enc = str.checkEncoding((RubyString) rs);
+            IRubyObject defaultSep = context.runtime.getGlobalVariables().get("$/");
+            if (rs == defaultSep)
+                enc = str.getEncoding();
+            else
+                enc = str.checkEncoding((RubyString) rs);
 
-        byte[] rsbytes;
-        if (rslen == 0) {
-            rsbytes = RubyIO.PARAGRAPH_SEPARATOR.unsafeBytes();
-            rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
-            rslen = 2;
-            paragraph_mode = true;
-        } else {
-
-            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
-            rsptr = ((RubyString)rs).getByteList().begin();
-        }
-
-        if ((rs == context.runtime.getGlobalVariables().get("$/") || paragraph_mode) && !enc.isAsciiCompatible()) {
-            rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
-            rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
-            rsptr = ((RubyString)rs).getByteList().begin();
-            rslen = ((RubyString)rs).getByteList().realSize();
-        }
-
-        while (subptr < pend) {
-            pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
-            if (pos < 0) break;
-            hit = subptr + pos;
-            adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
-            if (hit != adjusted) {
-                subptr = adjusted;
-                continue;
-            }
-            subend = hit + rslen;
-            if (paragraph_mode) {
-                while (subend < pend && enc.isNewLine(strBytes, subend, pend)) {
-                    subend += enc.length(strBytes, subend, pend);
+            byte[] rsbytes;
+            if (rslen == 0) {
+                /* paragraph mode */
+                int[] n = {0};
+                int eol = NULL_POINTER;
+                subend = subptr;
+                while (subend < pend) {
+                    do {
+                        if (EncodingUtils.encAscget(strBytes, subend, pend, n, enc) != '\r') {
+                            n[0] = 0;
+                        }
+                        rslen = n[0] + length(enc, strBytes, subend + n[0], pend);
+                        if (enc.isNewLine(strBytes, subend + n[0], pend)) {
+                            if (eol == subend) break;
+                            subend += rslen;
+                            if (subptr != NULL_POINTER) eol = subend;
+                        }
+                        else {
+                            if (subptr == NULL_POINTER) subptr = subend;
+                            subend += rslen;
+                        }
+                        rslen = 0;
+                    } while (subend < pend);
+                    if (subptr == NULL_POINTER) break;
+                    line = str.makeSharedString(runtime, subptr - ptr,
+                            subend - subptr + (chomp ? 0 : rslen));
+                    if (wantarray) {
+                        ((RubyArray) ary).push(line);
+                    } else {
+                        block.yield(context, line);
+                        str.modifyCheck(strBytes, len);
+                    }
+                    subptr = eol = NULL_POINTER;
+                }
+                break end;
+            } else {
+                ByteList rsByteList = ((RubyString) rs).getByteList();
+                rsbytes = rsByteList.unsafeBytes();
+                rsptr = rsByteList.begin();
+                if (rsByteList.length() == enc.minLength() &&
+                        enc.isNewLine(rsbytes, rsptr, rsByteList.length())) {
+                    rsnewline = true;
                 }
             }
-            line = str.substr(runtime, subptr - ptr, subend - subptr);
-            if (wantarray) {
-                ((RubyArray)ary).push(line);
-            } else {
-                block.yieldSpecific(context, line);
-                str.modifyCheck(strBytes, len);
-            }
-            subptr = subend;
-        }
 
-        if (subptr != pend) {
-            line = str.substr(runtime, subptr - ptr, pend - subptr);
-            if (wantarray) {
-                ((RubyArray) ary).push(line);
-            } else {
-                block.yieldSpecific(context, line);
+            if (rs == defaultSep && !enc.isAsciiCompatible()) {
+                rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
+                rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+                ByteList rsByteList = ((RubyString) rs).getByteList();
+                rsbytes = rsByteList.unsafeBytes();
+                rsptr = rsByteList.begin();
+                rslen = rsByteList.realSize();
             }
-        }
+
+            while (subptr < pend) {
+                pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
+                if (pos < 0) break;
+                hit = subptr + pos;
+                adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
+                if (hit != adjusted) {
+                    subptr = adjusted;
+                    continue;
+                }
+                subend = hit += rslen;
+                if (chomp) {
+                    if (rsnewline) {
+                        subend = chomp_newline(strBytes, subptr, subend, enc);
+                    } else {
+                        subend -= rslen;
+                    }
+                }
+                line = str.substr(runtime, subptr - ptr, subend - subptr);
+                if (wantarray) {
+                    ((RubyArray) ary).push(line);
+                } else {
+                    block.yieldSpecific(context, line);
+                    str.modifyCheck(strBytes, len);
+                }
+                subptr = hit;
+            }
+
+            if (subptr != pend) {
+                if (chomp) {
+                    pend = chomp_newline(strBytes, subptr, pend, enc);
+                } else if (pend - subptr >= rslen &&
+                        ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
+                    pend -= rslen;
+                }
+                line = str.substr(runtime, subptr - ptr, pend - subptr);
+                if (wantarray) {
+                    ((RubyArray) ary).push(line);
+                } else {
+                    block.yieldSpecific(context, line);
+                }
+            }
+        } while (false); // label "end"
 
         return wantarray ? ary : orig;
+    }
+
+    private static int chomp_newline(byte[] bytes, int p, int e, Encoding enc) {
+        int prev = enc.prevCharHead(bytes, p, e, e);
+        if (enc.isNewLine(bytes, prev, e)) {
+            e = prev;
+            prev = enc.prevCharHead(bytes, p, e, e);
+            if (prev != -1 && EncodingUtils.encAscget(bytes, prev, e, null, enc) == '\r')
+                e = prev;
+        }
+        return e;
     }
 
     public static int memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
@@ -1922,7 +2056,7 @@ public final class StringSupport {
             }
         }
 
-        if (cr == CR_VALID) {
+        if (cr == CR_VALID && enc.isAsciiCompatible()) {
             cr = CR_7BIT;
         }
         self.modifyAndKeepCodeRange();
@@ -2110,18 +2244,21 @@ public final class StringSupport {
                 oc = preciseCodePoint(enc, obytes, op, oend);
             }
 
-            int cl, ocl;
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                byte uc = AsciiTables.ToUpperCaseTable[c];
-                byte uoc = AsciiTables.ToUpperCaseTable[oc];
-                if (uc != uoc) {
-                    return uc < uoc ? -1 : 1;
+            final int cl, ocl;
+            if (Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+                int dc = AsciiTables.ToUpperCaseTable[c];
+                int odc = AsciiTables.ToUpperCaseTable[oc];
+                if (dc != odc) return dc < odc ? -1 : 1;
+
+                if (enc.isAsciiCompatible()) {
+                    cl = ocl = 1;
+                } else {
+                    cl = preciseLength(enc, bytes, p, end);
+                    ocl = preciseLength(enc, obytes, op, oend);
                 }
-                cl = ocl = 1;
             } else {
                 cl = length(enc, bytes, p, end);
                 ocl = length(enc, obytes, op, oend);
-                // TODO: opt for 2 and 3 ?
                 int ret = caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
                 if (ret != 0) return ret < 0 ? -1 : 1;
                 if (cl != ocl) return cl < ocl ? -1 : 1;
@@ -2189,52 +2326,6 @@ public final class StringSupport {
     public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         try {
             return multiByteSqueeze(value, squeeze, tables, enc, isArg);
-        } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-    }
-
-    /**
-     * rb_str_swapcase / rb_str_swapcase_bang
-     */
-
-    public static boolean singleByteSwapcase(byte[] bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
-                bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                modify = true;
-            } else if (ASCIIEncoding.INSTANCE.isLower(c)) {
-                bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteSwapcase(Encoding enc, byte[] bytes, int s, int end) {
-        boolean modify = false;
-        while (s < end) {
-            int c = codePoint(enc, bytes, s, end);
-            if (enc.isUpper(c)) {
-                enc.codeToMbc(toLower(enc, c), bytes, s);
-                modify = true;
-            } else if (enc.isLower(c)) {
-                enc.codeToMbc(toUpper(enc, c), bytes, s);
-                modify = true;
-            }
-            s += codeLength(enc, c);
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
-        try {
-            return multiByteSwapcase(enc, bytes, s, end);
         } catch (IllegalArgumentException e) {
             throw runtime.newArgumentError(e.getMessage());
         }
@@ -2351,85 +2442,125 @@ public final class StringSupport {
         return -1;
     }
 
-    public static boolean singleByteDowncase(byte[] bytes, int s, int end) {
-        boolean modify = false;
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, IRubyObject arg1, int flags) {
+        RubySymbol turkic = runtime.newSymbol("turkic");
+        RubySymbol lithuanian = runtime.newSymbol("lithuanian");
 
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
-                bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteDowncase(Encoding enc, byte[] bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCIIEncoding.INSTANCE.isUpper(c)) {
-                    bytes[s] = AsciiTables.ToLowerCaseTable[c];
-                    modify = true;
-                }
-                s++;
+        if (arg0.equals(turkic)) {
+            flags |= Config.CASE_FOLD_TURKISH_AZERI;
+            if (arg1.equals(lithuanian)) {
+                flags |= Config.CASE_FOLD_LITHUANIAN;
             } else {
-                c = codePoint(enc, bytes, s, end);
-                if (enc.isUpper(c)) {
-                    enc.codeToMbc(toLower(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
+                throw runtime.newArgumentError("invalid second option");
             }
-        }
-
-        return modify;
-    }
-
-    public static boolean singleByteUpcase(byte[] bytes, int s, int end) {
-        boolean modify = false;
-
-        while (s < end) {
-            int c = bytes[s] & 0xff;
-            if (ASCIIEncoding.INSTANCE.isLower(c)) {
-                bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                modify = true;
-            }
-            s++;
-        }
-
-        return modify;
-    }
-
-    public static boolean multiByteUpcase(Encoding enc, byte[] bytes, int s, int end) {
-        boolean modify = false;
-        int c;
-
-        while (s < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (ASCIIEncoding.INSTANCE.isLower(c)) {
-                    bytes[s] = AsciiTables.ToUpperCaseTable[c];
-                    modify = true;
-                }
-                s++;
+        } else if (arg0.equals(lithuanian)) {
+            flags |= Config.CASE_FOLD_LITHUANIAN;
+            if (arg1.equals(turkic)) {
+                flags |= Config.CASE_FOLD_TURKISH_AZERI;
             } else {
-                c = codePoint(enc, bytes, s, end);
-                if (enc.isLower(c)) {
-                    enc.codeToMbc(toUpper(enc, c), bytes, s);
-                    modify = true;
-                }
-                s += codeLength(enc, c);
+                throw runtime.newArgumentError("invalid second option");
+            }
+        } else {
+            throw runtime.newArgumentError("invalid option");
+        }
+        return flags;
+    }
+
+    public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, int flags) {
+        if (arg0.equals(runtime.newSymbol("ascii"))) {
+            flags |= Config.CASE_ASCII_ONLY;
+        } else if (arg0.equals(runtime.newSymbol("fold"))) {
+            if ((flags & (Config.CASE_UPCASE | Config.CASE_DOWNCASE)) == Config.CASE_DOWNCASE) {
+                flags ^= Config.CASE_FOLD | Config.CASE_DOWNCASE;
+            } else {
+                throw runtime.newArgumentError("option :fold only allowed for downcasing");
+            }
+        } else if (arg0.equals(runtime.newSymbol("turkic"))) {
+            flags |= Config.CASE_FOLD_TURKISH_AZERI;
+        } else if (arg0.equals(runtime.newSymbol("lithuanian"))) {
+            flags |= Config.CASE_FOLD_LITHUANIAN;
+        } else {
+            throw runtime.newArgumentError("invalid option");
+        }
+        return flags;
+    }
+
+    private static final class MappingBuffer {
+        MappingBuffer next;
+        final byte[] bytes;
+        int used;
+
+        MappingBuffer() {
+            bytes = null;
+        }
+
+        MappingBuffer(int size) {
+            bytes = new byte[size];
+        }
+    }
+
+    private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
+
+    public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags, Encoding enc) {
+        IntHolder pp = new IntHolder();
+        pp.value = src.getBegin();
+        int end = src.getRealSize() + pp.value;
+        byte[]bytes = src.getUnsafeBytes();
+        int tgtLen = 0;
+
+        int buffers = 0;
+        MappingBuffer root = new MappingBuffer();
+        MappingBuffer buffer = root;
+        while (pp.value < end) {
+            buffer.next = new MappingBuffer((end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH);
+            buffer = buffer.next;
+            int len = enc.caseMap(flags, bytes, pp, end, buffer.bytes, 0, buffer.bytes.length);
+            if (len < 0) throw runtime.newArgumentError("input string invalid");
+            buffer.used = len;
+            tgtLen += len;
+        }
+
+        final ByteList tgt;
+        if (buffers == 1) {
+            tgt = new ByteList(buffer.bytes, 0, buffer.used, enc, false);
+        } else {
+            tgt = new ByteList(tgtLen);
+            tgt.setEncoding(enc);
+            buffer = root.next;
+            int tgtPos = 0;
+            while (buffer != null) {
+                System.arraycopy(buffer.bytes, 0, tgt.getUnsafeBytes(), tgtPos, buffer.used);
+                tgtPos += buffer.used;
+                buffer = buffer.next;
             }
         }
 
-        return modify;
+        return tgt;
+    }
+
+    public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
+        if (value.getRealSize() == 0) return;
+        int s = value.getBegin();
+        int end = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+
+        IntHolder pp = new IntHolder();
+        pp.value = s;
+        int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
+        if (len < 0) throw runtime.newArgumentError("input string invalid");
     }
 
     public static int encCoderangeClean(int cr) {
         return (cr ^ (cr >> 1)) & CR_7BIT;
+    }
+
+    public static String byteListAsString(ByteList bytes) {
+        try {
+            Charset charset = bytes.getEncoding().getCharset();
+            if (charset != null) return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize(), charset);
+        } catch (UnsupportedCharsetException e) {}
+
+        return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
     }
 
     @Deprecated

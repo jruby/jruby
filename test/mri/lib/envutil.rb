@@ -1,8 +1,16 @@
 # -*- coding: us-ascii -*-
-# frozen_string_literal: false
+# frozen_string_literal: true
 require "open3"
 require "timeout"
 require_relative "find_executable"
+begin
+  require 'rbconfig'
+rescue LoadError
+end
+begin
+  require "rbconfig/sizeof"
+rescue LoadError
+end
 
 module EnvUtil
   def rubybin
@@ -34,12 +42,38 @@ module EnvUtil
   DEFAULT_SIGNALS = Signal.list
   DEFAULT_SIGNALS.delete("TERM") if /mswin|mingw/ =~ RUBY_PLATFORM
 
+  RUBYLIB = ENV["RUBYLIB"]
+
+  class << self
+    attr_accessor :subprocess_timeout_scale
+    attr_reader :original_internal_encoding, :original_external_encoding,
+                :original_verbose
+
+    def capture_global_values
+      @original_internal_encoding = Encoding.default_internal
+      @original_external_encoding = Encoding.default_external
+      @original_verbose = $VERBOSE
+    end
+  end
+
+  def apply_timeout_scale(t)
+    if scale = EnvUtil.subprocess_timeout_scale
+      t * scale
+    else
+      t
+    end
+  end
+  module_function :apply_timeout_scale
+
   def invoke_ruby(args, stdin_data = "", capture_stdout = false, capture_stderr = false,
                   encoding: nil, timeout: 10, reprieve: 1, timeout_error: Timeout::Error,
                   stdout_filter: nil, stderr_filter: nil,
                   signal: :TERM,
-                  rubybin: EnvUtil.rubybin,
+                  rubybin: EnvUtil.rubybin, precommand: nil,
                   **opt)
+    timeout = apply_timeout_scale(timeout)
+    reprieve = apply_timeout_scale(reprieve) if reprieve
+
     in_c, in_p = IO.pipe
     out_p, out_c = IO.pipe if capture_stdout
     err_p, err_c = IO.pipe if capture_stderr && capture_stderr != :merge_to_stdout
@@ -56,8 +90,11 @@ module EnvUtil
     if Array === args and Hash === args.first
       child_env.update(args.shift)
     end
+    if RUBYLIB and lib = child_env["RUBYLIB"]
+      child_env["RUBYLIB"] = [lib, RUBYLIB].join(File::PATH_SEPARATOR)
+    end
     args = [args] if args.kind_of?(String)
-    pid = spawn(child_env, rubybin, *args, **opt)
+    pid = spawn(child_env, *precommand, rubybin, *args, **opt)
     in_c.close
     out_c.close if capture_stdout
     err_c.close if capture_stderr && capture_stderr != :merge_to_stdout
@@ -121,7 +158,7 @@ module EnvUtil
       th.kill if th
     end
     [in_c, in_p, out_c, out_p, err_c, err_p].each do |io|
-      io.close if io && !io.closed?
+      io&.close
     end
     [th_stdout, th_stderr].each do |th|
       th.join if th
@@ -135,30 +172,33 @@ module EnvUtil
   end
 
   def verbose_warning
-    class << (stderr = "")
-      alias write <<
+    class << (stderr = "".dup)
+      alias write concat
+      def flush; end
     end
-    stderr, $stderr, verbose, $VERBOSE = $stderr, stderr, $VERBOSE, true
+    stderr, $stderr = $stderr, stderr
+    $VERBOSE = true
     yield stderr
     return $stderr
   ensure
-    stderr, $stderr, $VERBOSE = $stderr, stderr, verbose
+    stderr, $stderr = $stderr, stderr
+    $VERBOSE = EnvUtil.original_verbose
   end
   module_function :verbose_warning
 
   def default_warning
-    verbose, $VERBOSE = $VERBOSE, false
+    $VERBOSE = false
     yield
   ensure
-    $VERBOSE = verbose
+    $VERBOSE = EnvUtil.original_verbose
   end
   module_function :default_warning
 
   def suppress_warning
-    verbose, $VERBOSE = $VERBOSE, nil
+    $VERBOSE = nil
     yield
   ensure
-    $VERBOSE = verbose
+    $VERBOSE = EnvUtil.original_verbose
   end
   module_function :suppress_warning
 
@@ -171,26 +211,18 @@ module EnvUtil
   module_function :under_gc_stress
 
   def with_default_external(enc)
-    verbose, $VERBOSE = $VERBOSE, nil
-    origenc, Encoding.default_external = Encoding.default_external, enc
-    $VERBOSE = verbose
+    suppress_warning { Encoding.default_external = enc }
     yield
   ensure
-    verbose, $VERBOSE = $VERBOSE, nil
-    Encoding.default_external = origenc
-    $VERBOSE = verbose
+    suppress_warning { Encoding.default_external = EnvUtil.original_external_encoding }
   end
   module_function :with_default_external
 
   def with_default_internal(enc)
-    verbose, $VERBOSE = $VERBOSE, nil
-    origenc, Encoding.default_internal = Encoding.default_internal, enc
-    $VERBOSE = verbose
+    suppress_warning { Encoding.default_internal = enc }
     yield
   ensure
-    verbose, $VERBOSE = $VERBOSE, nil
-    Encoding.default_internal = origenc
-    $VERBOSE = verbose
+    suppress_warning { Encoding.default_internal = EnvUtil.original_internal_encoding }
   end
   module_function :with_default_internal
 
@@ -213,9 +245,12 @@ module EnvUtil
   if /darwin/ =~ RUBY_PLATFORM
     DIAGNOSTIC_REPORTS_PATH = File.expand_path("~/Library/Logs/DiagnosticReports")
     DIAGNOSTIC_REPORTS_TIMEFORMAT = '%Y-%m-%d-%H%M%S'
-    def self.diagnostic_reports(signame, cmd, pid, now)
+    @ruby_install_name = RbConfig::CONFIG['RUBY_INSTALL_NAME']
+
+    def self.diagnostic_reports(signame, pid, now)
       return unless %w[ABRT QUIT SEGV ILL TRAP].include?(signame)
-      cmd = File.basename(cmd)
+      cmd = File.basename(rubybin)
+      cmd = @ruby_install_name if "ruby-runner#{RbConfig::CONFIG["EXEEXT"]}" == cmd
       path = DIAGNOSTIC_REPORTS_PATH
       timeformat = DIAGNOSTIC_REPORTS_TIMEFORMAT
       pat = "#{path}/#{cmd}_#{now.strftime(timeformat)}[-_]*.crash"
@@ -234,7 +269,7 @@ module EnvUtil
       nil
     end
   else
-    def self.diagnostic_reports(signame, cmd, pid, now)
+    def self.diagnostic_reports(signame, pid, now)
     end
   end
 
@@ -247,10 +282,7 @@ module EnvUtil
   end
 end
 
-begin
-  require 'rbconfig'
-rescue LoadError
-else
+if defined?(RbConfig)
   module RbConfig
     @ruby = EnvUtil.rubybin
     class << self
@@ -258,10 +290,9 @@ else
       attr_reader :ruby
     end
     dir = File.dirname(ruby)
-    name = File.basename(ruby, CONFIG['EXEEXT'])
     CONFIG['bindir'] = dir
-    CONFIG['ruby_install_name'] = name
-    CONFIG['RUBY_INSTALL_NAME'] = name
     Gem::ConfigMap[:bindir] = dir if defined?(Gem::ConfigMap)
   end
 end
+
+EnvUtil.capture_global_values

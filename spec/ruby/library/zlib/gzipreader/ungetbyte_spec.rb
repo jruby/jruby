@@ -1,4 +1,4 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'stringio'
 require 'zlib'
 
@@ -21,21 +21,25 @@ describe 'GzipReader#ungetbyte' do
         @gz.read.should == '!12345abcde'
       end
 
-      it 'decrements pos' do
-        @gz.ungetbyte 0x21
-        @gz.pos.should == -1
+      ruby_bug "#13616", ""..."2.6" do
+        it 'decrements pos' do
+          @gz.ungetbyte 0x21
+          @gz.pos.should == -1
+        end
       end
     end
 
-    describe 'with nil' do
-      it 'does not prepend anything to the stream' do
-        @gz.ungetbyte nil
-        @gz.read.should == '12345abcde'
-      end
+    quarantine! do # https://bugs.ruby-lang.org/issues/13675
+      describe 'with nil' do
+        it 'does not prepend anything to the stream' do
+          @gz.ungetbyte nil
+          @gz.read.should == '12345abcde'
+        end
 
-      it 'does not decrement pos' do
-        @gz.ungetbyte nil
-        @gz.pos.should == 0
+        it 'does not decrement pos' do
+          @gz.ungetbyte nil
+          @gz.pos.should == 0
+        end
       end
     end
   end
@@ -58,15 +62,17 @@ describe 'GzipReader#ungetbyte' do
       end
     end
 
-    describe 'with nil' do
-      it 'does not insert anything into the stream' do
-        @gz.ungetbyte nil
-        @gz.read.should == 'abcde'
-      end
+    quarantine! do # https://bugs.ruby-lang.org/issues/13675
+      describe 'with nil' do
+        it 'does not insert anything into the stream' do
+          @gz.ungetbyte nil
+          @gz.read.should == 'abcde'
+        end
 
-      it 'does not decrement pos' do
-        @gz.ungetbyte nil
-        @gz.pos.should == 5
+        it 'does not decrement pos' do
+          @gz.ungetbyte nil
+          @gz.pos.should == 5
+        end
       end
     end
   end
@@ -94,20 +100,22 @@ describe 'GzipReader#ungetbyte' do
       end
     end
 
-    describe 'with nil' do
-      it 'does not append anything to the stream' do
-        @gz.ungetbyte nil
-        @gz.read.should == ''
-      end
+    quarantine! do # https://bugs.ruby-lang.org/issues/13675
+      describe 'with nil' do
+        it 'does not append anything to the stream' do
+          @gz.ungetbyte nil
+          @gz.read.should == ''
+        end
 
-      it 'does not decrement pos' do
-        @gz.ungetbyte nil
-        @gz.pos.should == 10
-      end
+        it 'does not decrement pos' do
+          @gz.ungetbyte nil
+          @gz.pos.should == 10
+        end
 
-      it 'does not make eof? false' do
-        @gz.ungetbyte nil
-        @gz.eof?.should be_true
+        it 'does not make eof? false' do
+          @gz.ungetbyte nil
+          @gz.eof?.should be_true
+        end
       end
     end
   end

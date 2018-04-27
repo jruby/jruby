@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String.new" do
   it "returns an instance of String" do
@@ -12,6 +12,13 @@ describe "String.new" do
       xA4xA2 = [0xA4, 0xA2].pack('CC').force_encoding 'utf-8'
       str = String.new(xA4xA2, encoding: 'euc-jp')
       str.encoding.should == Encoding::EUC_JP
+    end
+  end
+
+  ruby_version_is "2.4" do
+    it "accepts a capacity argument" do
+      String.new("", capacity: 100_000).should == ""
+      String.new("abc", capacity: 100_000).should == "abc"
     end
   end
 

@@ -140,7 +140,7 @@ public class FullInterpreterContext extends InterpreterContext {
         instructions = linearizedInstrArray;
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
 
-        // System.out.println("SCOPE: " + getScope().getName());
+        // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
 
@@ -183,6 +183,6 @@ public class FullInterpreterContext extends InterpreterContext {
             if (ipc <= rescueIPCs[i]) return rescueIPCs[i + 1];
         }
 
-        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc + getInstructions());
+        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc);
     }
 }

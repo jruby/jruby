@@ -354,14 +354,13 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    public void pushSymbolProc(final String name, final Encoding encoding) {
+    public void pushSymbolProc(final String id) {
         cacheValuePermanentlyLoadContext("symbolProc", RubyProc.class, null, new Runnable() {
             @Override
             public void run() {
                 loadContext();
-                adapter.ldc(name);
-                adapter.ldc(encoding.toString());
-                invokeIRHelper("newSymbolProc", sig(RubyProc.class, ThreadContext.class, String.class, String.class));
+                adapter.ldc(id);
+                invokeIRHelper("newSymbolProc", sig(RubyProc.class, ThreadContext.class, String.class));
             }
         });
     }

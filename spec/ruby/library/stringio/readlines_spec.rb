@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "StringIO#readlines when passed [separator]" do
   before :each do
@@ -88,5 +88,14 @@ describe "StringIO#readlines when in write-only mode" do
     io = StringIO.new("xyz")
     io.close_read
     lambda { io.readlines }.should raise_error(IOError)
+  end
+end
+
+ruby_version_is "2.4" do
+  describe "StringIO#readlines when passed [chomp]" do
+    it "returns the data read without a trailing newline character" do
+      io = StringIO.new("this>is\nan>example\r\n")
+      io.readlines(chomp: true).should == ["this>is", "an>example"]
+    end
   end
 end

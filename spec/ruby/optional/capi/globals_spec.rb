@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 require "stringio"
 
 load_extension("globals")
@@ -188,7 +188,7 @@ describe "CApiGlobalSpecs" do
         running = true
       end
 
-      Thread.pass until running
+      Thread.pass while thr.status and !running
       $_.should be_nil
 
       thr.join
@@ -215,7 +215,7 @@ describe "CApiGlobalSpecs" do
         running = true
       end
 
-      Thread.pass until running
+      Thread.pass while thr.status and !running
       $_.should be_nil
 
       thr.join

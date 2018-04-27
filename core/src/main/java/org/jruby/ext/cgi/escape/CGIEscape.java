@@ -16,6 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Created by headius on 12/8/16.
@@ -226,7 +227,7 @@ public class CGIEscape implements Library {
             case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J':
             case 'K': case 'L': case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T':
             case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z':
-            case '-': case '.': case '_':
+            case '-': case '.': case '_': case '~':
                 return true;
             default:
                 break;
@@ -278,13 +279,13 @@ public class CGIEscape implements Library {
     }
 
     static IRubyObject
-    optimized_unescape(Ruby runtime, RubyString str, IRubyObject encoding) {
+    optimized_unescape(ThreadContext context, RubyString str, IRubyObject encoding) {
         int i, len, beg = 0;
         RubyString dest = null;
         byte[] cstrBytes;
         int cstr;
         int cr;
-        Encoding origenc, encidx = runtime.getEncodingService().getEncodingFromObject(encoding);
+        Encoding origenc, encidx = EncodingUtils.rbToEncoding(context, encoding);
 
         len = str.size();
         ByteList byteList = str.getByteList();
@@ -292,6 +293,8 @@ public class CGIEscape implements Library {
         cstr = byteList.begin();
 
         int buf = 0;
+        Ruby runtime = context.runtime;
+        
         for (i = 0; i < len; ++i) {
             int c = cstrBytes[cstr + i] & 0xFF;
             int clen = 0;
@@ -414,7 +417,7 @@ public class CGIEscape implements Library {
 
         if (str.getEncoding().isAsciiCompatible()) {
             IRubyObject enc = accept_charset(argv, argv.length - 1, 1, self);
-            return optimized_unescape(context.runtime, str, enc);
+            return optimized_unescape(context, str, enc);
         } else {
             return Helpers.invokeSuper(context, self, argv, Block.NULL_BLOCK);
         }

@@ -1,2 +1,3 @@
 fails:Array#flatten with a non-Array object in the Array does not call #to_ary if not defined when #respond_to_missing? returns false
 fails:Array#flatten with a non-Array object in the Array calls #to_ary if not defined when #respond_to_missing? returns true
+fails:Array#flatten with a non-Array object in the Array calls respond_to_missing?(:to_ary, false) to try coercing

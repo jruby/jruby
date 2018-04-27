@@ -5,7 +5,6 @@
 =end
 
 require 'drb/drb'
-require 'thread'
 require 'monitor'
 
 module DRb
@@ -28,7 +27,7 @@ module DRb
       @cond = new_cond
       @servers = {}
       @waiting = []
-      @queue = Queue.new
+      @queue = Thread::Queue.new
       @thread = invoke_thread
       @uri = nil
     end

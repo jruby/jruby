@@ -47,7 +47,6 @@
 #   Translation of presentation on Ruby by Masatoshi Seki.
 
 require 'socket'
-require 'thread'
 require 'io/wait'
 require 'weakref'
 require 'drb/eq'
@@ -1246,7 +1245,7 @@ module DRb
   # not normally need to deal with it directly.
   class DRbConn
     POOL_SIZE = 16  # :nodoc:
-    @mutex = Mutex.new
+    @mutex = Thread::Mutex.new
     @pool = []
 
     def self.open(remote_uri)  # :nodoc:
@@ -1508,12 +1507,7 @@ module DRb
       if  Thread.current['DRb'] && Thread.current['DRb']['server'] == self
         Thread.current['DRb']['stop_service'] = true
       else
-        if @protocol.respond_to? :shutdown
-          @protocol.shutdown
-        else
-          [@thread, *@grp.list].each {|thread| thread.kill} # xxx: Thread#kill
-        end
-        @thread.join
+        shutdown
       end
     end
 
@@ -1531,6 +1525,18 @@ module DRb
     end
 
     private
+
+    def shutdown
+      current = Thread.current
+      if @protocol.respond_to? :shutdown
+        @protocol.shutdown
+      else
+        [@thread, *@grp.list].each { |thread|
+          thread.kill unless thread == current # xxx: Thread#kill
+        }
+      end
+      @thread.join unless @thread == current
+    end
 
     ##
     # Starts the DRb main loop in a new thread.
@@ -1673,6 +1679,17 @@ module DRb
       include InvokeMethod18Mixin
     end
 
+    def error_print(exception)
+      exception.backtrace.inject(true) do |first, x|
+        if first
+          $stderr.puts "#{x}: #{exception} (#{exception.class})"
+        else
+          $stderr.puts "\tfrom #{x}"
+        end
+        false
+      end
+    end
+
     # The main loop performed by a DRbServer's internal thread.
     #
     # Accepts a connection from a client, and starts up its own
@@ -1696,17 +1713,15 @@ module DRb
             succ = false
             invoke_method = InvokeMethod.new(self, client)
             succ, result = invoke_method.perform
-            if !succ && verbose
-              p result
-              result.backtrace.each do |x|
-                puts x
-              end
-            end
-            client.send_reply(succ, result) rescue nil
+            error_print(result) if !succ && verbose
+            client.send_reply(succ, result)
+          rescue Exception => e
+            error_print(e) if verbose
           ensure
             client.close unless succ
             if Thread.current['DRb']['stop_service']
-              Thread.new { stop_service }
+              shutdown
+              break
             end
             break unless succ
           end
@@ -1857,7 +1872,7 @@ module DRb
   end
   module_function :install_acl
 
-  @mutex = Mutex.new
+  @mutex = Thread::Mutex.new
   def mutex # :nodoc:
     @mutex
   end

@@ -1,6 +1,7 @@
 # frozen_string_literal: false
 exclude(/_stack_size$/, 'often too expensive')
 exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
+exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
 exclude :test_handle_interrupt, "handle_interrupt is not working properly"
 exclude :test_handle_interrupt_and_p, "handle_interrupt is not working properly"
 exclude :test_handle_interrupt_blocking, "handle_interrupt is not working properly"
@@ -12,6 +13,7 @@ exclude :test_mutex_unlock_on_trap, "traps execute in a separate thread in JRuby
 exclude :test_no_valid_cfp, "may depend on MRI internal stack structures"
 exclude :test_priority, "unreliably depends on thread scheduling"
 exclude :test_recursive_outer, "expected to be fixed by our change based on MRI r43981 but was not"
+exclude :test_report_on_exception, "very sensitive to thread timing and parallelism"
 exclude :test_safe_level, "SAFE levels are unsupported"
 exclude :test_thread_join_in_trap, "fails intermittently (#4956)"
 exclude :test_thread_join_main_thread, "hangs"

@@ -23,7 +23,7 @@ public class InlinedLineNumberInstr extends LineNumberInstr {
         String[] base = super.toStringNonOperandArgs();
         String[] args = Arrays.copyOf(base, base.length + 1);
 
-        args[args.length - 1] = "scope_name: " + scope.getName();
+        args[args.length - 1] = "scope_name: " + scope.getId();
 
         return  args;
     }

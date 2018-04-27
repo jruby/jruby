@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -22,22 +23,22 @@ import org.jruby.runtime.opto.Invalidator;
  * call const_missing.
  */
 public class SearchModuleForConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String   constName;
+    private RubySymbol constantName;
     private final boolean noPrivateConsts;
     private final boolean callConstMissing;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public SearchModuleForConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
-        this(result, currentModule, constName, noPrivateConsts, true);
+    public SearchModuleForConstInstr(Variable result, Operand currentModule, RubySymbol constantName, boolean noPrivateConsts) {
+        this(result, currentModule, constantName, noPrivateConsts, true);
     }
 
-    public SearchModuleForConstInstr(Variable result, Operand currentModule, String constName,
+    public SearchModuleForConstInstr(Variable result, Operand currentModule, RubySymbol constantName,
                                      boolean noPrivateConsts, boolean callConstMissing) {
         super(Operation.SEARCH_MODULE_FOR_CONST, result, currentModule);
 
-        this.constName = constName;
+        this.constantName = constantName;
         this.noPrivateConsts = noPrivateConsts;
         this.callConstMissing = callConstMissing;
     }
@@ -46,8 +47,12 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
         return getOperand1();
     }
 
-    public String getConstName() {
-        return constName;
+    public String getId() {
+        return constantName.idString();
+    }
+
+    public RubySymbol getName() {
+        return constantName;
     }
 
     public boolean isNoPrivateConsts() {
@@ -61,18 +66,19 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
     @Override
     public Instr clone(CloneInfo ii) {
         return new SearchModuleForConstInstr(ii.getRenamedVariable(result),
-                getCurrentModule().cloneForInlining(ii), constName, noPrivateConsts, callConstMissing);
+                getCurrentModule().cloneForInlining(ii), constantName, noPrivateConsts, callConstMissing);
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + constName, "no_priv: " + noPrivateConsts};
+        return new String[] { "name: " + constantName, "no_priv: " + noPrivateConsts};
     }
 
     private Object cache(Ruby runtime, RubyModule module) {
-        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        String id = getId();
+        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(id, false) : module.getConstantNoConstMissing(id);
         if (constant != null) {
-            Invalidator invalidator = runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = runtime.getConstantInvalidator(id);
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
@@ -82,13 +88,13 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getCurrentModule());
-        e.encode(getConstName());
+        e.encode(getName());
         e.encode(isNoPrivateConsts());
         e.encode(callConstMissing());
     }
 
     public static SearchModuleForConstInstr decode(IRReaderDecoder d) {
-        return new SearchModuleForConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(),
+        return new SearchModuleForConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol(),
                 d.decodeBoolean(), d.decodeBoolean());
     }
 
@@ -104,7 +110,7 @@ public class SearchModuleForConstInstr extends OneOperandResultBaseInstr impleme
 
         if (result == null) {
             if (callConstMissing) {
-                result = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+                result = module.callMethod(context, "const_missing", getName());
             } else {
                 result = UndefinedValue.UNDEFINED;
             }

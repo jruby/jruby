@@ -1,13 +1,10 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-require File.expand_path('../shared/basic', __FILE__)
-require File.expand_path('../shared/integer', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
+require_relative 'shared/basic'
+require_relative 'shared/integer'
 
 ruby_version_is '2.3' do
-  # To handle the special case of x64-mingw32
-  pointer_size = RUBY_PLATFORM =~ /\bx64\b/ ? 64 : 1.size * 8
-
-  if pointer_size == 64 then
+  platform_is pointer_size: 64 do
     little_endian do
       describe "String#unpack with format 'J'" do
         describe "with modifier '_'" do
@@ -141,7 +138,7 @@ ruby_version_is '2.3' do
     end
   end
 
-  if pointer_size == 32 then
+  platform_is pointer_size: 32 do
     little_endian do
       describe "String#unpack with format 'J'" do
         describe "with modifier '_'" do

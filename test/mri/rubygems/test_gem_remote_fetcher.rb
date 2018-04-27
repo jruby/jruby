@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 
 require 'webrick'
@@ -81,7 +81,6 @@ gems:
   # Generated via:
   #   x = OpenSSL::PKey::DH.new(2048) # wait a while...
   #   x.to_s => pem
-  #   x.priv_key.to_s => hex for OpenSSL::BN.new
   TEST_KEY_DH2048 =  OpenSSL::PKey::DH.new <<-_end_of_pem_
 -----BEGIN DH PARAMETERS-----
 MIIBCAKCAQEA3Ze2EHSfYkZLUn557torAmjBgPsqzbodaRaGZtgK1gEU+9nNJaFV
@@ -92,17 +91,6 @@ NP0fuvVAIB158VnQ0liHSwcl6+9vE1mL0Jo/qEXQxl0+UdKDjaGfTsn6HIrwTnmJ
 PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
 -----END DH PARAMETERS-----
     _end_of_pem_
-
-  TEST_KEY_DH2048.priv_key = OpenSSL::BN.new("108911488509734781344423639" \
-     "5585749502236089033416160524030987005037540379474123441273555416835" \
-     "4725688238369352738266590757370603937618499698665047757588998555345" \
-     "3446251978586372525530219375408331096098220027413238477359960428372" \
-     "0195464393332338164504352015535549496585792320286513563739305843396" \
-     "9294344974028713065472959376197728193162272314514335882399554394661" \
-     "5306385003430991221886779612878793446851681835397455333989268503748" \
-     "7862488679178398716189205737442996155432191656080664090596502674943" \
-     "7902481557157485795980326766117882761941455140582265347052939604724" \
-     "964857770053363840471912215799994973597613931991572884", 16)
 
   def setup
     @proxies = %w[https_proxy http_proxy HTTP_PROXY http_proxy_user HTTP_PROXY_USER http_proxy_pass HTTP_PROXY_PASS no_proxy NO_PROXY]
@@ -175,7 +163,7 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
     fetcher = Gem::RemoteFetcher.new nil
     @fetcher = fetcher
     def fetcher.request(uri, request_class, last_modified = nil)
-      raise SocketError, "tarded"
+      raise SocketError, "oops"
     end
 
     uri = 'http://gems.example.com/yaml'
@@ -183,7 +171,7 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
       fetcher.fetch_size uri
     end
 
-    assert_equal "SocketError: tarded (#{uri})", e.message
+    assert_equal "SocketError: oops (#{uri})", e.message
   end
 
   def test_no_proxy
@@ -242,6 +230,21 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
     uri = URI.parse "http://example.com/foo"
     target = MiniTest::Mock.new
     target.expect :target, "badexample.com"
+
+    dns = MiniTest::Mock.new
+    dns.expect :getresource, target, [String, Object]
+
+    fetch = Gem::RemoteFetcher.new nil, dns
+    assert_equal URI.parse("http://example.com/foo"), fetch.api_endpoint(uri)
+
+    target.verify
+    dns.verify
+  end
+
+  def test_api_endpoint_ignores_trans_domain_values_that_end_with_original_in_path
+    uri = URI.parse "http://example.com/foo"
+    target = MiniTest::Mock.new
+    target.expect :target, "evil.com/a.example.com"
 
     dns = MiniTest::Mock.new
     dns.expect :getresource, target, [String, Object]
@@ -552,7 +555,7 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
       nil
     end
 
-    assert_equal nil, fetcher.fetch_path(@uri + 'foo.gz', Time.at(0))
+    assert_nil fetcher.fetch_path(@uri + 'foo.gz', Time.at(0))
   end
 
   def test_fetch_path_io_error
@@ -618,7 +621,7 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
       nil
     end
 
-    assert_equal nil, fetcher.fetch_path(URI.parse(@gem_repo), Time.at(0))
+    assert_nil fetcher.fetch_path(URI.parse(@gem_repo), Time.at(0))
   end
 
   def test_implicit_no_proxy
@@ -697,6 +700,23 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
     end
 
     assert_equal "too many redirects (#{url})", e.message
+  end
+
+  def test_fetch_http_redirects_without_location
+    fetcher = Gem::RemoteFetcher.new nil
+    @fetcher = fetcher
+    url = 'http://gems.example.com/redirect'
+
+    def fetcher.request(uri, request_class, last_modified = nil)
+      res = Net::HTTPMovedPermanently.new nil, 301, nil
+      res
+    end
+
+    e = assert_raises Gem::RemoteFetcher::FetchError do
+      fetcher.fetch_http URI.parse(url)
+    end
+
+    assert_equal "redirecting but no redirect location was given (#{url})", e.message
   end
 
   def test_fetch_http_with_additional_headers
@@ -924,6 +944,8 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
         @ssl_server_thread.kill.join
         @ssl_server_thread = nil
       end
+      utils = WEBrick::Utils    # TimeoutHandler is since 1.9
+      utils::TimeoutHandler.terminate if defined?(utils::TimeoutHandler.terminate)
     end
 
     def normal_server_port
@@ -1046,4 +1068,3 @@ PeIQQkFng2VVot/WAQbv3ePqWq07g1BBcwIBAg==
   end
 
 end
-

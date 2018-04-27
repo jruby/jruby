@@ -1,5 +1,4 @@
 # frozen_string_literal: false
-require 'thread'
 
 # The Singleton module implements the Singleton pattern.
 #
@@ -133,7 +132,7 @@ module Singleton
     def __init__(klass) # :nodoc:
       klass.instance_eval {
         @singleton__instance__ = nil
-        @singleton__mutex__ = Mutex.new
+        @singleton__mutex__ = Thread::Mutex.new
       }
       def klass.instance # :nodoc:
         return @singleton__instance__ if @singleton__instance__

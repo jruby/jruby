@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Thread#join" do
   it "returns the thread when it is finished" do
@@ -46,7 +46,10 @@ describe "Thread#join" do
   end
 
   it "raises any exceptions encountered in the thread body" do
-    t = Thread.new { raise NotImplementedError.new("Just kidding") }
+    t = Thread.new {
+      Thread.current.report_on_exception = false
+      raise NotImplementedError.new("Just kidding")
+    }
     lambda { t.join }.should raise_error(NotImplementedError)
   end
 

@@ -10,6 +10,8 @@
 #
 
 require 'uri/common'
+autoload :IPSocket, 'socket'
+autoload :IPAddr, 'ipaddr'
 
 module URI
 
@@ -207,7 +209,7 @@ module URI
           "the scheme #{@scheme} does not accept registry part: #{registry} (or bad hostname?)"
       end
 
-      @scheme.freeze if @scheme
+      @scheme&.freeze
       self.set_path('') if !@path && !@opaque # (see RFC2396 Section 5.2)
       self.set_port(self.default_port) if self.default_port && !@port
     end
@@ -271,7 +273,7 @@ module URI
     #
     # Portion of the path that does make use of the slash '/'.
     # The path typically refers to the absolute path and the opaque part.
-    #  (see RFC2396 Section 3 and 5.2)
+    # (See RFC2396 Section 3 and 5.2.)
     #
     attr_reader :opaque
 
@@ -330,7 +332,7 @@ module URI
     # see also URI::Generic.scheme=
     #
     def set_scheme(v)
-      @scheme = v ? v.downcase : v
+      @scheme = v&.downcase
     end
     protected :set_scheme
 
@@ -643,9 +645,9 @@ module URI
     # This method is same as URI::Generic#host except
     # brackets for IPv6 (and future IP) addresses are removed.
     #
-    # u = URI("http://[::1]/bar")
-    # p u.hostname      #=> "::1"
-    # p u.host          #=> "[::1]"
+    #   u = URI("http://[::1]/bar")
+    #   p u.hostname      #=> "::1"
+    #   p u.host          #=> "[::1]"
     #
     def hostname
       v = self.host
@@ -657,10 +659,10 @@ module URI
     # This method is same as URI::Generic#host= except
     # the argument can be bare IPv6 address.
     #
-    # u = URI("http://foo/bar")
-    # p u.to_s                  #=> "http://foo/bar"
-    # u.hostname = "::1"
-    # p u.to_s                  #=> "http://[::1]/bar"
+    #   u = URI("http://foo/bar")
+    #   p u.to_s                  #=> "http://foo/bar"
+    #   u.hostname = "::1"
+    #   p u.to_s                  #=> "http://[::1]/bar"
     #
     # If the argument seems IPv6 address,
     # it is wrapped by brackets.
@@ -683,7 +685,7 @@ module URI
       if @opaque
         raise InvalidURIError,
           "can not set port with registry or opaque"
-      elsif !v.kind_of?(Fixnum) && parser.regexp[:PORT] !~ v
+      elsif !v.kind_of?(Integer) && parser.regexp[:PORT] !~ v
         raise InvalidComponentError,
           "bad component(expected port component): #{v.inspect}"
       end
@@ -697,7 +699,7 @@ module URI
     # see also URI::Generic.port=
     #
     def set_port(v)
-      v = v.empty? ? nil : v.to_i unless !v || v.kind_of?(Fixnum)
+      v = v.empty? ? nil : v.to_i unless !v || v.kind_of?(Integer)
       @port = v
     end
     protected :set_port
@@ -977,7 +979,7 @@ module URI
     # returns an Array of the path split on '/'
     #
     def split_path(path)
-      path.split(%r{/+}, -1)
+      path.split("/", -1)
     end
     private :split_path
 
@@ -1096,15 +1098,19 @@ module URI
     #   # =>  #<URI::HTTP:0x2021f3b0 URL:http://my.example.com/main.rbx?page=1>
     #
     def merge(oth)
-      begin
-        base, rel = merge0(oth)
-      rescue
-        raise $!.class, $!.message
+      rel = parser.send(:convert_to_uri, oth)
+
+      if rel.absolute?
+        #raise BadURIError, "both URI are absolute" if absolute?
+        # hmm... should return oth for usability?
+        return rel
       end
 
-      if base == rel
-        return base
+      unless self.absolute?
+        raise BadURIError, "both URI are relative"
       end
+
+      base = self.dup
 
       authority = rel.userinfo || rel.host || rel.port
 
@@ -1136,31 +1142,6 @@ module URI
     end # merge
     alias + merge
 
-    # return base and rel.
-    # you can modify `base', but can not `rel'.
-    def merge0(oth)
-      oth = parser.send(:convert_to_uri, oth)
-
-      if self.relative? && oth.relative?
-        raise BadURIError,
-          "both URI are relative"
-      end
-
-      if self.absolute? && oth.absolute?
-        #raise BadURIError,
-        #  "both URI are absolute"
-        # hmm... should return oth for usability?
-        return oth, oth
-      end
-
-      if self.absolute?
-        return self.dup, oth
-      else
-        return oth, oth
-      end
-    end
-    private :merge0
-
     # :stopdoc:
     def route_from_path(src, dst)
       case dst
@@ -1173,8 +1154,8 @@ module URI
         return dst.dup
       end
 
-      src_path = src.scan(%r{(?:\A|[^/]+)/})
-      dst_path = dst.scan(%r{(?:\A|[^/]+)/?})
+      src_path = src.scan(%r{[^/]*/})
+      dst_path = dst.scan(%r{[^/]*/?})
 
       # discard same parts
       while !dst_path.empty? && dst_path.first == src_path.first
@@ -1314,7 +1295,17 @@ module URI
     end
 
     #
-    # Returns normalized URI
+    # Returns normalized URI.
+    #
+    #   require 'uri'
+    #
+    #   URI("HTTP://my.EXAMPLE.com").normalize
+    #   #=> #<URI::HTTP http://my.example.com/>
+    #
+    # Normalization here means:
+    #
+    # * scheme and host are converted to lowercase,
+    # * an empty path component is set to "/".
     #
     def normalize
       uri = dup
@@ -1350,7 +1341,7 @@ module URI
       if @opaque
         str << @opaque
       else
-        if @host
+        if @host || %w[file postgres].include?(@scheme)
           str << '//'
         end
         if self.userinfo
@@ -1378,7 +1369,7 @@ module URI
     end
 
     #
-    # Compares to URI's
+    # Compares two URIs
     #
     def ==(oth)
       if self.class == oth.class
@@ -1459,8 +1450,8 @@ module URI
     #
     # == Description
     #
-    #  attempt to parse other URI +oth+
-    #  return [parsed_oth, self]
+    # attempts to parse other URI +oth+,
+    # returns [parsed_oth, self]
     #
     # == Usage
     #
@@ -1486,6 +1477,8 @@ module URI
     # ftp_proxy, no_proxy, etc.
     # If there is no proper proxy, nil is returned.
     #
+    # If the optional parameter, +env+, is specified, it is used instead of ENV.
+    #
     # Note that capitalized variables (HTTP_PROXY, FTP_PROXY, NO_PROXY, etc.)
     # are examined too.
     #
@@ -1494,32 +1487,32 @@ module URI
     # So HTTP_PROXY is not used.
     # http_proxy is not used too if the variable is case insensitive.
     # CGI_HTTP_PROXY can be used instead.
-    def find_proxy
+    def find_proxy(env=ENV)
       raise BadURIError, "relative URI: #{self}" if self.relative?
       name = self.scheme.downcase + '_proxy'
       proxy_uri = nil
-      if name == 'http_proxy' && ENV.include?('REQUEST_METHOD') # CGI?
+      if name == 'http_proxy' && env.include?('REQUEST_METHOD') # CGI?
         # HTTP_PROXY conflicts with *_proxy for proxy settings and
         # HTTP_* for header information in CGI.
         # So it should be careful to use it.
-        pairs = ENV.reject {|k, v| /\Ahttp_proxy\z/i !~ k }
+        pairs = env.reject {|k, v| /\Ahttp_proxy\z/i !~ k }
         case pairs.length
         when 0 # no proxy setting anyway.
           proxy_uri = nil
         when 1
           k, _ = pairs.shift
-          if k == 'http_proxy' && ENV[k.upcase] == nil
+          if k == 'http_proxy' && env[k.upcase] == nil
             # http_proxy is safe to use because ENV is case sensitive.
-            proxy_uri = ENV[name]
+            proxy_uri = env[name]
           else
             proxy_uri = nil
           end
         else # http_proxy is safe to use because ENV is case sensitive.
-          proxy_uri = ENV.to_hash[name]
+          proxy_uri = env.to_hash[name]
         end
         if !proxy_uri
           # Use CGI_HTTP_PROXY.  cf. libwww-perl.
-          proxy_uri = ENV["CGI_#{name.upcase}"]
+          proxy_uri = env["CGI_#{name.upcase}"]
         end
       elsif name == 'http_proxy'
         if p_addr = ENV_JAVA['http.proxyHost']
@@ -1531,14 +1524,14 @@ module URI
             proxy_uri = "http://#{p_addr}:#{p_port}"
           end
         else
-          unless proxy_uri = ENV[name]
-            if proxy_uri = ENV[name.upcase]
-              warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.'
+          unless proxy_uri = env[name]
+            if proxy_uri = env[name.upcase]
+              warn 'The environment variable HTTP_PROXY is discouraged.  Use http_proxy.', uplevel: 1
             end
           end
         end
       else
-        proxy_uri = ENV[name] || ENV[name.upcase]
+        proxy_uri = env[name] || env[name.upcase]
       end
 
       if proxy_uri.nil? || proxy_uri.empty?
@@ -1546,7 +1539,6 @@ module URI
       end
 
       if self.hostname
-        require 'socket'
         begin
           addr = IPSocket.getaddress(self.hostname)
           return nil if /\A127\.|\A::1\z/ =~ addr
@@ -1555,15 +1547,27 @@ module URI
       end
 
       name = 'no_proxy'
-      if no_proxy = ENV[name] || ENV[name.upcase]
-        no_proxy.scan(/([^:,]*)(?::(\d+))?/) {|host, port|
-          if /(\A|\.)#{Regexp.quote host}\z/i =~ self.host &&
-            (!port || self.port == port.to_i)
-            return nil
-          end
-        }
+      if no_proxy = env[name] || env[name.upcase]
+        return nil unless URI::Generic.use_proxy?(self.hostname, addr, self.port, no_proxy)
       end
       URI.parse(proxy_uri)
+    end
+
+    def self.use_proxy?(hostname, addr, port, no_proxy) # :nodoc:
+      no_proxy.scan(/(?!\.)([^:,\s]+)(?::(\d+))?/) {|p_host, p_port|
+        if !p_port || port == p_port.to_i
+          if /(\A|\.)#{Regexp.quote p_host}\z/i =~ hostname
+            return false
+          elsif addr
+            begin
+              return false if IPAddr.new(p_host).include?(addr)
+            rescue IPAddr::InvalidAddressError
+              next
+            end
+          end
+        end
+      }
+      true
     end
   end
 end

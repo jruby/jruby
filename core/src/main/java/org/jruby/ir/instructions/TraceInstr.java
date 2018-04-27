@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -23,11 +24,11 @@ import java.util.EnumSet;
  */
 public class TraceInstr extends NoOperandInstr {
     private final RubyEvent event;
-    private final String name;
+    private final RubySymbol name;
     private final String filename;
     private final int linenumber;
 
-    public TraceInstr(RubyEvent event, String name, String filename, int linenumber) {
+    public TraceInstr(RubyEvent event, RubySymbol name, String filename, int linenumber) {
         super(Operation.TRACE);
 
         this.event = event;
@@ -46,7 +47,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public String getName() {
-        return name;
+        return name == null ? null : name.idString();
     }
 
     public String getFilename() {
@@ -72,7 +73,7 @@ public class TraceInstr extends NoOperandInstr {
     }
 
     public static TraceInstr decode(IRReaderDecoder d) {
-        return new TraceInstr(d.decodeRubyEvent(), d.decodeString(), d.decodeString(), d.decodeInt());
+        return new TraceInstr(d.decodeRubyEvent(), d.decodeSymbol(), d.decodeString(), d.decodeInt());
     }
 
     @Override
@@ -91,9 +92,7 @@ public class TraceInstr extends NoOperandInstr {
     public boolean computeScopeFlags(IRScope scope) {
         EnumSet<IRFlags> flags = scope.getFlags();
 
-        if (flags.contains(IRFlags.REQUIRES_FRAME)) return false;
-
-        flags.add(IRFlags.REQUIRES_FRAME);
+        flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
 
         return true;
     }

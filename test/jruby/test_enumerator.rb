@@ -140,8 +140,6 @@ class TestEnumerator < Test::Unit::TestCase
   end
 
   def test_java8_streaming_array
-    return unless JAVA_8
-
     arr = (1..200).to_a
     enum = arr.each
     stream = enum.to_java.stream
@@ -153,8 +151,6 @@ class TestEnumerator < Test::Unit::TestCase
   end
 
   def test_java8_streaming
-    return unless JAVA_8
-
     enum = Enumerator.new do |out|
       i = 1 ; loop do
         raise StopIteration if i > 100

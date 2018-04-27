@@ -94,7 +94,7 @@ public class FilenoUtil {
     }
 
     public static boolean isFake(int fileno) {
-        return fileno >= FIRST_FAKE_FD;
+        return fileno < 0 || fileno >= FIRST_FAKE_FD;
     }
 
     public static int filenoFrom(Channel channel) {

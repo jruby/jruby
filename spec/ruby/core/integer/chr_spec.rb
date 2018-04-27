@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Integer#chr without argument" do
   it "returns a String" do
@@ -163,6 +163,10 @@ describe "Integer#chr with an encoding argument" do
   it "raises a RangeError is self is less than 0" do
     lambda { -1.chr(Encoding::UTF_8) }.should raise_error(RangeError)
     lambda { -bignum_value.chr(Encoding::EUC_JP) }.should raise_error(RangeError)
+  end
+
+  it "raises a RangeError if self is too large" do
+    lambda { 2206368128.chr(Encoding::UTF_8) }.should raise_error(RangeError)
   end
 
   it "returns a String with the specified encoding" do

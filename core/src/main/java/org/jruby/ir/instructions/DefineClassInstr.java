@@ -46,7 +46,7 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + newIRClassBody.getName() };
+        return new String[] {"name: " + newIRClassBody.getId() };
     }
 
     @Override

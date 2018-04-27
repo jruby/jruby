@@ -57,7 +57,7 @@ public class PopenExecutor {
                 filenameByteList.getBegin() + filenameByteList.getRealSize(),
                 chlen,
                 filenameByteList.getEncoding()) == '|') {
-            return filenameStr.makeShared19(context.runtime, chlen[0], filenameByteList.length() - 1).infectBy(filenameOrCommand);
+            return filenameStr.makeShared(context.runtime, chlen[0], filenameByteList.length() - 1).infectBy(filenameOrCommand);
         }
         return context.nil;
     }
@@ -378,19 +378,15 @@ public class PopenExecutor {
                     if (key instanceof RubySymbol) {
                         switch (key.toString()) {
                             case "gid" :
-                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :gid option in JRuby");
-                                //break;
                                 throw runtime.newNotImplementedError("popen does not support :gid option in JRuby");
                             case "uid" :
-                                //runtime.getWarnings().warn(IRubyWarnings.ID.UNSUPPORTED_SUBPROCESS_OPTION, "popen does not support :uid option in JRuby");
-                                //break;
                                 throw runtime.newNotImplementedError("popen does not support :uid option in JRuby");
                             default :
                                 throw runtime.newArgumentError("wrong exec option symbol: " + key);
                         }
                     }
                     else {
-                        throw runtime.newArgumentError("wrong exec option");
+                        throw runtime.newArgumentError("wrong exec option: " + key);
                     }
                 }
 
@@ -505,12 +501,12 @@ public class PopenExecutor {
     private Errno errno = null;
 
     // MRI: pipe_open
-    private IRubyObject pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
+    private RubyIO pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
         IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
         long pid = 0;
         OpenFile fptr;
-        IRubyObject port;
+        RubyIO port;
         OpenFile write_fptr;
         IRubyObject write_port;
         PosixShim posix = new PosixShim(runtime);
@@ -629,8 +625,8 @@ public class PopenExecutor {
             fd = pair[1];
         }
 
-        port = runtime.getIO().allocate();
-        fptr = ((RubyIO)port).MakeOpenFile();
+        port = (RubyIO) runtime.getIO().allocate();
+        fptr = port.MakeOpenFile();
         fptr.setChannel(new NativeDeviceChannel(fd));
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
         if (convconfig != null) {
@@ -662,7 +658,7 @@ public class PopenExecutor {
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
             fptr.tiedIOForWriting = (RubyIO)write_port;
-            ((RubyIO)port).setInstanceVariable("@tied_io_for_writing", write_port);
+            port.setInstanceVariable("@tied_io_for_writing", write_port);
         }
 
 //        fptr.setFinalizer(fptr.PIPE_FINALIZE);
@@ -1391,7 +1387,7 @@ public class PopenExecutor {
 //        rb_secure(2);
 
         boolean redirect = false;
-        switch (key.getMetaClass().getRealClass().getClassIndex()) {
+        switch (key.getType().getClassIndex()) {
             case SYMBOL:
                 id = key.toString();
 //                #ifdef HAVE_SETPGID
@@ -1407,7 +1403,7 @@ public class PopenExecutor {
                     else {
                         pgroup = val.convertToInteger().getLongValue();
                         if (pgroup < 0) {
-                            throw runtime.newArgumentError("negative process group ID : " + pgroup);
+                            throw runtime.newArgumentError("negative process group symbol : " + pgroup);
                         }
                     }
                     eargp.pgroup_given_set();
@@ -1541,7 +1537,10 @@ public class PopenExecutor {
                 }
                 break;
 
-            case FIXNUM:
+            case INTEGER:
+                if (!(key instanceof RubyFixnum)) {
+                    return ST_STOP;
+                }
             case FILE:
             case IO:
             case ARRAY:
@@ -1590,9 +1589,14 @@ public class PopenExecutor {
             case IO:
                 val = checkExecRedirectFd(runtime, val, false);
                 /* fall through */
-            case FIXNUM:
-                param = val;
-                eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+            case INTEGER:
+                if (val instanceof RubyFixnum) {
+                    param = val;
+                    eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+                    break;
+                }
+
+                checkExecRedirectDefault(runtime, key, val, eargp);
                 break;
 
             case ARRAY:
@@ -1641,17 +1645,22 @@ public class PopenExecutor {
                 break;
 
             default:
-                tmp = val;
-                val = TypeConverter.ioCheckIO(runtime, tmp);
-                if (!val.isNil()) {
-                    val = checkExecRedirectFd(runtime, val, false);
-                    param = val;
-                    eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
-                    break;
-                }
-                throw runtime.newArgumentError("wrong exec redirect action");
+                checkExecRedirectDefault(runtime, key, val, eargp);
         }
 
+    }
+
+    private static void checkExecRedirectDefault(Ruby runtime, IRubyObject key, IRubyObject val, ExecArg eargp) {
+        IRubyObject tmp;
+        IRubyObject param;
+        tmp = val;
+        val = TypeConverter.ioCheckIO(runtime, tmp);
+        if (!val.isNil()) {
+            val = checkExecRedirectFd(runtime, val, false);
+            param = val;
+            eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
+        }
+        throw runtime.newArgumentError("wrong exec redirect action");
     }
 
     // MRI: check_exec_redirect_fd

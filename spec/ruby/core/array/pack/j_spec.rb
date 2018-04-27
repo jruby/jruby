@@ -1,14 +1,11 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-require File.expand_path('../shared/basic', __FILE__)
-require File.expand_path('../shared/numeric_basic', __FILE__)
-require File.expand_path('../shared/integer', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
+require_relative 'shared/basic'
+require_relative 'shared/numeric_basic'
+require_relative 'shared/integer'
 
 ruby_version_is '2.3' do
-  # To handle the special case of x64-mingw32
-  pointer_size = RUBY_PLATFORM =~ /\bx64\b/ ? 64 : 1.size * 8
-
-  if pointer_size == 64 then
+  platform_is pointer_size: 64 do
     describe "Array#pack with format 'J'" do
       it_behaves_like :array_pack_basic, 'J'
       it_behaves_like :array_pack_basic_non_float, 'J'
@@ -114,7 +111,7 @@ ruby_version_is '2.3' do
     end
   end
 
-  if pointer_size == 32 then
+  platform_is pointer_size: 32 do
     describe "Array#pack with format 'J'" do
       it_behaves_like :array_pack_basic, 'J'
       it_behaves_like :array_pack_basic_non_float, 'J'

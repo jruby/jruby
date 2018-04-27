@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,11 +35,10 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import com.headius.invokebinder.Binder;
-import org.jcodings.Encoding;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -58,9 +57,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
+import org.jcodings.Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
+import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -73,14 +73,12 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CacheableMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
@@ -91,7 +89,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
@@ -103,14 +101,15 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
+import org.jruby.util.ByteListHelper;
 import org.jruby.util.ClassProvider;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
@@ -118,9 +117,24 @@ import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.anno.FrameField.*;
+import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.anno.FrameField.BLOCK;
+import static org.jruby.anno.FrameField.CLASS;
+import static org.jruby.anno.FrameField.FILENAME;
+import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.anno.FrameField.LINE;
+import static org.jruby.anno.FrameField.METHODNAME;
+import static org.jruby.anno.FrameField.SCOPE;
+import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.runtime.Visibility.*;
+import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.Visibility.PUBLIC;
+
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.types;
 
 
 /**
@@ -298,15 +312,15 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public MethodHandle getIdTest() {
+    public final MethodHandle getIdTest() {
         MethodHandle idTest = this.idTest;
         if (idTest != null) return idTest;
         return this.idTest = newIdTest();
     }
 
-    protected MethodHandle newIdTest() {
+    protected final MethodHandle newIdTest() {
         return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
-                .insert(2,id)
+                .insert(2, id)
                 .invoke(testModuleMatch);
     }
 
@@ -371,18 +385,20 @@ public class RubyModule extends RubyObject {
 
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
     // FIXME: synchronization is still wrong in CP code
-    public synchronized void addClassProvider(ClassProvider provider) {
+    public final synchronized void addClassProvider(ClassProvider provider) {
+        Set<ClassProvider> classProviders = this.classProviders;
         if (!classProviders.contains(provider)) {
-            Set<ClassProvider> cp = new HashSet<ClassProvider>(classProviders);
+            Set<ClassProvider> cp = new HashSet<>(classProviders.size() + 1);
+            cp.addAll(classProviders);
             cp.add(provider);
-            classProviders = cp;
+            this.classProviders = cp;
         }
     }
 
-    public synchronized void removeClassProvider(ClassProvider provider) {
-        Set<ClassProvider> cp = new HashSet<ClassProvider>(classProviders);
+    public final synchronized void removeClassProvider(ClassProvider provider) {
+        Set<ClassProvider> cp = new HashSet<>(classProviders);
         cp.remove(provider);
-        classProviders = cp;
+        this.classProviders = cp;
     }
 
     private void checkForCyclicInclude(RubyModule m) throws RaiseException {
@@ -398,6 +414,9 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
+        Set<ClassProvider> classProviders = this.classProviders;
+        if (classProviders == Collections.EMPTY_SET) return null;
+
         RubyClass clazz;
         for (ClassProvider classProvider: classProviders) {
             if ((clazz = classProvider.defineClassUnder(this, name, superClazz)) != null) {
@@ -408,6 +427,9 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyModule searchProvidersForModule(String name) {
+        Set<ClassProvider> classProviders = this.classProviders;
+        if (classProviders == Collections.EMPTY_SET) return null;
+
         RubyModule module;
         for (ClassProvider classProvider: classProviders) {
             if ((module = classProvider.defineModuleUnder(this, name)) != null) {
@@ -450,24 +472,35 @@ public class RubyModule extends RubyObject {
         return this.methods;
     }
 
-    public synchronized Map<String, DynamicMethod> getMethodsForWrite() {
-        Map<String, DynamicMethod> myMethods = this.methods;
-        return myMethods == Collections.EMPTY_MAP ?
-            this.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1) :
-            myMethods;
+    public Map<String, DynamicMethod> getMethodsForWrite() {
+        Map<String, DynamicMethod> methods = this.methods;
+        if (methods != Collections.EMPTY_MAP) return methods;
+
+        synchronized (this) {
+            methods = this.methods;
+            return methods == Collections.EMPTY_MAP ?
+                this.methods = new ConcurrentHashMap<>(0, 0.9f, 1) :
+                    methods;
+        }
     }
 
-    // note that addMethod now does its own put, so any change made to
-    // functionality here should be made there as well
-    private void putMethod(String name, DynamicMethod method) {
+    /**
+     * @note Internal API - only public as its used by generated code!
+     * @param runtime
+     * @param id identifier string (8859_1).  Matching entry in symbol table.
+     * @param method
+     * @return method
+     */ // NOTE: used by AnnotationBinder
+    public DynamicMethod putMethod(Ruby runtime, String id, DynamicMethod method) {
         if (hasPrepends()) {
             method = method.dup();
             method.setImplementationClass(methodLocation);
         }
 
-        methodLocation.getMethodsForWrite().put(name, method);
+        methodLocation.getMethodsForWrite().put(id, method);
 
-        getRuntime().addProfiledMethod(name, method);
+        runtime.addProfiledMethod(id, method);
+        return method;
     }
 
     /**
@@ -519,6 +552,73 @@ public class RubyModule extends RubyObject {
     public String getName() {
         if (cachedName != null) return cachedName;
         return calculateName();
+    }
+
+    /**
+     * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes which
+     * is properly encoded.
+     *
+     * @return a properly encoded class name.
+     *
+     * Note: getId() is only really valid for ASCII values.  This should be favored over using it.
+     */
+    public RubyString rubyName() {
+        return cachedRubyName != null ? cachedRubyName : calculateRubyName();
+    }
+
+    public RubyString rubyBaseName() {
+        String baseName = getBaseName();
+
+        return baseName == null ? null : (RubyString) getRuntime().newSymbol(baseName).to_s();
+    }
+
+    private RubyString calculateAnonymousRubyName() {
+        Ruby runtime = getRuntime();
+        RubyString anonBase = runtime.newString("#<"); // anonymous classes get the #<Class:0xdeadbeef> format
+        anonBase.append(metaClass.getRealClass().rubyName()).append(runtime.newString(":0x"));
+        anonBase.append(runtime.newString(Integer.toHexString(System.identityHashCode(this)))).append(runtime.newString(">"));
+
+        return anonBase;
+    }
+
+    private RubyString calculateRubyName() {
+        boolean cache = true;
+
+        if (getBaseName() == null) return calculateAnonymousRubyName(); // no name...anonymous!
+
+        Ruby runtime = getRuntime();
+        RubyClass objectClass = runtime.getObject();
+        List<RubyString> parents = new ArrayList<>();
+        for (RubyModule p = getParent(); p != null && p != objectClass; p = p.getParent()) {
+            if (p == this) break;  // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+
+            RubyString name = p.rubyBaseName();
+
+            // This is needed when the enclosing class or module is a singleton.
+            // In that case, we generated a name such as null::Foo, which broke
+            // Marshalling, among others. The correct thing to do in this situation
+            // is to insert the generate the name of form #<Class:01xasdfasd> if
+            // it's a singleton module/class, which this code accomplishes.
+            if (name == null) {
+                cache = false;
+                name = p.rubyName();
+            }
+
+            parents.add(name);
+        }
+
+        Collections.reverse(parents);
+
+        RubyString colons = runtime.newString("::");
+        RubyString fullName = runtime.newString();
+        for (RubyString parent:  parents) {
+            fullName.cat19(parent).cat19(colons);
+        }
+        fullName.cat19(rubyBaseName());
+
+        if (cache) cachedRubyName = fullName;
+
+        return fullName;
     }
 
     /**
@@ -949,23 +1049,28 @@ public class RubyModule extends RubyObject {
     public static final class MethodClumper {
         private HashMap<String, List<JavaMethodDescriptor>> annotatedMethods;
         private HashMap<String, List<JavaMethodDescriptor>> staticAnnotatedMethods;
-        // final HashMap<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<>();
 
-        public void clump(final Class cls) {
-            Method[] declaredMethods = Initializer.DECLARED_METHODS.get(cls);
+        public Map<Set<FrameField>, List<String>> readGroups = Collections.EMPTY_MAP;
+        public Map<Set<FrameField>, List<String>> writeGroups = Collections.EMPTY_MAP;
+
+        @SuppressWarnings("deprecation")
+        public void clump(final Class klass) {
+            Method[] declaredMethods = Initializer.DECLARED_METHODS.get(klass);
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
                 if (anno == null) continue;
+
+                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
 
                 // skip bridge methods, as generated by JDK8 javac for e.g. return-value overloaded methods
                 if (method.isBridge()) continue;
 
                 JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
 
-                String name = anno.name().length == 0 ? method.getName() : anno.name()[0];
+                final String[] names = anno.name();
+                String name = names.length == 0 ? method.getName() : names[0];
 
-                List<JavaMethodDescriptor> methodDescs;
                 Map<String, List<JavaMethodDescriptor>> methodsHash;
                 if (desc.isStatic) {
                     if ( (methodsHash = staticAnnotatedMethods) == null ) {
@@ -977,43 +1082,18 @@ public class RubyModule extends RubyObject {
                     }
                 }
 
-                // add to specific
-                methodDescs = methodsHash.get(name);
+                List<JavaMethodDescriptor> methodDescs = methodsHash.get(name);
                 if (methodDescs == null) {
-                    // optimize for most methods mapping to one method for a given name :
-                    methodsHash.put(name, Collections.singletonList(desc));
-                }
-                else {
-                    CompatVersion oldCompat = methodDescs.get(0).anno.compat();
-                    CompatVersion newCompat = desc.anno.compat();
-
-                    int comparison = newCompat.compareTo(oldCompat);
-                    if (comparison == 1) {
-                        // new method's compat is higher than old method's, so we throw old one away
-                        methodsHash.put(name, methodDescs = new ArrayList<>(2));
-                    } else if (comparison == 0) {
-                        // same compat version, proceed to adding additional method
-                    } else {
-                        // lower compat, skip this method
-                        continue;
-                    }
-
-                    if (methodDescs.getClass() != ArrayList.class) { // due singletonList
-                        ArrayList<JavaMethodDescriptor> newDescs = new ArrayList<>(4);
-                        newDescs.addAll(methodDescs);
-                        methodsHash.put(name, methodDescs = newDescs);
-                    }
-
-                    methodDescs.add(desc);
+                    methodsHash.put(name, methodDescs = new ArrayList<>(4));
                 }
 
-                // add to general
-                //methodDescs = allAnnotatedMethods.get(name);
-                //if (methodDescs == null) {
-                //    methodDescs = new ArrayList<JavaMethodDescriptor>();
-                //    allAnnotatedMethods.put(name, methodDescs);
-                //}
-                //methodDescs.add(desc);
+                methodDescs.add(desc);
+
+                // check for frame field reads or writes
+                if (anno.reads().length > 0 && readGroups == Collections.EMPTY_MAP) readGroups = new HashMap<>();
+                if (anno.writes().length > 0 && writeGroups == Collections.EMPTY_MAP) writeGroups = new HashMap<>();
+
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getName());
             }
         }
 
@@ -1105,8 +1185,8 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         testFrozen("module");
-        if (name.equals("__id__") || name.equals("__send__") || name.equals("object_id")) {
-            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problem");
+        if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
+            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problems");
         }
 
         if (name.equals("method_missing")) {
@@ -1161,11 +1241,11 @@ public class RubyModule extends RubyObject {
         // See if module is in chain...Cannot match against itself so start at superClass.
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isSame(moduleToCompare)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "singleton_class?")
@@ -1174,11 +1254,11 @@ public class RubyModule extends RubyObject {
     }
 
     // TODO: Consider a better way of synchronizing
-    public void addMethod(String name, DynamicMethod method) {
+    public void addMethod(String id, DynamicMethod method) {
         testFrozen("class/module");
 
         if (methodLocation != this) {
-            methodLocation.addMethod(name, method);
+            methodLocation.addMethod(id, method);
             return;
         }
 
@@ -1188,12 +1268,12 @@ public class RubyModule extends RubyObject {
             attached.testFrozen();
         }
 
-        addMethodInternal(name, method);
+        addMethodInternal(id, method);
     }
 
     public final void addMethodInternal(String name, DynamicMethod method) {
         synchronized(methodLocation.getMethodsForWrite()) {
-            addMethodAtBootTimeOnly(name, method);
+            putMethod(getRuntime(), name, method);
             invalidateCoreClasses();
             invalidateCacheDescendants();
         }
@@ -1204,36 +1284,31 @@ public class RubyModule extends RubyObject {
      * method that skips synchronization and hierarchy invalidation to speed
      * boot-time method definition.
      *
-     * @param name The name to which to bind the method
+     * @param id The name to which to bind the method
      * @param method The method to bind
+     * @deprecated No longer used, internal API!
      */
-    public final void addMethodAtBootTimeOnly(String name, DynamicMethod method) {
-        if (hasPrepends()) {
-            method = method.dup();
-            method.setImplementationClass(methodLocation);
-        }
-
-        methodLocation.getMethodsForWrite().put(name, method);
-
-        getRuntime().addProfiledMethod(name, method);
+    public final void addMethodAtBootTimeOnly(String id, DynamicMethod method) {
+        putMethod(getRuntime(), id, method);
     }
 
-    public void removeMethod(ThreadContext context, String name) {
+    public void removeMethod(ThreadContext context, String id) {
         testFrozen("class/module");
 
-        switch (name) {
-            case "object_id"  : warnMethodRemoval(context, name); break;
-            case "__send__"   : warnMethodRemoval(context, name); break;
-            case "initialize" : warnMethodRemoval(context, name); break;
+        switch (id) {
+            case "object_id"  : warnMethodRemoval(context, id); break;
+            case "__send__"   : warnMethodRemoval(context, id); break;
+            case "initialize" : warnMethodRemoval(context, id); break;
         }
 
+        RubySymbol name = context.runtime.newSymbol(id);
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
         Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
         synchronized (methodsForWrite) {
-            DynamicMethod method = methodsForWrite.remove(name);
+            DynamicMethod method = methodsForWrite.remove(id);
             if (method == null) {
-                throw context.runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
+                throw context.runtime.newNameError(str(context.runtime, "method '", name, "' not defined in ", rubyName()), id);
             }
 
             invalidateCoreClasses();
@@ -1242,14 +1317,15 @@ public class RubyModule extends RubyObject {
 
         if (isSingleton()) {
             IRubyObject singleton = ((MetaClass)this).getAttached();
-            singleton.callMethod(context, "singleton_method_removed", context.runtime.newSymbol(name));
+            singleton.callMethod(context, "singleton_method_removed", name);
         } else {
-            callMethod(context, "method_removed", context.runtime.newSymbol(name));
+            callMethod(context, "method_removed", name);
         }
     }
 
-    private static void warnMethodRemoval(final ThreadContext context, final String name) {
-        context.runtime.getWarnings().warn(ID.UNDEFINING_BAD, "removing `" + name + "' may cause serious problems");
+    private static void warnMethodRemoval(final ThreadContext context, final String id) {
+        context.runtime.getWarnings().warn(ID.UNDEFINING_BAD,
+                str(context.runtime, "removing `", ids(context.runtime, id), "' may cause serious problems"));
     }
 
     /**
@@ -1258,7 +1334,7 @@ public class RubyModule extends RubyObject {
      * @param name The name of the method to search for
      * @return The method, or UndefinedMethod if not found
      */
-    public DynamicMethod searchMethod(String name) {
+    public final DynamicMethod searchMethod(String name) {
         return searchWithCache(name).method;
     }
 
@@ -1298,25 +1374,32 @@ public class RubyModule extends RubyObject {
     /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
      *
-     * @param name The name of the method to search for
+     * @param id The name of the method to search for
      * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
      * @return The method, or UndefinedMethod if not found
      */
-    public CacheEntry searchWithCache(String name, boolean cacheUndef) {
-        CacheEntry entry = cacheHit(name);
+    public final CacheEntry searchWithCache(String id, boolean cacheUndef) {
+        final CacheEntry entry = cacheHit(id);
+        return entry != null ? entry : searchWithCacheMiss(id, cacheUndef);
+    }
 
-        if (entry != null) return entry;
-
+    /**
+     * Search through this module and supermodules for method definitions after {@link RubyModule#cacheHit(String)}
+     * failed to return a result. Cache superclass definitions in this class.
+     * 
+     * @param id The name of the method to search for
+     * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
+     * @return The method, or UndefinedMethod if not found
+     */
+    private CacheEntry searchWithCacheMiss(final String id, final boolean cacheUndef) {
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
-        int token = getGeneration();
-        DynamicMethod method = searchMethodInner(name);
-
+        final int token = generation;
+        DynamicMethod method = searchMethodInner(id);
         if (method instanceof CacheableMethod) {
             method = ((CacheableMethod) method).getMethodForCaching();
         }
-
-        return method != null ? addToCache(name, method, token) : cacheUndef ? addToCache(name, UndefinedMethod.getInstance(), token) : cacheEntryFactory.newCacheEntry(name, method, token);
+        return method != null ? addToCache(id, method, token) : cacheUndef ? addToCache(id, UndefinedMethod.getInstance(), token) : cacheEntryFactory.newCacheEntry(id, method, token);
     }
 
     @Deprecated
@@ -1339,7 +1422,7 @@ public class RubyModule extends RubyObject {
     private final Map<String, CacheEntry> getCachedMethodsForWrite() {
         Map<String, CacheEntry> myCachedMethods = this.cachedMethods;
         return myCachedMethods == Collections.EMPTY_MAP ?
-            this.cachedMethods = new ConcurrentHashMap<String, CacheEntry>(0, 0.75f, 1) :
+            this.cachedMethods = new ConcurrentHashMap<>(0, 0.75f, 1) :
             myCachedMethods;
     }
 
@@ -1370,7 +1453,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected static abstract class CacheEntryFactory {
-        public abstract CacheEntry newCacheEntry(String name,DynamicMethod method, int token);
+        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, int token);
 
         /**
          * Test all WrapperCacheEntryFactory instances in the chain for assignability
@@ -1416,7 +1499,7 @@ public class RubyModule extends RubyObject {
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
         @Override
-        public CacheEntry newCacheEntry(String name, DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
             return new CacheEntry(method, token);
         }
     };
@@ -1426,12 +1509,12 @@ public class RubyModule extends RubyObject {
             super(previous);
         }
         @Override
-        public CacheEntry newCacheEntry(String name,DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id,DynamicMethod method, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
             }
             // delegate up the chain
-            CacheEntry delegated = previous.newCacheEntry(name,method, token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, token);
             return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.token);
         }
     }
@@ -1450,13 +1533,13 @@ public class RubyModule extends RubyObject {
         }
 
         @Override
-        public CacheEntry newCacheEntry(String name, DynamicMethod method, int token) {
-            if (method.isUndefined()) {
-                return new CacheEntry(method, token);
-            }
-            CacheEntry delegated = previous.newCacheEntry(name, method, token);
-            DynamicMethod enhancedMethod = getMethodEnhancer().enhance( name, delegated.method );
-            return new CacheEntry( enhancedMethod, delegated.token );
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
+            if (method.isUndefined()) return new CacheEntry(method, token);
+
+            CacheEntry delegated = previous.newCacheEntry(id, method, token);
+            DynamicMethod enhancedMethod = getMethodEnhancer().enhance(id, delegated.method);
+
+            return new CacheEntry(enhancedMethod, delegated.token);
         }
     }
 
@@ -1471,21 +1554,21 @@ public class RubyModule extends RubyObject {
         return cacheEntryFactory.hasCacheEntryFactory(SynchronizedCacheEntryFactory.class);
     }
 
-    private CacheEntry addToCache(String name, DynamicMethod method, int token) {
-        CacheEntry entry = cacheEntryFactory.newCacheEntry(name, method, token);
-        methodLocation.getCachedMethodsForWrite().put(name, entry);
+    private CacheEntry addToCache(String id, DynamicMethod method, int token) {
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, token);
+        methodLocation.getCachedMethodsForWrite().put(id, entry);
 
         return entry;
     }
 
-    public DynamicMethod searchMethodInner(String name) {
+    public DynamicMethod searchMethodInner(String id) {
         // This flattens some of the recursion that would be otherwise be necessary.
         // Used to recurse up the class hierarchy which got messy with prepend.
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             // Only recurs if module is an IncludedModuleWrapper.
             // This way only the recursion needs to be handled differently on
             // IncludedModuleWrapper.
-            DynamicMethod method = module.searchMethodCommon(name);
+            DynamicMethod method = module.searchMethodCommon(id);
             if (method != null) return method.isNull() ? null : method;
         }
         return null;
@@ -1496,7 +1579,7 @@ public class RubyModule extends RubyObject {
         // Used to recurse up the class hierarchy which got messy with prepend.
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             // Check for refinements in the given scope
-            DynamicMethod method = IRRuntimeHelpers.getRefinedMethodForClass(refinedScope, this.getNonIncludedClass(), name);
+            DynamicMethod method = IRRuntimeHelpers.getRefinedMethodForClass(refinedScope, getNonIncludedClass(), name);
             if (method != null && !method.isNull()) return method;
 
             // Only recurs if module is an IncludedModuleWrapper.
@@ -1509,8 +1592,8 @@ public class RubyModule extends RubyObject {
     }
 
     // The local method resolution logic. Overridden in IncludedModuleWrapper for recursion.
-    protected DynamicMethod searchMethodCommon(String name) {
-        return getMethods().get(name);
+    protected DynamicMethod searchMethodCommon(String id) {
+        return getMethods().get(id);
     }
 
     public void invalidateCacheDescendants() {
@@ -1610,56 +1693,80 @@ public class RubyModule extends RubyObject {
      */
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
-        if (oldName.equals(name)) return;
 
-        DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
-
-        putMethod(name, new AliasMethod(this, method, oldName));
+        putAlias(name, searchForAliasMethod(getRuntime(), oldName), oldName);
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
     }
 
-    public synchronized void defineAliases(List<String> aliases, String oldName) {
+    /**
+     * @note Internal API - only public as its used by generated code!
+     * @param id
+     * @param method
+     * @param oldName
+     */ // NOTE: used by AnnotationBinder
+    public void putAlias(String id, DynamicMethod method, String oldName) {
+        if (id.equals(oldName)) return;
+
+        putMethod(getRuntime(), id, new AliasMethod(this, method, oldName));
+    }
+
+    public synchronized void defineAliases(List<String> aliases, String oldId) {
         testFrozen("module");
-        DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
+
+        Ruby runtime = getRuntime();
+        DynamicMethod method = searchForAliasMethod(runtime, oldId);
 
         for (String name: aliases) {
-            if (oldName.equals(name)) continue;
-
-            putMethod(name, new AliasMethod(this, method, oldName));
+            putAlias(name, method, oldId);
         }
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
     }
 
-    private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
-        DynamicMethod method = deepMethodSearch(name, runtime);
+    private DynamicMethod searchForAliasMethod(Ruby runtime, String id) {
+        DynamicMethod method = deepMethodSearch(id, runtime);
 
-//        if (method instanceof JavaMethod) {
-//            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-//            // We warn because we treat certain method names as "special" for purposes of
-//            // optimization. Hopefully this will be enough to convince people not to alias
-//            // them.
-//            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
-//
-//            if (callerReq.framing() != Framing.None ||
-//                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
-//                char refChar = '#';
-//                String simpleName = getSimpleName();
-//
-//                if (baseName == null && this instanceof MetaClass) {
-//                    IRubyObject attached = ((MetaClass)this).getAttached();
-//                    if (attached instanceof RubyModule) {
-//                        simpleName = ((RubyModule)attached).getSimpleName();
-//                        refChar = '.';
-//                    }
-//                }
-//
-//                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
-//            }
-//        }
+        if (method instanceof NativeCallMethod) {
+            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+            // We warn because we treat certain method names as "special" for purposes of
+            // optimization. Hopefully this will be enough to convince people not to alias
+            // them.
+
+            DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
+
+            // native-backed but not a direct call, ok
+            if (nativeCall == null) return method;
+
+            Method javaMethod = nativeCall.getMethod();
+            JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
+
+            if (anno == null) return method;
+
+            if (anno.reads().length > 0 || anno.writes().length > 0) {
+
+                MethodIndex.addMethodReadFields(id, anno.reads());
+                MethodIndex.addMethodWriteFields(id, anno.writes());
+
+                if (runtime.isVerbose()) {
+                    String baseName = getBaseName();
+                    char refChar = '#';
+                    String simpleName = getSimpleName();
+
+                    if (baseName == null && this instanceof MetaClass) {
+                        IRubyObject attached = ((MetaClass) this).getAttached();
+                        if (attached instanceof RubyModule) {
+                            simpleName = ((RubyModule) attached).getSimpleName();
+                            refChar = '.';
+                        }
+                    }
+
+                    runtime.getWarnings().warning(simpleName + refChar + id + " accesses caller method's state and should not be aliased");
+                }
+            }
+        }
 
         return method;
     }
@@ -1688,10 +1795,10 @@ public class RubyModule extends RubyObject {
                 RubyClass tmp = clazz.getSuperClass();
                 while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
                 if (tmp != null) tmp = tmp.getRealClass();
-                if (tmp != superClazz) throw runtime.newTypeError("superclass mismatch for class " + name);
+                if (tmp != superClazz) throw runtime.newTypeError(str(runtime, "superclass mismatch for class ", ids(runtime, name)));
                 // superClazz = null;
             }
-        } else if (classProviders != null && (clazz = searchProvidersForClass(name, superClazz)) != null) {
+        } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
             // reopen a java class
         } else {
             if (superClazz == null) superClazz = runtime.getObject();
@@ -1738,9 +1845,9 @@ public class RubyModule extends RubyObject {
         IRubyObject moduleObj = getConstantAtSpecial(name);
         RubyModule module;
         if (moduleObj != null) {
-            if (!moduleObj.isModule()) throw runtime.newTypeError(name + " is not a module");
+            if (!moduleObj.isModule()) throw runtime.newTypeError(str(runtime, ids(runtime, name), " is not a module"));
             module = (RubyModule)moduleObj;
-        } else if (classProviders != null && (module = searchProvidersForModule(name)) != null) {
+        } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
         } else {
             module = RubyModule.newModule(runtime, name, this, true);
@@ -1763,7 +1870,7 @@ public class RubyModule extends RubyObject {
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
-        String internedIdentifier = identifier.toString();
+        String internedIdentifier = identifier.idString();
 
         final Ruby runtime = context.runtime;
 
@@ -1776,17 +1883,14 @@ public class RubyModule extends RubyObject {
             throw runtime.newNameError("invalid attribute name", internedIdentifier);
         }
 
-        // FIXME: This only works if identifier's encoding is ASCII-compatible
-        final String variableName = TypeConverter.checkID(runtime, '@' + internedIdentifier).toString();
+        final String variableName = identifier.asInstanceVariable().idString();
         if (readable) {
             addMethod(internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
         if (writeable) {
-            // FIXME: This only works if identifier's encoding is ASCII-compatible
-            identifier = TypeConverter.checkID(runtime, internedIdentifier + '=');
-            internedIdentifier = identifier.toString();
-            addMethod(internedIdentifier, new AttrWriterMethod(methodLocation, visibility, variableName));
+            identifier = identifier.asWriter();
+            addMethod(identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName));
             callMethod(context, "method_added", identifier);
         }
     }
@@ -1822,21 +1926,21 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private DynamicMethod deepMethodSearch(String name, Ruby runtime) {
-        DynamicMethod method = searchMethod(name);
+    private DynamicMethod deepMethodSearch(String id, Ruby runtime) {
+        DynamicMethod method = searchMethod(id);
 
-        if (method.isUndefined() && isModule()) {
-            method = runtime.getObject().searchMethod(name);
-        }
+        if (method.isUndefined() && isModule()) method = runtime.getObject().searchMethod(id);
 
         if (method.isUndefined()) {
-            throw runtime.newNameError(undefinedMethodMessage(name, getName(), isModule()), name);
+            RubySymbol name = runtime.newSymbol(id);
+            throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), id);
         }
+
         return method;
     }
 
-    public static String undefinedMethodMessage(final String name, final String modName, final boolean isModule) {
-        return "undefined method `" + name + "' for " + (isModule ? "module" : "class") + " `" + modName + "'";
+    public static String undefinedMethodMessage(Ruby runtime, IRubyObject name, IRubyObject modName, boolean isModule) {
+        return str(runtime, "undefined method `", name, "' for " + (isModule ? "module" : "class") + " `", modName, "'");
     }
 
     /**
@@ -1858,40 +1962,39 @@ public class RubyModule extends RubyObject {
         return checkRespondTo ? respondsToMethod(name, checkVisibility): isMethodBound(name, checkVisibility);
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
+    public final IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
         return newMethod(receiver, methodName, bound, visibility, false, true);
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
+    public final IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
         return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
     }
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
-        final CallSite site;
+        final String methodName;
+
         public RespondToMissingMethod(RubyModule implClass, Visibility visibility, String methodName) {
             super(implClass, visibility, methodName);
 
             setParameterList(REST);
-            site = new FunctionalCachingCallSite(methodName);
+            this.methodName = methodName;
         }
+
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return site.call(context, self, self, args, block);
+            return Helpers.callMethodMissing(context, self, getVisibility(), name, CallType.UNKNOWN, args, block);
         }
 
         @Override
         public boolean equals(Object other) {
-            if ( ! (other instanceof RespondToMissingMethod) ) return false;
-
-            RespondToMissingMethod that = (RespondToMissingMethod) other;
-
-            return this.site.methodName.equals(that.site.methodName) &&
-                    isImplementedBy(that.getImplementationClass());
+            return this == other ||
+                    (other instanceof RespondToMissingMethod &&
+                            ((RespondToMissingMethod) other).methodName.equals(methodName));
         }
 
         @Override
         public int hashCode() {
-            return /* getImplementationClass().hashCode() + */ 7 * this.site.methodName.hashCode();
+            return methodName.hashCode();
         }
 
     }
@@ -1899,18 +2002,15 @@ public class RubyModule extends RubyObject {
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
         DynamicMethod method = searchMethod(methodName);
 
-        if (method.isUndefined() ||
-            (visibility != null && method.getVisibility() != visibility)) {
+        if (method.isUndefined() || (visibility != null && method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
                 if (receiver.respondsToMissing(methodName, priv)) {
                     method = new RespondToMissingMethod(this, PUBLIC, methodName);
                 } else {
-                    throw getRuntime().newNameError("undefined method `" + methodName +
-                        "' for class `" + this.getName() + "'", methodName);
+                    throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
                 }
             } else {
-                throw getRuntime().newNameError("undefined method `" + methodName +
-                    "' for class `" + this.getName() + "'", methodName);
+                throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
             }
         }
 
@@ -1931,7 +2031,7 @@ public class RubyModule extends RubyObject {
         return newMethod;
     }
 
-    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, Block block) {
         Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
@@ -1945,8 +2045,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
         final Ruby runtime = context.runtime;
-        RubySymbol nameSym = TypeConverter.checkID(arg0);
-        String name = nameSym.toString();
+        RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
         if (!block.isGiven()) {
@@ -1965,7 +2064,7 @@ public class RubyModule extends RubyObject {
             if (method != null) {
                 newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
                 Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
-                return nameSym;
+                return name;
             }
         }
 
@@ -1975,14 +2074,14 @@ public class RubyModule extends RubyObject {
         // a normal block passed to define_method changes to do arity checking; make it a lambda
         proc.getBlock().type = Block.Type.LAMBDA;
 
-        newMethod = createProcMethod(name, visibility, proc);
+        newMethod = createProcMethod(name.idString(), visibility, proc);
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
-        return nameSym;
+        return name;
     }
 
-    @JRubyMethod(name = "define_method", visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "define_method", reads = VISIBILITY)
     public IRubyObject define_method(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         Visibility visibility = getCurrentVisibilityForDefineMethod(context);
 
@@ -1991,15 +2090,14 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject defineMethodFromCallable(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Visibility visibility) {
         final Ruby runtime = context.runtime;
-        RubySymbol nameSym = TypeConverter.checkID(arg0);
-        String name = nameSym.toString();
+        RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
         if (runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(name, visibility, proc);
+            newMethod = createProcMethod(name.idString(), visibility, proc);
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
@@ -2014,7 +2112,7 @@ public class RubyModule extends RubyObject {
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
-        return nameSym;
+        return name;
     }
 
     @Deprecated
@@ -2050,15 +2148,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "name")
     public IRubyObject name19() {
-        Ruby runtime = getRuntime();
-        if (getBaseName() == null) {
-            return runtime.getNil();
-        } else {
-            return runtime.newString(getName());
-        }
+        return getBaseName() == null ? getRuntime().getNil() : rubyName();
     }
 
     protected IRubyObject cloneMethods(RubyModule clone) {
+        Ruby runtime = getRuntime();
         RubyModule realType = this.getNonIncludedClass();
         for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
             DynamicMethod method = entry.getValue();
@@ -2070,7 +2164,7 @@ public class RubyModule extends RubyObject {
                 // TODO: Make DynamicMethod immutable
                 DynamicMethod clonedMethod = method.dup();
                 clonedMethod.setImplementationClass(clone);
-                clone.putMethod(entry.getKey(), clonedMethod);
+                clone.putMethod(runtime, entry.getKey(), clonedMethod);
             }
         }
 
@@ -2201,21 +2295,24 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
-    public IRubyObject to_s() {
+    public RubyString to_s() {
         if(isSingleton()){
-            IRubyObject attached = ((MetaClass)this).getAttached();
-            StringBuilder buffer = new StringBuilder("#<Class:");
+            IRubyObject attached = ((MetaClass) this).getAttached();
+            RubyString buffer = getRuntime().newString("#<Class:");
+
             if (attached != null) { // FIXME: figure out why we getService null sometimes
-                if(attached instanceof RubyClass || attached instanceof RubyModule){
-                    buffer.append(attached.inspect());
-                }else{
-                    buffer.append(attached.anyToString());
+                if (attached instanceof RubyClass || attached instanceof RubyModule) {
+                    buffer.cat19(attached.inspect().convertToString());
+                } else {
+                    buffer.cat19((RubyString) attached.anyToString());
                 }
             }
-            buffer.append('>');
-            return getRuntime().newString(buffer.toString());
+            buffer.cat19(getRuntime().newString(">"));
+
+            return buffer;
         }
-        return getRuntime().newString(getName());
+
+        return rubyName();
     }
 
     /** rb_mod_eqq
@@ -2241,7 +2338,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if(!(other instanceof RubyModule)) return context.runtime.getFalse();
+        if(!(other instanceof RubyModule)) return context.fals;
 
         RubyModule otherModule = (RubyModule) other;
         if(otherModule.isIncluded()) {
@@ -2359,7 +2456,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr
      *
      */
-    @JRubyMethod(name = "attr", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -2385,7 +2482,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_reader
      *
      */
-    @JRubyMethod(name = "attr_reader", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_reader", rest = true, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2400,7 +2497,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_attr_writer
      *
      */
-    @JRubyMethod(name = "attr_writer", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_writer", rest = true, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2422,7 +2519,7 @@ public class RubyModule extends RubyObject {
      *  Note: this method should not be called from Java in most cases, since
      *  it depends on Ruby frame state for visibility. Use add[Read/Write]Attribute instead.
      */
-    @JRubyMethod(name = "attr_accessor", rest = true, visibility = PRIVATE, reads = VISIBILITY)
+    @JRubyMethod(name = "attr_accessor", rest = true, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
         Visibility visibility = context.getCurrentVisibility();
@@ -2457,16 +2554,15 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyArray instanceMethods(Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
-        Ruby runtime = getRuntime();
-        RubyArray ary = runtime.newArray();
-        Set<String> seen = new HashSet<String>();
+        RubyArray ary = getRuntime().newArray();
 
-        populateInstanceMethodNames(seen, ary, visibility, obj, not, includeSuper);
+        populateInstanceMethodNames(new HashSet<String>(), ary, visibility, obj, not, includeSuper);
 
         return ary;
     }
 
-    public void populateInstanceMethodNames(Set<String> seen, RubyArray ary, Visibility visibility, boolean obj, boolean not, boolean recur) {
+    final void populateInstanceMethodNames(final Set<String> seen, final RubyArray ary, Visibility visibility,
+                                           boolean obj, boolean not, boolean recur) {
         Ruby runtime = getRuntime();
         RubyModule mod = this;
         boolean prepended = false;
@@ -2486,18 +2582,14 @@ public class RubyModule extends RubyObject {
     }
 
     protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
-        for (Map.Entry entry : getMethods().entrySet()) {
-            String methodName = (String) entry.getKey();
+        for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
+            String id = entry.getKey();
+            if (!seen.contains(id)) {
+                seen.add(id);
 
-            if (! seen.contains(methodName)) {
-                seen.add(methodName);
-
-                DynamicMethod method = (DynamicMethod) entry.getValue();
-                if (//(method.isImplementedBy(realType) || method.isImplementedBy(mod)) &&
-                        (!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) &&
-                        ! method.isUndefined()) {
-
-                    ary.append(runtime.newSymbol(methodName));
+                DynamicMethod method = entry.getValue();
+                if ((!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) && !method.isUndefined()) {
+                    ary.append(runtime.newSymbol(id));
                 }
             }
         }
@@ -2534,25 +2626,27 @@ public class RubyModule extends RubyObject {
     /** rb_class_protected_instance_methods
      *
      */
+    @JRubyMethod(name = "protected_instance_methods", optional = 1)
     public RubyArray protected_instance_methods(IRubyObject[] args) {
-        return protected_instance_methods19(args);
+        return instanceMethods(args, PROTECTED, false, false);
     }
 
-    @JRubyMethod(name = "protected_instance_methods", optional = 1)
+    @Deprecated
     public RubyArray protected_instance_methods19(IRubyObject[] args) {
-        return instanceMethods(args, PROTECTED, false, false);
+        return protected_instance_methods(args);
     }
 
     /** rb_class_private_instance_methods
      *
      */
+    @JRubyMethod(name = "private_instance_methods", optional = 1)
     public RubyArray private_instance_methods(IRubyObject[] args) {
-        return private_instance_methods19(args);
+        return instanceMethods(args, PRIVATE, false, false);
     }
 
-    @JRubyMethod(name = "private_instance_methods", optional = 1)
+    @Deprecated
     public RubyArray private_instance_methods19(IRubyObject[] args) {
-        return instanceMethods(args, PRIVATE, false, false);
+        return private_instance_methods(args);
     }
 
     /** rb_mod_prepend_features
@@ -2610,7 +2704,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_include
      *
      */
-    @JRubyMethod(name = "include", rest = true)
+    @JRubyMethod(name = "include", required = 1, rest = true)
     public RubyModule include(IRubyObject[] modules) {
         ThreadContext context = getRuntime().getCurrentContext();
         // MRI checks all types first:
@@ -2631,7 +2725,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "include", required = 1) // most common path: include Enumerable
     public RubyModule include(ThreadContext context, IRubyObject module) {
-        if ( ! module.isModule() ) {
+        if (!module.isModule()) {
             throw context.runtime.newTypeError(module, context.runtime.getModule());
         }
         module.callMethod(context, "append_features", this);
@@ -2641,12 +2735,12 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "included", required = 1, visibility = PRIVATE)
     public IRubyObject included(ThreadContext context, IRubyObject other) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "extended", required = 1, visibility = PRIVATE)
     public IRubyObject extended(ThreadContext context, IRubyObject other, Block block) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
@@ -2699,17 +2793,17 @@ public class RubyModule extends RubyObject {
         }
 
         for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
-            String name = entry.getKey();
-            IRubyObject mapped = methodNames.fastARef(runtime.newSymbol(name));
+            String id = entry.getKey();
+            IRubyObject mapped = methodNames.fastARef(runtime.newSymbol(id));
             if (mapped == NEVER) {
                 // unmapped
             } else if (mapped == context.nil) {
                 // do not mix
                 continue;
             } else {
-                name = mapped.toString();
+                id = TypeConverter.checkID(mapped).idString();
             }
-            methodLocation.getMethodsForWrite().put(name, entry.getValue().dup());
+            methodLocation.getMethodsForWrite().put(id, entry.getValue().dup());
         }
 
         return mod;
@@ -2762,19 +2856,23 @@ public class RubyModule extends RubyObject {
     public RubyModule module_function(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
+        if (!isModule()) {
+            throw context.runtime.newTypeError("module_function must be called for modules");
+        }
+
         if (args.length == 0) {
             context.setCurrentVisibility(MODULE_FUNCTION);
         } else {
             setMethodVisibility(args, PRIVATE);
 
             for (int i = 0; i < args.length; i++) {
-                String name = args[i].asJavaString().intern();
-                DynamicMethod method = deepMethodSearch(name, runtime);
+                RubySymbol name = TypeConverter.checkID(args[i]);
+                DynamicMethod method = deepMethodSearch(name.idString(), runtime);
                 DynamicMethod newMethod = method.dup();
                 newMethod.setImplementationClass(getSingletonClass());
                 newMethod.setVisibility(PUBLIC);
-                getSingletonClass().addMethod(name, newMethod);
-                callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(name));
+                getSingletonClass().addMethod(name.idString(), newMethod);
+                callMethod(context, "singleton_method_added", name);
             }
         }
         return this;
@@ -2782,22 +2880,22 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "method_added", required = 1, visibility = PRIVATE)
     public IRubyObject method_added(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_removed", required = 1, visibility = PRIVATE)
     public IRubyObject method_removed(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_undefined", required = 1, visibility = PRIVATE)
     public IRubyObject method_undefined(ThreadContext context, IRubyObject nothing) {
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "method_defined?", required = 1)
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
-        return isMethodBound(symbol.asJavaString(), true) ? context.runtime.getTrue() : context.runtime.getFalse();
+        return isMethodBound(symbol.asJavaString(), true) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "public_method_defined?", required = 1)
@@ -2835,11 +2933,13 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "alias_method", required = 2, visibility = PRIVATE)
+    @JRubyMethod(name = "alias_method", required = 2)
     public RubyModule alias_method(ThreadContext context, IRubyObject newId, IRubyObject oldId) {
-        String newName = newId.asJavaString();
-        defineAlias(newName, oldId.asJavaString());
         RubySymbol newSym = TypeConverter.checkID(newId);
+        RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
+
+        defineAlias(newSym.idString(), oldSym.idString());
+
         if (isSingleton()) {
             ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
         } else {
@@ -2848,7 +2948,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "undef_method", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "undef_method", rest = true)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
             undef(context, args[i].asJavaString());
@@ -2857,26 +2957,26 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, Block block) {
         return specificEval(context, this, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, this, arg0, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, this, arg0, arg1, block, EvalType.MODULE_EVAL);
     }
     @JRubyMethod(name = {"module_eval", "class_eval"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
@@ -2886,8 +2986,8 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"},
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block, EvalType.MODULE_EVAL);
@@ -2897,8 +2997,8 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true,
-            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, args, block, EvalType.MODULE_EVAL);
@@ -2907,10 +3007,10 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "remove_method", rest = true)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
-            removeMethod(context, TypeConverter.checkID(args[i]).toString());
+            removeMethod(context, TypeConverter.checkID(args[i]).idString());
         }
         return this;
     }
@@ -3122,11 +3222,11 @@ public class RubyModule extends RubyObject {
         RubyModule module = this;
         do {
             if (module.hasClassVariable(internedName)) {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         } while ((module = module.getSuperClass()) != null);
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     /** rb_mod_cvar_get
@@ -3216,51 +3316,44 @@ public class RubyModule extends RubyObject {
         return const_defined_p19(context, new IRubyObject[]{symbol});
     }
 
+    private RubyBoolean constantDefined(Ruby runtime, RubySymbol symbol, boolean inherit) {
+        if (symbol.validConstantName()) {
+            return runtime.newBoolean(getConstantSkipAutoload(symbol.idString(), inherit, inherit) != null);
+        }
+
+        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.idString());
+    }
+
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
     public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
+        Ruby runtime = context.runtime;
+        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
-        final IRubyObject symbol = args[0];
-        final String fullName = symbol.asJavaString();
-        String name = fullName;
+        if (args[0] instanceof RubySymbol) return constantDefined(runtime, ((RubySymbol) args[0]), inherit);
 
-        int sep = name.indexOf("::");
-        // symbol form does not allow ::
-        if (symbol instanceof RubySymbol && sep != -1) {
-            throw runtime.newNameError("wrong constant name", name);
-        }
+        RubyString fullName = args[0].convertToString();
 
-        RubyModule mod = this;
-
-        if (sep == 0) { // ::Foo::Bar
-            mod = runtime.getObject();
-            name = name.substring(2);
-        }
-
-        // Bare ::
-        if (name.length() == 0) {
-            throw runtime.newNameError("wrong constant name ", fullName);
-        }
-
-        IRubyObject obj;
-        while ( ( sep = name.indexOf("::") ) != -1 ) {
-            final String segment = name.substring(0, sep);
-            if (segment.length() == 0) {
-                throw runtime.newNameError("wrong constant name " + fullName, name);
+        IRubyObject value = ByteListHelper.split(fullName.getByteList(), CommonByteLists.COLON_COLON, (index, segment, module) -> {
+            if (index == 0) {
+                if (segment.realSize() == 0) return runtime.getObject();  // '::Foo...'
+                module = this;
             }
-            obj = mod.getConstantNoConstMissing(validateConstant(segment, symbol), inherit, inherit);
-            if (obj == null) return runtime.getFalse();
-            if (obj instanceof RubyModule) {
-                mod = (RubyModule) obj;
-            } else {
-                throw runtime.newTypeError(segment + " does not refer to class/module");
-            }
-            name = name.substring(sep + 2);
-        }
 
-        obj = mod.getConstantSkipAutoload(validateConstant(name, symbol), inherit, inherit);
-        return runtime.newBoolean(obj != null);
+            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
+            IRubyObject obj = ((RubyModule) module).getConstantNoConstMissing(id, inherit, inherit);
+
+            if (obj == null) return null;
+            if (!(obj instanceof RubyModule)) throw runtime.newTypeError(segment + " does not refer to class/module");
+
+            return obj;
+        }, (index, segment, module) -> {
+            if (module == null) module = this; // Bare 'Foo'
+
+            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
+            return ((RubyModule) module).getConstantSkipAutoload(id, inherit, inherit);
+        });
+
+        return runtime.newBoolean(value != null);
     }
 
     /** rb_mod_const_get
@@ -3319,30 +3412,30 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "const_set", required = 2)
-    public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        return setConstant(validateConstant(symbol).intern(), value);
+    public IRubyObject const_set(IRubyObject name, IRubyObject value) {
+        return setConstant(validateConstant(name), value);
     }
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
     public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
-        String name = validateConstant(rubyName);
-        IRubyObject value;
-        if ((value = deleteConstant(name)) != null) {
-            invalidateConstantCache(name);
-            if (value != UNDEF) {
-                return value;
-            }
-            removeAutoload(name);
+        String id = validateConstant(rubyName);
+        IRubyObject value = deleteConstant(id);
+
+        if (value != null) { // found it!
+            invalidateConstantCache(id);
+
+            if (value != UNDEF) return value;
+
+            // autoload entry
+            removeAutoload(id);
             // FIXME: I'm not sure this is right, but the old code returned
             // the undef, which definitely isn't right...
-            return context.runtime.getNil();
+            return context.nil;
         }
 
-        if (hasConstantInHierarchy(name)) {
-            throw cannotRemoveError(name);
-        }
+        if (hasConstantInHierarchy(id)) throw cannotRemoveError(id);
 
-        throw context.runtime.newNameError("constant " + name + " not defined for " + getName(), name);
+        throw context.runtime.newNameError("constant " + id + " not defined for " + getName(), id);
     }
 
     private boolean hasConstantInHierarchy(final String name) {
@@ -3363,8 +3456,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
         Ruby runtime = context.runtime;
-        String shortName = rubyName.asJavaString();
-        String longName;
 
         if (this != runtime.getObject()) {
             throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
@@ -3374,28 +3465,39 @@ public class RubyModule extends RubyObject {
 
     }
 
+    @JRubyMethod(name = "constants")
     public RubyArray constants(ThreadContext context) {
-        return constants19(context);
+        return constantsCommon(context, true, true);
     }
 
     @JRubyMethod(name = "constants")
+    public RubyArray constants(ThreadContext context, IRubyObject allConstants) {
+        return constantsCommon(context, false, allConstants.isTrue());
+    }
+
+    @Deprecated
     public RubyArray constants19(ThreadContext context) {
-        return constantsCommon19(context, true, true);
+        return constants(context);
     }
 
-    @JRubyMethod(name = "constants")
+    @Deprecated
     public RubyArray constants19(ThreadContext context, IRubyObject allConstants) {
-        return constantsCommon19(context, false, allConstants.isTrue());
+        return constants(context, allConstants);
     }
 
+    @Deprecated // no longer used
     public RubyArray constantsCommon19(ThreadContext context, boolean replaceModule, boolean allConstants) {
+        return constantsCommon(context, replaceModule, allConstants);
+    }
+
+    private RubyArray constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Ruby runtime = context.runtime;
-        RubyArray array = runtime.newArray();
 
         Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
+        RubyArray array = runtime.newArray(constantNames.size());
 
         for (String name : constantNames) {
-            array.add(runtime.newSymbol(name));
+            array.append(runtime.newSymbol(name));
         }
         return array;
     }
@@ -3415,7 +3517,7 @@ public class RubyModule extends RubyObject {
             if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
                 constantNames = objectClass.getConstantNames(includePrivate);
             } else {
-                Set<String> names = new HashSet<String>();
+                Set<String> names = new HashSet<>();
                 for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
                     names.addAll(module.getConstantNames(includePrivate));
                 }
@@ -3435,7 +3537,7 @@ public class RubyModule extends RubyObject {
     public void deprecateConstant(Ruby runtime, String name) {
         ConstantEntry entry = getConstantMap().get(name);
         if (entry == null) {
-            throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+            throw runtime.newNameError(str(runtime, "constant ", types(runtime, this), "::", ids(runtime, name), " not defined"), name);
         }
 
         storeConstant(name, entry.value, entry.hidden, true);
@@ -3443,29 +3545,29 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject rname) {
+    public IRubyObject deprecate_constant(ThreadContext context, IRubyObject name) {
         checkFrozen();
 
-        deprecateConstant(context.runtime, validateConstant(rname));
+        deprecateConstant(context.runtime, validateConstant(name));
         return this;
     }
 
     @JRubyMethod(rest = true)
     public IRubyObject deprecate_constant(ThreadContext context, IRubyObject[] names) {
-        for (IRubyObject rname : names) {
-            deprecate_constant(context, rname);
+        for (IRubyObject name: names) {
+            deprecate_constant(context, name);
         }
         return this;
     }
 
     @JRubyMethod
-    public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
+    public IRubyObject private_constant(ThreadContext context, IRubyObject name) {
         checkFrozen();
 
-        String name = validateConstant(rubyName);
+        String id = validateConstant(name);
 
-        setConstantVisibility(context, name, true);
-        invalidateConstantCache(name);
+        setConstantVisibility(context.runtime, id, true);
+        invalidateConstantCache(id);
 
         return this;
     }
@@ -3479,13 +3581,13 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject public_constant(ThreadContext context, IRubyObject rubyName) {
+    public IRubyObject public_constant(ThreadContext context, IRubyObject name) {
         checkFrozen();
 
-        String name = validateConstant(rubyName);
+        String id = validateConstant(name);
 
-        setConstantVisibility(context, name, false);
-        invalidateConstantCache(name);
+        setConstantVisibility(context.runtime, id, false);
+        invalidateConstantCache(id);
         return this;
     }
 
@@ -3497,7 +3599,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "prepend", rest = true)
+    @JRubyMethod(name = "prepend", required = 1, rest = true)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         // MRI checks all types first:
         for (int i = modules.length; --i >= 0; ) {
@@ -3519,11 +3621,12 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
+    // NOTE: internal API
+    public final void setConstantVisibility(Ruby runtime, String name, boolean hidden) {
         ConstantEntry entry = getConstantMap().get(name);
 
         if (entry == null) {
-            throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+            throw runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
         }
 
         storeConstant(name, entry.value, hidden);
@@ -3783,8 +3886,6 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantFromNoConstMissing(String name, boolean includePrivate) {
-        assert name == name.intern() : name + " is not interned";
-
         final Ruby runtime = getRuntime();
         final RubyClass objectClass = runtime.getObject();
 
@@ -3795,9 +3896,7 @@ public class RubyModule extends RubyObject {
                 if ( value == UNDEF ) return mod.resolveUndefConstant(name);
 
                 if ( mod == objectClass && this != objectClass ) {
-                    String badCName = getName() + "::" + name;
-                    runtime.getWarnings().warn(ID.CONSTANT_BAD_REFERENCE,
-                        "toplevel constant " + name + " referenced by " + badCName);
+                    return null;
                 }
 
                 return value;
@@ -3987,7 +4086,9 @@ public class RubyModule extends RubyObject {
     //
 
     private RaiseException cannotRemoveError(String id) {
-        return getRuntime().newNameError("cannot remove " + id + " for " + getName(), id);
+        Ruby runtime = getRuntime();
+
+        return getRuntime().newNameError(str(runtime, "cannot remove ", ids(runtime, id), " for ", types(runtime, this)), id);
     }
 
 
@@ -4288,10 +4389,22 @@ public class RubyModule extends RubyObject {
         return publicNames;
     }
 
+    /**
+     * Validates name is a valid constant name and returns its id string.
+     * @param name object to verify as a valid constant.
+     * @return the id for this valid constant name.
+     */
     protected final String validateConstant(IRubyObject name) {
-        return validateConstant(name.asJavaString(), name);
+        RubySymbol symbol = RubySymbol.retrieveIDSymbol(name);
+
+        if (!symbol.validConstantName()) {
+            throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), symbol.idString());
+        }
+
+        return symbol.idString();
     }
 
+    // FIXME: This should really be working with symbol segments (errorName is FQN).
     protected final String validateConstant(String name, IRubyObject errorName) {
         if (IdUtil.isValidConstantName19(name)) return name;
 
@@ -4449,19 +4562,6 @@ public class RubyModule extends RubyObject {
         JRubyMethod jrubyMethod = desc.anno;
         final String[] names = jrubyMethod.name();
         final String[] aliases = jrubyMethod.alias();
-        // check for frame field reads or writes
-        CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
-
-        if (needs.framing() == Framing.Full) {
-            Collection<String> frameAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToSet(frameAwareMethods, simpleName, names, aliases);
-            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
-        }
-        if (needs.scoping() == Scoping.Full) {
-            Collection<String> scopeAwareMethods = new ArrayList<>(4); // added to a Set - thus no need for another Set
-            AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, simpleName, names, aliases);
-            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
-        }
 
         RubyModule singletonClass;
 
@@ -4553,6 +4653,7 @@ public class RubyModule extends RubyObject {
      * The cached name, only cached once this class and all containing classes are non-anonymous
      */
     private String cachedName;
+    private RubyString cachedRubyName;
 
     @SuppressWarnings("unchecked")
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
@@ -4682,7 +4783,7 @@ public class RubyModule extends RubyObject {
     }
 
     @Override
-    public Object toJava(final Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target == Class.class) { // try java_class for proxy modules
             final ThreadContext context = getRuntime().getCurrentContext();
             IRubyObject javaClass = JavaClass.java_class(context, this);
@@ -4787,7 +4888,7 @@ public class RubyModule extends RubyObject {
     /** The class this refinement refines */
     volatile RubyClass refinedClass = null;
 
-    /** The moduel where this refinement was defined */
+    /** The module where this refinement was defined */
     private volatile RubyModule definedAt = null;
 
     private static final AtomicReferenceFieldUpdater<RubyModule, Map> CLASSVARS_UPDATER;

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,14 +33,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
@@ -70,13 +73,16 @@ import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.StringSupport.*;
 import static org.jruby.util.io.EncodingUtils.vmode;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
@@ -85,6 +91,10 @@ import static org.jruby.util.io.EncodingUtils.vperm;
  **/
 @JRubyClass(name="File", parent="IO", include="FileTest")
 public class RubyFile extends RubyIO implements EncodingCapable {
+
+    static final ByteList SLASH = singleCharByteList((byte) '/');
+    static final ByteList BACKSLASH = singleCharByteList((byte) '\\');
+
     public static RubyClass createFileClass(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
 
@@ -100,13 +110,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
 
         // file separator constants
-        RubyString separator = RubyString.newString(runtime, new ByteList(new byte[] { '/' }, false));
+        RubyString separator = RubyString.newString(runtime, SLASH);
         separator.freeze(context);
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
 
         if (File.separatorChar == '\\') {
-            RubyString altSeparator = RubyString.newString(runtime, new ByteList(new byte[] { '\\' }, false));
+            RubyString altSeparator = RubyString.newString(runtime, BACKSLASH);
             altSeparator.freeze(context);
             fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
         } else {
@@ -114,7 +124,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         // path separator
-        RubyString pathSeparator = RubyString.newString(runtime, new ByteList(new byte[] { (byte) File.pathSeparatorChar }, false));
+        RubyString pathSeparator = RubyString.newString(runtime, singleCharByteList((byte) File.pathSeparatorChar));
         pathSeparator.freeze(context);
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
 
@@ -226,14 +236,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return fileClass;
     }
 
-    private static ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator FILE_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFile instance = new RubyFile(runtime, klass);
-
-            instance.setMetaClass(klass);
-
-            return instance;
+            return new RubyFile(runtime, klass);
         }
     };
 
@@ -275,16 +281,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @Override
-    protected IRubyObject rbIoClose(Ruby runtime) {
+    protected IRubyObject rbIoClose(ThreadContext context) {
         // Make sure any existing lock is released before we try and close the file
         if (openFile.currentLock != null) {
             try {
                 openFile.currentLock.release();
             } catch (IOException e) {
-                throw getRuntime().newIOError(e.getMessage());
+                throw context.runtime.newIOError(e.getMessage());
             }
         }
-        return super.rbIoClose(runtime);
+        return super.rbIoClose(context);
     }
 
     @JRubyMethod(required = 1)
@@ -448,13 +454,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
-        IRubyObject newPath = context.runtime.getNil();
+        if ((openFile.getMode() & OpenFile.TMPFILE) != 0) {
+            throw context.runtime.newIOError("File is unnamed (TMPFILE?)");
+        }
+
         final String path = getPath();
         if (path != null) {
-            newPath = context.runtime.newString(path);
+            RubyString newPath = context.runtime.newString(path);
             newPath.setTaint(true);
+            return newPath;
         }
-        return newPath;
+        return context.nil;
     }
 
     @JRubyMethod(required = 1)
@@ -481,50 +491,72 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.zero(runtime);
     }
 
-    @JRubyMethod
     @Override
-    public IRubyObject inspect() {
-        StringBuilder val = new StringBuilder();
-        val.append("#<File:").append(getPath());
-        if(!openFile.isOpen()) {
-            val.append(" (closed)");
+    public final IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyString inspect(ThreadContext context) {
+        final String path = openFile.getPath();
+        ByteList str = new ByteList(path.length() + 8);
+
+        str.append('#').append('<');
+        str.append(((RubyString) getMetaClass().to_s()).getByteList());
+        str.append(':').append( RubyEncoding.encodeUTF8(path) );
+        if (!openFile.isOpen()) {
+            str.append(' ').append('(');
+            str.append('c').append('l').append('o').append('s').append('e').append('d');
+            str.append(')');
         }
-        val.append('>');
-        return getRuntime().newString(val.toString());
+        str.append('>');
+        // MRI knows whether path is UTF-8 so it might return ASCII-8BIT (we do not check)
+        str.setEncoding(UTF8Encoding.INSTANCE);
+        return RubyString.newStringLight(context.runtime, str);
     }
 
     private static final String URI_PREFIX_STRING = "^(uri|jar|file|classpath):([^:/]{2,}:([^:/]{2,}:)?)?";
     private static final Pattern ROOT_PATTERN = Pattern.compile(URI_PREFIX_STRING + "/?/?$");
 
-    /* File class methods */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
-        final char separatorChar = separator.charAt(0);
-        String altSeparator = null;
-        char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = runtime.getClass("File").getConstant("ALT_SEPARATOR");
-        if (rbAltSeparator != context.nil) {
-          altSeparator = rbAltSeparator.toString();
-          altSeparatorChar = altSeparator.charAt(0);
-        }
+    private static final int NULL_CHAR = '\0';
 
-        RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[0]));
+    /* File class methods */
+
+    @JRubyMethod(meta = true) // required = 1, optional = 1
+    public static RubyString basename(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return basenameImpl(context, (RubyClass) recv, path, null);
+    }
+
+    @JRubyMethod(meta = true) // required = 1, optional = 1
+    public static RubyString basename(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject ext) {
+        return basenameImpl(context, (RubyClass) recv, path, ext == context.nil ? null : ext);
+    }
+
+    @Deprecated
+    public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject ext = (args.length > 1 && args[1] != context.nil) ? args[1] : null;
+        return basenameImpl(context, (RubyClass) recv, args[0], ext);
+    }
+
+    private static RubyString basenameImpl(ThreadContext context, RubyClass klass, IRubyObject path, IRubyObject ext) {
+        final Ruby runtime = context.runtime;
+
+        final int separatorChar = getSeparatorChar(klass);
+        final int altSeparatorChar = getAltSeparatorChar(klass);
+
+        RubyString origString = StringSupport.checkEmbeddedNulls(runtime, get_path(context, path));
         Encoding origEncoding = origString.getEncoding();
         String name = origString.toString();
 
         // uri-like paths without parent directory
-        if (name.endsWith(".jar!/") || ROOT_PATTERN.matcher(name).matches()) {
-            return args[0];
-        }
+        if (name.endsWith(".jar!/") || ROOT_PATTERN.matcher(name).matches()) return (RubyString) path;
 
         // MRI-compatible basename handling for windows drive letter paths
         if (Platform.IS_WINDOWS) {
             if (name.length() > 1 && name.charAt(1) == ':' && Character.isLetter(name.charAt(0))) {
                 switch (name.length()) {
                 case 2:
-                    return RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(args[0]);
+                    return (RubyString) RubyString.newEmptyString(runtime, origString.getEncoding()).infectBy(path);
                 case 3:
                     return RubyString.newString(runtime, RubyString.encodeBytelist(name.substring(2), origEncoding));
                 default:
@@ -535,14 +567,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     default:
                         // strip c: away from relative-pathed name
                         name = name.substring(2);
-                        break;
                     }
                     break;
                 }
             }
         }
 
-        while (name.length() > 1 && (name.charAt(name.length() - 1) == separatorChar || (altSeparator != null && name.charAt(name.length() - 1) == altSeparatorChar))) {
+        while (name.length() > 1 && (name.charAt(name.length() - 1) == separatorChar || (name.charAt(name.length() - 1) == altSeparatorChar))) {
             name = name.substring(0, name.length() - 1);
         }
 
@@ -551,7 +582,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int length = name.length();
         for (int i = length - 1; i >= 0; i--) {
             char c = name.charAt(i);
-            if (c != separatorChar && (altSeparator == null || c != altSeparatorChar)) {
+            if (c != separatorChar && c != altSeparatorChar) {
                 break;
             }
             slashCount++;
@@ -561,27 +592,40 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         int index = name.lastIndexOf(separatorChar);
-        if (altSeparator != null) {
+        if (altSeparatorChar != NULL_CHAR) {
             index = Math.max(index, name.lastIndexOf(altSeparatorChar));
         }
 
-        if (!(name.equals(separator) || (altSeparator != null && name.equals(altSeparator))) && index != -1) {
+        if (!(contentEquals(name, separatorChar) || (contentEquals(name, altSeparatorChar))) && index != -1) {
             name = name.substring(index + 1);
         }
 
-        if (args.length == 2) {
-            String ext = RubyString.stringValue(args[1]).toString();
-            if (".*".equals(ext)) {
+        if (ext != null) {
+            final String extStr = RubyString.stringValue(ext).toString();
+            if (".*".equals(extStr)) {
                 index = name.lastIndexOf('.');
                 if (index > 0) {  // -1 no match; 0 it is dot file not extension
                     name = name.substring(0, index);
                 }
-            } else if (name.endsWith(ext)) {
-                name = name.substring(0, name.length() - ext.length());
+            } else if (name.endsWith(extStr)) {
+                name = name.substring(0, name.length() - extStr.length());
             }
         }
 
         return RubyString.newString(runtime, RubyString.encodeBytelist(name, origEncoding));
+    }
+
+    private static int getSeparatorChar(final RubyClass File) {
+        final RubyString sep = RubyString.stringValue(File.getConstant("SEPARATOR"));
+        return sep.getByteList().get(0);
+    }
+
+    private static int getAltSeparatorChar(final RubyClass File) {
+        final IRubyObject sep = File.getConstant("ALT_SEPARATOR");
+        if (sep instanceof RubyString) { // != nil
+            return ((RubyString) sep).getByteList().get(0);
+        }
+        return NULL_CHAR;
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
@@ -663,7 +707,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         String name = jfilename;
         if (altSeparator != null) {
-            name = jfilename.replace(altSeparator, separator);
+            name = replace(jfilename, altSeparator, separator);
         }
         int minPathLength = 1;
         boolean trimmedSlashes = false;
@@ -716,9 +760,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
                     return jfilename.substring(0, 2) + '.';
-                } else {
-                    return ".";
                 }
+                return ".";
             }
             if (index == 0) {
                 return jfilename.substring(0, 1);
@@ -731,30 +774,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
 
             if (startsWithUNCOnWindows) {
-              index = jfilename.length();
-              String[] split = name.split(Pattern.quote(separator));
-              int pathSectionCount = 0;
-              for (int i = 0; i < split.length; i++) {
-                if (!split[i].isEmpty()) {
-                  pathSectionCount += 1;
+                index = jfilename.length();
+                List<String> split = StringSupport.split(name, separatorChar);
+                int pathSectionCount = 0;
+                for (int i = 0; i < split.size(); i++) {
+                    if (!split.get(i).isEmpty()) pathSectionCount += 1;
                 }
-              }
-              if (pathSectionCount > 2) {
-                  index = name.lastIndexOf(separator);
-              }
+                if (pathSectionCount > 2) index = name.lastIndexOf(separator);
             }
             result = jfilename.substring(0, index);
         }
 
         // trim leading slashes
         if (startsWithSeparator && result.length() > minPathLength) {
-          while (
-            result.length() > minPathLength &&
-            (result.charAt(minPathLength) == separatorChar ||
-              (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar))
-          ) {
-            result = result.substring(1, result.length());
-          }
+            while ( result.length() > minPathLength &&
+                    (result.charAt(minPathLength) == separatorChar ||
+                            (altSeparator != null && result.charAt(minPathLength) == altSeparatorChar)) ) {
+                result = result.substring(1, result.length());
+            }
         }
 
         char endChar;
@@ -780,18 +817,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        IRubyObject baseFilename = basename(context, recv, new IRubyObject[]{arg});
-
-        String filename = RubyString.stringValue(baseFilename).getUnicodeValue();
-        String result = "";
+        String filename = basename(context, recv, arg).getUnicodeValue();
 
         int dotIndex = filename.lastIndexOf('.');
         if (dotIndex > 0 && dotIndex != (filename.length() - 1)) {
             // Dot is not at beginning and not at end of filename.
-            result = filename.substring(dotIndex);
+            return RubyString.newString(context.runtime, filename.substring(dotIndex));
         }
 
-        return context.runtime.newString(result);
+        return RubyString.newEmptyString(context.runtime);
     }
 
     /**
@@ -1061,8 +1095,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
 
-        return runtime.newArray(dirname(context, recv, filename),
-                basename(context, recv, new IRubyObject[]{filename}));
+        return runtime.newArray(dirname(context, recv, filename), basename(context, recv, filename));
     }
 
     @JRubyMethod(required = 2, meta = true)
@@ -1107,7 +1140,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             }
 
-            return runtime.newString(realPath);
+            return RubyString.newString(runtime, realPath, runtime.getEncodingService().getFileSystemEncoding());
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -1141,6 +1174,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @JRubyMethod(required = 2, rest = true, meta = true)
+    public static IRubyObject lutime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        long[] atimeval = null;
+        long[] mtimeval = null;
+
+        if (args[0] != context.nil || args[1] != context.nil) {
+            atimeval = extractTimespec(context, args[0]);
+            mtimeval = extractTimespec(context, args[1]);
+        }
+
+        for (int i = 2, j = args.length; i < j; i++) {
+            RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
+
+            JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+
+            if (!fileToTouch.exists()) {
+                throw runtime.newErrnoENOENTError(filename.toString());
+            }
+
+            int result = runtime.getPosix().lutimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+            if (result == -1) {
+                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+            }
+        }
+
+        return runtime.newFixnum(args.length - 2);
+    }
+
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject utime(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         long[] atimespec = null;
@@ -1164,13 +1226,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             try {
                 result = runtime.getPosix().utimensat(0, fileToTouch.getAbsolutePath(), atimespec, mtimespec, 0);
-            } catch (RaiseException re) {
-                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
-                    // fall back on utimes
-                    result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
-                } else {
-                    throw re;
-                }
+            } catch (NotImplementedError re) {
+                // fall back on utimes
+                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
             }
 
             if (result == -1) {
@@ -1397,7 +1455,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
     // mri: file_path_convert
     private static RubyString filePathConvert(ThreadContext context, RubyString path) {
-        if (!org.jruby.platform.Platform.IS_WINDOWS) {
+        if (!Platform.IS_WINDOWS) {
             Ruby runtime = context.getRuntime();
             EncodingService encodingService = runtime.getEncodingService();
             Encoding pathEncoding = path.getEncoding();
@@ -1452,16 +1510,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public String toString() {
-        return "RubyFile(" + openFile.getPath() + ", " + openFile.getMode();
+        return "RubyFile(" + openFile.getPath() + ", " + openFile.getMode() + ')';
     }
 
-    @Deprecated // private
-    public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {
-        ZipEntry entry = zf.getEntry(path);
+    private static ZipEntry getFileEntry(ZipFile jar, String path, final String prefixForNoEntry) throws IOException {
+        ZipEntry entry = jar.getEntry(path);
         if (entry == null) {
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
-            String prefix = new File(".").getCanonicalPath();
-            entry = zf.getEntry(new File(path).getCanonicalPath().substring(prefix.length() + 1).replaceAll("\\\\", "/"));
+            path = new File(path).getCanonicalPath().substring(prefixForNoEntry.length() + 1);
+            entry = jar.getEntry(path.replaceAll("\\\\", "/"));
         }
         return entry;
     }
@@ -1471,21 +1528,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return getDirOrFileEntry(new JarFile(jar), path);
     }
 
-    @Deprecated // private
-    public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
+    @Deprecated // not-used
+    public static ZipEntry getDirOrFileEntry(ZipFile jar, String path) throws IOException {
         String dirPath = path + '/';
-        ZipEntry entry = zf.getEntry(dirPath); // first try as directory
+        ZipEntry entry = jar.getEntry(dirPath); // first try as directory
         if (entry == null) {
             if (dirPath.length() == 1) {
                 return new ZipEntry(dirPath);
             }
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
-            String prefix = new File(".").getCanonicalPath();
-            entry = zf.getEntry(new File(dirPath).getCanonicalPath().substring(prefix.length() + 1).replaceAll("\\\\", "/"));
+            final String prefix = new File(".").getCanonicalPath();
+            entry = jar.getEntry(new File(dirPath).getCanonicalPath().substring(prefix.length() + 1).replaceAll("\\\\", "/"));
 
             // JRUBY-6119
             if (entry == null) {
-                Enumeration<? extends ZipEntry> entries = zf.entries();
+                Enumeration<? extends ZipEntry> entries = jar.entries();
                 while (entries.hasMoreElements()) {
                     String zipEntry = entries.nextElement().getName();
                     if (zipEntry.startsWith(dirPath)) {
@@ -1494,9 +1551,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
 
-            if (entry == null) {
-                // try as file
-                entry = getFileEntry(zf, path);
+            if (entry == null) { // try as file
+                entry = getFileEntry(jar, path, prefix);
             }
         }
         return entry;
@@ -1838,11 +1894,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3, Encoding enc) {
-        return RubyString.newString(runtime,
-                new StringBuilder(s1.length() + s2.length() + s3.length()).
-                        append(s1).append(s2).append(s3).toString(),
-                enc
-        );
+        StringBuilder str =
+                new StringBuilder(s1.length() + s2.length() + s3.length()).append(s1).append(s2).append(s3);
+        return new RubyString(runtime, runtime.getString(), str, enc);
     }
 
     private static String canonicalizePath(String path) {
@@ -1873,8 +1927,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     URL u = new URL(pathWithoutJarPrefix);
                     String pathPart = u.getPath();
                     return new String[] {path.substring(0, path.indexOf(pathPart)), pathPart};
-                } catch (Exception e2) {
-                }
+                } catch (MalformedURLException e2) { /* ignore */ }
             }
         }
         return null;
@@ -1950,7 +2003,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param stringToCheck
      * @return
      */
-    private static String countSlashes( String stringToCheck ) {
+    private static String countSlashes(String stringToCheck) {
         // Count number of extra slashes in the beginning of the string.
         int slashCount = 0;
         for (int i = 0; i < stringToCheck.length(); i++) {
@@ -2045,6 +2098,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (RubyString) home;
     }
 
+    @Override
+    public <T> T toJava(Class<T> target) {
+        if (target == File.class) {
+            final String path = getPath();
+            return path == null ? null : target.cast(new File(path));
+        }
+        return super.toJava(target);
+    }
+
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
@@ -2120,7 +2182,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    // FIXME: MRI and JRuby are both broken here since it does not actually look up
+    // NOTE: MRI and JRuby are both broken here since it does not actually look up
     // File::{SEPARATOR,ALT_SEPARATOR} but merely hardcodes depending on whether we are on Windows.
     private static boolean isDirSeparator(char c) {
         return c == '/' || Platform.IS_WINDOWS && c == '\\';
@@ -2144,33 +2206,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return found ? 0 : -1;
     }
 
-    // String.startsWith for a CharSequence
-    private static boolean startsWith(final CharSequence str, final String prefix) {
-        int p = prefix.length();
-        if ( p > str.length() ) return false;
-        int i = 0;
-        while ( --p >= 0 ) {
-            if (str.charAt(i) != prefix.charAt(i)) return false;
-            i++;
+    private static String replace(final String str, CharSequence target, CharSequence replace) {
+        if (target.length() == 1 && replace.length() == 1) {
+            return str.replace(target.charAt(0), replace.charAt(0));
         }
-        return true;
-    }
-
-    private static boolean startsWith(final CharSequence str, final char c) {
-        return str.length() >= 1 && str.charAt(0) == c;
-    }
-
-    private static boolean startsWith(final CharSequence str, final char c1, final char c2) {
-        return str.length() >= 2 && str.charAt(0) == c1 && str.charAt(1) == c2;
-    }
-
-    // without any char[] array copying, also StringBuilder only has lastIndexOf(String)
-    private static int lastIndexOf(final CharSequence str, final char c, int index) {
-        while ( index >= 0 ) {
-            if ( str.charAt(index) == c ) return index;
-            index--;
-        }
-        return -1;
+        return str.replace(target, replace);
     }
 
     private static IRubyObject truncateCommon(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {

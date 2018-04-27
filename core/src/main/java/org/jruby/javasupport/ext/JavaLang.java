@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,12 +25,14 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport.ext;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
@@ -62,6 +64,7 @@ public abstract class JavaLang {
         Throwable.define(runtime);
         Runnable.define(runtime);
         Character.define(runtime);
+        Number.define(runtime);
         Class.define(runtime);
         ClassLoader.define(runtime);
         // Java::byte[].class_eval ...
@@ -254,13 +257,21 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "===", meta = true)
         public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject other) {
+            if (checkNativeException(self, other)) {
+                return context.tru;
+            }
+            return self.op_eqq(context, other);
+        }
+
+        @SuppressWarnings("deprecation")
+        private static boolean checkNativeException(IRubyObject self, IRubyObject other) {
             if ( other instanceof NativeException ) {
                 final java.lang.Class java_class = (java.lang.Class) self.dataGetStruct();
                 if ( java_class.isAssignableFrom( ((NativeException) other).getCause().getClass() ) ) {
-                    return context.runtime.getTrue();
+                    return true;
                 }
             }
-            return self.op_eqq(context, other);
+            return false;
         }
 
     }
@@ -314,6 +325,87 @@ public abstract class JavaLang {
 
     }
 
+    @JRubyClass(name = "Java::JavaLang::Number")
+    public static class Number {
+
+        static RubyClass define(final Ruby runtime) {
+            final RubyModule Number = Java.getProxyClass(runtime, java.lang.Number.class);
+            Number.defineAnnotatedMethods(Number.class);
+            return (RubyClass) Number;
+        }
+
+        @JRubyMethod(name = "to_f")
+        public static IRubyObject to_f(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newFloat(val.doubleValue());
+        }
+
+        @JRubyMethod(name = "real?")
+        public static IRubyObject real_p(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+                                                    val instanceof Short || val instanceof Byte ||
+                                                    val instanceof Float || val instanceof Double ||
+                                                    val instanceof java.math.BigInteger || val instanceof java.math.BigDecimal);
+        }
+
+        @JRubyMethod(name = { "to_i", "to_int" })
+        public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            if (val instanceof java.math.BigInteger) { // NOTE: should be moved into its own?
+                return RubyBignum.newBignum(context.runtime, (java.math.BigInteger) val);
+            }
+            if (val instanceof java.math.BigDecimal) { // NOTE: should be moved into its own?
+                return RubyBignum.newBignum(context.runtime, ((java.math.BigDecimal) val).toBigInteger());
+            }
+            return context.runtime.newFixnum(val.longValue());
+        }
+
+        @JRubyMethod(name = "integer?")
+        public static IRubyObject integer_p(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+                                                    val instanceof Short || val instanceof Byte ||
+                                                    val instanceof java.math.BigInteger);
+        }
+
+        @JRubyMethod(name = "zero?")
+        public static IRubyObject zero_p(final ThreadContext context, final IRubyObject self) {
+            return context.runtime.newBoolean(isZero(self));
+        }
+
+        private static boolean isZero(final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return Double.compare(val.doubleValue(), 0) == 0;
+        }
+
+        @JRubyMethod(name = "nonzero?")
+        public static IRubyObject nonzero_p(final ThreadContext context, final IRubyObject self) {
+            return isZero(self) ? context.nil : self;
+        }
+
+        @JRubyMethod(name = "coerce")
+        public static IRubyObject coerce(final ThreadContext context, final IRubyObject self, final IRubyObject type) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+
+            // NOTE: a basic stub that always coverts Java numbers to Ruby ones (for simplicity)
+            // gist being this is not expected to be used heavily, if so should get special care
+            final IRubyObject value;
+            if (val instanceof java.math.BigDecimal) {
+                final RubyClass klass = context.runtime.getClass("BigDecimal");
+                if (klass == null) { // user should require 'bigdecimal'
+                    throw context.runtime.newNameError("uninitialized constant BigDecimal", "BigDecimal");
+                }
+                value = new RubyBigDecimal(context.runtime, klass, (java.math.BigDecimal) val);
+            }
+            else {
+                value = convertJavaToUsableRubyObject(context.runtime, val);
+            }
+            return context.runtime.newArray(type, value);
+        }
+
+    }
+
     @JRubyClass(name = "Java::JavaLang::Character")
     public static class Character {
 
@@ -335,6 +427,12 @@ public abstract class JavaLang {
 
         private static char to_char(final IRubyObject num) {
             return (java.lang.Character) num.toJava(java.lang.Character.TYPE);
+        }
+
+        @JRubyMethod(name = "to_i")
+        public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
+            java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
+            return context.runtime.newFixnum(c);
         }
 
     }

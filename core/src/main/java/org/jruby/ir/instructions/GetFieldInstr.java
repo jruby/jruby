@@ -1,7 +1,8 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.common.IRubyWarnings;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -14,21 +15,25 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 
+import static org.jruby.common.IRubyWarnings.ID.IVAR_NOT_INITIALIZED;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
+
 public class GetFieldInstr extends GetInstr implements FixedArityInstr {
     private transient VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
-    public GetFieldInstr(Variable dest, Operand obj, String fieldName) {
+    public GetFieldInstr(Variable dest, Operand obj, RubySymbol fieldName) {
         super(Operation.GET_FIELD, dest, obj, fieldName);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new GetFieldInstr(ii.getRenamedVariable(getResult()),
-                getSource().cloneForInlining(ii), getRef());
+                getSource().cloneForInlining(ii), getName());
     }
 
     public static GetFieldInstr decode(IRReaderDecoder d) {
-        return new GetFieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new GetFieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol());
     }
 
     public VariableAccessor getAccessor(IRubyObject o) {
@@ -36,7 +41,7 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
         VariableAccessor localAccessor = accessor;
 
         if (localAccessor.getClassId() != cls.hashCode()) {
-            localAccessor = cls.getVariableAccessorForRead(getRef());
+            localAccessor = cls.getVariableAccessorForRead(getId());
             accessor = localAccessor;
         }
         return localAccessor;
@@ -48,8 +53,9 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
         VariableAccessor a = getAccessor(object);
         Object result = a == null ? null : (IRubyObject)a.get(object);
         if (result == null) {
-            if (context.runtime.isVerbose()) {
-                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + getRef() + " not initialized");
+            Ruby runtime = context.runtime;
+            if (runtime.isVerbose()) {
+                runtime.getWarnings().warning(IVAR_NOT_INITIALIZED, str(runtime, "instance variable ", ids(runtime, getId()), " not initialized"));
             }
             result = context.nil;
         }

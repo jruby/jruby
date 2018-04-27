@@ -1,12 +1,12 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :kernel_float, shared: true do
   it "returns the identical Float for numeric Floats" do
     float = 1.12
     float2 = @object.send(:Float, float)
     float2.should == float
-    float2.object_id.should == float.object_id
+    float2.should equal float
   end
 
   it "returns a Float for Fixnums" do

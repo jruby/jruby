@@ -24,6 +24,7 @@ require 'jruby/compiler/java_signature'
 #
 class Class
   JClass = java.lang.Class
+  private_constant :JClass
 
   ##
   # Get an array of all known subclasses of this class. If recursive == true,

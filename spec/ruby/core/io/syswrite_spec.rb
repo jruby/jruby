@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/write', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/write'
 
 describe "IO#syswrite on a file" do
   before :each do
@@ -45,6 +45,23 @@ describe "IO#syswrite on a file" do
     @file.syswrite("abcde")
     File.open(@filename) do |file|
       file.sysread(10).should == "01234abcde"
+    end
+  end
+end
+
+describe "IO#syswrite on a pipe" do
+  it "returns the written bytes if the fd is in nonblock mode and write would block" do
+    require 'io/nonblock'
+    r, w = IO.pipe
+    begin
+      w.nonblock = true
+      larger_than_pipe_capacity = 100 * 1024
+      written = w.syswrite("a"*larger_than_pipe_capacity)
+      written.should > 0
+      written.should < larger_than_pipe_capacity
+    ensure
+      w.close
+      r.close
     end
   end
 end

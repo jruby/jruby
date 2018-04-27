@@ -23,8 +23,8 @@ import java.util.List;
  * side-effect free as well, but this is difficult without adding a level of
  * indirection or pre-caching each value we encounter during construction.
  */
-public abstract class ImmutableLiteral extends Operand {
-    private Object cachedObject = null;
+public abstract class ImmutableLiteral<T> extends Operand {
+    private T cachedObject = null;
 
     public ImmutableLiteral() {
        super();
@@ -53,13 +53,13 @@ public abstract class ImmutableLiteral extends Operand {
     /**
      * Implementing class is responsible for constructing the cached value.
      */
-    public abstract Object createCacheObject(ThreadContext context);
+    public abstract T createCacheObject(ThreadContext context);
 
     /**
      * Returns the cached object.  If not then it asks class to create an
      * object to cache.
      */
-    public Object cachedObject(ThreadContext context) {
+    public T cachedObject(ThreadContext context) {
         if (!isCached()) cachedObject = createCacheObject(context);
 
         return cachedObject;
@@ -80,7 +80,7 @@ public abstract class ImmutableLiteral extends Operand {
      * assume the cost of constructing literals which may never be used.
      */
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+    public T retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         return cachedObject(context);
     }
 }

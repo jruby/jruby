@@ -105,7 +105,7 @@ class TestCSV::DataConverters < TestCSV
     end
 
     # gives us proper number conversion
-    assert_equal( [String, String, Fixnum, String, Float],
+    assert_equal( [String, String, Integer, String, Float],
                   @parser.shift.map { |field| field.class } )
   end
 
@@ -114,7 +114,7 @@ class TestCSV::DataConverters < TestCSV
     assert_nothing_raised(Exception) { @parser.convert(:numeric) }
 
     # and use
-    assert_equal( [String, String, Fixnum, String, Float],
+    assert_equal( [String, String, Integer, String, Float],
                   @parser.shift.map { |field| field.class } )
   end
 
@@ -125,7 +125,7 @@ class TestCSV::DataConverters < TestCSV
     assert_nothing_raised(Exception) { @parser.convert(:all) }
 
     # and use
-    assert_equal( [String, String, Fixnum, String, Float, DateTime],
+    assert_equal( [String, String, Integer, String, Float, DateTime],
                   @parser.shift.map { |field| field.class } )
   end
 
@@ -174,6 +174,15 @@ class TestCSV::DataConverters < TestCSV
     # and use
     assert_equal( ["Numbers", ":integer", 100, ":float", "3.015"],
                   @parser.shift.fields )
+  end
+
+  def test_custom_converter_with_blank_field
+    converter = lambda { |field| field.nil? }
+    row = nil
+    assert_nothing_raised(Exception) do
+      row = CSV.parse_line('nil,', converters: converter)
+    end
+    assert_equal([false, true], row);
   end
 
   def test_shortcut_interface

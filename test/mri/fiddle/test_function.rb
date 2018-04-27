@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 begin
   require_relative 'helper'
 rescue LoadError
@@ -6,8 +6,6 @@ end
 
 module Fiddle
   class TestFunction < Fiddle::TestCase
-    include Test::Unit::Assertions
-
     def setup
       super
       Fiddle.last_error = nil
@@ -62,13 +60,13 @@ module Fiddle
       func = Function.new(@libc['strcpy'], [TYPE_VOIDP, TYPE_VOIDP], TYPE_VOIDP)
 
       assert_nil Fiddle.last_error
-      func.call("000", "123")
+      func.call(+"000", "123")
       refute_nil Fiddle.last_error
     end
 
     def test_strcpy
       f = Function.new(@libc['strcpy'], [TYPE_VOIDP, TYPE_VOIDP], TYPE_VOIDP)
-      buff = "000"
+      buff = +"000"
       str = f.call(buff, "123")
       assert_equal("123", buff)
       assert_equal("123", str.to_s)

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util.io;
 
 
@@ -561,7 +562,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         dst.ensure(Math.min(len, bufferedInputBytesRemaining()));
 
-        if (hasUngotChars() && hasUngotChars()) {
+        if (hasUngotChars()) {
             for(int i = 0; i < ungotChars.length(); i++){
                 byte ungotc = (byte) ungotChars.get(i);
                 ++bytesCopied;

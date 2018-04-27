@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require "rubygems/requirement"
 
@@ -28,6 +28,12 @@ class TestGemRequirement < Gem::TestCase
     assert_requirement_equal "= 2", "2"
     assert_requirement_equal "= 2", ["2"]
     assert_requirement_equal "= 2", v(2)
+  end
+
+  def test_create
+    assert_equal req("= 1"), Gem::Requirement.create("= 1")
+    assert_equal req(">= 1.2", "<= 1.3"), Gem::Requirement.create([">= 1.2", "<= 1.3"])
+    assert_equal req(">= 1.2", "<= 1.3"), Gem::Requirement.create(">= 1.2", "<= 1.3")
   end
 
   def test_empty_requirements_is_none

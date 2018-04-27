@@ -1,0 +1,1 @@
+fails:A Symbol literal with invalid bytes raises an EncodingError at parse time

@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#attr_writer" do
   it "creates a setter for each given attribute name" do
@@ -58,7 +58,14 @@ describe "Module#attr_writer" do
     lambda { c.new.foo=1 }.should raise_error(NoMethodError)
   end
 
-  it "is a private method" do
-    lambda { Class.new.attr_writer(:foo) }.should raise_error(NoMethodError)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:attr_writer, false)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:attr_writer, false)
+    end
   end
 end

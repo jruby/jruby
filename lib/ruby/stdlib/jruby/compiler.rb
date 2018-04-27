@@ -5,17 +5,19 @@ require 'jruby'
 require 'jruby/compiler/java_class'
 
 module JRuby::Compiler
-  BAIS = java.io.ByteArrayInputStream
-  Mangler = org.jruby.util.JavaNameMangler
-  Opcodes = org.objectweb.asm.Opcodes rescue org.jruby.org.objectweb.asm.Opcodes
-  ClassWriter = org.objectweb.asm.ClassWriter rescue org.jruby.org.objectweb.asm.ClassWriter
-  SkinnyMethodAdapter = org.jruby.compiler.impl.SkinnyMethodAdapter
+  ByteArrayInputStream = java.io.ByteArrayInputStream
   ByteArrayOutputStream = java.io.ByteArrayOutputStream
+
+  Opcodes = JRuby::ASM::Opcodes
+  ClassWriter = JRuby::ASM::ClassWriter
+
+  Mangler = org.jruby.util.JavaNameMangler
+  SkinnyMethodAdapter = org.jruby.compiler.impl.SkinnyMethodAdapter
   IRWriterStream = org.jruby.ir.persistence.IRWriterStream
   IRWriter = org.jruby.ir.persistence.IRWriter
-  JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
-  DEFAULT_PREFIX = ""
+
+  DEFAULT_PREFIX = ''
 
   def default_options
     {
@@ -44,21 +46,17 @@ module JRuby::Compiler
         options[:basedir] = dir
       end
 
-      opts.on("-p", "--prefix PREFIX", "Prepend PREFIX to the file path and package. Default is no prefix.") do |pre|
-        options[:prefix] = pre
+      opts.on("-p", "--prefix PREFIX", "Prepend PREFIX to the file path and package. Default is no prefix.") do |prefix|
+        options[:prefix] = prefix
       end
 
-      opts.on("-t", "--target TARGET", "Output files to TARGET directory") do |tgt|
-        options[:target] = tgt
+      opts.on("-t", "--target TARGET", "Output files to TARGET directory") do |target|
+        options[:target] = target
       end
 
-      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |o|
-        options[:javac_options] << o
+      opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |options|
+        options[:javac_options] << options
       end
-
-      #opts.on("-5"," --jdk5", "Generate JDK 5 classes (version 49)") do |x|
-      #  options[:jdk5] = true
-      #end
 
       opts.on("--java", "Generate Java classes (.java) for a script containing Ruby class definitions") do
         options[:java] = true
@@ -68,8 +66,8 @@ module JRuby::Compiler
         options[:javac] = true
       end
 
-      opts.on("-c", "--classpath CLASSPATH", "Add a jar to the classpath for building") do |cp|
-        options[:classpath].concat cp.split(':')
+      opts.on("-c", "--classpath CLASSPATH", "Add a jar to the classpath for building") do |classpath|
+        options[:classpath].concat classpath.split(':')
       end
 
       opts.on("--sha1", "Compile to a class named using the SHA1 hash of the source file") do
@@ -114,28 +112,24 @@ module JRuby::Compiler
   module_function :compile_files
 
   def compile_files_with_options(filenames, options = default_options)
-    runtime = JRuby.runtime
 
-    unless File.exist? options[:target]
-      raise "Target dir not found: #{options[:target]}"
-    end
+    raise "Target dir not found: #{options[:target]}" unless File.exist?(options[:target])
 
     files = []
 
-    # The compilation code
     compile_proc = proc do |filename|
       begin
         file = File.open(filename, "r:ASCII-8BIT")
         source = file.read
 
         if options[:sha1]
-          pathname = "ruby.jit.FILE_" + Digest::SHA1.hexdigest(source).upcase
+          pathname = "ruby.jit.FILE_#{Digest::SHA1.hexdigest(source).upcase}"
         else
           pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix], true, false)
         end
 
         if options[:java] || options[:javac]
-          node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
+          node = JRuby.parse(source, filename)
 
           ruby_script = JavaGenerator.generate_java(node, filename)
 
@@ -146,7 +140,7 @@ module JRuby::Compiler
 
             FileUtils.mkdir_p java_dir
 
-            java_src = File.join(java_dir, cls.name + ".java")
+            java_src = File.join(java_dir, "#{cls.name}.java")
             puts "Generating Java class #{cls.name} to #{java_src}" if options[:verbose]
 
             files << java_src
@@ -159,19 +153,17 @@ module JRuby::Compiler
           puts "Compiling #{filename}" if options[:verbose]
 
           scope = JRuby.compile_ir(source, filename)
-          bytes = ByteArrayOutputStream.new
-          stream = IRWriterStream.new(bytes)
+          stream = IRWriterStream.new bytes = ByteArrayOutputStream.new
           IRWriter.persist(stream, scope)
           string = String.from_java_bytes(bytes.to_byte_array, 'BINARY')
 
-          # bust it up into 32k-1 chunks
-          pieces = string.scan(/.{1,32767}/m)
+          pieces = string.scan(/.{1,32767}/m) # bust it up into 32k-1 chunks
 
           cls = ClassWriter.new(ClassWriter::COMPUTE_MAXS | ClassWriter::COMPUTE_FRAMES)
           cls.visit(
               Opcodes::V1_7,
               Opcodes::ACC_PUBLIC,
-              pathname.gsub(".", "/"),
+              pathname.gsub('.', '/'),
               nil,
               "java/lang/Object",
               nil
@@ -267,10 +259,6 @@ module JRuby::Compiler
         end
 
         0
-      # rescue Exception
-      #   puts "Failure during compilation of file #{filename}:\n#{$!}"
-      #   puts $!.backtrace
-      #   1
       ensure
         file.close unless file.nil?
       end

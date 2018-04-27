@@ -1,11 +1,11 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 require 'socket'
 
 describe 'TCPServer#listen' do
   before :each do
-    @server = TCPServer.new(SocketSpecs.hostname, SocketSpecs.port)
+    @server = TCPServer.new(SocketSpecs.hostname, 0)
   end
 
   after :each do

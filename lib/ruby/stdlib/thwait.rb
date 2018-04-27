@@ -5,7 +5,6 @@
 #       $Revision: 1.3 $
 #       by Keiju ISHITSUKA(Nihon Rational Software Co.,Ltd.)
 
-require "thread.rb"
 require "e2mmap.rb"
 
 #
@@ -51,7 +50,7 @@ class ThreadsWait
   #
   def initialize(*threads)
     @threads = []
-    @wait_queue = Queue.new
+    @wait_queue = Thread::Queue.new
     join_nowait(*threads) unless threads.empty?
   end
 

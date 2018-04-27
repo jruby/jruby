@@ -3,6 +3,11 @@ require "test/unit"
 require "webrick/utils"
 
 class TestWEBrickUtils < Test::Unit::TestCase
+  def teardown
+    WEBrick::Utils::TimeoutHandler.terminate
+    super
+  end
+
   def assert_expired(m)
     Thread.handle_interrupt(Timeout::Error => :never, EX => :never) do
       assert_empty(m::TimeoutHandler.instance.instance_variable_get(:@timeout_info))
@@ -38,7 +43,7 @@ class TestWEBrickUtils < Test::Unit::TestCase
     assert_expired(m)
   end
 
-  def test_timeout_default_execption
+  def test_timeout_default_exception
     m = WEBrick::Utils
     assert_raise(Timeout::Error){ m.timeout(0.01){ sleep } }
     assert_expired(m)

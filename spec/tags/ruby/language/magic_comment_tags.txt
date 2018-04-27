@@ -1,0 +1,1 @@
+fails:Magic comment is case-insensitive

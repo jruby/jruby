@@ -1,8 +1,29 @@
 require 'test/unit'
-require 'jruby'
-require 'jruby/core_ext'
+require 'jruby/util'
 
 class TestJRubyCoreExt < Test::Unit::TestCase
+
+  def setup
+    require 'jruby'; require 'jruby/core_ext'
+  end
+
+  def test_jrubyc_inspect_bytecode
+    compiled = JRuby.compile script = 'def foo; return :foo end; bar = foo()'
+    assert_equal script, compiled.to_s
+    assert bytecode = compiled.inspect_bytecode
+    assert_equal String, bytecode.class
+  end
+
+  def test_string_unseeded_hash; require 'jruby/core_ext/string.rb'
+    assert 'foo'.unseeded_hash.is_a?(Integer)
+    assert_not_equal '0'.unseeded_hash, ' '.unseeded_hash
+    assert_equal '123'.dup.unseeded_hash, "#{123}".unseeded_hash
+  end
+
+  def test_string_alloc; require 'jruby/core_ext/string.rb'
+    assert String.alloc(128).is_a?(String)
+  end
+
   def test_subclasses
     superclass = Class.new
     sub1 = Class.new(superclass)
@@ -54,6 +75,14 @@ class TestJRubyCoreExt < Test::Unit::TestCase
       assert_equal JRuby.runtime, org.jruby.Ruby.global_runtime
     end
     assert_equal other_runtime, org.jruby.Ruby.global_runtime
+  end
+
+  def test_internal_libraries
+    internal_libraries = JRuby::Util.internal_libraries
+
+    assert_equal Array, internal_libraries.class
+    assert_true internal_libraries.size > 0
+    assert_include internal_libraries, "cgi/escape.jar"
   end
 
   private

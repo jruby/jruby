@@ -1,7 +1,8 @@
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../fixtures/module', __FILE__)
+require_relative 'spec_helper'
+require_relative 'fixtures/module'
 
 load_extension('module')
+compile_extension("module_under_autoload")
 
 describe "CApiModule" do
 
@@ -62,16 +63,14 @@ describe "CApiModule" do
       mod = @m.rb_define_module_under(CApiModuleSpecs, "ModuleSpecsModuleUnder2")
       mod.name.should == "CApiModuleSpecs::ModuleSpecsModuleUnder2"
     end
+  end
 
+  describe "rb_define_module_under" do
     it "defines a module for an existing Autoload with an extension" do
-      compile_extension("module_under_autoload")
-
       CApiModuleSpecs::ModuleUnderAutoload.name.should == "CApiModuleSpecs::ModuleUnderAutoload"
     end
 
     it "defines a module for an existing Autoload with a ruby object" do
-      compile_extension("module_under_autoload")
-
       CApiModuleSpecs::RubyUnderAutoload.name.should == "CApiModuleSpecs::RubyUnderAutoload"
     end
   end
@@ -308,12 +307,12 @@ describe "CApiModule" do
         @frozen = @class.dup.freeze
       end
 
-      it "raises a RuntimeError when passed a name" do
-        lambda { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class} when passed a name" do
+        lambda { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(frozen_error_class)
       end
 
-      it "raises a RuntimeError when passed a missing name" do
-        lambda { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class} when passed a missing name" do
+        lambda { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(frozen_error_class)
       end
     end
   end
@@ -335,6 +334,16 @@ describe "CApiModule" do
   describe "rb_class2name" do
     it "returns the module name" do
       @m.rb_class2name(CApiModuleSpecs::M).should == "CApiModuleSpecs::M"
+    end
+  end
+
+  describe "rb_mod_ancestors" do
+    it "returns an array of ancestors" do
+      one = Module.new
+      two = Module.new do
+        include one
+      end
+      @m.rb_mod_ancestors(two).should == [two, one]
     end
   end
 end

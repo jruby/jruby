@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "IO.select" do
   before :each do
@@ -15,7 +15,7 @@ describe "IO.select" do
   end
 
   it "returns immediately all objects that are ready for I/O when timeout is 0" do
-    @wr.write("be ready")
+    @wr.syswrite("be ready")
     result = IO.select [@rd], [@wr], nil, 0
     result.should == [[@rd], [@wr], []]
   end
@@ -108,6 +108,7 @@ describe "IO.select when passed nil for timeout" do
     end
 
     Thread.pass while t.status && t.status != "sleep"
+    t.join unless t.status
     t.status.should == "sleep"
     t.kill
     t.join

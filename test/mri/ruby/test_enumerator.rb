@@ -79,7 +79,7 @@ class TestEnumerator < Test::Unit::TestCase
     enum = @obj.to_enum
     assert_raise(NoMethodError) { enum.each {} }
     enum.freeze
-    assert_raise(RuntimeError) {
+    assert_raise(FrozenError) {
       capture_io do
         # warning: Enumerator.new without a block is deprecated; use Object#to_enum
         enum.__send__(:initialize, @obj, :foo)
@@ -103,6 +103,7 @@ class TestEnumerator < Test::Unit::TestCase
       1.times do
         foo = [1,2,3].to_enum
         GC.start
+        foo
       end
       GC.start
     end
@@ -439,7 +440,7 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal([1, 2, 3], a)
 
     g.freeze
-    assert_raise(RuntimeError) {
+    assert_raise(FrozenError) {
       g.__send__ :initialize, proc { |y| y << 4 << 5 }
     }
 
@@ -575,13 +576,22 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal Float::INFINITY, [:foo].cycle.size
     assert_equal 10, [:foo, :bar].cycle(5).size
     assert_equal 0,  [:foo, :bar].cycle(-10).size
+    assert_equal Float::INFINITY, {foo: 1}.cycle.size
+    assert_equal 10, {foo: 1, bar: 2}.cycle(5).size
+    assert_equal 0,  {foo: 1, bar: 2}.cycle(-10).size
     assert_equal 0,  [].cycle.size
     assert_equal 0,  [].cycle(5).size
+    assert_equal 0,  {}.cycle.size
+    assert_equal 0,  {}.cycle(5).size
 
     assert_equal nil, @obj.cycle.size
     assert_equal nil, @obj.cycle(5).size
     assert_equal Float::INFINITY, @sized.cycle.size
     assert_equal 126, @sized.cycle(3).size
+    assert_equal Float::INFINITY, [].to_enum { 42 }.cycle.size
+    assert_equal 0, [].to_enum { 0 }.cycle.size
+
+    assert_raise(TypeError) {[].to_enum { 0 }.cycle("").size}
   end
 
   def test_size_for_loops
@@ -644,6 +654,11 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal(1, e.peek)
     e.next
     assert_raise(StopIteration) { e.peek }
+  end
+
+  def test_uniq
+    assert_equal([1, 2, 3, 4, 5, 10],
+                 (1..Float::INFINITY).lazy.uniq{|x| (x**2) % 10 }.first(6))
   end
 end
 

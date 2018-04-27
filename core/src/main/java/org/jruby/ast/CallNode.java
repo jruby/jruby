@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,10 +30,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -45,20 +47,15 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     private final Node receiverNode;
     private Node argsNode;
     protected Node iterNode;
-    private String name;
+    private RubySymbol name;
     private final boolean isLazy;
 
-    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
-            Node iterNode) {
-        this(position, receiverNode, name, argsNode, iterNode, false);
-    }
-
-    public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode,
+    public CallNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode,
                     Node iterNode, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
-        
+
         assert receiverNode != null : "receiverNode is not null";
 
         this.name = name;
@@ -115,7 +112,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
 	 * name is the name of the method called
      * @return name
      */
-    public String getName() {
+    public RubySymbol getName() {
         return name;
     }
 

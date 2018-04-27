@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#delete" do
   it "returns a new string with the chars from the intersection of sets removed" do
@@ -109,11 +109,11 @@ describe "String#delete!" do
     a.should == "hello"
   end
 
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a.delete!("")            }.should raise_error(RuntimeError)
-    lambda { a.delete!("aeiou", "^e") }.should raise_error(RuntimeError)
+    lambda { a.delete!("")            }.should raise_error(frozen_error_class)
+    lambda { a.delete!("aeiou", "^e") }.should raise_error(frozen_error_class)
   end
 end

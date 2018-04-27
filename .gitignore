@@ -52,8 +52,10 @@ lib/native
 lib/ruby/cext/
 lib/ruby/gems
 lib/ruby/stdlib/*.jar
+lib/ruby/stdlib/ant*
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/gauntlet_rdoc.rb
+lib/ruby/stdlib/ipaddr*
 lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*

@@ -1,4 +1,5 @@
-# frozen_string_literal: false
+
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/commands/build_command'
 require 'rubygems/package'
@@ -63,6 +64,16 @@ class TestGemCommandsBuildCommand < Gem::TestCase
     assert_equal "ERROR:  Gemspec file not found: some_gem\n", @ui.error
   end
 
+  def test_can_find_gemspecs_without_dot_gemspec
+    gemspec_file = File.join(@tempdir, @gem.spec_name)
+
+    File.open gemspec_file + ".gemspec", 'w' do |gs|
+      gs.write @gem.to_ruby
+    end
+
+    util_test_build_gem @gem, gemspec_file
+  end
+
   def util_test_build_gem(gem, gemspec_file, check_licenses=true)
     @cmd.options[:args] = [gemspec_file]
 
@@ -107,5 +118,30 @@ class TestGemCommandsBuildCommand < Gem::TestCase
     util_test_build_gem @gem, gemspec_file, false
   end
 
-end
+  CERT_FILE = cert_path 'public3072'
+  SIGNING_KEY = key_path 'private3072'
 
+  def test_build_signed_gem
+    trust_dir = Gem::Security.trust_dir
+
+    spec = util_spec 'some_gem' do |s|
+      s.signing_key = SIGNING_KEY
+      s.cert_chain = [CERT_FILE]
+    end
+
+    gemspec_file = File.join(@tempdir, spec.spec_name)
+
+    File.open gemspec_file, 'w' do |gs|
+      gs.write spec.to_ruby
+    end
+
+    util_test_build_gem spec, gemspec_file
+
+    trust_dir.trust_cert OpenSSL::X509::Certificate.new(File.read(CERT_FILE))
+
+    gem = Gem::Package.new(File.join(@tempdir, spec.file_name),
+                           Gem::Security::HighSecurity)
+    assert gem.verify
+  end
+
+end

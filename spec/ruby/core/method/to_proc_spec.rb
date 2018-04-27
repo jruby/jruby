@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Method#to_proc" do
   before :each do
@@ -53,6 +53,10 @@ describe "Method#to_proc" do
     m = x.method :foo
     x.bar(&m).should == []
     x.baz(1,2,3,&m).should == [1,2,3]
+  end
+
+  it "returns a proc whose binding has the same receiver as the method" do
+    @meth.receiver.should == @meth.to_proc.binding.receiver
   end
 
   # #5926

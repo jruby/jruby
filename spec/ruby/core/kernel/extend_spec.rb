@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 module KernelSpecs::M
   def self.extend_object(o)
@@ -72,8 +72,8 @@ describe "Kernel#extend" do
       lambda { @frozen.extend }.should raise_error(ArgumentError)
     end
 
-    it "raises a RuntimeError" do
-      lambda { @frozen.extend @module }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class}" do
+      lambda { @frozen.extend @module }.should raise_error(frozen_error_class)
     end
   end
 end

@@ -4,7 +4,6 @@
 # $Id: test_yaml.rb 16084 2008-04-19 11:45:39Z knu $
 #
 require 'test/unit'
-require 'yaml'
 
 # [ruby-core:01946]
 module YAML_Tests
@@ -12,6 +11,11 @@ module YAML_Tests
 end
 
 class YAML_Unit_Tests < Test::Unit::TestCase
+
+  def setup
+    require 'yaml'
+  end
+
   #
   # Convert between YAML and the object to verify correct parsing and
   # emitting
@@ -1676,17 +1680,17 @@ YAMLSTR
     assert_equal FooXSmith, obj.class
   end
 
-  class PersonTestOne
-    yaml_as 'tag:data.allman.ms,2008:Person'
-  end
-
   def roundtrip(text)
     assert_equal text, YAML.load(YAML.dump(text))
   end
 
   def test_JRUBY_2976
-    assert_equal "--- !data.allman.ms,2008/Person {}\n\n", PersonTestOne.new.to_yaml
-    assert_equal PersonTestOne, YAML.load(PersonTestOne.new.to_yaml).class
+    personTestOne = Class.new do
+      yaml_as 'tag:data.allman.ms,2008:Person'
+    end
+
+    assert_equal "--- !data.allman.ms,2008/Person {}\n\n", personTestOne.new.to_yaml
+    assert_equal personTestOne, YAML.load(personTestOne.new.to_yaml).class
 
 
     Hash.class_eval do
@@ -1732,31 +1736,31 @@ Y
     end
   end
 
-#
-# opening Badger to add custom YAML serialization
-#
-  class ::Badger
-    yaml_as "tag:ruby.yaml.org,2002:#{self}"
+  def test_JRUBY_3773
+    #
+    # opening Badger to add custom YAML serialization
+    #
+    ::Badger.class_eval do
+      yaml_as "tag:ruby.yaml.org,2002:#{self}"
 
-    def to_yaml (opts={})
-      YAML::quick_emit(self.object_id, opts) do |out|
-        out.map(taguri) do |map|
-          map.add("s", to_s)
+      def to_yaml (opts={})
+        YAML::quick_emit(self.object_id, opts) do |out|
+          out.map(taguri) do |map|
+            map.add("s", to_s)
+          end
+        end
+      end
+
+      def Badger.yaml_new (klass, tag, val)
+        s = val["s"]
+        begin
+          Badger.from_s s
+        rescue => e
+          raise "failed to decode Badger from '#{s}'"
         end
       end
     end
 
-    def Badger.yaml_new (klass, tag, val)
-      s = val["s"]
-      begin
-        Badger.from_s s
-      rescue => e
-        raise "failed to decode Badger from '#{s}'"
-      end
-    end
-  end
-
-  def test_JRUBY_3773
     b = Badger.new("Axel", 35)
 
     assert_equal YAML::dump(b), <<OUT
@@ -1872,4 +1876,19 @@ YAML
     assert_equal YAML.load("---\ndate: 2011-03-03 00:00:01.0210000000 Z").to_yaml, "--- \ndate: 2011-03-03 00:03:31 Z\n"
     assert_equal YAML.load("---\ndate: 2011-03-03 00:00:01.0000000012 Z").to_yaml, "--- \ndate: 2011-03-03 00:00:01.000012 Z\n"
   end
+
+  # JRUBY-5387
+  def test_argument_error_with_invalid_syntax
+    assert_raise(ArgumentError) do
+      YAML.load(<<EOY)
+Gem::Specification.new do |s|
+  s.platform    = Gem::Platform::RUBY
+  s.name        = 'railties'
+  s.version     = version
+  s.summary     = 'Tools for creating, working with, and running Rails applications.'
+  s.description = 'Rails internals: application bootup, plugins, generators, and rake tasks.'
+EOY
+    end
+  end
+
 end

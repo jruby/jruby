@@ -2,6 +2,8 @@ language: java
 
 sudo: false
 
+dist: trusty
+
 cache:
  directories:
    - $HOME/.m2
@@ -10,10 +12,8 @@ before_install:
   - unset _JAVA_OPTIONS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=160M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=144M -XX:CompressedClassSpaceSize=96M"; fi
-  - export MAVEN_OPTS="-Xms64M -Xmx512M $MAVEN_OPTS"
-  - export JAVA_OPTS="$JAVA_OPTS"
-
+  - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
+  - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
@@ -24,7 +24,7 @@ before_script:
   - echo $MAVEN_OPTS
 
 jdk:
-  - openjdk7
+  - oraclejdk8
 
 os:
   - linux
@@ -36,7 +36,7 @@ env:
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
-    - PHASE='-Prake -Dtask=test:jruby:fullint'
+    #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
     - PHASE='-Prake -Dtask=test:jruby:jit'
     - PHASE='-Prake -Dtask=test:jruby:aot'
     - PHASE='-Prake -Dtask=test:mri'
@@ -56,22 +56,23 @@ env:
 
 matrix:
   include:
+    - env: PHASE='-Ptest'
+      jdk: openjdk8
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+      jdk: openjdk8
     # these profile do no need to run for all JDKs
     - env: PHASE='-Pdist'
-      jdk: oraclejdk8
+      jdk: openjdk8
     - env: PHASE='-Pjruby-jars'
-      jdk: openjdk7
+      jdk: openjdk8
     - env: PHASE='-Pmain'
       jdk: oraclejdk8
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk8
     - env: PHASE='-Posgi'
-      jdk: openjdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk8
-    - env: PHASE='-Prake -Dtask=test:mri'
-      jdk: oraclejdk8
-    # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
       jdk: oraclejdk8
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
@@ -98,7 +99,8 @@ matrix:
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
       jdk: oraclejdk9
 
-install: tool/travis-install.sh
+install:
+  - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
 script: tool/travis-script.sh
 
 notifications:
@@ -122,5 +124,5 @@ services:
 addons:
   apt:
     packages:
-      - oracle-java9-installer
+#      - oracle-java9-installer
       - haveged

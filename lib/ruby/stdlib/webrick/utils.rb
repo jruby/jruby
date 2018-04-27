@@ -37,7 +37,7 @@ module WEBrick
         Process::Sys::setgid(pw.gid)
         Process::Sys::setuid(pw.uid)
       else
-        warn("WEBrick::Utils::su doesn't work on this platform")
+        warn("WEBrick::Utils::su doesn't work on this platform", uplevel: 1)
       end
     end
     module_function :su
@@ -91,7 +91,6 @@ module WEBrick
 
     ###########
 
-    require "thread"
     require "timeout"
     require "singleton"
 
@@ -124,11 +123,9 @@ module WEBrick
     class TimeoutHandler
       include Singleton
 
-      class Thread < ::Thread; end
-
       ##
       # Mutex used to synchronize access across threads
-      TimeoutMutex = Mutex.new # :nodoc:
+      TimeoutMutex = Thread::Mutex.new # :nodoc:
 
       ##
       # Registers a new timeout handler
@@ -136,13 +133,18 @@ module WEBrick
       # +time+:: Timeout in seconds
       # +exception+:: Exception to raise when timeout elapsed
       def TimeoutHandler.register(seconds, exception)
-        instance.register(Thread.current, Time.now + seconds, exception)
+        at = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
+        instance.register(Thread.current, at, exception)
       end
 
       ##
       # Cancels the timeout handler +id+
       def TimeoutHandler.cancel(id)
         instance.cancel(Thread.current, id)
+      end
+
+      def self.terminate
+        instance.terminate
       end
 
       ##
@@ -152,11 +154,16 @@ module WEBrick
         TimeoutMutex.synchronize{
           @timeout_info = Hash.new
         }
-        @queue = Queue.new
-        @watcher = Thread.start{
+        @queue = Thread::Queue.new
+        @watcher = nil
+      end
+
+      # :nodoc:
+      private \
+        def watch
           to_interrupt = []
           while true
-            now = Time.now
+            now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
             wakeup = nil
             to_interrupt.clear
             TimeoutMutex.synchronize{
@@ -184,8 +191,17 @@ module WEBrick
             end
             @queue.clear
           end
-        }
-      end
+        end
+
+      # :nodoc:
+      private \
+        def watcher
+          (w = @watcher)&.alive? and return w # usual case
+          TimeoutMutex.synchronize{
+            (w = @watcher)&.alive? and next w # pathological check
+            @watcher = Thread.start(&method(:watch))
+          }
+        end
 
       ##
       # Interrupts the timeout handler +id+ and raises +exception+
@@ -203,10 +219,10 @@ module WEBrick
       def register(thread, time, exception)
         info = nil
         TimeoutMutex.synchronize{
-          @timeout_info[thread] ||= Array.new
-          @timeout_info[thread] << (info = [time, exception])
+          (@timeout_info[thread] ||= []) << (info = [time, exception])
         }
         @queue.push nil
+        watcher
         return info.object_id
       end
 
@@ -222,6 +238,14 @@ module WEBrick
             return true
           end
           return false
+        }
+      end
+
+      ##
+      def terminate
+        TimeoutMutex.synchronize{
+          @timeout_info.clear
+          @watcher&.kill&.join
         }
       end
     end

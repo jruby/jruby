@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe :kernel_Complex, shared: true do
   describe "when passed [Complex, Complex]" do
@@ -35,7 +35,7 @@ describe :kernel_Complex, shared: true do
     end
   end
 
-  describe "when passed [Integer]" do
+  describe "when passed [Integer/Float]" do
     it "returns a new Complex number with 0 as the imaginary component" do
       # Guard against the Mathn library
       conflicts_with :Prime do
@@ -62,7 +62,7 @@ describe :kernel_Complex, shared: true do
     it "needs to be reviewed for spec completeness"
   end
 
-  describe "when passed an Objectc which responds to #to_c" do
+  describe "when passed an Object which responds to #to_c" do
     it "returns the passed argument" do
       obj = Object.new; def obj.to_c; 1i end
       Complex(obj).should == Complex(0, 1)
@@ -72,7 +72,7 @@ describe :kernel_Complex, shared: true do
   describe "when passed a Numeric which responds to #real? with false" do
     it "returns the passed argument" do
       n = mock_numeric("unreal")
-      n.should_receive(:real?).and_return(false)
+      n.should_receive(:real?).any_number_of_times.and_return(false)
       Complex(n).should equal(n)
     end
   end
@@ -128,6 +128,14 @@ describe :kernel_Complex, shared: true do
     it "raises TypeError" do
       lambda { Complex.send(@method, :sym, :sym) }.should raise_error(TypeError)
       lambda { Complex.send(@method, 0,    :sym) }.should raise_error(TypeError)
+    end
+  end
+
+  describe "when passed nil" do
+    it "raises TypeError" do
+      lambda { Complex(nil) }.should raise_error(TypeError, "can't convert nil into Complex")
+      lambda { Complex(0, nil) }.should raise_error(TypeError, "can't convert nil into Complex")
+      lambda { Complex(nil, 0) }.should raise_error(TypeError, "can't convert nil into Complex")
     end
   end
 end

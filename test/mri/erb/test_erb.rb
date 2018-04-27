@@ -2,6 +2,7 @@
 # frozen_string_literal: false
 require 'test/unit'
 require 'erb'
+require 'stringio'
 
 class TestERB < Test::Unit::TestCase
   class MyError < RuntimeError ; end
@@ -84,6 +85,10 @@ end
 class TestERBCore < Test::Unit::TestCase
   def setup
     @erb = ERB
+  end
+
+  def test_version
+    assert_equal(String, @erb.version.class)
   end
 
   def test_core
@@ -197,19 +202,56 @@ EOS
     assert_equal(ans, erb.result)
   end
 
+  def test_trim_line1_with_carriage_return
+    erb = @erb.new("<% 3.times do %>\r\nline\r\n<% end %>\r\n", nil, '>')
+    assert_equal("line\r\n" * 3, erb.result)
+
+    erb = @erb.new("<% 3.times do %>\r\nline\r\n<% end %>\r\n", nil, '%>')
+    assert_equal("line\r\n" * 3, erb.result)
+  end
+
+  def test_trim_line2_with_carriage_return
+    erb = @erb.new("<% 3.times do %>\r\nline\r\n<% end %>\r\n", nil, '<>')
+    assert_equal("line\r\n" * 3, erb.result)
+
+    erb = @erb.new("<% 3.times do %>\r\nline\r\n<% end %>\r\n", nil, '%<>')
+    assert_equal("line\r\n" * 3, erb.result)
+  end
+
+  def test_explicit_trim_line_with_carriage_return
+    erb = @erb.new("<%- 3.times do -%>\r\nline\r\n<%- end -%>\r\n", nil, '-')
+    assert_equal("line\r\n" * 3, erb.result)
+
+    erb = @erb.new("<%- 3.times do -%>\r\nline\r\n<%- end -%>\r\n", nil, '%-')
+    assert_equal("line\r\n" * 3, erb.result)
+  end
+
+  def test_run
+    out = StringIO.new
+    orig, $stdout = $stdout, out
+
+    num = 3
+    @erb.new('<%= num * 3 %>').run(binding)
+
+    $stdout = orig
+    out.rewind
+    assert_equal('9', out.read)
+    return unless num               # to remove warning
+  end
+
   class Foo; end
 
   def test_def_class
     erb = @erb.new('hello')
     cls = erb.def_class
     assert_equal(Object, cls.superclass)
-    assert(cls.new.respond_to?('result'))
+    assert_respond_to(cls.new, 'result')
     cls = erb.def_class(Foo)
     assert_equal(Foo, cls.superclass)
-    assert(cls.new.respond_to?('result'))
+    assert_respond_to(cls.new, 'result')
     cls = erb.def_class(Object, 'erb')
     assert_equal(Object, cls.superclass)
-    assert(cls.new.respond_to?('erb'))
+    assert_respond_to(cls.new, 'erb')
   end
 
   def test_percent
@@ -262,21 +304,21 @@ EOS
       fname = File.join(File.dirname(File.expand_path(__FILE__)), 'hello.erb')
       def_erb_method('hello', fname)
     end
-    assert(klass.new.respond_to?('hello'))
+    assert_respond_to(klass.new, 'hello')
 
-    assert(! klass.new.respond_to?('hello_world'))
+    assert_not_respond_to(klass.new, 'hello_world')
     erb = @erb.new('hello, world')
     klass.module_eval do
       def_erb_method('hello_world', erb)
     end
-    assert(klass.new.respond_to?('hello_world'))
+    assert_respond_to(klass.new, 'hello_world')
   end
 
   def test_def_method_without_filename
     klass = Class.new
     erb = ERB.new("<% raise ::TestERB::MyError %>")
     erb.filename = "test filename"
-    assert(! klass.new.respond_to?('my_error'))
+    assert_not_respond_to(klass.new, 'my_error')
     erb.def_method(klass, 'my_error')
     e = assert_raise(::TestERB::MyError) {
        klass.new.my_error
@@ -288,12 +330,18 @@ EOS
     klass = Class.new
     erb = ERB.new("<% raise ::TestERB::MyError %>")
     erb.filename = "test filename"
-    assert(! klass.new.respond_to?('my_error'))
+    assert_not_respond_to(klass.new, 'my_error')
     erb.def_method(klass, 'my_error', 'test fname')
     e = assert_raise(::TestERB::MyError) {
        klass.new.my_error
     }
     assert_match(/\Atest fname:1\b/, e.backtrace[0])
+  end
+
+  def test_def_module
+    klass = Class.new
+    klass.include ERB.new('<%= val %>').def_module('render(val)')
+    assert_equal('1', klass.new.render(1))
   end
 
   def test_escape
@@ -342,12 +390,10 @@ Hello,\s
 EOS
 
     erb = ERB.new(src, nil, '%')
-    begin
+    e = assert_raise(RuntimeError) {
       erb.result
-      assert(false)
-    rescue
-      assert_match(/\A\(erb\):4\b/, $@[0].to_s)
-    end
+    }
+    assert_match(/\A\(erb\):4\b/, e.backtrace[0].to_s)
 
     src = <<EOS
 %>
@@ -389,28 +435,22 @@ Hello,\s
 EOS
 
     erb = ERB.new(src)
-    begin
+    e = assert_raise(RuntimeError) {
       erb.result
-      assert(false)
-    rescue
-      assert_match(/\A\(erb\):5\b/, $@[0].to_s)
-    end
+    }
+    assert_match(/\A\(erb\):5\b/, e.backtrace[0].to_s)
 
     erb = ERB.new(src, nil, '>')
-    begin
+    e = assert_raise(RuntimeError) {
       erb.result
-      assert(false)
-    rescue
-      assert_match(/\A\(erb\):5\b/, $@[0].to_s)
-    end
+    }
+    assert_match(/\A\(erb\):5\b/, e.backtrace[0].to_s)
 
     erb = ERB.new(src, nil, '<>')
-    begin
+    e = assert_raise(RuntimeError) {
       erb.result
-      assert(false)
-    rescue
-      assert_match(/\A\(erb\):5\b/, $@[0].to_s)
-    end
+    }
+    assert_match(/\A\(erb\):5\b/, e.backtrace[0].to_s)
 
     src = <<EOS
 % y = 'Hello'
@@ -421,20 +461,16 @@ EOS
 EOS
 
     erb = ERB.new(src, nil, '-')
-    begin
+    e = assert_raise(RuntimeError) {
       erb.result
-      assert(false)
-    rescue
-      assert_match(/\A\(erb\):5\b/, $@[0].to_s)
-    end
+    }
+    assert_match(/\A\(erb\):5\b/, e.backtrace[0].to_s)
 
     erb = ERB.new(src, nil, '%-')
-    begin
+    e = assert_raise(RuntimeError) {
       erb.result
-      assert(false)
-    rescue
-      assert_match(/\A\(erb\):5\b/, $@[0].to_s)
-    end
+    }
+    assert_match(/\A\(erb\):5\b/, e.backtrace[0].to_s)
   end
 
   def test_explicit
@@ -476,10 +512,115 @@ EOS
 
     assert_equal("%A5%B5%A5%F3%A5%D7%A5%EB",
                  ERB::Util.url_encode("\xA5\xB5\xA5\xF3\xA5\xD7\xA5\xEB".force_encoding("EUC-JP")))
+
+    assert_equal("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",
+                 ERB::Util.url_encode("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"),
+                 "should not escape any unreserved characters, as per RFC3986 Section 2.3")
   end
 
   def test_percent_after_etag
     assert_equal("1%", @erb.new("<%= 1 %>%", nil, "%").result)
+  end
+
+  def test_token_extension
+    extended_erb = Class.new(ERB)
+    extended_erb.module_eval do
+      def make_compiler(trim_mode)
+        compiler = Class.new(ERB::Compiler)
+        compiler.module_eval do
+          def compile_stag(stag, out, scanner)
+            case stag
+            when '<%=='
+              scanner.stag = stag
+              add_put_cmd(out, content) if content.size > 0
+              self.content = ''
+            else
+              super
+            end
+          end
+
+          def compile_content(stag, out)
+            case stag
+            when '<%=='
+              out.push("#{@insert_cmd}(::ERB::Util.html_escape(#{content}))")
+            else
+              super
+            end
+          end
+
+          def make_scanner(src)
+            scanner = Class.new(ERB::Compiler::SimpleScanner)
+            scanner.module_eval do
+              def stags
+                ['<%=='] + super
+              end
+            end
+            scanner.new(src, @trim_mode, @percent)
+          end
+        end
+        compiler.new(trim_mode)
+      end
+    end
+
+    src = <<~EOS
+      <% tag = '<>' \%>
+      <\%= tag \%>
+      <\%== tag \%>
+    EOS
+    ans = <<~EOS
+
+      <>
+      &lt;&gt;
+    EOS
+    assert_equal(ans, extended_erb.new(src).result)
+  end
+
+  def test_frozen_string_literal
+    bug12031 = '[ruby-core:73561] [Bug #12031]'
+    e = @erb.new("<%#encoding: us-ascii%>a")
+    e.src.sub!(/\A#(?:-\*-)?(.*)(?:-\*-)?/) {
+      '# -*- \1; frozen-string-literal: true -*-'
+    }
+    assert_equal("a", e.result, bug12031)
+
+    %w(false true).each do |flag|
+      erb = @erb.new("<%#frozen-string-literal: #{flag}%><%=''.frozen?%>")
+      assert_equal(flag, erb.result)
+    end
+  end
+
+  def test_result_with_hash
+    erb = @erb.new("<%= foo %>")
+    assert_equal("1", erb.result_with_hash(foo: "1"))
+  end
+
+  def test_result_with_hash_does_not_use_caller_local_variables
+    erb = @erb.new("<%= foo %>")
+    foo = 1
+    assert_raise(NameError) { erb.result_with_hash({}) }
+    assert_equal("1", erb.result_with_hash(foo: foo))
+  end
+
+  def test_result_with_hash_does_not_modify_caller_binding
+    erb = @erb.new("<%= foo %>")
+    erb.result_with_hash(foo: "1")
+    assert_equal(false, binding.local_variable_defined?(:foo))
+  end
+
+  def test_result_with_hash_does_not_modify_toplevel_binding
+    erb = @erb.new("<%= foo %>")
+    erb.result_with_hash(foo: "1")
+    assert_equal(false, TOPLEVEL_BINDING.local_variable_defined?(:foo))
+    TOPLEVEL_BINDING.eval 'template2 = "two"'
+    erb = @erb.new("<%= template2 %>")
+    erb.result_with_hash(template2: "TWO")
+    assert_equal "two", TOPLEVEL_BINDING.local_variable_get("template2")
+  end
+
+  # This depends on the behavior that #local_variable_set raises TypeError by invalid key.
+  def test_result_with_hash_with_invalid_keys_raises_type_error
+    erb = @erb.new("<%= 1 %>")
+    assert_raise(TypeError) { erb.result_with_hash({ 1 => "1" }) }
   end
 end
 

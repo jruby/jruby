@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension("numeric")
 
@@ -195,6 +195,13 @@ describe "CApiNumericSpecs" do
         @s.rb_num2ulong(-2147442171).should == 2147525125
       end
 
+      it "converts positive Bignums if the values is less than 64bits" do
+        @s.rb_num2ulong(0xffff_ffff).should == 0xffff_ffff
+        @s.rb_num2ulong(2**30).should == 2**30
+        @s.rb_num2ulong(fixnum_max+1).should == fixnum_max+1
+        @s.rb_num2ulong(fixnum_max).should == fixnum_max
+      end
+
       it "raises a RangeError if the value is more than 32bits" do
         lambda { @s.rb_num2ulong(0xffff_ffff+1) }.should raise_error(RangeError)
       end
@@ -207,6 +214,13 @@ describe "CApiNumericSpecs" do
 
       it "converts a negative Bignum into an unsigned number" do
         @s.rb_num2ulong(-9223372036854734331).should == 9223372036854817285
+      end
+
+      it "converts positive Bignums if the values is less than 64bits" do
+        @s.rb_num2ulong(0xffff_ffff_ffff_ffff).should == 0xffff_ffff_ffff_ffff
+        @s.rb_num2ulong(2**62).should == 2**62
+        @s.rb_num2ulong(fixnum_max+1).should == fixnum_max+1
+        @s.rb_num2ulong(fixnum_max).should == fixnum_max
       end
 
       it "raises a RangeError if the value is more than 64bits" do
@@ -224,7 +238,7 @@ describe "CApiNumericSpecs" do
   end
 
   describe "rb_Integer" do
-    it "creates a new Integer from a String" do
+    it "creates an Integer from a String" do
       i = @s.rb_Integer("8675309")
       i.should be_kind_of(Integer)
       i.should eql(8675309)
@@ -232,18 +246,46 @@ describe "CApiNumericSpecs" do
   end
 
   describe "rb_ll2inum" do
-    it "creates a new Fixnum from a small signed long long" do
+    it "creates a Fixnum from a small signed long long" do
       i = @s.rb_ll2inum_14()
       i.should be_kind_of(Fixnum)
       i.should eql(14)
     end
   end
 
+  describe "rb_ull2inum" do
+    it "creates a Fixnum from a small unsigned long long" do
+      i = @s.rb_ull2inum_14()
+      i.should be_kind_of(Fixnum)
+      i.should eql(14)
+    end
+
+    it "creates a positive Bignum from a negative long long" do
+      i = @s.rb_ull2inum_n14()
+      i.should be_kind_of(Bignum)
+      i.should eql(2 ** (@s.size_of_long_long * 8) - 14)
+    end
+  end
+
   describe "rb_int2inum" do
-    it "creates a new Fixnum from a long" do
+    it "creates a Fixnum from a long" do
       i = @s.rb_int2inum_14()
       i.should be_kind_of(Fixnum)
       i.should eql(14)
+    end
+  end
+
+  describe "rb_uint2inum" do
+    it "creates a Fixnum from a long" do
+      i = @s.rb_uint2inum_14()
+      i.should be_kind_of(Fixnum)
+      i.should eql(14)
+    end
+
+    it "creates a positive Bignum from a negative long" do
+      i = @s.rb_uint2inum_n14()
+      i.should be_kind_of(Bignum)
+      i.should eql(2 ** (@s.size_of_VALUE * 8) - 14)
     end
   end
 
@@ -427,6 +469,21 @@ describe "CApiNumericSpecs" do
       obj.should_receive(:coerce).with(2).and_return(nil)
 
       lambda { @s.rb_num_coerce_relop(2, obj, :<) }.should raise_error(ArgumentError)
+    end
+  end
+
+  describe "rb_absint_singlebit_p" do
+    it "returns 1 if absolute value fits into a bit" do
+      @s.rb_absint_singlebit_p(1).should == 1
+      @s.rb_absint_singlebit_p(2).should == 1
+      @s.rb_absint_singlebit_p(3).should == 0
+      @s.rb_absint_singlebit_p(-1).should == 1
+      @s.rb_absint_singlebit_p(-2).should == 1
+      @s.rb_absint_singlebit_p(-3).should == 0
+      @s.rb_absint_singlebit_p(bignum_value).should == 1
+      @s.rb_absint_singlebit_p(bignum_value(1)).should == 0
+      @s.rb_absint_singlebit_p(-bignum_value).should == 1
+      @s.rb_absint_singlebit_p(-bignum_value(1)).should == 0
     end
   end
 end

@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 # These specs only illustrate the basic autoload cases
 # and where toplevel autoload behaves differently from
@@ -49,16 +49,15 @@ describe "Kernel#autoload" do
   end
 
   it "can autoload in instance_eval" do
-    instance_eval do
-      # this instance_eval is not needed because specs are run in instance_eval
+    Object.new.instance_eval do
       autoload :KSAutoloadD, fixture(__FILE__, "autoload_d.rb")
       KSAutoloadD.loaded.should == :ksautoload_d
     end
   end
 
   describe "when Object is frozen" do
-    it "raises a RuntimeError before defining the constant" do
-      ruby_exe(fixture(__FILE__, "autoload_frozen.rb")).should == "RuntimeError - nil"
+    it "raises a FrozenError before defining the constant" do
+      ruby_exe(fixture(__FILE__, "autoload_frozen.rb")).should == "#{frozen_error_class} - nil"
     end
   end
 end

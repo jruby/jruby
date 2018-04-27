@@ -143,7 +143,7 @@ module WEBrick
       if proxy = proxy_uri(req, res)
         proxy_request_line = "CONNECT #{host}:#{port} HTTP/1.0"
         if proxy.userinfo
-          credentials = "Basic " + [proxy.userinfo].pack("m").delete("\n")
+          credentials = "Basic " + [proxy.userinfo].pack("m0")
         end
         host, port = proxy.host, proxy.port
       end
@@ -193,13 +193,13 @@ module WEBrick
       begin
         while fds = IO::select([ua, os])
           if fds[0].member?(ua)
-            buf = ua.sysread(1024);
+            buf = ua.readpartial(1024);
             @logger.debug("CONNECT: #{buf.bytesize} byte from User-Agent")
-            os.syswrite(buf)
+            os.write(buf)
           elsif fds[0].member?(os)
-            buf = os.sysread(1024);
+            buf = os.readpartial(1024);
             @logger.debug("CONNECT: #{buf.bytesize} byte from #{host}:#{port}")
-            ua.syswrite(buf)
+            ua.write(buf)
           end
         end
       rescue
@@ -294,7 +294,7 @@ module WEBrick
       if upstream = proxy_uri(req, res)
         if upstream.userinfo
           header['proxy-authorization'] =
-            "Basic " + [upstream.userinfo].pack("m").delete("\n")
+            "Basic " + [upstream.userinfo].pack("m0")
         end
         return upstream
       end

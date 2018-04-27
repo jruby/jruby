@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#[]=" do
   it "sets the value of the element at index" do
@@ -94,8 +94,8 @@ describe "Array#[]=" do
 
   it "checks frozen before attempting to coerce arguments" do
     a = [1,2,3,4].freeze
-    lambda {a[:foo] = 1}.should raise_error(RuntimeError)
-    lambda {a[:foo, :bar] = 1}.should raise_error(RuntimeError)
+    lambda {a[:foo] = 1}.should raise_error(frozen_error_class)
+    lambda {a[:foo, :bar] = 1}.should raise_error(frozen_error_class)
   end
 
   it "sets elements in the range arguments when passed ranges" do
@@ -236,8 +236,8 @@ describe "Array#[]=" do
     ary.should == [5, 6, 7]
   end
 
-  it "raises a RuntimeError on a frozen array" do
-    lambda { ArraySpecs.frozen_array[0, 0] = [] }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen array" do
+    lambda { ArraySpecs.frozen_array[0, 0] = [] }.should raise_error(frozen_error_class)
   end
 end
 
@@ -258,12 +258,12 @@ describe "Array#[]= with [index]" do
   end
 
   it "sets the value of the element at index" do
-      a = [1, 2, 3, 4]
-      a[2] = 5
-      a[-1] = 6
-      a[5] = 3
-      a.should == [1, 2, 5, 6, nil, 3]
-    end
+    a = [1, 2, 3, 4]
+    a[2] = 5
+    a[-1] = 6
+    a[5] = 3
+    a.should == [1, 2, 5, 6, nil, 3]
+  end
 
   it "sets the value of the element if it is right beyond the array boundary" do
     a = [1, 2, 3, 4]
@@ -350,11 +350,13 @@ describe "Array#[]= with [m..n]" do
   it "returns non-array value if non-array value assigned" do
     a = [1, 2, 3, 4, 5]
     (a[2..4] = 10).should == 10
+    (a.[]=(2..4, 10)).should == 10
   end
 
   it "returns array if array assigned" do
     a = [1, 2, 3, 4, 5]
     (a[2..4] = [7, 8]).should == [7, 8]
+    (a.[]=(2..4, [7, 8])).should == [7, 8]
   end
 
   it "just sets the section defined by range to nil even if the rhs is nil" do
@@ -370,11 +372,11 @@ describe "Array#[]= with [m..n]" do
   end
 
   it "replaces the section defined by range" do
-      a = [6, 5, 4, 3, 2, 1]
-      a[1...2] = 9
-      a[3..6] = [6, 6, 6]
-      a.should == [6, 9, 4, 6, 6, 6]
-    end
+    a = [6, 5, 4, 3, 2, 1]
+    a[1...2] = 9
+    a[3..6] = [6, 6, 6]
+    a.should == [6, 9, 4, 6, 6, 6]
+  end
 
   it "replaces the section if m and n < 0" do
     a = [1, 2, 3, 4, 5]
@@ -394,15 +396,32 @@ describe "Array#[]= with [m..n]" do
     a.should == [1, 2, 3, 8, 4, 5]
   end
 
-  it "accepts Range subclasses" do
-    a = [1, 2, 3, 4]
-    range_incl = ArraySpecs::MyRange.new(1, 2)
-    range_excl = ArraySpecs::MyRange.new(-3, -1, true)
+  describe "Range subclasses" do
+    before :each do
+      @range_incl = ArraySpecs::MyRange.new(1, 2)
+      @range_excl = ArraySpecs::MyRange.new(-3, -1, true)
+    end
 
-    a[range_incl] = ["a", "b"]
-    a.should == [1, "a", "b", 4]
-    a[range_excl] = ["A", "B"]
-    a.should == [1, "A", "B", 4]
+    it "accepts Range subclasses" do
+      a = [1, 2, 3, 4]
+
+      a[@range_incl] = ["a", "b"]
+      a.should == [1, "a", "b", 4]
+      a[@range_excl] = ["A", "B"]
+      a.should == [1, "A", "B", 4]
+    end
+
+    it "returns non-array value if non-array value assigned" do
+      a = [1, 2, 3, 4, 5]
+      (a[@range_incl] = 10).should == 10
+      (a.[]=(@range_incl, 10)).should == 10
+    end
+
+    it "returns array if array assigned" do
+      a = [1, 2, 3, 4, 5]
+      (a[@range_incl] = [7, 8]).should == [7, 8]
+      a.[]=(@range_incl, [7, 8]).should == [7, 8]
+    end
   end
 end
 
@@ -415,4 +434,3 @@ describe "Array#[] after a shift" do
     a.should == [3,4]
   end
 end
-

@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -10,12 +11,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class LocalVariable extends Variable implements DepthCloneable {
-    protected final String name;
+    protected final RubySymbol name;
     protected final int scopeDepth;
     protected final int offset;
     protected final int hcode;
 
-    public LocalVariable(String name, int scopeDepth, int location) {
+    public LocalVariable(RubySymbol name, int scopeDepth, int location) {
         super();
         this.name = name;
         this.scopeDepth = scopeDepth;
@@ -45,13 +46,17 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     @Override
-    public String getName() {
+    public String getId() {
+        return name.idString();
+    }
+
+    public RubySymbol getName() {
         return name;
     }
 
     @Override
     public String toString() {
-        return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
+        return isSelf() ? name.toString() : name + "(" + scopeDepth + ":" + offset + ")";
     }
 
     @Override
@@ -100,7 +105,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     public static LocalVariable decode(IRReaderDecoder d) {
-        return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
+        return d.getCurrentScope().getLocalVariable(d.decodeSymbol(), d.decodeInt());
     }
 
     @Override

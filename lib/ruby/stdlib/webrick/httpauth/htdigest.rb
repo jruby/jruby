@@ -38,9 +38,9 @@ module WEBrick
         @path = path
         @mtime = Time.at(0)
         @digest = Hash.new
-        @mutex = Mutex::new
+        @mutex = Thread::Mutex::new
         @auth_type = DigestAuth
-        open(@path,"a").close unless File::exist?(@path)
+        File.open(@path,"a").close unless File.exist?(@path)
         reload
       end
 
@@ -51,7 +51,7 @@ module WEBrick
         mtime = File::mtime(@path)
         if mtime > @mtime
           @digest.clear
-          open(@path){|io|
+          File.open(@path){|io|
             while line = io.gets
               line.chomp!
               user, realm, pass = line.split(/:/, 3)
@@ -79,7 +79,7 @@ module WEBrick
           File::rename(tmp.path, output)
           renamed = true
         ensure
-          tmp.close if !tmp.closed?
+          tmp.close
           File.unlink(tmp.path) if !renamed
         end
       end

@@ -1,5 +1,5 @@
-exclude :test_dup_warn, "temporarily disabled warning"
-exclude :test_initialize, "needs investigation"
+exclude :test_absent, "until fixed"
+exclude :test_dup_warn, "temporary failure due to disabling a warning jruby/joni#34"
 exclude :test_invalid_escape_error, "needs investigation"
 exclude :test_invalid_fragment, "needs investigation"
 exclude :test_match_without_regexp, "matches non-unicode with exception message using regexp, but our messages are always unicode"

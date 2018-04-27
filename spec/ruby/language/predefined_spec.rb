@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 require 'stringio'
 
 # The following tables are excerpted from Programming Ruby: The Pragmatic Programmer's Guide'
@@ -30,11 +30,11 @@ $`               String          The string preceding the match in a successful 
                                  is local to the current scope. [r/o, thread]
 $'               String          The string following the match in a successful pattern match. This variable
                                  is local to the current scope. [r/o, thread]
-$1 to $9         String          The contents of successive groups matched in a successful pattern match. In
+$1 to $<N>       String          The contents of successive groups matched in a successful pattern match. In
                                  "cat" =~/(c|a)(t|z)/, $1 will be set to “a” and $2 to “t”. This variable
                                  is local to the current scope. [r/o, thread]
 $~               MatchData       An object that encapsulates the results of a successful pattern match. The
-                                 variables $&, $`, $', and $1 to $9 are all derived from $~. Assigning to $~
+                                 variables $&, $`, $', and $1 to $<N> are all derived from $~. Assigning to $~
                                  changes the values of these derived variables. This variable is local to the
                                  current scope. [thread]
 =end
@@ -44,11 +44,11 @@ describe "Predefined global $~" do
   it "is set to contain the MatchData object of the last match if successful" do
     md = /foo/.match 'foo'
     $~.should be_kind_of(MatchData)
-    $~.object_id.should == md.object_id
+    $~.should equal md
 
     /bar/ =~ 'bar'
     $~.should be_kind_of(MatchData)
-    $~.object_id.should_not == md.object_id
+    $~.should_not equal md
   end
 
   it "is set to nil if the last match was unsuccessful" do
@@ -645,6 +645,33 @@ describe "Predefined global $," do
   end
 end
 
+describe "Predefined global $." do
+  it "can be assigned an Integer" do
+    $. = 123
+    $..should == 123
+  end
+
+  it "can be assigned a Float" do
+    $. = 123.5
+    $..should == 123
+  end
+
+  it "should call #to_int to convert the object to an Integer" do
+    obj = mock("good-value")
+    obj.should_receive(:to_int).and_return(321)
+
+    $. = obj
+    $..should == 321
+  end
+
+  it "raises TypeError if object can't be converted to an Integer" do
+    obj = mock("bad-value")
+    obj.should_receive(:to_int).and_return('abc')
+
+    lambda { $. = obj }.should raise_error(TypeError)
+  end
+end
+
 describe "Predefined global $_" do
   it "is set to the last line read by e.g. StringIO#gets" do
     stdin = StringIO.new("foo\nbar\n", "r")
@@ -801,7 +828,7 @@ end
 
 describe "Global variable $\"" do
   it "is an alias for $LOADED_FEATURES" do
-    $".object_id.should == $LOADED_FEATURES.object_id
+    $".should equal $LOADED_FEATURES
   end
 
   it "is read-only" do
@@ -876,6 +903,25 @@ describe "Global variable $-d" do
     $-d.should be_true
     $-d = false
     $DEBUG.should be_false
+  end
+end
+
+describe "Global variable $VERBOSE" do
+  it "converts truthy values to true" do
+    [true, 1, 0, [], ""].each do |true_value|
+      $VERBOSE = true_value
+      $VERBOSE.should be_true
+    end
+  end
+
+  it "allows false" do
+    $VERBOSE = false
+    $VERBOSE.should be_false
+  end
+
+  it "allows nil without coercing to false" do
+    $VERBOSE = nil
+    $VERBOSE.should be_nil
   end
 end
 
@@ -1134,7 +1180,7 @@ with_feature :encoding do
         STDIN.external_encoding.should equal(Encoding::ISO_8859_16)
       end
 
-      it "has the encodings set by #set_encoding"do
+      it "has the encodings set by #set_encoding" do
         code = "STDIN.set_encoding Encoding::IBM775, Encoding::IBM866; " \
                "p [STDIN.external_encoding.name, STDIN.internal_encoding.name]"
         ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}
@@ -1167,7 +1213,7 @@ with_feature :encoding do
         STDOUT.external_encoding.should be_nil
       end
 
-      it "has the encodings set by #set_encoding"do
+      it "has the encodings set by #set_encoding" do
         code = "STDOUT.set_encoding Encoding::IBM775, Encoding::IBM866; " \
                "p [STDOUT.external_encoding.name, STDOUT.internal_encoding.name]"
         ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}
@@ -1193,7 +1239,7 @@ with_feature :encoding do
         STDERR.external_encoding.should be_nil
       end
 
-      it "has the encodings set by #set_encoding"do
+      it "has the encodings set by #set_encoding" do
         code = "STDERR.set_encoding Encoding::IBM775, Encoding::IBM866; " \
                "p [STDERR.external_encoding.name, STDERR.internal_encoding.name]"
         ruby_exe(code).chomp.should == %{["IBM775", "IBM866"]}

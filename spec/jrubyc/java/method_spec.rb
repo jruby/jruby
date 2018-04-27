@@ -411,6 +411,53 @@ describe "A Ruby class generating a Java stub" do
     end
   end
 
+  describe 'with private (Ruby) :method' do
+
+    it 'does not generate the given method' do
+      cls = generate("class Foo; def abar; end; private :abar; def afoo; true; end; end").classes[0]
+
+      java_source = cls.to_s
+
+      expect( java_source ).to_not include 'Object abar' + '()'
+      expect( java_source ).to include 'public Object afoo' + '()'
+    end
+
+  end
+
+  describe 'with (Ruby) visibility' do
+
+    METHOD_VISIBILITY_SOURCE = File.expand_path('files/method_visibility.rb', File.dirname(__FILE__))
+
+    it 'does map public and protected methods to Java with same modifiers' do
+      cls = generate(File.read(METHOD_VISIBILITY_SOURCE)).classes[0]
+
+      java_source = cls.to_s
+
+      expect( java_source ).to include 'public Object publ_method' + '()'
+      expect( java_source ).to include 'public Object hello' + '(Object arg)'
+
+      expect( java_source ).to include 'protected Object prot_method' + '()'
+    end
+
+    it 'does not generate private methods (by default)' do
+      cls = generate(File.read(METHOD_VISIBILITY_SOURCE)).classes[0]
+
+      java_source = cls.to_s
+
+      expect( java_source ).to_not include 'Object there' + '()'
+      expect( java_source ).to_not include 'Object priv_method' + '()'
+    end
+
+    it 'explicit java_signature with modifier overrides Ruby visibility' do
+      cls = generate(File.read(METHOD_VISIBILITY_SOURCE)).classes[0]
+
+      java_source = cls.to_s
+
+      expect( java_source ).to include 'public int protMethodWithJSign' + '(String str_arg)'
+    end
+
+  end
+
   describe "when no class definitions are present in the target script" do
     before do
       @source = Tempfile.new('jrubyc_method_spec')

@@ -388,8 +388,14 @@ public class InterpreterEngine {
                 // Everything else is PUBLIC by default.
                 context.setCurrentVisibility(Visibility.PUBLIC);
                 break;
+            case PUSH_BACKREF_FRAME:
+                context.preBackrefMethod();
+                break;
             case POP_METHOD_FRAME:
                 context.popFrame();
+                break;
+            case POP_BACKREF_FRAME:
+                context.postBackrefMethod();
                 break;
             case POP_BINDING:
                 context.popScope();

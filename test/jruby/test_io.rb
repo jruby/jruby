@@ -205,6 +205,13 @@ class TestIO < Test::Unit::TestCase
     assert_raises(Errno::EBADF) { f.close }
   end
 
+  if WINDOWS
+    # Opening a file should raise EISDIR on Windows, but not raise on other platforms.
+    def test_open_read_directory
+      assert_raises(Errno::EISDIR) { File.open('.', 'r') }
+    end
+  end
+    
   def test_open_child_of_file
     ensure_files @file
     assert_raises(WINDOWS ? Errno::ENOENT : Errno::ENOTDIR) { File.open(File.join(@file, 'child')) }
@@ -215,7 +222,7 @@ class TestIO < Test::Unit::TestCase
       ensure_files @file
 
       fno = IO::sysopen(@file, "r", 0124) # not creating, mode is ignored
-      assert_instance_of(Fixnum, fno)
+      assert_instance_of(Integer, fno)
       assert_raises(Errno::EINVAL) { IO.open(fno, "w") } # not writable
       IO.open(fno, "r") do |io|
         assert_equal(fno, io.fileno)

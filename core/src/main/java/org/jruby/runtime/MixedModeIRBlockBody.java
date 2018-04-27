@@ -18,7 +18,8 @@ import org.jruby.util.log.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
-    private static final Logger LOG = LoggerFactory.getLogger(InterpretedIRBlockBody.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
+
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
@@ -52,12 +53,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public void setCallCount(int callCount) {
-        this.callCount = callCount;
+        synchronized (this) {
+            this.callCount = callCount;
+        }
     }
 
     @Override
     public void completeBuild(CompiledIRBlockBody blockBody) {
-        this.callCount = -1;
+        setCallCount(-1);
         blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
     }
@@ -84,10 +87,10 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
 
         if (interpreterContext == null) {
-            if (Options.IR_PRINT.load()) {
+            if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
-                LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));
+                LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
             interpreterContext = closure.getInterpreterContext();
@@ -97,12 +100,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public String getClassName(ThreadContext context) {
-        return closure.getName();
+        return closure.getId();
     }
 
     @Override
     public String getName() {
-        return closure.getName();
+        return closure.getId();
     }
 
     @Override
@@ -123,6 +126,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         return jittedBody.yieldDirect(context, block, args, self);
     }
 
+    @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
         if (callCount >= 0) promoteToFullBuild(context);
 
@@ -149,19 +153,11 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
         }
         finally {
-            // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
-            // Ex: eval("...", foo.instance_eval { binding })
-            // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
-            binding.getFrame().setVisibility(oldVis);
-            if (ic.popDynScope()) {
-                context.postYield(binding, prevFrame);
-            } else {
-                context.postYieldNoScope(prevFrame);
-            }
+            postYield(context, ic, binding, oldVis, prevFrame);
         }
     }
 
-    protected void promoteToFullBuild(ThreadContext context) {
+    private void promoteToFullBuild(ThreadContext context) {
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (callCount >= 0) {

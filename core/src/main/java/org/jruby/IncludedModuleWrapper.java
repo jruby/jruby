@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.util.Collection;
@@ -81,11 +82,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    public void addMethod(String name, DynamicMethod method) {
-        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
-    }
-
-    public void setMethods(Map newMethods) {
+    public void addMethod(String id, DynamicMethod method) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
@@ -211,18 +208,18 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected DynamicMethod searchMethodCommon(String name) {
+    protected DynamicMethod searchMethodCommon(String id) {
         // IncludedModuleWrapper needs to search prepended modules too, so search until we find methodLocation
         RubyModule module = origin;
         RubyModule methodLoc = origin.getMethodLocation();
 
         for (; module != methodLoc; module = module.getSuperClass()) {
-            DynamicMethod method = module.getMethods().get(name);
+            DynamicMethod method = module.getMethods().get(id);
             if (method != null) return method.isNull() ? null : method;
         }
 
         // one last search for method location
-        DynamicMethod method = module.getMethods().get(name);
+        DynamicMethod method = module.getMethods().get(id);
         if (method != null) return method.isNull() ? null : method;
 
         return null;

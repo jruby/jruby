@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#class_variable_set" do
   it "sets the class variable with the given name to the given value" do
@@ -25,13 +25,13 @@ describe "Module#class_variable_set" do
     c.send(:class_variable_get, "@@mvar").should == :new_mvar
   end
 
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     lambda {
       Class.new.freeze.send(:class_variable_set, :@@test, "test")
-    }.should raise_error(RuntimeError)
+    }.should raise_error(frozen_error_class)
     lambda {
       Module.new.freeze.send(:class_variable_set, :@@test, "test")
-    }.should raise_error(RuntimeError)
+    }.should raise_error(frozen_error_class)
   end
 
   it "raises a NameError when the given name is not allowed" do

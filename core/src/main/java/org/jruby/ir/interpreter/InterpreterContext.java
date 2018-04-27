@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.Callable;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
@@ -12,7 +13,6 @@ import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -41,7 +41,6 @@ public class InterpreterContext {
 
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
     private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
-    private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
@@ -59,7 +58,7 @@ public class InterpreterContext {
     }
 
     private InterpreterEngine engine;
-    public Callable<List<Instr>> instructionsCallback;
+    public final Callable<List<Instr>> instructionsCallback;
 
     private IRScope scope;
 
@@ -72,13 +71,14 @@ public class InterpreterContext {
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+        this.instructionsCallback = null; // engine != null
     }
 
     public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) throws Exception {
-        this.instructionsCallback = instructions;
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
+        this.instructionsCallback = instructions;
     }
 
     private void retrieveFlags() {
@@ -171,7 +171,7 @@ public class InterpreterContext {
         return scope.getFileName();
     }
 
-    public String getName() {
+    public RubySymbol getName() {
         return scope.getName();
     }
 

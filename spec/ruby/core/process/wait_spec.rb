@@ -1,6 +1,9 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "Process.wait" do
+  ProcessSpecs.use_system_ruby(self)
+
   before :all do
     begin
       leaked = Process.waitall

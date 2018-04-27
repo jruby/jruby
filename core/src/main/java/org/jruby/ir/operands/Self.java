@@ -16,8 +16,7 @@ public class Self extends Variable {
         super();
     }
 
-    @Override
-    public String getName() {
+    public String getId() {
         return NAME;
     }
 

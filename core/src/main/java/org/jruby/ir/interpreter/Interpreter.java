@@ -32,7 +32,9 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
-    public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+
+    static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+
     public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
 
@@ -61,10 +63,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.getInterpreterContext();
 
-        if (Options.IR_PRINT.load()) {
+        if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
 
-            LOG.info("Printing simple IR for " + irScope.getName() + ":\n" + new String(baos.toByteArray()));
+            LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
         ThreadContext context = runtime.getCurrentContext();

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
@@ -118,7 +119,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     public Object constant() {
         return constant;
     }
-    
+
     // Methods of the Nil Class (nil_*):
     
     /** nil_to_i
@@ -162,9 +163,10 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_inspect
      *
      */
+    @Override
     @JRubyMethod
-    public static RubyString inspect(ThreadContext context, IRubyObject recv) {
-        return inspect(context.runtime);
+    public IRubyObject inspect() {
+        return RubyNil.inspect(getRuntime());
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")
@@ -179,7 +181,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "&", required = 1)
     public static RubyBoolean op_and(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
     
     /** nil_or
@@ -248,24 +250,21 @@ public class RubyNil extends RubyObject implements Constantizable {
     }
 
     @Override
-    public Object toJava(Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target.isPrimitive()) {
-            if (target == Boolean.TYPE) {
-                return Boolean.FALSE;
-            } else if (target == Byte.TYPE) {
-                return (byte)0;
-            } else if (target == Short.TYPE) {
-                return (short)0;
-            } else if (target == Character.TYPE) {
-                return (char)0;
-            } else if (target == Integer.TYPE) {
-                return 0;
-            } else if (target == Long.TYPE) {
-                return (long)0;
-            } else if (target == Float.TYPE) {
-                return (float)0;
-            } else if (target == Double.TYPE) {
-                return (double)0;
+            if (target == boolean.class) {
+                return (T) Boolean.FALSE;
+            } else if (target == char.class) {
+                return (T) (Character) '\0';
+            } else {
+                switch (target.getSimpleName().charAt(0)) {
+                    case 'b': return (T) (Byte) (byte) 0;
+                    case 's': return (T) (Short) (short) 0;
+                    case 'i': return (T) (Integer) 0;
+                    case 'l': return (T) (Long) 0L;
+                    case 'f': return (T) (Float) 0.0F;
+                    case 'd': return (T) (Double) 0.0;
+                }
             }
         }
         return null;

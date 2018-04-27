@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.File;
@@ -46,7 +47,9 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -444,6 +447,28 @@ public class RubyArgsFile extends RubyObject {
         return recv;
     }
 
+    @JRubyMethod
+    public static IRubyObject each_codepoint(ThreadContext context, IRubyObject recv, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        CallSite each_codepoint = sites(context).each_codepoint;
+        while (data.next_argv(context)) {
+            each_codepoint.call(context, recv, data.currentFile, block);
+        }
+
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public static IRubyObject codepoints(ThreadContext context, IRubyObject recv, Block block) {
+        context.runtime.getWarnings().warn("ARGF#codepoints is deprecated; use #each_codepoint instead");
+
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
+
+        return each_codepoint(context, recv, block);
+    }
+
     /** Invoke a block for each line.
      *
      */
@@ -451,7 +476,7 @@ public class RubyArgsFile extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.next_argv(context)) return context.runtime.getNil();
+        if (!data.next_argv(context)) return context.nil;
 
         if (!(data.currentFile instanceof RubyIO)) {
             if (!data.next_argv(context)) return recv;
@@ -506,7 +531,7 @@ public class RubyArgsFile extends RubyObject {
 
     public static void argf_close(ThreadContext context, IRubyObject file) {
         if(file instanceof RubyIO) {
-            ((RubyIO)file).rbIoClose(context.runtime);
+            ((RubyIO) file).rbIoClose(context);
         } else {
             file.callMethod(context, "close");
         }
@@ -590,7 +615,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject eof(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.inited) return context.runtime.getTrue();
+        if (!data.inited) return context.tru;
 
         if (!(data.currentFile instanceof RubyIO)) {
             return data.currentFile.callMethod(context, "eof");
@@ -603,7 +628,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject eof_p(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.inited) return context.runtime.getTrue();
+        if (!data.inited) return context.tru;
 
         if (!(data.currentFile instanceof RubyIO)) {
             return data.currentFile.callMethod(context, "eof?");
@@ -636,7 +661,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         while(true) {
-            if (!data.next_argv(context)) return context.runtime.getNil();
+            if (!data.next_argv(context)) return context.nil;
 
             IRubyObject bt;
             if (!(data.currentFile instanceof RubyFile)) {
@@ -718,7 +743,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         while(true) {
-            if (!data.next_argv(context)) return context.runtime.getNil();
+            if (!data.next_argv(context)) return context.nil;
 
             IRubyObject bt;
             if (!(data.currentFile instanceof RubyFile)) {
@@ -808,5 +833,9 @@ public class RubyArgsFile extends RubyObject {
         if (!data.next_argv(context)) throw context.runtime.newArgumentError(errorMessage);
 
         return (RubyIO) data.currentFile;
+    }
+
+    private static JavaSites.ArgfSites sites(ThreadContext context) {
+        return context.sites.Argf;
     }
 }

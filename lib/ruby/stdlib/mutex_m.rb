@@ -10,9 +10,6 @@
 #
 # --
 
-
-require 'thread'
-
 # = mutex_m.rb
 #
 # When 'mutex_m' is required, any object that extends or includes Mutex_m will
@@ -102,7 +99,7 @@ module Mutex_m
   private
 
   def mu_initialize # :nodoc:
-    @_mutex = Mutex.new
+    @_mutex = Thread::Mutex.new
   end
 
   def initialize(*args) # :nodoc:
