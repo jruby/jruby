@@ -1395,11 +1395,25 @@ public class RubyModule extends RubyObject {
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
         final int token = generation;
-        DynamicMethod method = searchMethodInner(id);
-        if (method instanceof CacheableMethod) {
-            method = ((CacheableMethod) method).getMethodForCaching();
+        RubyModule host = searchMethodHost(id);
+        DynamicMethod method = null;
+
+        if (host != null) {
+            method = host.searchMethodCommon(id);
+            if (method instanceof CacheableMethod) {
+                method = ((CacheableMethod) method).getMethodForCaching();
+            }
         }
-        return method != null ? addToCache(id, method, token) : cacheUndef ? addToCache(id, UndefinedMethod.getInstance(), token) : cacheEntryFactory.newCacheEntry(id, method, token);
+
+        if (method != null) {
+            return addToCache(id, method, host, token);
+        }
+
+        if (cacheUndef) {
+            return addToCache(id, UndefinedMethod.getInstance(), host, token);
+        }
+
+        return cacheEntryFactory.newCacheEntry(id, method, host, token);
     }
 
     @Deprecated
@@ -1453,7 +1467,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected static abstract class CacheEntryFactory {
-        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, int token);
+        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule host, int token);
 
         /**
          * Test all WrapperCacheEntryFactory instances in the chain for assignability
@@ -1498,9 +1512,8 @@ public class RubyModule extends RubyObject {
     }
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
-        @Override
-        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
-            return new CacheEntry(method, token);
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule host, int token) {
+            return new CacheEntry(method, host, token);
         }
     };
 
@@ -1509,13 +1522,13 @@ public class RubyModule extends RubyObject {
             super(previous);
         }
         @Override
-        public CacheEntry newCacheEntry(String id,DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id,DynamicMethod method, RubyModule host, int token) {
             if (method.isUndefined()) {
-                return new CacheEntry(method, token);
+                return new CacheEntry(method, host, token);
             }
             // delegate up the chain
-            CacheEntry delegated = previous.newCacheEntry(id, method, token);
-            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, host, token);
+            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.host, delegated.token);
         }
     }
 
@@ -1533,13 +1546,13 @@ public class RubyModule extends RubyObject {
         }
 
         @Override
-        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
-            if (method.isUndefined()) return new CacheEntry(method, token);
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule host, int token) {
+            if (method.isUndefined()) return new CacheEntry(method, host, token);
 
-            CacheEntry delegated = previous.newCacheEntry(id, method, token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, host, token);
             DynamicMethod enhancedMethod = getMethodEnhancer().enhance(id, delegated.method);
 
-            return new CacheEntry(enhancedMethod, delegated.token);
+            return new CacheEntry(enhancedMethod, delegated.host, delegated.token);
         }
     }
 
@@ -1554,8 +1567,8 @@ public class RubyModule extends RubyObject {
         return cacheEntryFactory.hasCacheEntryFactory(SynchronizedCacheEntryFactory.class);
     }
 
-    private CacheEntry addToCache(String id, DynamicMethod method, int token) {
-        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, token);
+    private CacheEntry addToCache(String id, DynamicMethod method, RubyModule host, int token) {
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, host, token);
         methodLocation.getCachedMethodsForWrite().put(id, entry);
 
         return entry;
@@ -1570,6 +1583,19 @@ public class RubyModule extends RubyObject {
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(id);
             if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
+
+    public RubyModule searchMethodHost(String id) {
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            DynamicMethod method = module.searchMethodCommon(id);
+            if (method != null) return method.isNull() ? null : module;
         }
         return null;
     }
@@ -1694,7 +1720,8 @@ public class RubyModule extends RubyObject {
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
 
-        putAlias(name, searchForAliasMethod(getRuntime(), oldName), oldName);
+        CacheEntry entry = searchForAliasMethod(getRuntime(), oldName);
+        putAlias(name, entry.method, entry.host, oldName);
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
@@ -1709,14 +1736,21 @@ public class RubyModule extends RubyObject {
     public void putAlias(String id, DynamicMethod method, String oldName) {
         if (id.equals(oldName)) return;
 
-        putMethod(getRuntime(), id, new AliasMethod(this, method, oldName));
+        putMethod(getRuntime(), id, new AliasMethod(this, method, this, oldName));
+    }
+
+    public void putAlias(String id, DynamicMethod method, RubyModule oldModule, String oldName) {
+        if (id.equals(oldName)) return;
+
+        putMethod(getRuntime(), id, new AliasMethod(this, method, oldModule, oldName));
     }
 
     public synchronized void defineAliases(List<String> aliases, String oldId) {
         testFrozen("module");
 
         Ruby runtime = getRuntime();
-        DynamicMethod method = searchForAliasMethod(runtime, oldId);
+        CacheEntry entry = searchForAliasMethod(runtime, oldId);
+        DynamicMethod method = entry.method;
 
         for (String name: aliases) {
             putAlias(name, method, oldId);
@@ -1726,8 +1760,9 @@ public class RubyModule extends RubyObject {
         methodLocation.invalidateCacheDescendants();
     }
 
-    private DynamicMethod searchForAliasMethod(Ruby runtime, String id) {
-        DynamicMethod method = deepMethodSearch(id, runtime);
+    private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
+        CacheEntry entry = deepMethodSearch(id, runtime);
+        DynamicMethod method = entry.method;
 
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
@@ -1738,12 +1773,12 @@ public class RubyModule extends RubyObject {
             DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
 
             // native-backed but not a direct call, ok
-            if (nativeCall == null) return method;
+            if (nativeCall == null) return entry;
 
             Method javaMethod = nativeCall.getMethod();
             JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
 
-            if (anno == null) return method;
+            if (anno == null) return entry;
 
             if (anno.reads().length > 0 || anno.writes().length > 0) {
 
@@ -1768,7 +1803,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return method;
+        return entry;
     }
 
     /** this method should be used only by interpreter or compiler
@@ -1910,7 +1945,8 @@ public class RubyModule extends RubyObject {
     public void exportMethod(String name, Visibility visibility) {
         Ruby runtime = getRuntime();
 
-        DynamicMethod method = deepMethodSearch(name, runtime);
+        CacheEntry entry = deepMethodSearch(name, runtime);
+        DynamicMethod method = entry.method;
 
         if (method.getVisibility() != visibility) {
             if (this == method.getImplementationClass()) {
@@ -1926,8 +1962,11 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private DynamicMethod deepMethodSearch(String id, Ruby runtime) {
-        DynamicMethod method = searchMethod(id);
+    private CacheEntry deepMethodSearch(String id, Ruby runtime) {
+        CacheEntry entry = searchWithCache(id);
+        if (entry == null) entry = searchWithCacheMiss(id, true);
+
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined() && isModule()) method = runtime.getObject().searchMethod(id);
 
@@ -1936,7 +1975,7 @@ public class RubyModule extends RubyObject {
             throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), id);
         }
 
-        return method;
+        return entry;
     }
 
     public static String undefinedMethodMessage(Ruby runtime, IRubyObject name, IRubyObject modName, boolean isModule) {
@@ -2867,7 +2906,8 @@ public class RubyModule extends RubyObject {
 
             for (int i = 0; i < args.length; i++) {
                 RubySymbol name = TypeConverter.checkID(args[i]);
-                DynamicMethod method = deepMethodSearch(name.idString(), runtime);
+                CacheEntry entry = deepMethodSearch(name.idString(), runtime);
+                DynamicMethod method = entry.method;
                 DynamicMethod newMethod = method.dup();
                 newMethod.setImplementationClass(getSingletonClass());
                 newMethod.setVisibility(PUBLIC);

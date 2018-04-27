@@ -1102,14 +1102,12 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-
         // We have to rely on the frame stack to find the implementation class
-        RubyModule klazz = context.getFrameKlazz();
+        RubyModule klazz = context.getFrameKlazz().getMethodLocation();
         String methodName = context.getCurrentFrame().getName();
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
-        RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
-        RubyClass superClass = implMod.getSuperClass();
+        RubyClass superClass = klazz.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
         IRubyObject rVal;
