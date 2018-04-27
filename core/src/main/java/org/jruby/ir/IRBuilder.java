@@ -3783,7 +3783,9 @@ public class IRBuilder {
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
         // FIXME: This filename should switch to ByteList
-        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(rootNode.getFile()), rootNode.getStaticScope());
+        String file = rootNode.getFile();
+        if (file == null) file = "(anon)";
+        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(file), rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
