@@ -1148,7 +1148,7 @@ public class RubyLexer extends LexingCommon {
             result = RubyParser.tIVAR;
         }
 
-        if (c == EOF || Character.isSpaceChar(c)) {
+        if (c == EOF || isSpace(c)) {
             if (result == RubyParser.tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
@@ -1389,7 +1389,7 @@ public class RubyLexer extends LexingCommon {
             return identifierToken(RubyParser.tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
-                if (c == EOF || Character.isSpaceChar(c)) {
+                if (c == EOF || isSpace(c)) {
                     compile_error(PID.CVAR_BAD_NAME, "`$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);

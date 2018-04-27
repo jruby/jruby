@@ -1254,7 +1254,7 @@ public class RipperLexer extends LexingCommon {
             result = RipperParser.tIVAR;
         }
 
-        if (c == EOF || Character.isSpaceChar(c)) {
+        if (c == EOF || isSpace(c)) {
             if (result == RipperParser.tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
@@ -1478,7 +1478,7 @@ public class RipperLexer extends LexingCommon {
             return identifierToken(last_state, RipperParser.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                if (c == EOF || Character.isSpaceChar(c)) {
+                if (c == EOF || isSpace(c)) {
                     compile_error("`$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
