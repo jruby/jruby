@@ -120,7 +120,7 @@ public class StringTerm extends StrTerm {
 
         if ((flags & STR_FUNC_TERM) != 0) {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
-            lexer.setState(EXPR_BEG | EXPR_LABEL);
+            lexer.setState(EXPR_END | EXPR_ENDARG);
             lexer.setStrTerm(null);
             return ((flags & STR_FUNC_REGEXP) != 0) ? RipperParser.tREGEXP_END : RipperParser.tSTRING_END;
         }

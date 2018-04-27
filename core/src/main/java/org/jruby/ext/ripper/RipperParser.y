@@ -1449,16 +1449,17 @@ lambda          : /* none */  {
                     p.pushBlockScope();
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
-                } {
-                    $$ = p.getCmdArgumentState().getStack();
+                } f_larglist {
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
                     p.getCmdArgumentState().reset();
-                } f_larglist lambda_body {
-                    $$ = p.dispatch("on_lambda", $3, $4);
-                    p.popCurrentScope();
+                } lambda_body {
+                    p.getCmdArgumentState().reset($<Long>3.longValue());
+                    p.getCmdArgumentState().restart();
+                    $$ = p.dispatch("on_lambda", $2, $4);
                     p.setLeftParenBegin($<Integer>1);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    support.popCurrentScope();
                 }
-
+ 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
                     $$ = p.dispatch("on_paren", $2);
                 }
