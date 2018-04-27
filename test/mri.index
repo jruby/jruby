@@ -373,3 +373,5 @@ ruby/enc/test_shift_jis.rb
 ruby/enc/test_utf16.rb
 ruby/enc/test_utf32.rb
 ruby/enc/test_windows_1251.rb
+ruby/enc/test_case_mapping.rb
+ruby/enc/test_case_options.rb
