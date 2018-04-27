@@ -4338,7 +4338,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         prefixlen = deletedPrefixLength(prefix);
         if (prefixlen <= 0) return strDup(context.runtime);
 
-        return makeSharedString(context.runtime, prefixlen, size() - prefixlen);
+        return makeShared(context.runtime, prefixlen, size() - prefixlen);
     }
 
     @JRubyMethod(name = "delete_suffix")
@@ -4348,14 +4348,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         suffixlen = deletedSuffixLength(suffix);
         if (suffixlen <= 0) return strDup(context.runtime);
 
-        return makeSharedString(context.runtime, 0, size() - suffixlen);
+        return makeShared(context.runtime, 0, size() - suffixlen);
     }
 
     @JRubyMethod(name = "delete_prefix!")
     public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject prefix) {
         modifyAndKeepCodeRange();
         int prefixlen = deletedPrefixLength(prefix);
-        value.setBegin(value.getBegin() + prefixlen);
+        if (prefixlen <= 0) return context.nil;
+
+        value.view(prefixlen, value.realSize() - prefixlen);
         return this;
     }
 
