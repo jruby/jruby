@@ -1,0 +1,1 @@
+fails:Hash#initialize can be used to reset the default value
