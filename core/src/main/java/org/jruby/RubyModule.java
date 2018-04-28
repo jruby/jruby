@@ -996,6 +996,9 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
                     " (expected Module).");
         }
+        if (((RubyModule) arg).refinedClass != null) {
+            throw getRuntime().newArgumentError("refinement module is not allowed");
+        }
 
         RubyModule module = (RubyModule) arg;
 
@@ -1029,6 +1032,9 @@ public class RubyModule extends RubyObject {
         if (!(arg instanceof RubyModule)) {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
                     " (expected Module).");
+        }
+        if (((RubyModule) arg).refinedClass != null) {
+            throw getRuntime().newArgumentError("refinement module is not allowed");
         }
 
         RubyModule module = (RubyModule) arg;
