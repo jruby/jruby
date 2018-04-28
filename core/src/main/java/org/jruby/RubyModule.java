@@ -846,7 +846,7 @@ public class RubyModule extends RubyObject {
 
         RubyModule realRefinedModule;
         if (refinedModule instanceof IncludedModule) {
-            realRefinedModule = refinedModule.getMetaClass();
+            realRefinedModule = ((IncludedModule) refinedModule).getDelegate();
         } else if (refinedModule.isModule()) {
             realRefinedModule = refinedModule;
         } else {
