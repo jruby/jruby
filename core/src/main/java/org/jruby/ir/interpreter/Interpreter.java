@@ -211,6 +211,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // Top-level script!
         IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
 
+        // enable refinements if incoming scope already has an overlay active
+        if (staticScope.getOverlayModuleForRead() != null) {
+            script.setIsMaybeUsingRefinements();
+        }
+
         // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);

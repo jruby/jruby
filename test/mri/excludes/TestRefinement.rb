@@ -1,7 +1,6 @@
 exclude :test_adding_private_method, "needs investigation"
 exclude :test_call_refined_method_in_duplicate_module, "needs investigation"
 exclude :test_case_dispatch_is_aware_of_refinements, "needs investigation"
-exclude :test_eval_with_binding_scoping, "needs investigation"
 exclude :test_include_into_refinement, "needs investigation"
 exclude :test_include_refinement, "needs investigation"
 exclude :test_inspect, "needs investigation"
