@@ -8,3 +8,4 @@ fails:Module#refine for methods accessed indirectly is honored by Kernel#send
 fails:Module#refine for methods accessed indirectly is honored by BasicObject#__send__
 fails:Module#refine for methods accessed indirectly is honored by Symbol#to_proc
 fails:Module#refine for methods accessed indirectly is honored by string interpolation
+fails:Module#refine method lookup looks in included modules from the refinement then
