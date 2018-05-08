@@ -142,11 +142,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private ByteList value;
 
-    private static final String[][] opTable19 = {
-        { "+", "+(binary)" },
-        { "-", "-(binary)" }
-    };
-
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         runtime.setString(stringClass);
@@ -5800,35 +5795,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_intern
      *
      */
-    private RubySymbol to_sym() {
-        RubySymbol specialCaseIntern = checkSpecialCasesIntern(value);
-        if (specialCaseIntern != null) return specialCaseIntern;
-
-        if (scanForCodeRange() == CR_BROKEN) {
-            throw getRuntime().newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
-        }
-
-        RubySymbol symbol = getRuntime().getSymbolTable().getSymbol(value);
-        if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
-        return symbol;
-    }
-
-    private RubySymbol checkSpecialCasesIntern(ByteList value) {
-        String[][] opTable = opTable19;
-
-        for (int i = 0; i < opTable.length; i++) {
-            String op = opTable[i][1];
-            if (value.toString().equals(op)) {
-                return getRuntime().getSymbolTable().getSymbol(opTable[i][0]);
-            }
-        }
-
-        return null;
-    }
-
     @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol intern() {
-        return to_sym();
+        final Ruby runtime = getRuntime();
+
+        if (scanForCodeRange() == CR_BROKEN) {
+            throw runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
+        }
+
+        RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
+        if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
+        return symbol;
     }
 
     @Deprecated
@@ -5838,9 +5815,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod
     public IRubyObject ord(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return RubyFixnum.newFixnum(runtime, codePoint(runtime, EncodingUtils.STR_ENC_GET(this), value.getUnsafeBytes(), value.getBegin(),
-                value.getBegin() + value.getRealSize()));
+        final Ruby runtime = context.runtime;
+        final ByteList value = this.value;
+        return RubyFixnum.newFixnum(runtime, codePoint(runtime, EncodingUtils.getEncoding(value),
+                value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize()));
     }
 
     @JRubyMethod
@@ -5856,7 +5834,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject sumCommon(ThreadContext context, long bits) {
         Ruby runtime = context.runtime;
 
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int len = value.getRealSize();
         int end = p + len;
