@@ -5816,9 +5816,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod
     public IRubyObject ord(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        final ByteList value = this.value;
-        return RubyFixnum.newFixnum(runtime, codePoint(runtime, EncodingUtils.getEncoding(value),
-                value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize()));
+        return RubyFixnum.newFixnum(runtime, codePoint(runtime, this.value));
     }
 
     @JRubyMethod
@@ -6113,10 +6111,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return target.cast(value);
         }
         if (target == Character.class || target == Character.TYPE) {
-            if ( strLength() != 1 ) {
-                throw getRuntime().newArgumentError("could not coerce string of length " + strLength() + " (!= 1) into a char");
-            }
-            return (T) (Character) decodeString().charAt(0);
+            // like ord we will only take the start off the string (not failing if str-length > 1)
+            return (T) Character.valueOf((char) codePoint(getRuntime(), value));
         }
         return super.toJava(target);
     }

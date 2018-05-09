@@ -485,6 +485,11 @@ public final class StringSupport {
         }
     }
 
+    public static int codePoint(final Ruby runtime, final ByteList value) {
+        return codePoint(runtime, EncodingUtils.getEncoding(value),
+                value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
+    }
+
     public static int codeLength(Encoding enc, int c) {
         int i = enc.codeToMbcLength(c);
         return checkCodepointError(i);
