@@ -569,7 +569,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     protected final void modifyCheck() {
         if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("array");
+            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(this.getMetaClass());
             if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         }
     }
