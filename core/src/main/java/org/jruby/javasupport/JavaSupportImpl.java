@@ -48,6 +48,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.javasupport.ext.JavaExtensions;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.Loader;
@@ -124,7 +125,9 @@ public class JavaSupportImpl extends JavaSupport {
              */
             @Override
             public synchronized RubyModule computeValue(Class<?> klass) {
-                return Java.createProxyClassForClass(runtime, klass);
+                RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
+                JavaExtensions.getInstance().define(klass, proxyKlass); // (lazy) load extensions
+                return proxyKlass;
             }
         });
 

@@ -31,7 +31,6 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -46,17 +45,16 @@ import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 public abstract class JavaUtilRegex {
 
     public static void define(final Ruby runtime) {
-        Pattern.define(runtime);
-        Matcher.define(runtime);
+        JavaExtensions.put(runtime, java.util.regex.Pattern.class, (proxyClass) -> Pattern.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.util.regex.Matcher.class, (proxyClass) -> Matcher.define(runtime, (RubyClass) proxyClass));
     }
 
     @JRubyClass(name = "Java::JavaUtilRegex::Pattern")
     public static class Pattern {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Pattern = Java.getProxyClass(runtime, java.util.regex.Pattern.class);
+        static RubyClass define(final Ruby runtime, final RubyClass Pattern) {
             Pattern.defineAnnotatedMethods(Pattern.class);
-            return (RubyClass) Pattern;
+            return Pattern;
         }
 
         @JRubyMethod(name = "=~", required = 1)
@@ -96,8 +94,7 @@ public abstract class JavaUtilRegex {
     @JRubyClass(name = "Java::JavaUtilRegex::Matcher")
     public static class Matcher {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Matcher = Java.getProxyClass(runtime, java.util.regex.Matcher.class);
+        static RubyClass define(final Ruby runtime, final RubyClass Matcher) {
             Matcher.defineAnnotatedMethods(Matcher.class);
             return (RubyClass) Matcher;
         }
