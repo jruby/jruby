@@ -126,7 +126,7 @@ public class JavaSupportImpl extends JavaSupport {
             @Override
             public synchronized RubyModule computeValue(Class<?> klass) {
                 RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
-                JavaExtensions.getInstance().define(klass, proxyKlass); // (lazy) load extensions
+                JavaExtensions.define(klass, proxyKlass); // (lazy) load extensions
                 return proxyKlass;
             }
         });
