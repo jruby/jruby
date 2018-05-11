@@ -2,9 +2,8 @@ package org.jruby.javasupport.ext;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.util.cli.Options;
 
-import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -15,12 +14,12 @@ import java.util.function.Consumer;
  */
 public class JavaExtensions {
 
-    private static final boolean IMMEDIATE = false;
+    private static final boolean LAZY = Options.JI_LOAD_LAZY.load();;
 
     private JavaExtensions() { /* hidden */ }
 
     static void put(final Ruby runtime, Class javaClass, Consumer<RubyModule> proxyClass) {
-        if (IMMEDIATE) {
+        if (!LAZY) {
             proxyClass.accept( org.jruby.javasupport.Java.getProxyClass(runtime, javaClass) );
             return;
         }
@@ -28,8 +27,7 @@ public class JavaExtensions {
         assert previous == null;
     }
 
-    public static void define(final Class javaClass, final RubyModule proxyClass) {
-        final Ruby runtime = proxyClass.getRuntime();
+    public static void define(final Ruby runtime, final Class javaClass, final RubyModule proxyClass) {
         runtime.getJavaExtensionDefinitions().getOrDefault(javaClass, NOOP).accept(proxyClass);
     }
 
