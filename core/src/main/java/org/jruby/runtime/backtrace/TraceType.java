@@ -402,7 +402,7 @@ public class TraceType {
         String message;
         try {
             message = exception.callMethod(context, "message").toString();
-        } catch (org.jruby.exceptions.Exception _) {
+        } catch (org.jruby.exceptions.Exception unused) {
             message = exception.message(context).toString();
         }
         if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
