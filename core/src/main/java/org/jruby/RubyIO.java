@@ -44,6 +44,7 @@ import jnr.posix.POSIX;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
+import org.jruby.exceptions.EOFError;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -4300,6 +4301,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 local1 = true;
             } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
                 channel1 = new IOChannel.IOReadableByteChannel(arg1);
+            } else if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
+                channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
             } else {
                 throw runtime.newArgumentError("Should be String or IO");
             }
@@ -4378,6 +4381,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                         }
                     }
 
+                    return context.runtime.newFixnum(size);
+                } catch (EOFError eof) {
+                    // ignore EOF, reached end of input
                     return context.runtime.newFixnum(size);
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
