@@ -3018,7 +3018,9 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "undef_method", rest = true)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
-            undef(context, args[i].asJavaString());
+            RubySymbol name = TypeConverter.checkID(args[i]);
+
+            undef(context, name.idString());
         }
         return this;
     }
