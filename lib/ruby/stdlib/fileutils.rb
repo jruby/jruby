@@ -488,7 +488,7 @@ module FileUtils
   module_function :move
 
   def rename_cannot_overwrite_file?   #:nodoc:
-    /emx/ =~ RUBY_PLATFORM
+    /emx/ =~ RbConfig::CONFIG['host_os']
   end
   private_module_function :rename_cannot_overwrite_file?
 
@@ -628,23 +628,38 @@ module FileUtils
     unless parent_st.sticky?
       raise ArgumentError, "parent directory is world writable, FileUtils#remove_entry_secure does not work; abort: #{path.inspect} (parent directory mode #{'%o' % parent_st.mode})"
     end
+
     # freeze tree root
     euid = Process.euid
     dot_file = fullpath + "/."
-    File.lstat(dot_file).tap {|fstat|
-      unless fu_stat_identical_entry?(st, fstat)
-        # symlink (TOC-to-TOU attack?)
-        File.unlink fullpath
-        return
-      end
-      File.chown euid, -1, dot_file
-      File.chmod 0700, dot_file
-      unless fu_stat_identical_entry?(st, File.lstat(fullpath))
-        # TOC-to-TOU attack?
-        File.unlink fullpath
-        return
-      end
-    }
+    begin
+      File.open(dot_file) {|f|
+        unless fu_stat_identical_entry?(st, f.stat)
+          # symlink (TOC-to-TOU attack?)
+          File.unlink fullpath
+          return
+        end
+        f.chown euid, -1
+        f.chmod 0700
+      }
+    rescue EISDIR # JRuby in non-native mode can't open files as dirs
+      File.lstat(dot_file).tap {|fstat|
+        unless fu_stat_identical_entry?(st, fstat)
+          # symlink (TOC-to-TOU attack?)
+          File.unlink fullpath
+          return
+        end
+        File.chown euid, -1, dot_file
+        File.chmod 0700, dot_file
+      }
+    end
+
+    unless fu_stat_identical_entry?(st, File.lstat(fullpath))
+      # TOC-to-TOU attack?
+      File.unlink fullpath
+      return
+    end
+
     # ---- tree root is frozen ----
     root = Entry_.new(path)
     root.preorder_traverse do |ent|
@@ -1071,7 +1086,7 @@ module FileUtils
     private
 
     def fu_windows?
-      /mswin|mingw|bccwin|emx/ =~ RUBY_PLATFORM
+      /mswin|mingw|bccwin|emx/ =~ RbConfig::CONFIG['host_os']
     end
 
     def fu_copy_stream0(src, dest, blksize = nil)   #:nodoc:
