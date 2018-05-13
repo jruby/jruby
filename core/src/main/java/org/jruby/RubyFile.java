@@ -65,6 +65,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -1081,6 +1082,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (newFile.exists()) {
             runtime.getPosix().chmod(newNameJavaString, 0666);
             newFile.delete();
+        }
+
+        // Check if source file and dest parent are on same filesystem or raise EXDEV
+        Path oldPath = Paths.get(oldFile.toURI());
+        Path destPath = Paths.get(dest.getAbsolutePath());
+        try {
+            FileStore oldStore = Files.getFileStore(oldPath);
+            FileStore destStore = Files.getFileStore(destPath.getParent());
+            if (!oldStore.equals(destStore)) {
+                throw runtime.newErrnoEXDEVError("(" + oldFile + ", " + dest + ")");
+            }
+        } catch (IOException ioe) {
+            throw Helpers.newIOErrorFromException(runtime, ioe);
         }
 
         if (oldFile.renameTo(dest)) { // try to rename one more time
