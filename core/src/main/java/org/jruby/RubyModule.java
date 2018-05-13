@@ -211,7 +211,7 @@ public class RubyModule extends RubyObject {
         @JRubyMethod(name = "autoload?")
         public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
             final Ruby runtime = context.runtime;
-            final String name = symbol.asJavaString();
+            final String name = TypeConverter.checkID(symbol).idString();
 
             RubyModule mod = RubyKernel.getModuleForAutoload(runtime, self);
             for (/* RubyModule mod = (RubyModule) self */; mod != null; mod = mod.getSuperClass()) {
@@ -1967,7 +1967,7 @@ public class RubyModule extends RubyObject {
      */
     public void setMethodVisibility(IRubyObject[] methods, Visibility visibility) {
         for (int i = 0; i < methods.length; i++) {
-            exportMethod(methods[i].asJavaString(), visibility);
+            exportMethod(TypeConverter.checkID(methods[i]).idString(), visibility);
         }
     }
 
@@ -2682,12 +2682,12 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "instance_method", required = 1)
     public IRubyObject instance_method(IRubyObject symbol) {
-        return newMethod(null, symbol.asJavaString(), false, null);
+        return newMethod(null, TypeConverter.checkID(symbol).idString(), false, null);
     }
 
     @JRubyMethod(name = "public_instance_method", required = 1)
     public IRubyObject public_instance_method(IRubyObject symbol) {
-        return newMethod(null, symbol.asJavaString(), false, PUBLIC);
+        return newMethod(null, TypeConverter.checkID(symbol).idString(), false, PUBLIC);
     }
 
     /** rb_class_protected_instance_methods
@@ -2962,26 +2962,26 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "method_defined?", required = 1)
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
-        return isMethodBound(symbol.asJavaString(), true) ? context.tru : context.fals;
+        return isMethodBound(TypeConverter.checkID(symbol).idString(), true) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "public_method_defined?", required = 1)
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(symbol.asJavaString());
+        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
 
         return context.runtime.newBoolean(!method.isUndefined() && method.getVisibility() == PUBLIC);
     }
 
     @JRubyMethod(name = "protected_method_defined?", required = 1)
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(symbol.asJavaString());
+        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
 
         return context.runtime.newBoolean(!method.isUndefined() && method.getVisibility() == PROTECTED);
     }
 
     @JRubyMethod(name = "private_method_defined?", required = 1)
     public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(symbol.asJavaString());
+        DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
 
         return context.runtime.newBoolean(!method.isUndefined() && method.getVisibility() == PRIVATE);
     }
@@ -3287,13 +3287,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "class_variable_defined?", required = 1)
     public IRubyObject class_variable_defined_p(ThreadContext context, IRubyObject var) {
-        String internedName = validateClassVariable(var, var.asJavaString().intern());
-        RubyModule module = this;
-        do {
-            if (module.hasClassVariable(internedName)) {
-                return context.tru;
-            }
-        } while ((module = module.getSuperClass()) != null);
+        String id = validateClassVariable(context.runtime, var);
+
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            if (module.hasClassVariable(id)) return context.tru;
+        }
 
         return context.fals;
     }
@@ -3301,32 +3299,32 @@ public class RubyModule extends RubyObject {
     /** rb_mod_cvar_get
      *
      */
-    public IRubyObject class_variable_get(IRubyObject var) {
-        return getClassVar(var, validateClassVariable(var, var.asJavaString()).intern());
+    public IRubyObject class_variable_get(IRubyObject name) {
+        return getClassVar(name, validateClassVariable(getRuntime(), name));
     }
 
     @JRubyMethod(name = "class_variable_get")
-    public IRubyObject class_variable_get19(IRubyObject var) {
-        return class_variable_get(var);
+    public IRubyObject class_variable_get19(IRubyObject name) {
+        return class_variable_get(name);
     }
 
     /** rb_mod_cvar_set
      *
      */
-    public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
-        return setClassVar(validateClassVariable(var, var.asJavaString()).intern(), value);
+    public IRubyObject class_variable_set(IRubyObject name, IRubyObject value) {
+        return setClassVar(validateClassVariable(getRuntime(), name), value);
     }
 
     @JRubyMethod(name = "class_variable_set")
-    public IRubyObject class_variable_set19(IRubyObject var, IRubyObject value) {
-        return class_variable_set(var, value);
+    public IRubyObject class_variable_set19(IRubyObject name, IRubyObject value) {
+        return class_variable_set(name, value);
     }
 
     /** rb_mod_remove_cvar
      *
      */
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
-        return removeClassVariable(name.asJavaString());
+        return removeClassVariable(validateClassVariable(context.runtime, name));
     }
 
     @JRubyMethod(name = "remove_class_variable")
@@ -3442,8 +3440,8 @@ public class RubyModule extends RubyObject {
         boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
         final IRubyObject symbol = args[0];
-        final String fullName = symbol.asJavaString();
-        String name = fullName;
+        RubySymbol fullName = TypeConverter.checkID(symbol);
+        String name = fullName.idString();
 
         int sep = name.indexOf("::");
         // symbol form does not allow ::
@@ -3460,7 +3458,7 @@ public class RubyModule extends RubyObject {
 
         // Bare ::
         if (name.length() == 0) {
-            throw runtime.newNameError("wrong constant name ", fullName);
+            throw runtime.newNameError("wrong constant name ", fullName.idString());
         }
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
@@ -3794,15 +3792,6 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public boolean fastIsClassVarDefined(String internedName) {
         return isClassVarDefined(internedName);
-    }
-
-    /** rb_mod_remove_cvar
-     *
-     * @deprecated - use {@link #removeClassVariable(String)}
-     */
-    @Deprecated
-    public IRubyObject removeCvar(IRubyObject name) {
-        return removeClassVariable(name.asJavaString());
     }
 
     public IRubyObject removeClassVariable(String name) {
@@ -4334,6 +4323,16 @@ public class RubyModule extends RubyObject {
             return name;
         }
         throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, nameObj);
+    }
+
+    protected String validateClassVariable(Ruby runtime, IRubyObject object) {
+        RubySymbol name = TypeConverter.checkID(object);
+
+        if (!name.validClassVariableName()) {
+            throw getRuntime().newNameError(str(runtime, "`", ids(runtime, name), "' is not allowed as a class variable name"), this, object);
+        }
+
+        return name.idString();
     }
 
     protected final void ensureClassVariablesSettable() {
