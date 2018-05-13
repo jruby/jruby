@@ -469,7 +469,7 @@ module FileUtils
         end
         begin
           File.rename s, d
-        rescue EXDEV
+        rescue Errno::EXDEV
           copy_entry s, d, true
           if secure
             remove_entry_secure s, force
