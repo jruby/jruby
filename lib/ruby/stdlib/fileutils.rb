@@ -85,6 +85,8 @@
 # <tt>:verbose</tt> flags to methods in FileUtils.
 #
 
+require 'rbconfig'
+
 module FileUtils
 
   VERSION = "1.0.2"
