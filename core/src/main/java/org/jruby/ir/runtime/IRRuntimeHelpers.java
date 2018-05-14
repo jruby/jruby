@@ -2016,7 +2016,7 @@ public class IRRuntimeHelpers {
     }
 
     public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodId) {
-        Map<RubyClass, RubyModule> refinements;
+        Map<RubyModule, RubyModule> refinements;
         RubyModule refinement;
         DynamicMethod method = null;
         RubyModule overlay;

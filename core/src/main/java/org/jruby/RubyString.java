@@ -142,11 +142,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private ByteList value;
 
-    private static final String[][] opTable19 = {
-        { "+", "+(binary)" },
-        { "-", "-(binary)" }
-    };
-
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         runtime.setString(stringClass);
@@ -4331,42 +4326,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
       }
     }
 
-    @JRubyMethod(name = "delete_prefix")
-    public IRubyObject delete_prefix(ThreadContext context, IRubyObject arg) {
-        RubyString prefix = arg.convertToString();
-        if (!this.start_with_p(context, prefix).isTrue()) return this.dup();
-        if (prefix.value.getRealSize() == this.value.getRealSize()) return newEmptyString(context.runtime, value.getEncoding());
-        RubyString result = (RubyString) substr19(context.runtime, prefix.strLength(), this.strLength() - prefix.strLength());
-        return result.isEmpty() ? this : result;
-    }
-
-    @JRubyMethod(name = "delete_suffix")
-    public IRubyObject delete_suffix(ThreadContext context, IRubyObject arg) {
-        RubyString suffix = arg.convertToString();
-        if (!this.end_with_p(context, suffix).isTrue()) return this.dup();
-        if (suffix.value.getRealSize() == this.value.getRealSize()) return newEmptyString(context.runtime, value.getEncoding());
-        RubyString result = (RubyString) substr19(context.runtime, 0, this.strLength() - suffix.strLength());
-        return result.isEmpty() ? this : result;
-    }
-
-    @JRubyMethod(name = "delete_prefix!")
-    public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject arg) {
-        modifyCheck();
-        RubyString result = (RubyString) delete_prefix(context, arg);
-        if (equals(result)) return context.nil;
-        replaceInternal19(0, this.strLength(), result);
-        return this;
-    }
-
-    @JRubyMethod(name = "delete_suffix!")
-    public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject arg) {
-        modifyCheck();
-        RubyString result = (RubyString) delete_suffix(context, arg);
-        if (equals(result)) return context.nil;
-        replaceInternal19(0, this.strLength(), result);
-        return this;
-    }
-
     @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
@@ -4438,6 +4397,117 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int size;
 
         return value.getEncoding().isAsciiCompatible() && (size = value.realSize()) > 0 && value.get(size - 1) == c;
+    }
+
+    @JRubyMethod(name = "delete_prefix")
+    public IRubyObject delete_prefix(ThreadContext context, IRubyObject prefix) {
+        int prefixlen = deletedPrefixLength(prefix);
+
+        if (prefixlen <= 0) return strDup(context.runtime);
+
+        return makeShared(context.runtime, prefixlen, size() - prefixlen);
+    }
+
+    @JRubyMethod(name = "delete_suffix")
+    public IRubyObject delete_suffix(ThreadContext context, IRubyObject suffix) {
+        int suffixlen = deletedSuffixLength(suffix);
+
+        if (suffixlen <= 0) return strDup(context.runtime);
+
+        return makeShared(context.runtime, 0, size() - suffixlen);
+    }
+
+    @JRubyMethod(name = "delete_prefix!")
+    public IRubyObject delete_prefix_bang(ThreadContext context, IRubyObject prefix) {
+        modifyAndKeepCodeRange();
+
+        int prefixlen = deletedPrefixLength(prefix);
+
+        if (prefixlen <= 0) return context.nil;
+
+        // MRI: rb_str_drop_bytes, in a nutshell
+        modify();
+        value.view(prefixlen, value.realSize() - prefixlen);
+        clearCodeRange();
+
+        return this;
+    }
+
+    @JRubyMethod(name = "delete_suffix!")
+    public IRubyObject delete_suffix_bang(ThreadContext context, IRubyObject suffix) {
+        checkFrozen();
+
+        int suffixlen = deletedSuffixLength(suffix);
+
+        if (suffixlen <= 0) return context.nil;
+
+        int olen = size();
+
+        modifyAndKeepCodeRange();
+
+        int len = olen - suffixlen;
+
+        value.realSize(len);
+
+        if (!isCodeRangeAsciiOnly()) {
+            clearCodeRange();
+        }
+
+        return this;
+    }
+
+    private int deletedPrefixLength(IRubyObject _prefix) {
+        RubyString prefix = _prefix.convertToString();
+
+        if (prefix.isBrokenString()) return 0;
+
+        checkEncoding(prefix);
+
+        /* return 0 if not start with prefix */
+        int prefixlen = prefix.size();
+
+        if (prefixlen <= 0) return 0;
+
+        int olen = size();
+
+        if (olen < prefixlen) return 0;
+
+        byte[] strBytes = value.unsafeBytes();
+        int strptr = value.begin();
+        byte[] prefixBytes = prefix.value.unsafeBytes();
+        int prefixptr = prefix.value.begin();
+
+        if (ByteList.memcmp(strBytes, strptr, prefixBytes, prefixptr, prefixlen) != 0) return 0;
+
+        return prefixlen;
+    }
+
+    private int deletedSuffixLength(IRubyObject _suffix) {
+        RubyString suffix = _suffix.convertToString();
+
+        if (suffix.isBrokenString()) return 0;
+
+        Encoding enc = checkEncoding(suffix);
+
+        /* return 0 if not start with suffix */
+        int suffixlen = suffix.size();
+
+        if (suffixlen <= 0) return 0;
+
+        int olen = size();
+
+        if (olen < suffixlen) return 0;
+        byte[] strBytes = value.unsafeBytes();
+        int strptr = value.begin();
+        byte[] suffixBytes = suffix.value.unsafeBytes();
+        int suffixptr = suffix.value.begin();
+        int s = strptr + olen - suffixlen;
+
+        if (ByteList.memcmp(strBytes, s, suffixBytes, suffixptr, suffixlen) != 0) return 0;
+
+        if (enc.leftAdjustCharHead(strBytes, strptr, s, strptr + olen) != s) return 0;
+
+        return suffixlen;
     }
 
     private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');
@@ -5725,35 +5795,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_intern
      *
      */
-    private RubySymbol to_sym() {
-        RubySymbol specialCaseIntern = checkSpecialCasesIntern(value);
-        if (specialCaseIntern != null) return specialCaseIntern;
-
-        if (scanForCodeRange() == CR_BROKEN) {
-            throw getRuntime().newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
-        }
-
-        RubySymbol symbol = getRuntime().getSymbolTable().getSymbol(value);
-        if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
-        return symbol;
-    }
-
-    private RubySymbol checkSpecialCasesIntern(ByteList value) {
-        String[][] opTable = opTable19;
-
-        for (int i = 0; i < opTable.length; i++) {
-            String op = opTable[i][1];
-            if (value.toString().equals(op)) {
-                return getRuntime().getSymbolTable().getSymbol(opTable[i][0]);
-            }
-        }
-
-        return null;
-    }
-
     @JRubyMethod(name = {"to_sym", "intern"})
     public RubySymbol intern() {
-        return to_sym();
+        final Ruby runtime = getRuntime();
+
+        if (scanForCodeRange() == CR_BROKEN) {
+            throw runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
+        }
+
+        RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
+        if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
+        return symbol;
     }
 
     @Deprecated
@@ -5763,9 +5815,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod
     public IRubyObject ord(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return RubyFixnum.newFixnum(runtime, codePoint(runtime, EncodingUtils.STR_ENC_GET(this), value.getUnsafeBytes(), value.getBegin(),
-                value.getBegin() + value.getRealSize()));
+        final Ruby runtime = context.runtime;
+        return RubyFixnum.newFixnum(runtime, codePoint(runtime, this.value));
     }
 
     @JRubyMethod
@@ -5781,7 +5832,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject sumCommon(ThreadContext context, long bits) {
         Ruby runtime = context.runtime;
 
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int len = value.getRealSize();
         int end = p + len;
@@ -6060,10 +6111,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return target.cast(value);
         }
         if (target == Character.class || target == Character.TYPE) {
-            if ( strLength() != 1 ) {
-                throw getRuntime().newArgumentError("could not coerce string of length " + strLength() + " (!= 1) into a char");
-            }
-            return (T) (Character) decodeString().charAt(0);
+            // like ord we will only take the start off the string (not failing if str-length > 1)
+            return (T) Character.valueOf((char) codePoint(getRuntime(), value));
         }
         return super.toJava(target);
     }

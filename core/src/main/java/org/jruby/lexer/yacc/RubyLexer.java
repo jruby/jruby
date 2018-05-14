@@ -508,7 +508,7 @@ public class RubyLexer extends LexingCommon {
             type = RubyParser.tIMAGINARY;
         }
 
-        setState(EXPR_ENDARG);
+        setState(EXPR_END|EXPR_ENDARG);
         return type;
     }
 
@@ -829,6 +829,13 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tRPAREN: System.err.print("tRPAREN,"); break;
             case RubyParser.tLABEL: System.err.print("tLABEL("+ value() +":),"); break;
             case RubyParser.tLABEL_END: System.err.print("tLABEL_END"); break;
+            case RubyParser.keyword_def: System.err.print("keyword_def,"); break;
+            case RubyParser.keyword_do: System.err.print("keyword_do,"); break;
+            case RubyParser.keyword_do_block: System.err.print("keyword_do_block,"); break;
+            case RubyParser.keyword_do_cond: System.err.print("keyword_do_cond,"); break;
+            case RubyParser.keyword_do_lambda: System.err.print("keyword_do_lambda,"); break;
+            case RubyParser.keyword_end: System.err.print("keyword_end,"); break;
+            case RubyParser.keyword_yield: System.err.print("keyword_yield,"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
             case RubyParser.tDSTAR: System.err.print("tDSTAR"); break;
@@ -1141,7 +1148,7 @@ public class RubyLexer extends LexingCommon {
             result = RubyParser.tIVAR;
         }
 
-        if (c == EOF || Character.isSpaceChar(c)) {
+        if (c == EOF || isSpace(c)) {
             if (result == RubyParser.tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
@@ -1302,7 +1309,6 @@ public class RubyLexer extends LexingCommon {
                 if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
-                setState(EXPR_END);
                 yaccValue = createTokenByteList();
                 return RubyParser.tGVAR;
 
@@ -1380,12 +1386,10 @@ public class RubyLexer extends LexingCommon {
             yaccValue = new NthRefNode(getPosition(), ref);
             return RubyParser.tNTH_REF;
         case '0':
-            setState(EXPR_END);
-
             return identifierToken(RubyParser.tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
-                if (c == EOF || Character.isSpaceChar(c)) {
+                if (c == EOF || isSpace(c)) {
                     compile_error(PID.CVAR_BAD_NAME, "`$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
@@ -1568,9 +1572,8 @@ public class RubyLexer extends LexingCommon {
         parenNest++;
         int c = '[';
         if (isAfterOperator()) {
-            setState(EXPR_ARG);
-            
             if ((c = nextc()) == ']') {
+                setState(EXPR_ARG);
                 if (peek('=')) {
                     nextc();
                     yaccValue = LBRACKET_RBRACKET_EQ;
@@ -1580,7 +1583,7 @@ public class RubyLexer extends LexingCommon {
                 return RubyParser.tAREF;
             }
             pushback(c);
-            setState(getState() | EXPR_LABEL);
+            setState(EXPR_ARG|EXPR_LABEL);
             yaccValue = LBRACKET;
             return '[';
         } else if (isBEG() || (isARG() && (spaceSeen || isLexState(lex_state, EXPR_LABELED)))) {
@@ -1620,8 +1623,7 @@ public class RubyLexer extends LexingCommon {
 
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(EXPR_BEG);
-        if (c != RubyParser.tLBRACE_ARG) setState(getState() | EXPR_LABEL);
+        setState(c == RubyParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
         if (c != RubyParser.tLBRACE) commandStart = true;
         yaccValue = getPosition();
 
@@ -1907,7 +1909,7 @@ public class RubyLexer extends LexingCommon {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         yaccValue = RBRACKET;
         return RubyParser.tRBRACK;
     }
@@ -1915,7 +1917,7 @@ public class RubyLexer extends LexingCommon {
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         yaccValue = RCURLY;
         int tok = braceNest == 0 ? RubyParser.tSTRING_DEND : RubyParser.tRCURLY;
         braceNest--;
@@ -2340,7 +2342,7 @@ public class RubyLexer extends LexingCommon {
                 pushback(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                return scanHex(2, false, "Invalid escape character syntax");
+                return scanHex(2, false, "Invalid hex escape");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space

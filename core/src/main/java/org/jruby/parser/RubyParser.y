@@ -456,7 +456,7 @@ stmt            : keyword_alias fitem {
                     $$ = support.newRescueModNode($1, $3);
                 }
                 | keyword_END tLCURLY compstmt tRCURLY {
-                    if (support.isInDef() || support.isInSingle()) {
+                    if (support.isInDef()) {
                         support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
                     $$ = new PostExeNode($1, $3);
@@ -688,7 +688,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                    $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+                    if (support.isInDef()) support.compile_error("dynamic constant assignment");
                     $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
                 }
                 | tCVAR {
@@ -735,16 +735,14 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("dynamic constant assignment");
-                    }
+                    if (support.isInDef()) support.yyerror("dynamic constant assignment");
 
                     ISourcePosition position = support.getPosition($1);
 
                     $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) {
+                    if (support.isInDef()) {
                         support.yyerror("dynamic constant assignment");
                     }
 
@@ -766,7 +764,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+                    if (support.isInDef()) support.compile_error("dynamic constant assignment");
 
                     $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
                 }
@@ -814,7 +812,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.attrset($1, $2, $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) {
+                    if (support.isInDef()) {
                         support.yyerror("dynamic constant assignment");
                     }
 
@@ -823,7 +821,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new ConstDeclNode(position, (RubySymbol) null, support.new_colon2(position, $1, $3), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) {
+                    if (support.isInDef()) {
                         support.yyerror("dynamic constant assignment");
                     }
 
@@ -1588,18 +1586,15 @@ primary         : literal
                 | k_class tLSHFT expr {
                     $$ = new Integer((support.isInClass() ? 2 : 0) & (support.isInDef() ? 1 : 0));
                     support.setInDef(false);
-                } term {
-                    $$ = Integer.valueOf(support.getInSingle());
-                    support.setInSingle(0);
+                    support.setIsInClass(false);
                     support.pushLocalScope();
-                } bodystmt keyword_end {
-                    Node body = support.makeNullNil($7);
+                } term bodystmt keyword_end {
+                    Node body = support.makeNullNil($6);
 
                     $$ = new SClassNode($1, $3, support.getCurrentScope(), body, lexer.getRubySourceline());
                     support.popCurrentScope();
                     support.setInDef((($<Integer>4.intValue()) & 1) != 0);
                     support.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
-                    support.setInSingle($<Integer>6.intValue());
                 }
                 | k_module cpath {
                     if (support.isInDef()) { 
@@ -1631,11 +1626,10 @@ primary         : literal
                     lexer.setCurrentArg($<ByteList>3);
                 }
                 | keyword_def singleton dot_or_colon {
-                    lexer.setState(EXPR_FNAME);
+                    lexer.setState(EXPR_FNAME); 
                     $$ = support.isInDef();
                     support.setInDef(true);
-                } fname {
-                    support.setInSingle(support.getInSingle() + 1);
+               } fname {
                     support.pushLocalScope();
                     lexer.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                     $$ = lexer.getCurrentArg();
@@ -1646,7 +1640,6 @@ primary         : literal
 
                     $$ = new DefsNode($1, $2, support.symbolID($5), (ArgsNode) $7, support.getCurrentScope(), body, $9.getLine());
                     support.popCurrentScope();
-                    support.setInSingle(support.getInSingle() - 1);
                     support.setInDef($<Boolean>4.booleanValue());
                     lexer.setCurrentArg($<ByteList>6);
                 }
@@ -1864,10 +1857,15 @@ lambda          : /* none */  {
                     support.pushBlockScope();
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.incrementParenNest());
-                } f_larglist lambda_body {
-                    $$ = new LambdaNode($2.getPosition(), $2, $3, support.getCurrentScope());
-                    support.popCurrentScope();
+                } f_larglist {
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().reset();
+                } lambda_body {
+                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
+                    lexer.getCmdArgumentState().restart();
+                    $$ = new LambdaNode($2.getPosition(), $2, $4, support.getCurrentScope());
                     lexer.setLeftParenBegin($<Integer>1);
+                    support.popCurrentScope();
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
@@ -2213,7 +2211,7 @@ string_dvar     : tGVAR {
 
 // ByteList:symbol
 symbol          : tSYMBEG sym {
-                     lexer.setState(EXPR_ENDARG);
+                     lexer.setState(EXPR_END|EXPR_ENDARG);
                      $$ = $2;
                 }
 
@@ -2230,7 +2228,7 @@ sym             : fname
                 }
 
 dsym            : tSYMBEG xstring_contents tSTRING_END {
-                     lexer.setState(EXPR_ENDARG);
+                     lexer.setState(EXPR_END|EXPR_ENDARG);
 
                      // DStrNode: :"some text #{some expression}"
                      // StrNode: :"some text"
@@ -2318,7 +2316,7 @@ var_lhs         : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = new GlobalAsgnNode(lexer.tokline, support.symbolID($1), NilImplicitNode.NIL);
                 }
                 | tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) support.compile_error("dynamic constant assignment");
+                    if (support.isInDef()) support.compile_error("dynamic constant assignment");
 
                     $$ = new ConstDeclNode(lexer.tokline, support.symbolID($1), null, NilImplicitNode.NIL);
                 }

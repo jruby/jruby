@@ -77,8 +77,7 @@ ruby/test_rational2.rb
 ruby/test_readpartial.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
-# jruby/jruby#4288
-#ruby/test_refinement.rb
+ruby/test_refinement.rb
 ruby/test_rubyoptions.rb
 # Removed until we can implement the remaining features (#2143)
 #ruby/test_settracefunc.rb
@@ -373,3 +372,5 @@ ruby/enc/test_shift_jis.rb
 ruby/enc/test_utf16.rb
 ruby/enc/test_utf32.rb
 ruby/enc/test_windows_1251.rb
+ruby/enc/test_case_mapping.rb
+ruby/enc/test_case_options.rb

@@ -244,7 +244,7 @@ top_stmts     : none {
 
 top_stmt      : stmt
               | keyword_BEGIN {
-                  if (p.isInDef() || p.isInSingle()) {
+                  if (p.isInDef()) {
                       p.yyerror("BEGIN in method");
                   }
               } tLCURLY top_compstmt tRCURLY {
@@ -316,7 +316,7 @@ stmt            : keyword_alias fitem {
                     $$ = p.dispatch("on_rescue_mod", $1, $3);
                 }
                 | keyword_END tLCURLY compstmt tRCURLY {
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         p.warn("END in method; use at_exit");
                     }
                     $$ = p.dispatch("on_END", $3);
@@ -595,7 +595,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value tCOLON2 tCONSTANT {
                     $$ = p.dispatch("on_const_path_field", $1, $3);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         $$ = p.dispatch("on_assign_error", $<IRubyObject>$);
                         p.error();
                     }
@@ -603,7 +603,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                 | tCOLON3 tCONSTANT {
                     $$ = p.dispatch("on_top_const_field", $2);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         $$ = p.dispatch("on_assign_error", $<IRubyObject>$);
                         p.error();
                     }
@@ -671,7 +671,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | primary_value tCOLON2 tCONSTANT {
                     IRubyObject val = p.dispatch("on_const_path_field", $1, $3);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         val = p.dispatch("on_assign_error", val);
                         p.error();
                     }
@@ -681,7 +681,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
                 | tCOLON3 tCONSTANT {
                     IRubyObject val = p.dispatch("on_top_const_field", $2);
 
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         val = p.dispatch("on_assign_error", val);
                         p.error();
                     }
@@ -1166,32 +1166,35 @@ primary         : literal
                     $$ = p.dispatch("on_for", $2, $5, $8);
                 }
                 | keyword_class cpath superclass {
-                    if (p.isInDef() || p.isInSingle()) {
+                    if (p.isInDef()) {
                         p.yyerror("class definition in method body");
                     }
                     p.pushLocalScope();
+                    $$ = p.isInClass(); // MRI reuses $1 but we use the value for position.
+                    p.setIsInClass(true);
                 } bodystmt keyword_end {
                     $$ = p.dispatch("on_class", $2, $3, $5);
                     p.popCurrentScope();
+                    p.setIsInClass($<Boolean>4.booleanValue());
                 }
                 | keyword_class tLSHFT expr {
-                    $$ = Boolean.valueOf(p.isInDef());
+                    $$ = new Integer((p.isInClass() ? 2 : 0) & (p.isInDef() ? 1 : 0));
                     p.setInDef(false);
-                } term {
-                    $$ = Integer.valueOf(p.getInSingle());
-                    p.setInSingle(0);
+                    p.setIsInClass(false);
                     p.pushLocalScope();
-                } bodystmt keyword_end {
-                    $$ = p.dispatch("on_sclass", $3, $7);
+                } term bodystmt keyword_end {
+                    $$ = p.dispatch("on_sclass", $3, $6);
 
                     p.popCurrentScope();
-                    p.setInDef($<Boolean>4.booleanValue());
-                    p.setInSingle($<Integer>6.intValue());
+                    p.setInDef((($<Integer>4.intValue()) & 1) != 0);
+                    p.setIsInClass((($<Integer>4.intValue()) & 2) != 0);
                 }
                 | keyword_module cpath {
-                    if (p.isInDef() || p.isInSingle()) { 
+                    if (p.isInDef()) { 
                         p.yyerror("module definition in method body");
                     }
+                    $$ = p.isInClass();
+                    p.setIsInClass(true);
                     p.pushLocalScope();
                 } bodystmt keyword_end {
                     $$ = p.dispatch("on_module", $2, $4);
@@ -1211,8 +1214,9 @@ primary         : literal
                 }
                 | keyword_def singleton dot_or_colon {
                     p.setState(EXPR_FNAME);
+                    $$ = p.isInDef();
+                    p.setInDef(true);
                 } fname {
-                    p.setInSingle(p.getInSingle() + 1);
                     p.pushLocalScope();
                     p.setState(EXPR_ENDFN|EXPR_LABEL); /* force for args */
                     $$ = p.getCurrentArg();
@@ -1221,7 +1225,7 @@ primary         : literal
                     $$ = p.dispatch("on_defs", $2, $3, $5, $7, $8);
 
                     p.popCurrentScope();
-                    p.setInSingle(p.getInSingle() - 1);
+                    p.setInDef($<Boolean>4.booleanValue());
                     p.setCurrentArg($<IRubyObject>6);
                 }
                 | keyword_break {
@@ -1445,16 +1449,17 @@ lambda          : /* none */  {
                     p.pushBlockScope();
                     $$ = p.getLeftParenBegin();
                     p.setLeftParenBegin(p.incrementParenNest());
-                } {
-                    $$ = p.getCmdArgumentState().getStack();
+                } f_larglist {
+                    $$ = Long.valueOf(p.getCmdArgumentState().getStack());
                     p.getCmdArgumentState().reset();
-                } f_larglist lambda_body {
-                    $$ = p.dispatch("on_lambda", $3, $4);
-                    p.popCurrentScope();
+                } lambda_body {
+                    p.getCmdArgumentState().reset($<Long>3.longValue());
+                    p.getCmdArgumentState().restart();
+                    $$ = p.dispatch("on_lambda", $2, $4);
                     p.setLeftParenBegin($<Integer>1);
-                    p.getCmdArgumentState().reset($<Long>2.longValue());
+                    p.popCurrentScope();
                 }
-
+ 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
                     $$ = p.dispatch("on_paren", $2);
                 }

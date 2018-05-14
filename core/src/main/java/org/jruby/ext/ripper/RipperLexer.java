@@ -1254,7 +1254,7 @@ public class RipperLexer extends LexingCommon {
             result = RipperParser.tIVAR;
         }
 
-        if (c == EOF || Character.isSpaceChar(c)) {
+        if (c == EOF || isSpace(c)) {
             if (result == RipperParser.tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
@@ -1478,7 +1478,7 @@ public class RipperLexer extends LexingCommon {
             return identifierToken(last_state, RipperParser.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                if (c == EOF || Character.isSpaceChar(c)) {
+                if (c == EOF || isSpace(c)) {
                     compile_error("`$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
@@ -1659,9 +1659,8 @@ public class RipperLexer extends LexingCommon {
         parenNest++;
         int c = '[';
         if (isAfterOperator()) {
-            setState(EXPR_ARG);
-
             if ((c = nextc()) == ']') {
+                setState(EXPR_ARG);
                 if (peek('=')) {
                     nextc();
                     return RipperParser.tASET;
@@ -1669,7 +1668,7 @@ public class RipperLexer extends LexingCommon {
                 return RipperParser.tAREF;
             }
             pushback(c);
-            setState(getState() | EXPR_LABEL);
+            setState(EXPR_ARG|EXPR_LABEL);
             return '[';
         } else if (isBEG() || (isARG() && (spaceSeen || isLexState(lex_state, EXPR_LABELED)))) {
             c = RipperParser.tLBRACK;
@@ -1708,7 +1707,7 @@ public class RipperLexer extends LexingCommon {
         conditionState.stop();
         cmdArgumentState.stop();
         setState(EXPR_BEG);
-        if (c != RipperParser.tLBRACE_ARG) setState(getState() | EXPR_LABEL);
+        setState(c == RipperParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
         if (c != RipperParser.tLBRACE) commandStart = true;
 
         return c;

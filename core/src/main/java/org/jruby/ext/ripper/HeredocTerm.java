@@ -170,6 +170,13 @@ public class HeredocTerm extends StrTerm {
             if (c == '#') {
                 int token = lexer.peekVariableName(RipperParser.tSTRING_DVAR, RipperParser.tSTRING_DBEG);
 
+                int heredoc_line_indent = lexer.getHeredocLineIndent() ;
+                if (heredoc_line_indent != -1) {
+                    if (lexer.getHeredocIndent() > heredoc_line_indent) {
+                        lexer.setHeredocIndent(heredoc_line_indent);
+                    }
+                    lexer.setHeredocLineIndent(-1);
+                }
                 if (token != 0) {
                     return token;
                 } else {

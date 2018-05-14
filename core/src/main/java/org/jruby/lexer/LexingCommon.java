@@ -257,6 +257,10 @@ public abstract class LexingCommon {
         return heredoc_indent;
     }
 
+    public int getHeredocLineIndent() {
+        return heredoc_line_indent;
+    }
+
     public int getLeftParenBegin() {
         return leftParenBegin;
     }
@@ -947,6 +951,10 @@ public abstract class LexingCommon {
      */
     public static boolean isOctChar(int c) {
         return '0' <= c && c <= '7';
+    }
+
+    public static boolean isSpace(int c) {
+        return c == ' ' || ('\t' <= c && c <= '\r');
     }
 
     protected boolean isSpaceArg(int c, boolean spaceSeen) {

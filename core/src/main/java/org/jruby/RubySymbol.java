@@ -251,6 +251,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
     }
 
+    /**
+     * Is the string this constant represents a valid constant identifier name.
+     */
+    public boolean validClassVariableName() {
+        boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
+                index == 0 && codepoint == '@' ||
+                        index == 1 && codepoint == '@' ||
+                        index == 2 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
+                        index > 2 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
+
+        return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
+    }
+
+
     public boolean validLocalVariableName() {
         boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
                 index == 0 && (!encoding.isDigit(codepoint) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_')) ||
