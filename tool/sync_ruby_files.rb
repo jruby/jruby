@@ -15,7 +15,6 @@ STDLIB_FILES = %w[
   drb.rb
   e2mmap.rb
   erb.rb
-  fileutils.rb
   find.rb
   forwardable
   forwardable.rb

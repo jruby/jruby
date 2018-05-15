@@ -26,6 +26,7 @@ end
 
 default_gems = [
     ImportedGem.new('did_you_mean', '1.0.1'),
+    ImportedGem.new('fileutils', '1.1.0'),
     ImportedGem.new('ipaddr', '1.2.0'),
     ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
     ImportedGem.new('jruby-readline', '1.2.2'),
