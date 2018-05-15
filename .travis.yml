@@ -43,7 +43,6 @@ env:
     - PHASE='-Prake -Dtask=test:mri:fullint'
     - PHASE='-Prake -Dtask=test:mri:jit'
     - PHASE='-Prake -Dtask=test:slow_suites'
-    - PHASE='-Prake -Dtask=test:tracing'
     - PHASE='-Prake -Dtask=spec:ji'
     - PHASE='-Prake -Dtask=spec:compiler'
     - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic

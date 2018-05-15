@@ -48,17 +48,6 @@ namespace :test do
   task :rake_targets => long_tests
   task :extended => long_tests
 
-  desc "Run tracing tests"
-  task :tracing do
-    Rake::TestTask.new('test:tracing') do |t|
-      t.pattern = 'test/tracing/test_*.rb'
-      t.verbose = true
-      t.ruby_opts << '-J-ea'
-      t.ruby_opts << '--debug'
-      t.ruby_opts << '--disable-gems'
-    end
-  end
-
   max_meta_size = ENV_JAVA['java.specification.version'] > '1.7' ? '-XX:MaxMetaspaceSize' : '-XX:MaxPermSize'
   get_meta_size = proc do |default_size = 452|
     (ENV['JAVA_OPTS'] || '').index(max_meta_size) || (ENV['JRUBY_OPTS'] || '').index(max_meta_size) ?
