@@ -145,11 +145,6 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
-    public T visitClassVarDeclNode(ClassVarDeclNode node) {
-        return defaultVisit(node);
-    }
-
-    @Override
     public T visitClassVarNode(ClassVarNode node) {
         return defaultVisit(node);
     }
@@ -591,6 +586,12 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
 
     @Override
     public T visitOther(Node node) {
+        return defaultVisit(node);
+    }
+
+    @Override
+    @Deprecated
+    public T visitClassVarDeclNode(ClassVarDeclNode node) {
         return defaultVisit(node);
     }
 
