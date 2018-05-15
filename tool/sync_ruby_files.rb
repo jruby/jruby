@@ -5,7 +5,6 @@ STDLIB_FILES = %w[
   benchmark.rb
   cgi
   cgi.rb
-  csv.rb
   date
   date.rb
   debug.rb
