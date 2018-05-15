@@ -27,7 +27,7 @@ end
 default_gems = [
     ImportedGem.new('cmath', '1.0.0'),
     ImportedGem.new('csv', '1.0.0'),
-    ImportedGem.new('did_you_mean', '1.0.1'),
+    ImportedGem.new('did_you_mean', '1.2.0'),
     ImportedGem.new('fileutils', '1.1.0'),
     ImportedGem.new('ipaddr', '1.2.0'),
     ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
@@ -43,6 +43,8 @@ default_gems = [
     ImportedGem.new('rdoc', '${rdoc.version}'),
     ImportedGem.new('scanf', '1.0.0'),
     ImportedGem.new('test-unit', '${test-unit.version}'),
+    ImportedGem.new('webrick', '1.4.2'),
+    ImportedGem.new('xmlrpc', '0.3.0'),
 ]
 
 project 'JRuby Lib Setup' do

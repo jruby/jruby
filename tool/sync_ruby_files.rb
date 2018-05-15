@@ -61,8 +61,6 @@ STDLIB_FILES = %w[
   uri
   uri.rb
   weakref.rb
-  webrick
-  webrick.rb
   yaml
   yaml.rb
 ]
