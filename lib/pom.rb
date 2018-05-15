@@ -27,24 +27,27 @@ end
 default_gems = [
     ImportedGem.new('cmath', '1.0.0'),
     ImportedGem.new('csv', '1.0.0'),
-    ImportedGem.new('did_you_mean', '1.2.0'),
     ImportedGem.new('fileutils', '1.1.0'),
     ImportedGem.new('ipaddr', '1.2.0'),
     ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
     ImportedGem.new('jruby-readline', '1.2.2'),
     ImportedGem.new('jruby-openssl', '0.9.21'),
     ImportedGem.new('json', '${json.version}'),
-    ImportedGem.new('minitest', '${minitest.version}'),
-    ImportedGem.new('net-telnet', '0.1.1'),
-    ImportedGem.new('power_assert', '${power_assert.version}'),
     ImportedGem.new('psych', '3.0.2'),
-    ImportedGem.new('rake', '${rake.version}'),
     ImportedGem.new('rake-ant', '1.0.4'),
     ImportedGem.new('rdoc', '${rdoc.version}'),
     ImportedGem.new('scanf', '1.0.0'),
-    ImportedGem.new('test-unit', '${test-unit.version}'),
     ImportedGem.new('webrick', '1.4.2'),
-    ImportedGem.new('xmlrpc', '0.3.0'),
+]
+
+bundled_gems = [
+    ['did_you_mean', '1.2.0'],
+    ['minitest', '${minitest.version}'],
+    ['net-telnet', '0.1.1'],
+    ['power_assert', '${power_assert.version}'],
+    ['rake', '${rake.version}'],
+    ['test-unit', '${test-unit.version}'],
+    ['xmlrpc', '0.3.0'],
 ]
 
 project 'JRuby Lib Setup' do
@@ -88,6 +91,13 @@ project 'JRuby Lib Setup' do
   default_gems.each do |g|
     # use provided scope so it is not a real dependency for runtime
     dependency 'rubygems', g.name, g.version, :type => 'gem', :scope => :provided do
+      exclusion 'rubygems:jar-dependencies'
+    end
+  end
+
+  bundled_gems.each do |name, version|
+    # use provided scope so it is not a real dependency for runtime
+    dependency 'rubygems', name, version, :type => 'gem', :scope => :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
