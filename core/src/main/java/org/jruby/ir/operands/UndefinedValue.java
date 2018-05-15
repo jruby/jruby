@@ -400,7 +400,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public void visit(IRVisitor visitor) {
         visitor.UndefinedValue(this);
     }
-    
+
     @Deprecated
     public Object dataGetStructChecked() { throw undefinedOperation(); }
 }
