@@ -65,7 +65,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '1.8.3',
+              'json.version' => '2.1.0',
               'rspec.version' => '3.4.0',
               'rspec-core.version' => '3.4.4',
               'rspec-expectations.version' => '3.4.0',

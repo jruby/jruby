@@ -192,16 +192,15 @@ io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
 #io/console/test_io_console.rb
 
-json/test_json.rb
-json/test_json_addition.rb
-json/test_json_encoding.rb
-json/test_json_fixtures.rb
-json/test_json_generate.rb
-json/test_json_generic_object.rb
-# Depends on some rails lib?.rb
-#json/test_json_rails.rb
-json/test_json_string_matching.rb
-json/test_json_unicode.rb
+json/json_addition_test.rb
+json/json_common_interface_test.rb
+json/json_encoding_test.rb
+json/json_ext_parser_test.rb
+json/json_fixtures_test.rb
+json/json_generator_test.rb
+json/json_generic_object_test.rb
+json/json_parser_test.rb
+json/json_string_matching_test.rb
 
 logger/test_logger.rb
 
