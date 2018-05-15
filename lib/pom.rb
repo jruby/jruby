@@ -25,6 +25,7 @@ class ImportedGem
 end
 
 default_gems = [
+    ImportedGem.new('cmath', '1.0.0'),
     ImportedGem.new('did_you_mean', '1.0.1'),
     ImportedGem.new('fileutils', '1.1.0'),
     ImportedGem.new('ipaddr', '1.2.0'),
