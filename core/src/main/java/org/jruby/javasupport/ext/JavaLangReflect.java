@@ -57,9 +57,9 @@ public abstract class JavaLangReflect {
     @JRubyClass(name = "Java::JavaLangReflect::Constructor")
     public static class Constructor {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Constructor) {
-            Constructor.defineAnnotatedMethods(Constructor.class);
-            return (RubyClass) Constructor;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Constructor.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -118,9 +118,9 @@ public abstract class JavaLangReflect {
     @JRubyClass(name = "Java::JavaLangReflect::Method")
     public static class Method {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Method) {
-            Method.defineAnnotatedMethods(Method.class);
-            return (RubyClass) Method;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Method.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -198,9 +198,9 @@ public abstract class JavaLangReflect {
     @JRubyClass(name = "Java::JavaLangReflect::Field")
     public static class Field {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Field) {
-            Field.defineAnnotatedMethods(Field.class);
-            return (RubyClass) Field;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Field.class);
+            return proxy;
         }
 
         @JRubyMethod // alias value_type name

@@ -52,9 +52,9 @@ public abstract class JavaUtilRegex {
     @JRubyClass(name = "Java::JavaUtilRegex::Pattern")
     public static class Pattern {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Pattern) {
-            Pattern.defineAnnotatedMethods(Pattern.class);
-            return Pattern;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Pattern.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "=~", required = 1)
@@ -94,9 +94,9 @@ public abstract class JavaUtilRegex {
     @JRubyClass(name = "Java::JavaUtilRegex::Matcher")
     public static class Matcher {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Matcher) {
-            Matcher.defineAnnotatedMethods(Matcher.class);
-            return (RubyClass) Matcher;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Matcher.class);
+            return (RubyClass) proxy;
         }
 
         @JRubyMethod

@@ -80,10 +80,10 @@ public abstract class JavaLang {
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
     public static class Iterable {
 
-        static RubyModule define(final Ruby runtime, final RubyModule Iterable) {
-            Iterable.includeModule( runtime.getEnumerable() ); // include Enumerable
-            Iterable.defineAnnotatedMethods(Iterable.class);
-            return Iterable;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
+            proxy.defineAnnotatedMethods(Iterable.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -177,10 +177,10 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Comparable", include = "Comparable")
     public static class Comparable {
 
-        static RubyModule define(final Ruby runtime, final RubyModule Comparable) {
-            Comparable.includeModule( runtime.getComparable() ); // include Comparable
-            Comparable.defineAnnotatedMethods(Comparable.class);
-            return Comparable;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getComparable() ); // include Comparable
+            proxy.defineAnnotatedMethods(Comparable.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "<=>")
@@ -205,9 +205,9 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Throwable")
     public static class Throwable {
 
-        static RubyModule define(final Ruby runtime, final RubyClass Throwable) {
-            Throwable.defineAnnotatedMethods(Throwable.class);
-            return Throwable;
+        static RubyModule define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Throwable.class);
+            return proxy;
         }
 
         @JRubyMethod // stackTrace => backtrace
@@ -273,9 +273,9 @@ public abstract class JavaLang {
     @JRubyModule(name = "Java::JavaLang::Runnable")
     public static class Runnable {
 
-        static RubyModule define(final Ruby runtime, final RubyModule Runnable) {
-            Runnable.defineAnnotatedMethods(Runnable.class);
-            return Runnable;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.defineAnnotatedMethods(Runnable.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -321,13 +321,13 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Number")
     public static class Number {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Number) {
-            Number.defineAnnotatedMethods(Number.class);
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Number.class);
 
-            Number.defineAlias("to_int", "longValue");
-            Number.defineAlias("to_f", "doubleValue");
+            proxy.defineAlias("to_int", "longValue");
+            proxy.defineAlias("to_f", "doubleValue");
 
-            return Number;
+            return proxy;
         }
 
         @JRubyMethod(name = "to_f")
@@ -405,10 +405,9 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Character")
     public static class Character {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Character) {
-            System.out.println("defining Character extensions: proxy-class: " + Character);
-            Character.defineAnnotatedMethods(Character.class);
-            return (RubyClass) Character;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Character.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "java_identifier_start?", meta = true)
@@ -438,10 +437,10 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Class")
     public static class Class {
 
-        static RubyClass define(final Ruby runtime, final RubyClass Class) {
-            Class.includeModule( runtime.getComparable() ); // include Comparable
-            Class.defineAnnotatedMethods(Class.class);
-            return (RubyClass) Class;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.includeModule( runtime.getComparable() ); // include Comparable
+            proxy.defineAnnotatedMethods(Class.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "ruby_class")
@@ -599,9 +598,9 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::ClassLoader")
     public static class ClassLoader {
 
-        static RubyModule define(final Ruby runtime, final RubyClass ClassLoader) {
-            ClassLoader.defineAnnotatedMethods(ClassLoader.class);
-            return ClassLoader;
+        static RubyModule define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(ClassLoader.class);
+            return proxy;
         }
 
         @JRubyMethod

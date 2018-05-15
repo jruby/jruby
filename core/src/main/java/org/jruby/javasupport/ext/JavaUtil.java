@@ -69,10 +69,10 @@ public abstract class JavaUtil {
     @JRubyModule(name = "Java::JavaUtil::Enumeration", include = "Enumerable")
     public static class Enumeration {
 
-        static RubyModule define(final Ruby runtime, final RubyModule Enumeration) {
-            Enumeration.includeModule( runtime.getEnumerable() ); // include Enumerable
-            Enumeration.defineAnnotatedMethods(Enumeration.class);
-            return Enumeration;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
+            proxy.defineAnnotatedMethods(Enumeration.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -91,10 +91,10 @@ public abstract class JavaUtil {
     @JRubyModule(name = "Java::JavaUtil::Iterator", include = "Enumerable")
     public static class Iterator {
 
-        static RubyModule define(final Ruby runtime, final RubyModule Iterator) {
-            Iterator.includeModule( runtime.getEnumerable() ); // include Enumerable
-            Iterator.defineAnnotatedMethods(Iterator.class);
-            return Iterator;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
+            proxy.defineAnnotatedMethods(Iterator.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -113,10 +113,10 @@ public abstract class JavaUtil {
     @JRubyModule(name = "Java::JavaUtil::Collection", include = "Enumerable")
     public static class Collection {
 
-        static RubyModule define(final Ruby runtime, final RubyModule Collection) {
-            Collection.includeModule( runtime.getEnumerable() ); // include Enumerable
-            Collection.defineAnnotatedMethods(Collection.class);
-            return Collection;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
+            proxy.defineAnnotatedMethods(Collection.class);
+            return proxy;
         }
 
         @JRubyMethod(name = { "length", "size" })
@@ -256,9 +256,9 @@ public abstract class JavaUtil {
     @JRubyModule(name = "Java::JavaUtil::List")
     public static class List {
 
-        static RubyModule define(final Ruby runtime, final RubyModule List) {
-            List.defineAnnotatedMethods(List.class);
-            return List;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.defineAnnotatedMethods(List.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "[]") // act safe on indexes compared to get(idx) throwing IndexOutOfBoundsException
