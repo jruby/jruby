@@ -41,6 +41,7 @@ default_gems = [
     ImportedGem.new('rake', '${rake.version}'),
     ImportedGem.new('rake-ant', '1.0.4'),
     ImportedGem.new('rdoc', '${rdoc.version}'),
+    ImportedGem.new('scanf', '1.0.0'),
     ImportedGem.new('test-unit', '${test-unit.version}'),
 ]
 

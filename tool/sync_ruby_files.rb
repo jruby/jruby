@@ -45,7 +45,6 @@ STDLIB_FILES = %w[
   rinda
   rss
   rss.rb
-  scanf.rb
   set.rb
   shell
   shell.rb
