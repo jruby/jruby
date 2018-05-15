@@ -125,7 +125,7 @@ DO NOT MODIFIY - GENERATED CODE
     <rspec-mocks.version>3.4.1</rspec-mocks.version>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <invoker.skip>true</invoker.skip>
-    <json.version>1.8.3</json.version>
+    <json.version>2.1.0</json.version>
     <jar-dependencies.version>0.3.12</jar-dependencies.version>
     <power_assert.version>1.1.1</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
