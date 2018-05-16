@@ -3713,13 +3713,14 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject setClassVar(String name, IRubyObject value) {
         RubyModule module = this;
+        RubyModule highest = this;
         do {
             if (module.hasClassVariable(name)) {
-                return module.storeClassVariable(name, value);
+                highest = module;
             }
         } while ((module = module.getSuperClass()) != null);
 
-        return storeClassVariable(name, value);
+        return highest.storeClassVariable(name, value);
     }
 
     @Deprecated
@@ -3759,10 +3760,15 @@ public class RubyModule extends RubyObject {
         assert IdUtil.isClassVariable(name);
         Object value;
         RubyModule module = this;
+        RubyModule highest = null;
 
         do {
-            if ((value = module.fetchClassVariable(name)) != null) return (IRubyObject)value;
+            if (module.hasClassVariable(name)) {
+                highest = module;
+            }
         } while ((module = module.getSuperClass()) != null);
+
+        if (highest != null) return highest.fetchClassVariable(name);
 
         return null;
     }
