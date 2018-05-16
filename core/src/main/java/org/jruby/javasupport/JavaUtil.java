@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport;
 
 import java.io.Serializable;
@@ -123,9 +124,23 @@ public class JavaUtil {
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
         if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
 
+        if (objects instanceof String[]) return convertStringArrayToRuby(runtime, (String[]) objects, JAVA_STRING_CONVERTER);
+
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
+
         for (int i = 0; i < objects.length; i++) {
             rubyObjects[i] = convertJavaToUsableRubyObject(runtime, objects[i]);
+        }
+        return rubyObjects;
+    }
+
+    public static IRubyObject[] convertStringArrayToRuby(final Ruby runtime, final String[] strings, StringConverter converter) {
+        if ( strings == null || strings.length == 0 ) return IRubyObject.NULL_ARRAY;
+
+        IRubyObject[] rubyObjects = new IRubyObject[strings.length];
+
+        for (int i = 0; i < strings.length; i++) {
+            rubyObjects[i] = convertJavaToUsableRubyObjectWithConverter(runtime, strings[i], converter);
         }
         return rubyObjects;
     }
@@ -251,9 +266,9 @@ public class JavaUtil {
             singletonClass.addMethod("method_missing", procToIface);
             // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
             // ... e.g. calling a Ruby implemented Predicate#test should not dispatch to Kernel#test
-            final Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod();
             // getMethods for interface returns all methods (including ones from super-interfaces)
             for ( Method method : targetType.getMethods() ) {
+                Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod(method.getName());
                 if ( Modifier.isAbstract(method.getModifiers()) ) {
                     singletonClass.addMethodInternal(method.getName(), implMethod);
                 }
@@ -264,7 +279,7 @@ public class JavaUtil {
         return (T) javaObject.getValue();
     }
 
-    public static NumericConverter getNumericConverter(Class target) {
+    public static <T> NumericConverter<T> getNumericConverter(Class<T> target) {
         final NumericConverter converter = NUMERIC_CONVERTERS.get(target);
         return converter == null ? NUMERIC_TO_OTHER : converter;
     }
@@ -587,11 +602,11 @@ public class JavaUtil {
         public String toString() {return type.getName() + " converter";}
     }
 
-    public interface NumericConverter {
-        public Object coerce(RubyNumeric numeric, Class target);
+    public interface NumericConverter<T> {
+        T coerce(RubyNumeric numeric, Class<T> target);
     }
 
-    private static IRubyObject trySimpleConversions(Ruby runtime, Object object) {
+    public static IRubyObject trySimpleConversions(Ruby runtime, Object object) {
         if ( object == null ) return runtime.getNil();
 
         if ( object instanceof IRubyObject ) return (IRubyObject) object;
@@ -609,7 +624,7 @@ public class JavaUtil {
         return null;
     }
 
-    private static final JavaConverter JAVA_DEFAULT_CONVERTER = new JavaConverter(Object.class) {
+    public static final JavaConverter JAVA_DEFAULT_CONVERTER = new JavaConverter(Object.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             IRubyObject result = trySimpleConversions(runtime, object);
             return result == null ? JavaObject.wrap(runtime, object) : result;
@@ -622,7 +637,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_BOOLEAN_CONVERTER = new JavaConverter(Boolean.class) {
+    public static final JavaConverter JAVA_BOOLEAN_CONVERTER = new JavaConverter(Boolean.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyBoolean.newBoolean(runtime, ((Boolean)object).booleanValue());
@@ -635,7 +650,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_FLOAT_CONVERTER = new JavaConverter(Float.class) {
+    public static final JavaConverter JAVA_FLOAT_CONVERTER = new JavaConverter(Float.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFloat.newFloat(runtime, ((Float)object).doubleValue());
@@ -648,7 +663,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_DOUBLE_CONVERTER = new JavaConverter(Double.class) {
+    public static final JavaConverter JAVA_DOUBLE_CONVERTER = new JavaConverter(Double.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFloat.newFloat(runtime, ((Double)object).doubleValue());
@@ -661,7 +676,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_CHAR_CONVERTER = new JavaConverter(Character.class) {
+    public static final JavaConverter JAVA_CHAR_CONVERTER = new JavaConverter(Character.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Character)object).charValue());
@@ -674,7 +689,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_BYTE_CONVERTER = new JavaConverter(Byte.class) {
+    public static final JavaConverter JAVA_BYTE_CONVERTER = new JavaConverter(Byte.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Byte)object).byteValue());
@@ -687,7 +702,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_SHORT_CONVERTER = new JavaConverter(Short.class) {
+    public static final JavaConverter JAVA_SHORT_CONVERTER = new JavaConverter(Short.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Short)object).shortValue());
@@ -700,7 +715,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_INT_CONVERTER = new JavaConverter(Integer.class) {
+    public static final JavaConverter JAVA_INT_CONVERTER = new JavaConverter(Integer.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Integer)object).intValue());
@@ -713,7 +728,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_LONG_CONVERTER = new JavaConverter(Long.class) {
+    public static final JavaConverter JAVA_LONG_CONVERTER = new JavaConverter(Long.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Long)object).longValue());
@@ -726,7 +741,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_BOOLEANPRIM_CONVERTER = new JavaConverter(boolean.class) {
+    public static final JavaConverter JAVA_BOOLEANPRIM_CONVERTER = new JavaConverter(boolean.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyBoolean.newBoolean(runtime, ((Boolean)object).booleanValue());
@@ -739,7 +754,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_FLOATPRIM_CONVERTER = new JavaConverter(float.class) {
+    public static final JavaConverter JAVA_FLOATPRIM_CONVERTER = new JavaConverter(float.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFloat.newFloat(runtime, ((Float)object).doubleValue());
@@ -752,7 +767,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_DOUBLEPRIM_CONVERTER = new JavaConverter(double.class) {
+    public static final JavaConverter JAVA_DOUBLEPRIM_CONVERTER = new JavaConverter(double.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFloat.newFloat(runtime, ((Double)object).doubleValue());
@@ -765,7 +780,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_CHARPRIM_CONVERTER = new JavaConverter(char.class) {
+    public static final JavaConverter JAVA_CHARPRIM_CONVERTER = new JavaConverter(char.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Character)object).charValue());
@@ -778,7 +793,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_BYTEPRIM_CONVERTER = new JavaConverter(byte.class) {
+    public static final JavaConverter JAVA_BYTEPRIM_CONVERTER = new JavaConverter(byte.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Byte)object).byteValue());
@@ -791,7 +806,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_SHORTPRIM_CONVERTER = new JavaConverter(short.class) {
+    public static final JavaConverter JAVA_SHORTPRIM_CONVERTER = new JavaConverter(short.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Short)object).shortValue());
@@ -804,7 +819,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_INTPRIM_CONVERTER = new JavaConverter(int.class) {
+    public static final JavaConverter JAVA_INTPRIM_CONVERTER = new JavaConverter(int.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Integer)object).intValue());
@@ -817,7 +832,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_LONGPRIM_CONVERTER = new JavaConverter(long.class) {
+    public static final JavaConverter JAVA_LONGPRIM_CONVERTER = new JavaConverter(long.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyFixnum.newFixnum(runtime, ((Long)object).longValue());
@@ -830,20 +845,28 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_STRING_CONVERTER = new JavaConverter(String.class) {
+    public static class StringConverter extends JavaConverter {
+        public StringConverter() {
+            super(String.class);
+        }
+
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyString.newUnicodeString(runtime, (String)object);
         }
+
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((String[]) array)[i]);
         }
-        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
-            ((String[])array)[i] = (String)value.toJava(String.class);
-        }
-    };
 
-    private static final JavaConverter JAVA_CHARSEQUENCE_CONVERTER = new JavaConverter(String.class) {
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((String[])array)[i] = value.toJava(String.class);
+        }
+    }
+
+    public static final StringConverter JAVA_STRING_CONVERTER = new StringConverter();
+
+    public static final JavaConverter JAVA_CHARSEQUENCE_CONVERTER = new JavaConverter(CharSequence.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyString.newUnicodeString(runtime, (CharSequence)object);
@@ -856,7 +879,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter BYTELIST_CONVERTER = new JavaConverter(ByteList.class) {
+    public static final JavaConverter BYTELIST_CONVERTER = new JavaConverter(ByteList.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyString.newString(runtime, (ByteList)object);
@@ -869,7 +892,7 @@ public class JavaUtil {
         }
     };
 
-    private static final JavaConverter JAVA_BIGINTEGER_CONVERTER = new JavaConverter(BigInteger.class) {
+    public static final JavaConverter JAVA_BIGINTEGER_CONVERTER = new JavaConverter(BigInteger.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
             return RubyBignum.newBignum(runtime, (BigInteger)object);
@@ -910,90 +933,61 @@ public class JavaUtil {
         JAVA_CONVERTERS.put(BigInteger.class, JAVA_BIGINTEGER_CONVERTER);
     }
 
-    private static final NumericConverter NUMERIC_TO_BYTE = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongByteable(value) ) return (byte) value;
-            throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
+    private static final NumericConverter<Byte> NUMERIC_TO_BYTE = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongByteable(value) ) return (byte) value;
+        throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
+    };
+    private static final NumericConverter<Short> NUMERIC_TO_SHORT = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongShortable(value) ) return (short) value;
+        throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
+    };
+    private static final NumericConverter<Character> NUMERIC_TO_CHARACTER = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongCharable(value) ) return (char) value;
+        throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
+    };
+    private static final NumericConverter<Integer> NUMERIC_TO_INTEGER = (numeric, target) -> {
+        final long value = numeric.getLongValue();
+        if ( isLongIntable(value) ) return (int) value;
+        throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
+    };
+    private static final NumericConverter<Long> NUMERIC_TO_LONG = (numeric, target) -> numeric.getLongValue();
+    private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (numeric, target) -> {
+        final double value = numeric.getDoubleValue();
+        // many cases are ok to convert to float; if not one of these, error
+        if ( isDoubleFloatable(value) ) return (float) value;
+        throw numeric.getRuntime().newTypeError("too big for float: " + numeric);
+    };
+    private static final NumericConverter<Double> NUMERIC_TO_DOUBLE = (numeric, target) -> numeric.getDoubleValue();
+    private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER = (numeric, target) -> numeric.getBigIntegerValue();
+
+    private static final NumericConverter NUMERIC_TO_OTHER = (numeric, target) -> {
+        if (target.isAssignableFrom(numeric.getClass())) {
+            // just return as-is, since we can't do any coercion
+            return numeric;
+        }
+        // otherwise, error; no conversion available
+        throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
+    };
+    private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (numeric, target) -> {
+        // for Object, default to natural wrapper type
+        if (numeric instanceof RubyFixnum) {
+            long value = numeric.getLongValue();
+            return Long.valueOf(value);
+        } else if (numeric instanceof RubyFloat) {
+            double value = numeric.getDoubleValue();
+            return Double.valueOf(value);
+        } else if (numeric instanceof RubyBignum) {
+            return ((RubyBignum)numeric).getValue();
+        } else if (numeric instanceof RubyBigDecimal) {
+            return ((RubyBigDecimal)numeric).getValue();
+        } else {
+            return NUMERIC_TO_OTHER.coerce(numeric, target);
         }
     };
-    private static final NumericConverter NUMERIC_TO_SHORT = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongShortable(value) ) return (short) value;
-            throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_CHARACTER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongCharable(value) ) return (char) value;
-            throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_INTEGER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final long value = numeric.getLongValue();
-            if ( isLongIntable(value) ) return (int) value;
-            throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_LONG = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return numeric.getLongValue();
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_FLOAT = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            final double value = numeric.getDoubleValue();
-            // many cases are ok to convert to float; if not one of these, error
-            if ( isDoubleFloatable(value) ) return (float) value;
-            throw numeric.getRuntime().newTypeError("too big for float: " + numeric);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_DOUBLE = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return numeric.getDoubleValue();
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_BIGINTEGER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return numeric.getBigIntegerValue();
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_OBJECT = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            // for Object, default to natural wrapper type
-            if (numeric instanceof RubyFixnum) {
-                long value = numeric.getLongValue();
-                return Long.valueOf(value);
-            } else if (numeric instanceof RubyFloat) {
-                double value = numeric.getDoubleValue();
-                return Double.valueOf(value);
-            } else if (numeric instanceof RubyBignum) {
-                return ((RubyBignum)numeric).getValue();
-            } else if (numeric instanceof RubyBigDecimal) {
-                return ((RubyBigDecimal)numeric).getValue();
-            } else {
-                return NUMERIC_TO_OTHER.coerce(numeric, target);
-            }
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_OTHER = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            if (target.isAssignableFrom(numeric.getClass())) {
-                // just return as-is, since we can't do any coercion
-                return numeric;
-            }
-            // otherwise, error; no conversion available
-            throw numeric.getRuntime().newTypeError("could not coerce " + numeric.getMetaClass() + " to " + target);
-        }
-    };
-    private static final NumericConverter NUMERIC_TO_VOID = new NumericConverter() {
-        public Object coerce(RubyNumeric numeric, Class target) {
-            return null;
-        }
-    };
+    private static final NumericConverter NUMERIC_TO_VOID = (numeric, target) -> null;
     private static boolean isDoubleFloatable(double value) {
         return true;
     }
@@ -1487,11 +1481,12 @@ public class JavaUtil {
         case NIL:
             javaObject = null;
             break;
-        case FIXNUM:
-            javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
-            break;
-        case BIGNUM:
-            javaObject = ((RubyBignum) object).getValue();
+        case INTEGER:
+            if (object instanceof RubyFixnum) {
+                javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
+            } else {
+                javaObject = ((RubyBignum) object).getValue();
+            }
             break;
         case FLOAT:
             javaObject = new Double(((RubyFloat) object).getValue());

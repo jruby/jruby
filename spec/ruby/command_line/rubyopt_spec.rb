@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 describe "Processing RUBYOPT" do
   before (:each) do
@@ -24,6 +24,11 @@ describe "Processing RUBYOPT" do
 
   it "prints the version number for '-v'" do
     ENV["RUBYOPT"] = '-v'
+    ruby_exe("")[/\A.*/].should == RUBY_DESCRIPTION
+  end
+
+  it "ignores whitespace around the option" do
+    ENV["RUBYOPT"] = ' -v '
     ruby_exe("")[/\A.*/].should == RUBY_DESCRIPTION
   end
 

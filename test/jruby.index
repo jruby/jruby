@@ -15,9 +15,10 @@ jruby/test_case
 jruby/test_class
 jruby/test_comparable
 jruby/test_core_arities
+jruby/test_coverage
 jruby/test_custom_enumerable
 jruby/test_cvars_in_odd_scopes
-jruby/test_date_joda_time
+jruby/test_date
 jruby/test_defined
 jruby/test_default_constants
 jruby/test_delegated_array_equals
@@ -27,6 +28,7 @@ jruby/test_digest_extend
 jruby/test_digest2
 jruby/test_env
 jruby/test_etc
+jruby/test_exception
 jruby/test_file
 # IRBuilder is unable to build these currently
 #jruby/test_flip
@@ -52,7 +54,6 @@ jruby/test_marshal_with_instance_variables
 jruby/test_marshal_gemspec
 jruby/test_method_missing
 jruby/test_name_error
-jruby/test_no_stack_trace_stomp
 jruby/test_pack
 jruby/test_primitive_to_java
 jruby/test_process
@@ -68,17 +69,19 @@ jruby/test_string_java_bytes
 jruby/test_string_printf
 jruby/test_string_to_number
 jruby/test_super_call_site_caching
+jruby/test_symbol
 jruby/test_system
 jruby/test_system_error
 jruby/test_timeout
 jruby/test_thread
-# FIXME probably should figure this one out
-#test_thread_backtrace
+jruby/test_thread_backtrace
 jruby/test_threaded_nonlocal_return
 jruby/test_time
 jruby/test_unmarshal
 jruby/test_vietnamese_charset
 jruby/test_win32
+# TODO test_yaml seems outdated
+# jruby/test_yaml
 jruby/test_zlib
 
 # these tests are last because they pull in libraries that can affect others

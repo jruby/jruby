@@ -1,7 +1,0 @@
-exclude :test_load_with_options, "needs investigation"
-exclude :test_parse_generic_object, "needs investigation"
-exclude :test_symbolize_names, "needs investigation"
-exclude :test_argument_encoding, "jruby/jruby#4281"
-exclude :test_error_message_encoding, "jruby/jruby#4281"
-exclude :test_parse_json_primitive_values, "jruby/jruby#4282"
-exclude :test_wrong_inputs, "jruby/jruby#4283"

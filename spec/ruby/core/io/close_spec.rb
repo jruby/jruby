@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#close" do
   before :each do
@@ -31,18 +31,34 @@ describe "IO#close" do
     lambda { @io.write "data" }.should raise_error(IOError)
   end
 
-  ruby_version_is ''...'2.3' do
-    it "raises an IOError if closed" do
-      @io.close
-      lambda { @io.close }.should raise_error(IOError)
-    end
+  it 'does not close the stream if autoclose is false' do
+    other_io = IO.new(@io.fileno)
+    other_io.autoclose = false
+    other_io.close
+    lambda { @io.write "data" }.should_not raise_error(IOError)
   end
 
-  ruby_version_is "2.3" do
-    it "does nothing if already closed" do
-      @io.close
+  it "does nothing if already closed" do
+    @io.close
 
-      @io.close.should be_nil
+    @io.close.should be_nil
+  end
+
+  ruby_version_is '2.5' do
+    it 'raises an IOError with a clear message' do
+      read_io, write_io = IO.pipe
+      going_to_read = false
+      thread = Thread.new do
+        lambda do
+          going_to_read = true
+          read_io.read
+        end.should raise_error(IOError, 'stream closed in another thread')
+      end
+
+      Thread.pass until going_to_read && thread.stop?
+      read_io.close
+      thread.join
+      write_io.close
     end
   end
 end
@@ -79,4 +95,3 @@ describe "IO#close on an IO.popen stream" do
   end
 
 end
-

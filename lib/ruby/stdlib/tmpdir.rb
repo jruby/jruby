@@ -82,7 +82,7 @@ class Dir
   #    FileUtils.remove_entry dir
   #  end
   #
-  def Dir.mktmpdir(prefix_suffix=nil, *rest)
+  def self.mktmpdir(prefix_suffix=nil, *rest)
     path = Tmpname.create(prefix_suffix || "d", *rest) {|n| mkdir(n, 0700)}
     if block_given?
       begin
@@ -106,37 +106,33 @@ class Dir
       Dir.tmpdir
     end
 
-    def make_tmpname((prefix, suffix), n)
-      prefix = (String.try_convert(prefix) or
-          raise ArgumentError, "unexpected prefix: #{prefix.inspect}")
-      suffix &&= (String.try_convert(suffix) or
-          raise ArgumentError, "unexpected suffix: #{suffix.inspect}")
-      t = Time.now.strftime("%Y%m%d")
-      path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}".dup
-      path << "-#{n}" if n
-      path << suffix if suffix
-      path
-    end
-
     def create(basename, tmpdir=nil, max_try: nil, **opts)
-    if $SAFE > 0 and tmpdir.tainted?
-      tmpdir = '/tmp'
-    else
-      tmpdir ||= tmpdir()
-    end
-    n = nil
-    begin
-      # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
-      # path = File.join(tmpdir, make_tmpname(basename, n))
-      path = File.expand_path(make_tmpname(basename, n), tmpdir)
-      yield(path, n, opts)
-    rescue Errno::EEXIST
-      n ||= 0
-      n += 1
-      retry if !max_try or n < max_try
-      raise "cannot generate temporary name using `#{basename}' under `#{tmpdir}'"
-    end
-    path
+      if $SAFE > 0 and tmpdir.tainted?
+        tmpdir = '/tmp'
+      else
+        tmpdir ||= tmpdir()
+      end
+      n = nil
+      prefix, suffix = basename
+      prefix = (String.try_convert(prefix) or
+                raise ArgumentError, "unexpected prefix: #{prefix.inspect}")
+      suffix &&= (String.try_convert(suffix) or
+                  raise ArgumentError, "unexpected suffix: #{suffix.inspect}")
+      begin
+        t = Time.now.strftime("%Y%m%d")
+        path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}"\
+               "#{n ? %[-#{n}] : ''}#{suffix||''}"
+        # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
+        # path = File.join(tmpdir, path)
+        path = File.expand_path(path, tmpdir)
+        yield(path, n, opts)
+      rescue Errno::EEXIST
+        n ||= 0
+        n += 1
+        retry if !max_try or n < max_try
+        raise "cannot generate temporary name using `#{basename}' under `#{tmpdir}'"
+      end
+      path
     end
   end
 end

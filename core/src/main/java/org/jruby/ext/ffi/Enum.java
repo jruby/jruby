@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -162,14 +162,14 @@ public final class Enum extends RubyObject {
     public final IRubyObject find(ThreadContext context, IRubyObject query) {
         if (query instanceof RubySymbol) {
             IRubyObject value = kv_map.fastARef(query);
-            return value != null ? value : context.runtime.getNil();
+            return value != null ? value : context.nil;
 
         } else if (query instanceof RubyInteger) {
             RubySymbol symbol = valueToSymbol.get((Long)((RubyInteger) query).getLongValue());
-            return symbol != null ? symbol : context.runtime.getNil();
+            return symbol != null ? symbol : context.nil;
 
         } else {
-            return context.runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -180,7 +180,7 @@ public final class Enum extends RubyObject {
 
     @JRubyMethod(name = { "symbols" })
     public final IRubyObject symbols(ThreadContext context) {
-        return kv_map.keys();
+        return kv_map.keys(context);
     }
 
     @JRubyMethod(name = { "tag" })
@@ -229,6 +229,6 @@ public final class Enum extends RubyObject {
 
     @JRubyMethod(name = "reference_required?")
     public IRubyObject reference_required_p(ThreadContext context) {
-        return context.runtime.getFalse();
+        return context.fals;
     }
 }

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,11 +29,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
@@ -143,40 +145,69 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(value);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "eql?", required = 1)
+    public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
+        return op_equal(context, other);
+    }
+
     @Override
+    @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        return context.runtime.newBoolean( equals(other) );
+    }
+
+    @Override
+    @JRubyMethod(name = "===", required = 1)
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return method.call(context, receiver, implementationModule, methodName, other, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public boolean equals(Object other) {
         if (!(other instanceof RubyMethod)) {
-            return context.runtime.getFalse();
+            return false;
         }
         if (method instanceof ProcMethod) {
-            return context.runtime.newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
+            return ((ProcMethod) method).isSame(((RubyMethod) other).getMethod());
         }
+        if (getMetaClass() != ((RubyBasicObject) other).getMetaClass()) {
+            return false;
+        }
+
         RubyMethod otherMethod = (RubyMethod)other;
-        return context.runtime.newBoolean(receiver == otherMethod.receiver &&
-                originModule == otherMethod.originModule &&
-                (isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) || isSerialMatch(otherMethod.getMethod().getRealMethod()))
-        );
+        return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
+            ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
     }
 
     private boolean isMethodMissingMatch(DynamicMethod other) {
         return (method.getRealMethod() instanceof RubyModule.RespondToMissingMethod) &&
-                ((RubyModule.RespondToMissingMethod)method.getRealMethod()).equals(other);
+                ((RubyModule.RespondToMissingMethod) method.getRealMethod()).equals(other);
     }
 
     private boolean isSerialMatch(DynamicMethod otherMethod) {
         return method.getRealMethod().getSerialNumber() == otherMethod.getRealMethod().getSerialNumber();
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCodeImpl());
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) hashCodeImpl();
+    }
+
+    private long hashCodeImpl() {
+        return receiver.hashCode() * method.getRealMethod().getSerialNumber();
     }
 
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        return newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        newMethod.setMetaClass(getMetaClass());
+        return newMethod;
     }
 
     /** Create a Proc object.
@@ -217,46 +248,68 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder buf = new StringBuilder("#<");
-        char delimeter = '#';
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyString str = RubyString.newString(runtime, "#<");
+        String sharp = "#";
         
-        buf.append(getMetaClass().getRealClass().getName()).append(": ");
-        
-        if (implementationModule.isSingleton()) {
-            IRubyObject attached = ((MetaClass) implementationModule).getAttached();
+        str.catString(getType().getName()).catString(": ");
+
+        RubyModule definedClass;
+        RubyModule mklass = originModule;
+
+        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
+            definedClass = method.getRealMethod().getDefinedClass();
+        }
+        else {
+            definedClass = method.getDefinedClass();
+        }
+
+        if (definedClass.isIncluded()) {
+            definedClass = definedClass.getMetaClass();
+        }
+
+        if (mklass.isSingleton()) {
+            IRubyObject attached = ((MetaClass) mklass).getAttached();
             if (receiver == null) {
-                buf.append(implementationModule.inspect().toString());
+                str.cat19(inspect(context, mklass).convertToString());
             } else if (receiver == attached) {
-                buf.append(attached.inspect().toString());
-                delimeter = '.';
+                str.cat19(inspect(context, attached).convertToString());
+                sharp = ".";
             } else {
-                buf.append(receiver.inspect().toString());
-                buf.append('(').append(attached.inspect().toString()).append(')');
-                delimeter = '.';
+                str.cat19(inspect(context, receiver).convertToString());
+                str.catString("(");
+                str.cat19(inspect(context, attached).convertToString());
+                str.catString(")");
+                sharp = ".";
             }
         } else {
-            buf.append(originModule.getName());
-            
-            if (implementationModule != originModule) {
-                buf.append('(').append(implementationModule.getName()).append(')');
+            str.catString(mklass.getName());
+            if (definedClass != mklass) {
+                str.catString("(");
+                str.catString(definedClass.getName());
+                str.catString(")");
             }
         }
-        
-        buf.append(delimeter).append(methodName).append('>');
-        
-        RubyString str = getRuntime().newString(buf.toString());
-        str.setTaint(isTaint());
+        str.catString(sharp);
+        str.catString(this.methodName);
+        if (!methodName.equals(method.getName())) {
+            str.catString("(");
+            str.catString(method.getName());
+            str.catString(")");
+        }
+        if (method.isNotImplemented()) {
+            str.catString(" (not-implemented)");
+        }
+        str.catString(">");
+
         return str;
     }
 
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         return receiver;
-    }
-
-    @JRubyMethod
-    public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
     }
 
     @JRubyMethod
@@ -268,7 +321,7 @@ public class RubyMethod extends AbstractRubyMethod {
             return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     public String getFilename() {

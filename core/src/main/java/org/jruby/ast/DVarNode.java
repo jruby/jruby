@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,10 +29,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,13 +44,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class DVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
-    private String name;
+    private RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private int location;
 
-    public DVarNode(ISourcePosition position, int location, String name) {
+    public DVarNode(ISourcePosition position, int location, RubySymbol name) {
         super(position, false);
         this.location = location;
         this.name = name;
@@ -89,16 +91,8 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
+    public RubySymbol getName() {
         return name;
-    }
-    
-    /**
-     * Sets the name of this variable (for refactoring support)
-     * @param name to set the variable to
-     */
-    public void setName(String name) {
-        this.name = name;
     }
     
     public List<Node> childNodes() {

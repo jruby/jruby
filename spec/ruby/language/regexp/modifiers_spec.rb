@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Regexps with modifers" do
   it "supports /i (case-insensitive)" do
@@ -37,6 +37,13 @@ describe "Regexps with modifers" do
     /foo/imoximox.match("foo").to_a.should == ["foo"]
 
     lambda { eval('/foo/a') }.should raise_error(SyntaxError)
+  end
+
+  ruby_version_is "2.4" do
+    it "supports (?~) (absent operator)" do
+      Regexp.new("(?~foo)").match("hello").to_a.should == ["hello"]
+      "foo".scan(Regexp.new("(?~foo)")).should == ["fo","o",""]
+    end
   end
 
   it "supports (?imx-imx) (inline modifiers)" do

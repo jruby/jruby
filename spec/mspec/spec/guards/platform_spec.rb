@@ -20,6 +20,13 @@ describe Object, "#platform_is" do
     ScratchPad.recorded.should == :yield
   end
 
+  it "returns what #os? returns when no block is given" do
+    PlatformGuard.stub(:os?).and_return(true)
+    platform_is(:solarce).should == true
+    PlatformGuard.stub(:os?).and_return(false)
+    platform_is(:solarce).should == false
+  end
+
   it "sets the name of the guard to :platform_is" do
     platform_is(:solarce) { }
     @guard.name.should == :platform_is
@@ -51,6 +58,13 @@ describe Object, "#platform_is_not" do
     PlatformGuard.stub(:os?).and_return(false)
     platform_is_not(:solarce) { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
+  end
+
+  it "returns the opposite of what #os? returns when no block is given" do
+    PlatformGuard.stub(:os?).and_return(true)
+    platform_is_not(:solarce).should == false
+    PlatformGuard.stub(:os?).and_return(false)
+    platform_is_not(:solarce).should == true
   end
 
   it "sets the name of the guard to :platform_is_not" do
@@ -110,66 +124,49 @@ describe Object, "#platform_is_not :wordsize => SIZE_SPEC" do
 end
 
 describe PlatformGuard, ".implementation?" do
-  before :all do
-    @verbose = $VERBOSE
-    $VERBOSE = nil
-  end
-
-  after :all do
-    $VERBOSE = @verbose
-  end
-
-  before :each do
-    @ruby_name = Object.const_get :RUBY_NAME
-  end
-
-  after :each do
-    Object.const_set :RUBY_NAME, @ruby_name
-  end
-
-  it "returns true if passed :ruby and RUBY_NAME == 'ruby'" do
-    Object.const_set :RUBY_NAME, 'ruby'
+  it "returns true if passed :ruby and RUBY_ENGINE == 'ruby'" do
+    stub_const 'RUBY_ENGINE', 'ruby'
     PlatformGuard.implementation?(:ruby).should == true
   end
 
-  it "returns true if passed :rubinius and RUBY_NAME == 'rbx'" do
-    Object.const_set :RUBY_NAME, 'rbx'
+  it "returns true if passed :rubinius and RUBY_ENGINE == 'rbx'" do
+    stub_const 'RUBY_ENGINE', 'rbx'
     PlatformGuard.implementation?(:rubinius).should == true
   end
 
-  it "returns true if passed :jruby and RUBY_NAME == 'jruby'" do
-    Object.const_set :RUBY_NAME, 'jruby'
+  it "returns true if passed :jruby and RUBY_ENGINE == 'jruby'" do
+    stub_const 'RUBY_ENGINE', 'jruby'
     PlatformGuard.implementation?(:jruby).should == true
   end
 
-  it "returns true if passed :ironruby and RUBY_NAME == 'ironruby'" do
-    Object.const_set :RUBY_NAME, 'ironruby'
+  it "returns true if passed :ironruby and RUBY_ENGINE == 'ironruby'" do
+    stub_const 'RUBY_ENGINE', 'ironruby'
     PlatformGuard.implementation?(:ironruby).should == true
   end
 
-  it "returns true if passed :maglev and RUBY_NAME == 'maglev'" do
-    Object.const_set :RUBY_NAME, 'maglev'
+  it "returns true if passed :maglev and RUBY_ENGINE == 'maglev'" do
+    stub_const 'RUBY_ENGINE', 'maglev'
     PlatformGuard.implementation?(:maglev).should == true
   end
 
-  it "returns true if passed :topaz and RUBY_NAME == 'topaz'" do
-    Object.const_set :RUBY_NAME, 'topaz'
+  it "returns true if passed :topaz and RUBY_ENGINE == 'topaz'" do
+    stub_const 'RUBY_ENGINE', 'topaz'
     PlatformGuard.implementation?(:topaz).should == true
   end
 
-  it "returns true if passed :ruby and RUBY_NAME matches /^ruby/" do
-    Object.const_set :RUBY_NAME, 'ruby'
+  it "returns true if passed :ruby and RUBY_ENGINE matches /^ruby/" do
+    stub_const 'RUBY_ENGINE', 'ruby'
     PlatformGuard.implementation?(:ruby).should == true
 
-    Object.const_set :RUBY_NAME, 'ruby1.8'
+    stub_const 'RUBY_ENGINE', 'ruby1.8'
     PlatformGuard.implementation?(:ruby).should == true
 
-    Object.const_set :RUBY_NAME, 'ruby1.9'
+    stub_const 'RUBY_ENGINE', 'ruby1.9'
     PlatformGuard.implementation?(:ruby).should == true
   end
 
   it "raises an error when passed an unrecognized name" do
-    Object.const_set :RUBY_NAME, 'ruby'
+    stub_const 'RUBY_ENGINE', 'ruby'
     lambda {
       PlatformGuard.implementation?(:python)
     }.should raise_error(/unknown implementation/)

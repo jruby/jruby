@@ -1,11 +1,11 @@
 /**
  * **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,7 +30,6 @@
 package org.jruby.embed;
 
 import java.io.InputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
@@ -39,7 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.Ruby;
 import org.jruby.RubyGlobal.InputGlobalVariable;
@@ -59,7 +57,6 @@ import org.jruby.embed.internal.SingletonLocalContextProvider;
 import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
-import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaEmbedUtils;
@@ -493,15 +490,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public void setRunRubyInProcess(boolean inprocess) {
         provider.getRubyInstanceConfig().setRunRubyInProcess(inprocess);
-    }
-
-    @Deprecated
-    public CompatVersion getCompatVersion() {
-        return provider.getRubyInstanceConfig().getCompatVersion();
-    }
-
-    @Deprecated
-    public void setCompatVersion(CompatVersion version) {
     }
 
     /**
@@ -1949,5 +1937,14 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
 
     protected void addGemPath(String uri) {
         runScriptlet( "require 'rubygems/defaults/jruby';Gem::Specification.add_dir '" + uri + "' unless Gem::Specification.dirs.member?( '" + uri + "' )" );
+    }
+
+    @Deprecated
+    public org.jruby.CompatVersion getCompatVersion() {
+        return provider.getRubyInstanceConfig().getCompatVersion();
+    }
+
+    @Deprecated
+    public void setCompatVersion(org.jruby.CompatVersion version) {
     }
 }

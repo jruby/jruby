@@ -1,25 +1,13 @@
+# encoding: UTF-8
 require 'test/unit'
 require 'pathname'
 require 'rbconfig'
-require 'tempfile'
 
 class TestPathname < Test::Unit::TestCase
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def test_dup
     assert_equal 'some/path', Pathname.new('some/path').dup.to_s
-  end
-
-  unless WINDOWS # Don't have symlinks on Windows.
-    def test_realpath_symlink
-      target = Tempfile.new 'target'
-      link = Dir::Tmpname.make_tmpname 'link', nil
-      File.symlink(target, link)
-      assert_equal Pathname.new(target).realpath, Pathname.new(link).realpath
-    ensure
-      target.close! if target
-      File.delete(link) if link && File.exists?(link)
-    end
   end
 
   # GH-3392
@@ -65,6 +53,13 @@ class TestPathname < Test::Unit::TestCase
     assert Pathname.new('file:/my.jar!/asd').absolute?
     assert Pathname.new('file://my.jar!/asd').absolute?
     assert Pathname.new('my.jar!/asd').absolute?
+  end
+
+  def test_unicode_name
+    x = "joe"
+    y = "joe/⸀䐀攀氀攀琀攀䴀攀/fred"
+    p = Pathname.new(y).relative_path_from(Pathname.new(x))
+    assert_equal "⸀䐀攀氀攀琀攀䴀攀/fred", p.to_s
   end
 
 end

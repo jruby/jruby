@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -37,6 +37,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -203,6 +204,7 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * Simple helper to print any objects.
+     * @deprecated no longer used - uses Java's System.out
      */
     public static void puts(Object obj) {
         System.out.println(obj.toString());
@@ -222,13 +224,22 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * The default toString method is just a wrapper that calls the
+     * Ruby "to_s" method.  This will raise if it is not actually a Ruby String.
+     *
+     * @param context thread context this is executing on.
+     * @return the string.
+     */
+    public RubyString toRubyString(ThreadContext context) {
+        return sites(context).to_s.call(context, this, this).convertToString();
+    }
+
+    /**
+     * The default toString method is just a wrapper that calls the
      * Ruby "to_s" method.
      */
     @Override
     public String toString() {
-        ThreadContext context = getRuntime().getCurrentContext();
-        RubyString rubyString = sites(context).to_s.call(context, this, this).convertToString();
-        return rubyString.getUnicodeValue();
+        return toRubyString(getRuntime().getCurrentContext()).getUnicodeValue();
     }
 
     /**
@@ -368,18 +379,20 @@ public class RubyObject extends RubyBasicObject {
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
      */
-    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
-        if (a == b) {
-            return true;
-        } else if (a instanceof RubySymbol) {
-            return false;
-        } else if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
-            return ((RubyFixnum)a).fastEqual((RubyFixnum) b);
-        } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
-            return ((RubyFloat)a).fastEqual((RubyFloat)b);
-        } else {
-            return invokedynamic(context, a, OP_EQUAL, b).isTrue();
+    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
+        if (a == b) return true;
+        if (a instanceof RubySymbol) return false;
+
+        return fastNumEqualInternal(context, a, b);
+    }
+
+    private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
+        if (a instanceof RubyFixnum) {
+            if (b instanceof RubyFixnum) return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
+        } else if (a instanceof RubyFloat) {
+            if (b instanceof RubyFloat) return ((RubyFloat) a).fastEqual((RubyFloat) b);
         }
+        return invokedynamic(context, a, OP_EQUAL, b).isTrue();
     }
 
     /**
@@ -387,16 +400,13 @@ public class RubyObject extends RubyBasicObject {
      * equality, and then calling the "eql?" method.
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
-        if (a == b) {
-            return true;
-        } else if (a instanceof RubySymbol) {
-            return false;
-        } else if (a instanceof RubyNumeric) {
+        if (a == b) return true;
+        if (a instanceof RubySymbol) return false;
+        if (a instanceof RubyNumeric) {
             if (a.getClass() != b.getClass()) return false;
-            return equalInternal(context, a, b);
-        } else {
-            return invokedynamic(context, a, EQL, b).isTrue();
+            return fastNumEqualInternal(context, a, b);
         }
+        return invokedynamic(context, a, EQL, b).isTrue();
     }
 
     /**

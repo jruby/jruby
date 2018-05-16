@@ -1,6 +1,6 @@
 IMPLS = {
   truffleruby: {
-    git: "https://github.com/graalvm/truffleruby.git",
+    git: "https://github.com/oracle/truffleruby.git",
     from_commit: "f10ab6988d",
   },
   jruby: {
@@ -13,16 +13,25 @@ IMPLS = {
   mri: {
     git: "https://github.com/ruby/ruby.git",
     master: "trunk",
-    prefix: "spec/rubyspec",
-    merge_message: "Update to ruby/spec@",
   },
 }
 
+MSPEC = ARGV.delete('--mspec')
+
+MSPEC_REPO = File.expand_path("../../..", __FILE__)
+raise MSPEC_REPO if !Dir.exist?(MSPEC_REPO) or !Dir.exist?("#{MSPEC_REPO}/.git")
+
 # Assuming the rubyspec repo is a sibling of the mspec repo
-RUBYSPEC_REPO = File.expand_path("../../../../rubyspec", __FILE__)
+RUBYSPEC_REPO = File.expand_path("../rubyspec", MSPEC_REPO)
 raise RUBYSPEC_REPO unless Dir.exist?(RUBYSPEC_REPO)
 
+SOURCE_REPO = MSPEC ? MSPEC_REPO : RUBYSPEC_REPO
+
 NOW = Time.now
+
+BRIGHT_RED = "\e[31;1m"
+BRIGHT_YELLOW = "\e[33;1m"
+RESET = "\e[0m"
 
 class RubyImplementation
   attr_reader :name
@@ -54,11 +63,13 @@ class RubyImplementation
   end
 
   def last_merge_message
-    @data[:merge_message] || "Merge ruby/spec commit"
+    message = @data[:merge_message] || "Update to ruby/spec@"
+    message.gsub!("ruby/spec", "ruby/mspec") if MSPEC
+    message
   end
 
   def prefix
-    @data[:prefix] || "spec/ruby"
+    MSPEC ? "spec/mspec" : "spec/ruby"
   end
 
   def rebased_branch
@@ -93,32 +104,38 @@ end
 def filter_commits(impl)
   Dir.chdir(impl.repo_name) do
     date = NOW.strftime("%F")
-    branch = "specs-#{date}"
+    branch = "#{MSPEC ? :mspec : :specs}-#{date}"
 
     unless branch?(branch)
       sh "git", "checkout", "-b", branch
       sh "git", "filter-branch", "-f", "--subdirectory-filter", impl.prefix, *impl.from_commit
-      sh "git", "push", "-f", RUBYSPEC_REPO, "#{branch}:#{impl.name}"
+      sh "git", "push", "-f", SOURCE_REPO, "#{branch}:#{impl.name}"
     end
   end
 end
 
 def rebase_commits(impl)
-  Dir.chdir(RUBYSPEC_REPO) do
+  Dir.chdir(SOURCE_REPO) do
     sh "git", "checkout", "master"
     sh "git", "pull"
 
     rebased = impl.rebased_branch
     if branch?(rebased)
-      puts "#{rebased} already exists, assuming it correct"
-      sh "git", "checkout", rebased
+      last_commit = Time.at(Integer(`git log -n 1 --format='%ct' #{rebased}`))
+      days_since_last_commit = (NOW-last_commit) / 86400
+      if days_since_last_commit > 7
+        abort "#{BRIGHT_RED}#{rebased} exists but last commit is old (#{last_commit}), delete the branch if it was merged#{RESET}"
+      else
+        puts "#{BRIGHT_YELLOW}#{rebased} already exists, last commit on #{last_commit}, assuming it correct#{RESET}"
+        sh "git", "checkout", rebased
+      end
     else
       sh "git", "checkout", impl.name
 
       if ENV["LAST_MERGE"]
         last_merge = `git log -n 1 --format='%H %ct' #{ENV["LAST_MERGE"]}`
       else
-        last_merge = `git log --grep='#{impl.last_merge_message}' -n 1 --format='%H %ct'`
+        last_merge = `git log --grep='^#{impl.last_merge_message}' -n 1 --format='%H %ct'`
       end
       last_merge, commit_timestamp = last_merge.chomp.split(' ')
 
@@ -128,7 +145,7 @@ def rebase_commits(impl)
       commit_date = Time.at(Integer(commit_timestamp))
       days_since_last_merge = (NOW-commit_date) / 86400
       if days_since_last_merge > 60
-        raise "#{days_since_last_merge} since last merge, probably wrong commit"
+        raise "#{days_since_last_merge.floor} days since last merge, probably wrong commit"
       end
 
       puts "Rebasing..."
@@ -141,36 +158,29 @@ end
 
 def test_new_specs
   require "yaml"
-  Dir.chdir(RUBYSPEC_REPO) do
-    versions = YAML.load_file(".travis.yml")
-    versions = versions["matrix"]["include"].map { |job| job["rvm"] }
-    versions.delete "ruby-head"
-    min_version, max_version = versions.minmax
+  Dir.chdir(SOURCE_REPO) do
+    if MSPEC
+      sh "bundle", "exec", "rspec"
+    else
+      versions = YAML.load_file(".travis.yml")
+      versions = versions["matrix"]["include"].map { |job| job["rvm"] }
+      versions.delete "ruby-head"
+      min_version, max_version = versions.minmax
 
-    run_rubyspec = -> version {
-      command = "chruby #{version} && ../mspec/bin/mspec -j"
-      sh ENV["SHELL"], "-c", command
-    }
-    run_rubyspec[min_version]
-    run_rubyspec[max_version]
-    run_rubyspec["trunk"]
+      run_rubyspec = -> version {
+        command = "chruby #{version} && ../mspec/bin/mspec -j"
+        sh ENV["SHELL"], "-c", command
+      }
+      run_rubyspec[min_version]
+      run_rubyspec[max_version]
+      run_rubyspec["trunk"]
+    end
   end
 end
 
 def verify_commits(impl)
   puts
-  Dir.chdir(RUBYSPEC_REPO) do
-    history = `git log master...`
-    history.lines.slice_before(/^commit \h{40}$/).each do |commit, *message|
-      commit = commit.chomp.split.last
-      message = message.join
-      if /\W(#\d+)/ === message
-        puts "Commit #{commit} contains an unqualified issue number: #{$1}"
-        puts "Replace it with #{impl.repo_org}/#{impl.repo_name}#{$1}"
-        sh "git", "rebase", "-i", "#{commit}^"
-      end
-    end
-
+  Dir.chdir(SOURCE_REPO) do
     puts "Manually check commit messages:"
     print "Press enter >"
     STDIN.gets
@@ -179,7 +189,7 @@ def verify_commits(impl)
 end
 
 def fast_forward_master(impl)
-  Dir.chdir(RUBYSPEC_REPO) do
+  Dir.chdir(SOURCE_REPO) do
     sh "git", "checkout", "master"
     sh "git", "merge", "--ff-only", "#{impl.name}-rebased"
   end
@@ -189,7 +199,7 @@ def check_ci
   puts
   puts <<-EOS
   Push to master, and check that the CI passes:
-    https://github.com/ruby/spec/commits/master
+    https://github.com/ruby/#{:m if MSPEC}spec/commits/master
 
   EOS
 end

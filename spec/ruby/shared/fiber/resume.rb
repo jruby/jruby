@@ -5,13 +5,15 @@ describe :fiber_resume, shared: true do
   end
 
   it "raises a FiberError if invoked from a different Thread" do
-    fiber = Fiber.new { }
-    lambda do
-      Thread.new do
-        fiber.resume
-      end.join
-    end.should raise_error(FiberError)
-    fiber.resume
+    fiber = Fiber.new { 42 }
+    Thread.new do
+      -> {
+        fiber.send(@method)
+      }.should raise_error(FiberError)
+    end.join
+
+    # Check the Fiber can still be used
+    fiber.send(@method).should == 42
   end
 
   it "passes control to the beginning of the block on first invocation" do

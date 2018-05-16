@@ -5,6 +5,14 @@
 extern "C" {
 #endif
 
+static VALUE numeric_spec_size_of_VALUE(VALUE self) {
+  return INT2FIX(sizeof(VALUE));
+}
+
+static VALUE numeric_spec_size_of_long_long(VALUE self) {
+  return INT2FIX(sizeof(LONG_LONG));
+}
+
 #ifdef HAVE_NUM2CHR
 static VALUE numeric_spec_NUM2CHR(VALUE self, VALUE value) {
   return INT2FIX(NUM2CHR(value));
@@ -17,6 +25,16 @@ static VALUE numeric_spec_rb_int2inum_14(VALUE self) {
 }
 #endif
 
+#ifdef HAVE_RB_UINT2INUM
+static VALUE numeric_spec_rb_uint2inum_14(VALUE self) {
+  return rb_uint2inum(14);
+}
+
+static VALUE numeric_spec_rb_uint2inum_n14(VALUE self) {
+  return rb_uint2inum(-14);
+}
+#endif
+
 #ifdef HAVE_RB_INTEGER
 static VALUE numeric_spec_rb_Integer(VALUE self, VALUE str) {
   return rb_Integer(str);
@@ -26,6 +44,16 @@ static VALUE numeric_spec_rb_Integer(VALUE self, VALUE str) {
 #ifdef HAVE_RB_LL2INUM
 static VALUE numeric_spec_rb_ll2inum_14(VALUE self) {
   return rb_ll2inum(14);
+}
+#endif
+
+#ifdef HAVE_RB_ULL2INUM
+static VALUE numeric_spec_rb_ull2inum_14(VALUE self) {
+  return rb_ull2inum(14);
+}
+
+static VALUE numeric_spec_rb_ull2inum_n14(VALUE self) {
+  return rb_ull2inum(-14);
 }
 #endif
 
@@ -96,9 +124,18 @@ static VALUE numeric_spec_rb_num_coerce_relop(VALUE self, VALUE x, VALUE y, VALU
 }
 #endif
 
+#ifdef HAVE_RB_ABSINT_SINGLEBIT_P
+static VALUE numeric_spec_rb_absint_singlebit_p(VALUE self, VALUE num) {
+  return INT2FIX(rb_absint_singlebit_p(num));
+}
+#endif
+
 void Init_numeric_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiNumericSpecs", rb_cObject);
+
+  rb_define_method(cls, "size_of_VALUE", numeric_spec_size_of_VALUE, 0);
+  rb_define_method(cls, "size_of_long_long", numeric_spec_size_of_long_long, 0);
 
 #ifdef HAVE_NUM2CHR
   rb_define_method(cls, "NUM2CHR", numeric_spec_NUM2CHR, 1);
@@ -108,12 +145,22 @@ void Init_numeric_spec(void) {
   rb_define_method(cls, "rb_int2inum_14", numeric_spec_rb_int2inum_14, 0);
 #endif
 
+#ifdef HAVE_RB_UINT2INUM
+  rb_define_method(cls, "rb_uint2inum_14", numeric_spec_rb_uint2inum_14, 0);
+  rb_define_method(cls, "rb_uint2inum_n14", numeric_spec_rb_uint2inum_n14, 0);
+#endif
+
 #ifdef HAVE_RB_INTEGER
   rb_define_method(cls, "rb_Integer", numeric_spec_rb_Integer, 1);
 #endif
 
 #ifdef HAVE_RB_LL2INUM
   rb_define_method(cls, "rb_ll2inum_14", numeric_spec_rb_ll2inum_14, 0);
+#endif
+
+#ifdef HAVE_RB_ULL2INUM
+  rb_define_method(cls, "rb_ull2inum_14", numeric_spec_rb_ull2inum_14, 0);
+  rb_define_method(cls, "rb_ull2inum_n14", numeric_spec_rb_ull2inum_n14, 0);
 #endif
 
 #ifdef HAVE_RB_NUM2DBL
@@ -158,6 +205,10 @@ void Init_numeric_spec(void) {
 
 #ifdef HAVE_RB_NUM_COERCE_RELOP
   rb_define_method(cls, "rb_num_coerce_relop", numeric_spec_rb_num_coerce_relop, 3);
+#endif
+
+#ifdef HAVE_RB_ABSINT_SINGLEBIT_P
+rb_define_method(cls, "rb_absint_singlebit_p", numeric_spec_rb_absint_singlebit_p, 1);
 #endif
 }
 

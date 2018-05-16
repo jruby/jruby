@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/constants', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../fixtures/constants'
 
 describe "Module#const_missing" do
   it "is called when an undefined constant is referenced via literal form" do
@@ -24,4 +24,13 @@ describe "Module#const_missing" do
     end
   end
 
+  it "is called regardless of visibility" do
+    klass = Class.new do
+      def self.const_missing(name)
+        "Found:#{name}"
+      end
+      private_class_method :const_missing
+    end
+    klass::Hello.should == 'Found:Hello'
+  end
 end

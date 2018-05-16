@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#alias_method" do
   before :each do
@@ -49,9 +49,9 @@ describe "Module#alias_method" do
     }
   end
 
-  it "raises RuntimeError if frozen" do
+  it "raises #{frozen_error_class} if frozen" do
     @class.freeze
-    lambda { @class.make_alias :uno, :public_one }.should raise_error(RuntimeError)
+    lambda { @class.make_alias :uno, :public_one }.should raise_error(frozen_error_class)
   end
 
   it "converts the names using #to_str" do
@@ -69,8 +69,15 @@ describe "Module#alias_method" do
     lambda { @class.make_alias mock('x'), :public_one }.should raise_error(TypeError)
   end
 
-  it "is a private method" do
-    lambda { @class.alias_method :ichi, :public_one }.should raise_error(NoMethodError)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      lambda { @class.alias_method :ichi, :public_one }.should raise_error(NoMethodError)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:alias_method, false)
+    end
   end
 
   it "returns self" do

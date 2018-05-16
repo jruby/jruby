@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.profile.builtin;
 
 import org.jruby.MetaClass;
@@ -40,14 +41,16 @@ import org.jruby.util.collections.IntHashMap.Entry;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
+
 public abstract class ProfilePrinter {
     
     /**
      * Printer implementation factory for supported profiling modes.
      * @param mode the profiling mode
      * @param profileData
-     * @param runtime
-     * @see Ruby#printProfileData(ProfileData)
      */
     public static ProfilePrinter newPrinter(ProfilingMode mode, ProfileData profileData) {
         return newPrinter(mode, profileData, null);
@@ -58,17 +61,13 @@ public abstract class ProfilePrinter {
         if (topInvocation == null) topInvocation = profileData.computeResults();
         if (mode == ProfilingMode.FLAT) {
             printer = new FlatProfilePrinter(profileData, topInvocation);
-        }
-        else if (mode == ProfilingMode.GRAPH) {
+        } else if (mode == ProfilingMode.GRAPH) {
             printer = new GraphProfilePrinter(profileData, topInvocation);
-        }
-        else if (mode == ProfilingMode.HTML) {
+        } else if (mode == ProfilingMode.HTML) {
             printer = new HtmlProfilePrinter(profileData, topInvocation);
-        }
-        else if (mode == ProfilingMode.JSON) {
+        } else if (mode == ProfilingMode.JSON) {
             printer = new JsonProfilePrinter(profileData, topInvocation);
-        }
-        else {
+        } else {
             printer = null;
         }
         return printer;
@@ -136,10 +135,10 @@ public abstract class ProfilePrinter {
     static String methodName(ProfiledMethod profileMethod) {
         final String displayName;
         if (profileMethod != null) {
-            String name = profileMethod.getName();
             DynamicMethod method = profileMethod.getMethod();
-            if (name == null) name = method.getName();
-            displayName = moduleHashMethod(method.getImplementationClass(), name);
+            String id = profileMethod.getName();
+            if (id == null) id = method.getName();
+            displayName = moduleHashMethod(method.getImplementationClass(), id.toString());
         } else {
             displayName = "<unknown>";
         }
@@ -180,24 +179,26 @@ public abstract class ProfilePrinter {
     static final String PROFILER_PROFILE_METHOD = "JRuby::Profiler.profile";
     static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::Profiler.profiled_code";
     
-    private static String moduleHashMethod(RubyModule module, String name) {
+    private static String moduleHashMethod(RubyModule module, String id) {
+        Ruby runtime = module.getRuntime();
+
         if (module instanceof MetaClass) {
             IRubyObject obj = ((MetaClass) module).getAttached();
             if (obj instanceof RubyModule) {
-                return ((RubyModule) obj).getName() + "." + name;
+                return str(runtime, types(runtime, (RubyModule) obj), ".", ids(runtime, id));
             } 
             if (obj instanceof RubyObject) {
-                return ((RubyObject) obj).getType().getName() + "(singleton)#" + name;
+                return str(runtime, types(runtime, ((RubyObject) obj).getType()), "(singleton)#", ids(runtime, id));
             }
-            return "unknown#" + name;
+            return str(runtime, "unknown#", ids(runtime, id));
         }
         if (module.isSingleton()) {
-            return ((RubyClass) module).getRealClass().getName() + "(singleton)#" + name;
+            return str(runtime, types(runtime, ((RubyClass) module).getRealClass()), "(singleton)#", ids(runtime, id));
         }
         if (module instanceof RubyClass) {
-            return module.getName() + "#" + name; // instance method
+            return str(runtime, types(runtime, module), "#", ids(runtime, id)); // instance method
         }
-        return module.getName() + "." + name; // module method
+        return str(runtime, types(runtime, module), ".", ids(runtime, id)); // module method
     }
     
     protected static void pad(PrintStream out, int size, String body) {

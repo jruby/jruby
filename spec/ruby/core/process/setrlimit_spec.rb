@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 platform_is_not :windows do
   describe "Process.setrlimit" do
@@ -73,13 +73,13 @@ platform_is_not :windows do
         Process.setrlimit(:STACK, *Process.getrlimit(Process::RLIMIT_STACK)).should be_nil
       end
 
-      platform_is_not :solaris do
-        platform_is_not :aix do
-          it "coerces :MEMLOCK into RLIMIT_MEMLOCK" do
-            Process.setrlimit(:MEMLOCK, *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
-          end
+      platform_is_not :solaris, :aix do
+        it "coerces :MEMLOCK into RLIMIT_MEMLOCK" do
+          Process.setrlimit(:MEMLOCK, *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
         end
+      end
 
+      platform_is_not :solaris do
         it "coerces :NPROC into RLIMIT_NPROC" do
           Process.setrlimit(:NPROC, *Process.getrlimit(Process::RLIMIT_NPROC)).should be_nil
         end
@@ -100,7 +100,7 @@ platform_is_not :windows do
           Process.setrlimit(:RTPRIO, *Process.getrlimit(Process::RLIMIT_RTPRIO)).should be_nil
         end
 
-        if defined?(Process::RLIMIT_RTTIME)
+        guard -> { defined?(Process::RLIMIT_RTTIME) } do
           it "coerces :RTTIME into RLIMIT_RTTIME" do
             Process.setrlimit(:RTTIME, *Process.getrlimit(Process::RLIMIT_RTTIME)).should be_nil
           end
@@ -155,13 +155,13 @@ platform_is_not :windows do
         Process.setrlimit("STACK", *Process.getrlimit(Process::RLIMIT_STACK)).should be_nil
       end
 
-      platform_is_not :solaris do
-        platform_is_not :aix do
-          it "coerces 'MEMLOCK' into RLIMIT_MEMLOCK" do
-            Process.setrlimit("MEMLOCK", *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
-          end
+      platform_is_not :solaris, :aix do
+        it "coerces 'MEMLOCK' into RLIMIT_MEMLOCK" do
+          Process.setrlimit("MEMLOCK", *Process.getrlimit(Process::RLIMIT_MEMLOCK)).should be_nil
         end
+      end
 
+      platform_is_not :solaris do
         it "coerces 'NPROC' into RLIMIT_NPROC" do
           Process.setrlimit("NPROC", *Process.getrlimit(Process::RLIMIT_NPROC)).should be_nil
         end
@@ -182,7 +182,7 @@ platform_is_not :windows do
           Process.setrlimit("RTPRIO", *Process.getrlimit(Process::RLIMIT_RTPRIO)).should be_nil
         end
 
-        if defined?(Process::RLIMIT_RTTIME)
+        guard -> { defined?(Process::RLIMIT_RTTIME) } do
           it "coerces 'RTTIME' into RLIMIT_RTTIME" do
             Process.setrlimit("RTTIME", *Process.getrlimit(Process::RLIMIT_RTTIME)).should be_nil
           end

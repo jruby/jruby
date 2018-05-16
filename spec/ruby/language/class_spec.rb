@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/class', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/class'
 
 ClassSpecsNumber = 12
 
@@ -13,11 +13,9 @@ describe "The class keyword" do
     ClassSpecsKeywordWithSemicolon.should be_an_instance_of(Class)
   end
 
-  ruby_version_is "2.3" do
-    it "does not raise a SyntaxError when opening a class without a semicolon" do
-      eval "class ClassSpecsKeywordWithoutSemicolon end"
-      ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
-    end
+  it "does not raise a SyntaxError when opening a class without a semicolon" do
+    eval "class ClassSpecsKeywordWithoutSemicolon end"
+    ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
   end
 end
 
@@ -88,19 +86,17 @@ describe "A class definition" do
   end
 
   # [Bug #12367] [ruby-core:75446]
-  ruby_version_is "2.4" do # Until backported
-    it "raises an error when reopening a class with Object as superclass" do
-      module ClassSpecs
-        class SuperclassReopenedObject < A
-        end
-        SuperclassReopenedObject.superclass.should == A
-
-        lambda {
-          class SuperclassReopenedObject < Object
-          end
-        }.should raise_error(TypeError, /superclass mismatch/)
-        SuperclassReopenedObject.superclass.should == A
+  it "raises an error when reopening a class with Object as superclass" do
+    module ClassSpecs
+      class SuperclassReopenedObject < A
       end
+      SuperclassReopenedObject.superclass.should == A
+
+      lambda {
+        class SuperclassReopenedObject < Object
+        end
+      }.should raise_error(TypeError, /superclass mismatch/)
+      SuperclassReopenedObject.superclass.should == A
     end
   end
 

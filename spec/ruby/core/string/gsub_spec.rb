@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :string_gsub_named_capture, shared: true do
   it "replaces \\k named backreferences with the regexp's corresponding capture" do
@@ -603,13 +603,13 @@ describe "String#gsub! with pattern and replacement" do
   end
 
   # See [ruby-core:23666]
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     s = "hello"
     s.freeze
 
-    lambda { s.gsub!(/ROAR/, "x")    }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/e/, "e")       }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/[aeiou]/, '*') }.should raise_error(RuntimeError)
+    lambda { s.gsub!(/ROAR/, "x")    }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/e/, "e")       }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/[aeiou]/, '*') }.should raise_error(frozen_error_class)
   end
 end
 
@@ -640,13 +640,13 @@ describe "String#gsub! with pattern and block" do
   end
 
   # See [ruby-core:23663]
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     s = "hello"
     s.freeze
 
-    lambda { s.gsub!(/ROAR/)    { "x" } }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/e/)       { "e" } }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/[aeiou]/) { '*' } }.should raise_error(RuntimeError)
+    lambda { s.gsub!(/ROAR/)    { "x" } }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/e/)       { "e" } }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/[aeiou]/) { '*' } }.should raise_error(frozen_error_class)
   end
 
   it "uses the compatible encoding if they are compatible" do

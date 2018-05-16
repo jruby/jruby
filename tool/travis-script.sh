@@ -20,8 +20,3 @@ if [[ -v COMMAND ]]
 then
   $COMMAND
 fi
-
-if [[ -v JT ]]
-then
-  ruby tool/jt.rb $JT
-fi

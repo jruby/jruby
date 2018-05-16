@@ -181,6 +181,10 @@ VALUE string_spec_rb_str_length(VALUE self, VALUE str) {
 VALUE string_spec_rb_str_new(VALUE self, VALUE str, VALUE len) {
   return rb_str_new(RSTRING_PTR(str), FIX2INT(len));
 }
+
+VALUE string_spec_rb_str_new_offset(VALUE self, VALUE str, VALUE offset, VALUE len) {
+  return rb_str_new(RSTRING_PTR(str) + FIX2INT(offset), FIX2INT(len));
+}
 #endif
 
 #ifdef HAVE_RB_STR_NEW2
@@ -254,6 +258,18 @@ VALUE string_spec_rb_str_new4(VALUE self, VALUE str) {
 #ifdef HAVE_RB_STR_NEW5
 VALUE string_spec_rb_str_new5(VALUE self, VALUE str, VALUE ptr, VALUE len) {
   return rb_str_new5(str, RSTRING_PTR(ptr), FIX2INT(len));
+}
+#endif
+
+#ifdef HAVE_RB_TAINTED_STR_NEW
+VALUE string_spec_rb_tainted_str_new(VALUE self, VALUE str, VALUE len) {
+  return rb_tainted_str_new(RSTRING_PTR(str), FIX2INT(len));
+}
+#endif
+
+#ifdef HAVE_RB_TAINTED_STR_NEW2
+VALUE string_spec_rb_tainted_str_new2(VALUE self, VALUE str) {
+  return rb_tainted_str_new2(RSTRING_PTR(str));
 }
 #endif
 
@@ -355,6 +371,13 @@ VALUE string_spec_RSTRING_PTR_after_funcall(VALUE self, VALUE str, VALUE cb) {
 #ifdef HAVE_STRINGVALUE
 VALUE string_spec_StringValue(VALUE self, VALUE str) {
   return StringValue(str);
+}
+#endif
+
+#ifdef HAVE_SAFE_STRING_VALUE
+static VALUE string_spec_SafeStringValue(VALUE self, VALUE str) {
+  SafeStringValue(str);
+  return str;
 }
 #endif
 
@@ -517,6 +540,7 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_RB_STR_NEW
   rb_define_method(cls, "rb_str_new", string_spec_rb_str_new, 2);
+  rb_define_method(cls, "rb_str_new_offset", string_spec_rb_str_new_offset, 3);
 #endif
 
 #ifdef HAVE_RB_STR_NEW2
@@ -562,6 +586,14 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_RB_STR_NEW5
   rb_define_method(cls, "rb_str_new5", string_spec_rb_str_new5, 3);
+#endif
+
+#ifdef HAVE_RB_TAINTED_STR_NEW
+  rb_define_method(cls, "rb_tainted_str_new", string_spec_rb_tainted_str_new, 2);
+#endif
+
+#ifdef HAVE_RB_TAINTED_STR_NEW2
+  rb_define_method(cls, "rb_tainted_str_new2", string_spec_rb_tainted_str_new2, 1);
 #endif
 
 #ifdef HAVE_RB_STR_PLUS
@@ -617,6 +649,10 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_STRINGVALUE
   rb_define_method(cls, "StringValue", string_spec_StringValue, 1);
+#endif
+
+#ifdef HAVE_SAFE_STRING_VALUE
+  rb_define_method(cls, "SafeStringValue", string_spec_SafeStringValue, 1);
 #endif
 
 #ifdef HAVE_RB_STR_HASH

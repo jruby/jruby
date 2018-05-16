@@ -1,6 +1,6 @@
 # -*- encoding: binary -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/marshal_data', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/marshal_data'
 
 describe "Marshal.dump" do
   it "dumps nil" do
@@ -414,6 +414,15 @@ describe "Marshal.dump" do
       dump = Marshal.dump(1...2)
       load = Marshal.load(dump)
       load.should == (1...2)
+    end
+
+    it "dumps a Range with extra instance variables" do
+      range = (1...3)
+      range.instance_variable_set :@foo, 42
+      dump = Marshal.dump(range)
+      load = Marshal.load(dump)
+      load.should == range
+      load.instance_variable_get(:@foo).should == 42
     end
   end
 

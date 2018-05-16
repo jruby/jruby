@@ -43,7 +43,7 @@ public class Pointer extends AbstractMemory {
         Pointer nullPointer = new Pointer(runtime, pointerClass, new NullMemoryIO(runtime));
         pointerClass.setConstant("NULL", nullPointer);
         
-        runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer));
+        runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer, "to_ptr"));
 
         return pointerClass;
     }
@@ -198,8 +198,8 @@ public class Pointer extends AbstractMemory {
         private static final Arity ARITY = Arity.NO_ARGUMENTS;
         private final Pointer nullPointer;
 
-        private NilToPointerMethod(RubyModule implementationClass, Pointer nullPointer) {
-            super(implementationClass, Visibility.PUBLIC);
+        private NilToPointerMethod(RubyModule implementationClass, Pointer nullPointer, String name) {
+            super(implementationClass, Visibility.PUBLIC, name);
             this.nullPointer = nullPointer;
         }
 

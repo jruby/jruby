@@ -1,11 +1,12 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 require 'socket'
 
 describe "TCPServer#sysaccept" do
   before :each do
-    @server = TCPServer.new(SocketSpecs.hostname, SocketSpecs.port)
+    @server = TCPServer.new(SocketSpecs.hostname, 0)
+    @port = @server.addr[1]
   end
 
   after :each do
@@ -18,7 +19,7 @@ describe "TCPServer#sysaccept" do
 
   it 'returns file descriptor of an accepted connection' do
     begin
-      sock = TCPSocket.new(SocketSpecs.hostname, SocketSpecs.port)
+      sock = TCPSocket.new(SocketSpecs.hostname, @port)
 
       fd = @server.sysaccept
 

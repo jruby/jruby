@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -57,7 +57,7 @@ public class TestLoadService extends TestRubyBase {
         try{
             runtime.evalScriptlet("require ''");
         } catch (RaiseException e){
-            assertEquals("Empty library is not valid, exception should have been raised", RaiseException.class, e.getClass());
+            assertTrue("Empty library is not valid, exception should have been raised", RaiseException.class.isAssignableFrom(e.getClass()));
             assertNull("Empty library is not valid, exception should only be RaiseException with no root cause", e.getCause());
         }
     }
@@ -67,7 +67,7 @@ public class TestLoadService extends TestRubyBase {
             // presumably this require should fail
             runtime.evalScriptlet("require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
-            assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
+            assertTrue("Require of non-existent library should fail", RaiseException.class.isAssignableFrom(e.getClass()));
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
         }
     }
@@ -78,7 +78,7 @@ public class TestLoadService extends TestRubyBase {
             // presumably this require should fail
             runtime.evalScriptlet("require 'rubygems'; require 'somethingthatdoesnotexist'");
         } catch (RaiseException e){
-            assertEquals("Require of non-existent library should fail", RaiseException.class, e.getClass());
+            assertTrue("Require of non-existent library should fail", RaiseException.class.isAssignableFrom(e.getClass()));
             assertNull("Require of non-existent library should , exception should only be RaiseException with no root cause", e.getCause());
         }
     }

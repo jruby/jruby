@@ -15,7 +15,8 @@ class Gem::Commands::SetupCommand < Gem::Command
     super 'setup', 'Install RubyGems',
           :format_executable => true, :document => %w[ri],
           :site_or_vendor => 'sitelibdir',
-          :destdir => '', :prefix => '', :previous_version => ''
+          :destdir => '', :prefix => '', :previous_version => '',
+          :regenerate_binstubs => true
 
     add_option '--previous-version=VERSION',
                'Previous version of RubyGems',
@@ -79,6 +80,11 @@ class Gem::Commands::SetupCommand < Gem::Command
       options[:document].uniq!
     end
 
+    add_option '--[no-]regenerate-binstubs',
+               'Regenerate gem binstubs' do |value, options|
+      options[:regenerate_binstubs] = value
+   end
+
     @verbose = nil
   end
 
@@ -92,7 +98,7 @@ class Gem::Commands::SetupCommand < Gem::Command
   end
 
   def defaults_str # :nodoc:
-    "--format-executable --document ri"
+    "--format-executable --document ri --regenerate-binstubs"
   end
 
   def description # :nodoc:
@@ -145,6 +151,8 @@ By default, this RubyGems will install gem as:
     install_default_bundler_gem
 
     say "RubyGems #{Gem::VERSION} installed"
+
+    regenerate_binstubs if options[:regenerate_binstubs]
 
     uninstall_old_gemcutter
 
@@ -208,10 +216,9 @@ By default, this RubyGems will install gem as:
   def install_executables(bin_dir)
     @bin_file_names = []
 
-    {
-      'gem' => 'bin',
-      'bundler' => 'bundler/exe',
-    }.each do |tool, path|
+    executables = { 'gem' => 'bin' }
+    executables['bundler'] = 'bundler/exe' if Gem::USE_BUNDLER_FOR_GEMDEPS
+    executables.each do |tool, path|
       say "Installing #{tool} executable" if @verbose
 
       Dir.chdir path do
@@ -277,13 +284,14 @@ By default, this RubyGems will install gem as:
   end
 
   def install_lib(lib_dir)
-    {
-      'RubyGems' => 'lib',
-      'Bundler' => 'bundler/lib'
-    }.each do |tool, path|
+    libs = { 'RubyGems' => 'lib' }
+    libs['Bundler'] = 'bundler/lib' if Gem::USE_BUNDLER_FOR_GEMDEPS
+    libs.each do |tool, path|
       say "Installing #{tool}" if @verbose
 
       lib_files = rb_files_in path
+      lib_files.concat(template_files) if tool == 'Bundler'
+
       pem_files = pem_files_in path
 
       Dir.chdir path do
@@ -340,26 +348,60 @@ By default, this RubyGems will install gem as:
   end
 
   def install_default_bundler_gem
-    Dir.chdir("bundler") do
-      bundler_spec = Gem::Specification.load("bundler.gemspec")
-      bundler_spec.files = Dir["{*.md,{lib,exe,man}/**/*}"]
-      bundler_spec.executables -= %w[bundler bundle_ruby]
-      Dir.entries(Gem::Specification.default_specifications_dir).
-        select {|gs| gs.start_with?("bundler-") }.
-        each {|gs| File.delete(File.join(Gem::Specification.default_specifications_dir, gs)) }
+    return unless Gem::USE_BUNDLER_FOR_GEMDEPS
 
-      default_spec_path = File.join(Gem::Specification.default_specifications_dir, "#{bundler_spec.full_name}.gemspec")
-      Gem.write_binary(default_spec_path, bundler_spec.to_ruby)
+    specs_dir = Gem::Specification.default_specifications_dir
+    File.join(options[:destdir], specs_dir) unless Gem.win_platform?
+    mkdir_p specs_dir
 
-      bundler_spec = Gem::Specification.load(default_spec_path)
+    # Workaround for non-git environment.
+    gemspec = File.open('bundler/bundler.gemspec', 'rb'){|f| f.read.gsub(/`git ls-files -z`/, "''") }
+    File.open('bundler/bundler.gemspec', 'w'){|f| f.write gemspec }
 
-      Dir.entries(bundler_spec.gems_dir).
-        select {|default_gem| default_gem.start_with?("bundler-") }.
-        each {|default_gem| rm_r File.join(bundler_spec.gems_dir, default_gem) }
+    bundler_spec = Gem::Specification.load("bundler/bundler.gemspec")
+    bundler_spec.files = Dir.chdir("bundler") { Dir["{*.md,{lib,exe,man}/**/*}"] }
+    bundler_spec.executables -= %w[bundler bundle_ruby]
 
-      mkdir_p bundler_spec.bin_dir
-      bundler_spec.executables.each {|e| cp File.join(bundler_spec.bindir, e), File.join(bundler_spec.bin_dir, e) }
+    # Remove bundler-*.gemspec in default specification directory.
+    Dir.entries(specs_dir).
+      select {|gs| gs.start_with?("bundler-") }.
+      each {|gs| File.delete(File.join(specs_dir, gs)) }
+
+    default_spec_path = File.join(specs_dir, "#{bundler_spec.full_name}.gemspec")
+    Gem.write_binary(default_spec_path, bundler_spec.to_ruby)
+
+    bundler_spec = Gem::Specification.load(default_spec_path)
+
+    # Remove gemspec that was same version of vendored bundler.
+    normal_gemspec = File.join(Gem.default_dir, "specifications", "bundler-#{bundler_spec.version}.gemspec")
+    if File.file? normal_gemspec
+      File.delete normal_gemspec
     end
+
+    # Remove gem files that were same version of vendored bundler.
+    if File.directory? bundler_spec.gems_dir
+      Dir.entries(bundler_spec.gems_dir).
+        select {|default_gem| File.basename(default_gem) == "bundler-#{bundler_spec.version}" }.
+        each {|default_gem| rm_r File.join(bundler_spec.gems_dir, default_gem) }
+    end
+
+    bundler_bin_dir = File.join(Gem.default_dir, 'gems', bundler_spec.full_name, bundler_spec.bindir)
+    File.join(options[:destdir], bundler_bin_dir) unless Gem.win_platform?
+    mkdir_p bundler_bin_dir
+    bundler_spec.executables.each do |e|
+      cp File.join("bundler", bundler_spec.bindir, e), File.join(bundler_bin_dir, e)
+    end
+
+    if Gem.win_platform?
+      require 'rubygems/installer'
+
+      installer = Gem::Installer.for_spec bundler_spec
+      bundler_spec.executables.each do |e|
+        installer.generate_windows_script e, bundler_spec.bin_dir
+      end
+    end
+
+    say "Bundler #{bundler_spec.version} installed"
   end
 
   def make_destination_dirs(install_destdir)
@@ -419,6 +461,22 @@ By default, this RubyGems will install gem as:
     end
   end
 
+  # for installation of bundler as default gems
+  def template_files
+    Dir.chdir "bundler/lib" do
+      (Dir[File.join('bundler', 'templates', '**', '{*,.*}')]).
+        select{|f| !File.directory?(f)}
+    end
+  end
+
+  # for cleanup old bundler files
+  def template_files_in dir
+    Dir.chdir dir do
+      (Dir[File.join('templates', '**', '{*,.*}')]).
+        select{|f| !File.directory?(f)}
+    end
+  end
+
   def remove_old_bin_files(bin_dir)
     old_bin_files = {
       'gem_mirror' => 'gem mirror',
@@ -452,13 +510,14 @@ abort "#{deprecation_message}"
   end
 
   def remove_old_lib_files lib_dir
-    {
-      File.join(lib_dir, 'rubygems') => 'lib/rubygems',
-      File.join(lib_dir, 'bundler') => 'bundler/lib/bundler',
-    }.each do |old_lib_dir, new_lib_dir|
+    lib_dirs = { File.join(lib_dir, 'rubygems') => 'lib/rubygems' }
+    lib_dirs[File.join(lib_dir, 'bundler')] = 'bundler/lib/bundler' if Gem::USE_BUNDLER_FOR_GEMDEPS
+    lib_dirs.each do |old_lib_dir, new_lib_dir|
       lib_files = rb_files_in(new_lib_dir)
+      lib_files.concat(template_files_in(new_lib_dir)) if new_lib_dir =~ /bundler/
 
       old_lib_files = rb_files_in(old_lib_dir)
+      old_lib_files.concat(template_files_in(old_lib_dir)) if old_lib_dir =~ /bundler/
 
       to_remove = old_lib_files - lib_files
 
@@ -518,6 +577,13 @@ abort "#{deprecation_message}"
                               :version => '< 0.4')
     ui.uninstall
   rescue Gem::InstallError
+  end
+
+  def regenerate_binstubs
+    require "rubygems/commands/pristine_command"
+    say "Regenerating binstubs"
+    command = Gem::Commands::PristineCommand.new
+    command.invoke(*%w[--all --only-executables --silent])
   end
 
 end

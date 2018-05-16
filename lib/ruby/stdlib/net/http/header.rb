@@ -14,8 +14,16 @@ module Net::HTTPHeader
     @header = {}
     return unless initheader
     initheader.each do |key, value|
-      warn "net/http: warning: duplicated HTTP header: #{key}" if key?(key) and $VERBOSE
-      @header[key.downcase] = [value.strip]
+      warn "net/http: duplicated HTTP header: #{key}", uplevel: 1 if key?(key) and $VERBOSE
+      if value.nil?
+        warn "net/http: nil HTTP header: #{key}", uplevel: 1 if $VERBOSE
+      else
+        value = value.strip # raise error for invalid byte sequences
+        if value.count("\r\n") > 0
+          raise ArgumentError, 'header field value cannot include CR/LF'
+        end
+        @header[key.downcase] = [value]
+      end
     end
   end
 
@@ -38,7 +46,7 @@ module Net::HTTPHeader
       @header.delete key.downcase
       return val
     end
-    @header[key.downcase] = [val]
+    set_field(key, val)
   end
 
   # [Ruby 1.8.3]
@@ -58,9 +66,37 @@ module Net::HTTPHeader
   #
   def add_field(key, val)
     if @header.key?(key.downcase)
-      @header[key.downcase].push val
+      append_field_value(@header[key.downcase], val)
     else
+      set_field(key, val)
+    end
+  end
+
+  private def set_field(key, val)
+    case val
+    when Enumerable
+      ary = []
+      append_field_value(ary, val)
+      @header[key.downcase] = ary
+    else
+      val = val.to_s # for compatibility use to_s instead of to_str
+      if val.b.count("\r\n") > 0
+        raise ArgumentError, 'header field value cannot include CR/LF'
+      end
       @header[key.downcase] = [val]
+    end
+  end
+
+  private def append_field_value(ary, val)
+    case val
+    when Enumerable
+      val.each{|x| append_field_value(ary, x)}
+    else
+      val = val.to_s
+      if /[\r\n]/n.match?(val.b)
+        raise ArgumentError, 'header field value cannot include CR/LF'
+      end
+      ary.push val
     end
   end
 
@@ -92,12 +128,14 @@ module Net::HTTPHeader
   # Iterates through the header names and values, passing in the name
   # and value to the code block supplied.
   #
+  # Returns an enumerator if no block is given.
+  #
   # Example:
   #
   #     response.header.each_header {|key,value| puts "#{key} = #{value}" }
   #
   def each_header   #:yield: +key+, +value+
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { @header.size }
     @header.each do |k,va|
       yield k, va.join(', ')
     end
@@ -107,8 +145,10 @@ module Net::HTTPHeader
 
   # Iterates through the header names in the header, passing
   # each header name to the code block.
+  #
+  # Returns an enumerator if no block is given.
   def each_name(&block)   #:yield: +key+
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { @header.size }
     @header.each_key(&block)
   end
 
@@ -120,8 +160,10 @@ module Net::HTTPHeader
   # Note that header names are capitalized systematically;
   # capitalization may not match that used by the remote HTTP
   # server in its response.
+  #
+  # Returns an enumerator if no block is given.
   def each_capitalized_name  #:yield: +key+
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { @header.size }
     @header.each_key do |k|
       yield capitalize(k)
     end
@@ -129,8 +171,10 @@ module Net::HTTPHeader
 
   # Iterates through header values, passing each value to the
   # code block.
+  #
+  # Returns an enumerator if no block is given.
   def each_value   #:yield: +value+
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { @header.size }
     @header.each_value do |va|
       yield va.join(', ')
     end
@@ -160,8 +204,10 @@ module Net::HTTPHeader
   # Note that header names are capitalized systematically;
   # capitalization may not match that used by the remote HTTP
   # server in its response.
+  #
+  # Returns an enumerator if no block is given.
   def each_capitalized
-    block_given? or return enum_for(__method__)
+    block_given? or return enum_for(__method__) { @header.size }
     @header.each do |k,v|
       yield capitalize(k), v.join(', ')
     end
@@ -374,7 +420,7 @@ module Net::HTTPHeader
 
   alias form_data= set_form_data
 
-  # Set a HTML form data set.
+  # Set an HTML form data set.
   # +params+ is the form data set; it is an Array of Arrays or a Hash
   # +enctype is the type to encode the form data set.
   # It is application/x-www-form-urlencoded or multipart/form-data.
@@ -427,27 +473,22 @@ module Net::HTTPHeader
   end
 
   def basic_encode(account, password)
-    'Basic ' + ["#{account}:#{password}"].pack('m').delete("\r\n")
+    'Basic ' + ["#{account}:#{password}"].pack('m0')
   end
   private :basic_encode
 
   def connection_close?
-    tokens(@header['connection']).include?('close') or
-    tokens(@header['proxy-connection']).include?('close')
+    token = /(?:\A|,)\s*close\s*(?:\z|,)/i
+    @header['connection']&.grep(token) {return true}
+    @header['proxy-connection']&.grep(token) {return true}
+    false
   end
 
   def connection_keep_alive?
-    tokens(@header['connection']).include?('keep-alive') or
-    tokens(@header['proxy-connection']).include?('keep-alive')
+    token = /(?:\A|,)\s*keep-alive\s*(?:\z|,)/i
+    @header['connection']&.grep(token) {return true}
+    @header['proxy-connection']&.grep(token) {return true}
+    false
   end
-
-  def tokens(vals)
-    return [] unless vals
-    vals.map {|v| v.split(',') }.flatten\
-        .reject {|str| str.strip.empty? }\
-        .map {|tok| tok.strip.downcase }
-  end
-  private :tokens
 
 end
-

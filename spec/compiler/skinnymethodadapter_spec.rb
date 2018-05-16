@@ -18,6 +18,7 @@ describe "SkinnyMethodAdapter" do
 
       when /ACC_/, # access modifiers
            /V1_/, # version identifiers
+           /V[0-9]+/, # version identifiers
            /T_/, # type identifiers
            /F_/, # framing hints
            /H_/, # method handles

@@ -23,7 +23,7 @@ abstract public class NativeInvoker extends DynamicMethod {
 
 
     public NativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
-        super(implementationClass, Visibility.PUBLIC);
+        super(implementationClass, Visibility.PUBLIC, "ffi"+function.getFunctionAddress());
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
         this.signature = signature;

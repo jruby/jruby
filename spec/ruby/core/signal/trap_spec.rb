@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 platform_is_not :windows do
   describe "Signal.trap" do
@@ -111,6 +111,12 @@ platform_is_not :windows do
     it "accepts 'IGNORE' in place of a proc" do
       Signal.trap :HUP, "IGNORE"
       Signal.trap(:HUP, "IGNORE").should == "IGNORE"
+    end
+  end
+
+  describe "Signal.trap" do
+    it "returns SYSTEM_DEFAULT if passed DEFAULT and no handler was ever set" do
+      Signal.trap("PROF", "DEFAULT").should == "SYSTEM_DEFAULT"
     end
   end
 end

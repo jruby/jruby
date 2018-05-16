@@ -4,16 +4,12 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.EncodingUtils;
 
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
@@ -95,12 +91,12 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     @Override
     public void copyInto(IRubyObject[] target, int start, int len) {
         if (!packed()) {
-            super.copyInto(target, start);
+            super.copyInto(target, start, len);
             return;
         }
         if (len != 1) {
             unpack();
-            super.copyInto(target, start);
+            super.copyInto(target, start, len);
             return;
         }
         target[start] = value;
@@ -139,7 +135,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
-        EncodingUtils.strBufCat(runtime, str, OPEN_BRACKET);
+        str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s = inspect(context, value);
@@ -147,7 +143,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         else str.setEncoding(s.getEncoding());
         str.cat19(s);
 
-        EncodingUtils.strBufCat(runtime, str, CLOSE_BRACKET);
+        str.cat((byte) ']');
 
         if (tainted) str.setTaint(true);
 
@@ -167,7 +163,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         modifyCheck();
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @Override

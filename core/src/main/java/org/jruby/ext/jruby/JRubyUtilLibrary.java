@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.jruby;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -53,41 +55,40 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
+    @Deprecated // JRuby::Util no longer used by JRuby itself
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyModule mJRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
-        mJRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
-
-        // core class utils
-        runtime.getString().defineAnnotatedMethods(StringUtils.class);
+        RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
+        JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject gc(IRubyObject recv) {
+    public static IRubyObject gc(ThreadContext context, IRubyObject recv) {
         System.gc();
-        return recv.getRuntime().getNil();
+        return context.nil;
     }
 
-    @JRubyMethod(name = "objectspace", module = true)
+    @JRubyMethod(name = { "objectspace", "object_space?" }, alias = { "objectspace?" }, module = true)
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         return RubyBoolean.newBoolean(runtime, runtime.isObjectSpaceEnabled());
     }
 
-    @JRubyMethod(name = "objectspace=", module = true)
+    @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = recv.getRuntime();
-        if (arg.isTrue()) {
+        final Ruby runtime = recv.getRuntime();
+        boolean enabled = arg.isTrue();
+        if (enabled) {
             runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
         }
-        runtime.setObjectSpaceEnabled(arg.isTrue());
-        return runtime.getNil();
+        runtime.setObjectSpaceEnabled(enabled);
+        return runtime.newBoolean(enabled);
     }
 
-    @JRubyMethod(name = "classloader_resources", module = true)
+    @JRubyMethod(name = "classloader_resources", module = true) // used from RGs' JRuby defaults
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
         Ruby runtime = recv.getRuntime();
         String resource = arg.convertToString().toString();
-        final List<RubyString> urlStrings = new ArrayList<RubyString>();
+        final List<RubyString> urlStrings = new ArrayList<>();
         try {
             Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
             while (urls.hasMoreElements()) {
@@ -96,20 +97,48 @@ public class JRubyUtilLibrary implements Library {
                 urlStrings.add(runtime.newString(urlString));
             }
             return RubyArray.newArray(runtime, urlStrings);
-        } catch (IOException ignore) {
         }
-        return runtime.newEmptyArray();
+        catch (IOException ignore) {
+            return runtime.newEmptyArray();
+        }
     }
 
+    @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
     public static class StringUtils {
-        @JRubyMethod
         public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
-            Ruby runtime = context.runtime;
-            if (!(recv instanceof RubyString)) {
-                throw runtime.newTypeError(recv, runtime.getString());
-            }
-
-            return runtime.newFixnum(((RubyString)recv).unseededStrHashCode(runtime));
+            return CoreExt.String.unseeded_hash(context, recv);
         }
+    }
+
+    /**
+     * Provide stats on how many method and constant invalidations have occurred globally.
+     *
+     * This was added for Pry in https://github.com/jruby/jruby/issues/4384
+     */
+    @JRubyMethod(name = "cache_stats", module = true)
+    public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+
+        RubyHash stat = RubyHash.newHash(runtime);
+        stat.op_aset(context, runtime.newSymbol("method_invalidation_count"), runtime.newFixnum(runtime.getCaches().getMethodInvalidationCount()));
+        stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), runtime.newFixnum(runtime.getCaches().getConstantInvalidationCount()));
+
+        return stat;
+    }
+
+    /**
+     * Return a list of files and extensions that JRuby treats as internal (or "built-in"), skipping load path and
+     * filesystem search.
+     *
+     * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
+     */
+    @JRubyMethod(module = true)
+    public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
+
+        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+
+        return runtime.newArrayNoCopy(names);
     }
 }

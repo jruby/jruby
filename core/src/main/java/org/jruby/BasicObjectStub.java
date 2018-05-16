@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.util.Collections;
@@ -41,6 +42,8 @@ import org.jruby.runtime.builtin.Variable;
 
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.util.RubyStringBuilder.str;
+
 import org.jruby.util.TypeConverter;
 
 public final class BasicObjectStub {
@@ -145,8 +148,9 @@ public final class BasicObjectStub {
 
     public static String asJavaString(IRubyObject self) {
         IRubyObject asString = checkStringType(self);
-        if(!asString.isNil()) return ((RubyString)asString).asJavaString();
-        throw getRuntime(self).newTypeError(inspect(self).toString() + " is not a string");
+        if(!asString.isNil()) return asString.asJavaString();
+        Ruby runtime = getRuntime(self);
+        throw runtime.newTypeError(str(runtime, "", inspect(self), " is not a string"));
     }
 
     public static RubyString asString(IRubyObject self) {

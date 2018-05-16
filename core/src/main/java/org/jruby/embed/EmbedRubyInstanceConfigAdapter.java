@@ -1,11 +1,11 @@
 /**
  * **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,7 +35,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
-import org.jruby.CompatVersion;
 import org.jruby.Profile;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
@@ -164,10 +163,6 @@ public interface EmbedRubyInstanceConfigAdapter {
      * run in the process.
      */
     public void setRunRubyInProcess(boolean inprocess);
-
-    public CompatVersion getCompatVersion();
-
-    public void setCompatVersion(CompatVersion version);
 
     /**
      * Tests whether the Object Space is enabled or not.
@@ -451,4 +446,10 @@ public interface EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion();
+
+    @Deprecated
+    public org.jruby.CompatVersion getCompatVersion();
+
+    @Deprecated
+    public void setCompatVersion(org.jruby.CompatVersion version);
 }

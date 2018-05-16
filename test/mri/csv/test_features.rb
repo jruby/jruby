@@ -104,6 +104,20 @@ class TestCSV::Features < TestCSV
     assert_equal($/, CSV.new(STDERR).row_sep)
   end
 
+  def test_line
+    lines = [
+      %Q(abc,def\n),
+      %Q(abc,"d\nef"\n),
+      %Q(abc,"d\r\nef"\n),
+      %Q(abc,"d\ref")
+    ]
+    csv = CSV.new(lines.join(''))
+    lines.each do |line|
+      csv.shift
+      assert_equal(line, csv.line)
+    end
+  end
+
   def test_lineno
     assert_equal(5, @sample_data.lines.to_a.size)
 
@@ -124,8 +138,11 @@ class TestCSV::Features < TestCSV
   end
 
   def test_unknown_options
-    assert_raise_with_message(ArgumentError, /unknown/) {
+    assert_raise_with_message(ArgumentError, /unknown keyword/) {
       CSV.new(@sample_data, unknown: :error)
+    }
+    assert_raise_with_message(ArgumentError, /unknown keyword/) {
+      CSV.new(@sample_data, universal_newline: true)
     }
   end
 
@@ -140,6 +157,29 @@ class TestCSV::Features < TestCSV
       assert_equal("line", row.first)
     end
     assert_equal(3, count)
+  end
+
+  def test_liberal_parsing
+    input = '"Johnson, Dwayne",Dwayne "The Rock" Johnson'
+    assert_raise(CSV::MalformedCSVError) do
+        CSV.parse_line(input)
+    end
+    assert_equal(["Johnson, Dwayne", 'Dwayne "The Rock" Johnson'],
+                 CSV.parse_line(input, liberal_parsing: true))
+
+    input = '"quoted" field'
+    assert_raise(CSV::MalformedCSVError) do
+        CSV.parse_line(input)
+    end
+    assert_equal(['"quoted" field'],
+                 CSV.parse_line(input, liberal_parsing: true))
+
+    assert_raise(CSV::MalformedCSVError) do
+      CSV.parse_line('is,this "three," or four,fields', liberal_parsing: true)
+    end
+
+    assert_equal(["is", 'this "three', ' or four"', "fields"],
+      CSV.parse_line('is,this "three, or four",fields', liberal_parsing: true))
   end
 
   def test_csv_behavior_readers
@@ -313,6 +353,15 @@ class TestCSV::Features < TestCSV
     assert_equal [["line", "1", "a"], ["line", "2", "b"]], c.each.to_a
   end
 
+  def test_comment_rows_are_ignored_with_heredoc
+    c = CSV.new(<<~EOL, skip_lines: ".")
+    1,foo
+    .2,bar
+    3,baz
+    EOL
+    assert_equal [["1", "foo"], ["3", "baz"]], c.each.to_a
+  end
+
   def test_quoted_skip_line_markers_are_ignored
     sample_data = "line,1,a\n\"#not\",a,line\nline,2,b"
     c = CSV.new sample_data, :skip_lines => /\A\s*#/
@@ -325,4 +374,7 @@ class TestCSV::Features < TestCSV
     assert_equal [["line", "1", "a"], ["line", "2", "b"]], c.each.to_a
   end
 
+  def test_table_nil_equality
+    assert_nothing_raised(NoMethodError) { CSV.parse("test", headers: true) == nil }
+  end
 end

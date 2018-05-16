@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#dump" do
   it "taints the result if self is tainted" do
@@ -418,7 +418,7 @@ describe "String#dump" do
   end
 
   it "includes .force_encoding(name) if the encoding isn't ASCII compatible" do
-    "\u{876}".encode('utf-16be').dump.should == "\"\\bv\".force_encoding(\"UTF-16BE\")"
-    "\u{876}".encode('utf-16le').dump.should == "\"v\\b\".force_encoding(\"UTF-16LE\")"
+    "\u{876}".encode('utf-16be').dump.end_with?(".force_encoding(\"UTF-16BE\")").should be_true
+    "\u{876}".encode('utf-16le').dump.end_with?(".force_encoding(\"UTF-16LE\")").should be_true
   end
 end

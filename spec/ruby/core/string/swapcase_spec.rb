@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#swapcase" do
   it "returns a new string with all uppercase chars from self converted to lowercase and vice versa" do
@@ -41,6 +41,14 @@ describe "String#swapcase!" do
     a.should == "CyBeR_pUnK11"
   end
 
+  ruby_version_is '2.4' do
+    it "modifies self in place for all of Unicode" do
+      a = "äÖü"
+      a.swapcase!.should equal(a)
+      a.should == "ÄöÜ"
+    end
+  end
+
   it "returns nil if no modifications were made" do
     a = "+++---111222???"
     a.swapcase!.should == nil
@@ -49,10 +57,10 @@ describe "String#swapcase!" do
     "".swapcase!.should == nil
   end
 
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     ["", "hello"].each do |a|
       a.freeze
-      lambda { a.swapcase! }.should raise_error(RuntimeError)
+      lambda { a.swapcase! }.should raise_error(frozen_error_class)
     end
   end
 end

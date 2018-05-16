@@ -2,6 +2,7 @@ package org.jruby.main;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +30,9 @@ public class DripMain {
         // preboot actual runtime
         Ruby.clearGlobalRuntime();
         File dripMain = new File(JRUBY_DRIP_PREBOOT_FILE);
+
+        // Disable native stdio when running under Drip (#4942)
+        Options.NATIVE_STDIO.force("false");
 
         RubyInstanceConfig config = new RubyInstanceConfig();
         ruby = Ruby.newInstance(config);

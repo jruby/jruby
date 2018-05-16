@@ -1,4 +1,5 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
+require_relative '../../shared/hash/key_error'
 
 load_extension("hash")
 
@@ -116,6 +117,31 @@ describe "C-API Hash function" do
 
     it "returns an Enumerator when no block is passed" do
       @s.rb_hash_delete_if({a: 1}).should be_an_instance_of(Enumerator)
+    end
+  end
+
+  describe "rb_hash_fetch" do
+    before :each do
+      @hsh = {:a => 1, :b => 2}
+    end
+
+    it "returns the value associated with the key" do
+      @s.rb_hash_fetch(@hsh, :b).should == 2
+    end
+
+    it "raises a KeyError if the key is not found and default is set" do
+      @hsh.default = :d
+      lambda { @s.rb_hash_fetch(@hsh, :c) }.should raise_error(KeyError)
+    end
+
+    it "raises a KeyError if the key is not found and no default is set" do
+      lambda { @s.rb_hash_fetch(@hsh, :c) }.should raise_error(KeyError)
+    end
+
+    context "when key is not found" do
+      it_behaves_like :key_error, -> (obj, key) {
+        @s.rb_hash_fetch(obj, key)
+      }, { a: 1 }
     end
   end
 

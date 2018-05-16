@@ -16,7 +16,7 @@ DO NOT MODIFIY - GENERATED CODE
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9.1.11.0-SNAPSHOT</version>
+  <version>9.2.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
@@ -28,16 +28,16 @@ DO NOT MODIFIY - GENERATED CODE
   </organization>
   <licenses>
     <license>
-      <name>GPL 2</name>
+      <name>GPL-2.0</name>
       <url>http://www.gnu.org/licenses/gpl-2.0-standalone.html</url>
     </license>
     <license>
-      <name>LGPL 2.1</name>
+      <name>LGPL-2.1</name>
       <url>http://www.gnu.org/licenses/lgpl-2.1-standalone.html</url>
     </license>
     <license>
-      <name>EPL</name>
-      <url>http://www.eclipse.org/legal/epl-v10.html</url>
+      <name>EPL-2.0</name>
+      <url>http://www.eclipse.org/legal/epl-v20.html</url>
     </license>
   </licenses>
   <developers>
@@ -108,31 +108,30 @@ DO NOT MODIFIY - GENERATED CODE
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <jruby.basedir>${project.basedir}</jruby.basedir>
-    <minitest.version>5.4.1</minitest.version>
+    <minitest.version>5.10.3</minitest.version>
     <ant.version>1.9.2</ant.version>
-    <diff-lcs.version>1.1.3</diff-lcs.version>
-    <jffi.version>1.2.16</jffi.version>
-    <rake.version>10.4.2</rake.version>
+    <jffi.version>1.2.17</jffi.version>
+    <rake.version>12.3.0</rake.version>
     <jruby-launcher.version>1.1.1</jruby-launcher.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <asm.version>5.0.4</asm.version>
+    <asm.version>6.0</asm.version>
     <rspec-expectations.version>3.4.0</rspec-expectations.version>
     <its.osgi>osgi*/pom.xml</its.osgi>
-    <base.javac.version>1.7</base.javac.version>
-    <test-unit.version>3.1.1</test-unit.version>
-    <rdoc.version>4.2.0</rdoc.version>
+    <base.javac.version>1.8</base.javac.version>
+    <test-unit.version>3.2.7</test-unit.version>
+    <rdoc.version>6.0.1</rdoc.version>
     <rspec.version>3.4.0</rspec.version>
-    <base.java.version>1.7</base.java.version>
+    <base.java.version>1.8</base.java.version>
     <rspec-mocks.version>3.4.1</rspec-mocks.version>
     <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <invoker.skip>true</invoker.skip>
-    <json.version>1.8.3</json.version>
-    <jar-dependencies.version>0.3.10</jar-dependencies.version>
-    <power_assert.version>0.2.3</power_assert.version>
+    <json.version>2.1.0</json.version>
+    <jar-dependencies.version>0.3.12</jar-dependencies.version>
+    <power_assert.version>1.1.1</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
-    <joda.time.version>2.8.2</joda.time.version>
+    <joda.time.version>2.9.9</joda.time.version>
     <rspec-support.version>3.4.1</rspec-support.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
   </properties>
@@ -256,7 +255,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.0.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-enforcer-plugin</artifactId>
@@ -282,7 +281,7 @@ DO NOT MODIFIY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>2.4.3</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -335,6 +334,17 @@ DO NOT MODIFIY - GENERATED CODE
         <plugin>
           <artifactId>maven-scm-publish-plugin</artifactId>
           <version>1.0-beta-2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <dependencies>
+            <dependency>
+              <groupId>biz.aQute.bnd</groupId>
+              <artifactId>biz.aQute.bndlib</artifactId>
+              <version>3.5.0</version>
+            </dependency>
+          </dependencies>
         </plugin>
       </plugins>
     </pluginManagement>

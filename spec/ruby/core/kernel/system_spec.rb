@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :kernel_system, shared: true do
   it "executes the specified command in a subprocess" do
@@ -23,6 +23,16 @@ describe :kernel_system, shared: true do
     $?.should be_an_instance_of Process::Status
     $?.success?.should == false
     $?.exitstatus.should == 1
+  end
+
+  ruby_version_is "2.6" do
+    it "raises RuntimeError when `exception: true` is given and the command exits with a non-zero exit status" do
+      lambda { @object.system(ruby_cmd('exit 1'), exception: true) }.should raise_error(RuntimeError)
+    end
+
+    it "raises Errno::ENOENT when `exception: true` is given and the specified command does not exist" do
+      lambda { @object.system('feature_14386', exception: true) }.should raise_error(Errno::ENOENT)
+    end
   end
 
   it "returns nil when command execution fails" do

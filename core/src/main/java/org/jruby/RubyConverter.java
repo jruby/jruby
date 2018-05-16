@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,11 +23,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
+import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -96,12 +98,24 @@ public class RubyConverter extends RubyObject {
         NONASCII_TO_ASCII.put(UTF32BEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
         NONASCII_TO_ASCII.put(UTF32LEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
         NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("CP50220".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("CP51932".getBytes()).getEncoding());
+        NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("CP50221".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("CP51932".getBytes()).getEncoding());
+        NONASCII_TO_ASCII.put(EncodingDB.getEncodings().get("IBM037".getBytes()).getEncoding(), ISO8859_1Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(EncodingDB.getEncodings().get("UTF-16".getBytes()).getEncoding(), UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(EncodingDB.getEncodings().get("UTF-32".getBytes()).getEncoding(), UTF8Encoding.INSTANCE);
+        NONASCII_TO_ASCII.put(
                 EncodingDB.getEncodings().get("ISO-2022-JP".getBytes()).getEncoding(),
                 EncodingDB.getEncodings().get("stateless-ISO-2022-JP".getBytes()).getEncoding());
+        NONASCII_TO_ASCII.put(
+                EncodingDB.getEncodings().get("ISO-2022-JP-KDDI".getBytes()).getEncoding(),
+                EncodingDB.getEncodings().get("stateless-ISO-2022-JP-KDDI".getBytes()).getEncoding());
     }
 
     public static RubyClass createConverterClass(Ruby runtime) {
-        RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
+        RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getData(), CONVERTER_ALLOCATOR, runtime.getEncoding());
         runtime.setConverter(converterc);
         converterc.setClassIndex(ClassIndex.CONVERTER);
         converterc.setReifiedClass(RubyConverter.class);
@@ -366,7 +380,7 @@ public class RubyConverter extends RubyObject {
 
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
-            String retStr = retSym.toString();
+            String retStr = retSym.asJavaString(); // 7bit comparison
 
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
@@ -405,7 +419,7 @@ public class RubyConverter extends RubyObject {
 
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
-            String retStr = retSym.toString();
+            String retStr = retSym.asJavaString(); // 7 bit comparison
 
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||

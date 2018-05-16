@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Time#succ" do
   it "returns a new time one second later than time" do
@@ -14,6 +14,6 @@ describe "Time#succ" do
     -> {
       t2 = t1.succ
     }.should complain(/Time#succ is obsolete/)
-    t1.object_id.should_not == t2.object_id
+    t1.should_not equal t2
   end
 end

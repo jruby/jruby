@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,22 +26,22 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * 
- * Note: This was renamed from UnboundMethod.java
- * 
+ * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
+ *
+ * @note This was renamed from UnboundMethod.java
  * @author jpetersen
  */
 @JRubyClass(name="UnboundMethod", parent="Method")
@@ -83,26 +83,39 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newClass;
     }
 
-    @JRubyMethod(name = "==", required = 1)
     @Override
+    @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof AbstractRubyMethod)) {
-            return context.runtime.getFalse();
-        }
+        return context.runtime.newBoolean( equals(other) );
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof AbstractRubyMethod)) return false;
         if (method instanceof ProcMethod) {
-            return context.runtime.newBoolean(((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod()));
+            return ((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod());
         }
-        AbstractRubyMethod otherMethod = (AbstractRubyMethod)other;
-        return context.runtime.newBoolean(
-                originModule == otherMethod.originModule &&
-                method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
+        AbstractRubyMethod otherMethod = (AbstractRubyMethod) other;
+        return originModule == otherMethod.originModule &&
+               method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber();
+    }
+
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return context.runtime.newFixnum(hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        long serial = method.getRealMethod().getSerialNumber();
+        return 997 * ((int) (serial >> 32) ^ (int) serial & 0xFF);
     }
 
     @JRubyMethod
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
         
-        receiverClass.checkValidBindTargetFrom(context, implementationModule);
+        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
         
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
     }
@@ -116,26 +129,31 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder buf = new StringBuilder("#<");
-        char delimeter = '#';
+        StringBuilder str = new StringBuilder(24).append("#<");
+        char sharp = '#';
 
-        buf.append(getMetaClass().getRealClass().getName()).append(": ");
+        str.append(getMetaClass().getRealClass().getName()).append(": ");
 
         if (implementationModule.isSingleton()) {
-            buf.append(implementationModule.inspect().toString());
+            str.append(implementationModule.inspect().toString());
         } else {
-            buf.append(originModule.getName());
+            str.append(originModule.getName());
 
             if (implementationModule != originModule) {
-                buf.append('(').append(implementationModule.getName()).append(')');
+                str.append('(').append(implementationModule.getName()).append(')');
             }
         }
 
-        buf.append(delimeter).append(methodName).append('>');
+        str.append(sharp).append(methodName); // (real-name) if alias
+        final String realName= method.getRealMethod().getName();
+        if ( realName != null && ! methodName.equals(realName) ) {
+            str.append('(').append(realName).append(')');
+        }
+        str.append('>');
 
-        RubyString str = getRuntime().newString(buf.toString());
-        str.setTaint(isTaint());
-        return str;
+        RubyString res = RubyString.newString(getRuntime(), str);
+        res.setTaint(isTaint());
+        return res;
     }
 
     @JRubyMethod

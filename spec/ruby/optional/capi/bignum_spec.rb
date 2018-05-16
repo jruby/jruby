@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension("bignum")
 
@@ -22,7 +22,7 @@ describe "CApiBignumSpecs" do
       @min_long = ensure_bignum(-@max_long - 1)
       @max_ulong = ensure_bignum(2**(0.size * 8) - 1)
     end
-end
+  end
 
   describe "rb_big2long" do
     unless full_range_longs

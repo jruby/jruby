@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :kernel_chomp, shared: true do
   it "removes the final newline of $_" do
@@ -53,7 +53,7 @@ with_feature :encoding do
 
     it "removes the final carriage return, newline from a multi-byte $_" do
       script = fixture __FILE__, "#{@method}.rb"
-      KernelSpecs.encoded_chomp(script).should == "あれ"
+      KernelSpecs.run_with_dash_n(script).should == "あれ"
     end
   end
 

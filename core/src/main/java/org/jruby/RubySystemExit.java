@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,24 +28,26 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SystemExit;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * The Java representation of a Ruby SystemExit.
+ *
+ * @see SystemExit
+ */
 @JRubyClass(name="SystemExit", parent="Exception")
 public class RubySystemExit extends RubyException {
 
     IRubyObject status;
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubySystemExit(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator ALLOCATOR = (runtime, klass) -> new RubySystemExit(runtime, klass);
 
-    static RubyClass createSystemExitClass(Ruby runtime, RubyClass exceptionClass) {
+    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
         RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, ALLOCATOR);
 
         systemExitClass.defineAnnotatedMethods(RubySystemExit.class);
@@ -64,6 +66,11 @@ public class RubySystemExit extends RubyException {
     protected RubySystemExit(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
         status = runtime.getNil();
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new SystemExit(message, this);
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)

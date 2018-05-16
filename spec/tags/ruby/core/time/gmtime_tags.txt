@@ -1,0 +1,1 @@
+fails:Time#gmtime on a frozen time does not raise an error if already in UTC

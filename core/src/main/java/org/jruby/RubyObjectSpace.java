@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,6 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.util.ArrayList;
@@ -70,8 +71,7 @@ public class RubyObjectSpace {
         if (args.length == 2) {
             finalizer = args[1];
             if (!finalizer.respondsTo("call")) {
-                throw runtime.newArgumentError("wrong type argument "
-                        + finalizer.getType() + " (should be callable)");
+                throw runtime.newArgumentError("wrong type argument " + finalizer.getType() + " (should be callable)");
             }
         } else {
             finalizer = runtime.newProc(Block.Type.PROC, block);
@@ -91,10 +91,9 @@ public class RubyObjectSpace {
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         final Ruby runtime = id.getRuntime();
         if (!(id instanceof RubyFixnum)) {
-            throw recv.getRuntime().newTypeError(id, recv.getRuntime().getFixnum());
+            throw runtime.newTypeError(id, runtime.getFixnum());
         }
-        RubyFixnum idFixnum = (RubyFixnum) id;
-        long longId = idFixnum.getLongValue();
+        long longId = ((RubyFixnum) id).getLongValue();
         if (longId == 0) {
             return runtime.getFalse();
         } else if (longId == 20) {
@@ -113,7 +112,7 @@ public class RubyObjectSpace {
                 return object;
             } else {
                 runtime.getWarnings().warn("ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                throw recv.getRuntime().newRangeError(String.format("0x%016x is not id value", longId));
+                throw runtime.newRangeError(String.format("0x%016x is not id value", longId));
             }
         }
     }
@@ -212,6 +211,11 @@ public class RubyObjectSpace {
         public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
             map.put(key, value);
             return context.runtime.newFixnum(System.identityHashCode(value));
+        }
+
+        @JRubyMethod(name = "key?")
+        public IRubyObject key_p(ThreadContext context, IRubyObject key) {
+            return context.runtime.newBoolean(map.get(key) != null);
         }
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();

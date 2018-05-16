@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -62,12 +63,14 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -81,12 +84,17 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.backtrace.BacktraceData.EMPTY_STACK_TRACE;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -106,7 +114,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     // static { LOG.setDebugEnable(true); }
 
     /** The thread-like think that is actually executing */
-    private volatile ThreadLike threadImpl;
+    private volatile ThreadLike threadImpl = ThreadLike.DUMMY;
 
     /** Fiber-local variables */
     private volatile transient Map<IRubyObject, IRubyObject> fiberLocalVariables;
@@ -120,10 +128,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Whether this thread should try to abort the program on exception */
     private volatile boolean abortOnException;
 
+    /** Whether this thread should report_on_exception when this thread GCs, when it terminates, or never */
+    private volatile IRubyObject reportOnException;
+
+    /** Whether this thread's terminating exception has been captured by any code *after* the thread terminated. */
+    private volatile boolean exceptionCaptured;
+
     /** The final value resulting from the thread's execution */
     private volatile IRubyObject finalResult;
 
-    private volatile IRubyObject threadName;
     private String file; private int line; // Thread.new location (for inspect)
 
     /**
@@ -131,7 +144,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * it here to continue propagating it while handling thread shutdown
      * logic and abort_on_exception.
      */
-    private volatile RaiseException exitingException;
+    private volatile Throwable exitingException;
 
     /** The ThreadGroup to which this thread belongs */
     private volatile RubyThreadGroup threadGroup;
@@ -213,7 +226,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         super(runtime, type);
 
         finalResult = errorInfo = runtime.getNil();
-        threadName = runtime.getNil();
+        reportOnException = runtime.getReportOnException();
     }
 
     public RubyThread(Ruby runtime, RubyClass klass, Runnable runnable) {
@@ -251,7 +264,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     if (status.get() == Status.SLEEP) {
                         exitSleep();
                     }
-                    RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{err}, Block.NULL_BLOCK);
+                    // if it's a Ruby exception, force the cause through
+                    IRubyObject[] args;
+                    if (err instanceof RubyException) {
+                        args = Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", ((RubyException) err).cause));
+                    } else {
+                        args = Helpers.arrayOf(err);
+                    }
+                    RubyKernel.raise(context, runtime.getKernel(), args, Block.NULL_BLOCK);
                 }
             }
 
@@ -276,6 +296,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private void toKill() {
         pendingInterruptClear();
+        status.set(Status.ABORTING);
         throwThreadKill();
     }
 
@@ -478,7 +499,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject to_s(ThreadContext context) {
-            return RubyString.newString(context.runtime, element.mriStyleString());
+            return RubyStackTraceElement.to_s_mri(context, element);
         }
 
         public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
@@ -565,7 +586,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(rest = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) throw context.runtime.newThreadError("must be called with a block");
-        if (threadImpl != null) throw context.runtime.newThreadError("already initialized thread");
+        if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
         return startThread(context, new RubyRunnable(this, args, block));
     }
@@ -577,7 +598,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             thread.setDaemon(true);
             this.file = context.getFile();
             this.line = context.getLine();
-            setThreadName(runtime, thread, file, line, true);
+            initThreadName(runtime, thread, file, line);
             threadImpl = new NativeThread(this, thread);
 
             addToCorrectThreadGroup(context);
@@ -606,74 +627,46 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static final String RUBY_THREAD_PREFIX = "Ruby-";
 
-    private void setThreadName(final Ruby runtime, final Thread thread,
-        final String file, final int line, final boolean newThread) {
+    private static void initThreadName(final Ruby runtime, final Thread thread, final String file, final int line) {
         // "Ruby-0-Thread-16: (irb):21"
-        // "Ruby-0-Thread-17@worker#1: (irb):21"
         final String newName;
-        final String setName = getNameOrNull();
-        final String currentName = thread.getName();
-        if ( currentName != null && currentName.startsWith(RUBY_THREAD_PREFIX) ) {
-            final int i = currentName.indexOf('@'); // Thread#name separator
-            if ( i == -1 ) { // name not set yet: "Ruby-0-Thread-42: FILE:LINE"
-                int end = currentName.indexOf(':');
-                if ( end == -1 ) end = currentName.length();
-                final String prefix = currentName.substring(0, end);
-                newName = currentName.replace(prefix, prefix + '@' + setName);
+        final StringBuilder name = new StringBuilder(24);
+        name
+                .append(RUBY_THREAD_PREFIX)
+                .append(runtime.getRuntimeNumber())
+                .append('-')
+                .append("Thread-")
+                .append(incAndGetThreadCount(runtime));
+        if ( file != null ) {
+            name
+                    .append(':')
+                    .append(' ')
+                    .append(file)
+                    .append(':')
+                    .append(line + 1);
+        }
+        newName = name.toString();
 
-            }
-            else { // name previously set: "Ruby-0-Thread-42@foo: FILE:LINE"
-                final String prefix = currentName.substring(0, i); // Ruby-0-Thread-42
-                int end = currentName.indexOf(':', i);
-                if ( end == -1 ) end = currentName.length();
-                final String prefixWithName = currentName.substring(0, end); // Ruby-0-Thread-42@foo:
-                newName = currentName.replace(prefixWithName, setName == null ? prefix : (prefix + '@' + setName));
-            }
-        }
-        else if ( newThread ) {
-            final StringBuilder name = new StringBuilder(24);
-            name.append(RUBY_THREAD_PREFIX).append(runtime.getRuntimeNumber());
-            name.append('-').append("Thread-").append(incAndGetThreadCount(runtime));
-            if ( setName != null ) name.append('@').append(setName);
-            if ( file != null ) { // in JIT we seem to get "" as file and line 0
-                name.append(':').append(' ').append(file).append(':').append(line + 1);
-            }
-            newName = name.toString();
-        }
-        else return; // not a new-thread that and does not match out Ruby- prefix
-        // ... very likely user-code set the java thread name - thus do not mess!
-        try { thread.setName(newName); }
-        catch (SecurityException ignore) { } // current thread can not modify
+        thread.setName(newName);
     }
 
-    // TODO likely makes sense to have a counter or the Ruby class directly (could be included with JMX)
-    private static final WeakHashMap<Ruby, AtomicLong> threadCount = new WeakHashMap<Ruby, AtomicLong>(4);
-
     private static long incAndGetThreadCount(final Ruby runtime) {
-        AtomicLong counter = threadCount.get(runtime);
-        if ( counter == null ) {
-            synchronized (runtime) {
-                counter = threadCount.get(runtime);
-                if ( counter == null ) {
-                    threadCount.put(runtime, counter = new AtomicLong(0));
-                }
-            }
-        }
-        return counter.incrementAndGet();
+        return runtime.getThreadService().incrementAndGetThreadCount();
     }
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit, Block block) {
-        RubyThread rubyThread = new RubyThread(recv.getRuntime(), (RubyClass) recv);
+        Ruby runtime = recv.getRuntime();
+        RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
 
         if (callInit) {
             rubyThread.callInit(args, block);
 
-            if (rubyThread.threadImpl == null) {
-                throw recv.getRuntime().newThreadError("uninitialized thread - check " + ((RubyClass) recv).getName() + "#initialize");
+            if (rubyThread.threadImpl == ThreadLike.DUMMY) {
+                throw runtime.newThreadError(str(runtime, "uninitialized thread - check " , types(runtime, (RubyClass) recv), "#initialize"));
             }
         } else {
             // for Thread::start, which does not call the subclass's initialize
-            rubyThread.initialize(recv.getRuntime().getCurrentContext(), args, block);
+            rubyThread.initialize(runtime.getCurrentContext(), args, block);
         }
 
         return rubyThread;
@@ -747,7 +740,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
             if (value instanceof RubySymbol) {
                 RubySymbol sym = (RubySymbol) value;
-                switch (sym.toString()) {
+                switch (sym.idString()) {
                     case "immediate" : return;
                     case "on_blocking" : return;
                     case "never" : return;
@@ -765,7 +758,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "pending_interrupt?", optional = 1)
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
         if (pendingInterruptQueue.isEmpty()) {
-            return context.runtime.getFalse();
+            return context.fals;
         } else {
             if (args.length == 1) {
                 IRubyObject err = args[0];
@@ -773,12 +766,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     throw context.runtime.newTypeError("class or module required for rescue clause");
                 }
                 if (pendingInterruptInclude(err)) {
-                    return context.runtime.getTrue();
+                    return context.tru;
                 } else {
-                    return context.runtime.getFalse();
+                    return context.fals;
                 }
             } else {
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
     }
@@ -793,21 +786,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             if (!enc.isAsciiCompatible()) {
                 throw runtime.newArgumentError("ASCII incompatible encoding (" + enc + ")");
             }
-            name = nameStr.newFrozen();
+            threadImpl.setRubyName(runtime.freezeAndDedupString(nameStr).asJavaString());
+        } else {
+            threadImpl.setRubyName(null);
         }
-        this.threadName = name;
-        setThreadName(runtime, getNativeThread(), null, -1, false);
+
         return name;
     }
 
     @JRubyMethod(name = "name")
     public IRubyObject getName() {
-        return this.threadName;
-    }
+        Ruby runtime = getRuntime();
 
-    private String getNameOrNull() {
-        final IRubyObject name = getName();
-        return ( name == null || name.isNil() ) ? null : name.asJavaString();
+        CharSequence rubyName = threadImpl.getRubyName();
+
+        if (rubyName == null) return runtime.getNil();
+
+        return RubyString.newString(getRuntime(), rubyName);
     }
 
     private boolean pendingInterruptInclude(IRubyObject err) {
@@ -884,13 +879,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private IRubyObject getSymbolKey(IRubyObject originalKey) {
-        if (originalKey instanceof RubySymbol) {
-            return originalKey;
-        } else if (originalKey instanceof RubyString) {
-            return getRuntime().newSymbol(originalKey.asJavaString());
-        } else {
-            throw getRuntime().newTypeError(originalKey + " is not a symbol nor a string");
-        }
+        if (originalKey instanceof RubySymbol) return originalKey;
+
+        Ruby runtime = getRuntime();
+
+        if (originalKey instanceof RubyString) return runtime.newSymbol(((RubyString) originalKey).getByteList());
+
+        throw getRuntime().newTypeError(str(getRuntime(), ids(runtime, originalKey), " is not a symbol nor a string"));
     }
 
     private synchronized Map<IRubyObject, IRubyObject> getFiberLocals() {
@@ -917,7 +912,41 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public boolean isAlive(){
-        return threadImpl.isAlive() && status.get() != Status.ABORTING;
+        return threadImpl.isAlive() && status.get() != Status.DEAD;
+    }
+
+    @JRubyMethod
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject value = op_aref(key);
+
+        if (value.isNil()) {
+            if (block.isGiven()) return block.yield(context, key);
+
+            throw runtime.newKeyError("key not found: " + key.inspect(), this, key);
+        }
+
+        return value;
+    }
+
+    @JRubyMethod
+    public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
+        Ruby runtime = context.runtime;
+        boolean blockGiven = block.isGiven();
+
+        if (blockGiven) {
+            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
+        }
+
+        IRubyObject value = op_aref(key);
+
+        if (value.isNil()) {
+            if (blockGiven) return block.yield(context, key);
+            return _default;
+        }
+
+        return value;
     }
 
     @JRubyMethod(name = "[]", required = 1)
@@ -1069,10 +1098,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         if (exitingException != null) {
-            // Set $! in the current thread before exiting
-            runtime.getGlobalVariables().set("$!", (IRubyObject)exitingException.getException());
-            throw exitingException;
-
+            if (exitingException instanceof RaiseException) {
+                RaiseException raiseException = (RaiseException) exitingException;
+                // Set $! in the current thread before exiting
+                runtime.getGlobalVariables().set("$!", (IRubyObject) raiseException.getException());
+            } else {
+                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exitingException));
+            }
+            Helpers.throwException(exitingException);
         }
 
         // check events before leaving
@@ -1110,21 +1143,32 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Override
     public synchronized IRubyObject inspect() {
         // FIXME: There's some code duplication here with RubyObject#inspect
-        StringBuilder part = new StringBuilder(32);
-        String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(':');
-        part.append(identityString());
-        final String name = getNameOrNull(); // thread.name
-        if ( name != null ) {
-            part.append('@').append(name);
+        RubyString result = getRuntime().newString("#<");
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        result.cat(getMetaClass().getRealClass().toRubyString(context));
+        result.cat(':');
+        result.catString(identityString());
+        String id = threadImpl.getRubyName(); // thread.name
+        if (notEmpty(id)) {
+            result.cat('@');
+            result.append(getRuntime().newSymbol(id).to_s());
         }
-        if ( file != null && file.length() > 0 && line >= 0 ) {
-            part.append('@').append(file).append(':').append(line + 1);
+        if (notEmpty(file) && line >= 0) {
+            result.cat('@');
+            result.catString(file);
+            result.cat(':');
+            result.catString("" + (line + 1));
         }
-        part.append(' ');
-        part.append(status.toString().toLowerCase());
-        part.append('>');
-        return getRuntime().newString(part.toString());
+        result.cat(' ');
+        result.catString(status.toString().toLowerCase());
+        result.cat('>');
+        return result;
+    }
+
+    private boolean notEmpty(String str) {
+        return str != null && str.length() > 0;
     }
 
     @JRubyMethod(name = "key?", required = 1)
@@ -1151,6 +1195,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         synchronized (rubyThread) {
             rubyThread.pollThreadEvents(context);
+            Status oldStatus = rubyThread.status.get();
             try {
                 // attempt to decriticalize all if we're the critical thread
                 receiver.getRuntime().getThreadService().setCritical(false);
@@ -1158,8 +1203,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 rubyThread.status.set(Status.SLEEP);
                 rubyThread.wait();
             } catch (InterruptedException ie) {
+            } finally {
                 rubyThread.pollThreadEvents(context);
-                rubyThread.status.set(Status.RUN);
+                rubyThread.status.set(oldStatus);
             }
         }
 
@@ -1291,42 +1337,51 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
         if (args.length == 0) {
-            IRubyObject lastException = errorInfo;
-            if (lastException.isNil()) {
-                return new RaiseException(runtime, runtime.getRuntimeError(), "", false).getException();
+            if (errorInfo.isNil()) {
+                // We force RaiseException here to populate backtrace
+                return RaiseException.from(runtime, runtime.getRuntimeError(), "").getException();
             }
-            return lastException;
+            return errorInfo;
         }
 
         final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject arg = args[0];
 
-        final IRubyObject exception;
+        IRubyObject tmp;
+        final RubyException exception;
         if (args.length == 1) {
             if (arg instanceof RubyString) {
-                return runtime.getRuntimeError().newInstance(context, args, block);
+                tmp = runtime.getRuntimeError().newInstance(context, args, block);
             }
-            if (arg instanceof ConcreteJavaProxy ) {
+            else if (arg instanceof ConcreteJavaProxy ) {
                 return arg;
             }
-            if ( ! arg.respondsTo("exception") ) {
-                return runtime.newTypeError("exception class/object expected").getException();
+            else if ( ! arg.respondsTo("exception") ) {
+                throw runtime.newTypeError("exception class/object expected");
+            } else {
+                tmp = arg.callMethod(context, "exception");
             }
-            exception = arg.callMethod(context, "exception");
         } else {
             if ( ! arg.respondsTo("exception") ) {
-                return runtime.newTypeError("exception class/object expected").getException();
+                throw runtime.newTypeError("exception class/object expected");
             }
 
-            exception = arg.callMethod(context, "exception", args[1]);
+            tmp = arg.callMethod(context, "exception", args[1]);
         }
 
-        if (!runtime.getException().isInstance(exception)) {
-            return runtime.newTypeError("exception object expected").getException();
+        if (!runtime.getException().isInstance(tmp)) {
+            throw runtime.newTypeError("exception object expected");
         }
+
+        exception = (RubyException) tmp;
 
         if (args.length == 3) {
-            ((RubyException) exception).set_backtrace(args[2]);
+            exception.set_backtrace(args[2]);
+        }
+
+        IRubyObject cause = context.getErrorInfo();
+        if (cause != exception) {
+            exception.setCause(cause);
         }
 
         return exception;
@@ -1496,7 +1551,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exitSleep() {
-        status.set(Status.RUN);
+        if (status.get() != Status.ABORTING) {
+            status.set(Status.RUN);
+        }
     }
 
     @JRubyMethod(name = {"kill", "exit", "terminate"})
@@ -1508,6 +1565,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (currentThread == runtime.getThreadService().getMainThread()) {
             // rb_exit to hard exit process...not quite right for us
         }
+
+        status.set(Status.ABORTING);
+
         return genericKill(runtime, currentThread);
     }
 
@@ -1545,51 +1605,99 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         throw getRuntime().newNotImplementedError("Thread-specific SAFE levels are not supported");
     }
 
+    @JRubyMethod(name = "backtrace")
     public IRubyObject backtrace(ThreadContext context) {
-        return backtrace20(context, NULL_ARRAY);
+        return backtraceInternal(context, null, null);
     }
 
-    @JRubyMethod(name = "backtrace", optional = 2)
-    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level) {
+        return backtraceInternal(context, level, null);
+    }
+
+    @JRubyMethod(name = "backtrace")
+    public IRubyObject backtrace(ThreadContext context, IRubyObject level, IRubyObject length) {
+        return backtraceInternal(context, level, length);
+    }
+
+    private IRubyObject backtraceInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
+        Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
-        if (myContext == null) return context.nil;
-
-        Thread nativeThread = getNativeThread();
-
         // nativeThread can be null if the thread has terminated and GC has claimed it
-        if (nativeThread == null) return context.nil;
-
         // nativeThread may have finished
-        if (!nativeThread.isAlive()) return context.nil;
+        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return myContext.createCallerBacktrace(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerBacktrace(levelInt, lengthInt, getNativeThread().getStackTrace());
     }
 
-    @JRubyMethod(optional = 2)
-    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context) {
+        return backtraceLocationsInternal(context, null, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level) {
+        return backtraceLocationsInternal(context, level, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject level, IRubyObject length) {
+        return backtraceLocationsInternal(context, level, length);
+    }
+
+    private IRubyObject backtraceLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         ThreadContext myContext = getContext();
-
-        if (myContext == null) return context.nil;
-
         Thread nativeThread = getNativeThread();
 
+        // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
-        if (nativeThread == null) return context.nil;
-
         // nativeThread may have finished
-        if (!nativeThread.isAlive()) return context.nil;
+        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
         Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, args, 0);
-        Integer level = ll[0], length = ll[1];
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer levelInt = ll[0], lengthInt = ll[1];
 
-        return myContext.createCallerLocations(level, length, getNativeThread().getStackTrace());
+        return myContext.createCallerLocations(levelInt, lengthInt, getNativeThread().getStackTrace());
+    }
+
+    @JRubyMethod(name = "report_on_exception=")
+    public IRubyObject report_on_exception_set(ThreadContext context, IRubyObject state) {
+        if (state.isNil()) {
+            reportOnException = state;
+        } else {
+            reportOnException = context.runtime.newBoolean(state.isTrue());
+        }
+        return this;
+    }
+
+    @JRubyMethod(name = "report_on_exception")
+    public IRubyObject report_on_exception(ThreadContext context) {
+        return reportOnException;
+    }
+
+    @JRubyMethod(name = "report_on_exception=", meta = true)
+    public static IRubyObject report_on_exception_set(ThreadContext context, IRubyObject self, IRubyObject state) {
+        Ruby runtime = context.runtime;
+        
+        if (state.isNil()) {
+            runtime.setReportOnException(state);
+        } else {
+            runtime.setReportOnException(runtime.newBoolean(state.isTrue()));
+        }
+
+        return self;
+    }
+
+    @JRubyMethod(name = "report_on_exception", meta = true)
+    public static IRubyObject report_on_exception(ThreadContext context, IRubyObject self) {
+        return context.runtime.getReportOnException();
     }
 
     public StackTraceElement[] javaBacktrace() {
@@ -1606,44 +1714,53 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exceptionRaised(RaiseException exception) {
-        assert isCurrent();
+        exceptionRaised((Throwable) exception);
+    }
 
-        RubyException rubyException = exception.getException();
-        Ruby runtime = rubyException.getRuntime();
-        if (runtime.getSystemExit().isInstance(rubyException)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-        }
-        else if (abortOnException(runtime)) {
-            runtime.getThreadService().getMainThread().raise(rubyException);
-            return;
-        }
-        else if (runtime.isDebug()) {
-            runtime.printError(exception.getException());
-        }
-        exitingException = exception;
+    protected void printReportExceptionWarning() {
+        Ruby runtime = getRuntime();
+        String name = threadImpl.getReportName();
+        runtime.getErrorStream().println("warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):");
     }
 
     /**
-     * For handling all non-Ruby exceptions bubbling out of threads
-     * @param exception
+     * For handling all exceptions bubbling out of threads
+     * @param throwable
      */
-    @SuppressWarnings("deprecation")
-    public void exceptionRaised(Throwable exception) {
-        if (exception instanceof RaiseException) {
-            exceptionRaised((RaiseException)exception);
-            return;
+    public void exceptionRaised(Throwable throwable) {
+        // if unrescuable (internal exceptions) just re-raise and let it be handled by thread handler
+        if (throwable instanceof Unrescuable) {
+            Helpers.throwException(throwable);
         }
+
+        Ruby runtime = getRuntime();
 
         assert isCurrent();
 
-        Ruby runtime = getRuntime();
-        if (abortOnException(runtime) && exception instanceof Error) {
-            // re-propagate on main thread
-            runtime.getThreadService().getMainThread().raise(JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
+        IRubyObject rubyException;
+
+        if (throwable instanceof RaiseException) {
+            RaiseException exception = (RaiseException) throwable;
+            rubyException = exception.getException();
         } else {
-            // just rethrow on this thread, let system handlers report it
-            Helpers.throwException(exception);
+            rubyException = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
         }
+
+        if (runtime.getSystemExit().isInstance(rubyException)) {
+            runtime.getThreadService().getMainThread().raise(rubyException);
+        } else if (abortOnException(runtime) || reportOnException.isTrue()) {
+            if (reportOnException.isTrue()) {
+                printReportExceptionWarning();
+                runtime.printError(throwable);
+            }
+            if (abortOnException(runtime)) {
+                runtime.getThreadService().getMainThread().raise(rubyException);
+            }
+        } else if (runtime.isDebug()) {
+            runtime.printError(throwable);
+        }
+
+        exitingException = throwable;
     }
 
     private boolean abortOnException(Ruby runtime) {
@@ -1747,75 +1864,90 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
         // Use selectables but only if they're not associated with a file (which has odd select semantics)
-        if (channel instanceof SelectableChannel && (fptr == null || !fptr.fd().isNativeFile)) {
+        ChannelFD fd = fptr == null ? null : fptr.fd();
+        if (channel instanceof SelectableChannel && fd != null) {
             SelectableChannel selectable = (SelectableChannel)channel;
 
-            synchronized (selectable.blockingLock()) {
-                boolean oldBlocking = selectable.isBlocking();
+            // ensure we have fptr locked, but release it to avoid deadlock
+            boolean locked = false;
+            if (fptr != null) {
+                locked = fptr.lock();
+                fptr.unlock();
+            }
+            try {
+                synchronized (selectable.blockingLock()) {
+                    boolean oldBlocking = selectable.isBlocking();
 
-                SelectionKey key;
-                try {
-                    selectable.configureBlocking(false);
-
-                    if (fptr != null) fptr.addBlockingThread(this);
-                    currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
-
-                    key = selectable.register(currentSelector, ops);
-
-                    beforeBlockingCall();
-                    int result;
-                    if (timeout < 0) {
-                        result = currentSelector.select();
-                    } else if (timeout == 0) {
-                        result = currentSelector.selectNow();
-                    } else {
-                        result = currentSelector.select(timeout);
-                    }
-
-                    // check for thread events, in case we've been woken up to die
-                    pollThreadEvents();
-
-                    if (result == 1) {
-                        Set<SelectionKey> keySet = currentSelector.selectedKeys();
-
-                        if (keySet.iterator().next() == key) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                } catch (IOException ioe) {
-                    throw getRuntime().newIOErrorFromException(ioe);
-                } finally {
-                    // Note: I don't like ignoring these exceptions, but it's
-                    // unclear how likely they are to happen or what damage we
-                    // might do by ignoring them. Note that the pieces are separate
-                    // so that we can ensure one failing does not affect the others
-                    // running.
-
-                    // shut down and null out the selector
+                    SelectionKey key;
                     try {
-                        if (currentSelector != null) {
-                            getRuntime().getSelectorPool().put(currentSelector);
+                        selectable.configureBlocking(false);
+
+                        if (fptr != null) fptr.addBlockingThread(this);
+                        currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
+
+                        key = selectable.register(currentSelector, ops);
+
+                        beforeBlockingCall();
+                        int result;
+
+                        if (timeout < 0) {
+                            result = currentSelector.select();
+                        } else if (timeout == 0) {
+                            result = currentSelector.selectNow();
+                        } else {
+                            result = currentSelector.select(timeout);
                         }
-                    } catch (Exception e) {
-                        // ignore
+
+                        // check for thread events, in case we've been woken up to die
+                        pollThreadEvents();
+
+                        if (result == 1) {
+                            Set<SelectionKey> keySet = currentSelector.selectedKeys();
+
+                            if (keySet.iterator().next() == key) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    } catch (IOException ioe) {
+                        throw getRuntime().newIOErrorFromException(ioe);
                     } finally {
-                        currentSelector = null;
+                        // Note: I don't like ignoring these exceptions, but it's
+                        // unclear how likely they are to happen or what damage we
+                        // might do by ignoring them. Note that the pieces are separate
+                        // so that we can ensure one failing does not affect the others
+                        // running.
+
+                        // shut down and null out the selector
+                        try {
+                            if (currentSelector != null) {
+                                getRuntime().getSelectorPool().put(currentSelector);
+                            }
+                        } catch (Exception e) {
+                            // ignore
+                        } finally {
+                            currentSelector = null;
+                        }
+
+                        // remove this thread as a blocker against the given IO
+                        if (fptr != null) fptr.removeBlockingThread(this);
+
+                        // go back to previous blocking state on the selectable
+                        try {
+                            selectable.configureBlocking(oldBlocking);
+                        } catch (Exception e) {
+                            // ignore
+                        }
+
+                        // clear thread state from blocking call
+                        afterBlockingCall();
                     }
-
-                    // remove this thread as a blocker against the given IO
-                    if (fptr != null) fptr.removeBlockingThread(this);
-
-                    // go back to previous blocking state on the selectable
-                    try {
-                        selectable.configureBlocking(oldBlocking);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-
-                    // clear thread state from blocking call
-                    afterBlockingCall();
+                }
+            } finally {
+                if (fptr != null) {
+                    fptr.lock();
+                    if (locked) fptr.unlock();
                 }
             }
         } else {
@@ -1928,7 +2060,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return false;
         }
         final RubyThread other = (RubyThread)obj;
-        if (this.threadImpl != other.threadImpl && (this.threadImpl == null || !this.threadImpl.equals(other.threadImpl))) {
+        if (this.threadImpl != other.threadImpl && (this.threadImpl == ThreadLike.DUMMY || !this.threadImpl.equals(other.threadImpl))) {
             return false;
         }
         return true;
@@ -1936,7 +2068,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Override
     public int hashCode() {
-        return 97 * 3 + (this.threadImpl != null ? this.threadImpl.hashCode() : 0);
+        return 97 * 3 + (this.threadImpl != ThreadLike.DUMMY ? this.threadImpl.hashCode() : 0);
     }
 
     @Override
@@ -2052,6 +2184,41 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return block.yieldSpecific(context);
         } finally {
             ts.setCritical(critical);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject backtrace20(ThreadContext context, IRubyObject[] args) {
+        return backtrace(context);
+    }
+
+    @Deprecated
+    public IRubyObject backtrace(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return backtrace(context);
+            case 1:
+                return backtrace(context, args[0]);
+            case 2:
+                return backtrace(context, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
+        }
+    }
+
+    @Deprecated
+    public IRubyObject backtrace_locations(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return backtrace_locations(context);
+            case 1:
+                return backtrace_locations(context, args[0]);
+            case 2:
+                return backtrace_locations(context, args[0], args[1]);
+            default:
+                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                return null; // not reached
         }
     }
 }

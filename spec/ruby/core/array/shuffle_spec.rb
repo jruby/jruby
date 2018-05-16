@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#shuffle" do
   it "returns the same values, in a usually different order" do
@@ -95,8 +95,8 @@ describe "Array#shuffle!" do
     a.should equal(original)
   end
 
-  it "raises a RuntimeError on a frozen array" do
-    lambda { ArraySpecs.frozen_array.shuffle! }.should raise_error(RuntimeError)
-    lambda { ArraySpecs.empty_frozen_array.shuffle! }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen array" do
+    lambda { ArraySpecs.frozen_array.shuffle! }.should raise_error(frozen_error_class)
+    lambda { ArraySpecs.empty_frozen_array.shuffle! }.should raise_error(frozen_error_class)
   end
 end

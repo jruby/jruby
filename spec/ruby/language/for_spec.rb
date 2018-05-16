@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 # for name[, name]... in expr [do]
 #   body
@@ -10,6 +10,12 @@ describe "The for expression" do
       j += i
     end
     j.should == 6
+  end
+
+  it "iterates over a list of arrays and destructures with empty comma" do
+    for i, in [[1,2]]
+      i.should == 1
+    end
   end
 
   it "iterates over an Hash passing each key-value pair to the block" do

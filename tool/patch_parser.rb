@@ -1,3 +1,58 @@
+REMAPS = {
+  '"tUPLUS"' => '"unary+"',
+  '"tUMINUS"'=>  '"unary-"',
+  '"tPOW"' => '"\'**\'"',
+  '"tCMP"' => '"\'<=>\'"',
+  '"tEQ"' => '"\'==\'"',
+  '"tEQQ"' => '"\'===\'"',
+  '"tNEQ"' => '"\'!=\'"',
+  '"tGEQ"' => '"\'>=\'"',
+  '"tLEQ"' => '"\'<=\'"',
+  '"tANDOP"' => '"\'&&\'"',
+  '"tOROP"' => '"\'||\'"',
+  '"tMATCH"' => '"\'=~\'"',
+  '"tNMATCH"'=> '"\'!~\'"',
+  '"tDOT"' => '"\'.\'"',
+  '"tDOT2"' => '"\'..\'"',
+  '"tDOT3"' => '"\'...\'"',
+  '"tAREF"' => '"\'[]\'"',
+  '"tASET"' => '"\'[]=\'"',
+  '"tLSHFT"' => '"\'<<\'"',
+  '"tRSHFT"' => '"\'>>\'"',
+  '"tANDDOT"' => '"\'&.\'"',
+  '"tCOLON2"' => '"\'::\'"',
+  '"tCOLON3"' => '"\':: at EXPR_BEG\'"',
+  '"tASSOC"' => '"\'=>\'"',
+  '"tLPAREN"' => '"\'(\'"',
+  '"tLPAREN2"'=> '"\'( arg\'"',
+  '"tRPAREN"' => '"\')\'"',
+  '"tLPAREN_ARG"' => '"\'[\'"',
+  '"tLBRACK"' => '"\'{\'"',
+  '"tRBRACK"' => '"\'{ arg\'"',
+  '"tLBRACE"' => '"\'[\'"',
+  '"tLBRACE_ARG"' => '"\'[ args\'"', 
+  '"tSTAR"' => '"\'*\'"',
+  '"tSTAR2"' => '"\'*\'"',
+  '"tAMPER"' => '"\'&\'"',
+  '"tAMPER2"' => '"\'&\'"',
+  '"tTILDE"' => '"\'~\'"',
+  '"tPERCENT"' => '"\'%\'"',
+  '"tDIVIDE"' => '"\'/\'"',
+  '"tPLUS"' => '"\'+\'"',
+  '"tMINUS"' => '"\'-\'"',
+  '"tLT"' => '"\'<\'"',
+  '"tGT"' => '"\'>\'"',
+  '"tPIPE"' => '"\'|\'"',
+  '"tBANG"' => '"\'!\'"',
+  '"tCARET"' => '"\'^\'"',
+  '"tLCURLY"' => '"\'{\'"',
+  '"tRCURLY"' => '"\'}\'"',
+  '"tBACK_REF2"' => '"\'`\'"',
+  '"tSYMBEG"' => '"\':\'"',
+  '"tLAMBDA"'  => '"\'->\'"',
+  '"tDSTAR"' => '"\'**\'"',
+}
+
 def get_numbers_until_end_block(table)
   while line = gets
     break if /\};/ =~ line
@@ -8,6 +63,20 @@ def get_numbers_until_end_block(table)
     end
   end
   table
+end
+
+def print_names_until_end_block
+  while line = gets
+    if /\};/ =~ line
+      print line
+      break
+    end
+    next if /^\/\// =~ line
+    new_line = line.split(/,/).map do |element|
+      REMAPS[element.strip] || element
+    end.join(',')
+    puts new_line
+  end
 end
 
 # We use this script to generate our normal parser and the parser for 
@@ -38,6 +107,13 @@ end
 check4 = get_numbers_until_end_block([])
 
 puts "    protected static final short[] yyCheck = #{yytable_prefix}YyTables.yyCheck();"
+
+while gets
+  print $_
+  break if /protected static final String\[\] yyNames = \{/ =~ $_
+end
+
+print_names_until_end_block
 
 while gets
   print $_
@@ -75,12 +151,12 @@ open("#{yytable_prefix}YyTables.java", "w") { |f|
   f.print <<END
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or

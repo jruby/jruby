@@ -17,7 +17,6 @@ import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -53,7 +52,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         }
 
         try {
-            JVMVisitor visitor = new JVMVisitor();
+            JVMVisitor visitor = new JVMVisitor(runtime);
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             bytecode = visitor.compileToBytecode(scope, context);
             Class compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
@@ -64,7 +63,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         } catch (NotCompilableException nce) {
             throw nce;
         } catch (Throwable t) {
-            throw new NotCompilableException("failed to compile script " + scope.getName(), t);
+            throw new NotCompilableException("failed to compile script " + scope.getId(), t);
         }
 
         final MethodHandle compiledHandle = _compiledHandle;
@@ -74,7 +73,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
-                    return (IRubyObject) compiledHandle.invokeWithArguments(context, staticScope, self, IRubyObject.NULL_ARRAY, block, self.getMetaClass(), Interpreter.ROOT);
+                    return (IRubyObject) compiledHandle.invokeWithArguments(context, staticScope, self, IRubyObject.NULL_ARRAY, block, self.getMetaClass(), null);
                 } catch (Throwable t) {
                     Helpers.throwException(t);
                     return null; // not reached
@@ -92,7 +91,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
                 context.setCurrentVisibility(Visibility.PRIVATE);
 
                 try {
-                    return (IRubyObject) compiledHandle.invokeWithArguments(context, staticScope, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, currModule, Interpreter.ROOT);
+                    return (IRubyObject) compiledHandle.invokeWithArguments(context, staticScope, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, currModule, null);
                 } catch (IRBreakJump bj) {
                     throw IRException.BREAK_LocalJumpError.getException(context.runtime);
                 } catch (Throwable t) {

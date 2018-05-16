@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,6 +28,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.javasupport.JavaClass;
@@ -91,6 +92,7 @@ import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1092,19 +1094,33 @@ public class RubyClass extends RubyModule {
         setSuperClass(superClass);
     }
 
+    // introduced solely to provide some level of compatibility with previous
+    // Class#subclasses implementation ... `ruby_class.to_java.subclasses`
+    public final Collection<RubyClass> subclasses() {
+        return subclasses(false);
+    }
+
     public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        Set<RubyClass> mySubclasses = subclasses;
-        if (mySubclasses != null) {
-            Collection<RubyClass> mine = new ArrayList<RubyClass>(mySubclasses);
-            if (includeDescendants) {
-                for (RubyClass i: mySubclasses) {
-                    mine.addAll(i.subclasses(includeDescendants));
-                }
-            }
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses != null) {
+            Collection<RubyClass> mine = new ArrayList<>();
+            subclassesInner(mine, includeDescendants);
 
             return mine;
-        } else {
-            return Collections.EMPTY_LIST;
+        }
+        return Collections.EMPTY_LIST;
+    }
+
+    private void subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses != null) {
+            Set<RubyClass> keys = subclasses.keySet();
+            mine.addAll(keys);
+            if (includeDescendants) {
+                for (RubyClass klass: keys) {
+                    klass.subclassesInner(mine, includeDescendants);
+                }
+            }
         }
     }
 
@@ -1117,12 +1133,19 @@ public class RubyClass extends RubyModule {
      *
      * @param subclass The subclass to add
      */
-    public synchronized void addSubclass(RubyClass subclass) {
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) subclasses = oldSubclasses = new WeakHashSet<RubyClass>(4);
-            oldSubclasses.add(subclass);
+    public void addSubclass(RubyClass subclass) {
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses == null) {
+            // check again
+            synchronized (this) {
+                subclasses = this.subclasses;
+                if (subclasses == null) {
+                    this.subclasses = subclasses = new ConcurrentWeakHashMap<>(4, 0.75f, 1);
+                }
+            }
         }
+
+        subclasses.put(subclass, NEVER);
     }
 
     /**
@@ -1130,13 +1153,11 @@ public class RubyClass extends RubyModule {
      *
      * @param subclass The subclass to remove
      */
-    public synchronized void removeSubclass(RubyClass subclass) {
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) return;
+    public void removeSubclass(RubyClass subclass) {
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses == null) return;
 
-            oldSubclasses.remove(subclass);
-        }
+        subclasses.remove(subclass);
     }
 
     /**
@@ -1145,25 +1166,21 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to remove
      * @param newSubclass The subclass to replace it with
      */
-    public synchronized void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> oldSubclasses = subclasses;
-            if (oldSubclasses == null) return;
+    public void replaceSubclass(RubyClass subclass, RubyClass newSubclass) {
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses == null) return;
 
-            oldSubclasses.remove(subclass);
-            oldSubclasses.add(newSubclass);
-        }
+        subclasses.remove(subclass);
+        subclasses.put(newSubclass, NEVER);
     }
 
     @Override
     public void becomeSynchronized() {
         // make this class and all subclasses sync
-        synchronized (runtime.getHierarchyLock()) {
-            super.becomeSynchronized();
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.becomeSynchronized();
-            }
+        super.becomeSynchronized();
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses != null) {
+            for (RubyClass subclass : subclasses.keySet()) subclass.becomeSynchronized();
         }
     }
 
@@ -1183,11 +1200,9 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
 
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.invalidateCacheDescendants();
-            }
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        if (subclasses != null) {
+            for (RubyClass subclass : subclasses.keySet()) subclass.invalidateCacheDescendants();
         }
     }
 
@@ -1198,16 +1213,12 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
+        Map<RubyClass, Object> subclasses = this.subclasses;
         // no subclasses, don't bother with lock and iteration
         if (subclasses == null || subclasses.isEmpty()) return;
 
         // cascade into subclasses
-        synchronized (runtime.getHierarchyLock()) {
-            Set<RubyClass> mySubclasses = subclasses;
-            if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.addInvalidatorsAndFlush(invalidators);
-            }
-        }
+        for (RubyClass subclass : subclasses.keySet()) subclass.addInvalidatorsAndFlush(invalidators);
     }
 
     public final Ruby getClassRuntime() {
@@ -1220,7 +1231,7 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
-        return runtime.getNil();
+        return context.nil;
     }
 
     /** rb_class_inherited (reversed semantics!)
@@ -1244,7 +1255,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return runtime.getNil();
+            if (metaClass == runtime.getBasicObject().getMetaClass()) return context.nil;
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1252,7 +1263,7 @@ public class RubyClass extends RubyModule {
             superClazz = superClazz.superClass;
         }
 
-        return superClazz != null ? superClazz : runtime.getNil();
+        return superClazz != null ? superClazz : context.nil;
     }
 
     private void checkNotInitialized() {
@@ -1603,16 +1614,18 @@ public class RubyClass extends RubyModule {
 
         private void defineClassMethods(Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
-            for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
-                String methodName = methodEntry.getKey();
 
-                if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+            // define class/static methods
+            for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
+                String id = methodEntry.getKey();
 
-                String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+                if (!JavaNameMangler.willMethodMangleOk(id)) continue;
 
-                Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(methodName);
-                List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
-                Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
+                String javaMethodName = JavaNameMangler.mangleMethodName(id);
+
+                Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(id);
+                List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(id);
+                Class[] methodSignature = getMetaClass().getMethodSignatures().get(id);
 
                 String signature;
                 if (methodSignature == null) {
@@ -1627,7 +1640,7 @@ public class RubyClass extends RubyModule {
 
                             m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
                             //m.invokevirtual("org/jruby/RubyClass", "getMetaClass", sig(RubyClass.class) );
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class) );
                             break;
                         default:
@@ -1637,7 +1650,7 @@ public class RubyClass extends RubyModule {
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.aload(0);
                             m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class) );
                     }
@@ -1661,14 +1674,14 @@ public class RubyClass extends RubyModule {
 
                     m.getstatic(javaPath, "rubyClass", ci(RubyClass.class));
 
-                    m.ldc(methodName); // method name
+                    m.ldc(id); // method name
                     RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
                     m.invokevirtual("org/jruby/RubyClass", "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
 
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), methodName, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), id, javaName, javaMethodName + signature);
 
                 m.end();
             }
@@ -1677,18 +1690,18 @@ public class RubyClass extends RubyModule {
         private void defineInstanceMethods(Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
-                final String methodName = methodEntry.getKey();
+                final String id = methodEntry.getKey();
 
-                if ( ! JavaNameMangler.willMethodMangleOk(methodName) ) {
-                    LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), methodName);
+                if (!JavaNameMangler.willMethodMangleOk(id)) {
+                    LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), id);
                     continue;
                 }
 
-                String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+                String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
-                Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(methodName);
-                List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
-                Class[] methodSignature = getMethodSignatures().get(methodName);
+                Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(id);
+                List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(id);
+                Class[] methodSignature = getMethodSignatures().get(id);
 
                 final String signature;
                 if (methodSignature == null) { // non-signature signature with just IRubyObject
@@ -1700,7 +1713,7 @@ public class RubyClass extends RubyModule {
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.aload(0);
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class));
                             break;
                         case 1:
@@ -1709,7 +1722,7 @@ public class RubyClass extends RubyModule {
                             generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                             m.aload(0);
-                            m.ldc(methodName);
+                            m.ldc(id);
                             m.aload(1); // IRubyObject arg1
                             m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject.class));
                             break;
@@ -1727,7 +1740,7 @@ public class RubyClass extends RubyModule {
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                                 m.aload(0);
-                                m.ldc(methodName);
+                                m.ldc(id);
 
                                 // generate an IRubyObject[] for the method arguments :
                                 m.pushInt(paramCount);
@@ -1746,7 +1759,7 @@ public class RubyClass extends RubyModule {
                                 generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
                                 m.aload(0);
-                                m.ldc(methodName);
+                                m.ldc(id);
                                 m.aload(1); // IRubyObject[] arg1
                             }
                             m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
@@ -1763,7 +1776,7 @@ public class RubyClass extends RubyModule {
 
                     signature = sig(methodSignature[0], params);
                     int mod = ACC_PUBLIC;
-                    if ( isVarArgsSignature(methodName, methodSignature) ) mod |= ACC_VARARGS;
+                    if ( isVarArgsSignature(id, methodSignature) ) mod |= ACC_VARARGS;
                     m = new SkinnyMethodAdapter(cw, mod, javaMethodName, signature, null, null);
                     generateMethodAnnotations(methodAnnos, m, parameterAnnos);
 
@@ -1771,14 +1784,14 @@ public class RubyClass extends RubyModule {
                     m.astore(rubyIndex);
 
                     m.aload(0); // self
-                    m.ldc(methodName); // method name
+                    m.ldc(id); // method name
                     RealClassGenerator.coerceArgumentsToRuby(m, params, rubyIndex);
                     m.invokevirtual(javaPath, "callMethod", sig(IRubyObject.class, String.class, IRubyObject[].class));
 
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), methodName, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}#{} as {}#{}", getName(), id, javaName, javaMethodName + signature);
 
                 instanceMethods.add(javaMethodName + signature);
 
@@ -1921,7 +1934,7 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public Object toJava(final Class target) {
+    public <T> T toJava(Class<T> target) {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
@@ -1930,13 +1943,13 @@ public class RubyClass extends RubyModule {
             if ( ! javaClass.isNil() ) return javaClass.toJava(target);
 
             Class reifiedClass = nearestReifiedClass(this);
-            if ( reifiedClass != null ) return reifiedClass;
+            if ( reifiedClass != null ) return target.cast(reifiedClass);
             // should never fall through, since RubyObject has a reified class
         }
 
         if (target.isAssignableFrom(RubyClass.class)) {
             // they're asking for something RubyClass extends, give them that
-            return this;
+            return target.cast(this);
         }
 
         return defaultToJava(target);
@@ -2363,7 +2376,7 @@ public class RubyClass extends RubyModule {
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
-    private Set<RubyClass> subclasses;
+    private volatile Map<RubyClass, Object> subclasses;
     public static final int CS_IDX_INITIALIZE = 0;
     public enum CS_NAMES {
         INITIALIZE("initialize");

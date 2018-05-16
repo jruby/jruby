@@ -1,7 +1,6 @@
 package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
@@ -10,19 +9,18 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
-public class Symbol extends ImmutableLiteral {
-    public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
+public class Symbol extends ImmutableLiteral implements Stringable {
+    public static final Symbol KW_REST_ARG_DUMMY = new Symbol(null);
 
-    private final ByteList bytes;
+    private final RubySymbol symbol;
 
-    public Symbol(String name, Encoding encoding) {
-        super();
-
-        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
+    public Symbol(RubySymbol symbol) {
+        this.symbol = symbol;
     }
 
-    public Symbol(ByteList bytes) {
-        this.bytes = bytes;
+    public boolean equals(Object other) {
+        return other instanceof Symbol &&
+                (this == KW_REST_ARG_DUMMY && other == KW_REST_ARG_DUMMY || symbol.equals(((Symbol) other).symbol));
     }
 
     @Override
@@ -31,14 +29,18 @@ public class Symbol extends ImmutableLiteral {
     }
 
     public ByteList getBytes() {
-        return bytes;
+        return symbol.getBytes();
     }
 
-    public String getString() { return RubyString.byteListToString(bytes); }
+    public RubySymbol getSymbol() {
+        return symbol;
+    }
+
+    public String getString() { return symbol.idString(); }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime, bytes);
+        return symbol;
     }
 
     @Override
@@ -47,7 +49,7 @@ public class Symbol extends ImmutableLiteral {
     }
 
     public Encoding getEncoding() {
-        return bytes.getEncoding();
+        return symbol.getEncoding();
     }
 
     @Override
@@ -58,12 +60,12 @@ public class Symbol extends ImmutableLiteral {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getString());
-        e.encode(getEncoding());
+
+        e.encode(getBytes());
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeString(), d.decodeEncoding());
+        return new Symbol(d.decodeSymbol());
     }
 
     @Override

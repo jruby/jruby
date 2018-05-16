@@ -52,8 +52,13 @@ lib/native
 lib/ruby/cext/
 lib/ruby/gems
 lib/ruby/stdlib/*.jar
+lib/ruby/stdlib/ant*
+lib/ruby/stdlib/cmath.rb
+lib/ruby/stdlib/csv.rb
 lib/ruby/stdlib/did_you_mean*
+lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/gauntlet_rdoc.rb
+lib/ruby/stdlib/ipaddr*
 lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
@@ -73,6 +78,8 @@ lib/ruby/stdlib/readline*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/power_assert*
 lib/ruby/stdlib/psych*
+lib/ruby/stdlib/scanf.rb
+lib/ruby/stdlib/webrick*
 lib/ruby/stdlib/**/maven-metadata-local.xml
 release.properties
 share
@@ -81,7 +88,7 @@ target
 test/pom.xml
 test/prawn
 test/rails
-test/testapp/testapp
+test/jruby/testapp/testapp
 tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,23 +29,25 @@
 package org.jruby.util;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.SJISEncoding;
+import org.jcodings.specific.UTF8Encoding;
 
 public enum KCode {
-    NIL(null, "ASCII", 0),
-    NONE("NONE", "ASCII", 0),
-    UTF8("UTF8", "NonStrictUTF8", 64),
-    SJIS("SJIS", "NonStrictSJIS", 48),
-    EUC("EUC", "NonStrictEUCJP", 32);
+    NIL(null, ASCIIEncoding.INSTANCE, 0),
+    NONE("NONE", ASCIIEncoding.INSTANCE, 0),
+    UTF8("UTF8", UTF8Encoding.INSTANCE, 64),
+    SJIS("SJIS", SJISEncoding.INSTANCE, 48),
+    EUC("EUC", EUCJPEncoding.INSTANCE, 32);
 
     private final String kcode;
-    private final String encodingName;
+    private final Encoding encoding;
     private final int code;
 
-    private volatile Encoding encoding;
-
-    private KCode(String kcode, String encodingName, int code) {
+    private KCode(String kcode, Encoding encoding, int code) {
         this.kcode = kcode;
-        this.encodingName = encodingName;
+        this.encoding = encoding;
         this.code = code;
     }
 
@@ -89,9 +91,6 @@ public enum KCode {
     }
 
     public Encoding getEncoding() {
-        if (encoding == null) {
-            encoding = Encoding.load(encodingName);
-        }
         return encoding;
     }
 

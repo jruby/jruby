@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -37,6 +37,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -62,6 +65,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static volatile File tempDir;
 
+    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
+
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
     }
@@ -86,6 +91,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 out.close();
                 in.close();
                 url = f.toURI().toURL();
+
+                cachedJarPaths.add(URLUtil.getPath(url));
             }
             catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
@@ -183,6 +190,23 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             getJDBCDriverUnloader().run();
         }
         catch (Exception ex) { LOG.debug(ex); }
+
+        terminateJarIndexCacheEntries();
+    }
+
+    protected void terminateJarIndexCacheEntries() {
+        for (String jarPath : cachedJarPaths){
+            try {
+                // Remove reference from jar cache
+                JarResource.removeJarResource(jarPath);
+
+                // Delete temp jar on disk
+                File jarFile = new File(jarPath);
+                jarFile.delete();
+            } catch (Exception e) {
+                // keep trying to clean up other temp jars
+            }
+        }
     }
 
     @Deprecated

@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -10,12 +11,16 @@ import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
+import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
+import org.jruby.util.KeyValuePair;
+
+import java.util.List;
 
 /*
  * args field: [self, receiver, *args]
@@ -23,11 +28,23 @@ import org.jruby.runtime.CallType;
 public class CallInstr extends CallBase implements ResultInstr {
     protected transient Variable result;
 
-    public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr createWithKwargs(IRScope scope, CallType callType, Variable result, RubySymbol name,
+                                             Operand receiver, Operand[] args, Operand closure,
+                                             List<KeyValuePair<Operand, Operand>> kwargs) {
+        // FIXME: This is obviously total nonsense but this will be on an optimized path and we will not be constructing
+        // a new hash like this unless the eventual caller needs an ordinary hash.
+        Operand[] newArgs = new Operand[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[args.length] = new Hash(kwargs, true);
+
+        return create(scope, callType, result, name, receiver, newArgs, closure);
+    }
+
+    public static CallInstr create(IRScope scope, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
         return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
     }
 
-    public static CallInstr create(IRScope scope, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure) {
         boolean isPotentiallyRefined = scope.maybeUsingRefinements();
 
         if (!containsArgSplat(args)) {
@@ -50,12 +67,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
 
-    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure,
+    public CallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                      boolean potentiallyRefined) {
         this(Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+    protected CallInstr(Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
                         Operand closure, boolean potentiallyRefined) {
         super(op, callType, name, receiver, args, closure, potentiallyRefined);
 
@@ -76,8 +93,8 @@ public class CallInstr extends CallBase implements ResultInstr {
         int callTypeOrdinal = d.decodeInt();
         CallType callType = CallType.fromOrdinal(callTypeOrdinal);
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - calltype:  " + callType);
-        String methAddr = d.decodeString();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - methaddr:  " + methAddr);
+        RubySymbol name = d.decodeSymbol();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - methaddr:  " + name);
         Operand receiver = d.decodeOperand();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - receiver:  " + receiver);
         int argsCount = d.decodeInt();
@@ -97,7 +114,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
 
-        return create(d.getCurrentScope(), callType, result, methAddr, receiver, args, closure);
+        return create(d.getCurrentScope(), callType, result, name, receiver, args, closure);
     }
 
     public Variable getResult() {

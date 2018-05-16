@@ -192,16 +192,15 @@ io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
 #io/console/test_io_console.rb
 
-json/test_json.rb
-json/test_json_addition.rb
-json/test_json_encoding.rb
-json/test_json_fixtures.rb
-json/test_json_generate.rb
-json/test_json_generic_object.rb
-# Depends on some rails lib?.rb
-#json/test_json_rails.rb
-json/test_json_string_matching.rb
-json/test_json_unicode.rb
+json/json_addition_test.rb
+json/json_common_interface_test.rb
+json/json_encoding_test.rb
+json/json_ext_parser_test.rb
+json/json_fixtures_test.rb
+json/json_generator_test.rb
+json/json_generic_object_test.rb
+json/json_parser_test.rb
+json/json_string_matching_test.rb
 
 logger/test_logger.rb
 
@@ -219,7 +218,8 @@ net/http/test_http_request.rb
 net/http/test_httpheader.rb
 net/http/test_httpresponse.rb
 net/http/test_httpresponses.rb
-net/http/test_https.rb
+# jruby/jruby-openssl#112
+#net/http/test_https.rb
 net/http/test_https_proxy.rb
 net/imap/test_imap.rb
 net/imap/test_imap_response_parser.rb
@@ -327,11 +327,13 @@ psych/visitors/test_emitter.rb
 psych/visitors/test_to_ruby.rb
 psych/visitors/test_yaml_tree.rb
 
-ripper/test_files.rb
+# Assumes MRI source layout to randomly rip .rb files
+# ripper/test_files.rb
 ripper/test_filter.rb
 ripper/test_parser_events.rb
 ripper/test_ripper.rb
 ripper/test_scanner_events.rb
+ripper/test_sexp.rb
 
 scanf/test_scanf.rb
 scanf/test_scanfblocks.rb
@@ -369,3 +371,5 @@ ruby/enc/test_shift_jis.rb
 ruby/enc/test_utf16.rb
 ruby/enc/test_utf32.rb
 ruby/enc/test_windows_1251.rb
+ruby/enc/test_case_mapping.rb
+ruby/enc/test_case_options.rb

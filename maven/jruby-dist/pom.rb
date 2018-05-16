@@ -1,7 +1,7 @@
 require 'rubygems/package'
 require 'fileutils'
 project 'JRuby Dist' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
@@ -66,6 +66,35 @@ project 'JRuby Dist' do
 
   plugin( :invoker )
 
+  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+
+  profile 'sonatype-oss-release' do
+
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+      execute_goals( 'attach-artifact',
+                     id: 'attach-checksums',
+                     phase: :package,
+                     artifacts: [ { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha256',
+                                    classifier: :bin,
+                                    type: 'tar.gz.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha512',
+                                    classifier: :bin,
+                                    type: 'tar.gz.sha512'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha256',
+                                    classifier: :bin,
+                                    type: 'zip.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha512',
+                                    classifier: :bin,
+                                    type: 'zip.sha512'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha256',
+                                    classifier: :src,
+                                    type: 'zip.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha512',
+                                    classifier: :src,
+                                    type: 'zip.sha512'} ] )
+    end
+  end
+
   # since the source packages are done from the git repository we need
   # to be inside a git controlled directory. for example the source packages
   # itself does not contain the git repository and can not pack
@@ -77,7 +106,7 @@ project 'JRuby Dist' do
       file( :exists => '../../.git' )
     end
 
-    phase 'package' do
+    phase 'prepare-package' do
       execute :pack_sources do |ctx|
         require 'fileutils'
 
@@ -86,13 +115,11 @@ project 'JRuby Dist' do
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
 
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          [ 'tar', 'zip' ].each do |format|
+          [ 'tar.gz', 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
         end
-        puts "zipping #{basefile}.tar"
-        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',
@@ -101,9 +128,6 @@ project 'JRuby Dist' do
                                         :type => 'zip',
                                         :classifier => 'src' } ] )
 
-      end
-      plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
-        execute_goals( :artifacts, :algorithms => ['SHA256' ] )
       end
     end
   end

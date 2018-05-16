@@ -1,43 +1,49 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 require 'socket'
 
 describe "Socket#connect_nonblock" do
   before :each do
     @hostname = "127.0.0.1"
-    @addr = Socket.sockaddr_in(SocketSpecs.port, @hostname)
+    @server = TCPServer.new(@hostname, 0) # started, but no accept
+    @addr = Socket.sockaddr_in(@server.addr[1], @hostname)
     @socket = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
     @thread = nil
   end
 
   after :each do
     @socket.close
+    @server.close
     @thread.join if @thread
   end
 
   it "connects the socket to the remote side" do
-    ready = false
+    port = nil
+    accept = false
     @thread = Thread.new do
-      server = TCPServer.new(@hostname, SocketSpecs.port)
-      ready = true
+      server = TCPServer.new(@hostname, 0)
+      port = server.addr[1]
+      Thread.pass until accept
       conn = server.accept
       conn << "hello!"
       conn.close
       server.close
     end
 
-    Thread.pass while (@thread.status and @thread.status != 'sleep') or !ready
+    Thread.pass until port
 
+    addr = Socket.sockaddr_in(port, @hostname)
     begin
-      @socket.connect_nonblock(@addr)
+      @socket.connect_nonblock(addr)
     rescue Errno::EINPROGRESS
     end
 
+    accept = true
     IO.select nil, [@socket]
 
     begin
-      @socket.connect_nonblock(@addr)
+      @socket.connect_nonblock(addr)
     rescue Errno::EISCONN
       # Not all OS's use this errno, so we trap and ignore it
     end
@@ -58,10 +64,8 @@ describe "Socket#connect_nonblock" do
       end.should raise_error(IO::WaitWritable)
     end
 
-    ruby_version_is "2.3" do
-      it "returns :wait_writable in exceptionless mode when the connect would block" do
-        @socket.connect_nonblock(@addr, exception: false).should == :wait_writable
-      end
+    it "returns :wait_writable in exceptionless mode when the connect would block" do
+      @socket.connect_nonblock(@addr, exception: false).should == :wait_writable
     end
   end
 end

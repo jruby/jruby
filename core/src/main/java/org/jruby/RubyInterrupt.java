@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,8 @@ import static jnr.constants.platform.Signal.SIGINT;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.Interrupt;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -38,16 +40,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ArraySupport;
 
+/**
+ * The Java representation of a Ruby Interrupt.
+ *
+ * @see Interrupt
+ */
 @JRubyClass(name="Interrupt", parent="SignalException")
 public class RubyInterrupt extends RubySignalException {
-    private static final ObjectAllocator INTERRUPT_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyInterrupt(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator INTERRUPT_ALLOCATOR = (runtime, klass) -> new RubyInterrupt(runtime, klass);
 
-    static RubyClass createInterruptClass(Ruby runtime, RubyClass signalExceptionClass) {
+    static RubyClass define(Ruby runtime, RubyClass signalExceptionClass) {
         RubyClass interruptClass = runtime.defineClass("Interrupt", signalExceptionClass, INTERRUPT_ALLOCATOR);
         interruptClass.defineAnnotatedMethods(RubyInterrupt.class);
         return interruptClass;
@@ -55,6 +57,11 @@ public class RubyInterrupt extends RubySignalException {
 
     protected RubyInterrupt(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new Interrupt(message, this);
     }
 
     @JRubyMethod(optional = 1, visibility = PRIVATE)

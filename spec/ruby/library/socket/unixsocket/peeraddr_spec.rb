@@ -1,5 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "UNIXSocket#peeraddr" do
 
@@ -21,7 +21,9 @@ describe "UNIXSocket#peeraddr" do
     end
 
     it "raises an error in server sockets" do
-      lambda { @server.peeraddr }.should raise_error
+      lambda {
+        @server.peeraddr
+      }.should raise_error(Errno::ENOTCONN)
     end
   end
 

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
@@ -9,14 +10,14 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class PushBlockFrameInstr extends NoOperandResultBaseInstr implements FixedArityInstr {
-    private final String frameName;
+    private final RubySymbol frameName;
 
-    public PushBlockFrameInstr(Variable result, String frameName) {
+    public PushBlockFrameInstr(Variable result, RubySymbol frameName) {
         super(Operation.PUSH_BLOCK_FRAME, result);
         this.frameName = frameName;
     }
 
-    public String getFrameName() {
+    public RubySymbol getFrameName() {
         return frameName;
     }
 
@@ -26,7 +27,7 @@ public class PushBlockFrameInstr extends NoOperandResultBaseInstr implements Fix
     }
 
     public static PushBlockFrameInstr decode(IRReaderDecoder d) {
-        return new PushBlockFrameInstr(d.decodeVariable(), d.decodeString());
+        return new PushBlockFrameInstr(d.decodeVariable(), d.decodeSymbol());
     }
 
     @Override

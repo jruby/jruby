@@ -205,12 +205,24 @@ class TestIO < Test::Unit::TestCase
     assert_raises(Errno::EBADF) { f.close }
   end
 
+  if WINDOWS
+    # Opening a file should raise EISDIR on Windows, but not raise on other platforms.
+    def test_open_read_directory
+      assert_raises(Errno::EISDIR) { File.open('.', 'r') }
+    end
+  end
+    
+  def test_open_child_of_file
+    ensure_files @file
+    assert_raises(WINDOWS ? Errno::ENOENT : Errno::ENOTDIR) { File.open(File.join(@file, 'child')) }
+  end
+
   unless WINDOWS # Windows doesn't take kindly to perm mode tests
     def test_sysopen
       ensure_files @file
 
       fno = IO::sysopen(@file, "r", 0124) # not creating, mode is ignored
-      assert_instance_of(Fixnum, fno)
+      assert_instance_of(Integer, fno)
       assert_raises(Errno::EINVAL) { IO.open(fno, "w") } # not writable
       IO.open(fno, "r") do |io|
         assert_equal(fno, io.fileno)
@@ -377,6 +389,21 @@ class TestIO < Test::Unit::TestCase
     a = true
     File.read(@devnull) { a = false }
     assert(a)
+  end
+
+  unless WINDOWS
+    # On Windows an error is raised when opening a directory instead of when reading.
+    def test_read_directory
+      File.open('.', 'r') do |f|
+        assert_raise(Errno::EISDIR) { f.read }
+      end
+    end
+
+    def test_gets_directory
+      File.open('.', 'r') do |f|
+        assert_raise(Errno::EISDIR) { f.gets }
+      end
+    end
   end
 
   if (WINDOWS)
@@ -558,6 +585,34 @@ class TestIO < Test::Unit::TestCase
   def test_stringio_gets_nil_separator_limit
     stringio = StringIO.new 'abcde'
     assert_equal 'ab', stringio.gets(nil, 2)
+  end
+
+  # jruby/jruby#4796
+  def test_io_copy_stream_does_not_leak_io_like_objects
+    in_stream = Tempfile.new('4796')
+    in_stream.write('1234567890')
+    in_stream.rewind
+    
+    out_stream = Object.new
+    def out_stream.write(stuff)
+      stuff.length
+    end
+    def out_stream.read(*n)
+      nil
+    end
+
+    fu = JRuby.runtime.fileno_util
+
+    before = fu.number_of_wrappers
+
+    100.times do
+      IO.copy_stream(in_stream, out_stream)
+      IO.copy_stream(out_stream, in_stream)
+    end
+
+    after = fu.number_of_wrappers
+
+    assert_equal before, after, "no wrappers should have been registered"
   end
 
 end

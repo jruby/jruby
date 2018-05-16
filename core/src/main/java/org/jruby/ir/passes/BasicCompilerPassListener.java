@@ -53,6 +53,6 @@ public class BasicCompilerPassListener implements CompilerPassListener {
             return scope.getFileName() + '#' + scope.getLineNumber() + '#';
         }
 
-        return scope.getFileName() + '#' + scope.getLineNumber() + '#' + scope.getName();
+        return scope.getFileName() + '#' + scope.getLineNumber() + '#' + scope.getId();
     }
 }

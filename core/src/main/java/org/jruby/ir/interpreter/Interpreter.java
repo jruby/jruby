@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
@@ -33,7 +32,9 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
-    public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+
+    static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+
     public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
 
@@ -62,10 +63,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.getInterpreterContext();
 
-        if (Options.IR_PRINT.load()) {
+        if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
 
-            LOG.info("Printing simple IR for " + irScope.getName() + ":\n" + new String(baos.toByteArray()));
+            LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
         ThreadContext context = runtime.getCurrentContext();
@@ -85,13 +86,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
 
         scope.setModule(currModule);
-        DynamicScope tlbScope = irScope.getToplevelScope();
-        if (tlbScope == null) {
-            context.preMethodScopeOnly(scope);
-        } else {
-            context.preScopedBody(tlbScope);
-            tlbScope.growIfNeeded();
-        }
+
+        IRRuntimeHelpers.prepareScriptScope(context, scope);
+
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
@@ -213,6 +210,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // Top-level script!
         IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+
+        // enable refinements if incoming scope already has an overlay active
+        if (staticScope.getOverlayModuleForRead() != null) {
+            script.setIsMaybeUsingRefinements();
+        }
 
         // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
         // we end up growing dynamicscope potentially based on any changes made.

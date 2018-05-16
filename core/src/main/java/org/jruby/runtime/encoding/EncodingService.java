@@ -5,6 +5,7 @@ import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.ISO8859_16Encoding;
+import org.jcodings.spi.ISO_8859_16;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
@@ -24,7 +25,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.encoding.ISO_8859_16;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
@@ -135,6 +135,8 @@ public final class EncodingService {
         return e != null ? e : findAliasEntry(bytes);
     }
 
+    private static ByteList defaultCharsetName;
+
     // rb_locale_charmap...mostly
     public Encoding getLocaleEncoding() {
         final Encoding consoleEncoding = getConsoleEncoding();
@@ -143,7 +145,13 @@ public final class EncodingService {
             return consoleEncoding;
         }
 
-        Entry entry = findEncodingOrAliasEntry(new ByteList(Charset.defaultCharset().name().getBytes()));
+        ByteList encName = defaultCharsetName;
+        if (encName == null) {
+            encName = new ByteList(Charset.defaultCharset().name().getBytes(), false);
+            defaultCharsetName = encName;
+        }
+
+        final Entry entry = findEncodingOrAliasEntry(encName);
         return entry == null ? ASCIIEncoding.INSTANCE : entry.getEncoding();
     }
 
@@ -268,7 +276,7 @@ public final class EncodingService {
             final String name = RubyNKF.NKFCharsetMap.get(id);
             if ( name != null ) return getEncodingFromNKFName(name);
         }
-        if ( ( arg = arg.checkStringType19() ).isNil() ) {
+        if ( ( arg = arg.checkStringType() ).isNil() ) {
             return null;
         }
         if ( ! ((RubyString) arg).getEncoding().isAsciiCompatible() ) {
@@ -328,7 +336,7 @@ public final class EncodingService {
      *
      * @param str the object to coerce and use to look up encoding. The coerced String
      * must be ASCII-compatible.
-     * @return the Encoding object found, nil (for internal), or raises ArgumentError
+     * @return the Encoding object found, nil (for internal)
      */
     public Encoding findEncodingNoError(IRubyObject str) {
         return findEncodingCommon(str, false);
@@ -442,17 +450,7 @@ public final class EncodingService {
             case LOCALE: return service.getLocaleEncoding();
             case EXTERNAL: return runtime.getDefaultExternalEncoding();
             case INTERNAL: return runtime.getDefaultInternalEncoding();
-            case FILESYSTEM:
-                if (Platform.IS_WINDOWS) {
-                    String fileEncoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
-                    try {
-                        return service.getEncodingFromString(fileEncoding);
-                    } catch (RaiseException re) {
-                        runtime.getWarnings().warning("could not load encoding for file.encoding of " + fileEncoding + ", using default external");
-                        if (runtime.isDebug()) re.printStackTrace();
-                    }
-                }
-                return runtime.getDefaultExternalEncoding();
+            case FILESYSTEM: return runtime.getDefaultFilesystemEncoding();
             default:
                 throw new RuntimeException("invalid SpecialEncoding: " + this);
             }

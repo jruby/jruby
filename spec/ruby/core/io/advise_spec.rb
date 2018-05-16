@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#advise" do
   before :each do
@@ -17,7 +17,7 @@ describe "IO#advise" do
     }.should raise_error(TypeError)
   end
 
-  it "raises a TypeError if offsert cannot be coerced to an Integer" do
+  it "raises a TypeError if offset cannot be coerced to an Integer" do
     lambda {
       @io.advise(:normal, "wat")
     }.should raise_error(TypeError)

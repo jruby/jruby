@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ import org.jruby.lexer.StrptimeLexer;
 
 /**
  * This is Java implementation of ext/date/date_strptime.c in Ruby 2.3.1.
- * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strptime.c
+ * see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strptime.c
  */
 public class StrptimeParser {
     // day_names
@@ -63,7 +64,7 @@ public class StrptimeParser {
 
     /**
      * Ported Date::Format::Bag from lib/ruby/stdlib/date/format.rb in JRuby 9.1.5.0.
-     * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/lib/ruby/stdlib/date/format.rb
+     * see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/lib/ruby/stdlib/date/format.rb
      */
     public static class FormatBag {
         private int mDay = Integer.MIN_VALUE;
@@ -71,27 +72,27 @@ public class StrptimeParser {
         private int cWDay = Integer.MIN_VALUE;
         private int yDay = Integer.MIN_VALUE;
         private int cWeek = Integer.MIN_VALUE;
-        private BigInteger cWYear = null;
+        private long cWYear = Long.MIN_VALUE;
         private int min = Integer.MIN_VALUE;
         private int mon = Integer.MIN_VALUE;
         private int hour = Integer.MIN_VALUE;
-        private BigInteger year = null;
+        private long year = Long.MIN_VALUE;
         private int sec = Integer.MIN_VALUE;
         private int wNum0 = Integer.MIN_VALUE;
         private int wNum1 = Integer.MIN_VALUE;
 
         private String zone = null;
 
-        private BigInteger secFraction = null; // Rational
+        private Number secFraction = null; // Rational
         private int secFractionSize = Integer.MIN_VALUE;
 
-        private BigInteger seconds = null; // Bignum or Rational
+        private Number seconds = null; // Bignum or Rational
         private int secondsSize = Integer.MIN_VALUE;
 
         private int merid = Integer.MIN_VALUE;
-        private BigInteger cent = null;
+        private long cent = Long.MIN_VALUE;
 
-        private boolean fail = false;
+        //private boolean fail = false;
         private String leftover = null;
 
         public int getMDay() {
@@ -114,7 +115,7 @@ public class StrptimeParser {
             return cWeek;
         }
 
-        public BigInteger getCWYear() {
+        public long getCWYear() {
             return cWYear;
         }
 
@@ -130,7 +131,7 @@ public class StrptimeParser {
             return hour;
         }
 
-        public BigInteger getYear() {
+        public long getYear() {
             return year;
         }
 
@@ -150,7 +151,7 @@ public class StrptimeParser {
             return zone;
         }
 
-        public BigInteger getSecFraction() {
+        public Number getSecFraction() {
             return secFraction;
         }
 
@@ -158,7 +159,7 @@ public class StrptimeParser {
             return secFractionSize;
         }
 
-        public BigInteger getSeconds() {
+        public Number getSeconds() {
             return seconds;
         }
 
@@ -170,12 +171,8 @@ public class StrptimeParser {
             return merid;
         }
 
-        public BigInteger getCent() {
+        public long getCent() {
             return cent;
-        }
-
-        void fail() {
-            fail = true;
         }
 
         public String getLeftover() {
@@ -186,20 +183,18 @@ public class StrptimeParser {
             return v != Integer.MIN_VALUE;
         }
 
-        public static boolean has(BigInteger v) {
+        public static boolean has(long v) {
+            return v != Long.MIN_VALUE;
+        }
+
+        public static boolean has(Number v) {
             return v != null;
         }
     }
 
-    private final StrptimeLexer lexer;
-
-    public StrptimeParser() {
-        this.lexer = new StrptimeLexer((Reader) null);
-    }
-
     /**
      * Ported from RubyDateFormatter#addToPattern in JRuby 9.1.5.0.
-     * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
+     * see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
      */
     private void addToPattern(final List<StrptimeToken> compiledPattern, final String str) {
         for (int i = 0; i < str.length(); i++) {
@@ -214,12 +209,12 @@ public class StrptimeParser {
 
     /**
      * Ported from RubyDateFormatter#compilePattern in JRuby 9.1.5.0.
-     * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
+     * see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
      */
     public List<StrptimeToken> compilePattern(final String pattern) {
         final List<StrptimeToken> compiledPattern = new LinkedList<>();
         final Reader reader = new StringReader(pattern); // TODO Use try-with-resource statement
-        lexer.yyreset(reader);
+        StrptimeLexer lexer = new StrptimeLexer(reader);
 
         StrptimeToken token;
         try {
@@ -288,14 +283,14 @@ public class StrptimeParser {
 
         if (FormatBag.has(bag.cent)) {
             if (FormatBag.has(bag.cWYear)) {
-                bag.cWYear = bag.cWYear.add(bag.cent.multiply(BigInteger.valueOf(100)));
+                bag.cWYear += bag.cent * 100;
             }
             if (FormatBag.has(bag.year)) {
-                bag.year = bag.year.add(bag.cent.multiply(BigInteger.valueOf(100)));
+                bag.year += bag.cent * 100;
             }
 
             // delete bag._cent
-            bag.cent = null;
+            bag.cent = Long.MIN_VALUE;
         }
 
         if (FormatBag.has(bag.merid)) {
@@ -378,9 +373,9 @@ public class StrptimeParser {
                     }
                     case FORMAT_CENTURY: { // %C - year / 100 (round down.  20 in 2009)
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
-                            bag.cent = BigInteger.valueOf(readDigits(2));
+                            bag.cent = readDigits(2);
                         } else {
-                            bag.cent = readDigitsMax();
+                            bag.cent = readDigitsMaxLong();
                         }
                         break;
                     }
@@ -402,9 +397,9 @@ public class StrptimeParser {
                     }
                     case FORMAT_WEEKYEAR: { // %G - The week-based year
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
-                            bag.cWYear = BigInteger.valueOf(readDigits(4));
+                            bag.cWYear = readDigits(4);
                         } else {
-                            bag.cWYear = readDigitsMax();
+                            bag.cWYear = readDigitsMaxLong();
                         }
                         break;
                     }
@@ -413,9 +408,9 @@ public class StrptimeParser {
                         if (!validRange(v, 0, 99)) {
                             fail = true;
                         }
-                        bag.cWYear = BigInteger.valueOf(v);
+                        bag.cWYear = v;
                         if (!bag.has(bag.cent)) {
-                            bag.cent = BigInteger.valueOf((int)v >= 69 ? 19 : 20);
+                            bag.cent = v >= 69 ? 19 : 20;
                         }
                         break;
                     }
@@ -467,7 +462,7 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger v;
+                        final Number v;
                         final int initPos = pos;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
                             if (token.getFormat() == StrptimeFormat.FORMAT_MILLISEC) {
@@ -479,7 +474,7 @@ public class StrptimeParser {
                             v = readDigitsMax();
                         }
 
-                        bag.secFraction = !negative ? v : v.negate();
+                        bag.secFraction = !negative ? v : negateInteger(v);
                         bag.secFractionSize = pos - initPos;
                         break;
                     }
@@ -517,8 +512,8 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger sec = readDigitsMax();
-                        bag.seconds = !negative ? sec : sec.negate();
+                        final Number sec = readDigitsMax();
+                        bag.seconds = !negative ? sec : negateInteger(sec);
                         bag.secondsSize = 3;
                         break;
                     }
@@ -537,8 +532,8 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger sec = readDigitsMax();
-                        bag.seconds = !negative ? sec : sec.negate();
+                        final Number sec = readDigitsMax();
+                        bag.seconds = !negative ? sec : negateInteger(sec);
                         break;
                     }
                     case FORMAT_WEEK_YEAR_S: // %U, %OU - Week number of the year.  The week starts with Sunday.  (00..53)
@@ -588,13 +583,13 @@ public class StrptimeParser {
                             pos++;
                         }
 
-                        final BigInteger year;
+                        final long year;
                         if (isNumberPattern(compiledPattern, tokenIndex)) {
-                            year = BigInteger.valueOf(readDigits(4));
+                            year = readDigits(4);
                         } else {
-                            year = readDigitsMax();
+                            year = readDigitsMaxLong();
                         }
-                        bag.year = !negative ? year : year.negate();
+                        bag.year = !negative ? year : -1 * year;
                         break;
                     }
                     case FORMAT_YEAR_SHORT: { // %y, %Ey, %Oy - year % 100 (00..99)
@@ -602,9 +597,9 @@ public class StrptimeParser {
                         if (!validRange(year, 0, 99)) {
                             fail = true;
                         }
-                        bag.year = BigInteger.valueOf(year);
+                        bag.year = year;
                         if (!bag.has(bag.cent)) {
-                            bag.cent = BigInteger.valueOf((int)year >= 69 ? 19 : 20);
+                            bag.cent = year >= 69 ? 19 : 20;
                         }
                         break;
                     }
@@ -651,7 +646,7 @@ public class StrptimeParser {
 
         /**
          * Ports read_digits from ext/date/date_strptime.c in MRI 2.3.1 under BSDL.
-         * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
+         * see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
          */
         private long readDigits(final int len) {
             char c;
@@ -681,24 +676,59 @@ public class StrptimeParser {
 
         /**
          * Ports READ_DIGITS_MAX from ext/date/date_strptime.c in MRI 2.3.1 under BSDL.
-         * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
+         * see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
+         *
+         * @return integer value (Long or BigInteger)
          */
-        private BigInteger readDigitsMax() {
+        private Number readDigitsMax() {
             char c;
-            BigInteger v = BigInteger.ZERO;
+            long v = 0; BigInteger vBig = null;
             final int initPos = pos;
 
             while (true) {
-                if (isEndOfText(text, pos)) {
-                    break;
-                }
+                if (isEndOfText(text, pos)) break;
 
                 c = text.charAt(pos);
-                if (!isDigit(c)) {
-                    break;
-                } else {
-                    v = v.multiply(BigInteger.TEN).add(new BigInteger(Integer.toString(toInt(c))));
+                if (!isDigit(c)) break;
+
+                if (vBig == null) {
+                    try {
+                        long tmp = Math.multiplyExact(v, 10);
+                        tmp = Math.addExact(tmp, toInt(c));
+                        v = tmp;
+                    }
+                    catch (ArithmeticException overflow) {
+                        vBig = BigInteger.valueOf(v); continue;
+                    }
                 }
+                else {
+                    vBig = vBig.multiply(BigInteger.TEN);
+                    vBig = vBig.add(BigInteger.valueOf(toInt(c)));
+                }
+
+                pos += 1;
+            }
+
+            if (pos == initPos) {
+                fail = true;
+            }
+
+            return vBig == null ? v : vBig;
+        }
+
+        private long readDigitsMaxLong() {
+            char c;
+            long v = 0L;
+            final int initPos = pos;
+
+            while (true) {
+                if (isEndOfText(text, pos)) break;
+
+                c = text.charAt(pos);
+                if (!isDigit(c)) break;
+
+                v = v * 10 + toInt(c);
+
                 pos += 1;
             }
 
@@ -731,7 +761,7 @@ public class StrptimeParser {
 
         /**
          * Ports num_pattern_p from ext/date/date_strptime.c in MRI 2.3.1 under BSDL.
-         * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
+         * see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
          */
         private static boolean isNumberPattern(final List<StrptimeToken> compiledPattern, final int i) {
             if (compiledPattern.size() <= i + 1) {
@@ -785,7 +815,7 @@ public class StrptimeParser {
 
         /**
          * Ports valid_pattern_p in ext/date/date_strptime.c in MRI 2.3.1 under BSDL.
-         * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
+         * see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strftime.c
          */
         private static boolean validRange(long v, int lower, int upper) {
             return lower <= v && v <= upper;
@@ -819,5 +849,13 @@ public class StrptimeParser {
         private static int toInt(char c) {
             return c - '0';
         }
+
+        private static Number negateInteger(final Number i) {
+            if (i instanceof BigInteger) {
+                return ((BigInteger) i).negate();
+            }
+            return -i.longValue();
+        }
+
     }
 }

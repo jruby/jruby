@@ -4,8 +4,8 @@ require 'test/unit'
 class TestNumeric < Test::Unit::TestCase
   def test_coerce
     a, b = 1.coerce(2)
-    assert_equal(Fixnum, a.class)
-    assert_equal(Fixnum, b.class)
+    assert_kind_of(Integer, a)
+    assert_kind_of(Integer, b)
 
     a, b = 1.coerce(2.0)
     assert_equal(Float, a.class)
@@ -18,21 +18,17 @@ class TestNumeric < Test::Unit::TestCase
     assert_raise_with_message(TypeError, /can't be coerced into /) {1|:foo}
     assert_raise_with_message(TypeError, /can't be coerced into /) {1^:foo}
 
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      assert_raise_with_message(TypeError, /:\u{3042}/) {1+:"\u{3042}"}
-      assert_raise_with_message(TypeError, /:\u{3042}/) {1&:"\u{3042}"}
-      assert_raise_with_message(TypeError, /:\u{3042}/) {1|:"\u{3042}"}
-      assert_raise_with_message(TypeError, /:\u{3042}/) {1^:"\u{3042}"}
-    end
-    EnvUtil.with_default_external(Encoding::US_ASCII) do
-      assert_raise_with_message(TypeError, /:"\\u3042"/) {1+:"\u{3042}"}
-      assert_raise_with_message(TypeError, /:"\\u3042"/) {1&:"\u{3042}"}
-      assert_raise_with_message(TypeError, /:"\\u3042"/) {1|:"\u{3042}"}
-      assert_raise_with_message(TypeError, /:"\\u3042"/) {1^:"\u{3042}"}
-    end
+    assert_raise_with_message(TypeError, /:\u{3042}/) {1+:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:\u{3042}/) {1&:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:\u{3042}/) {1|:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:\u{3042}/) {1^:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:"\\u3042"/) {1+:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:"\\u3042"/) {1&:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:"\\u3042"/) {1|:"\u{3042}"}
+    assert_raise_with_message(TypeError, /:"\\u3042"/) {1^:"\u{3042}"}
 
     bug10711 = '[ruby-core:67405] [Bug #10711]'
-    exp = "1.2 can't be coerced into Fixnum"
+    exp = "1.2 can't be coerced into Integer"
     assert_raise_with_message(TypeError, exp, bug10711) { 1 & 1.2 }
   end
 
@@ -58,18 +54,16 @@ class TestNumeric < Test::Unit::TestCase
 
     bug7688 = '[ruby-core:51389] [Bug #7688]'
     a = Class.new(Numeric) do
-      def coerce(x); raise StandardError; end
+      def coerce(x); raise StandardError, "my error"; end
     end.new
-    assert_raise_with_message(TypeError, /can't be coerced into /) { 1 + a }
-    warn = /will no more rescue exceptions of #coerce.+ in the next release/m
-    assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
+    assert_raise_with_message(StandardError, "my error") { 1 + a }
+    assert_raise_with_message(StandardError, "my error") { 1 < a }
 
     a = Class.new(Numeric) do
       def coerce(x); :bad_return_value; end
     end.new
     assert_raise_with_message(TypeError, "coerce must return [x, y]") { 1 + a }
-    warn = /Bad return value for #coerce.+next release will raise an error/m
-    assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
+    assert_raise_with_message(TypeError, "coerce must return [x, y]") { 1 < a }
   end
 
   def test_singleton_method
@@ -80,12 +74,18 @@ class TestNumeric < Test::Unit::TestCase
 
   def test_dup
     a = Numeric.new
-    assert_raise(TypeError) { a.dup }
+    assert_same a, a.dup
+  end
 
-    c = Module.new do
-      break eval("class C\u{3042} < Numeric; self; end")
+  def test_clone
+    a = Numeric.new
+    assert_same a, a.clone
+    assert_raise(ArgumentError) {a.clone(freeze: false)}
+
+    c = EnvUtil.labeled_class("\u{1f4a9}", Numeric)
+    assert_raise_with_message(ArgumentError, /\u{1f4a9}/) do
+      c.new.clone(freeze: false)
     end
-    assert_raise_with_message(TypeError, /C\u3042/) {c.new.dup}
   end
 
   def test_quo
@@ -145,6 +145,18 @@ class TestNumeric < Test::Unit::TestCase
     end.new
 
     assert_predicate(a, :zero?)
+  end
+
+  def test_nonzero_p
+    a = Class.new(Numeric) do
+      def zero?; true; end
+    end.new
+    assert_nil(a.nonzero?)
+
+    a = Class.new(Numeric) do
+      def zero?; false; end
+    end.new
+    assert_equal(a, a.nonzero?)
   end
 
   def test_positive_p
@@ -244,8 +256,7 @@ class TestNumeric < Test::Unit::TestCase
   end
 
   def test_step
-    i, bignum = 32, 1 << 30
-    bignum <<= (i <<= 1) - 32 until bignum.is_a?(Bignum)
+    bignum = RbConfig::LIMITS['FIXNUM_MAX'] + 1
     assert_raise(ArgumentError) { 1.step(10, 1, 0) { } }
     assert_raise(ArgumentError) { 1.step(10, 1, 0).size }
     assert_raise(ArgumentError) { 1.step(10, 0) { } }
@@ -336,4 +347,59 @@ class TestNumeric < Test::Unit::TestCase
     assert_not_operator(1, :eql?, 1.0)
     assert_not_operator(1, :eql?, 2)
   end
+
+  def test_coerced_remainder
+    assert_separately([], <<-'end;')
+      x = Class.new do
+        def coerce(a) [self, a]; end
+        def %(a) self; end
+      end.new
+      assert_raise(ArgumentError) {1.remainder(x)}
+    end;
+  end
+
+  def test_comparison_comparable
+    bug12864 = '[ruby-core:77713] [Bug #12864]'
+
+    myinteger = Class.new do
+      include Comparable
+
+      def initialize(i)
+        @i = i.to_i
+      end
+      attr_reader :i
+
+      def <=>(other)
+        @i <=> (other.is_a?(self.class) ? other.i : other)
+      end
+    end
+
+    all_assertions(bug12864) do |a|
+      [5, 2**62, 2**61].each do |i|
+        a.for("%#x"%i) do
+          m = myinteger.new(i)
+          assert_equal(i, m)
+          assert_equal(m, i)
+        end
+      end
+    end
+  end
+
+  def test_pow
+    assert_equal(2**3, 2.pow(3))
+    assert_equal(2**-1, 2.pow(-1))
+    assert_equal(2**0.5, 2.pow(0.5))
+    assert_equal((-1)**0.5, -1.pow(0.5))
+    assert_equal(3**3 % 8, 3.pow(3, 8))
+    assert_equal(3**3 % -8, 3.pow(3,-8))
+    assert_equal(3**2 % -2, 3.pow(2,-2))
+    assert_equal((-3)**3 % 8, -3.pow(3,8))
+    assert_equal((-3)**3 % -8, -3.pow(3,-8))
+    assert_equal(5**2 % -8, 5.pow(2,-8))
+    assert_equal(4481650795473624846969600733813414725093,
+                 2120078484650058507891187874713297895455.
+                    pow(5478118174010360425845660566650432540723,
+                        5263488859030795548286226023720904036518))
+  end
+
 end

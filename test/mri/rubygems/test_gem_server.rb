@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/server'
 require 'stringio'
@@ -222,7 +222,7 @@ class TestGemServer < Gem::TestCase
     assert_equal 404, @res.status, @res.body
     assert_match %r| \d\d:\d\d:\d\d |, @res['date']
     assert_equal 'text/plain', @res['content-type']
-    assert_equal 'No gems found matching "z" "9" nil', @res.body
+    assert_equal 'No gems found matching "z-9"', @res.body
     assert_equal 404, @res.status
   end
 
@@ -288,6 +288,23 @@ class TestGemServer < Gem::TestCase
 
     spec = Marshal.load Gem.inflate(@res.body)
     assert_equal 'a-b', spec.name
+    assert_equal v('3.a'), spec.version
+  end
+
+  def test_quick_marshal_a_b_1_3_a_gemspec_rz
+    quick_gem 'a-b-1', '3.a'
+
+    data = StringIO.new "GET /quick/Marshal.#{Gem.marshal_version}/a-b-1-3.a.gemspec.rz HTTP/1.0\r\n\r\n"
+    @req.parse data
+
+    @server.quick @req, @res
+
+    assert_equal 200, @res.status, @res.body
+    assert @res['date']
+    assert_equal 'application/x-deflate', @res['content-type']
+
+    spec = Marshal.load Gem.inflate(@res.body)
+    assert_equal 'a-b-1', spec.name
     assert_equal v('3.a'), spec.version
   end
 
@@ -390,6 +407,22 @@ class TestGemServer < Gem::TestCase
                   ['a', Gem::Version.new(2), Gem::Platform::RUBY],
                   ['a', v('3.a'), Gem::Platform::RUBY]],
                  Marshal.load(Gem.gunzip(@res.body))
+  end
+
+  def test_uri_encode
+    url_safe = @server.uri_encode 'http://rubyonrails.org/">malicious_content</a>'
+    assert_equal url_safe, 'http://rubyonrails.org/%22%3Emalicious_content%3C/a%3E'
+  end
+
+  # Regression test for issue #1793: incorrect URL encoding.
+  # Checking that no URLs have had '://' incorrectly encoded
+  def test_regression_1793
+    data = StringIO.new "GET / HTTP/1.0\r\n\r\n"
+    @req.parse data
+
+    @server.root @req, @res
+
+    refute_match %r|%3A%2F%2F|, @res.body
   end
 
   def util_listen

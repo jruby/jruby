@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#sysread on a file" do
   before :each do
@@ -78,5 +78,21 @@ describe "IO#sysread on a file" do
 
   it "raises IOError on closed stream" do
     lambda { IOSpecs.closed_io.sysread(5) }.should raise_error(IOError)
+  end
+end
+
+describe "IO#sysread" do
+  before do
+    @read, @write = IO.pipe
+  end
+
+  after do
+    @read.close
+    @write.close
+  end
+
+  it "returns a smaller string if less than size bytes are available" do
+    @write.syswrite "ab"
+    @read.sysread(3).should == "ab"
   end
 end

@@ -12,12 +12,14 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.TypeConverter;
 
 public class TracePoint extends RubyObject {
     public static void createTracePointClass(Ruby runtime) {
@@ -47,32 +49,31 @@ public class TracePoint extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] _events, final Block block) {
         final Ruby runtime = context.runtime;
         
-        if (!block.isGiven()) throw runtime.newThreadError("must be called with a block");
+        if (!block.isGiven()) throw runtime.newArgumentError("must be called with a block");
         
         ArrayList<RubyEvent> events = new ArrayList<RubyEvent>(_events.length);
         for (int i = 0; i < _events.length; i++) {
-            IRubyObject _event = _events[i];
-            if (_event instanceof RubySymbol || _event instanceof RubyString) {
-                String eventName = _event.asJavaString().toUpperCase();
-                RubyEvent event = null;
-                try {
-                    event = RubyEvent.valueOf(eventName);
-                } catch (IllegalArgumentException iae) {}
-                
-                if (event == null) throw runtime.newArgumentError("unknown event: " + eventName);
-                
-                // a_call is call | b_call | c_call, and same as a_return.
-                if (event == RubyEvent.A_CALL) {
-                    events.add(RubyEvent.CALL);
-                    events.add(RubyEvent.B_CALL);
-                    events.add(RubyEvent.C_CALL);
-                } else if (event == RubyEvent.A_RETURN) {
-                    events.add(RubyEvent.RETURN);
-                    events.add(RubyEvent.B_RETURN);
-                    events.add(RubyEvent.C_RETURN);
-                } else {
-                    events.add(event);
-                }
+            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], runtime.getSymbol(), sites(context).to_sym);
+
+            String eventName = _event.asJavaString().toUpperCase();
+            RubyEvent event = null;
+            try {
+                event = RubyEvent.valueOf(eventName);
+            } catch (IllegalArgumentException iae) {}
+
+            if (event == null) throw runtime.newArgumentError("unknown event: " + eventName);
+
+            // a_call is call | b_call | c_call, and same as a_return.
+            if (event == RubyEvent.A_CALL) {
+                events.add(RubyEvent.CALL);
+                events.add(RubyEvent.B_CALL);
+                events.add(RubyEvent.C_CALL);
+            } else if (event == RubyEvent.A_RETURN) {
+                events.add(RubyEvent.RETURN);
+                events.add(RubyEvent.B_RETURN);
+                events.add(RubyEvent.C_RETURN);
+            } else {
+                events.add(event);
             }
         }
         
@@ -80,7 +81,7 @@ public class TracePoint extends RubyObject {
         if (events.size() > 0) {
             _eventSet = EnumSet.copyOf(events);
         } else {
-            _eventSet = EnumSet.allOf(RubyEvent.class);
+            _eventSet = EnumSet.of(RubyEvent.LINE);
         }
         
         final EnumSet<RubyEvent> eventSet = _eventSet;
@@ -92,7 +93,7 @@ public class TracePoint extends RubyObject {
                 inside = true;
 
                 if (file == null) file = "(ruby)";
-                if (type == null) type = context.runtime.getFalse();
+                if (type == null) type = context.fals;
 
                 IRubyObject binding;
                 if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
@@ -133,7 +134,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject binding(ThreadContext context) {
         checkInside(context);
         
-        return context.nil;
+        return binding == null ? context.nil : binding;
     }
     
     @JRubyMethod
@@ -186,7 +187,16 @@ public class TracePoint extends RubyObject {
     public IRubyObject method_id(ThreadContext context) {
         checkInside(context);
         
-        return name == null ? context.nil : context.runtime.newString(name);
+        return name == null ? context.nil : context.runtime.newSymbol(name);
+    }
+
+    @JRubyMethod
+    public IRubyObject callee_id(ThreadContext context) {
+        checkInside(context);
+
+        // TODO: actually get called name, requires modifying trace handling in bindings
+
+        return name == null ? context.nil : context.runtime.newSymbol(name);
     }
     
     @JRubyMethod
@@ -214,6 +224,13 @@ public class TracePoint extends RubyObject {
     @JRubyMethod
     public IRubyObject self(ThreadContext context) {
         return binding.isNil() ? context.nil : ((RubyBinding)binding).getBinding().getSelf();
+    }
+
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject trace(ThreadContext context, IRubyObject self, IRubyObject[] events, Block block) {
+        TracePoint tp = (TracePoint) self.callMethod(context, "new", events, block);
+        tp.enable(context, Block.NULL_BLOCK);
+        return tp;
     }
     
     private void update(String eventName, String file, int line, String name, IRubyObject type, IRubyObject exception, IRubyObject returnValue, IRubyObject binding) {
@@ -260,6 +277,10 @@ public class TracePoint extends RubyObject {
 
     private void checkInside(ThreadContext context) throws RaiseException {
         if (!inside) throw context.runtime.newRuntimeError("access from outside");
+    }
+
+    private static JavaSites.TracePointSites sites(ThreadContext context) {
+        return context.sites.TracePoint;
     }
     
     private EventHook hook;

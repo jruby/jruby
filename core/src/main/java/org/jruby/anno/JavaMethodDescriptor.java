@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,11 +26,11 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.anno;
 
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.CodegenUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -39,8 +39,10 @@ public class JavaMethodDescriptor extends MethodDescriptor<Method> {
     public final Class[] parameters;
     public final Class returnClass;
     public final Class declaringClass;
-    public final String signature;
-    public final Class[] argumentTypes;
+    @Deprecated // no longer used
+    public String signature;
+    @Deprecated // initialized on demand
+    public Class[] argumentTypes;
 
     public JavaMethodDescriptor(Method method) {
         super(method);
@@ -48,13 +50,17 @@ public class JavaMethodDescriptor extends MethodDescriptor<Method> {
         declaringClass = method.getDeclaringClass();
         parameters = method.getParameterTypes();
         returnClass = method.getReturnType();
+    }
 
-        int start = (hasContext ? 1 : 0) + (isStatic ? 1 : 0);
-        int end = parameters.length - (hasBlock ? 1 : 0);
-        argumentTypes = new Class[end - start];
-        System.arraycopy(parameters, start, argumentTypes, 0, end - start);
-
-        signature = CodegenUtils.sig(method.getReturnType(), method.getParameterTypes());
+    public final Class[] getArgumentTypes() {
+        if (argumentTypes == null) {
+            int start = (hasContext ? 1 : 0) + (isStatic ? 1 : 0);
+            int end = parameters.length - (hasBlock ? 1 : 0);
+            Class[] argumentTypes = new Class[end - start];
+            System.arraycopy(parameters, start, argumentTypes, 0, end - start);
+            return this.argumentTypes = argumentTypes;
+        }
+        return argumentTypes;
     }
 
     public Class getDeclaringClass() {

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
@@ -76,31 +77,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
     public HandleMethod(
             RubyModule implementationClass,
             Visibility visibility,
-            long encodedSignature,
-            boolean builtin,
-            boolean notImplemented,
-            String parameterDesc,
-            final int min,
-            final int max,
-            final Callable<MethodHandle>... makers) {
-
-        super(implementationClass, visibility);
-        this.signature = Signature.decode(encodedSignature);
-        this.builtin = builtin;
-        this.notImplemented = notImplemented;
-        this.parameterDesc = parameterDesc;
-        this.min = min;
-        this.max = max;
-        this.maker0 = makers[0];
-        this.maker1 = makers[1];
-        this.maker2 = makers[2];
-        this.maker3 = makers[3];
-        this.maker4 = makers[4];
-    }
-
-    public HandleMethod(
-            RubyModule implementationClass,
-            Visibility visibility,
+            String name,
             long encodedSignature,
             boolean builtin,
             boolean notImplemented,
@@ -113,7 +90,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
             final Callable<MethodHandle> maker3,
             final Callable<MethodHandle> maker4) {
 
-        super(implementationClass, visibility);
+        super(implementationClass, visibility, name);
         this.signature = Signature.decode(encodedSignature);
         this.builtin = builtin;
         this.notImplemented = notImplemented;
@@ -284,7 +261,7 @@ public class HandleMethod extends DynamicMethod implements MethodArgs2, Cloneabl
 
     @Override
     public DynamicMethod dup() {
-        return new HandleMethod(implementationClass, getVisibility(), signature.encode(), builtin, notImplemented, parameterDesc, min, max, maker0, maker1, maker2, maker3, maker4);
+        return new HandleMethod(implementationClass, getVisibility(), name, signature.encode(), builtin, notImplemented, parameterDesc, min, max, maker0, maker1, maker2, maker3, maker4);
     }
 
     @Override

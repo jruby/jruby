@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../../../shared/basicobject/send', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../shared/basicobject/send'
 
 describe "Kernel#public_send" do
   it "invokes the named public method" do
@@ -104,5 +104,5 @@ describe "Kernel#public_send" do
     }.should raise_error(NoMethodError)
   end
 
-  it_behaves_like(:basicobject_send, :public_send)
+  it_behaves_like :basicobject_send, :public_send
 end

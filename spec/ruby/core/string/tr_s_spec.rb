@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#tr_s" do
   it "returns a string processed according to tr with newly duplicate characters removed" do
@@ -127,10 +127,10 @@ describe "String#tr_s!" do
     s.should == "hello"
   end
 
-  it "raises a RuntimeError if self is frozen" do
+  it "raises a #{frozen_error_class} if self is frozen" do
     s = "hello".freeze
-    lambda { s.tr_s!("el", "ar") }.should raise_error(RuntimeError)
-    lambda { s.tr_s!("l", "r")   }.should raise_error(RuntimeError)
-    lambda { s.tr_s!("", "")     }.should raise_error(RuntimeError)
+    lambda { s.tr_s!("el", "ar") }.should raise_error(frozen_error_class)
+    lambda { s.tr_s!("l", "r")   }.should raise_error(frozen_error_class)
+    lambda { s.tr_s!("", "")     }.should raise_error(frozen_error_class)
   end
 end

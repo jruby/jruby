@@ -65,7 +65,7 @@ class Proc
         end
         __make_curry_proc__(proc, my_passed, arity)
       else
-        proc.call(*my_passed)
+        proc.call(*my_passed, &passed_proc)
       end
     end
 

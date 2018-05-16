@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 begin
   gem 'minitest', '< 5.0.0' if defined? Gem
 rescue Gem::LoadError
@@ -86,7 +86,7 @@ module Test
           self.verbose = options[:verbose]
         end
 
-        opts.on '-n', '--name PATTERN', "Filter test method names on pattern: /REGEXP/ or STRING" do |a|
+        opts.on '-n', '--name PATTERN', "Filter test method names on pattern: /REGEXP/, !/REGEXP/ or STRING" do |a|
           (options[:filter] ||= []) << a
         end
 
@@ -106,11 +106,11 @@ module Test
           elsif negative.empty? and positive.size == 1 and pos_pat !~ positive[0]
             filter = positive[0]
           else
-            filter = Regexp.union(*positive.map! {|s| s[pos_pat, 1] || "\\A#{Regexp.quote(s)}\\z"})
+            filter = Regexp.union(*positive.map! {|s| Regexp.new(s[pos_pat, 1] || "\\A#{Regexp.quote(s)}\\z")})
           end
           unless negative.empty?
-            negative = Regexp.union(*negative.map! {|s| s[neg_pat, 1]})
-            filter = /\A(?!.*#{negative})#{filter}/
+            negative = Regexp.union(*negative.map! {|s| Regexp.new(s[neg_pat, 1])})
+            filter = /\A(?=.*#{filter})(?!.*#{negative})/
           end
           if Regexp === filter
             # bypass conversion in minitest
@@ -134,6 +134,24 @@ module Test
         options
       end
 
+      def non_options(files, options)
+        @jobserver = nil
+        if !options[:parallel] and
+          /(?:\A|\s)--jobserver-(?:auth|fds)=(\d+),(\d+)/ =~ ENV["MAKEFLAGS"]
+          begin
+            r = IO.for_fd($1.to_i(10), "rb", autoclose: false)
+            w = IO.for_fd($2.to_i(10), "wb", autoclose: false)
+          rescue
+            r.close if r
+            nil
+          else
+            @jobserver = [r, w]
+            options[:parallel] ||= 1
+          end
+        end
+        super
+      end
+
       def status(*args)
         result = super
         raise @interrupt if @interrupt
@@ -148,13 +166,9 @@ module Test
 
         options[:retry] = true
 
-        opts.on '-j N', '--jobs N', "Allow run tests with N jobs at once" do |a|
-          if /^t/ =~ a
-            options[:testing] = true # For testing
-            options[:parallel] = a[1..-1].to_i
-          else
-            options[:parallel] = a.to_i
-          end
+        opts.on '-j N', '--jobs N', /\A(t)?(\d+)\z/, "Allow run tests with N jobs at once" do |_, t, a|
+          options[:testing] = true & t # For testing
+          options[:parallel] = a.to_i
         end
 
         opts.on '--separate', "Restart job process after one testcase has done" do
@@ -170,14 +184,14 @@ module Test
           options[:retry] = false
         end
 
-        opts.on '--ruby VAL', "Path to ruby; It'll have used at -j option" do |a|
+        opts.on '--ruby VAL', "Path to ruby which is used at -j option" do |a|
           options[:ruby] = a.split(/ /).reject(&:empty?)
         end
       end
 
       class Worker
         def self.launch(ruby,args=[])
-          io = IO.popen([*ruby,
+          io = IO.popen([*ruby, "-W1",
                         "#{File.dirname(__FILE__)}/unit/parallel.rb",
                         *args], "rb+")
           new(io, io.pid, :waiting)
@@ -211,7 +225,7 @@ module Test
           rescue Errno::EPIPE
             died
           rescue IOError
-            raise unless ["stream closed","closed stream"].include? $!.message
+            raise unless /stream closed|closed stream/ =~ $!.message
             died
           end
         end
@@ -237,7 +251,6 @@ module Test
           return if @io.closed?
           @quit_called = true
           @io.puts "quit"
-          @io.close
         end
 
         def kill
@@ -257,7 +270,7 @@ module Test
         end
 
         def to_s
-          if @file
+          if @file and @status != :ready
             "#{@pid}=#{@file}"
           else
             "#{@pid}:#{@status.to_s.ljust(7)}"
@@ -277,10 +290,22 @@ module Test
 
       end
 
+      def flush_job_tokens
+        if @jobserver
+          r, w = @jobserver.shift(2)
+          @jobserver = nil
+          w << @job_tokens.slice!(0..-1)
+          r.close
+          w.close
+        end
+      end
+
       def after_worker_down(worker, e=nil, c=false)
         return unless @options[:parallel]
         return if @interrupt
+        flush_job_tokens
         warn e if e
+        real_file = worker.real_file and warn "running file: #{real_file}"
         @need_quit = true
         warn ""
         warn "Some worker was crashed. It seems ruby interpreter's bug"
@@ -294,6 +319,10 @@ module Test
       def after_worker_quit(worker)
         return unless @options[:parallel]
         return if @interrupt
+        worker.close
+        if @jobserver and (token = @job_tokens.slice!(0))
+          @jobserver[1] << token
+        end
         @workers.delete(worker)
         @dead_workers << worker
         @ios = @workers.map(&:io)
@@ -347,6 +376,11 @@ module Test
         end
       end
 
+      FakeClass = Struct.new(:name)
+      def fake_class(name)
+        (@fake_classes ||= {})[name] ||= FakeClass.new(name)
+      end
+
       def deal(io, type, result, rep, shutting_down = false)
         worker = @workers_hash[io]
         cmd = worker.read
@@ -356,12 +390,14 @@ module Test
           # just only dots, ignore
         when /^okay$/
           worker.status = :running
-          jobs_status
         when /^ready(!)?$/
           bang = $1
           worker.status = :ready
 
-          return nil unless task = @tasks.shift
+          unless task = @tasks.shift
+            worker.quit
+            return nil
+          end
           if @options[:separate] and not bang
             worker.quit
             worker = add_worker
@@ -369,7 +405,7 @@ module Test
           worker.run(task, type)
           @test_count += 1
 
-          jobs_status
+          jobs_status(worker)
         when /^done (.+?)$/
           begin
             r = Marshal.load($1.unpack("m")[0])
@@ -380,11 +416,20 @@ module Test
           result << r[0..1] unless r[0..1] == [nil,nil]
           rep    << {file: worker.real_file, report: r[2], result: r[3], testcase: r[5]}
           $:.push(*r[4]).uniq!
+          jobs_status(worker) if @options[:job_status] == :replace
           return true
+        when /^record (.+?)$/
+          begin
+            r = Marshal.load($1.unpack("m")[0])
+          rescue => e
+            print "unknown record: #{e.message} #{$1.unpack("m")[0].dump}"
+            return true
+          end
+          record(fake_class(r[0]), *r[1..-1])
         when /^p (.+?)$/
           del_jobs_status
           print $1.unpack("m")[0]
-          jobs_status if @options[:job_status] == :replace
+          jobs_status(worker) if @options[:job_status] == :replace
         when /^after (.+?)$/
           @warnings << Marshal.load($1.unpack("m")[0])
         when /^bye (.+?)$/
@@ -407,8 +452,7 @@ module Test
           return
         end
 
-        # Require needed things for parallel running
-        require 'thread'
+        # Require needed thing for parallel running
         require 'timeout'
         @tasks = @files.dup # Array of filenames.
         @need_quit = false
@@ -420,14 +464,22 @@ module Test
         @workers      = [] # Array of workers.
         @workers_hash = {} # out-IO => worker
         @ios          = [] # Array of worker IOs
+        @job_tokens   = String.new(encoding: Encoding::ASCII_8BIT) if @jobserver
         begin
-          @options[:parallel].times {launch_worker}
+          [@tasks.size, @options[:parallel]].min.times {launch_worker}
 
           while _io = IO.select(@ios)[0]
             break if _io.any? do |io|
               @need_quit or
                 (deal(io, type, result, rep).nil? and
                  !@workers.any? {|x| [:running, :prepare].include? x.status})
+            end
+            if @jobserver and @job_tokens and !@tasks.empty? and !@workers.any? {|x| x.status == :ready}
+              t = @jobserver[0].read_nonblock([@tasks.size, @options[:parallel]].min, exception: false)
+              if String === t
+                @job_tokens << t
+                t.size.times {launch_worker}
+              end
             end
           end
         rescue Interrupt => ex
@@ -442,17 +494,20 @@ module Test
           end
 
           quit_workers
+          flush_job_tokens
 
           unless @interrupt || !@options[:retry] || @need_quit
+            parallel = @options[:parallel]
             @options[:parallel] = false
             suites, rep = rep.partition {|r| r[:testcase] && r[:file] && r[:report].any? {|e| !e[2].is_a?(MiniTest::Skip)}}
             suites.map {|r| r[:file]}.uniq.each {|file| require file}
             suites.map! {|r| eval("::"+r[:testcase])}
             del_status_line or puts
             unless suites.empty?
-              puts "Retrying..."
+              puts "\n""Retrying..."
               _run_suites(suites, type)
             end
+            @options[:parallel] = parallel
           end
           unless @options[:retry]
             del_status_line or puts
@@ -497,11 +552,16 @@ module Test
             end
           }
         end
+        del_status_line
         result
       end
     end
 
     module Skipping # :nodoc: all
+      def failed(s)
+        super if !s or @options[:hide_skip]
+      end
+
       private
       def setup_options(opts, options)
         super
@@ -525,7 +585,59 @@ module Test
         report.reject!{|r| r.start_with? "Skipped:" } if @options[:hide_skip]
         report.sort_by!{|r| r.start_with?("Skipped:") ? 0 : \
                            (r.start_with?("Failure:") ? 1 : 2) }
+        failed(nil)
         result
+      end
+    end
+
+    module Statistics
+      def update_list(list, rec, max)
+        if i = list.empty? ? 0 : list.bsearch_index {|*a| yield(*a)}
+          list[i, 0] = [rec]
+          list[max..-1] = [] if list.size >= max
+        end
+      end
+
+      def record(suite, method, assertions, time, error)
+        if @options.values_at(:longest, :most_asserted).any?
+          @tops ||= {}
+          rec = [suite.name, method, assertions, time, error]
+          if max = @options[:longest]
+            update_list(@tops[:longest] ||= [], rec, max) {|_,_,_,t,_|t<time}
+          end
+          if max = @options[:most_asserted]
+            update_list(@tops[:most_asserted] ||= [], rec, max) {|_,_,a,_,_|a<assertions}
+          end
+        end
+        # (((@record ||= {})[suite] ||= {})[method]) = [assertions, time, error]
+        super
+      end
+
+      def run(*args)
+        result = super
+        if @tops ||= nil
+          @tops.each do |t, list|
+            if list
+              puts "#{t.to_s.tr('_', ' ')} tests:"
+              list.each {|suite, method, assertions, time, error|
+                printf "%5.2fsec(%d): %s#%s\n", time, assertions, suite, method
+              }
+            end
+          end
+        end
+        result
+      end
+
+      private
+      def setup_options(opts, options)
+        super
+        opts.separator "statistics options:"
+        opts.on '--longest=N', Integer, 'Show longest N tests' do |n|
+          options[:longest] = n
+        end
+        opts.on '--most-asserted=N', Integer, 'Show most asserted N tests' do |n|
+          options[:most_asserted] = n
+        end
       end
     end
 
@@ -546,31 +658,31 @@ module Test
 
       def del_status_line(flush = true)
         @status_line_size ||= 0
-        unless @options[:job_status] == :replace
-          $stdout.puts
-          return
+        if @options[:job_status] == :replace
+          $stdout.print "\r"+" "*@status_line_size+"\r"
+        else
+          $stdout.puts if @status_line_size > 0
         end
-        print "\r"+" "*@status_line_size+"\r"
         $stdout.flush if flush
         @status_line_size = 0
       end
 
-      def add_status(line, flush: true)
-        unless @options[:job_status] == :replace
-          print(line)
-          return
-        end
+      def add_status(line)
         @status_line_size ||= 0
-        line = line[0...(terminal_width-@status_line_size)]
+        if @options[:job_status] == :replace
+          line = line[0...(terminal_width-@status_line_size)]
+        end
         print line
-        $stdout.flush if flush
         @status_line_size += line.size
       end
 
-      def jobs_status
-        return unless @options[:job_status]
-        puts "" unless @options[:verbose] or @options[:job_status] == :replace
-        status_line = @workers.map(&:to_s).join(" ")
+      def jobs_status(worker)
+        return if !@options[:job_status] or @options[:verbose]
+        if @options[:job_status] == :replace
+          status_line = @workers.map(&:to_s).join(" ")
+        else
+          status_line = worker.to_s
+        end
         update_status(status_line) or (puts; nil)
       end
 
@@ -611,8 +723,8 @@ module Test
         end
         if color or @options[:job_status] == :replace
           @verbose = !options[:parallel]
-          @output = Output.new(self)
         end
+        @output = Output.new(self) unless @options[:testing]
         filter = options[:filter]
         type = "#{type}_methods"
         total = if filter
@@ -631,17 +743,20 @@ module Test
 
       def update_status(s)
         count = @test_count.to_s(10).rjust(@total_tests.size)
-        del_status_line(false) if @options[:job_status] == :replace
+        del_status_line(false)
         print(@passed_color)
-        add_status("[#{count}/#{@total_tests}]", flush: false)
+        add_status("[#{count}/#{@total_tests}]")
         print(@reset_color)
         add_status(" #{s}")
+        $stdout.print "\r" if @options[:job_status] == :replace and !@verbose
+        $stdout.flush
       end
 
       def _print(s); $stdout.print(s); end
       def succeed; del_status_line; end
 
       def failed(s)
+        return if s and @options[:job_status] != :replace
         sep = "\n"
         @report_count ||= 0
         report.each do |msg|
@@ -682,9 +797,9 @@ module Test
 
         options[:job_status] = nil
 
-        opts.on '--jobs-status [TYPE]', [:normal, :replace],
+        opts.on '--jobs-status [TYPE]', [:normal, :replace, :none],
                 "Show status of jobs every file; Disabled when --jobs isn't specified." do |type|
-          options[:job_status] = type || :normal
+          options[:job_status] = (type || :normal if type != :none)
         end
 
         opts.on '--color[=WHEN]',
@@ -710,7 +825,7 @@ module Test
           when /\A(.*\#.*) = \z/
             runner.new_test($1)
           when /\A(.* s) = \z/
-            runner.add_status(" = "+$1.chomp)
+            runner.add_status(" = #$1")
           when /\A\.+\z/
             runner.succeed
           when /\A[EFS]\z/
@@ -727,7 +842,7 @@ module Test
         begin
           require "rbconfig"
         rescue LoadError
-          warn "#{caller(1)[0]}: warning: Parallel running disabled because can't get path to ruby; run specify with --ruby argument"
+          warn "#{caller(1, 1)[0]}: warning: Parallel running disabled because can't get path to ruby; run specify with --ruby argument"
           options[:parallel] = nil
         else
           options[:ruby] ||= [RbConfig.ruby]
@@ -747,6 +862,7 @@ module Test
 
     module GlobOption # :nodoc: all
       @@testfile_prefix = "test"
+      @@testfile_suffix = "test"
 
       def setup_options(parser, options)
         super
@@ -773,7 +889,7 @@ module Test
               next if f.empty?
               path = f
             end
-            if !(match = Dir["#{path}/**/#{@@testfile_prefix}_*.rb"]).empty?
+            if !(match = (Dir["#{path}/**/#{@@testfile_prefix}_*.rb"] + Dir["#{path}/**/*_#{@@testfile_suffix}.rb"]).uniq).empty?
               if reject
                 match.reject! {|n|
                   n[(prefix.length+1)..-1] if prefix
@@ -842,6 +958,22 @@ module Test
       end
     end
 
+    module RepeatOption # :nodoc: all
+      def setup_options(parser, options)
+        super
+        options[:repeat_count] = nil
+        parser.separator "repeat options:"
+        parser.on '--repeat-count=NUM', "Number of times to repeat", Integer do |n|
+          options[:repeat_count] = n
+        end
+      end
+
+      def _run_anything(type)
+        @repeat_count = @options[:repeat_count]
+        super
+      end
+    end
+
     module ExcludesOption # :nodoc: all
       class ExcludedMethods < Struct.new(:excludes)
         def exclude(name, reason)
@@ -878,7 +1010,7 @@ module Test
               nil
             else
               instance ||= new({})
-              instance.instance_eval(src)
+              instance.instance_eval(src, path)
             end
           end
           instance
@@ -891,6 +1023,7 @@ module Test
           excludes = excludes.split(File::PATH_SEPARATOR)
         end
         options[:excludes] = excludes || []
+        parser.separator "excludes options:"
         parser.on '-X', '--excludes-dir DIRECTORY', "Directory name of exclude files" do |d|
           options[:excludes].concat d.split(File::PATH_SEPARATOR)
         end
@@ -904,15 +1037,33 @@ module Test
       end
     end
 
+    module SubprocessOption
+      def setup_options(parser, options)
+        super
+        parser.separator "subprocess options:"
+        parser.on '--subprocess-timeout-scale NUM', "Scale subprocess timeout", Float do |scale|
+          raise OptionParser::InvalidArgument, "timeout scale must be positive" unless scale > 0
+          options[:timeout_scale] = scale
+        end
+        if scale = options[:timeout_scale] or
+          (scale = ENV["RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE"] and (scale = scale.to_f) > 0)
+          EnvUtil.subprocess_timeout_scale = scale
+        end
+      end
+    end
+
     class Runner < MiniTest::Unit # :nodoc: all
       include Test::Unit::Options
       include Test::Unit::StatusLine
       include Test::Unit::Parallel
+      include Test::Unit::Statistics
       include Test::Unit::Skipping
       include Test::Unit::GlobOption
+      include Test::Unit::RepeatOption
       include Test::Unit::LoadPathOption
       include Test::Unit::GCStressOption
       include Test::Unit::ExcludesOption
+      include Test::Unit::SubprocessOption
       include Test::Unit::RunCount
 
       class << self; undef autorun; end

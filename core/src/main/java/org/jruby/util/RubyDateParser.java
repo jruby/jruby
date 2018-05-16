@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,15 +23,15 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
-import org.jruby.RubyBignum;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyRational;
-import org.jruby.RubyString;
+import org.jcodings.Encoding;
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.HashMap;
+import java.math.BigInteger;
 import java.util.List;
 
 import static org.jruby.util.StrptimeParser.FormatBag.has;
@@ -40,112 +40,96 @@ import static org.jruby.util.StrptimeParser.FormatBag.has;
  * This class has {@code StrptimeParser} and provides methods that are calls from JRuby.
  */
 public class RubyDateParser {
-    private final StrptimeParser strptimeParser;
-
-    public RubyDateParser() {
-        this.strptimeParser = new StrptimeParser();
-    }
 
     /**
      * Date._strptime method in JRuby 9.1.5.0's lib/ruby/stdlib/date/format.rb is replaced
      * with this method. This is Java implementation of date__strptime method in MRI 2.3.1's
      * ext/date/date_strptime.c.
-     * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/lib/ruby/stdlib/date/format.rb
-     * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strptime.c
+     * See:
+     *  https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/lib/ruby/stdlib/date/format.rb
+     *  https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_strptime.c
      */
 
-    public HashMap<String, Object> parse(ThreadContext context, final RubyString format, final RubyString text) {
-        final boolean tainted = text.isTaint();
-        final List<StrptimeToken> compiledPattern = strptimeParser.compilePattern(format.asJavaString());
-        final StrptimeParser.FormatBag bag = strptimeParser.parse(compiledPattern, text.asJavaString());
-        if (bag != null) {
-            return convertFormatBagToHash(context, bag, tainted);
-        } else {
-            return null;
-        }
+    public IRubyObject parse(ThreadContext context, final RubyString format, final RubyString text) {
+        return parse(context, format.asJavaString(), text);
     }
 
-    private HashMap<String, Object> convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag, boolean tainted) {
-        final HashMap<String, Object> map = new HashMap<>();
+    public IRubyObject parse(ThreadContext context, final String format, final RubyString text) {
+        final List<StrptimeToken> compiledPattern = context.runtime.getCachedStrptimePattern(format);
+        final StrptimeParser.FormatBag bag = new StrptimeParser().parse(compiledPattern, text.asJavaString());
 
-        if (has(bag.getMDay())) {
-            map.put("mday", bag.getMDay());
-        }
-        if (has(bag.getWDay())) {
-            map.put("wday", bag.getWDay());
-        }
-        if (has(bag.getCWDay())) {
-            map.put("cwday", bag.getCWDay());
-        }
-        if (has(bag.getYDay())) {
-            map.put("yday", bag.getYDay());
-        }
-        if (has(bag.getCWeek())) {
-            map.put("cweek", bag.getCWeek());
-        }
-        if (has(bag.getCWYear())) {
-            map.put("cwyear", bag.getCWYear());
-        }
-        if (has(bag.getMin())) {
-            map.put("min", bag.getMin());
-        }
-        if (has(bag.getMon())) {
-            map.put("mon", bag.getMon());
-        }
-        if (has(bag.getHour())) {
-            map.put("hour", bag.getHour());
-        }
-        if (has(bag.getYear())) {
-            map.put("year", bag.getYear());
-        }
-        if (has(bag.getSec())) {
-            map.put("sec", bag.getSec());
-        }
-        if (has(bag.getWNum0())) {
-            map.put("wnum0", bag.getWNum0());
-        }
-        if (has(bag.getWNum1())) {
-            map.put("wnum1", bag.getWNum1());
-        }
+        return bag == null ? context.nil : convertFormatBagToHash(context, bag, text.getEncoding(), text.isTaint());
+    }
+
+    static RubyHash convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag,
+                                           Encoding encoding, boolean tainted) {
+        final Ruby runtime = context.runtime;
+        final RubyHash hash = RubyHash.newHash(runtime);
+
+        if (has(bag.getMDay())) setHashValue(runtime, hash, "mday", runtime.newFixnum(bag.getMDay()));
+        if (has(bag.getWDay())) setHashValue(runtime, hash, "wday", runtime.newFixnum(bag.getWDay()));
+        if (has(bag.getCWDay())) setHashValue(runtime, hash, "cwday", runtime.newFixnum(bag.getCWDay()));
+        if (has(bag.getYDay())) setHashValue(runtime, hash, "yday", runtime.newFixnum(bag.getYDay()));
+        if (has(bag.getCWeek())) setHashValue(runtime, hash, "cweek", runtime.newFixnum(bag.getCWeek()));
+        if (has(bag.getCWYear())) setHashValue(runtime, hash, "cwyear", RubyBignum.newBignum(runtime, bag.getCWYear()));
+        if (has(bag.getMin())) setHashValue(runtime, hash, "min", runtime.newFixnum(bag.getMin()));
+        if (has(bag.getMon())) setHashValue(runtime, hash, "mon", runtime.newFixnum(bag.getMon()));
+        if (has(bag.getHour())) setHashValue(runtime, hash, "hour", runtime.newFixnum(bag.getHour()));
+        if (has(bag.getYear())) setHashValue(runtime, hash, "year", RubyBignum.newBignum(runtime, bag.getYear()));
+        if (has(bag.getSec())) setHashValue(runtime, hash, "sec", runtime.newFixnum(bag.getSec()));
+        if (has(bag.getWNum0())) setHashValue(runtime, hash, "wnum0", runtime.newFixnum(bag.getWNum0()));
+        if (has(bag.getWNum1())) setHashValue(runtime, hash, "wnum1", runtime.newFixnum(bag.getWNum1()));
+
         if (bag.getZone() != null) {
-            final RubyString zone = RubyString.newString(context.getRuntime(), bag.getZone());
-            if (tainted) {
-                zone.taint(context);
-            }
-            map.put("zone", zone);
+            final RubyString zone = RubyString.newString(runtime, bag.getZone(), encoding);
+            if (tainted) zone.taint(context);
+
+            setHashValue(runtime, hash, "zone", zone);
             int offset = TimeZoneConverter.dateZoneToDiff(bag.getZone());
-            if (offset != Integer.MIN_VALUE) {
-                map.put("offset", offset);
-            }
+            if (offset != TimeZoneConverter.INVALID_ZONE) setHashValue(runtime, hash, "offset", runtime.newFixnum(offset));
         }
+
         if (has(bag.getSecFraction())) {
-            final RubyBignum secFraction = RubyBignum.newBignum(context.getRuntime(), bag.getSecFraction());
-            final RubyFixnum secFractionSize = RubyFixnum.newFixnum(context.getRuntime(), (long)Math.pow(10, bag.getSecFractionSize()));
-            map.put("sec_fraction", RubyRational.newRationalCanonicalize(context, secFraction, secFractionSize));
+            final RubyInteger secFraction = toRubyInteger(runtime, bag.getSecFraction());
+            final RubyFixnum secFractionSize = RubyFixnum.newFixnum(runtime, (long) Math.pow(10, bag.getSecFractionSize()));
+            setHashValue(runtime, hash, "sec_fraction",
+                    RubyRational.newRationalCanonicalize(context, secFraction, secFractionSize));
         }
+
         if (bag.has(bag.getSeconds())) {
             if (has(bag.getSecondsSize())) {
-                final RubyBignum seconds = RubyBignum.newBignum(context.getRuntime(), bag.getSeconds());
-                final RubyFixnum secondsSize = RubyFixnum.newFixnum(context.getRuntime(), (long)Math.pow(10, bag.getSecondsSize()));
-                map.put("seconds", RubyRational.newRationalCanonicalize(context, seconds, secondsSize));
+                final RubyInteger seconds = toRubyInteger(runtime, bag.getSeconds());
+                final RubyFixnum secondsSize = RubyFixnum.newFixnum(runtime, (long) Math.pow(10, bag.getSecondsSize()));
+                setHashValue(runtime, hash, "seconds", RubyRational.newRationalCanonicalize(context, seconds, secondsSize));
             } else {
-                map.put("seconds", bag.getSeconds());
+                setHashValue(runtime, hash, "seconds", toRubyInteger(runtime, bag.getSeconds()));
             }
         }
         if (has(bag.getMerid())) {
-            map.put("_merid", bag.getMerid());
+            setHashValue(runtime, hash, "_merid", runtime.newFixnum(bag.getMerid()));
         }
         if (has(bag.getCent())) {
-            map.put("_cent", bag.getCent());
+            setHashValue(runtime, hash, "_cent", RubyBignum.newBignum(runtime, bag.getCent()));
         }
         if (bag.getLeftover() != null) {
-            final RubyString leftover = RubyString.newString(context.getRuntime(), bag.getLeftover());
-            if (tainted) {
-                leftover.taint(context);
-            }
-            map.put("leftover", leftover);
+            final RubyString leftover = RubyString.newString(runtime, bag.getLeftover(), encoding);
+            if (tainted) leftover.taint(context);
+
+            setHashValue(runtime, hash, "leftover", leftover);
         }
 
-        return map;
+        return hash;
     }
+
+    private static RubyInteger toRubyInteger(final Ruby runtime, final Number i) {
+        if (i instanceof BigInteger) {
+            return RubyBignum.newBignum(runtime, (BigInteger) i);
+        }
+        return RubyFixnum.newFixnum(runtime, i.longValue());
+    }
+
+    private static void setHashValue(final Ruby runtime, final RubyHash hash, final String key, final IRubyObject value) {
+        hash.fastASet(RubySymbol.newSymbol(runtime, key), value);
+    }
+
 }

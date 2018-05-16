@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Process.setsid" do
   with_feature :fork do
@@ -22,7 +22,7 @@ describe "Process.setsid" do
       read2.close
       pgid_child = Integer(read.gets)
       read.close
-      platform_is_not :aix do
+      platform_is_not :aix, :openbsd do
         # AIX does not allow Process.getsid(pid)
         # if pid is in a different session.
         pgid = Process.getsid(pid)

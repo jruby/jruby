@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,6 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
@@ -298,7 +299,7 @@ public class RubyMath {
     }
 
     private static double atanh_common(IRubyObject recv, IRubyObject x) {
-        double value = ((RubyFloat)RubyKernel.new_float(recv,x)).getDoubleValue();
+        double value = RubyKernel.new_float(recv.getRuntime(), x).getDoubleValue();
         double  y = Math.abs(value);
         double  result;
 
@@ -680,7 +681,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "gamma", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat gamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(recv, x).getDoubleValue();
+        double value = RubyKernel.new_float(context.runtime, x).getDoubleValue();
         double result = nemes_gamma(value);
         /* note nemes_gamma can return Double.POSITIVE_INFINITY or Double.NEGATIVE_INFINITY
          * when value is an integer less than 1.
@@ -719,7 +720,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "lgamma", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyArray lgamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(recv, x).getDoubleValue();
+        double value = RubyKernel.new_float(context.runtime, x).getDoubleValue();
         // JRUBY-4653: Could this error checking done more elegantly?
         if (value < 0 && Double.isInfinite(value)) throw context.runtime.newMathDomainError("lgamma");
 

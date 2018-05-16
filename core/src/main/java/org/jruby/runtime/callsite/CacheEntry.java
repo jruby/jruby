@@ -15,11 +15,7 @@ public class CacheEntry {
     }
 
     public final boolean typeOk(RubyClass incomingType) {
-        return typeOk(this, incomingType);
-    }
-
-    public static final boolean typeOk(CacheEntry entry, RubyClass incomingType) {
-        return entry.token == incomingType.getGeneration();
+        return token == incomingType.getGeneration();
     }
 
     @Override

@@ -1,5 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 require 'socket'
 
@@ -29,9 +29,7 @@ describe "Socket#accept_nonblock" do
     }
   end
 
-  ruby_version_is '2.3' do
-    it 'returns :wait_readable in exceptionless mode' do
-      @socket.accept_nonblock(exception: false).should == :wait_readable
-    end
+  it 'returns :wait_readable in exceptionless mode' do
+    @socket.accept_nonblock(exception: false).should == :wait_readable
   end
 end

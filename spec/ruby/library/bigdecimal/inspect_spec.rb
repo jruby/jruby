@@ -1,10 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'bigdecimal'
 
 describe "BigDecimal#inspect" do
 
   before :each do
-    @bigdec = BigDecimal.new("1234.5678")
+    @bigdec = BigDecimal("1234.5678")
   end
 
   it "returns String" do

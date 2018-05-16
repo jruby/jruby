@@ -4,7 +4,6 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 
 import java.io.Closeable;
@@ -84,19 +83,19 @@ public class ChannelFD implements Closeable {
 
         this.currentLock = dup2Source.currentLock;
 
-        return 0;
+        return fakeFileno;
     }
 
     public void close() throws IOException {
         // tidy up
-        finish(true);
+        finish();
     }
 
     public int bestFileno() {
         return realFileno == -1 ? fakeFileno : realFileno;
     }
 
-    private void finish(boolean close) throws IOException {
+    private void finish() throws IOException {
         synchronized (refs) {
             // if refcount is at or below zero, we're no longer valid
             if (refs.get() <= 0) {
@@ -109,17 +108,15 @@ public class ChannelFD implements Closeable {
             }
 
             // otherwise decrement and possibly close as normal
-            if (close) {
-                int count = refs.decrementAndGet();
+            int count = refs.decrementAndGet();
 
-                if (count <= 0) {
-                    // if we're the last referrer, close the channel
-                    try {
-                        ch.close();
-                    } finally {
-                        filenoUtil.unregisterWrapper(realFileno);
-                        filenoUtil.unregisterWrapper(fakeFileno);
-                    }
+            if (count <= 0) {
+                // if we're the last referrer, close the channel
+                try {
+                    ch.close();
+                } finally {
+                    filenoUtil.unregisterWrapper(realFileno);
+                    filenoUtil.unregisterWrapper(fakeFileno);
                 }
             }
         }

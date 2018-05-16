@@ -4,9 +4,17 @@ module ExceptionSpecs
   class Backtrace
     def self.backtrace
       begin
-        raise # Do not move this line or update backtrace_spec.rb
+        raise # If you move this line, update backtrace_spec.rb
       rescue RuntimeError => e
         e.backtrace
+      end
+    end
+
+    def self.backtrace_locations
+      begin
+        raise
+      rescue RuntimeError => e
+        e.backtrace_locations
       end
     end
   end
@@ -53,6 +61,9 @@ module NoMethodErrorSpecs
   end
 
   class NoMethodErrorD; end
+
+  class InstanceException < Exception
+  end
 end
 
 class NameErrorSpecs

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,28 +28,25 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Ruby's StopIteration exception.
+ /**
+ * The Java representation of a Ruby StopIteration.
+ *
+ * @see StopIteration
  * @see RubyEnumerator
  * @author kares
  */
 @JRubyClass(name="StopIteration", parent="IndexError")
-public class RubyStopIteration extends RubyException {
+public class RubyStopIteration extends RubyIndexError {
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyStopIteration(runtime, klass);
-        }
-    };
-
-    static RubyClass createStopIterationClass(Ruby runtime, RubyClass superClass) {
-        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, ALLOCATOR);
+    static RubyClass define(Ruby runtime, RubyClass superClass) {
+        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, (runtime1, klass) -> new RubyStopIteration(runtime1, klass));
         StopIteration.defineAnnotatedMethods(RubyStopIteration.class);
         return StopIteration;
     }
@@ -68,6 +65,11 @@ public class RubyStopIteration extends RubyException {
 
     protected RubyStopIteration(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new StopIteration(message, this);
     }
 
     @JRubyMethod

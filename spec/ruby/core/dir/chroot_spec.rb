@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
-require File.expand_path('../shared/chroot', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
+require_relative 'shared/chroot'
 
 platform_is_not :windows do
   as_superuser do
@@ -31,7 +31,7 @@ platform_is_not :windows do
         it "calls #to_path on non-String argument" do
           p = mock('path')
           p.should_receive(:to_path).and_return('.')
-          lambda { Dir.chroot(p) }.should raise_error
+          lambda { Dir.chroot(p) }.should raise_error(Errno::EPERM)
         end
       end
     end

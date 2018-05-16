@@ -14,15 +14,15 @@ describe "Java String and primitive-typed methods" do
     expect(CoreTypeMethods.getString).to be_kind_of(String)
     expect(CoreTypeMethods.getString).to eq("foo");
 
-    expect(CoreTypeMethods.getByte).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getByte).to be_kind_of(Integer)
     expect(CoreTypeMethods.getByte).to eq(1)
-    expect(CoreTypeMethods.getShort).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getShort).to be_kind_of(Integer)
     expect(CoreTypeMethods.getShort).to eq(2)
-    expect(CoreTypeMethods.getChar).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getChar).to be_kind_of(Integer)
     expect(CoreTypeMethods.getChar).to eq(2)
-    expect(CoreTypeMethods.getInt).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getInt).to be_kind_of(Integer)
     expect(CoreTypeMethods.getInt).to eq(4)
-    expect(CoreTypeMethods.getLong).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getLong).to be_kind_of(Integer)
     expect(CoreTypeMethods.getLong).to eq(8)
 
     expect(CoreTypeMethods.getFloat).to be_kind_of(Float)
@@ -224,15 +224,15 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.stringStaticField).to be_kind_of(String)
     expect(JavaFields.stringStaticField).to eq("foo");
 
-    expect(JavaFields.byteStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.byteStaticField).to be_kind_of(Integer)
     expect(JavaFields.byteStaticField).to eq(1)
-    expect(JavaFields.shortStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.shortStaticField).to be_kind_of(Integer)
     expect(JavaFields.shortStaticField).to eq(2)
-    expect(JavaFields.charStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.charStaticField).to be_kind_of(Integer)
     expect(JavaFields.charStaticField).to eq(2)
-    expect(JavaFields.intStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.intStaticField).to be_kind_of(Integer)
     expect(JavaFields.intStaticField).to eq(4)
-    expect(JavaFields.longStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.longStaticField).to be_kind_of(Integer)
     expect(JavaFields.longStaticField).to eq(8)
 
     expect(JavaFields.floatStaticField).to be_kind_of(Float)
@@ -258,15 +258,15 @@ describe "Java String and primitive-typed fields" do
     expect(jf.stringField).to be_kind_of(String)
     expect(jf.stringField).to eq("foo");
 
-    expect(jf.byteField).to be_kind_of(Fixnum)
+    expect(jf.byteField).to be_kind_of(Integer)
     expect(jf.byteField).to eq(1)
-    expect(jf.shortField).to be_kind_of(Fixnum)
+    expect(jf.shortField).to be_kind_of(Integer)
     expect(jf.shortField).to eq(2)
-    expect(jf.charField).to be_kind_of(Fixnum)
+    expect(jf.charField).to be_kind_of(Integer)
     expect(jf.charField).to eq(2)
-    expect(jf.intField).to be_kind_of(Fixnum)
+    expect(jf.intField).to be_kind_of(Integer)
     expect(jf.intField).to eq(4)
-    expect(jf.longField).to be_kind_of(Fixnum)
+    expect(jf.longField).to be_kind_of(Integer)
     expect(jf.longField).to eq(8)
 
     expect(jf.floatField).to be_kind_of(Float)
@@ -292,15 +292,15 @@ end
 describe "Java primitive-box-typed fields" do
   it "coerce to Ruby types when retrieved" do
     # static
-    expect(JavaFields.byteObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.byteObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.byteObjStaticField).to eq(1)
-    expect(JavaFields.shortObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.shortObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.shortObjStaticField).to eq(2)
-    expect(JavaFields.charObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.charObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.charObjStaticField).to eq(2)
-    expect(JavaFields.intObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.intObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.intObjStaticField).to eq(4)
-    expect(JavaFields.longObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.longObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.longObjStaticField).to eq(8)
 
     expect(JavaFields.floatObjStaticField).to be_kind_of(Float)
@@ -315,15 +315,15 @@ describe "Java primitive-box-typed fields" do
 
     # instance
     jf = JavaFields.new
-    expect(jf.byteObjField).to be_kind_of(Fixnum)
+    expect(jf.byteObjField).to be_kind_of(Integer)
     expect(jf.byteObjField).to eq(1)
-    expect(jf.shortObjField).to be_kind_of(Fixnum)
+    expect(jf.shortObjField).to be_kind_of(Integer)
     expect(jf.shortObjField).to eq(2)
-    expect(jf.charObjField).to be_kind_of(Fixnum)
+    expect(jf.charObjField).to be_kind_of(Integer)
     expect(jf.charObjField).to eq(2)
-    expect(jf.intObjField).to be_kind_of(Fixnum)
+    expect(jf.intObjField).to be_kind_of(Integer)
     expect(jf.intObjField).to eq(4)
-    expect(jf.longObjField).to be_kind_of(Fixnum)
+    expect(jf.longObjField).to be_kind_of(Integer)
     expect(jf.longObjField).to eq(8)
 
     expect(jf.floatObjField).to be_kind_of(Float)
@@ -377,23 +377,23 @@ describe "Java String, primitive, and object-typed interface methods" do
 
     expect(vri_handler.receiveByte(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveShort(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveChar(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveInt(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveLong(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveFloat(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
@@ -442,23 +442,23 @@ describe "Java primitive-typed interface methods" do
 
     expect(vri_handler.receiveByte(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveShort(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveChar(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveInt(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveLong(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveFloat(nil)).to eq(0.0)
     expect(vri.result).to eq(0.0)
@@ -504,23 +504,23 @@ describe "Java primitive-box-typed interface methods" do
 
     expect(vri_handler.receiveByteObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveShortObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveCharObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveIntObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveLongObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveFloatObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
@@ -721,12 +721,13 @@ end
 describe "Class\#to_java" do
   describe "when passed java.lang.Class.class" do
     cls = java.lang.Class
-    it "coerces core classes to their Java class object" do
-      # TODO: add all core, native types here
-      [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(cls)).to eq(eval("cls.forName('org.jruby.Ruby#{rubycls}')"))
-      end
-    end
+
+    # NOTE: moved to a Java test @see org.jruby.javasupport.TestJavaClass#testToJava
+    # it "coerces core classes to their Java class object" do
+    #   [Object, Array, String, Hash, File, IO].each do |rubycls|
+    #     expect(rubycls.to_java(cls)).to eq(eval("cls.forName('org.jruby.Ruby#{rubycls}')"))
+    #   end
+    # end
 
     class UserKlass < Object; end
 
@@ -747,17 +748,19 @@ describe "Class\#to_java" do
   end
 
   describe "when passed java.lang.Object.class" do
-    it "coerces core classes to their Ruby class object" do
-      [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
-      end
-      BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
-      [Bignum, Dir, ENV, FalseClass, Fixnum, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
-        expect(clazz.to_java(java.lang.Object)).to eq(clazz)
-      end
-      expect(Exception.to_java(java.lang.Object)).to eq Exception
-      expect(StandardError.to_java(java.lang.Object)).to eq StandardError
-    end
+
+    # NOTE: moved to a Java test @see org.jruby.javasupport.TestJavaClass#testToJavaObject
+    # it "coerces core classes to their Ruby class object" do
+    #   [Object, Array, String, Hash, File, IO].each do |rubycls|
+    #     expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
+    #   end
+    #   BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
+    #   [Bignum, Dir, ENV, FalseClass, Integer, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
+    #     expect(clazz.to_java(java.lang.Object)).to eq(clazz)
+    #   end
+    #   expect(Exception.to_java(java.lang.Object)).to eq Exception
+    #   expect(StandardError.to_java(java.lang.Object)).to eq StandardError
+    # end
 
     it "coerces user classes/modules to their Ruby class object" do
       clazz = Class.new

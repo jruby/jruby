@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,8 @@ import static jnr.constants.platform.Signal.NSIG;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SignalException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -40,20 +42,26 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubySignal;
 import org.jruby.util.TypeConverter;
 
+/**
+ * The Java representation of a Ruby SignalException.
+ *
+ * @see SignalException
+ */
 @JRubyClass(name="SignalException", parent="Exception")
 public class RubySignalException extends RubyException {
-    private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubySignalException(runtime, klass);
-        }
-    };
+    private static final ObjectAllocator SIGNAL_EXCEPTION_ALLOCATOR =
+            (runtime, klass) -> new RubySignalException(runtime, klass);
 
     protected RubySignalException(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass createSignalExceptionClass(Ruby runtime, RubyClass exceptionClass) {
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new SignalException(message, this);
+    }
+
+    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
         RubyClass signalExceptionClass = runtime.defineClass("SignalException", exceptionClass, SIGNAL_EXCEPTION_ALLOCATOR);
         signalExceptionClass.defineAnnotatedMethods(RubySignalException.class);
 

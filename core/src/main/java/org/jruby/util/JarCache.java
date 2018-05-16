@@ -157,4 +157,20 @@ class JarCache {
             return index;
         }
     }
+
+    public boolean remove(String jarPath){
+        String cacheKey = jarPath;
+
+        synchronized (indexCache) {
+            JarIndex index = indexCache.get(cacheKey);
+            if (index == null){
+                return false;
+            }
+            else{
+                index.release();
+                indexCache.remove(cacheKey);
+                return true;
+            }
+        }
+    }
 }

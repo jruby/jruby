@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 platform_is_not :windows do
   describe "File.realpath" do
@@ -72,9 +72,17 @@ end
 
 platform_is :windows do
   describe "File.realpath" do
+    before :each do
+      @file = tmp("realpath")
+      touch @file
+    end
+
+    after :each do
+      rm_r @file
+    end
+
     it "returns the same path" do
-      file = __FILE__
-      File.realpath(file).should == file
+      File.realpath(@file).should == @file
     end
   end
 end

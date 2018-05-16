@@ -1,0 +1,1 @@
+fails:Enumerable#uniq when yielded with multiple arguments returns all yield arguments as an array

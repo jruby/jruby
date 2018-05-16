@@ -114,6 +114,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.verbosity.level=silent"
     arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
     arg :line => "-T -J-XX:MaxPermSize=512M" if ENV_JAVA["java.version"] !~ /\A1\.8/
+    arg :line => "-T --debug"
     arg :line => "-f #{ms[:format]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
     arg :line => "#{ms[:spec_target]}" if ms[:spec_target]

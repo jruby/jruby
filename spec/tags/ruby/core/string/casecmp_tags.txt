@@ -1,0 +1,2 @@
+fails:String#casecmp? independent of case for UNICODE characters returns true when downcase(:fold) on unicode
+fails:String#casecmp? independent of case in UTF-8 mode for non-ASCII characters returns true when they are the same with normalized case

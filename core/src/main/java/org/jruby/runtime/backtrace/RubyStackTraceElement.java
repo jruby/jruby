@@ -1,5 +1,10 @@
 package org.jruby.runtime.backtrace;
 
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.util.CommonByteLists;
+
 public class RubyStackTraceElement implements java.io.Serializable {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
 
@@ -72,6 +77,22 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return asStackTraceElement().toString();
     }
 
+    public static RubyString to_s_mri(ThreadContext context, RubyStackTraceElement element) {
+        RubySymbol methodSym = context.runtime.newSymbol(element.getMethodName());
+        RubyString line = context.runtime.newString();
+
+        line.setEncoding(methodSym.getEncoding());
+        line.cat(element.getFileName().getBytes());
+        line.cat(CommonByteLists.COLON);
+        line.append(context.runtime.newFixnum(element.getLineNumber()));
+        line.cat(CommonByteLists.BACKTRACE_IN);
+        line.cat(methodSym.getBytes());
+        line.cat(new byte[] {'\''});
+
+        return line;
+    }
+
+    @Deprecated
     public final CharSequence mriStyleString() {
         // return fileName + ':' + lineNumber + ":in `" + methodName + '\'';
         return new StringBuilder(fileName.length() + methodName.length() + 12).

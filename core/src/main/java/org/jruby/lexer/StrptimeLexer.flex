@@ -1,4 +1,11 @@
-/* IMPORTANT: must compile with JFlex 1.4, JFlex 1.4.3 seems buggy with look-ahead */
+/**
+ * IMPORTANT: must compile with JFlex 1.4, JFlex 1.4.3 seems buggy with look-ahead
+ *
+ * How to generate StrptimeLexer.java
+ * 1. Download and install JFlex 1.4 from https://sourceforge.net/projects/jflex/files/jflex/1.4/
+ * 2. Execute bin/jflex command to generate StrptimeLexer.java
+ *    $ bin/jflex core/src/main/java/org/jruby/lexer/StrptimeLexer.java
+ */
 
 package org.jruby.lexer;
 

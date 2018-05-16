@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,11 +35,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SignalException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
 import org.jruby.platform.Platform;
@@ -354,11 +356,7 @@ public class Main {
         boolean heapError = false;
 
         if (oomeMessage != null) {
-            if (oomeMessage.contains("PermGen")) {
-                // report permgen memory error
-                config.getError().println("Error: Your application exhausted PermGen area of the heap.");
-                config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
-            } else if (oomeMessage.contains("unable to create new native thread")) {
+            if (oomeMessage.contains("unable to create new native thread")) {
                 // report thread exhaustion error
                 config.getError().println("Error: Your application demanded too many live threads, perhaps for Fiber or Enumerator.");
                 config.getError().println("Ensure your old Fibers and Enumerators are being cleaned up.");
@@ -531,6 +529,12 @@ public class Main {
             IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
             if (status != null && ! status.isNil()) {
                 return RubyNumeric.fix2int(status);
+            }
+            return 0;
+        } else if ( runtime.getSignalException().isInstance(raisedException) ) {
+            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "signo");
+            if (status != null && ! status.isNil()) {
+                return RubyNumeric.fix2int(status) + 128;
             }
             return 0;
         }

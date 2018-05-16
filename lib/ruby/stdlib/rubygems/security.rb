@@ -462,7 +462,7 @@ module Gem::Security
 
   ##
   # Creates a new key pair of the specified +length+ and +algorithm+.  The
-  # default is a 2048 bit RSA key.
+  # default is a 3072 bit RSA key.
 
   def self.create_key length = KEY_LENGTH, algorithm = KEY_ALGORITHM
     algorithm.new length
@@ -578,7 +578,7 @@ module Gem::Security
   def self.write pemmable, path, permissions = 0600, passphrase = nil, cipher = KEY_CIPHER
     path = File.expand_path path
 
-    open path, 'wb', permissions do |io|
+    File.open path, 'wb', permissions do |io|
       if passphrase and cipher
         io.write pemmable.to_pem cipher, passphrase
       else

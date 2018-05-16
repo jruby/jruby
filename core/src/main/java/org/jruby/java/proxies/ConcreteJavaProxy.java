@@ -41,7 +41,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
 
-        InitializeMethod(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
+        InitializeMethod(final RubyClass clazz) { super(clazz, Visibility.PRIVATE, "initialize"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -92,7 +92,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         final DynamicMethod newMethod;
 
         NewMethod(final RubyClass clazz) {
-            super(clazz, Visibility.PUBLIC);
+            super(clazz, Visibility.PUBLIC, "new");
             newMethod = clazz.searchMethod("new");
         }
 
@@ -210,7 +210,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object toJava(final Class type) {
+    public <T> T toJava(Class<T> type) {
         final Object object = getObject();
         final Class clazz = object.getClass();
 
@@ -222,16 +222,16 @@ public class ConcreteJavaProxy extends JavaProxy {
                  object instanceof Boolean && type == Boolean.TYPE ) {
                 // FIXME in more permissive call paths, like invokedynamic, this can allow
                 // precision-loading downcasts to happen silently
-                return object;
+                return (T) object;
             }
         }
         else if ( type.isAssignableFrom(clazz) ) {
             if ( Java.OBJECT_PROXY_CACHE || metaClass.getCacheProxy() ) {
                 getRuntime().getJavaSupport().getObjectProxyCache().put(object, this);
             }
-            return object;
+            return type.cast(object);
         }
-        else if ( type.isAssignableFrom(getClass()) ) return this; // e.g. IRubyObject.class
+        else if ( type.isAssignableFrom(getClass()) ) return type.cast(this); // e.g. IRubyObject.class
 
         throw getRuntime().newTypeError("failed to coerce " + clazz.getName() + " to " + type.getName());
     }

@@ -1,7 +1,7 @@
 #
 # Copyright (C) 2008 Wayne Meissner
 #
-# Version: EPL 1.0/GPL 2.0/LGPL 2.1
+# Version: EPL 2.0/GPL 2.0/LGPL 2.1
 #
 # The contents of this file are subject to the Common Public
 # License Version 1.0 (the "License"); you may not use this file

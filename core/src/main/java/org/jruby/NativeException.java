@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,16 +25,22 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.lang.reflect.Member;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
+@Deprecated
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
 
@@ -43,31 +49,43 @@ public class NativeException extends RubyException {
     public static final String CLASS_NAME = "NativeException";
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
-        super(runtime, rubyClass);
-        this.cause = cause;
-        this.messageAsJavaString = cause.getClass().getName() + ": " + searchStackMessage(cause);
+        this(runtime, rubyClass, cause, buildMessage(cause));
     }
-    
+
+    private NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause, String message) {
+        super(runtime, rubyClass, message);
+        this.cause = cause;
+        String s = buildMessage(cause);
+        this.messageAsJavaString = message;
+    }
+
+    private static String buildMessage(Throwable cause) {
+        return cause.getClass().getName() + ": " + searchStackMessage(cause);
+    }
+
     private NativeException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass, null);
         this.cause = new Throwable();
         this.messageAsJavaString = null;
     }
     
-    private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-            NativeException instance = new NativeException(runtime, klazz);
-            instance.setMetaClass(klazz);
-            return instance;
-        }
-    };
+    private static ObjectAllocator NATIVE_EXCEPTION_ALLOCATOR = (runtime, klazz) -> new NativeException(runtime, klazz);
 
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
         RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NATIVE_EXCEPTION_ALLOCATOR);
+        runtime.getObject().deprecateConstant(runtime, CLASS_NAME);
 
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 
         return exceptionClass;
+    }
+
+    @Override
+    public void prepareBacktrace(ThreadContext context) {
+        // if it's null, use cause's trace to build a raw stack trace
+        if (backtraceData == null) {
+            backtraceData = TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), cause.getStackTrace());
+        }
     }
 
     @JRubyMethod
@@ -76,7 +94,7 @@ public class NativeException extends RubyException {
     }
 
     @Deprecated
-    public IRubyObject cause(Block unusedBlock) {
+    public final IRubyObject cause(Block unusedBlock) {
         return cause();
     }
 

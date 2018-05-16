@@ -1,11 +1,12 @@
 # -*- encoding: binary -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "BasicSocket#recv" do
 
   before :each do
-    @server = TCPServer.new('127.0.0.1', SocketSpecs.port)
+    @server = TCPServer.new('127.0.0.1', 0)
+    @port = @server.addr[1]
   end
 
   after :each do
@@ -23,7 +24,7 @@ describe "BasicSocket#recv" do
     Thread.pass while t.status and t.status != "sleep"
     t.status.should_not be_nil
 
-    socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+    socket = TCPSocket.new('127.0.0.1', @port)
     socket.send('hello', 0)
     socket.close
 
@@ -46,7 +47,7 @@ describe "BasicSocket#recv" do
       Thread.pass while t.status and t.status != "sleep"
       t.status.should_not be_nil
 
-      socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+      socket = TCPSocket.new('127.0.0.1', @port)
       socket.send('helloU', Socket::MSG_OOB)
       socket.shutdown(1)
       t.join
@@ -67,7 +68,7 @@ describe "BasicSocket#recv" do
     Thread.pass while t.status and t.status != "sleep"
     t.status.should_not be_nil
 
-    socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+    socket = TCPSocket.new('127.0.0.1', @port)
     socket.write("firstline\377secondline\377")
     socket.close
 
@@ -75,21 +76,19 @@ describe "BasicSocket#recv" do
     ScratchPad.recorded.should == "firstline\377"
   end
 
-  ruby_version_is "2.3" do
-    it "allows an output buffer as third argument" do
-      socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
-      socket.write("data")
+  it "allows an output buffer as third argument" do
+    socket = TCPSocket.new('127.0.0.1', @port)
+    socket.write("data")
 
-      client = @server.accept
-      buf = "foo"
-      begin
-        client.recv(4, 0, buf)
-      ensure
-        client.close
-      end
-      buf.should == "data"
-
-      socket.close
+    client = @server.accept
+    buf = "foo"
+    begin
+      client.recv(4, 0, buf)
+    ensure
+      client.close
     end
+    buf.should == "data"
+
+    socket.close
   end
 end

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#split with String" do
   with_feature :encoding do
@@ -298,6 +298,10 @@ describe "String#split with Regexp" do
     "hi!".split(/()/, -1).should == ["h", "", "i", "", "!", "", ""]
     "hello".split(/((el))()/).should == ["h", "el", "el", "", "lo"]
     "AabB".split(/([a-z])+/).should == ["A", "b", "B"]
+  end
+
+  it "applies the limit to the number of split substrings, without counting captures" do
+    "aBaBa".split(/(B)()()/, 2).should == ["a", "B", "", "", "aBa"]
   end
 
   it "does not include non-matching captures in the result array" do

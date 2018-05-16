@@ -1,5 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 # Describes Numeric#step shared specs between different argument styles.
 # To be able to do it, the @step_args var must contain a Proc that transforms
@@ -405,6 +405,18 @@ describe :numeric_step, :shared => true do
             it "returns 1 if step is infinity_value" do
               10.send(@method, *@step_args.call(5, -infinity_value)).size.should == 1
             end
+          end
+        end
+
+        describe "when stop is not passed" do
+          it "returns infinity_value" do
+            1.send(@method, *@step_args.call()).size.should == infinity_value
+          end
+        end
+
+        describe "when stop is nil" do
+          it "returns infinity_value" do
+            1.send(@method, *@step_args.call(nil, 5)).size.should == infinity_value
           end
         end
       end

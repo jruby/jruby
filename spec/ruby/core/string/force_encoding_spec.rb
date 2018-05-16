@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 with_feature :encoding do
   describe "String#force_encoding" do
@@ -45,9 +45,9 @@ with_feature :encoding do
       str.dup.force_encoding('utf-16le').should_not == str.encode('utf-16le')
     end
 
-    it "raises a RuntimeError if self is frozen" do
+    it "raises a #{frozen_error_class} if self is frozen" do
       str = "abcd".freeze
-      lambda { str.force_encoding(str.encoding) }.should raise_error(RuntimeError)
+      lambda { str.force_encoding(str.encoding) }.should raise_error(frozen_error_class)
     end
   end
 end

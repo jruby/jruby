@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -202,7 +202,7 @@ public abstract class CallSite {
      * @param block the block argument to pass
      * @return the result of the call
      */
-    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg3, Block block);
+    public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block);
 
     /**
      * Call the site's method against the target object passing one argument and
@@ -324,4 +324,14 @@ public abstract class CallSite {
      * @return the result of the call
      */
     public abstract IRubyObject callVarargsIter(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block);
+
+    /**
+     * Produce a string representation of this CallSite, for informational purposes. Subclasses can override this to
+     * provide more information.
+     *
+     * @return an informational string representation of this CallSite
+     */
+    public String toString() {
+        return  "CallSite(\"" + methodName + "\"," + callType + ")";
+    }
 }

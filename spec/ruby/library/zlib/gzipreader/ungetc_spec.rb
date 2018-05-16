@@ -1,4 +1,4 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'stringio'
 require 'zlib'
 
@@ -12,7 +12,7 @@ describe 'GzipReader#ungetc' do
 
   describe 'at the start of the stream' do
     before :each do
-      @gz = Zlib::GzipReader.new(@io)
+      @gz = Zlib::GzipReader.new(@io, external_encoding: Encoding::UTF_8)
     end
 
     describe 'with a single-byte character' do
@@ -21,9 +21,11 @@ describe 'GzipReader#ungetc' do
         @gz.read.should == 'x12345abcde'
       end
 
-      it 'decrements pos' do
-        @gz.ungetc 'x'
-        @gz.pos.should == -1
+      ruby_bug "#13616", ""..."2.6" do
+        it 'decrements pos' do
+          @gz.ungetc 'x'
+          @gz.pos.should == -1
+        end
       end
     end
 
@@ -33,9 +35,11 @@ describe 'GzipReader#ungetc' do
         @gz.read.should == 'ŷ12345abcde'
       end
 
-      it 'decrements pos' do
-        @gz.ungetc 'ŷ'
-        @gz.pos.should == -2
+      ruby_bug "#13616", ""..."2.6" do
+        it 'decrements pos' do
+          @gz.ungetc 'ŷ'
+          @gz.pos.should == -2
+        end
       end
     end
 
@@ -45,9 +49,11 @@ describe 'GzipReader#ungetc' do
         @gz.read.should == 'xŷž12345abcde'
       end
 
-      it 'decrements pos' do
-        @gz.ungetc 'xŷž'
-        @gz.pos.should == -5
+      ruby_bug "#13616", ""..."2.6" do
+        it 'decrements pos' do
+          @gz.ungetc 'xŷž'
+          @gz.pos.should == -5
+        end
       end
     end
 
@@ -57,9 +63,11 @@ describe 'GzipReader#ungetc' do
         @gz.read.should == '!12345abcde'
       end
 
-      it 'decrements pos' do
-        @gz.ungetc 0x21
-        @gz.pos.should == -1
+      ruby_bug "#13616", ""..."2.6" do
+        it 'decrements pos' do
+          @gz.ungetc 0x21
+          @gz.pos.should == -1
+        end
       end
     end
 
@@ -75,22 +83,24 @@ describe 'GzipReader#ungetc' do
       end
     end
 
-    describe 'with nil' do
-      it 'does not prepend anything to the stream' do
-        @gz.ungetc nil
-        @gz.read.should == '12345abcde'
-      end
+    quarantine! do # https://bugs.ruby-lang.org/issues/13675
+      describe 'with nil' do
+        it 'does not prepend anything to the stream' do
+          @gz.ungetc nil
+          @gz.read.should == '12345abcde'
+        end
 
-      it 'does not decrement pos' do
-        @gz.ungetc nil
-        @gz.pos.should == 0
+        it 'does not decrement pos' do
+          @gz.ungetc nil
+          @gz.pos.should == 0
+        end
       end
     end
   end
 
   describe 'in the middle of the stream' do
     before :each do
-      @gz = Zlib::GzipReader.new(@io)
+      @gz = Zlib::GzipReader.new(@io, external_encoding: Encoding::UTF_8)
       @gz.read 5
     end
 
@@ -154,22 +164,24 @@ describe 'GzipReader#ungetc' do
       end
     end
 
-    describe 'with nil' do
-      it 'does not insert anything into the stream' do
-        @gz.ungetc nil
-        @gz.read.should == 'abcde'
-      end
+    quarantine! do # https://bugs.ruby-lang.org/issues/13675
+      describe 'with nil' do
+        it 'does not insert anything into the stream' do
+          @gz.ungetc nil
+          @gz.read.should == 'abcde'
+        end
 
-      it 'does not decrement pos' do
-        @gz.ungetc nil
-        @gz.pos.should == 5
+        it 'does not decrement pos' do
+          @gz.ungetc nil
+          @gz.pos.should == 5
+        end
       end
     end
   end
 
   describe 'at the end of the stream' do
     before :each do
-      @gz = Zlib::GzipReader.new(@io)
+      @gz = Zlib::GzipReader.new(@io, external_encoding: Encoding::UTF_8)
       @gz.read
     end
 
@@ -258,20 +270,22 @@ describe 'GzipReader#ungetc' do
       end
     end
 
-    describe 'with nil' do
-      it 'does not append anything to the stream' do
-        @gz.ungetc nil
-        @gz.read.should == ''
-      end
+    quarantine! do # https://bugs.ruby-lang.org/issues/13675
+      describe 'with nil' do
+        it 'does not append anything to the stream' do
+          @gz.ungetc nil
+          @gz.read.should == ''
+        end
 
-      it 'does not decrement pos' do
-        @gz.ungetc nil
-        @gz.pos.should == 10
-      end
+        it 'does not decrement pos' do
+          @gz.ungetc nil
+          @gz.pos.should == 10
+        end
 
-      it 'does not make eof? false' do
-        @gz.ungetc nil
-        @gz.eof?.should be_true
+        it 'does not make eof? false' do
+          @gz.ungetc nil
+          @gz.eof?.should be_true
+        end
       end
     end
   end

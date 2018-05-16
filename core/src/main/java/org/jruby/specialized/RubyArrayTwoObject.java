@@ -9,13 +9,11 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
-import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.ByteList;
 
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
 
@@ -152,7 +150,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
-        EncodingUtils.strBufCat(runtime, str, OPEN_BRACKET);
+        str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s1 = inspect(context, car);
@@ -161,13 +159,15 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         else str.setEncoding(s1.getEncoding());
         str.cat19(s1);
 
-        EncodingUtils.strBufCat(runtime, str, COMMA_SPACE);
+        ByteList bytes = str.getByteList();
+        bytes.ensure(2 + s2.size() + 1);
+        bytes.append((byte) ',').append((byte) ' ');
 
         if (s2.isTaint()) tainted = true;
         else str.setEncoding(s2.getEncoding());
         str.cat19(s2);
 
-        EncodingUtils.strBufCat(runtime, str, CLOSE_BRACKET);
+        str.cat((byte) ']');
 
         if (tainted) str.setTaint(true);
 

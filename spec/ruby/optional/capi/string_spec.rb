@@ -1,6 +1,6 @@
 # encoding: utf-8
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../../../shared/string/times', __FILE__)
+require_relative 'spec_helper'
+require_relative '../../shared/string/times'
 
 load_extension('string')
 
@@ -100,6 +100,10 @@ describe "C-API String function" do
     it "returns an empty string if len is 0" do
       @s.rb_str_new("hello", 0).should == ""
     end
+
+    it "returns a string from an offset char buffer" do
+      @s.rb_str_new_offset("hello", 1, 3).should == "ell"
+    end
   end
 
   describe "rb_str_new2" do
@@ -184,7 +188,7 @@ describe "C-API String function" do
       str1 = "hi"
       str2 = @s.rb_str_new3 str1
       str1.should == str2
-      str1.object_id.should_not == str2.object_id
+      str1.should_not equal str2
     end
   end
 
@@ -213,7 +217,7 @@ describe "C-API String function" do
       str1 = "hi"
       str2 = @s.rb_str_dup str1
       str1.should == str2
-      str1.object_id.should_not == str2.object_id
+      str1.should_not equal str2
     end
   end
 
@@ -225,6 +229,22 @@ describe "C-API String function" do
 
       new_string.should == "hello world"
       new_string.class.should == string_class
+    end
+  end
+
+  describe "rb_tainted_str_new" do
+    it "creates a new tainted String" do
+      newstring = @s.rb_tainted_str_new("test", 4)
+      newstring.should == "test"
+      newstring.tainted?.should be_true
+    end
+  end
+
+  describe "rb_tainted_str_new2" do
+    it "creates a new tainted String" do
+      newstring = @s.rb_tainted_str_new2("test")
+      newstring.should == "test"
+      newstring.tainted?.should be_true
     end
   end
 
@@ -423,30 +443,55 @@ describe "C-API String function" do
     end
   end
 
-  describe "StringValue" do
+  describe :string_value_macro, shared: true do
+    before :each do
+      @s = CApiStringSpecs.new
+    end
+
     it "does not call #to_str on a String" do
       str = "genuine"
       str.should_not_receive(:to_str)
-      @s.StringValue(str)
+      @s.send(@method, str)
     end
 
     it "does not call #to_s on a String" do
       str = "genuine"
       str.should_not_receive(:to_str)
-      @s.StringValue(str)
+      @s.send(@method, str)
     end
 
     it "calls #to_str on non-String objects" do
       str = mock("fake")
       str.should_receive(:to_str).and_return("wannabe")
-      @s.StringValue(str)
+      @s.send(@method, str).should == "wannabe"
     end
 
     it "does not call #to_s on non-String objects" do
       str = mock("fake")
       str.should_not_receive(:to_s)
-      lambda { @s.StringValue(str) }.should raise_error(TypeError)
+      lambda { @s.send(@method, str) }.should raise_error(TypeError)
     end
+  end
+
+  describe "StringValue" do
+    it_behaves_like :string_value_macro, :StringValue
+  end
+
+  describe "SafeStringValue" do
+    it "raises for tained string when $SAFE is 1" do
+      begin
+        Thread.new {
+          $SAFE = 1
+          lambda {
+            @s.SafeStringValue("str".taint)
+          }.should raise_error(SecurityError)
+        }.join
+      ensure
+        $SAFE = 0
+      end
+    end
+
+    it_behaves_like :string_value_macro, :SafeStringValue
   end
 
   describe "rb_str_resize" do
@@ -501,7 +546,7 @@ describe "C-API String function" do
   describe "rb_str_hash" do
     it "hashes the string into a number" do
       s = "hello"
-      @s.rb_str_hash(s).should == s.hash
+      @s.rb_str_hash(s).should be_kind_of(Integer)
     end
   end
 

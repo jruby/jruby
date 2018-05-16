@@ -1,9 +1,9 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/windows', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/windows'
 require 'etc'
 
 describe "Etc.group" do
-  it_behaves_like(:etc_on_windows, :group)
+  it_behaves_like :etc_on_windows, :group
 
   platform_is_not :windows do
     it "raises a RuntimeError for parallel iteration" do

@@ -33,6 +33,9 @@ specs in a manner compatible with multiple Ruby implementations.
      configuration facility with a default project file and user-specific
      overrides.
 
+## Requirements
+
+MSpec requires Ruby 2.3 or more recent.
 
 ## Bundler
 

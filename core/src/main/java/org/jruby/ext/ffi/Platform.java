@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
@@ -40,9 +41,13 @@ import org.jruby.util.SafePropertyAccessor;
  *
  */
 public class Platform {
+
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
+
     public static final CPU_TYPE CPU = determineCPU();
     public static final OS_TYPE OS = determineOS();
+
+    private static final int ARCH_DATA_MODEL = determineArchDataModel();
 
     public static final String NAME = CPU + "-" + OS;
     public static final String LIBPREFIX = OS == OS.WINDOWS ? "" : "lib";
@@ -57,7 +62,7 @@ public class Platform {
     protected final int addressSize, longSize;
     private final long addressMask;
     protected final Pattern libPattern;
-    private final int javaVersionMajor;
+    private int javaVersionMajor = -1;
 
     public enum OS_TYPE {
         DARWIN,
@@ -169,7 +174,7 @@ public class Platform {
             case LINUX:
                 return "libc.so.6";
             case AIX:
-                if (Integer.getInteger("sun.arch.data.model") == 32) {
+                if (ARCH_DATA_MODEL == 32) {
                     return "libc.a(shr.o)";
                 } else {
                     return "libc.a(shr_64.o)";
@@ -192,8 +197,8 @@ public class Platform {
         }
     }
 
-    protected Platform(OS_TYPE os) {
-        int dataModel = Integer.getInteger("sun.arch.data.model");
+    private static int determineArchDataModel() {
+        int dataModel = SafePropertyAccessor.getInt("sun.arch.data.model"); // default: 0
         if (dataModel != 32 && dataModel != 64) {
             switch (CPU) {
                 case I386:
@@ -213,10 +218,14 @@ public class Platform {
                     dataModel = 0;
             }
         }
-        addressSize = dataModel;
+        return dataModel;
+    }
+
+    protected Platform(OS_TYPE os) {
+        addressSize = ARCH_DATA_MODEL;
         addressMask = addressSize == 32 ? 0xffffffffL : 0xffffffffffffffffL;
         longSize = os == OS.WINDOWS ? 32 : addressSize; // Windows is LLP64
-        String libpattern = null;
+        String libpattern;
         switch (os) {
             case WINDOWS:
                 libpattern = ".*\\.dll$";
@@ -232,20 +241,6 @@ public class Platform {
                 break;
         }
         libPattern = Pattern.compile(libpattern);
-        int version = 5;
-        try {
-            String versionString = System.getProperty("java.version");
-            if (versionString != null) {
-                // remove additional version identifiers, e.g. -ea
-                versionString = versionString.split("-|\\+")[0];
-                String[] v = versionString.split("\\.");
-                // starting from JDK 9, there is no leading "1." in java.version
-                version = Integer.valueOf(v.length > 1 ? v[1] : v[0]);
-            }
-        } catch (Exception ex) {
-            version = 0;
-        }
-        javaVersionMajor = version;
     }
 
     /**
@@ -278,10 +273,31 @@ public class Platform {
     /**
      * Gets the version of the Java Virtual Machine (JVM) jffi is running on.
      *
-     * @return A number representing the java version.  e.g. 5 for java 1.5, 6 for java 1.6
+     * @return A number representing the java version.  e.g. 8 for java 1.8, 9 for java 9
      */
     public final int getJavaMajorVersion() {
-        return javaVersionMajor;
+        if (javaVersionMajor != -1) return javaVersionMajor;
+
+        int version = 5;
+        try {
+            String versionString = SafePropertyAccessor.getProperty("java.version");
+            if (versionString != null) {
+                // remove additional version identifiers, e.g. -ea
+                versionString = versionString.split("-|\\+")[0];
+                String[] v = versionString.split("\\.");
+                if (v[0].equals("1")) {
+                    // Pre Java 9, 1.x style
+                    version = Integer.valueOf(v[1]);
+                } else {
+                    // Java 9+, x.y.z style
+                    version = Integer.valueOf(v[0]);
+                }
+            }
+        } catch (Exception ex) {
+            version = 0;
+        }
+
+        return javaVersionMajor = version;
     }
     public final boolean isBSD() {
         return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN;
@@ -292,8 +308,7 @@ public class Platform {
     public final boolean isSupported() {
         return OS != OS.UNKNOWN 
                 && CPU != CPU.UNKNOWN
-                && (addressSize == 32 || addressSize == 64)
-                && javaVersionMajor >= 5;
+                && (addressSize == 32 || addressSize == 64);
     }
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
         RubyModule module = ffi.defineModuleUnder("Platform");

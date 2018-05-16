@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,6 +24,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.java.invokers;
 
 import java.lang.reflect.AccessibleObject;
@@ -33,6 +34,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import com.headius.modulator.Modulator;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -45,8 +47,10 @@ import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
@@ -68,8 +72,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     private final Ruby runtime;
 
     @SuppressWarnings("unchecked") // NULL_CACHE
-    RubyToJavaInvoker(RubyModule host, Member member) {
-        super(host, Visibility.PUBLIC);
+    RubyToJavaInvoker(RubyModule host, Member member, String name) {
+        super(host, Visibility.PUBLIC, name);
         this.runtime = host.getRuntime();
 
         final T callable;
@@ -94,8 +98,8 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     @SuppressWarnings("unchecked") // NULL_CACHE
-    RubyToJavaInvoker(RubyModule host, Member[] members) {
-        super(host, Visibility.PUBLIC);
+    RubyToJavaInvoker(RubyModule host, Member[] members, String name) {
+        super(host, Visibility.PUBLIC, name);
         this.runtime = host.getRuntime();
 
         // initialize all the callables for this method
@@ -339,10 +343,13 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return (JavaProxy) self;
     }
 
-    static <T extends AccessibleObject> T setAccessible(T accessible) {
+    static <T extends AccessibleObject & Member> T setAccessible(T accessible) {
+        // TODO: Replace flag that's false on 9 with proper module checks
         if (!accessible.isAccessible() &&
-                !Ruby.isSecurityRestricted() ) {
-            try { accessible.setAccessible(true); }
+                !Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load() &&
+                accessible instanceof Member) {
+            try { Modulator.trySetAccessible(accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
@@ -362,8 +369,11 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+        // TODO: Replace flag that's false on 9 with proper module checks
         if (!allAreAccessible(accessibles) &&
-                !Ruby.isSecurityRestricted() ) {
+                !Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load() &&
+                allAreMember(accessibles)) {
             try { AccessibleObject.setAccessible(accessibles, true); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
@@ -375,6 +385,11 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     private static <T extends AccessibleObject> boolean allAreAccessible(T[] accessibles) {
         for (T accessible : accessibles) if (!accessible.isAccessible()) return false;
+        return true;
+    }
+
+    private static <T extends AccessibleObject> boolean allAreMember(T[] accessibles) {
+        for (T accessible : accessibles) if (!(accessible instanceof Member)) return false;
         return true;
     }
 

@@ -5,9 +5,9 @@ class PlatformGuard < SpecGuard
     args.any? do |name|
       case name
       when :rubinius
-        RUBY_NAME.start_with?('rbx')
+        RUBY_ENGINE.start_with?('rbx')
       when :ruby, :jruby, :truffleruby, :ironruby, :macruby, :maglev, :topaz, :opal
-        RUBY_NAME.start_with?(name.to_s)
+        RUBY_ENGINE.start_with?(name.to_s)
       else
         raise "unknown implementation #{name}"
       end
@@ -40,8 +40,21 @@ class PlatformGuard < SpecGuard
     os?(:windows)
   end
 
+  WORD_SIZE = 1.size * 8
+
+  POINTER_SIZE = begin
+    require 'rbconfig/sizeof'
+    RbConfig::SIZEOF["void*"] * 8
+  rescue LoadError
+    WORD_SIZE
+  end
+
   def self.wordsize?(size)
-    size == 8 * 1.size
+    size == WORD_SIZE
+  end
+
+  def self.pointer_size?(size)
+    size == POINTER_SIZE
   end
 
   def initialize(*args)
@@ -61,18 +74,18 @@ class PlatformGuard < SpecGuard
         match &&= PlatformGuard.os?(*value)
       when :wordsize
         match &&= PlatformGuard.wordsize? value
+      when :pointer_size
+        match &&= PlatformGuard.pointer_size? value
       end
     end
     match
   end
 end
 
-class Object
-  def platform_is(*args, &block)
-    PlatformGuard.new(*args).run_if(:platform_is, &block)
-  end
+def platform_is(*args, &block)
+  PlatformGuard.new(*args).run_if(:platform_is, &block)
+end
 
-  def platform_is_not(*args, &block)
-    PlatformGuard.new(*args).run_unless(:platform_is_not, &block)
-  end
+def platform_is_not(*args, &block)
+  PlatformGuard.new(*args).run_unless(:platform_is_not, &block)
 end

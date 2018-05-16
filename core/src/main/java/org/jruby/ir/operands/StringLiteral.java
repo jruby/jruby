@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -40,6 +41,10 @@ public class StringLiteral extends Operand implements Stringable {
 
     public StringLiteral(String s) {
         this.frozenString = new FrozenString(s);
+    }
+
+    public StringLiteral(RubySymbol symbol) {
+        frozenString = new FrozenString(symbol);
     }
 
     private StringLiteral(FrozenString frozenString) {
@@ -83,8 +88,7 @@ public class StringLiteral extends Operand implements Stringable {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        RubyString string = (RubyString) frozenString.retrieve(context, self, currScope, currDynScope, temp);
-        return string.strDup(context.runtime);
+        return frozenString.retrieve(context, self, currScope, currDynScope, temp).strDup(context.runtime);
     }
 
     @Override

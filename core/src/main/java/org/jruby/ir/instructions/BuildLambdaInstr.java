@@ -56,6 +56,8 @@ public class BuildLambdaInstr extends OneOperandResultBaseInstr implements Fixed
         return getOperand1();
     }
 
+    public boolean hasLiteralClosure() { return getClosureArg() instanceof WrappedIRClosure; }
+
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);

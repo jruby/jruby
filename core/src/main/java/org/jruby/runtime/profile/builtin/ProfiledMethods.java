@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.profile.builtin;
 
 import org.jruby.Ruby;
@@ -30,9 +31,10 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -78,16 +80,15 @@ public class ProfiledMethods {
         return methods;
     }
 
-    public void addProfiledMethod( final String name, final DynamicMethod method ) {
-
+    public void addProfiledMethod(String name, DynamicMethod method ) {
         final long serial = method.getSerialNumber();
 
-        if ( getMethods().size() >= getProfileMaxMethods()) {
+        if (getMethods().size() >= getProfileMaxMethods()) {
             getWarnings().warnOnce(IRubyWarnings.ID.PROFILE_MAX_METHODS_EXCEEDED, "method count exceeds max of " + getConfig().getProfileMaxMethods() + "; no new methods will be profiled");
             return;
         }
 
-        getMethods().putIfAbsent( serial, new ProfiledMethod(name, method) );
+        getMethods().putIfAbsent(serial, new ProfiledMethod(name, method));
     }
 
     public ProfiledMethod getProfiledMethod( final long serial ) {

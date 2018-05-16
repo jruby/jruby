@@ -82,7 +82,7 @@ public class SexpMaker {
 
         DigestBuilder db = new DigestBuilder(sha1);
 
-        db.append(scope.getName());
+        db.append(scope.getId());
         db.append('\n');
         // CON FIXME: We need a better way to uniquely identify this...right?
         db.append(JITTED_METHOD_NUMBER.getAndIncrement());

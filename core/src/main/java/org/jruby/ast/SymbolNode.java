@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,40 +30,35 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
 import org.jcodings.Encoding;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 
 /**
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEffectFree {
-    private final ByteList bytes;
+    private final RubySymbol name;
 
-    // Interned ident path (e.g. [':', ident]).
-    public SymbolNode(ISourcePosition position, String name, Encoding encoding, int cr) {
+    public SymbolNode(ISourcePosition position, RubySymbol value) {
         super(position, false);
-        this.bytes = new ByteList(name.getBytes(encoding.getCharset()), encoding);
-    }
 
-    // String path (e.g. [':', str_beg, str_content, str_end])
-    public SymbolNode(ISourcePosition position, ByteList value) {
-        super(position, false);
-        this.bytes = value;
+        this.name = value;
     }
 
     public boolean equals(Object other) {
         return other instanceof SymbolNode &&
-                bytes.equals(((SymbolNode) other).bytes) &&
-                bytes.getEncoding() == ((SymbolNode) other).getEncoding();
+                name.equals(((SymbolNode) other).name) &&
+                name.getEncoding() == ((SymbolNode) other).name.getEncoding();
     }
 
     public NodeType getNodeType() {
@@ -78,19 +73,11 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, SideEff
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
-        return new String(bytes.unsafeBytes(), bytes.getEncoding().getCharset());
-    }
-
-    public Encoding getEncoding() {
-        return bytes.getEncoding();
+    public RubySymbol getName() {
+        return name;
     }
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public ByteList getBytes() {
-        return bytes;
     }
 }

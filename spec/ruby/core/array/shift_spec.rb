@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#shift" do
   it "removes and returns the first element" do
@@ -30,11 +30,11 @@ describe "Array#shift" do
     array[0..2].should == ['two', 3.0, array]
   end
 
-  it "raises a RuntimeError on a frozen array" do
-    lambda { ArraySpecs.frozen_array.shift }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen array" do
+    lambda { ArraySpecs.frozen_array.shift }.should raise_error(frozen_error_class)
   end
-  it "raises a RuntimeError on an empty frozen array" do
-    lambda { ArraySpecs.empty_frozen_array.shift }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on an empty frozen array" do
+    lambda { ArraySpecs.empty_frozen_array.shift }.should raise_error(frozen_error_class)
   end
 
   describe "passed a number n as an argument" do
@@ -104,7 +104,7 @@ describe "Array#shift" do
       a.should == []
     end
 
-    it "raises a TypeError when the passed n can be coerced to Integer" do
+    it "raises a TypeError when the passed n cannot be coerced to Integer" do
       lambda{ [1, 2].shift("cat") }.should raise_error(TypeError)
       lambda{ [1, 2].shift(nil) }.should raise_error(TypeError)
     end

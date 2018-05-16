@@ -1,6 +1,6 @@
 # frozen_string_literal: true
+autoload :FileUtils, 'fileutils'
 autoload :URI, 'uri'
-require 'fileutils'
 
 ##
 # A Source knows how to list and fetch gems from a RubyGems marshal index.
@@ -160,7 +160,7 @@ class Gem::Source
     if update_cache? then
       FileUtils.mkdir_p cache_dir
 
-      open local_spec, 'wb' do |io|
+      File.open local_spec, 'wb' do |io|
         io.write spec
       end
     end

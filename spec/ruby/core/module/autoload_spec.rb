@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 require 'thread'
 
 describe "Module#autoload?" do
@@ -329,9 +329,25 @@ describe "Module#autoload" do
   end
 
   describe "on a frozen module" do
-    it "raises a RuntimeError before setting the name" do
-      lambda { @frozen_module.autoload :Foo, @non_existent }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} before setting the name" do
+      lambda { @frozen_module.autoload :Foo, @non_existent }.should raise_error(frozen_error_class)
       @frozen_module.should_not have_constant(:Foo)
+    end
+  end
+
+  describe "when changing $LOAD_PATH" do
+    before do
+      $LOAD_PATH.unshift(File.expand_path('../fixtures/path1', __FILE__))
+    end
+
+    after do
+      $LOAD_PATH.shift
+      $LOAD_PATH.shift
+    end
+
+    it "does not reload a file due to a different load path" do
+      ModuleSpecs::Autoload.autoload :LoadPath, "load_path"
+      ModuleSpecs::Autoload::LoadPath.loaded.should == :autoload_load_path
     end
   end
 
@@ -383,74 +399,103 @@ describe "Module#autoload" do
 
       ModuleSpecs::Autoload.send(:remove_const, :Concur)
     end
-  end
 
-  describe "when changing $LOAD_PATH" do
+    # https://bugs.ruby-lang.org/issues/10892
+    it "blocks others threads while doing an autoload" do
+      file_path     = fixture(__FILE__, "repeated_concurrent_autoload.rb")
+      autoload_path = file_path.sub(/\.rb\Z/, '')
+      mod_count     = 30
+      thread_count  = 16
 
-    before do
-      $LOAD_PATH.unshift(File.expand_path('../fixtures/path1', __FILE__))
-    end
+      mod_names = []
+      mod_count.times do |i|
+        mod_name = :"Mod#{i}"
+        Object.autoload mod_name, autoload_path
+        mod_names << mod_name
+      end
 
-    after do
-      $LOAD_PATH.shift
-      $LOAD_PATH.shift
-    end
+      barrier = ModuleSpecs::CyclicBarrier.new thread_count
+      ScratchPad.record ModuleSpecs::ThreadSafeCounter.new
 
-    it "does not reload a file due to a different load path" do
-      ModuleSpecs::Autoload.autoload :LoadPath, "load_path"
-      ModuleSpecs::Autoload::LoadPath.loaded.should == :autoload_load_path
-    end
+      threads = (1..thread_count).map do
+        Thread.new do
+          mod_names.each do |mod_name|
+            break false unless barrier.enabled?
 
-  end
+            was_last_one_in = barrier.await # wait for all threads to finish the iteration
+            # clean up so we can autoload the same file again
+            $LOADED_FEATURES.delete(file_path) if was_last_one_in && $LOADED_FEATURES.include?(file_path)
+            barrier.await # get ready for race
 
-  describe "(concurrently)" do
-    ruby_bug "#10892", ""..."2.3" do
-      it "blocks others threads while doing an autoload" do
-        file_path     = fixture(__FILE__, "repeated_concurrent_autoload.rb")
-        autoload_path = file_path.sub(/\.rb\Z/, '')
-        mod_count     = 30
-        thread_count  = 16
-
-        mod_names = []
-        mod_count.times do |i|
-          mod_name = :"Mod#{i}"
-          autoload mod_name, autoload_path
-          mod_names << mod_name
-        end
-
-        barrier = ModuleSpecs::CyclicBarrier.new thread_count
-        ScratchPad.record ModuleSpecs::ThreadSafeCounter.new
-
-        threads = (1..thread_count).map do
-          Thread.new do
-            mod_names.each do |mod_name|
-              break false unless barrier.enabled?
-
-              was_last_one_in = barrier.await # wait for all threads to finish the iteration
-              # clean up so we can autoload the same file again
-              $LOADED_FEATURES.delete(file_path) if was_last_one_in && $LOADED_FEATURES.include?(file_path)
-              barrier.await # get ready for race
-
-              begin
-                Object.const_get(mod_name).foo
-              rescue NoMethodError
-                barrier.disable!
-                break false
-              end
+            begin
+              Object.const_get(mod_name).foo
+            rescue NoMethodError
+              barrier.disable!
+              break false
             end
           end
         end
+      end
 
-        # check that no thread got a NoMethodError because of partially loaded module
-        threads.all? {|t| t.value}.should be_true
+      # check that no thread got a NoMethodError because of partially loaded module
+      threads.all? {|t| t.value}.should be_true
 
-        # check that the autoloaded file was evaled exactly once
-        ScratchPad.recorded.get.should == mod_count
+      # check that the autoloaded file was evaled exactly once
+      ScratchPad.recorded.get.should == mod_count
 
-        mod_names.each do |mod_name|
-          Object.send(:remove_const, mod_name)
+      mod_names.each do |mod_name|
+        Object.send(:remove_const, mod_name)
+      end
+    end
+
+    it "raises a NameError in each thread if the constant is not set" do
+      file = fixture(__FILE__, "autoload_never_set.rb")
+      start = false
+
+      threads = Array.new(10) do
+        Thread.new do
+          Thread.pass until start
+          begin
+            ModuleSpecs::Autoload.autoload :NeverSetConstant, file
+            Thread.pass
+            ModuleSpecs::Autoload::NeverSetConstant
+          rescue NameError => e
+            e
+          ensure
+            Thread.pass
+          end
         end
       end
+
+      start = true
+      threads.each { |t|
+        t.value.should be_an_instance_of(NameError)
+      }
+    end
+
+    it "raises a LoadError in each thread if the file does not exist" do
+      file = fixture(__FILE__, "autoload_does_not_exist.rb")
+      start = false
+
+      threads = Array.new(10) do
+        Thread.new do
+          Thread.pass until start
+          begin
+            ModuleSpecs::Autoload.autoload :FileDoesNotExist, file
+            Thread.pass
+            ModuleSpecs::Autoload::FileDoesNotExist
+          rescue LoadError => e
+            e
+          ensure
+            Thread.pass
+          end
+        end
+      end
+
+      start = true
+      threads.each { |t|
+        t.value.should be_an_instance_of(LoadError)
+      }
     end
   end
 

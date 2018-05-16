@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -411,14 +411,25 @@ public class ShellLauncher {
         return pathFile;
     }
 
-    // MRI: Hopefully close to dln_find_exe_r used by popen logic
     public static File findPathExecutable(Ruby runtime, String fname) {
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         IRubyObject pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
-        String[] pathNodes = null;
+        return findPathExecutable(runtime, fname, pathObject);
+    }
+
+    // MRI: Hopefully close to dln_find_exe_r used by popen logic
+    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+        String[] pathNodes;
+
+        if (pathObject == null || pathObject.isNil()) {
+            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+            pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
+        }
+
         if (pathObject == null) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
         }
+
         else {
             String pathSeparator = System.getProperty("path.separator");
             String path = pathObject.toString();
@@ -1196,11 +1207,7 @@ public class ShellLauncher {
             } else {
                 verifyExecutable();
                 execArgs = args;
-                try {
-                    execArgs[0] = executableFile.getCanonicalPath();
-                } catch (IOException ioe) {
-                    // can't get the canonical path, will use as-is
-                }
+                execArgs[0] = executableFile.getAbsolutePath();
             }
         }
 
