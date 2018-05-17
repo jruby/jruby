@@ -3814,6 +3814,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EMSGSIZE"), null);
     }
 
+    public RaiseException newErrnoEXDEVError(String message) {
+        return newRaiseException(getErrno().getClass("EXDEV"), message);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }
@@ -4264,13 +4268,16 @@ public final class Ruby implements Constantizable {
      */
     public RaiseException newStopIteration(IRubyObject result, String message) {
         final ThreadContext context = getCurrentContext();
-        if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            RubyException ex = RubyStopIteration.newInstance(context, result, message);
-            return ex.toThrowable();
-        }
-        if ( message == null ) message = STOPIERATION_BACKTRACE_MESSAGE;
+
+        if (message == null) message = STOPIERATION_BACKTRACE_MESSAGE;
+
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
-        return RaiseException.from(ex, disabledBacktrace());
+
+        if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
+            ex.forceBacktrace(disabledBacktrace());
+        }
+
+        return ex.toThrowable();
     }
 
     @Deprecated

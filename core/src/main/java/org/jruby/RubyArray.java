@@ -4601,7 +4601,7 @@ rational_loop:
                     if (result instanceof RubyInteger) {
                         result = ((RubyInteger) result).op_plus(context, value);
                     } else if (result instanceof RubyRational) {
-                        result = ((RubyRational) result).op_add(context, value);
+                        result = ((RubyRational) result).op_plus(context, value);
                     } else {
                         throw runtime.newTypeError("BUG: unexpected type in rational part of Array#sum");
                     }

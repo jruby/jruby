@@ -413,17 +413,17 @@ module JRuby::Compiler
 
     def private_method(name)
       return if name.to_s.eql?('initialize')
-      method = methods.find { |method| method.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method = methods.find { |m| m.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
       method.visibility = :private
     end
 
     def protected_method(name)
-      method = methods.find { |method| method.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method = methods.find { |m| m.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
       method.visibility = :protected
     end
 
     def public_method(name)
-      method = methods.find { |method| method.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
+      method = methods.find { |m| m.name.to_s == name.to_s } || raise(NoMethodError.new("could not find method :#{name}"))
       method.visibility = :public
     end
 
@@ -651,18 +651,18 @@ JAVA
     end
 
     def typed_args
-      return @typed_args if @typed_args
+      @typed_args ||= begin
+        i = 0
+        java_signature.parameters.map do |a|
+          type = a.type.name.to_s
+          if a.variable_name
+            var_name = a.variable_name
+          else
+            var_name = args[i]; i += 1
+          end
 
-      i = 0
-      @typed_args = java_signature.parameters.map do |a|
-        type = a.type.name.to_s
-        if a.variable_name
-          var_name = a.variable_name
-        else
-          var_name = args[i]; i += 1
+          { :name => var_name, :type => type }
         end
-
-        { :name => var_name, :type => type }
       end
     end
 
@@ -683,13 +683,14 @@ JAVA
     end
 
     def passed_args
-      return @passed_args if @passed_args
-
-      if arity <= MAX_UNBOXED_ARITY_LENGTH
-        @passed_args = var_names.map { |var| "ruby_arg_#{var}" }.join(', ')
-        @passed_args = ', ' + @passed_args if args.size > 0
-      else
-        @passed_args = ', ruby_args'
+      @passed_args ||= begin
+        if arity <= MAX_UNBOXED_ARITY_LENGTH
+          passed_args = var_names.map { |var| "ruby_arg_#{var}" }.join(', ')
+          passed_args = ', ' + passed_args if args.size > 0
+          passed_args
+        else
+          ', ruby_args'
+        end
       end
     end
 

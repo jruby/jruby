@@ -882,7 +882,9 @@ public class RubyKernel {
                 raise = convertToException(runtime, args[0], args[1]).toThrowable();
                 break;
             default:
-                raise = RaiseException.from(convertToException(runtime, args[0], args[1]), args[2]);
+                RubyException exception = convertToException(runtime, args[0], args[1]);
+                exception.forceBacktrace(args[2]);
+                raise = exception.toThrowable();
                 break;
         }
 
