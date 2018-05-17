@@ -31,7 +31,7 @@ default_gems = [
     ImportedGem.new('ipaddr', '1.2.0'),
     ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
     ImportedGem.new('jruby-readline', '1.2.2'),
-    ImportedGem.new('jruby-openssl', '0.9.21'),
+    ImportedGem.new('jruby-openssl', '0.10.0'),
     ImportedGem.new('json', '${json.version}'),
     ImportedGem.new('psych', '3.0.2'),
     ImportedGem.new('rake-ant', '1.0.4'),
