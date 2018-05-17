@@ -1872,7 +1872,7 @@ public class RubyModule extends RubyObject {
 
             if (allocator == null) {
                 if (isReifiable(runtime, superClazz)) {
-                    if (RubyInstanceConfig.REIFY_RUBY_CLASSES) {
+                    if (Options.REIFY_CLASSES.load()) {
                         allocator = REIFYING_OBJECT_ALLOCATOR;
                     } else if (Options.REIFY_VARIABLES.load()) {
                         allocator = IVAR_INSPECTING_OBJECT_ALLOCATOR;
@@ -1897,8 +1897,6 @@ public class RubyModule extends RubyObject {
         if (superClass == runtime.getObject()) return true;
 
         if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
-
-        if (FIELD_ALLOCATOR_SET.contains(superClass.getAllocator())) return true;
 
         return false;
     }

@@ -575,6 +575,7 @@ public class VariableTableManager {
 
         fieldVariables += 1;
 
+        // TODO: These should be generated so they are unique to each reified width
         VariableAccessor newVariableAccessor;
         switch (index) {
             case 0:
@@ -608,7 +609,7 @@ public class VariableTableManager {
                 newVariableAccessor = new VariableAccessorVar9(realClass, name, newIndex, id);
                 break;
             default:
-                throw new RuntimeException("unsupported var index in " + realClass + ": " + index);
+                newVariableAccessor = new VariableAccessor(realClass, name, newIndex, id);
         }
 
         final String[] newVariableNames = new String[newIndex + 1];
