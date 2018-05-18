@@ -106,7 +106,7 @@ public class JRubyUtilLibrary implements Library {
         }
     }
 
-    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
+    @JRubyMethod(meta = true) // for RubyGems' JRuby defaults
     public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
         String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
@@ -114,7 +114,7 @@ public class JRubyUtilLibrary implements Library {
         return runtime.newString(launcher);
     }
 
-    @JRubyMethod(name = "extra_gem_paths", module = true) // used from RGs' JRuby defaults
+    @JRubyMethod(name = "extra_gem_paths", meta = true) // used from RGs' JRuby defaults
     public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
         final List<String> extraGemPaths = runtime.getInstanceConfig().getExtraGemPaths();
@@ -149,8 +149,8 @@ public class JRubyUtilLibrary implements Library {
     }
 
     /**
-     * Return a list of files and extensions that JRuby treats as internal (or "built-in"), skipping load path and
-     * filesystem search.
+     * Return a list of files and extensions that JRuby treats as internal (or "built-in"),
+     * skipping load path and filesystem search.
      *
      * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
      */
