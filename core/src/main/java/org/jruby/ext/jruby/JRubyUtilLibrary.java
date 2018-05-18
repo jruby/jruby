@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.ClasspathLauncher;
 
 import static org.jruby.util.URLUtil.getPath;
 
@@ -55,10 +56,11 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
-    @Deprecated // JRuby::Util no longer used by JRuby itself
+    // JRuby::Util no longer used by JRuby itself
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
+        JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
     }
 
     @JRubyMethod(module = true)
@@ -101,6 +103,25 @@ public class JRubyUtilLibrary implements Library {
         catch (IOException ignore) {
             return runtime.newEmptyArray();
         }
+    }
+
+    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
+    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
+        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
+        return runtime.newString(launcher);
+    }
+
+    @JRubyMethod(name = "extra_gem_paths", module = true) // used from RGs' JRuby defaults
+    public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        final List<String> extraGemPaths = runtime.getInstanceConfig().getExtraGemPaths();
+        IRubyObject[] extra_gem_paths = new IRubyObject[extraGemPaths.size()];
+        int i = 0; for (String gemPath : extraGemPaths) {
+            extra_gem_paths[i++] = runtime.newString(gemPath);
+        }
+        return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
     }
 
     @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'

@@ -200,15 +200,6 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
-    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
-        return runtime.newString(launcher);
-    }
-
-
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
