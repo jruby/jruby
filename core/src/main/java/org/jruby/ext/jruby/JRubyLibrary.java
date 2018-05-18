@@ -194,7 +194,17 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(name = "set_last_exit_status", module = true) // used from JRuby::ProcessManager
+    // used from jruby/kernel/proc.rb
+    @JRubyMethod(name = "set_meta_class", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject set_meta_class(ThreadContext context, IRubyObject recv, IRubyObject obj, IRubyObject klass) {
+        if (!(klass instanceof RubyClass)) {
+            klass = klass.getMetaClass();
+        }
+        ((RubyObject) obj).setMetaClass((RubyClass) klass);
+        return context.nil;
+    }
+
+    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
     public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
                                                    IRubyObject status, IRubyObject pid) {
         RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
