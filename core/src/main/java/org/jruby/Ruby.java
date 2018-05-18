@@ -1762,13 +1762,21 @@ public final class Ruby implements Constantizable {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
         }
 
-        addBuiltinIfAllowed("win32ole.jar", new Library() {
-            public void load(Ruby runtime, boolean wrap) throws IOException {
-                runtime.getLoadService().require("jruby/win32ole/stub");
-            }
-        });
+        addBuiltinIfAllowed("win32ole.jar", (runtime, wrap) -> runtime.getLoadService().require("jruby/win32ole/stub"));
 
         addLazyBuiltin("cgi/escape.jar", "cgi/escape", "org.jruby.ext.cgi.escape.CGIEscape");
+
+        addBuiltinIfAllowed("2.5/psych.jar", (runtime, wrap) -> { // from psych.rb (-> booted by RGs)
+            runtime.getLoadService().require("psych_jars");
+            final Library library;
+            try {
+                library = (Library) Class.forName("org.jruby.ext.psych.PsychLibrary", true, runtime.getJRubyClassLoader()).newInstance();
+            }
+            catch (ClassNotFoundException|InstantiationException|IllegalAccessException ex) {
+                Helpers.throwException(ex); throw new AssertionError(); // not reached
+            }
+            library.load(runtime, false);
+        });
     }
 
     private void initRubyKernel() {
