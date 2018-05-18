@@ -27,6 +27,7 @@ jruby/test_dir_with_jar_without_dir_entry
 jruby/test_digest_extend
 jruby/test_digest2
 jruby/test_env
+jruby/test_enumerator
 jruby/test_etc
 jruby/test_exception
 jruby/test_file
