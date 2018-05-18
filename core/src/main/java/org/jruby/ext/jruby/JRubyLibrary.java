@@ -32,11 +32,7 @@
 package org.jruby.ext.jruby;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.Node;
@@ -199,6 +195,17 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
+    }
+
+    @JRubyMethod(name = "set_last_exit_status", module = true) // used from JRuby::ProcessManager
+    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
+                                                   IRubyObject status, IRubyObject pid) {
+        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
+                status.convertToInteger().getLongValue(),
+                pid.convertToInteger().getLongValue()
+        );
+        context.setLastExitStatus(processStatus);
+        return processStatus;
     }
 
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
