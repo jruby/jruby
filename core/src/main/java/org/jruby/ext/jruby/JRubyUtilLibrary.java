@@ -61,6 +61,7 @@ public class JRubyUtilLibrary implements Library {
         RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
         JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
+        JRubyUtil.setConstant("ON_WINDOWS", runtime.newBoolean(org.jruby.platform.Platform.IS_WINDOWS));
     }
 
     @JRubyMethod(module = true)

@@ -3,7 +3,6 @@ module JRuby
   module ProcessManager
     java_import java.lang.ProcessBuilder
     java_import org.jruby.util.ShellLauncher
-    java_import org.jruby.platform.Platform
 
     Redirect = ProcessBuilder::Redirect
     LaunchConfig = ShellLauncher::LaunchConfig
@@ -14,7 +13,7 @@ module JRuby
 
       config = LaunchConfig.new(JRuby.runtime, [command], false)
 
-      use_shell = Platform::IS_WINDOWS ? config.should_run_in_shell : false
+      use_shell = JRuby::Util::ON_WINDOWS ? config.should_run_in_shell : false
       use_shell |= ShellLauncher.should_use_shell(command)
 
       if use_shell
