@@ -36,16 +36,10 @@ class Object
     import_classes.map do |import_class|
       case import_class
       when String
-        cc = java.lang.Character
-        valid_name = import_class.split(".").all? do |frag|
-          cc.java_identifier_start? frag[0].ord and
-          frag.each_char.all? {|c| cc.java_identifier_part? c.ord }
-        end
-        unless valid_name
+        unless JavaUtilities.valid_java_identifier?(import_class)
           raise ArgumentError.new "not a valid Java identifier: #{import_class}"
         end
-        # pull in the class
-        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include? "::"
+        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include?('::')
         import_class = JavaUtilities.get_proxy_class(import_class)
       when Module
         if import_class.respond_to? "java_class"

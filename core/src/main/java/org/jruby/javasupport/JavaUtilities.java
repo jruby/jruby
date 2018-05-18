@@ -5,6 +5,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.StringSupport;
 
 @JRubyModule(name = "JavaUtilities")
 public class JavaUtilities {
@@ -53,4 +54,22 @@ public class JavaUtilities {
     public static IRubyObject get_proxy_or_package_under_package(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         return Java.get_proxy_or_package_under_package(context, recv, arg0, arg1);
     }
+
+    @JRubyMethod(name = "valid_java_identifier?", meta = true)
+    public static IRubyObject valid_java_identifier_p(ThreadContext context, IRubyObject recv, IRubyObject name) {
+        final String javaName = name.convertToString().decodeString();
+        return context.runtime.newBoolean(validJavaIdentifier(javaName));
+    }
+
+    private static boolean validJavaIdentifier(final String javaName) {
+        for (String frag : StringSupport.split(javaName, '.')) {
+            if (frag.length() == 0) return false;
+            if (!Character.isJavaIdentifierStart(frag.codePointAt(0))) return false;
+            for (int i = 1; i < frag.length(); i++) {
+                if (!Character.isJavaIdentifierPart(frag.codePointAt(i))) return false;
+            }
+        }
+        return true;
+    }
+
 }
