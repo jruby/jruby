@@ -965,42 +965,65 @@ public class RubyKernel {
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
      * @param name the name of the file to require
      **/
-    public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        return require19(recv.getRuntime().getCurrentContext(), recv, name, block);
-    }
-
     @JRubyMethod(name = "require", module = true, visibility = PRIVATE)
-    public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
-        Ruby runtime = context.runtime;
+    public static IRubyObject require(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
         IRubyObject tmp = name.checkStringType();
 
-        if (!tmp.isNil()) return requireCommon(runtime, recv, tmp, block);
+        if (tmp != context.nil) return requireCommon(context.runtime, (RubyString) tmp, block);
 
-        return requireCommon(runtime, recv, RubyFile.get_path(context, name), block);
+        return requireCommon(context.runtime, RubyFile.get_path(context, name), block);
     }
 
-    private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
+    @Deprecated
+    public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
+        return require(recv.getRuntime().getCurrentContext(), recv, name, block);
+    }
+
+    @Deprecated
+    public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
+        return require(context, recv, name, block);
+    }
+
+    private static IRubyObject requireCommon(Ruby runtime, RubyString name, Block block) {
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, name);
         return runtime.newBoolean(runtime.getLoadService().require(path.toString()));
     }
 
+    @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
+    public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
+        Ruby runtime = context.runtime;
+        RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
+        return loadCommon(runtime, pathStr, false, block);
+    }
+
+    @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
+    public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject wrap, Block block) {
+        Ruby runtime = context.runtime;
+        RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
+        return loadCommon(runtime, pathStr, wrap.isTrue(), block);
+    }
+
+    public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 1: return load(context, recv, args[0], block);
+            case 2: return load(context, recv, args[0], args[1], block);
+        }
+        Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+        return null; // not reached
+    }
+
+    @Deprecated
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
         return load19(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
 
-    @JRubyMethod(name = "load", required = 1, optional = 1, module = true, visibility = PRIVATE)
+    @Deprecated
     public static IRubyObject load19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
-        return loadCommon(path, runtime, args, block);
+        return load(context, recv, args, block);
     }
 
-    private static IRubyObject loadCommon(IRubyObject fileName, Ruby runtime, IRubyObject[] args, Block block) {
-        RubyString file = fileName.convertToString();
-
-        boolean wrap = args.length == 2 ? args[1].isTrue() : false;
-
-        runtime.getLoadService().load(file.toString(), wrap);
+    private static IRubyObject loadCommon(Ruby runtime, RubyString path, boolean wrap, Block block) {
+        runtime.getLoadService().load(path.toString(), wrap);
 
         return runtime.getTrue();
     }
@@ -1551,8 +1574,7 @@ public class RubyKernel {
             return result;
         }
 
-        RubyString string = str.convertToString();
-        IRubyObject[] args = new IRubyObject[] {string};
+        IRubyObject[] args = new IRubyObject[] { str.convertToString() };
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         long[] tuple;
 
