@@ -83,21 +83,22 @@ public class JRubyLibrary implements Library {
         JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        /**
-         * JRuby::CONFIG ~ shortcut for JRuby.runtime.instance_config
-         * @since 9.2
-         */
-        IRubyObject config = Java.getInstance(runtime, runtime.getInstanceConfig());
-        config.getMetaClass().defineAlias("rubygems_disabled?", "isDisableGems");
-        config.getMetaClass().defineAlias("did_you_mean_disabled?", "isDisableDidYouMean");
-        JRuby.setConstant("CONFIG", config);
+        RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
+        CONFIG.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
     }
 
-    @Deprecated // old JRuby.defineModuleUnder("CONFIG")
+    /**
+     * JRuby::CONFIG
+     */
     public static class JRubyConfig {
-        // @JRubyMethod(name = "rubygems_disabled?")
+        @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
             return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+        }
+
+        @JRubyMethod(name = "did_you_mean_disabled?")
+        public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
