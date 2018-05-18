@@ -1645,15 +1645,6 @@ public final class Ruby implements Constantizable {
         new ThreadFiberLibrary().load(this, false);
     }
 
-    private RubyClass defineClassIfAllowed(String name, RubyClass superClass) {
-	// TODO: should probably apply the null object pattern for a
-	// non-allowed class, rather than null
-        if (superClass != null && profile.allowClass(name)) {
-            return defineClass(name, superClass, superClass.getAllocator());
-        }
-        return null;
-    }
-
     private Map<Integer, RubyClass> errnos = new HashMap<Integer, RubyClass>();
 
     public RubyClass getErrno(int n) {
@@ -1791,8 +1782,8 @@ public final class Ruby implements Constantizable {
     }
 
     private void addBuiltinIfAllowed(String name, Library lib) {
-        if(profile.allowBuiltin(name)) {
-            loadService.addBuiltinLibrary(name,lib);
+        if (profile.allowBuiltin(name)) {
+            loadService.addBuiltinLibrary(name, lib);
         }
     }
 
