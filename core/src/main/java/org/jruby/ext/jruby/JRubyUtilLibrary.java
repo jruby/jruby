@@ -87,6 +87,11 @@ public class JRubyUtilLibrary implements Library {
         return runtime.newBoolean(enabled);
     }
 
+    @JRubyMethod(meta = true, name = "native_posix?")
+    public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
+        return context.runtime.newBoolean(context.runtime.getPosix().isNative());
+    }
+
     @JRubyMethod(name = "classloader_resources", module = true) // used from RGs' JRuby defaults
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
         Ruby runtime = recv.getRuntime();

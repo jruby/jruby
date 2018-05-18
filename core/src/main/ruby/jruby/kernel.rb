@@ -12,7 +12,7 @@ begin
 rescue Exception
   warn "ProcessBuilder unavailable; using default backtick" if $VERBOSE
   # leave old backtick logic in place
-end unless JRuby.runtime.posix.native? # native POSIX uses new logic for back-quote
+end unless JRuby::Util.native_posix? # native POSIX uses new logic for back-quote
 
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/kernel.rb'
