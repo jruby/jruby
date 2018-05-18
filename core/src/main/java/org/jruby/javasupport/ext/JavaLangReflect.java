@@ -31,7 +31,6 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,18 +49,17 @@ import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 public abstract class JavaLangReflect {
 
     public static void define(final Ruby runtime) {
-        Constructor.define(runtime);
-        Field.define(runtime);
-        Method.define(runtime);
+        JavaExtensions.put(runtime, java.lang.reflect.Constructor.class, (proxyClass) -> Constructor.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.lang.reflect.Field.class, (proxyClass) -> Field.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.lang.reflect.Method.class, (proxyClass) -> Method.define(runtime, (RubyClass) proxyClass));
     }
 
     @JRubyClass(name = "Java::JavaLangReflect::Constructor")
     public static class Constructor {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Constructor = Java.getProxyClass(runtime, java.lang.reflect.Constructor.class);
-            Constructor.defineAnnotatedMethods(Constructor.class);
-            return (RubyClass) Constructor;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Constructor.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -120,10 +118,9 @@ public abstract class JavaLangReflect {
     @JRubyClass(name = "Java::JavaLangReflect::Method")
     public static class Method {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Method = Java.getProxyClass(runtime, java.lang.reflect.Method.class);
-            Method.defineAnnotatedMethods(Method.class);
-            return (RubyClass) Method;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Method.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -201,10 +198,9 @@ public abstract class JavaLangReflect {
     @JRubyClass(name = "Java::JavaLangReflect::Field")
     public static class Field {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Field = Java.getProxyClass(runtime, java.lang.reflect.Field.class);
-            Field.defineAnnotatedMethods(Field.class);
-            return (RubyClass) Field;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Field.class);
+            return proxy;
         }
 
         @JRubyMethod // alias value_type name

@@ -4826,6 +4826,12 @@ public final class Ruby implements Constantizable {
         return dataClass;
     }
 
+    /**
+     * @return Class -> extension initializer map
+     * @note Internal API, subject to change!
+     */
+    public Map<Class, Consumer<RubyModule>> getJavaExtensionDefinitions() { return javaExtensionDefinitions; }
+
     @Deprecated
     private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
         @Override
@@ -5295,6 +5301,8 @@ public final class Ruby implements Constantizable {
     public final JavaSites sites = new JavaSites();
 
     private volatile MRIRecursionGuard mriRecursionGuard;
+
+    private final Map<Class, Consumer<RubyModule>> javaExtensionDefinitions = new WeakHashMap<>(); // caller-syncs
 
     // For strptime processing we cache the parsed format strings since most applications
     // reuse the same formats over and over.  This is also unbounded (for now) since all applications
