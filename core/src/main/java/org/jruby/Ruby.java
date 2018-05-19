@@ -1768,6 +1768,10 @@ public final class Ruby implements Constantizable {
         });
 
         addLazyBuiltin("cgi/escape.jar", "cgi/escape", "org.jruby.ext.cgi.escape.CGIEscape");
+
+        if(Platform.IS_WINDOWS) {
+          addLazyBuiltin("win32/resolv.jar", "win32/resolv", "org.jruby.ext.win32.resolv.Win32Resolv");
+        }
     }
 
     private void initRubyKernel() {

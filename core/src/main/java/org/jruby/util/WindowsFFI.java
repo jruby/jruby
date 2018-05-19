@@ -57,6 +57,71 @@ public class WindowsFFI {
         int TerminateProcess(jnr.ffi.Pointer hProcess, int uExitCode);
     }
 
+    public static interface Iphlpapi {
+        public static final int MAX_HOSTNAME_LEN = 128;
+        public static final int MAX_DOMAIN_NAME_LEN = 128;
+        public static final int MAX_SCOPE_ID_LEN = 256;
+
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366067(v=vs.85).aspx
+        public static final class IP_ADDRESS_STRING extends Struct {
+            public byte[] String = new byte[16];
+
+            public IP_ADDRESS_STRING(Runtime runtime) {
+                super(runtime);
+            }
+        }
+
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366068(v=vs.85).aspx
+        public static class IP_ADDR_STRING extends Struct {
+            public IP_ADDR_STRING Next; // pointer?
+            public IP_ADDRESS_STRING IpAddress;
+            public IP_ADDRESS_STRING IpMask;
+            public int Context;
+
+            public IP_ADDR_STRING(Runtime runtime) {
+                super(runtime);
+            }
+        }
+
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/aa365900(v=vs.85).aspx
+        public static final class FIXED_INFO extends Struct {
+            public byte[] HostName = new byte[MAX_HOSTNAME_LEN + 4];
+            public byte[] DomainName = new byte[MAX_DOMAIN_NAME_LEN + 4];
+            public IP_ADDR_STRING CurrentDnsServer; // pointer?
+            public IP_ADDR_STRING DnsServerList;
+            public int NodeType;
+            public byte[] ScopeId = new byte[MAX_SCOPE_ID_LEN + 4];
+            public int EnableRouting;
+            public int EnableProxy;
+            public int EnableDns;
+
+            public FIXED_INFO(Runtime runtime) {
+                super(runtime);
+            }
+        }
+
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/aa365968(v=vs.85).aspx
+        int GetNetworkParams(FIXED_INFO pFixedInfo, IntByReference pOutBufLen);
+    }
+
+
+
+    // Iphlpapi
+    private static final class SingletonHolderIphlpapi {
+        static final Iphlpapi Iphlpapi = LibraryLoader.create(Iphlpapi.class)
+                .load("iphlpapi");
+    }
+
+    public static Iphlpapi getIphlpapi() {
+        return iphlpapi();
+    }
+
+    public static Iphlpapi iphlpapi() {
+        return SingletonHolderIphlpapi.Iphlpapi;
+    }
+
+
+    // Kernel32
     private static final class SingletonHolder {
         static final Kernel32 Kernel32 = LibraryLoader.create(Kernel32.class)
                 .convention(CallingConvention.STDCALL)
