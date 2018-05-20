@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -234,6 +234,10 @@ public class MathLinker {
         return ((RubyFixnum)self).op_mul(context, value);
     }
 
+    public static IRubyObject fixnum_op_mod(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_mod(context, value);
+    }
+
     public static IRubyObject fixnum_op_equal(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_equal(context, value);
     }
@@ -291,11 +295,11 @@ public class MathLinker {
     }
 
     public static IRubyObject fixnum_op_rshift(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
-        return ((RubyFixnum)self).op_rshift(value);
+        return ((RubyFixnum)self).op_rshift(context, value);
     }
 
     public static IRubyObject fixnum_op_lshift(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
-        return ((RubyFixnum)self).op_lshift(value);
+        return ((RubyFixnum)self).op_lshift(context, value);
     }
 
     public static IRubyObject fixnum_op_plus_one(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {

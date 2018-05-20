@@ -7,6 +7,8 @@ import java.util.HashMap;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -21,8 +23,13 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 
 import jnr.constants.platform.Errno;
 
+/**
+ * The Java representation of a Ruby SystemCallError.
+ *
+ * @see SystemCallError
+ */
 @JRubyClass(name="SystemCallError", parent="StandardError")
-public class RubySystemCallError extends RubyException {
+public class RubySystemCallError extends RubyStandardError {
     private IRubyObject errno = getRuntime().getNil();
 
     private final static Map<String, String> defaultMessages = new HashMap<String, String>();
@@ -121,9 +128,9 @@ public class RubySystemCallError extends RubyException {
         super(runtime, rubyClass, null);
     }
 
-    public RubySystemCallError(Ruby runtime, RubyClass rubyClass, String message, int errno) {
-        super(runtime, rubyClass, message);
-        this.errno = runtime.newFixnum(errno);
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new SystemCallError(message, this);
     }
 
     private static ObjectAllocator SYSTEM_CALL_ERROR_ALLOCATOR = new ObjectAllocator() {
@@ -170,7 +177,7 @@ public class RubySystemCallError extends RubyException {
         }
     };
 
-    public static RubyClass createSystemCallErrorClass(Ruby runtime, RubyClass standardError) {
+    public static RubyClass define(Ruby runtime, RubyClass standardError) {
         RubyClass exceptionClass = runtime.defineClass("SystemCallError", standardError, SYSTEM_CALL_ERROR_ALLOCATOR);
 
         exceptionClass.setMarshal(SYSTEM_CALL_ERROR_MARSHAL);

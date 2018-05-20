@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.File;
@@ -475,7 +476,7 @@ public class RubyArgsFile extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.next_argv(context)) return context.runtime.getNil();
+        if (!data.next_argv(context)) return context.nil;
 
         if (!(data.currentFile instanceof RubyIO)) {
             if (!data.next_argv(context)) return recv;
@@ -614,7 +615,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject eof(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.inited) return context.runtime.getTrue();
+        if (!data.inited) return context.tru;
 
         if (!(data.currentFile instanceof RubyIO)) {
             return data.currentFile.callMethod(context, "eof");
@@ -627,7 +628,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject eof_p(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.inited) return context.runtime.getTrue();
+        if (!data.inited) return context.tru;
 
         if (!(data.currentFile instanceof RubyIO)) {
             return data.currentFile.callMethod(context, "eof?");
@@ -660,7 +661,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         while(true) {
-            if (!data.next_argv(context)) return context.runtime.getNil();
+            if (!data.next_argv(context)) return context.nil;
 
             IRubyObject bt;
             if (!(data.currentFile instanceof RubyFile)) {
@@ -742,7 +743,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         while(true) {
-            if (!data.next_argv(context)) return context.runtime.getNil();
+            if (!data.next_argv(context)) return context.nil;
 
             IRubyObject bt;
             if (!(data.currentFile instanceof RubyFile)) {

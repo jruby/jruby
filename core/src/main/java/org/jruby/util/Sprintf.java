@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.math.BigInteger;
@@ -90,6 +91,7 @@ public class Sprintf {
     private static final String ERR_MALFORMED_DOT_NUM = "malformed format string - %.[0-9]";
     private static final String ERR_MALFORMED_STAR_NUM = "malformed format string - %*[0-9]";
     private static final String ERR_ILLEGAL_FORMAT_CHAR = "illegal format character - %";
+    private static final String ERR_INCOMPLETE_FORMAT_SPEC = "incomplete format specifier; use %% (double %) instead";
     private static final String ERR_MALFORMED_NAME = "malformed name - unmatched parenthesis";
 
     private static final ThreadLocal<Map<Locale, NumberFormat>> LOCALE_NUMBER_FORMATS = new ThreadLocal<Map<Locale, NumberFormat>>();
@@ -151,8 +153,8 @@ public class Sprintf {
             throw runtime.newArgumentError(message);
         }
 
-        void raiseKeyError(String message) {
-            throw runtime.newKeyError(message);
+        void raiseKeyError(String message, IRubyObject recv, IRubyObject key) {
+            throw runtime.newKeyError(message, recv, key);
         }
 
         void warn(ID id, String message) {
@@ -179,12 +181,13 @@ public class Sprintf {
             if (object == null) {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
-                    raiseKeyError("key" + startDelim + RubyString.newString(runtime, name) + endDelim + " not found");
+                    RubyString nameStr = RubyString.newString(runtime, name);
+                    raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameSym);
                 } else if (rubyHash.hasDefaultProc()) {
                     object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                 }
 
-                if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found");
+                if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found", rubyHash, nameSym);
             }
 
             return object;
@@ -265,13 +268,14 @@ public class Sprintf {
                 if (object == null) {
                     object = rubyHash.getIfNone();
                     if (object == RubyBasicObject.UNDEF) {
-                        raiseKeyError("key<" + name + "> not found");
+                        RubyString nameStr = RubyString.newString(runtime, name);
+                        raiseKeyError("key<" + name + "> not found", rubyHash, nameSym);
                     } else if (rubyHash.hasDefaultProc()) {
                         object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                     }
 
                     if (object.isNil()) {
-                        throw runtime.newKeyError("key " + nameSym + " not found");
+                        throw runtime.newKeyError("key " + nameSym + " not found", rubyHash, nameSym);
                     }
                 }
 
@@ -541,6 +545,7 @@ public class Sprintf {
                     if (width < 0) {
                         flags |= FLAG_MINUS;
                         width = -width;
+                        if (width < 0) throw runtime.newArgumentError("width too big");
                     }
 
                     break;
@@ -1411,6 +1416,7 @@ public class Sprintf {
             if (incomplete) {
                 if (flags == FLAG_NONE) {
                     // dangling '%' char
+                    if (format[length - 1] == '%') raiseArgumentError(args,ERR_INCOMPLETE_FORMAT_SPEC);
                     buf.append('%');
                 } else {
                     raiseArgumentError(args,ERR_ILLEGAL_FORMAT_CHAR);

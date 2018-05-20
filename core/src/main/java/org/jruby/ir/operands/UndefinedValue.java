@@ -251,12 +251,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
      *
      * @return
      */
-    public IRubyObject checkStringType19() { throw undefinedOperation(); }
-
-    /**
-     *
-     * @return
-     */
     public IRubyObject checkArrayType() { throw undefinedOperation(); }
 
     /**
@@ -314,7 +308,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return the object wrapped.
      */
     public Object dataGetStruct() { throw undefinedOperation(); }
-    public Object dataGetStructChecked() { throw undefinedOperation(); }
 
     /**
      *
@@ -407,4 +400,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public void visit(IRVisitor visitor) {
         visitor.UndefinedValue(this);
     }
+
+    @Deprecated
+    public Object dataGetStructChecked() { throw undefinedOperation(); }
 }

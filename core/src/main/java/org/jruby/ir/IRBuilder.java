@@ -1,8 +1,8 @@
 package org.jruby.ir;
 
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -21,6 +21,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.KeyValuePair;
 
@@ -85,8 +86,6 @@ import static org.jruby.ir.operands.ScopeModule.*;
 public class IRBuilder {
     static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
-
-    public static final String USING_METHOD = "using";
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -225,7 +224,7 @@ public class IRBuilder {
             if (savedGlobalException != null) {
                 // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
                 if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
-                builder.addInstr(new PutGlobalVarInstr("$!", savedGlobalException));
+                builder.addInstr(new PutGlobalVarInstr(builder.symbol("$!"), savedGlobalException));
             }
 
             // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and
@@ -301,7 +300,7 @@ public class IRBuilder {
     protected IRManager manager;
     protected IRScope scope;
     protected List<Instr> instructions;
-    protected List<String> argumentDescriptions;
+    protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
@@ -316,10 +315,10 @@ public class IRBuilder {
         return needsCodeCoverage || parent != null && parent.needsCodeCoverage();
     }
 
-    public void addArgumentDescription(ArgumentType type, String name) {
+    public void addArgumentDescription(ArgumentType type, RubySymbol name) {
         if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
 
-        argumentDescriptions.add(type.toString());
+        argumentDescriptions.add(type);
         argumentDescriptions.add(name);
     }
 
@@ -473,7 +472,7 @@ public class IRBuilder {
             case PREEXENODE: return buildPreExe((PreExeNode) node);
             case POSTEXENODE: return buildPostExe((PostExeNode) node);
             case RATIONALNODE: return buildRational((RationalNode) node);
-            case REDONODE: return buildRedo();
+            case REDONODE: return buildRedo((RedoNode) node);
             case REGEXPNODE: return buildRegexp((RegexpNode) node);
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFileName() + ":" + node.getLine());
@@ -723,7 +722,7 @@ public class IRBuilder {
         }
     }
 
-    protected LocalVariable getBlockArgVariable(String name, int depth) {
+    protected LocalVariable getBlockArgVariable(RubySymbol name, int depth) {
         if (!(scope instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
 
         return getLocalVariable(name, depth);
@@ -800,8 +799,7 @@ public class IRBuilder {
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                int depth = localVariable.getDepth();
-                v = getBlockArgVariable(localVariable.getName(), depth);
+                v = getBlockArgVariable(localVariable.getName(), localVariable.getDepth());
                 receiveBlockArg(v, argsArray, argIndex, isSplat);
                 break;
             }
@@ -943,34 +941,36 @@ public class IRBuilder {
     public Operand buildBreak(BreakNode breakNode) {
         IRLoop currLoop = getCurrentLoop();
 
-        Operand rv = build(breakNode.getValueNode());
-
         if (currLoop != null) {
             // If we have ensure blocks, have to run those first!
-            if (!activeEnsureBlockStack.empty()) {
-                emitEnsureBlocks(currLoop);
-             }
-            addInstr(new CopyInstr(currLoop.loopResult, rv));
+            if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(currLoop);
+
+            addInstr(new CopyInstr(currLoop.loopResult, build(breakNode.getValueNode())));
             addInstr(new JumpInstr(currLoop.loopEndLabel));
         } else {
             if (scope instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
                 IRScope returnScope = scope.getLexicalParent();
-                // In 1.9 and later modes, no breaks from evals
                 if (scope instanceof IREvalScript || returnScope == null) {
-                    addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                    // We are not in a closure or a loop => bad break instr!
+                    throwSyntaxError(breakNode, "Can't escape from eval with redo");
                 } else {
-                    addInstr(new BreakInstr(rv, returnScope.getName()));
+                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getName()));
                 }
             } else {
                 // We are not in a closure or a loop => bad break instr!
-                addInstr(new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                throwSyntaxError(breakNode, "Invalid break");
             }
         }
 
         // Once the break instruction executes, control exits this scope
         return U_NIL;
+    }
+
+    private void throwSyntaxError(Node node, String message) {
+        String errorMessage = getFileName() + ":" + (node.getLine() + 1) + ": " + message;
+        throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
     }
 
     private void handleNonlocalReturnInMethod() {
@@ -1043,9 +1043,11 @@ public class IRBuilder {
 
     public Operand buildCall(Variable result, CallNode callNode) {
         Node receiverNode = callNode.getReceiverNode();
+        RubySymbol name = callNode.getName();
 
         // Frozen string optimization: check for "string".freeze
-        if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
+        String id = name.idString(); // ID Str ok here since it is 7bit check.
+        if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
             return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
@@ -1057,16 +1059,15 @@ public class IRBuilder {
 
         // obj["string"] optimization for Hash
         ArrayNode argsAry;
-        if (
-                !callNode.isLazy() &&
-                callNode.getName().equals("[]") &&
+        if (!callNode.isLazy() &&
+                id.equals("[]") &&
                 callNode.getArgsNode() instanceof ArrayNode &&
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
                 argsAry.get(0) instanceof StrNode &&
                 !scope.maybeUsingRefinements() &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
-            addInstr(ArrayDerefInstr.create(result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
+            addInstr(ArrayDerefInstr.create(scope, result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
             return result;
         }
 
@@ -1087,15 +1088,15 @@ public class IRBuilder {
             Operand[] args = buildCallArgsExcept(callNode.getArgsNode(), keywordArgs);
             List<KeyValuePair<Operand, Operand>> kwargs = buildKeywordArguments(keywordArgs);
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, callNode.getName(), receiver, args, block, kwargs);
+            callInstr = CallInstr.createWithKwargs(scope, CallType.NORMAL, result, name, receiver, args, block, kwargs);
         } else {
             Operand[] args = setupCallArgs(callNode.getArgsNode());
             block = setupCallClosure(callNode.getIterNode());
-            callInstr = CallInstr.create(scope, result, callNode.getName(), receiver, args, block);
+            callInstr = CallInstr.create(scope, result, name, receiver, args, block);
         }
 
         determineIfWeNeedLineNumber(callNode);
-        determineIfProcNew(receiverNode, callNode.getName(), callInstr);
+        determineIfProcNew(receiverNode, name, callInstr);
         receiveBreakException(block, callInstr);
 
         if (callNode.isLazy()) {
@@ -1116,9 +1117,10 @@ public class IRBuilder {
         return kwargs;
     }
 
-    private void determineIfProcNew(Node receiverNode, String name, CallInstr callInstr) {
+    private void determineIfProcNew(Node receiverNode, RubySymbol name, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (name.equals("new") && receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().equals("Proc")) {
+        if (CommonByteLists.NEW_METHOD.equals(name.getBytes()) &&
+                receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
             callInstr.setProcNew(true);
         }
     }
@@ -1369,7 +1371,7 @@ public class IRBuilder {
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        String className = cpath.getName();
+        RubySymbol className = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
         Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
@@ -1384,6 +1386,7 @@ public class IRBuilder {
     // Foo is the class in whose context this is being defined.
     public Operand buildSClass(SClassNode sclassNode) {
         Operand receiver = build(sclassNode.getReceiverNode());
+        // FIXME: metaclass name should be a bytelist
         IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName(), sclassNode.getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
@@ -1482,7 +1485,7 @@ public class IRBuilder {
         }
     }
 
-    private Operand putConstant(String name, Operand value) {
+    private Operand putConstant(RubySymbol name, Operand value) {
         addInstr(new PutConstInstr(findContainerModule(), name, value));
 
         return value;
@@ -1508,11 +1511,11 @@ public class IRBuilder {
         return putConstant((Colon3Node) constNode, value);
     }
 
-    private Operand searchModuleForConst(Operand startingModule, String name) {
+    private Operand searchModuleForConst(Operand startingModule, RubySymbol name) {
         return addResultInstr(new SearchModuleForConstInstr(createTemporaryVariable(), startingModule, name, true));
     }
 
-    private Operand searchConst(String name) {
+    private Operand searchConst(RubySymbol name) {
         return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
     }
 
@@ -1575,7 +1578,8 @@ public class IRBuilder {
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(new LabelInstr(rescueLabel));
         addInstr(new ReceiveRubyExceptionInstr(exc));
-        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception"));
+        addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
+                manager.runtime.newSymbol(CommonByteLists.EXCEPTION)));
         outputExceptionCheck(excType, exc, caughtLabel);
 
         // Fall-through when the exc !== Exception; rethrow 'exc'
@@ -1734,7 +1738,7 @@ public class IRBuilder {
             Label defLabel = getNewLabel();
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
-            String constName = ((ConstNode) node).getName();
+            RubySymbol constName = ((ConstNode) node).getName();
             addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
@@ -1753,7 +1757,7 @@ public class IRBuilder {
             // This runtime library would be used both by the interpreter & the compiled code!
 
             final Colon3Node colon = (Colon3Node) node;
-            final String name = colon.getName();
+            final RubySymbol name = colon.getName();
             final Variable errInfo = createTemporaryVariable();
 
             // store previous exception for restoration if we rescue something
@@ -1829,7 +1833,7 @@ public class IRBuilder {
                             IS_DEFINED_METHOD,
                             new Operand[]{
                                     buildSelf(),
-                                    new FrozenString(((FCallNode) node).getName()),
+                                    new Symbol(((FCallNode) node).getName()),
                                     manager.getFalse(),
                                     new FrozenString(DefinedMessage.METHOD.getText())
                             }
@@ -1855,7 +1859,7 @@ public class IRBuilder {
                                     IS_DEFINED_CALL,
                                     new Operand[]{
                                             build(callNode.getReceiverNode()),
-                                            new StringLiteral(callNode.getName()),
+                                            new Symbol(callNode.getName()),
                                             new FrozenString(DefinedMessage.METHOD.getText())
                                     }
                             )
@@ -1903,7 +1907,7 @@ public class IRBuilder {
                                     IS_DEFINED_METHOD,
                                     new Operand[] {
                                             receiver,
-                                            new StringLiteral(attrAssign.getName()),
+                                            new Symbol(attrAssign.getName()),
                                             manager.getTrue(),
                                             new FrozenString(DefinedMessage.METHOD.getText())
                                     }
@@ -2057,13 +2061,13 @@ public class IRBuilder {
 
         ArgumentDescriptor[] argDesc;
         if (argumentDescriptions == null) {
-            argDesc = NO_ARG_DESCS;
+            argDesc = ArgumentDescriptor.EMPTY_ARRAY;
         } else {
             argDesc = new ArgumentDescriptor[argumentDescriptions.size() / 2];
-            for (int i = 0; i < argumentDescriptions.size();) {
-                argDesc[i / 2] = new ArgumentDescriptor(
-                        ArgumentType.valueOf(argumentDescriptions.get(i++)),
-                        argumentDescriptions.get(i++));
+            for (int i = 0; i < argumentDescriptions.size(); i += 2) {
+                ArgumentType type = (ArgumentType) argumentDescriptions.get(i);
+                RubySymbol symbol = (RubySymbol) argumentDescriptions.get(i+1);
+                argDesc[i / 2] = new ArgumentDescriptor(type, symbol);
             }
         }
 
@@ -2072,30 +2076,25 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
-    static final ArgumentDescriptor[] NO_ARG_DESCS = new ArgumentDescriptor[0];
-
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(), defNode.getScope(), needsCodeCoverage());
-
-        //return newIRBuilder(manager).defineMethodInner(defNode, method, parent);
+        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(),
+                defNode.getScope(), needsCodeCoverage());
     }
 
     public Operand buildDefn(MethodDefNode node) { // Instance method
         IRMethod method = defineNewMethod(node, true);
         addInstr(new DefineInstanceMethodInstr(method));
-        // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
+        return new Symbol(node.getName());
     }
 
     public Operand buildDefs(DefsNode node) { // Class method
         Operand container =  build(node.getReceiverNode());
         IRMethod method = defineNewMethod(node, false);
         addInstr(new DefineClassMethodInstr(container, method));
-        // FIXME: Method name should save encoding
-        return new Symbol(method.getName(), USASCIIEncoding.INSTANCE);
+        return new Symbol(node.getName());
     }
 
-    protected LocalVariable getArgVariable(String name, int depth) {
+    protected LocalVariable getArgVariable(RubySymbol name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
         return scope instanceof IRFor ? getLocalVariable(name, depth) : getNewLocalVariable(name, 0);
     }
@@ -2114,8 +2113,8 @@ public class IRBuilder {
      * '_' we create temporary variables in the case the scope has a zsuper in it.  If so, then the zsuper
      * call will slurp those temps up as it's parameters so it can properly set up the call.
      */
-    private Variable argumentResult(String name) {
-        boolean isUnderscore = name.equals("_");
+    private Variable argumentResult(RubySymbol name) {
+        boolean isUnderscore = name.getBytes().realSize() == 1 && name.getBytes().charAt(0) == '_';
 
         if (isUnderscore && underscoreVariableSeen) {
             return createTemporaryVariable();
@@ -2128,7 +2127,7 @@ public class IRBuilder {
     public void receiveRequiredArg(Node node, int argIndex, Signature signature) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
-                String argName = ((ArgumentNode)node).getName();
+                RubySymbol argName = ((ArgumentNode)node).getName();
 
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.req, argName);
 
@@ -2189,7 +2188,7 @@ public class IRBuilder {
                 // We fall through or jump to variableAssigned once we know we have a valid value in place.
                 Label variableAssigned = getNewLabel();
                 OptArgNode optArg = (OptArgNode)args[optIndex + j];
-                String argName = optArg.getName();
+                RubySymbol argName = optArg.getName();
                 Variable argVar = argumentResult(argName);
                 if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
@@ -2210,13 +2209,14 @@ public class IRBuilder {
             // Consider: def foo(*); .. ; end
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
-            String argName = argsNode.getRestArgNode().getName();
+            RestArgNode restArgNode = argsNode.getRestArgNode();
             if (scope instanceof IRMethod) {
-                addArgumentDescription(
-                        argName == null || argName.length() == 0 ? ArgumentType.anonrest : ArgumentType.rest,
-                        argName);
+                addArgumentDescription(restArgNode.isAnonymous() ?
+                        ArgumentType.anonrest : ArgumentType.rest, restArgNode.getName());
             }
-            argName = (argName == null || argName.equals("")) ? "*" : argName;
+
+            RubySymbol argName =  restArgNode.isAnonymous() ?
+                    scope.getManager().getRuntime().newSymbol(CommonByteLists.STAR) : restArgNode.getName();
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -2242,7 +2242,7 @@ public class IRBuilder {
         // reify to Proc if we have a block arg
         BlockArgNode blockArg = argsNode.getBlock();
         if (blockArg != null) {
-            String argName = blockArg.getName();
+            RubySymbol argName = blockArg.getName();
             Variable blockVar = argumentResult(argName);
             if (scope instanceof IRMethod) addArgumentDescription(ArgumentType.block, argName);
             Variable tmp = createTemporaryVariable();
@@ -2288,11 +2288,11 @@ public class IRBuilder {
             for (int i = 0; i < keywordsCount; i++) {
                 KeywordArgNode kwarg = (KeywordArgNode) args[keywordIndex + i];
                 AssignableNode kasgn = kwarg.getAssignable();
-                String argName = ((INameNode) kasgn).getName();
-                Variable av = getNewLocalVariable(argName, 0);
+                RubySymbol key = ((INameNode) kasgn).getName();
+                Variable av = getNewLocalVariable(key, 0);
                 Label l = getNewLabel();
-                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName);
-                addInstr(new ReceiveKeywordArgInstr(av, argName, required));
+                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, key);
+                addInstr(new ReceiveKeywordArgInstr(av, key, required));
                 addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
@@ -2300,7 +2300,7 @@ public class IRBuilder {
                     addInstr(new CopyInstr(av, buildNil())); // wipe out undefined value with nil
                     build(kasgn);
                 } else {
-                    addInstr(new RaiseRequiredKeywordArgumentError(argName));
+                    addInstr(new RaiseRequiredKeywordArgumentError(key));
                 }
                 addInstr(new LabelInstr(l));
             }
@@ -2309,14 +2309,14 @@ public class IRBuilder {
         // 2.0 keyword rest arg
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
-            String argName = keyRest.getName();
+            RubySymbol key = keyRest.getName();
             ArgumentType type = ArgumentType.keyrest;
 
             // anonymous keyrest
-            if (argName == null || argName.length() == 0) type = ArgumentType.anonkeyrest;
+            if (key == null || key.getBytes().realSize() == 0) type = ArgumentType.anonkeyrest;
 
-            Variable av = getNewLocalVariable(argName, 0);
-            if (scope instanceof IRMethod) addArgumentDescription(type, argName);
+            Variable av = getNewLocalVariable(key, 0);
+            if (scope instanceof IRMethod) addArgumentDescription(type, key);
             addInstr(new ReceiveKeywordRestArgInstr(av, required));
         }
 
@@ -2324,11 +2324,11 @@ public class IRBuilder {
         receiveBlockArg(argsNode);
     }
 
-    private void addKeyArgDesc(AssignableNode kasgn, String argName) {
+    private void addKeyArgDesc(AssignableNode kasgn, RubySymbol key) {
         if (isRequiredKeywordArgumentValue(kasgn)) {
-            addArgumentDescription(ArgumentType.keyreq, argName);
+            addArgumentDescription(ArgumentType.keyreq, key);
         } else {
-            addArgumentDescription(ArgumentType.key, argName);
+            addArgumentDescription(ArgumentType.key, key);
         }
     }
 
@@ -2580,7 +2580,7 @@ public class IRBuilder {
     public Operand buildEnsureInternal(Node ensureBodyNode, Node ensurerNode) {
         // Save $!
         final Variable savedGlobalException = createTemporaryVariable();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+        addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
 
         // ------------ Build the body of the ensure block ------------
         //
@@ -2694,7 +2694,7 @@ public class IRBuilder {
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
-            if (fcallNode.getName().equals("define_method") && block instanceof WrappedIRClosure) {
+            if (CommonByteLists.DEFINE_METHOD_METHOD.equals(fcallNode.getName().getBytes()) && block instanceof WrappedIRClosure) {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
@@ -2721,21 +2721,19 @@ public class IRBuilder {
                 return build(node);
             case BLOCKPASSNODE:
                 Node bodyNode = ((BlockPassNode)node).getBodyNode();
-                if (bodyNode instanceof SymbolNode) {
-                    return new SymbolProc(((SymbolNode)bodyNode).getName(), ((SymbolNode)bodyNode).getEncoding());
-                }
-                return build(bodyNode);
+                return bodyNode instanceof SymbolNode ?
+                        new SymbolProc(((SymbolNode)bodyNode).getName()) : build(bodyNode);
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
         }
     }
 
     // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeUsingMethod(String methodName, Operand[] args) {
+    private void determineIfMaybeUsingMethod(RubySymbol methodName, Operand[] args) {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (USING_METHOD.equals(methodName) && !(outerScope instanceof IRMethod) && args.length == 1) {
+        if (CommonByteLists.USING_METHOD.equals(methodName.getBytes()) && !(outerScope instanceof IRMethod) && args.length == 1) {
             scope.setIsMaybeUsingRefinements();
         }
     }
@@ -2781,8 +2779,10 @@ public class IRBuilder {
         // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError"));
-            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
+            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
+                    manager.runtime.newSymbol(CommonByteLists.NOT_IMPLEMENTED_ERROR)));
+            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), manager.runtime.newSymbol(CommonByteLists.NEW),
+                    excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();
         }
@@ -2852,7 +2852,8 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, "each", receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, NO_ARGS,
+                forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -3048,7 +3049,7 @@ public class IRBuilder {
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {
-        return new StringLiteral(literalNode.getName());
+        return new StringLiteral(literalNode.getSymbolName());
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode) {
@@ -3093,10 +3094,10 @@ public class IRBuilder {
         Operand regexp = build(matchNode.getRegexpNode());
 
         Variable tempLastLine = createTemporaryVariable();
-        addResultInstr(new GetGlobalVariableInstr(tempLastLine, "$_"));
+        addResultInstr(new GetGlobalVariableInstr(tempLastLine, symbol("$_")));
 
         if (result == null) result = createTemporaryVariable();
-        return addResultInstr(new MatchInstr(result, regexp, tempLastLine));
+        return addResultInstr(new MatchInstr(scope, result, regexp, tempLastLine));
     }
 
     public Operand buildMatch2(Variable result, Match2Node matchNode) {
@@ -3105,7 +3106,7 @@ public class IRBuilder {
 
         if (result == null) result = createTemporaryVariable();
 
-        addInstr(new MatchInstr(result, receiver, value));
+        addInstr(new MatchInstr(scope, result, receiver, value));
 
         if (matchNode instanceof Match2CaptureNode) {
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
@@ -3115,7 +3116,7 @@ public class IRBuilder {
                 int offset = slot & 0xffff;
 
                 // For now, we'll continue to implicitly reference "$~"
-                String var = getVarNameFromScopeTree(scope, depth, offset);
+                RubySymbol var = manager.runtime.newSymbol(getVarNameFromScopeTree(scope, depth, offset));
                 addInstr(new SetCapturedVarInstr(getLocalVariable(var, depth), result, var));
             }
         }
@@ -3135,7 +3136,7 @@ public class IRBuilder {
 
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(new MatchInstr(result, receiver, value));
+        return addResultInstr(new MatchInstr(scope, result, receiver, value));
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath) {
@@ -3158,7 +3159,7 @@ public class IRBuilder {
 
     public Operand buildModule(ModuleNode moduleNode) {
         Colon3Node cpath = moduleNode.getCPath();
-        String moduleName = cpath.getName();
+        RubySymbol moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
         Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
@@ -3183,9 +3184,13 @@ public class IRBuilder {
             addInstr(new ThreadPollInstr(true));
             // If a closure, the next is simply a return from the closure!
             if (scope instanceof IRClosure) {
-                addInstr(new ReturnInstr(rv));
+                if (scope instanceof IREvalScript) {
+                    throwSyntaxError(nextNode, "Can't escape from eval with next");
+                } else {
+                    addInstr(new ReturnInstr(rv));
+                }
             } else {
-                addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
+                throwSyntaxError(nextNode, "Invalid next");
             }
         }
 
@@ -3194,7 +3199,7 @@ public class IRBuilder {
     }
 
     public Operand buildNthRef(NthRefNode nthRefNode) {
-        return copyAndReturnValue(new NthRef(nthRefNode.getMatchNumber()));
+        return copyAndReturnValue(new NthRef(scope, nthRefNode.getMatchNumber()));
     }
 
     public Operand buildNil() {
@@ -3221,18 +3226,18 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
-        String opName = opAsgnNode.getOperatorName();
-        if (opName.equals("||") || opName.equals("&&")) {
+        boolean isOrOr = opAsgnNode.isOr();
+        if (isOrOr || opAsgnNode.isAnd()) {
             l = getNewLabel();
-            addInstr(createBranch(readerValue, opName.equals("||") ? manager.getTrue() : manager.getFalse(), l));
+            addInstr(createBranch(readerValue, isOrOr ? manager.getTrue() : manager.getFalse(), l));
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -3246,10 +3251,10 @@ public class IRBuilder {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
             Variable setValue = createTemporaryVariable();
-            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
+            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorSymbolName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
@@ -3267,7 +3272,7 @@ public class IRBuilder {
 
     private Operand buildColon2ForConstAsgnDeclNode(Node lhs, Variable valueResult, boolean constMissing) {
         Variable leftModule = createTemporaryVariable();
-        String name;
+        RubySymbol name;
 
         if (lhs instanceof Colon2Node) {
             Colon2Node colon2Node = (Colon2Node) lhs;
@@ -3285,9 +3290,7 @@ public class IRBuilder {
     }
 
     public Operand buildOpAsgnConstDeclNode(OpAsgnConstDeclNode node) {
-        String op = node.getOperator();
-
-        if ("||".equals(op)) {
+        if (node.isOr()) {
             Variable result = createTemporaryVariable();
             Label done = getNewLabel();
             Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, false);
@@ -3297,7 +3300,7 @@ public class IRBuilder {
             addInstr(new PutConstInstr(module, ((Colon3Node) node.getFirstNode()).getName(), rhsValue));
             addInstr(new LabelInstr(done));
             return result;
-        } else if ("&&".equals(op)) {
+        } else if (node.isAnd()) {
             Variable result = createTemporaryVariable();
             Label done = getNewLabel();
             Operand module = buildColon2ForConstAsgnDeclNode(node.getFirstNode(), result, true);
@@ -3312,7 +3315,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
-        addInstr(CallInstr.create(scope, result, node.getOperator(), lhs, new Operand[] { rhs }, null));
+        addInstr(CallInstr.create(scope, result, node.getSymbolOperator(), lhs, new Operand[] { rhs }, null));
         return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
@@ -3388,12 +3391,12 @@ public class IRBuilder {
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, null));
         addInstr(createBranch(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(scope, callType, elt, "[]=", array, argList, null));
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.ASET), array, argList, null));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -3407,15 +3410,15 @@ public class IRBuilder {
         Operand array = buildWithOrder(receiver, opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(scope, callType, elt, "[]", array, argList, null)); // elt = a[args]
+        addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
-        String  operation = opElementAsgnNode.getOperatorName();
+        RubySymbol operation = opElementAsgnNode.getOperatorSymbolName();
         addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(scope, callType, tmp, "[]=", array, argList, null));   // a[args] = elt
+        addInstr(CallInstr.create(scope, callType, tmp, symbol(ArrayDerefInstr.ASET), array, argList, null));   // a[args] = elt
         return elt;
     }
 
@@ -3467,7 +3470,8 @@ public class IRBuilder {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), "_END_", true);
+        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
+                Signature.from(postExeNode), CommonByteLists._END_, true);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
 
@@ -3482,7 +3486,7 @@ public class IRBuilder {
     public Operand buildPreExe(PreExeNode preExeNode) {
         IRScope topLevel = scope.getRootLexicalScope();
         IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
-                Signature.from(preExeNode), "_BEGIN_");
+                Signature.from(preExeNode), IRFor._BEGIN_);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
 
@@ -3496,7 +3500,7 @@ public class IRBuilder {
                 (ImmutableLiteral) build(rationalNode.getDenominator()));
     }
 
-    public Operand buildRedo() {
+    public Operand buildRedo(RedoNode redoNode) {
         // If we have ensure blocks, have to run those first!
         if (!activeEnsureBlockStack.empty()) {
             emitEnsureBlocks(getCurrentLoop());
@@ -3504,16 +3508,20 @@ public class IRBuilder {
 
         // If in a loop, a redo is a jump to the beginning of the loop.
         // If not, for closures, a redo is a jump to the beginning of the closure.
-        // If not in a loop or a closure, it is a local jump error
+        // If not in a loop or a closure, it is a compile/syntax error
         IRLoop currLoop = getCurrentLoop();
         if (currLoop != null) {
              addInstr(new JumpInstr(currLoop.iterStartLabel));
         } else {
             if (scope instanceof IRClosure) {
-                addInstr(new ThreadPollInstr(true));
-                addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                if (scope instanceof IREvalScript) {
+                    throwSyntaxError(redoNode, "Can't escape from eval with redo");
+                } else {
+                    addInstr(new ThreadPollInstr(true));
+                    addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                }
             } else {
-                addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
+                throwSyntaxError(redoNode, "Invalid redo");
             }
         }
         return manager.getNil();
@@ -3542,7 +3550,7 @@ public class IRBuilder {
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().equals("$!")) return false;
+        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().idString().equals("$!")) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
@@ -3706,7 +3714,7 @@ public class IRBuilder {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
+            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
             scope.setHasLoopsFlag();
@@ -3736,7 +3744,8 @@ public class IRBuilder {
             // 4. eval/for (return) [static]
             boolean definedWithinMethod = scope.getNearestMethod() != null;
             if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
-            addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getName() : "--none--" ));
+            addInstr(new NonlocalReturnInstr(retVal,
+                    definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
@@ -3773,7 +3782,10 @@ public class IRBuilder {
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        IRScriptBody script = new IRScriptBody(manager, rootNode.getFile(), rootNode.getStaticScope());
+        // FIXME: This filename should switch to ByteList
+        String file = rootNode.getFile();
+        if (file == null) file = "(anon)";
+        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(file), rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
@@ -3790,6 +3802,10 @@ public class IRBuilder {
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
+
+        scope.computeScopeFlagsEarly(instructions);
+        // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
+        if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
         return scope.allocateInterpreterContext(instructions);
     }
@@ -3832,7 +3848,7 @@ public class IRBuilder {
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(ret, buildSelf(), args, block, scope.maybeUsingRefinements());
+            superInstr = new UnresolvedSuperInstr(scope, ret, buildSelf(), args, block, scope.maybeUsingRefinements());
         }
         receiveBreakException(block, superInstr);
         return ret;
@@ -3848,7 +3864,7 @@ public class IRBuilder {
     }
 
     private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
+        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -3858,8 +3874,7 @@ public class IRBuilder {
 
     public Operand buildSymbol(SymbolNode node) {
         // Since symbols are interned objects, no need to copyAndReturnValue(...)
-        // SSS FIXME: Premature opt?
-        return new Symbol(node.getBytes());
+        return new Symbol(node.getName());
     }
 
     public Operand buildTrue() {
@@ -3952,6 +3967,8 @@ public class IRBuilder {
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
+        if (scope instanceof IRScriptBody) throwSyntaxError(node, "Invalid yield");
+
         boolean unwrap = true;
         Node argNode = node.getArgsNode();
         // Get rid of one level of array wrapping
@@ -4015,7 +4032,7 @@ public class IRBuilder {
                     next = getNewLabel();
                     addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
+                    addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
                     addInstr(new JumpInstr(allDoneLabel));
 
                     // We may run out of live builds and walk int already built scopes if zsuper in an eval
@@ -4029,7 +4046,7 @@ public class IRBuilder {
                 // If we hit a method, this is known to always succeed
                 if (superScope instanceof IRMethod) {
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+                    addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
                 } //else {
                 // FIXME: Do or don't ... there is no try
                     /* Control should never get here in the runtime */
@@ -4099,7 +4116,7 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
-    private String methodNameFor() {
+    private RubySymbol methodNameFor() {
         IRScope method = scope.getNearestMethod();
 
         return method == null ? null : method.getName();
@@ -4109,15 +4126,15 @@ public class IRBuilder {
         return scope.createTemporaryVariable();
     }
 
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getLocalVariable(name, scopeDepth);
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         return scope.getNewLocalVariable(name, scopeDepth);
     }
 
-    public String getName() {
+    public RubySymbol getName() {
         return scope.getName();
     }
 
@@ -4131,6 +4148,15 @@ public class IRBuilder {
 
     public void initFlipStateVariable(Variable v, Operand initState) {
         addInstrAtBeginning(new CopyInstr(v, initState));
+
+    }
+
+    private RubySymbol symbol(String id) {
+        return manager.runtime.newSymbol(id);
+    }
+
+    private RubySymbol symbol(ByteList bytelist) {
+        return manager.runtime.newSymbol(bytelist);
     }
 
     /**
@@ -4163,9 +4189,8 @@ public class IRBuilder {
             // Always add the keyword rest arg to the beginning
             keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
         } else if (instr instanceof ReceiveKeywordArgInstr) {
-            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
-            // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
-            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
+            ReceiveKeywordArgInstr receiveKwargInstr = (ReceiveKeywordArgInstr) instr;
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(receiveKwargInstr.getKey()), receiveKwargInstr.getResult()));
         } else if (instr instanceof ReceiveRestArgInstr) {
             callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
         } else if (instr instanceof ReceiveArgBase) {

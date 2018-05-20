@@ -89,7 +89,7 @@ class TestClass < Test::Unit::TestCase
     end
   end
 
-  def test_instanciate_singleton_class
+  def test_instantiate_singleton_class
     c = class << Object.new; self; end
     assert_raise(TypeError) { c.new }
   end
@@ -241,13 +241,28 @@ class TestClass < Test::Unit::TestCase
     assert_equal("TestClass::C\u{df}", c.name, '[ruby-core:24600]')
   end
 
-  def test_invalid_jump_from_class_definition
+  def test_invalid_next_from_class_definition
     assert_raise(SyntaxError) { eval("class C; next; end") }
+  end
+
+  def test_invalid_break_from_class_definition
     assert_raise(SyntaxError) { eval("class C; break; end") }
+  end
+
+  def test_invalid_redo_from_class_definition
     assert_raise(SyntaxError) { eval("class C; redo; end") }
+  end
+
+  def test_invalid_retry_from_class_definition
     assert_raise(SyntaxError) { eval("class C; retry; end") }
+  end
+
+  def test_invalid_return_from_class_definition
     assert_raise(SyntaxError) { eval("class C; return; end") }
-    assert_raise(SyntaxError) { eval("class C; yield; end") }
+  end
+
+  def test_invalid_yield_from_class_definition
+    assert_raise(LocalJumpError) { eval("class C; yield; end") }
   end
 
   def test_clone
@@ -297,7 +312,8 @@ class TestClass < Test::Unit::TestCase
   end
 
   def test_cannot_reinitialize_class_with_initialize_copy # [ruby-core:50869]
-    assert_in_out_err([], <<-'end;', ["Object"], [])
+    assert_in_out_err([], "#{<<~"begin;"}\n#{<<~'end;'}", ["Object"], [])
+    begin;
       class Class
         def initialize_copy(*); super; end
       end
@@ -427,14 +443,14 @@ class TestClass < Test::Unit::TestCase
     obj = Object.new
     c = obj.singleton_class
     obj.freeze
-    assert_raise_with_message(RuntimeError, /frozen object/) {
+    assert_raise_with_message(FrozenError, /frozen object/) {
       c.class_eval {def f; end}
     }
   end
 
   def test_singleton_class_message
     c = Class.new.freeze
-    assert_raise_with_message(RuntimeError, /frozen Class/) {
+    assert_raise_with_message(FrozenError, /frozen Class/) {
       def c.f; end
     }
   end
@@ -579,7 +595,8 @@ class TestClass < Test::Unit::TestCase
       m.module_eval "class #{n}; end"
     }
 
-    assert_separately([], <<-"end;")
+    assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}")
+    begin;
       Date = (class C\u{1f5ff}; self; end).new
       assert_raise_with_message(TypeError, /C\u{1f5ff}/) {
         require 'date'
@@ -588,22 +605,24 @@ class TestClass < Test::Unit::TestCase
   end
 
   def test_should_not_expose_singleton_class_without_metaclass
-    assert_normal_exit %q{
+    assert_normal_exit "#{<<~"begin;"}\n#{<<~'end;'}", '[Bug #11740]'
+    begin;
       klass = Class.new(Array)
       # The metaclass of +klass+ should handle #bla since it should inherit methods from meta:meta:Array
       def (Array.singleton_class).bla; :bla; end
       hidden = ObjectSpace.each_object(Class).find { |c| klass.is_a? c and c.inspect.include? klass.inspect }
       raise unless hidden.nil?
-    }, '[Bug #11740]'
+    end;
 
-    assert_normal_exit %q{
+    assert_normal_exit "#{<<~"begin;"}\n#{<<~'end;'}", '[Bug #11740]'
+    begin;
       klass = Class.new(Array)
       klass.singleton_class
       # The metaclass of +klass+ should handle #bla since it should inherit methods from meta:meta:Array
       def (Array.singleton_class).bla; :bla; end
       hidden = ObjectSpace.each_object(Class).find { |c| klass.is_a? c and c.inspect.include? klass.inspect }
       raise if hidden.nil?
-    }, '[Bug #11740]'
+    end;
 
   end
 end

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -92,6 +92,12 @@ public class CoverageData {
 
     public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
         assert lines != null;
+
+        if (filename == null) {
+            // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
+            // we opt to ignore scripts with no filename, since coverage means nothing
+            return coverage;
+        }
 
         Map<String, int[]> coverage = this.coverage;
 

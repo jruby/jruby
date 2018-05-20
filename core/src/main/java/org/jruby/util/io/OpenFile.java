@@ -1,7 +1,6 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
-import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -73,6 +72,7 @@ public class OpenFile implements Finalizable {
     public static final int TRUNC              = 0x00000800;
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
+    public static final int TMPFILE            = 0x00410000;
     public static final int PREP         = (1<<16);
 
     public static final int SYNCWRITE = SYNC | WRITABLE;
@@ -903,7 +903,7 @@ public class OpenFile implements Finalizable {
                 posix.errno = Errno.valueOf(RubyNumeric.num2int(err));
                 throw runtime.newErrnoFromErrno(posix.errno, pathv);
             } else {
-                throw new RaiseException((RubyException)err);
+                throw ((RubyException)err).toThrowable();
             }
         }
     }
@@ -2676,7 +2676,7 @@ public class OpenFile implements Finalizable {
                 if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed"), Block.NULL_BLOCK);
+                RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed in another thread"), Block.NULL_BLOCK);
                 thread.raise(Helpers.arrayOf(exception), Block.NULL_BLOCK);
             }
         }

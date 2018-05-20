@@ -1,6 +1,5 @@
 # frozen_string_literal: false
 require 'test/unit'
-require 'thread'
 require 'tmpdir'
 
 class TestConditionVariable < Test::Unit::TestCase
@@ -43,12 +42,10 @@ class TestConditionVariable < Test::Unit::TestCase
     thread = Thread.new do
       Thread.current.abort_on_exception = false
       mutex.synchronize do
-        begin
+        assert_raise(Interrupt) {
           condvar.wait(mutex)
-        rescue Exception
-          locked = mutex.locked?
-          raise
-        end
+        }
+        locked = mutex.locked?
       end
     end
 
@@ -57,7 +54,7 @@ class TestConditionVariable < Test::Unit::TestCase
     end
 
     thread.raise Interrupt, "interrupt a dead condition variable"
-    assert_raise(Interrupt) { thread.value }
+    thread.join
     assert(locked)
   end
 
@@ -94,8 +91,6 @@ class TestConditionVariable < Test::Unit::TestCase
 
   def test_condvar_wait_deadlock
     assert_in_out_err([], <<-INPUT, /\Afatal\nNo live threads left\. Deadlock/, [])
-      require "thread"
-
       mutex = Mutex.new
       cv = ConditionVariable.new
 
@@ -218,7 +213,7 @@ INPUT
     end
 
     condvar = DumpableCV.new
-    assert_raise_with_message(TypeError, /internal Array/, bug9674) do
+    assert_raise(TypeError, bug9674) do
       Marshal.dump(condvar)
     end
   end

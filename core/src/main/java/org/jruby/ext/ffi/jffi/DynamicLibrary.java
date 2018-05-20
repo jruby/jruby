@@ -77,7 +77,7 @@ public class DynamicLibrary extends RubyObject {
         final String sym = symbolName.toString();
         final long address = library.getSymbolAddress(sym);
         if (address == 0L) {
-            return context.runtime.getNil();
+            return context.nil;
         }
 
         return new Symbol(context.runtime, this, sym, new DataSymbolMemoryIO(context.runtime, this, address));
@@ -88,14 +88,14 @@ public class DynamicLibrary extends RubyObject {
         final String sym = symbolName.toString();
         final long address = library.getSymbolAddress(sym);
         if (address == 0L) {
-            return context.runtime.getNil();
+            return context.nil;
         }
         return new Symbol(context.runtime, this, sym,
                 new TextSymbolMemoryIO(context.runtime, this, address));
     }
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return name != null ? RubyString.newString(context.runtime, name) : context.runtime.getNil();
+        return name != null ? RubyString.newString(context.runtime, name) : context.nil;
     }
     public static final class Symbol extends Pointer {
         private final DynamicLibrary library;

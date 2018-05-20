@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/slice', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/slice'
 
 describe "Array#slice!" do
   it "removes and return the element at index" do
@@ -156,5 +156,5 @@ describe "Array#slice!" do
 end
 
 describe "Array#slice" do
-  it_behaves_like(:array_slice, :slice)
+  it_behaves_like :array_slice, :slice
 end

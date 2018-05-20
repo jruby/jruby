@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,6 +24,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.strscan;
 
 import org.jcodings.Encoding;
@@ -32,15 +33,16 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -53,7 +55,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -445,8 +446,7 @@ public class RubyStringScanner extends RubyObject {
 
         if (!isMatched()) {
             RubyClass errorClass = runtime.getClass("StringScanner").getClass("Error");
-            throw new RaiseException(RubyException.newException(
-                    runtime, errorClass, "unscan failed: previous match had failed"));
+            throw RaiseException.from(runtime, errorClass, "unscan failed: previous match had failed");
         }
         pos = lastPos;
         clearMatched();
@@ -467,7 +467,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "eos?")
     public RubyBoolean eos_p(ThreadContext context) {
         check();
-        return pos >= str.getByteList().getRealSize() ? context.runtime.getTrue() : context.runtime.getFalse();
+        return pos >= str.getByteList().getRealSize() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "empty?")
@@ -482,13 +482,13 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = "rest?")
     public RubyBoolean rest_p(ThreadContext context) {
         check();
-        return pos >= str.getByteList().getRealSize() ? context.runtime.getFalse() : context.runtime.getTrue();
+        return pos >= str.getByteList().getRealSize() ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "matched?")
     public RubyBoolean matched_p(ThreadContext context) {
         check();
-        return isMatched() ? context.runtime.getTrue() : context.runtime.getFalse();
+        return isMatched() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "matched")
@@ -522,6 +522,9 @@ public class RubyStringScanner extends RubyObject {
             return context.nil;
         }
 
+        if (idx instanceof RubySymbol || idx instanceof RubyString) {
+            if (pattern == null) return context.nil;
+        }
         int i = RubyMatchData.backrefNumber(runtime, pattern, regs, idx);
         int numRegs = regs == null ? 1 : regs.numRegs;
 
@@ -544,7 +547,7 @@ public class RubyStringScanner extends RubyObject {
     public IRubyObject pre_match(ThreadContext context) {
         check();
         if (!isMatched()) {
-            return context.runtime.getNil();
+            return context.nil;
         }
         return extractRange(context.runtime, 0, lastPos + beg);
     }
@@ -602,28 +605,74 @@ public class RubyStringScanner extends RubyObject {
 
     private static final int INSPECT_LENGTH = 5;
 
+    private static final byte[] DOT_BYTES = "...".getBytes();
+
     private IRubyObject inspect1() {
-        if (pos == 0) return RubyString.newEmptyString(getRuntime());
+        final Ruby runtime = getRuntime();
+        if (pos == 0) return RubyString.newEmptyString(runtime);
         if (pos > INSPECT_LENGTH) {
-            return RubyString.newStringNoCopy(getRuntime(), "...".getBytes()).
-            append(str.substr(getRuntime(), pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
-        } else {
-            return str.substr(getRuntime(), 0, pos).inspect();
+            return RubyString.newStringNoCopy(runtime, DOT_BYTES).
+                append(str.substr(runtime, pos - INSPECT_LENGTH, INSPECT_LENGTH)).inspect();
         }
+        return str.substr(runtime, 0, pos).inspect();
     }
 
     private IRubyObject inspect2() {
-        if (pos >= str.getByteList().getRealSize()) return RubyString.newEmptyString(getRuntime());
+        final Ruby runtime = getRuntime();
+        if (pos >= str.getByteList().getRealSize()) return RubyString.newEmptyString(runtime);
         int len = str.getByteList().getRealSize() - pos;
         if (len > INSPECT_LENGTH) {
-            return ((RubyString)str.substr(getRuntime(), pos, INSPECT_LENGTH)).cat("...".getBytes()).inspect();
-        } else {
-            return str.substr(getRuntime(), pos, len).inspect();
+            return ((RubyString) str.substr(runtime, pos, INSPECT_LENGTH)).cat(DOT_BYTES).inspect();
         }
+        return str.substr(runtime, pos, len).inspect();
     }
 
     @JRubyMethod(name = "must_C_version", meta = true)
     public static IRubyObject mustCversion(IRubyObject recv) {
         return recv;
+    }
+
+    @JRubyMethod(name = "size")
+    public IRubyObject size(ThreadContext context) {
+        if (!isMatched()) return context.nil;
+        return context.runtime.newFixnum(regs.numRegs);
+    }
+
+    @JRubyMethod(name = "captures")
+    public IRubyObject captures(ThreadContext context) {
+        int i, numRegs;
+        RubyArray newAry;
+
+        if (!isMatched()) return context.nil;
+
+        Ruby runtime = context.runtime;
+
+        numRegs = regs.numRegs;
+        newAry  = RubyArray.newArray(runtime, numRegs);
+
+        for (i = 1; i < numRegs; i++) {
+            IRubyObject str = extractRange(runtime, lastPos + regs.beg[i],
+                    lastPos + regs.end[i]);
+            newAry.push(str);
+        }
+
+        return newAry;
+    }
+
+    @JRubyMethod(name = "values_at", rest = true)
+    public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
+        int i;
+        RubyArray newAry;
+
+        if (!isMatched()) return context.nil;
+
+        Ruby runtime = context.runtime;
+
+        newAry = RubyArray.newArray(runtime, args.length);
+        for (i = 0; i < args.length; i++) {
+            newAry.push(op_aref(context, args[i]));
+        }
+
+        return newAry;
     }
 }

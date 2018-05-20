@@ -1213,28 +1213,6 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
-  def test_allow_override_of_make_tmpname
-    # mimics behavior of attachment_fu, which overrides private #make_tmpname
-    Tempfile.class_eval do
-      alias_method :save_make_tmpname, :make_tmpname
-      def make_tmpname(basename, n)
-        ext = nil
-        sprintf("%s%d-%d%s", basename.to_s.gsub(/\.\w+$/) { |s| ext = s; '' }, $$, n, ext)
-      end
-    end
-
-    @teardown_blocks << proc do
-      Tempfile.class_eval { alias_method :make_tmpname, :save_make_tmpname }
-    end
-
-    begin
-      t = Tempfile.new "tcttac.jpg", File.dirname(__FILE__)
-      assert t.path =~ /\.jpg$/
-    ensure
-      t.close
-    end
-  end
-
   unless WINDOWS
     def test_mode_of_tempfile_is_600
       t = Tempfile.new "tcttac.jpg"

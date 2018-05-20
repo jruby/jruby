@@ -28,110 +28,8 @@ end
 #
 # The +Matrix+ class represents a mathematical matrix. It provides methods for creating
 # matrices, operating on them arithmetically and algebraically,
-# and determining their mathematical properties (trace, rank, inverse, determinant).
-#
-# == Method Catalogue
-#
-# To create a matrix:
-# * Matrix[*rows]
-# * Matrix.[](*rows)
-# * Matrix.rows(rows, copy = true)
-# * Matrix.columns(columns)
-# * Matrix.build(row_count, column_count, &block)
-# * Matrix.diagonal(*values)
-# * Matrix.scalar(n, value)
-# * Matrix.identity(n)
-# * Matrix.unit(n)
-# * Matrix.I(n)
-# * Matrix.zero(n)
-# * Matrix.row_vector(row)
-# * Matrix.column_vector(column)
-# * Matrix.empty(row_count, column_count)
-# * Matrix.hstack(*matrices)
-# * Matrix.vstack(*matrices)
-#
-# To access Matrix elements/columns/rows/submatrices/properties:
-# * #[](i, j)
-# * #row_count (row_size)
-# * #column_count (column_size)
-# * #row(i)
-# * #column(j)
-# * #collect
-# * #map
-# * #each
-# * #each_with_index
-# * #find_index
-# * #minor(*param)
-# * #first_minor(row, column)
-# * #cofactor(row, column)
-# * #adjugate
-# * #laplace_expansion(row_or_column: num)
-# * #cofactor_expansion(row_or_column: num)
-#
-# Properties of a matrix:
-# * #diagonal?
-# * #empty?
-# * #hermitian?
-# * #lower_triangular?
-# * #normal?
-# * #orthogonal?
-# * #permutation?
-# * #real?
-# * #regular?
-# * #singular?
-# * #square?
-# * #symmetric?
-# * #unitary?
-# * #upper_triangular?
-# * #zero?
-#
-# Matrix arithmetic:
-# * #*(m)
-# * #+(m)
-# * #-(m)
-# * #/(m)
-# * #inverse
-# * #inv
-# * #**
-# * #+@
-# * #-@
-#
-# Matrix functions:
-# * #determinant
-# * #det
-# * #hstack(*matrices)
-# * #rank
-# * #round
-# * #trace
-# * #tr
-# * #transpose
-# * #t
-# * #vstack(*matrices)
-#
-# Matrix decompositions:
-# * #eigen
-# * #eigensystem
-# * #lup
-# * #lup_decomposition
-#
-# Complex arithmetic:
-# * conj
-# * conjugate
-# * imag
-# * imaginary
-# * real
-# * rect
-# * rectangular
-#
-# Conversion to other data types:
-# * #coerce(other)
-# * #row_vectors
-# * #column_vectors
-# * #to_a
-#
-# String representations:
-# * #to_s
-# * #inspect
+# and determining their mathematical properties such as trace, rank, inverse, determinant,
+# or eigensystem.
 #
 class Matrix
   include Enumerable
@@ -314,10 +212,10 @@ class Matrix
   #   Matrix.vstack(x, y) # => Matrix[[1, 2], [3, 4], [5, 6], [7, 8]]
   #
   def Matrix.vstack(x, *matrices)
-    raise TypeError, "Expected a Matrix, got a #{x.class}" unless x.is_a?(Matrix)
+    x = CoercionHelper.coerce_to_matrix(x)
     result = x.send(:rows).map(&:dup)
     matrices.each do |m|
-      raise TypeError, "Expected a Matrix, got a #{m.class}" unless m.is_a?(Matrix)
+      m = CoercionHelper.coerce_to_matrix(m)
       if m.column_count != x.column_count
         raise ErrDimensionMismatch, "The given matrices must have #{x.column_count} columns, but one has #{m.column_count}"
       end
@@ -335,11 +233,11 @@ class Matrix
   #   Matrix.hstack(x, y) # => Matrix[[1, 2, 5, 6], [3, 4, 7, 8]]
   #
   def Matrix.hstack(x, *matrices)
-    raise TypeError, "Expected a Matrix, got a #{x.class}" unless x.is_a?(Matrix)
+    x = CoercionHelper.coerce_to_matrix(x)
     result = x.send(:rows).map(&:dup)
     total_column_count = x.column_count
     matrices.each do |m|
-      raise TypeError, "Expected a Matrix, got a #{m.class}" unless m.is_a?(Matrix)
+      m = CoercionHelper.coerce_to_matrix(m)
       if m.row_count != x.row_count
         raise ErrDimensionMismatch, "The given matrices must have #{x.row_count} rows, but one has #{m.row_count}"
       end
@@ -349,6 +247,35 @@ class Matrix
       total_column_count += m.column_count
     end
     new result, total_column_count
+  end
+
+  #
+  # Create a matrix by combining matrices entrywise, using the given block
+  #
+  #   x = Matrix[[6, 6], [4, 4]]
+  #   y = Matrix[[1, 2], [3, 4]]
+  #   Matrix.combine(x, y) {|a, b| a - b} # => Matrix[[5, 4], [1, 0]]
+  #
+  def Matrix.combine(*matrices)
+    return to_enum(__method__, *matrices) unless block_given?
+
+    return Matrix.empty if matrices.empty?
+    matrices.map!(&CoercionHelper.method(:coerce_to_matrix))
+    x = matrices.first
+    matrices.each do |m|
+      Matrix.Raise ErrDimensionMismatch unless x.row_count == m.row_count && x.column_count == m.column_count
+    end
+
+    rows = Array.new(x.row_count) do |i|
+      Array.new(x.column_count) do |j|
+        yield matrices.map{|m| m[i,j]}
+      end
+    end
+    new rows, x.column_count
+  end
+
+  def combine(*matrices, &block)
+    Matrix.combine(self, *matrices, &block)
   end
 
   #
@@ -1053,6 +980,17 @@ class Matrix
   end
 
   #
+  # Hadamard product
+  #    Matrix[[1,2], [3,4]].hadamard_product(Matrix[[1,2], [3,2]])
+  #      => 1  4
+  #         9  8
+  #
+  def hadamard_product(m)
+    combine(m){|a, b| a * b}
+  end
+  alias_method :entrywise_product, :hadamard_product
+
+  #
   # Returns the inverse of the matrix.
   #   Matrix[[-1, -1], [0, -1]].inverse
   #     => -1  1
@@ -1246,7 +1184,7 @@ class Matrix
   # deprecated; use Matrix#determinant
   #
   def determinant_e
-    warn "#{caller(1)[0]}: warning: Matrix#determinant_e is deprecated; use #determinant"
+    warn "Matrix#determinant_e is deprecated; use #determinant", uplevel: 1
     determinant
   end
   alias det_e determinant_e
@@ -1304,7 +1242,7 @@ class Matrix
   # deprecated; use Matrix#rank
   #
   def rank_e
-    warn "#{caller(1)[0]}: warning: Matrix#rank_e is deprecated; use #rank"
+    warn "Matrix#rank_e is deprecated; use #rank", uplevel: 1
     rank
   end
 
@@ -1483,6 +1421,13 @@ class Matrix
   end
 
   #
+  # Explicit conversion to a Matrix. Returns self
+  #
+  def to_matrix
+    self
+  end
+
+  #
   # Returns an array of arrays that describe the rows of the matrix.
   #
   def to_a
@@ -1490,17 +1435,17 @@ class Matrix
   end
 
   def elements_to_f
-    warn "#{caller(1)[0]}: warning: Matrix#elements_to_f is deprecated, use map(&:to_f)"
+    warn "Matrix#elements_to_f is deprecated, use map(&:to_f)", uplevel: 1
     map(&:to_f)
   end
 
   def elements_to_i
-    warn "#{caller(1)[0]}: warning: Matrix#elements_to_i is deprecated, use map(&:to_i)"
+    warn "Matrix#elements_to_i is deprecated, use map(&:to_i)", uplevel: 1
     map(&:to_i)
   end
 
   def elements_to_r
-    warn "#{caller(1)[0]}: warning: Matrix#elements_to_r is deprecated, use map(&:to_r)"
+    warn "Matrix#elements_to_r is deprecated, use map(&:to_r)", uplevel: 1
     map(&:to_r)
   end
 
@@ -1582,7 +1527,7 @@ class Matrix
     #
     def self.coerce_to(obj, cls, meth) # :nodoc:
       return obj if obj.kind_of?(cls)
-
+      raise TypeError, "Expected a #{cls} but got a #{obj.class}" unless obj.respond_to? meth
       begin
         ret = obj.__send__(meth)
       rescue Exception => e
@@ -1595,6 +1540,10 @@ class Matrix
 
     def self.coerce_to_int(obj)
       coerce_to(obj, Integer, :to_int)
+    end
+
+    def self.coerce_to_matrix(obj)
+      coerce_to(obj, Matrix, :to_matrix)
     end
   end
 
@@ -1685,6 +1634,7 @@ end
 # * Vector.[](*array)
 # * Vector.elements(array, copy = true)
 # * Vector.basis(size: n, index: k)
+# * Vector.zero(n)
 #
 # To access elements:
 # * #[](i)
@@ -1697,6 +1647,7 @@ end
 # * #angle_with(v)
 # * Vector.independent?(*vs)
 # * #independent?(*vs)
+# * #zero?
 #
 # Vector arithmetic:
 # * #*(x) "is matrix or number"
@@ -1765,6 +1716,17 @@ class Vector
     raise ArgumentError, "invalid index (#{index} for 0...#{size})" unless 0 <= index && index < size
     array = Array.new(size, 0)
     array[index] = 1
+    new convert_to_array(array, false)
+  end
+
+  #
+  # Return a zero vector.
+  #
+  #    Vector.zero(3) => Vector[0, 0, 0]
+  #
+  def Vector.zero(size)
+    raise ArgumentError, "invalid size (#{size} for 0..)" if size < 0
+    array = Array.new(size, 0)
     new convert_to_array(array, false)
   end
 
@@ -1880,6 +1842,13 @@ class Vector
   #
   def independent?(*vs)
     self.class.independent?(self, *vs)
+  end
+
+  #
+  # Returns +true+ iff all elements are zero.
+  #
+  def zero?
+    all?(&:zero?)
   end
 
   #--
@@ -2121,18 +2090,25 @@ class Vector
     @elements.dup
   end
 
+  #
+  # Return a single-column matrix from this vector
+  #
+  def to_matrix
+    Matrix.column_vector(self)
+  end
+
   def elements_to_f
-    warn "#{caller(1)[0]}: warning: Vector#elements_to_f is deprecated"
+    warn "Vector#elements_to_f is deprecated", uplevel: 1
     map(&:to_f)
   end
 
   def elements_to_i
-    warn "#{caller(1)[0]}: warning: Vector#elements_to_i is deprecated"
+    warn "Vector#elements_to_i is deprecated", uplevel: 1
     map(&:to_i)
   end
 
   def elements_to_r
-    warn "#{caller(1)[0]}: warning: Vector#elements_to_r is deprecated"
+    warn "Vector#elements_to_r is deprecated", uplevel: 1
     map(&:to_r)
   end
 

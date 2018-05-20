@@ -4,7 +4,6 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
-import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -21,7 +20,6 @@ import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.API;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -35,8 +33,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.channels.Channel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -505,12 +501,12 @@ public class PopenExecutor {
     private Errno errno = null;
 
     // MRI: pipe_open
-    private IRubyObject pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
+    private RubyIO pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
         IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
         long pid = 0;
         OpenFile fptr;
-        IRubyObject port;
+        RubyIO port;
         OpenFile write_fptr;
         IRubyObject write_port;
         PosixShim posix = new PosixShim(runtime);
@@ -629,8 +625,8 @@ public class PopenExecutor {
             fd = pair[1];
         }
 
-        port = runtime.getIO().allocate();
-        fptr = ((RubyIO)port).MakeOpenFile();
+        port = (RubyIO) runtime.getIO().allocate();
+        fptr = port.MakeOpenFile();
         fptr.setChannel(new NativeDeviceChannel(fd));
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
         if (convconfig != null) {
@@ -662,7 +658,7 @@ public class PopenExecutor {
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
             fptr.tiedIOForWriting = (RubyIO)write_port;
-            ((RubyIO)port).setInstanceVariable("@tied_io_for_writing", write_port);
+            port.setInstanceVariable("@tied_io_for_writing", write_port);
         }
 
 //        fptr.setFinalizer(fptr.PIPE_FINALIZE);
@@ -1407,7 +1403,7 @@ public class PopenExecutor {
                     else {
                         pgroup = val.convertToInteger().getLongValue();
                         if (pgroup < 0) {
-                            throw runtime.newArgumentError("negative process group ID : " + pgroup);
+                            throw runtime.newArgumentError("negative process group symbol : " + pgroup);
                         }
                     }
                     eargp.pgroup_given_set();

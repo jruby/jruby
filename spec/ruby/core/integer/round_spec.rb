@@ -1,10 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/to_i', __FILE__)
-require File.expand_path('../shared/integer_rounding', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/to_i'
+require_relative 'shared/integer_rounding'
 
 describe "Integer#round" do
-  it_behaves_like(:integer_to_i, :round)
-  it_behaves_like(:integer_rounding_positive_precision, :round)
+  it_behaves_like :integer_to_i, :round
+  it_behaves_like :integer_rounding_positive_precision, :round
 
   ruby_version_is ""..."2.5" do # Not just since 2.4
     it "rounds itself as a float if passed a positive precision" do

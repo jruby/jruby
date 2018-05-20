@@ -10,19 +10,13 @@ class TestThreadBacktrace < Test::Unit::TestCase
       end
     end.value
 
-    # These traces were modified during the new mixed-mode backtrace work
-    # to match the RubyProc calls at the top of a new Thread's stack.
     if $0 == __FILE__
-      expected = [
-                  /test\/test_thread_backtrace\.rb:7:in `test_simple_backtrace'/,
-                  /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/,
-                  /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/]
+      expected = [ /test\/jruby\/test_thread_backtrace\.rb:7:in `block in test_simple_backtrace'/ ]
     else
-      expected = [
-                  /\/test\/test_thread_backtrace\.rb:7:in `test_simple_backtrace'/,
-                  /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/,
-                  /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/]
+      expected = [ /test\/jruby\/test_thread_backtrace\.rb:7:in `block in test_simple_backtrace'/ ]
     end
+
+    puts "  " + backtrace.join("\n  ") if $VERBOSE
 
     expected.each_with_index do |pattern, index|
       assert pattern =~ backtrace[index],

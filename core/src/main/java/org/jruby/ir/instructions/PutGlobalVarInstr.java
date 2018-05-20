@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -15,7 +16,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInstr {
-    public PutGlobalVarInstr(String varName, Operand value) {
+    public PutGlobalVarInstr(RubySymbol varName, Operand value) {
         this(new GlobalVariable(varName), value);
     }
 
@@ -25,7 +26,7 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
-        String name = getTarget().getName();
+        String name = getTarget().getId();
 
         if (name.equals("$_") || name.equals("$LAST_READ_LINE")) {
             scope.getFlags().add(IRFlags.REQUIRES_LASTLINE);
@@ -67,7 +68,7 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         GlobalVariable target = getTarget();
         IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, currScope, currDynScope, temp);
-        context.runtime.getGlobalVariables().set(target.getName(), value);
+        context.runtime.getGlobalVariables().set(target.getId(), value);
         return null;
     }
 

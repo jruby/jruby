@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/rescue', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/rescue'
 
 class SpecificExampleException < StandardError
 end
@@ -195,18 +195,34 @@ describe "The rescue keyword" do
     ScratchPad.recorded.should == [:one, :else_ran, :ensure_ran, :outside_begin]
   end
 
-  it "will execute an else block even without rescue and ensure" do
-    lambda {
-      eval <<-ruby
-        begin
-          ScratchPad << :begin
-        else
-          ScratchPad << :else
-        end
-      ruby
-    }.should complain(/else without rescue is useless/)
+  ruby_version_is ''...'2.6' do
+    it "will execute an else block even without rescue and ensure" do
+      lambda {
+        eval <<-ruby
+          begin
+            ScratchPad << :begin
+          else
+            ScratchPad << :else
+          end
+        ruby
+      }.should complain(/else without rescue is useless/)
 
-    ScratchPad.recorded.should == [:begin, :else]
+      ScratchPad.recorded.should == [:begin, :else]
+    end
+  end
+
+  ruby_version_is '2.6' do
+    it "raises SyntaxError when else is used without rescue and ensure" do
+      lambda {
+        eval <<-ruby
+          begin
+            ScratchPad << :begin
+          else
+            ScratchPad << :else
+          end
+        ruby
+      }.should raise_error(SyntaxError, /else without rescue is useless/)
+    end
   end
 
   it "will not execute an else block if an exception was raised" do
@@ -355,11 +371,23 @@ describe "The rescue keyword" do
   end
 
   it "evaluates rescue expressions only when needed" do
-    invalid_rescuer = Object.new
     begin
-      :foo
-    rescue invalid_rescuer
-    end.should == :foo
+      ScratchPad << :foo
+    rescue -> { ScratchPad << :bar; StandardError }.call
+    end
+
+    ScratchPad.recorded.should == [:foo]
+  end
+
+  it "suppresses exception from block when raises one from rescue expression" do
+    -> {
+      begin
+        raise "from block"
+      rescue (raise "from rescue expression")
+      end
+    }.should raise_error(RuntimeError, "from rescue expression") do |e|
+      e.cause.message.should == "from block"
+    end
   end
 
   it "should splat the handling Error classes" do

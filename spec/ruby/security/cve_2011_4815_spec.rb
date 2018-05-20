@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 describe :resists_cve_2011_4815, shared: true do
   it "resists CVE-2011-4815 by having different hash codes in different processes" do
@@ -20,6 +20,17 @@ end
 
 describe "Float#hash" do
   it_behaves_like :resists_cve_2011_4815, '3.14'
+end
+
+# https://bugs.ruby-lang.org/issues/14420
+guard_not -> { platform_is :windows and PlatformGuard.implementation?(:ruby) } do
+  describe "Rational#hash" do
+    it_behaves_like :resists_cve_2011_4815, 'Rational(1, 2)'
+  end
+
+  describe "Complex#hash" do
+    it_behaves_like :resists_cve_2011_4815, 'Complex(1, 2)'
+  end
 end
 
 describe "String#hash" do

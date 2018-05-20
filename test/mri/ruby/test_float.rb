@@ -16,6 +16,8 @@ class TestFloat < Test::Unit::TestCase
     assert_in_delta(13.4 % 1, 0.4, 0.0001)
     assert_equal(36893488147419111424,
                  36893488147419107329.0.to_i)
+    assert_equal(1185151044158398820374743613440,
+                 1.1851510441583988e+30.to_i)
   end
 
   def nan_test(x,y)
@@ -455,6 +457,8 @@ class TestFloat < Test::Unit::TestCase
   end
 
   def test_floor_with_precision
+    assert_equal(+0.0, +0.001.floor(1))
+    assert_equal(-0.1, -0.001.floor(1))
     assert_equal(1.100, 1.111.floor(1))
     assert_equal(1.110, 1.111.floor(2))
     assert_equal(11110, 11119.9.floor(-1))
@@ -482,6 +486,8 @@ class TestFloat < Test::Unit::TestCase
   end
 
   def test_ceil_with_precision
+    assert_equal(+0.1, +0.001.ceil(1))
+    assert_equal(-0.0, -0.001.ceil(1))
     assert_equal(1.200, 1.111.ceil(1))
     assert_equal(1.120, 1.111.ceil(2))
     assert_equal(11120, 11111.1.ceil(-1))
@@ -755,6 +761,12 @@ class TestFloat < Test::Unit::TestCase
   def test_Float
     assert_in_delta(0.125, Float("0.1_2_5"), 0.00001)
     assert_in_delta(0.125, "0.1_2_5__".to_f, 0.00001)
+    assert_in_delta(0.0, "0_.125".to_f, 0.00001)
+    assert_in_delta(0.0, "0._125".to_f, 0.00001)
+    assert_in_delta(0.1, "0.1__2_5".to_f, 0.00001)
+    assert_in_delta(0.1, "0.1_e10".to_f, 0.00001)
+    assert_in_delta(0.1, "0.1e_10".to_f, 0.00001)
+    assert_in_delta(1.0, "0.1e1__0".to_f, 0.00001)
     assert_equal(1, suppress_warning {Float(([1] * 10000).join)}.infinite?)
     assert_not_predicate(Float(([1] * 10000).join("_")), :infinite?) # is it really OK?
     assert_raise(ArgumentError) { Float("1.0\x001") }
@@ -782,7 +794,7 @@ class TestFloat < Test::Unit::TestCase
   end
 
   def test_num2dbl
-    assert_raise(TypeError) do
+    assert_raise(ArgumentError, "comparison of String with 0 failed") do
       1.0.step(2.0, "0.5") {}
     end
     assert_raise(TypeError) do

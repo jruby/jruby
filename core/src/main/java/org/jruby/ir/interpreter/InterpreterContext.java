@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.Callable;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
@@ -12,7 +13,6 @@ import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -171,7 +171,7 @@ public class InterpreterContext {
         return scope.getFileName();
     }
 
-    public String getName() {
+    public RubySymbol getName() {
         return scope.getName();
     }
 

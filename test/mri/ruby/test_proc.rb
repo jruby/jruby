@@ -1174,6 +1174,8 @@ class TestProc < Test::Unit::TestCase
     x = proc {}
     x.taint
     assert_predicate(x.to_s, :tainted?)
+    name = "Proc\u{1f37b}"
+    assert_include(EnvUtil.labeled_class(name, Proc).new {}.to_s, name)
   end
 
   @@line_of_source_location_test = __LINE__ + 1
@@ -1320,6 +1322,20 @@ class TestProc < Test::Unit::TestCase
     assert_equal(20, b.local_variable_get(:b))
     assert_equal(10, b.eval("a"))
     assert_equal(20, b.eval("b"))
+  end
+
+  def test_local_variable_set_wb
+    assert_ruby_status([], <<-'end;', '[Bug #13605]')
+      b = binding
+      n = 20_000
+
+      n.times do |i|
+        v = rand(2_000)
+        name = "n#{v}"
+        value = Object.new
+        b.local_variable_set name, value
+      end
+    end;
   end
 
   def test_local_variable_defined?

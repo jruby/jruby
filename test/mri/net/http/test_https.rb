@@ -191,4 +191,33 @@ class TestNetHTTPS < Test::Unit::TestCase
       assert th.join(10), bug4246
     }
   end
+
+  def test_min_version
+    http = Net::HTTP.new("127.0.0.1", config("port"))
+    http.use_ssl = true
+    http.min_version = :TLS1
+    http.verify_callback = Proc.new do |preverify_ok, store_ctx|
+      true
+    end
+    ex = assert_raise(OpenSSL::SSL::SSLError){
+      http.request_get("/") {|res| }
+    }
+    assert_match(/hostname \"127.0.0.1\" does not match/, ex.message)
+  end
+
+  def test_max_version
+    http = Net::HTTP.new("127.0.0.1", config("port"))
+    http.use_ssl = true
+    http.max_version = :SSL2
+    http.verify_callback = Proc.new do |preverify_ok, store_ctx|
+      true
+    end
+    @log_tester = lambda {|_| }
+    ex = assert_raise(OpenSSL::SSL::SSLError){
+      http.request_get("/") {|res| }
+    }
+    re_msg = /\ASSL_connect returned=1 errno=0 |SSL_CTX_set_max_proto_version/
+    assert_match(re_msg, ex.message)
+  end
+
 end if defined?(OpenSSL::SSL)

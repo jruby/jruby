@@ -68,10 +68,10 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         InterpreterContext ic = method.getInterpreterContext();
 
-        if (Options.IR_PRINT.load()) {
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
             ByteArrayOutputStream baos = IRDumper.printIR(method, false);
 
-            LOG.info("Printing simple IR for " + method.getName() + ":\n" + new String(baos.toByteArray()));
+            LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
         return ic;
@@ -249,7 +249,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         // FIXME: This is only printing out CFG once.  If we keep applying more passes then we
         // will want to print out after those new passes.
         ensureInstrsReady();
-        LOG.info("Executing '" + method.getName() + "'");
+        LOG.info("Executing '" + method.getId() + "'");
         if (!displayedCFG) {
             LOG.info(method.debugOutput());
             displayedCFG = true;
@@ -268,9 +268,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         synchronized (this) {
-            int callCount = this.callCount;
             if (callCount >= 0 && callCount++ >= Options.JIT_THRESHOLD.load()) {
-                this.callCount = callCount;
                 context.runtime.getJITCompiler().buildThresholdReached(context, this);
             }
         }

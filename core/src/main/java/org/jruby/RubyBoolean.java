@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
@@ -161,6 +162,14 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         public static RubyString false_to_s(IRubyObject f) {
             return RubyString.newStringShared(f.getRuntime(), FALSE_BYTES);
         }
+
+        @Override
+        public <T> T toJava(Class<T> target) {
+            if (target.isAssignableFrom(Boolean.class) || target == boolean.class) {
+                return (T) Boolean.FALSE;
+            }
+            return super.toJava(target);
+        }
     }
 
     static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
@@ -192,6 +201,14 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         public static RubyString true_to_s(IRubyObject t) {
             return RubyString.newStringShared(t.getRuntime(), TRUE_BYTES);
         }
+
+        @Override
+        public <T> T toJava(Class<T> target) {
+            if (target.isAssignableFrom(Boolean.class) || target == boolean.class) {
+                return (T) Boolean.TRUE;
+            }
+            return super.toJava(target);
+        }
     }
     
     @JRubyMethod(name = "hash")
@@ -220,17 +237,6 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
-    }
-
-    @Override
-    public Object toJava(Class target) {
-        if (target.isAssignableFrom(Boolean.class) || target.equals(boolean.class)) {
-            if (isFalse()) return Boolean.FALSE;
-
-            return Boolean.TRUE;
-        } else {
-            return super.toJava(target);
-        }
     }
 }
 

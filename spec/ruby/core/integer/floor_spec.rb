@@ -1,10 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/to_i', __FILE__)
-require File.expand_path('../shared/integer_rounding', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/to_i'
+require_relative 'shared/integer_rounding'
 
 describe "Integer#floor" do
-  it_behaves_like(:integer_to_i, :floor)
-  it_behaves_like(:integer_rounding_positive_precision, :floor)
+  it_behaves_like :integer_to_i, :floor
+  it_behaves_like :integer_rounding_positive_precision, :floor
 
   ruby_version_is "2.4" do
     context "precision argument specified as part of the floor method is negative" do

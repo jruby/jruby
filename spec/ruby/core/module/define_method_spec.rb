@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 class DefineMethodSpecClass
 end
@@ -222,19 +222,17 @@ describe "Module#define_method" do
     }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "2.3" do
-    it "does not use the caller block when no block is given" do
-      o = Object.new
-      def o.define(name)
-        self.class.class_eval do
-          define_method(name)
-        end
+  it "does not use the caller block when no block is given" do
+    o = Object.new
+    def o.define(name)
+      self.class.class_eval do
+        define_method(name)
       end
-
-      lambda {
-        o.define(:foo) { raise "not used" }
-      }.should raise_error(ArgumentError)
     end
+
+    lambda {
+      o.define(:foo) { raise "not used" }
+    }.should raise_error(ArgumentError)
   end
 
   it "does not change the arity check style of the original proc" do
@@ -629,5 +627,30 @@ describe "Method#define_method when passed an UnboundMethod object" do
 
   it "defines a method with the same #parameters as the original" do
     @obj.method(:n).parameters.should == @obj.method(:m).parameters
+  end
+end
+
+describe "Method#define_method when passed a Proc object" do
+  describe "and a method is defined inside" do
+    it "defines the nested method in the default definee where the Proc was created" do
+      prc = nil
+      t = Class.new do
+        prc = -> {
+          def nested_method_in_proc_for_define_method
+            42
+          end
+        }
+      end
+
+      c = Class.new do
+        define_method(:test, prc)
+      end
+
+      o = c.new
+      o.test
+      o.should_not have_method :nested_method_in_proc_for_define_method
+
+      t.new.nested_method_in_proc_for_define_method.should == 42
+    end
   end
 end

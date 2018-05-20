@@ -135,6 +135,8 @@ public final class EncodingService {
         return e != null ? e : findAliasEntry(bytes);
     }
 
+    private static ByteList defaultCharsetName;
+
     // rb_locale_charmap...mostly
     public Encoding getLocaleEncoding() {
         final Encoding consoleEncoding = getConsoleEncoding();
@@ -143,7 +145,13 @@ public final class EncodingService {
             return consoleEncoding;
         }
 
-        Entry entry = findEncodingOrAliasEntry(new ByteList(Charset.defaultCharset().name().getBytes()));
+        ByteList encName = defaultCharsetName;
+        if (encName == null) {
+            encName = new ByteList(Charset.defaultCharset().name().getBytes(), false);
+            defaultCharsetName = encName;
+        }
+
+        final Entry entry = findEncodingOrAliasEntry(encName);
         return entry == null ? ASCIIEncoding.INSTANCE : entry.getEncoding();
     }
 
@@ -328,7 +336,7 @@ public final class EncodingService {
      *
      * @param str the object to coerce and use to look up encoding. The coerced String
      * must be ASCII-compatible.
-     * @return the Encoding object found, nil (for internal), or raises ArgumentError
+     * @return the Encoding object found, nil (for internal)
      */
     public Encoding findEncodingNoError(IRubyObject str) {
         return findEncodingCommon(str, false);

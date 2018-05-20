@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.io.IOException;
@@ -97,7 +98,7 @@ public abstract class IOChannel implements Channel {
         ByteList buffer;
 
         if (src.hasArray()) {
-            buffer = new ByteList(src.array(), src.position(), src.remaining(), false);
+            buffer = new ByteList(src.array(), src.position(), src.remaining(), true);
         } else {
             buffer = new ByteList(src.remaining());
             buffer.append(src, src.remaining());
@@ -106,12 +107,12 @@ public abstract class IOChannel implements Channel {
         return (int)written.convertToInteger().getLongValue();
     }
 
-    protected CallSite initReadSite() {
+    protected CallSite initReadSite(String readMethod) {
         // no call site use here since this will only be called once
-        if(io.respondsTo("read")) {
-            return MethodIndex.getFunctionalCallSite("read");
+        if(io.respondsTo(readMethod)) {
+            return MethodIndex.getFunctionalCallSite(readMethod);
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `read' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `" + readMethod + "' method");
         }
     }
 
@@ -133,8 +134,12 @@ public abstract class IOChannel implements Channel {
         private final CallSite read;
 
         public IOReadableByteChannel(final IRubyObject io) {
+            this(io, "read");
+        }
+
+        public IOReadableByteChannel(final IRubyObject io, final String readMethod) {
             super(io);
-            read = initReadSite();
+            read = initReadSite(readMethod);
         }
         
         public int read(ByteBuffer dst) throws IOException {
@@ -167,7 +172,7 @@ public abstract class IOChannel implements Channel {
         private final CallSite read;
         public IOReadableWritableByteChannel(final IRubyObject io) {
             super(io);
-            read = initReadSite();
+            read = initReadSite("read");
             write = initWriteSite();
         }
 

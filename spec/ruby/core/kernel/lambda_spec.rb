@@ -1,11 +1,11 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/lambda', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/lambda'
 
 # The functionality of lambdas is specified in core/proc
 
 describe "Kernel.lambda" do
-  it_behaves_like(:kernel_lambda, :lambda)
+  it_behaves_like :kernel_lambda, :lambda
 
   it "is a private method" do
     Kernel.should have_private_instance_method(:lambda)

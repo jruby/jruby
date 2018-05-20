@@ -63,10 +63,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.getInterpreterContext();
 
-        if (Options.IR_PRINT.load()) {
+        if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
 
-            LOG.info("Printing simple IR for " + irScope.getName() + ":\n" + new String(baos.toByteArray()));
+            LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
         ThreadContext context = runtime.getCurrentContext();
@@ -210,6 +210,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // Top-level script!
         IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+
+        // enable refinements if incoming scope already has an overlay active
+        if (staticScope.getOverlayModuleForRead() != null) {
+            script.setIsMaybeUsingRefinements();
+        }
 
         // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
         // we end up growing dynamicscope potentially based on any changes made.

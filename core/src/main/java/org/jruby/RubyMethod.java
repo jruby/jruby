@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,11 +29,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.ProcMethod;
@@ -155,6 +157,12 @@ public class RubyMethod extends AbstractRubyMethod {
     }
 
     @Override
+    @JRubyMethod(name = "===", required = 1)
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        return method.call(context, receiver, implementationModule, methodName, other, Block.NULL_BLOCK);
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof RubyMethod)) {
             return false;
@@ -240,50 +248,68 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
     public IRubyObject inspect() {
-        StringBuilder str = new StringBuilder(24).append("#<");
-        char sharp = '#';
-        
-        str.append(getMetaClass().getRealClass().getName()).append(": ");
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
 
-        if (implementationModule.isSingleton()) {
-            IRubyObject attached = ((MetaClass) implementationModule).getAttached();
+        RubyString str = RubyString.newString(runtime, "#<");
+        String sharp = "#";
+        
+        str.catString(getType().getName()).catString(": ");
+
+        RubyModule definedClass;
+        RubyModule mklass = originModule;
+
+        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
+            definedClass = method.getRealMethod().getDefinedClass();
+        }
+        else {
+            definedClass = method.getDefinedClass();
+        }
+
+        if (definedClass.isIncluded()) {
+            definedClass = definedClass.getMetaClass();
+        }
+
+        if (mklass.isSingleton()) {
+            IRubyObject attached = ((MetaClass) mklass).getAttached();
             if (receiver == null) {
-                str.append(implementationModule.inspect().toString());
+                str.cat19(inspect(context, mklass).convertToString());
             } else if (receiver == attached) {
-                str.append(attached.inspect().toString());
-                sharp = '.';
+                str.cat19(inspect(context, attached).convertToString());
+                sharp = ".";
             } else {
-                str.append(receiver.inspect().toString());
-                str.append('(').append(attached.inspect().toString()).append(')');
-                sharp = '.';
+                str.cat19(inspect(context, receiver).convertToString());
+                str.catString("(");
+                str.cat19(inspect(context, attached).convertToString());
+                str.catString(")");
+                sharp = ".";
             }
         } else {
-            str.append(originModule.getName());
-            if (implementationModule != originModule) {
-                str.append('(').append(implementationModule.getName()).append(')');
+            str.catString(mklass.getName());
+            if (definedClass != mklass) {
+                str.catString("(");
+                str.catString(definedClass.getName());
+                str.catString(")");
             }
         }
-
-        str.append(sharp).append(methodName); // (real-name) if alias
-        final String realName= method.getRealMethod().getName();
-        if ( realName != null && ! methodName.equals(realName) ) {
-            str.append('(').append(realName).append(')');
+        str.catString(sharp);
+        str.catString(this.methodName);
+        if (!methodName.equals(method.getName())) {
+            str.catString("(");
+            str.catString(method.getName());
+            str.catString(")");
         }
-        str.append('>');
-        
-        RubyString res = RubyString.newString(getRuntime(), str);
-        res.setTaint(isTaint());
-        return res;
+        if (method.isNotImplemented()) {
+            str.catString(" (not-implemented)");
+        }
+        str.catString(">");
+
+        return str;
     }
 
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
         return receiver;
-    }
-
-    @JRubyMethod
-    public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
     }
 
     @JRubyMethod
@@ -295,7 +321,7 @@ public class RubyMethod extends AbstractRubyMethod {
             return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     public String getFilename() {

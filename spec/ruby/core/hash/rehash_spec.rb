@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Hash#rehash" do
   it "reorganizes the hash by recomputing all key hash codes" do
@@ -33,6 +33,21 @@ describe "Hash#rehash" do
     h.rehash
     h[k1].should == v1
     h[k2].should == v2
+  end
+
+  it "removes duplicate keys" do
+    a = [1,2]
+    b = [1]
+
+    h = {}
+    h[a] = true
+    h[b] = true
+    b << 2
+    h.size.should == 2
+    h.keys.should == [a, b]
+    h.rehash
+    h.size.should == 1
+    h.keys.should == [a]
   end
 
   it "raises a #{frozen_error_class} if called on a frozen instance" do

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -28,7 +29,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public transient final long callSiteId;
     private final CallType callType;
-    protected String name;
+    protected RubySymbol name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
     protected final transient boolean hasClosure;
@@ -44,7 +45,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
-    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
+    protected CallBase(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
         super(op, arrayifyOperands(receiver, args, closure));
 
@@ -53,7 +54,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name, potentiallyRefined);
+        this.callSite = getCallSiteFor(callType, name.idString(), potentiallyRefined);
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -89,7 +90,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return hasClosure ? -1*(argsCount + 1) : argsCount;
     }
 
-    public String getName() {
+    /**
+     * raw identifier string (used by method table).
+     */
+    public String getId() {
+        return name.idString();
+    }
+
+    public RubySymbol getName() {
         return name;
     }
 
@@ -229,15 +237,15 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
             }
         }
 
-        String mname = getName();
-
-        if (potentiallySend(mname, argsCount)) {
+        if (potentiallySend(getId(), argsCount)) { // ok to look at raw string since we know we are looking for 7bit names.
             Operand meth = getArg1();
             if (meth instanceof StringLiteral) {
                 // This logic is intended to reduce the framing impact of send if we can
                 // statically determine the sent name and we know it does not need to be
                 // either framed or scoped. Previously it only did this logic for
                 // send(:local_variables).
+
+                // This says getString but I believe this will also always be an id string in this case so it is ok.
                 String sendName = ((StringLiteral) meth).getString();
                 if (MethodIndex.SCOPE_AWARE_METHODS.contains(sendName)) {
                     modifiedScope = true;
@@ -308,18 +316,12 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // How about aliasing of 'call', 'eval', 'send', 'module_eval', 'class_eval', 'instance_eval'?
     private boolean computeEvalFlag() {
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
-        String mname = getName();
+        String mname = getId();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
         // CON: Removed "call" check because we didn't do it in 1.7 and it deopts all callers of Method or Proc objects.
         // CON: eval forms with no arguments are block or block pass, and do not need to deopt
-        if (
-                (mname.equals("eval") ||
-                        mname.equals("module_eval") ||
-                        mname.equals("class_eval") ||
-                        mname.equals("instance_eval")
-                ) &&
-                        getArgsCount() != 0) {
-
+        if (getArgsCount() != 0 && (mname.equals("eval") || mname.equals("module_eval") ||
+                mname.equals("class_eval") || mname.equals("instance_eval"))) {
             return true;
         }
 
@@ -344,7 +346,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         // literal closures can be used to capture surrounding binding
         if (hasLiteralClosure()) return true;
 
-        String mname = getName();
+        String mname = getId();
         if (MethodIndex.SCOPE_AWARE_METHODS.contains(mname)) {
             return true;
         } else if (potentiallySend(mname, argsCount)) {
@@ -397,7 +399,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         if (procNew) return true;
 
-        String mname = getName();
+        String mname = getId();
         if (frameReads.size() > 0 || frameWrites.size() > 0) {
             // Known frame-aware methods.
             return true;
@@ -428,12 +430,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     /**
      * Determine based on the method name what frame fields it is likely to need.
-     *
-     * @param name the name of the method that will be called
      */
     private void captureFrameReadsAndWrites() {
         // grab a reference to frame fields this method name is known to be associated with
-        if (potentiallySend(getName(), argsCount)) {
+        if (potentiallySend(getId(), argsCount)) {
             // Might be a #send, use the frame reads and writes of what it might call
             Operand meth = getArg1();
             String aliasName;
@@ -447,8 +447,8 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 frameWrites = ALL;
             }
         } else {
-            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(name, Collections.EMPTY_SET);
-            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(name, Collections.EMPTY_SET);
+            frameReads = MethodIndex.METHOD_FRAME_READS.getOrDefault(getId(), Collections.EMPTY_SET);
+            frameWrites = MethodIndex.METHOD_FRAME_WRITES.getOrDefault(getId(), Collections.EMPTY_SET);
         }
     }
 

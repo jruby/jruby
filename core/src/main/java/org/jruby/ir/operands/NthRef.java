@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -16,8 +17,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class NthRef extends Reference {
     final public int matchNumber;
 
-    public NthRef(int matchNumber) {
-        super("$" + matchNumber);
+    public NthRef(IRScope scope, int matchNumber) {
+        super(scope.getManager().getRuntime().newSymbol("$" + matchNumber));
         this.matchNumber = matchNumber;
     }
 
@@ -39,7 +40,7 @@ public class NthRef extends Reference {
     }
 
     public static NthRef decode(IRReaderDecoder d) {
-        return new NthRef(d.decodeInt());
+        return new NthRef(d.getCurrentScope(), d.decodeInt());
     }
 
     @Override

@@ -22,7 +22,6 @@ project 'JRuby Core' do
 
               'jruby.basedir' => '${basedir}/..',
               'jruby.test.memory' => '3G',
-              'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G',
 
               'create.sources.jar' => false )
@@ -43,18 +42,18 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.16', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.17', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.17', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.43', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.19', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.45', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.9', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.7'
+  jar 'com.github.jnr:jnr-ffi:2.1.8'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.13'
+  jar 'org.jruby.joni:joni:2.1.16'
   jar 'org.jruby.extras:bytelist:1.0.15'
-  jar 'org.jruby.jcodings:jcodings:1.0.26'
+  jar 'org.jruby.jcodings:jcodings:1.0.30'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -226,7 +225,7 @@ project 'JRuby Core' do
           'systemProperties' => {
             'jruby.home' =>  '${basedir}/..'
           },
-          'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
                           'org/jruby/embed/**/*Test*.java',
                           'org/jruby/util/**/*Test*.java',

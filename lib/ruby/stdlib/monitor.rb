@@ -7,8 +7,6 @@
 # You can freely distribute/modify this library.
 #
 
-require 'thread'
-
 #
 # In concurrent programming, a monitor is an object or module intended to be
 # used safely by more than one thread.  The defining characteristic of a
@@ -201,6 +199,20 @@ module MonitorMixin
       @mon_owner = nil
       @mon_mutex.unlock
     end
+  end
+
+  #
+  # Returns true if this monitor is locked by any thread
+  #
+  def mon_locked?
+    @mon_mutex.locked?
+  end
+
+  #
+  # Returns true if this monitor is locked by current thread.
+  #
+  def mon_owned?
+    @mon_mutex.locked? && @mon_owner == Thread.current
   end
 
   #

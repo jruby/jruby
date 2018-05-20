@@ -6,6 +6,7 @@
 
 package org.jruby.ir.persistence;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -89,7 +90,7 @@ public class IRDumper extends IRVisitor {
     }
 
     public void visit(IRScope scope, boolean full, boolean recurse) {
-        println("begin " + scope.getScopeType().name() + "<" + scope.getName() + ">");
+        println("begin " + scope.getScopeType().name() + "<" + scope.getId() + ">");
 
         InterpreterContext ic = full ? scope.getFullInterpreterContext() : scope.getInterpreterContext();
 
@@ -101,12 +102,12 @@ public class IRDumper extends IRVisitor {
             println(ic.getStaticScope().getSignature());
         }
 
-        Map<String, LocalVariable> localVariables = ic.getScope().getLocalVariables();
+        Map<RubySymbol, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
             println("declared variables");
 
-            for (Map.Entry<String, LocalVariable> entry : localVariables.entrySet()) {
+            for (Map.Entry<RubySymbol, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
@@ -209,7 +210,8 @@ public class IRDumper extends IRVisitor {
 
         if (instr instanceof ResultInstr) {
             Variable result = ((ResultInstr) instr).getResult();
-            String sigilName = (result instanceof LocalVariable) ? "*" + result.getName() : result.getName();
+            // FIXME: bytelist_love - use getId and stringbuilder.
+            String sigilName = (result instanceof LocalVariable) ? "*" + result.getId() : result.getId();
 
             printf(varFormat, sigilName);
         } else {
@@ -224,7 +226,7 @@ public class IRDumper extends IRVisitor {
     public int getLongestVariable(int longest, ResultInstr i) {
         Variable result = i.getResult();
 
-        longest = Math.max(longest, result.getName().length() + ((result instanceof LocalVariable) ? 1 : 0));
+        longest = Math.max(longest, result.getId().length() + ((result instanceof LocalVariable) ? 1 : 0));
         return longest;
     }
 
@@ -297,7 +299,7 @@ public class IRDumper extends IRVisitor {
     public void UnboxedFixnum(UnboxedFixnum fixnum) { print(fixnum.getValue()); }
     public void Float(org.jruby.ir.operands.Float flote) { print(flote.getValue()); }
     public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { print(flote.getValue()); }
-    public void GlobalVariable(GlobalVariable globalvariable) { print(globalvariable.getName()); }
+    public void GlobalVariable(GlobalVariable globalvariable) { print(globalvariable.getId()); }
     public void Hash(Hash hash) {
         List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
         boolean comma = false;
@@ -313,7 +315,7 @@ public class IRDumper extends IRVisitor {
     public void Label(Label label) { print(label.toString()); }
     public void LocalVariable(LocalVariable localvariable) { print(localvariable.getName()); }
     public void Nil(Nil nil) { }
-    public void NthRef(NthRef nthref) { print(nthref.getName()); }
+    public void NthRef(NthRef nthref) { print(nthref.getId()); }
     public void NullBlock(NullBlock nullblock) { }
     public void ObjectClass(ObjectClass objectclass) { }
     public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }
@@ -325,15 +327,15 @@ public class IRDumper extends IRVisitor {
     public void StringLiteral(StringLiteral stringliteral) { print(stringliteral.getByteList()); }
     public void SValue(SValue svalue) { visit(svalue.getArray()); }
     public void Symbol(Symbol symbol) { print(symbol.getBytes()); }
-    public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName()); }
-    public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getName()); }
+    public void SymbolProc(SymbolProc symbolproc) { print(symbolproc.getName().idString()); }
+    public void TemporaryVariable(TemporaryVariable temporaryvariable) { print(temporaryvariable.getId()); }
     public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { TemporaryVariable(temporarylocalvariable); }
     public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { TemporaryVariable(temporaryfloatvariable); }
     public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { TemporaryVariable(temporaryfixnumvariable); }
     public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { TemporaryVariable(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) {  }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) {  }
-    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { print(wrappedirclosure.getClosure().getName()); }
+    public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { print(wrappedirclosure.getClosure().getId()); }
 
     private static Object get(Field f, Instr i) {
         try {

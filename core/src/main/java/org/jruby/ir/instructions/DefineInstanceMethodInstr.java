@@ -22,7 +22,7 @@ public class DefineInstanceMethodInstr extends NoOperandInstr implements FixedAr
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + method.getName() };
+        return new String[] {"name: " + method.getId() };
     }
 
     @Override

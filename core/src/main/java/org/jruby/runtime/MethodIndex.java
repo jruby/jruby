@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -27,6 +27,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime;
 
 import java.util.Arrays;
@@ -38,16 +39,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.anno.FrameField;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
+import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callsite.CmpCallSite;
 import org.jruby.runtime.callsite.EqCallSite;
 import org.jruby.runtime.callsite.BitAndCallSite;
@@ -60,6 +62,7 @@ import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.callsite.XorCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.util.StringSupport;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -121,6 +124,7 @@ public class MethodIndex {
                 {"+", "op_plus"},
                 {"-", "op_minus"},
                 {"*", "op_mul"},
+                {"%", "op_mod"},
                 {"==", "op_equal"},
                 {"<", "op_lt"},
                 {"<=", "op_le"},
@@ -168,6 +172,7 @@ public class MethodIndex {
             case "+" : return new PlusCallSite();
             case "-" : return new MinusCallSite();
             case "*" : return new MulCallSite();
+            case "%" : return new ModCallSite();
             case "<" : return new LtCallSite();
             case "<=" : return new LeCallSite();
             case ">" : return new GtCallSite();
@@ -244,16 +249,15 @@ public class MethodIndex {
         if (DEBUG) LOG.debug("Adding method fields for {}: {} for {}", usage, writes, methodNames);
 
         if (writes.size() > 0) {
-            String[] names = Helpers.SEMICOLON_PATTERN.split(methodNames);
-            List<String> namesList = Arrays.asList(names);
+            List<String> names = StringSupport.split(methodNames, ';');
 
-            addAwareness(needsFrame, needsScope, namesList);
+            addAwareness(needsFrame, needsScope, names);
 
             addFieldAccesses(methodFrameAccesses, names, writes);
         }
     }
 
-    private static void addFieldAccesses(Map<String, Set<FrameField>> methodFrameWrites, String[] names, Set<FrameField> writes) {
+    private static void addFieldAccesses(Map<String, Set<FrameField>> methodFrameWrites, List<String> names, Set<FrameField> writes) {
         for (String name : names) {
             methodFrameWrites.compute(
                     name,
@@ -261,9 +265,9 @@ public class MethodIndex {
         }
     }
 
-    private static void addAwareness(boolean needsFrame, boolean needsScope, List<String> namesList) {
-        if (needsFrame) FRAME_AWARE_METHODS.addAll(namesList);
-        if (needsScope) SCOPE_AWARE_METHODS.addAll(namesList);
+    private static void addAwareness(boolean needsFrame, boolean needsScope, List<String> names) {
+        if (needsFrame) FRAME_AWARE_METHODS.addAll(names);
+        if (needsScope) SCOPE_AWARE_METHODS.addAll(names);
     }
 
     public static void addMethodReadFields(String name, FrameField[] reads) {

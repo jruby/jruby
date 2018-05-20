@@ -189,8 +189,9 @@ class RegularFileResource extends AbstractFileResource {
                         throw new ResourceException.FileIsDirectory(absolutePath());
                     case ENOTDIR:
                         throw new ResourceException.FileIsNotDirectory(absolutePath());
+                    case EMFILE:
                     default:
-                        throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
+                        throw new ResourceException.IOError(new IOException(errno.description()));
 
                 }
             }
@@ -234,7 +235,7 @@ class RegularFileResource extends AbstractFileResource {
             return channel;
         }
 
-        if (file.isDirectory() && flags.isWritable()) {
+        if (file.isDirectory()) {
             throw new ResourceException.FileIsDirectory(absolutePath());
         }
 

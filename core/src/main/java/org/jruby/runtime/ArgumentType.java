@@ -2,32 +2,28 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubySymbol;
 
 /**
- * Created by headius on 5/8/15.
+ * The diffierent types of arguments identified in a method.
  */
 public enum ArgumentType {
+    key("key", false),
+    keyreq("keyreq", false),
+    keyrest("keyrest", false),
+    block("block", false),
+    opt("opt", false),
+    rest("rest", false),
+    req("req", false),
+    anonreq("req", true),
+    anonopt("opt", true),
+    anonrest("rest", true),
+    anonkeyrest("keyrest", true);
 
-    key("key", 'k', false),
-    keyreq("keyreq", 'K', false),
-    keyrest("keyrest", 'e', false),
-    block("block", 'b', false),
-    opt("opt", 'o', false),
-    rest("rest", 'r', false),
-    req("req", 'q', false),
-    anonreq("req", 'n', true),
-    anonopt("opt", 'O', true),
-    anonrest("rest", 'R', true),
-    anonkeyrest("keyrest", 'N', true);
-
-    public static final String ANONOPT = Character.toString( anonopt.prefix );
-    public static final String ANONREST = Character.toString( anonrest.prefix );
-    public static final String REQ = Character.toString( req.prefix );
-
-    private ArgumentType(String symbolicName, char prefix, boolean anonymous) {
-        this.symbolicName = symbolicName;
-        this.prefix = prefix;
+    ArgumentType(String typeId, boolean anonymous) {
+        this.typeId = typeId;
         this.anonymous = anonymous;
+        this.name = toString();
     }
 
     public static ArgumentType valueOf(char prefix) {
@@ -47,13 +43,10 @@ public enum ArgumentType {
         }
     }
 
-    public String renderPrefixForm(String name) {
-        return anonymous ? String.valueOf(prefix) : prefix + name;
-    }
+    public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
+        RubySymbol typeName = runtime.newSymbol(typeId);
 
-    public RubyArray toArrayForm(Ruby runtime, String name) {
-        // we check for null name here as a precaution, since it will certainly blow up newSymbol (#3086)
-        return anonymous || name == null ? runtime.newArray(runtime.newSymbol(symbolicName)) : runtime.newArray(runtime.newSymbol(symbolicName), runtime.newSymbol(name));
+        return anonymous ? runtime.newArray(typeName) : runtime.newArray(typeName, name);
     }
 
     public ArgumentType anonymousForm() {
@@ -66,7 +59,7 @@ public enum ArgumentType {
         return this;
     }
 
-    public final String symbolicName;
-    private final char prefix;
+    public final String name;
+    public final String typeId;
     public final boolean anonymous;
 }

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,12 +25,14 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.internal.runtime;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+
+import org.jruby.RubyString;
 import org.jruby.RubyThread;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -109,12 +111,13 @@ public class NativeThread implements ThreadLike {
     }
 
     @Override
-    public void setRubyName(String name) {
-        this.rubyName = name;
+    public void setRubyName(String id) {
+        this.rubyName = id;
         updateName();
     }
 
     @Override
+    @Deprecated
     public String getRubyName() {
         return rubyName;
     }
@@ -127,17 +130,10 @@ public class NativeThread implements ThreadLike {
         if (thread != null) nativeName = thread.getName();
 
         if (rubyName == null || rubyName.length() == 0) {
-            if (nativeName.equals("")) {
-                return "(unnamed)";
-            } else {
-                return nativeName;
-            }
-        } else {
-            if (nativeName.equals("")) {
-                return rubyName.toString();
-            }
-            return rubyName + " (" + nativeName + ")";
+            return nativeName.equals("") ? "(unnamed)" :  nativeName;
         }
+
+        return nativeName.equals("") ? rubyName : rubyName + " (" + nativeName + ")";
     }
 
     private static final String RUBY_THREAD_PREFIX = "Ruby-";

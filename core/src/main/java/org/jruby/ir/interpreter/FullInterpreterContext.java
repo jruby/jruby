@@ -140,7 +140,7 @@ public class FullInterpreterContext extends InterpreterContext {
         instructions = linearizedInstrArray;
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
 
-        // System.out.println("SCOPE: " + getScope().getName());
+        // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
 

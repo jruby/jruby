@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.parser;
 
 import java.io.Serializable;
@@ -33,9 +34,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
@@ -54,8 +55,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -83,8 +82,9 @@ public class StaticScope implements Serializable {
     // Next CRef down the lexical structure
     private StaticScope previousCRefScope = null;
 
-    // Our name holder (offsets are assigned as variables are added)
-    private ByteList[] variableNames;
+    // Our name holder (offsets are assigned as variables are added) [these are symbol strings.  Use
+    // as key to Symbol table for actual encoded versions].
+    private String[] variableNames;
 
     private int variableNamesLength;
 
@@ -101,7 +101,7 @@ public class StaticScope implements Serializable {
 
     protected IRScopeType scopeType;
 
-    private static final ByteList[] NO_NAMES = new ByteList[0];
+    private static final String[] NO_NAMES = new String[0];
 
     private Type type;
     private boolean isBlockOrEval;
@@ -155,7 +155,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      * @param names          The list of interned String variable names.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, ByteList[] names, int firstKeywordIndex) {
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
 
         this.enclosingScope = enclosingScope;
@@ -168,7 +168,7 @@ public class StaticScope implements Serializable {
         this.firstKeywordIndex = firstKeywordIndex;
     }
 
-    protected StaticScope(Type type, StaticScope enclosingScope, ByteList[] names) {
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
         this(type, enclosingScope, names, -1);
     }
 
@@ -232,7 +232,7 @@ public class StaticScope implements Serializable {
      * @param name of new variable
      * @return index of variable
      */
-    public int addVariableThisScope(ByteList name) {
+    public int addVariableThisScope(String name) {
         int slot = exists(name);
 
         if (slot >= 0) return slot;
@@ -247,26 +247,12 @@ public class StaticScope implements Serializable {
         return variableNames.length - 1;
     }
 
-    @Deprecated
-    public int addVariableThisScope(String stringName) {
-        return addVariableThisScope(new ByteList(stringName.getBytes(), USASCIIEncoding.INSTANCE));
-    }
-
     /**
      * Add a new named capture variable to this (current) scope.
      *
      * @param name name of variable.
      * @return index of variable
      */
-    public int addNamedCaptureVariable(ByteList name) {
-        int index = addVariableThisScope(name);
-
-        growNamedCaptures(index);
-
-        return index;
-    }
-
-    @Deprecated
     public int addNamedCaptureVariable(String name) {
         int index = addVariableThisScope(name);
 
@@ -282,7 +268,7 @@ public class StaticScope implements Serializable {
      * @param name of new variable
      * @return index+depth merged location of scope
      */
-    public int addVariable(ByteList name) {
+    public int addVariable(String name) {
         int slot = isDefined(name);
 
         if (slot >= 0) return slot;
@@ -297,22 +283,12 @@ public class StaticScope implements Serializable {
         return variableNames.length - 1;
     }
 
-    @Deprecated
-    public int addVariable(String name) {
-        return addVariable(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
-    }
-
-    @Deprecated
     public String[] getVariables() {
         String[] newVars = new String[variableNames.length];
         for (int i = 0; i < variableNames.length; i++) {
-            newVars[i] = StringSupport.byteListAsString(variableNames[i]);
+            newVars[i] = variableNames[i];
         }
         return newVars;
-    }
-
-    public ByteList[] getByteVariables() {
-        return variableNames;
     }
 
     public int getNumberOfVariables() {
@@ -325,7 +301,7 @@ public class StaticScope implements Serializable {
         // Clear constructor since we are changing names
         constructor = null;
 
-        variableNames = new ByteList[names.length];
+        variableNames = new String[names.length];
         variableNamesLength = names.length;
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
@@ -391,18 +367,13 @@ public class StaticScope implements Serializable {
      * @param name of the variable to find
      * @return index of variable or -1 if it does not exist
      */
-    public int exists(ByteList name) {
+    public int exists(String name) {
         return findVariableName(name);
     }
 
-    @Deprecated
-    public int exists(String name) {
-        return findVariableName(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
-    }
-
-    private int findVariableName(ByteList name) {
+    private int findVariableName(String name) {
         for (int i = 0; i < variableNames.length; i++) {
-            if (name.equal(variableNames[i])) return i;
+            if (name.equals(variableNames[i])) return i;
         }
         return -1;
     }
@@ -414,11 +385,6 @@ public class StaticScope implements Serializable {
      * @return a location where the left-most 16 bits of number of scopes down it is and the
      * right-most 16 bits represents its index in that scope
      */
-    public int isDefined(ByteList name) {
-        return isDefined(name, 0);
-    }
-
-    @Deprecated
     public int isDefined(String name) {
         return isDefined(name, 0);
     }
@@ -430,13 +396,10 @@ public class StaticScope implements Serializable {
      * @param name
      * @param value
      * @return
+     *
+     * Note: This is private code made public only for parser.
      */
-    public AssignableNode assign(ISourcePosition position, ByteList name, Node value) {
-        return assign(position, name, value, this, 0);
-    }
-
-    @Deprecated
-    public AssignableNode assign(ISourcePosition position, String name, Node value) {
+    public AssignableNode assign(ISourcePosition position, RubySymbol name, Node value) {
         return assign(position, name, value, this, 0);
     }
 
@@ -445,22 +408,17 @@ public class StaticScope implements Serializable {
      * where the first keyword argument started so we can test and tell whether we have
      * a kwarg or an ordinary variable during live execution (See keywordExists).
      * @param position
-     * @param name
+     * @param symbolID
      * @param value
      * @return
      */
-    public AssignableNode assignKeyword(ISourcePosition position, ByteList name, Node value) {
-        AssignableNode assignment = assign(position, name, value, this, 0);
+    public AssignableNode assignKeyword(ISourcePosition position, RubySymbol symbolID, Node value) {
+        AssignableNode assignment = assign(position, symbolID, value, this, 0);
 
         // register first keyword index encountered
         if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
 
         return assignment;
-    }
-
-    @Deprecated
-    public AssignableNode assignKeyword(ISourcePosition position, String name, Node value) {
-        return assignKeyword(position, StringSupport.stringAsByteList(name), value);
     }
 
     public boolean keywordExists(String name) {
@@ -491,7 +449,7 @@ public class StaticScope implements Serializable {
         return names;
     }
 
-    public int isDefined(ByteList name, int depth) {
+    public int isDefined(String name, int depth) {
         if (isBlockOrEval) {
             int slot = exists(name);
             if (slot >= 0) return (depth << 16) | slot;
@@ -502,74 +460,62 @@ public class StaticScope implements Serializable {
         }
     }
 
-    public int isDefined(String name, int depth) {
-        return isDefined(new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), depth);
-    }
-
-    public AssignableNode addAssign(ISourcePosition position, ByteList name, Node value) {
-        int slot = addVariable(name);
+    public AssignableNode addAssign(ISourcePosition position, RubySymbol symbolID, Node value) {
+        int slot = addVariable(symbolID.idString());
         // No bit math to store level since we know level is zero for this case
-        return new DAsgnNode(position, name, slot, value);
+        return new DAsgnNode(position, symbolID, slot, value);
     }
 
-    @Deprecated
-    public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
-        return addAssign(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), value);
-    }
-
-    public AssignableNode assign(ISourcePosition position, ByteList name, Node value,
+    public AssignableNode assign(ISourcePosition position, RubySymbol symbolID, Node value,
                                  StaticScope topScope, int depth) {
-        int slot = exists(name);
+        String id = symbolID.idString();
+        int slot = exists(id);
 
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            return isBlockOrEval ? new DAsgnNode(position, name, ((depth << 16) | slot), value)
-                    : new LocalAsgnNode(position, name, ((depth << 16) | slot), value);
+            return isBlockOrEval ? new DAsgnNode(position, symbolID, ((depth << 16) | slot), value)
+                    : new LocalAsgnNode(position, symbolID, ((depth << 16) | slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
-            slot = addVariable(name);
+            slot = addVariable(id);
 
-            return new LocalAsgnNode(position, name, slot, value);
+            return new LocalAsgnNode(position, symbolID, slot, value);
         }
 
         // If we are not a block-scope and we go there, we know that 'topScope' is a block scope
         // because a local scope cannot be within a local scope
         // If topScope was itself it would have created a LocalAsgnNode above.
-        return isBlockOrEval ? enclosingScope.assign(position, name, value, topScope, depth + 1)
-                : topScope.addAssign(position, name, value);
+        return isBlockOrEval ?
+                enclosingScope.assign(position, symbolID, value, topScope, depth + 1) :
+                topScope.addAssign(position, symbolID, value);
     }
 
-    @Deprecated
-    public AssignableNode assign(ISourcePosition position, String name, Node value,
-                                 StaticScope topScope, int depth) {
-        return assign(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE), value, topScope, depth);
-    }
-
-    public Node declare(ISourcePosition position, ByteList name, int depth) {
-        int slot = exists(name);
+    // Note: This is private code made public only for parser.
+    public Node declare(ISourcePosition position, RubySymbol symbolID, int depth) {
+        int slot = exists(symbolID.idString());
 
         if (slot >= 0) {
-            return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
+            return isBlockOrEval ?
+                    new DVarNode(position, ((depth << 16) | slot), symbolID) :
+                    new LocalVarNode(position, ((depth << 16) | slot), symbolID);
         }
 
-        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
+        return isBlockOrEval ? enclosingScope.declare(position, symbolID, depth + 1) : new VCallNode(position, symbolID);
     }
 
     /**
      * Make a DVar or LocalVar node based on scoping logic
      *
      * @param position the location that in the source that the new node will come from
-     * @param name     of the variable to be created is named
+     * @param symbolID of the variable to be created is named
      * @return a DVarNode or LocalVarNode
+     *
+     * Note: This is private code made public only for parser.
      */
-    public Node declare(ISourcePosition position, ByteList name) {
-        return declare(position, name, 0);
+    public Node declare(ISourcePosition position, RubySymbol symbolID) {
+        return declare(position, symbolID, 0);
     }
 
-    @Deprecated
-    public Node declare(ISourcePosition position, String name) {
-        return declare(position, new ByteList(name.getBytes(), USASCIIEncoding.INSTANCE));
-    }
     /**
      * Gets the Local Scope relative to the current Scope.  For LocalScopes this will be itself.
      * Blocks will contain the LocalScope it contains.
@@ -672,8 +618,8 @@ public class StaticScope implements Serializable {
         return commandArgumentStack;
     }
 
-    private void growVariableNames(ByteList name) {
-        ByteList[] newVariableNames = new ByteList[variableNames.length + 1];
+    private void growVariableNames(String name) {
+        String[] newVariableNames = new String[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
         variableNamesLength = newVariableNames.length;

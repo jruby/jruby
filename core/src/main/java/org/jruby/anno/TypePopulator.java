@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.anno;
 
 import java.util.List;
@@ -36,11 +37,15 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class TypePopulator {
+
     public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, boolean notImplemented) {
         javaMethod.setIsBuiltin(true);
         javaMethod.setArity(Arity.createArity(arity));
@@ -65,7 +70,7 @@ public abstract class TypePopulator {
         moduleMethod.setVisibility(Visibility.PUBLIC);
         return moduleMethod;
     }
-    
+
     public abstract void populate(RubyModule clsmod, Class clazz);
     
     public static final TypePopulator DEFAULT = new DefaultTypePopulator();
@@ -92,8 +97,8 @@ public abstract class TypePopulator {
             // fallback on non-pregenerated logic
 
             // populate method index; this is done statically in generated code
-            AnnotationBinder.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
-            AnnotationBinder.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
+            AnnotationHelper.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
+            AnnotationHelper.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
 
             final Ruby runtime = target.getRuntime();
             final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
@@ -126,4 +131,47 @@ public abstract class TypePopulator {
             }
         }
     }
+
+    // used by generated code (populators) - @see AnnorationBinder
+
+    protected static final Class[] ARG0 = new Class[] {};
+    protected static final Class[] ARG1 = new Class[] { IRubyObject.class };
+    protected static final Class[] ARG2 = new Class[] { IRubyObject.class, IRubyObject.class };
+    protected static final Class[] ARG3 = new Class[] { IRubyObject.class, IRubyObject.class, IRubyObject.class };
+    protected static final Class[] ARG4 = new Class[] { IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class };
+
+    protected static final Class[] ARG0_ARY = new Class[] { IRubyObject[].class };
+    protected static final Class[] ARG1_ARY = new Class[] { IRubyObject.class, IRubyObject[].class };
+    //protected static final Class[] ARG2_ARY = new Class[] { IRubyObject.class, IRubyObject.class, IRubyObject[].class };
+
+    protected static final Class[] CONTEXT_ARG0 = new Class[] { ThreadContext.class };
+    protected static final Class[] CONTEXT_ARG1 = new Class[] { ThreadContext.class, IRubyObject.class };
+    protected static final Class[] CONTEXT_ARG2 = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class };
+    protected static final Class[] CONTEXT_ARG3 = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class };
+    protected static final Class[] CONTEXT_ARG4 = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class };
+
+    protected static final Class[] CONTEXT_ARG0_ARY = new Class[] { ThreadContext.class, IRubyObject[].class };
+    protected static final Class[] CONTEXT_ARG1_ARY = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class };
+    //protected static final Class[] CONTEXT_ARG2_ARY = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class };
+
+    protected static final Class[] ARG0_BLOCK = new Class[] { Block.class };
+    protected static final Class[] ARG1_BLOCK = new Class[] { IRubyObject.class, Block.class };
+    protected static final Class[] ARG2_BLOCK = new Class[] { IRubyObject.class, IRubyObject.class, Block.class };
+    protected static final Class[] ARG3_BLOCK = new Class[] { IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class };
+    protected static final Class[] ARG4_BLOCK = new Class[] { IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class };
+
+    protected static final Class[] ARG0_ARY_BLOCK = new Class[] { IRubyObject[].class, Block.class };
+    protected static final Class[] ARG1_ARY_BLOCK = new Class[] { IRubyObject.class, IRubyObject[].class, Block.class };
+    //protected static final Class[] ARG2_ARY_BLOCK = new Class[] { IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class };
+
+    protected static final Class[] CONTEXT_ARG0_BLOCK = new Class[] { ThreadContext.class, Block.class };
+    protected static final Class[] CONTEXT_ARG1_BLOCK = new Class[] { ThreadContext.class, IRubyObject.class, Block.class };
+    protected static final Class[] CONTEXT_ARG2_BLOCK = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class };
+    protected static final Class[] CONTEXT_ARG3_BLOCK = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class };
+    protected static final Class[] CONTEXT_ARG4_BLOCK = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class };
+
+    protected static final Class[] CONTEXT_ARG0_ARY_BLOCK = new Class[] { ThreadContext.class, IRubyObject[].class, Block.class };
+    protected static final Class[] CONTEXT_ARG1_ARY_BLOCK = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class };
+    //protected static final Class[] CONTEXT_ARG2_ARY_BLOCK = new Class[] { ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class };
+
 }

@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport.ext;
 
 import org.jruby.*;
@@ -58,35 +59,31 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 public abstract class JavaLang {
 
     public static void define(final Ruby runtime) {
-        Iterable.define(runtime);
-        Comparable.define(runtime);
-        Throwable.define(runtime);
-        Runnable.define(runtime);
-        Character.define(runtime);
-        Number.define(runtime);
-        Class.define(runtime);
-        ClassLoader.define(runtime);
+        JavaExtensions.put(runtime, java.lang.Iterable.class, (proxyClass) -> Iterable.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.lang.Comparable.class, (proxyClass) -> Comparable.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.lang.Throwable.class, (proxyClass) -> Throwable.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.lang.Runnable.class, (proxyClass) -> Runnable.define(runtime, proxyClass));
+        JavaExtensions.put(runtime, java.lang.Character.class, (proxyClass) -> Character.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.lang.Number.class, (proxyClass) -> Number.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.lang.Class.class, (proxyClass) -> Class.define(runtime, (RubyClass) proxyClass));
+        JavaExtensions.put(runtime, java.lang.ClassLoader.class, (proxyClass) -> ClassLoader.define(runtime, (RubyClass) proxyClass));
         // Java::byte[].class_eval ...
-        final RubyModule byteArray = Java.getProxyClass(runtime, new byte[0].getClass());
-        byteArray.addMethod("ubyte_get", new UByteGet(byteArray));
-        byteArray.addMethod("ubyte_set", new UByteSet(byteArray));
-
-        final RubyModule String = Java.getProxyClass(runtime, java.lang.String.class);
-        String.defineAlias("to_str", "to_s");
-
-        final RubyModule Number = Java.getProxyClass(runtime, java.lang.Number.class);
-        Number.defineAlias("to_int", "longValue");
-        Number.defineAlias("to_f", "doubleValue");
+        JavaExtensions.put(runtime, new byte[0].getClass(), (byteArray) -> {
+            byteArray.addMethod("ubyte_get", new UByteGet(byteArray));
+            byteArray.addMethod("ubyte_set", new UByteSet(byteArray));
+        });
+        JavaExtensions.put(runtime, java.lang.String.class, (proxyClass) -> {
+            proxyClass.defineAlias("to_str", "to_s");
+        });
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
     public static class Iterable {
 
-        static RubyModule define(final Ruby runtime) {
-            final RubyModule Iterable = Java.getProxyClass(runtime, java.lang.Iterable.class);
-            Iterable.includeModule( runtime.getEnumerable() ); // include Enumerable
-            Iterable.defineAnnotatedMethods(Iterable.class);
-            return Iterable;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
+            proxy.defineAnnotatedMethods(Iterable.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -180,11 +177,10 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Comparable", include = "Comparable")
     public static class Comparable {
 
-        static RubyModule define(final Ruby runtime) {
-            final RubyModule Comparable = Java.getProxyClass(runtime, java.lang.Comparable.class);
-            Comparable.includeModule( runtime.getComparable() ); // include Comparable
-            Comparable.defineAnnotatedMethods(Comparable.class);
-            return Comparable;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.includeModule( runtime.getComparable() ); // include Comparable
+            proxy.defineAnnotatedMethods(Comparable.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "<=>")
@@ -209,10 +205,9 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Throwable")
     public static class Throwable {
 
-        static RubyModule define(final Ruby runtime) {
-            final RubyModule Throwable = Java.getProxyClass(runtime, java.lang.Throwable.class);
-            Throwable.defineAnnotatedMethods(Throwable.class);
-            return Throwable;
+        static RubyModule define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Throwable.class);
+            return proxy;
         }
 
         @JRubyMethod // stackTrace => backtrace
@@ -256,13 +251,21 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "===", meta = true)
         public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject other) {
+            if (checkNativeException(self, other)) {
+                return context.tru;
+            }
+            return self.op_eqq(context, other);
+        }
+
+        @SuppressWarnings("deprecation")
+        private static boolean checkNativeException(IRubyObject self, IRubyObject other) {
             if ( other instanceof NativeException ) {
                 final java.lang.Class java_class = (java.lang.Class) self.dataGetStruct();
                 if ( java_class.isAssignableFrom( ((NativeException) other).getCause().getClass() ) ) {
-                    return context.runtime.getTrue();
+                    return true;
                 }
             }
-            return self.op_eqq(context, other);
+            return false;
         }
 
     }
@@ -270,10 +273,9 @@ public abstract class JavaLang {
     @JRubyModule(name = "Java::JavaLang::Runnable")
     public static class Runnable {
 
-        static RubyModule define(final Ruby runtime) {
-            final RubyModule Runnable = Java.getProxyClass(runtime, java.lang.Runnable.class);
-            Runnable.defineAnnotatedMethods(Runnable.class);
-            return Runnable;
+        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
+            proxy.defineAnnotatedMethods(Runnable.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -319,16 +321,28 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Number")
     public static class Number {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Number = Java.getProxyClass(runtime, java.lang.Number.class);
-            Number.defineAnnotatedMethods(Number.class);
-            return (RubyClass) Number;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Number.class);
+
+            proxy.defineAlias("to_int", "longValue");
+            proxy.defineAlias("to_f", "doubleValue");
+
+            return proxy;
         }
 
         @JRubyMethod(name = "to_f")
         public static IRubyObject to_f(final ThreadContext context, final IRubyObject self) {
             java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
             return context.runtime.newFloat(val.doubleValue());
+        }
+
+        @JRubyMethod(name = "real?")
+        public static IRubyObject real_p(final ThreadContext context, final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+                                                    val instanceof Short || val instanceof Byte ||
+                                                    val instanceof Float || val instanceof Double ||
+                                                    val instanceof java.math.BigInteger || val instanceof java.math.BigDecimal);
         }
 
         @JRubyMethod(name = { "to_i", "to_int" })
@@ -349,6 +363,21 @@ public abstract class JavaLang {
             return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
                                                     val instanceof Short || val instanceof Byte ||
                                                     val instanceof java.math.BigInteger);
+        }
+
+        @JRubyMethod(name = "zero?")
+        public static IRubyObject zero_p(final ThreadContext context, final IRubyObject self) {
+            return context.runtime.newBoolean(isZero(self));
+        }
+
+        private static boolean isZero(final IRubyObject self) {
+            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            return Double.compare(val.doubleValue(), 0) == 0;
+        }
+
+        @JRubyMethod(name = "nonzero?")
+        public static IRubyObject nonzero_p(final ThreadContext context, final IRubyObject self) {
+            return isZero(self) ? context.nil : self;
         }
 
         @JRubyMethod(name = "coerce")
@@ -376,24 +405,25 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Character")
     public static class Character {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Character = Java.getProxyClass(runtime, java.lang.Character.class);
-            Character.defineAnnotatedMethods(Character.class);
-            return (RubyClass) Character;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Character.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "java_identifier_start?", meta = true)
-        public static IRubyObject java_identifier_start_p(final IRubyObject self, final IRubyObject num) {
-            return self.getRuntime().newBoolean( java.lang.Character.isJavaIdentifierStart(to_char(num)) );
+        public static IRubyObject java_identifier_start_p(final ThreadContext context, final IRubyObject self,
+                                                          final IRubyObject num) {
+            return context.runtime.newBoolean( java.lang.Character.isJavaIdentifierStart(int_char(num)) );
         }
 
         @JRubyMethod(name = "java_identifier_part?", meta = true)
-        public static IRubyObject java_identifier_part_p(final IRubyObject self, final IRubyObject num) {
-            return self.getRuntime().newBoolean( java.lang.Character.isJavaIdentifierPart(to_char(num)) );
+        public static IRubyObject java_identifier_part_p(final ThreadContext context, final IRubyObject self,
+                                                         final IRubyObject num) {
+            return context.runtime.newBoolean( java.lang.Character.isJavaIdentifierPart(int_char(num)) );
         }
 
-        private static char to_char(final IRubyObject num) {
-            return (java.lang.Character) num.toJava(java.lang.Character.TYPE);
+        private static int int_char(IRubyObject num) { // str.ord -> Fixnum
+            return num.toJava(java.lang.Character.TYPE);
         }
 
         @JRubyMethod(name = "to_i")
@@ -407,11 +437,10 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::Class")
     public static class Class {
 
-        static RubyClass define(final Ruby runtime) {
-            final RubyModule Class = Java.getProxyClass(runtime, java.lang.Class.class);
-            Class.includeModule( runtime.getComparable() ); // include Comparable
-            Class.defineAnnotatedMethods(Class.class);
-            return (RubyClass) Class;
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.includeModule( runtime.getComparable() ); // include Comparable
+            proxy.defineAnnotatedMethods(Class.class);
+            return proxy;
         }
 
         @JRubyMethod(name = "ruby_class")
@@ -569,10 +598,9 @@ public abstract class JavaLang {
     @JRubyClass(name = "Java::JavaLang::ClassLoader")
     public static class ClassLoader {
 
-        static RubyModule define(final Ruby runtime) {
-            final RubyModule ClassLoader = Java.getProxyClass(runtime, java.lang.ClassLoader.class);
-            ClassLoader.defineAnnotatedMethods(ClassLoader.class);
-            return ClassLoader;
+        static RubyModule define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(ClassLoader.class);
+            return proxy;
         }
 
         @JRubyMethod
@@ -601,7 +629,7 @@ public abstract class JavaLang {
     private static final class UByteGet extends JavaMethod.JavaMethodOne {
 
         UByteGet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_get");
         }
 
         @Override
@@ -616,7 +644,7 @@ public abstract class JavaLang {
     private static final class UByteSet extends JavaMethod.JavaMethodTwo {
 
         UByteSet(RubyModule implClass) {
-            super(implClass, PUBLIC);
+            super(implClass, PUBLIC, "ubyte_set");
         }
 
         @Override

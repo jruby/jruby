@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe 'TracePoint#disable' do
   def test; end
@@ -55,7 +55,7 @@ describe 'TracePoint#disable' do
     end
   end
 
-  ruby_bug "#14057", "2.0"..."2.5" do
+  ruby_bug "#14057", ""..."2.5" do
     it 'can accept param within a block but it should not yield arguments' do
       event_name = nil
       trace = TracePoint.new(:line) {}

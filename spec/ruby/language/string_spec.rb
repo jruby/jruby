@@ -1,6 +1,6 @@
 # -*- encoding: binary -*-
 
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 # TODO: rewrite these horrid specs. it "are..." seriously?!
 
@@ -40,6 +40,15 @@ describe "Ruby character strings" do
     "#@ip?".should == 'xxx?'
     "#@ip!".should == 'xxx!'
     "#@ip#@ip".should == 'xxxxxx'
+  end
+
+  it "don't get confused by partial interpolation character sequences" do
+    "#@".should == '#@'
+    "#@ ".should == '#@ '
+    "#@@".should == '#@@'
+    "#@@ ".should == '#@@ '
+    "#$ ".should == '#$ '
+    "#\$".should == '#$'
   end
 
   it "taints the result of interpolation when an interpolated value is tainted" do
@@ -224,27 +233,25 @@ describe "Ruby String literals" do
     long_string_literals.should == "Beautiful is better than ugly.Explicit is better than implicit."
   end
 
-  ruby_version_is "2.3" do
-    describe "with a magic frozen comment" do
-      it "produce the same object each time" do
-        ruby_exe(fixture(__FILE__, "freeze_magic_comment_one_literal.rb")).chomp.should == "true"
-      end
+  describe "with a magic frozen comment" do
+    it "produce the same object each time" do
+      ruby_exe(fixture(__FILE__, "freeze_magic_comment_one_literal.rb")).chomp.should == "true"
+    end
 
-      it "produce the same object for literals with the same content" do
-        ruby_exe(fixture(__FILE__, "freeze_magic_comment_two_literals.rb")).chomp.should == "true"
-      end
+    it "produce the same object for literals with the same content" do
+      ruby_exe(fixture(__FILE__, "freeze_magic_comment_two_literals.rb")).chomp.should == "true"
+    end
 
-      it "produce the same object for literals with the same content in different files" do
-        ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files.rb")).chomp.should == "true"
-      end
+    it "produce the same object for literals with the same content in different files" do
+      ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files.rb")).chomp.should == "true"
+    end
 
-      it "produce different objects for literals with the same content in different files if the other file doesn't have the comment" do
-        ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files_no_comment.rb")).chomp.should == "true"
-      end
+    it "produce different objects for literals with the same content in different files if the other file doesn't have the comment" do
+      ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files_no_comment.rb")).chomp.should == "true"
+    end
 
-      it "produce different objects for literals with the same content in different files if they have different encodings" do
-        ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files_diff_enc.rb")).chomp.should == "true"
-      end
+    it "produce different objects for literals with the same content in different files if they have different encodings" do
+      ruby_exe(fixture(__FILE__, "freeze_magic_comment_across_files_diff_enc.rb")).chomp.should == "true"
     end
   end
 

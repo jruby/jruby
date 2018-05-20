@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.jruby;
 
 import java.io.IOException;
@@ -43,6 +44,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.ClasspathLauncher;
 
 import static org.jruby.util.URLUtil.getPath;
 
@@ -54,10 +56,11 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
-    @Deprecated // JRuby::Util no longer used by JRuby itself
+    // JRuby::Util no longer used by JRuby itself
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
+        JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
     }
 
     @JRubyMethod(module = true)
@@ -102,6 +105,25 @@ public class JRubyUtilLibrary implements Library {
         }
     }
 
+    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
+    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
+        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
+        return runtime.newString(launcher);
+    }
+
+    @JRubyMethod(name = "extra_gem_paths", module = true) // used from RGs' JRuby defaults
+    public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        final List<String> extraGemPaths = runtime.getInstanceConfig().getExtraGemPaths();
+        IRubyObject[] extra_gem_paths = new IRubyObject[extraGemPaths.size()];
+        int i = 0; for (String gemPath : extraGemPaths) {
+            extra_gem_paths[i++] = runtime.newString(gemPath);
+        }
+        return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
+    }
+
     @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
     public static class StringUtils {
         public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
@@ -109,6 +131,11 @@ public class JRubyUtilLibrary implements Library {
         }
     }
 
+    /**
+     * Provide stats on how many method and constant invalidations have occurred globally.
+     *
+     * This was added for Pry in https://github.com/jruby/jruby/issues/4384
+     */
     @JRubyMethod(name = "cache_stats", module = true)
     public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
@@ -118,5 +145,21 @@ public class JRubyUtilLibrary implements Library {
         stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), runtime.newFixnum(runtime.getCaches().getConstantInvalidationCount()));
 
         return stat;
+    }
+
+    /**
+     * Return a list of files and extensions that JRuby treats as internal (or "built-in"), skipping load path and
+     * filesystem search.
+     *
+     * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
+     */
+    @JRubyMethod(module = true)
+    public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
+
+        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+
+        return runtime.newArrayNoCopy(names);
     }
 }

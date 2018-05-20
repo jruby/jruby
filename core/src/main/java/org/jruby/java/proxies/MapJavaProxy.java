@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.java.proxies;
 
 
@@ -147,15 +148,15 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyArray keys() {
+        public RubyArray keys(ThreadContext context) {
             syncSize();
-            return super.keys();
+            return super.keys(context);
         }
 
         @Override
-        public RubyArray rb_values() {
+        public RubyArray values(ThreadContext context) {
             syncSize();
-            return super.rb_values();
+            return super.values(context);
         }
 
         @Override
@@ -178,15 +179,23 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            internalPutSmall(key, value, checkForExisting);
+            internalPutNoResize(key, value, checkForExisting);
         }
 
         @Override
-        protected final void internalPutSmall(IRubyObject key, IRubyObject value, boolean checkForExisting) {
+        protected final IRubyObject internalPutNoResize(IRubyObject key, IRubyObject value, boolean checkForExisting) {
             @SuppressWarnings("unchecked")
+            Ruby runtime = getRuntime();
             final Map<Object, Object> map = mapDelegate();
-            map.put(key.toJava(Object.class), value.toJava(Object.class));
+            Object javaValue = value.toJava(Object.class);
+            Object existing = map.put(key.toJava(Object.class), javaValue);
             setSize( map.size() );
+            if (existing != null) {
+                if (existing == javaValue) return value;
+                return JavaUtil.convertJavaToUsableRubyObject(runtime, existing);
+            }
+            // none existing
+            return null;
         }
 
         @Override
@@ -299,10 +308,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override // re-invent @JRubyMethod(name = "any?")
-        public IRubyObject any_p(ThreadContext context, Block block) {
-            if (isEmpty()) return context.runtime.getFalse();
+        public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+            boolean patternGiven = args.length > 0;
 
-            if (!block.isGiven()) return context.runtime.getTrue();
+            if (isEmpty()) return context.fals;
+
+            if (!block.isGiven() && !patternGiven) return context.tru;
+            if (patternGiven) return any_p_p(context, args[0]);
 
             if (block.getSignature().arityValue() > 1) {
                 return any_p_i_fast(context, block);
@@ -328,6 +340,18 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 if ( block.yieldArray(context, runtime.newArray(key, val), null).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
+        private RubyBoolean any_p_p(ThreadContext context, IRubyObject pattern) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( pattern.callMethod(context, "===", RubyArray.newArray(runtime, key, val)).isTrue() ) {
                     return runtime.getTrue();
                 }
             }
@@ -628,8 +652,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = "keys")
-    public RubyArray keys() {
-        return getOrCreateRubyHashMap().keys();
+    public RubyArray keys(ThreadContext context) {
+        return getOrCreateRubyHashMap().keys(context);
     }
 
     /** rb_hash_values
@@ -789,9 +813,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return dupImpl("clone");
     }
 
-    @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().any_p(context, block);
+    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+        return getOrCreateRubyHashMap().any_p(context, args, block);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)

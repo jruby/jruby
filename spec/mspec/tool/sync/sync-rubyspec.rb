@@ -1,6 +1,6 @@
 IMPLS = {
   truffleruby: {
-    git: "https://github.com/graalvm/truffleruby.git",
+    git: "https://github.com/oracle/truffleruby.git",
     from_commit: "f10ab6988d",
   },
   jruby: {
@@ -13,7 +13,6 @@ IMPLS = {
   mri: {
     git: "https://github.com/ruby/ruby.git",
     master: "trunk",
-    merge_message: "Update to ruby/spec@",
   },
 }
 
@@ -64,7 +63,7 @@ class RubyImplementation
   end
 
   def last_merge_message
-    message = @data[:merge_message] || "Merge ruby/spec commit"
+    message = @data[:merge_message] || "Update to ruby/spec@"
     message.gsub!("ruby/spec", "ruby/mspec") if MSPEC
     message
   end
@@ -182,17 +181,6 @@ end
 def verify_commits(impl)
   puts
   Dir.chdir(SOURCE_REPO) do
-    history = `git log master...`
-    history.lines.slice_before(/^commit \h{40}$/).each do |commit, *message|
-      commit = commit.chomp.split.last
-      message = message.join
-      if /\W(#\d+)/ === message
-        puts "Commit #{commit} contains an unqualified issue number: #{$1}"
-        puts "Replace it with #{impl.repo_org}/#{impl.repo_name}#{$1}"
-        sh "git", "rebase", "-i", "#{commit}^"
-      end
-    end
-
     puts "Manually check commit messages:"
     print "Press enter >"
     STDIN.gets

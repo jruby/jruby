@@ -33,7 +33,7 @@ public class DefineClassMethodInstr extends OneOperandInstr implements FixedArit
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + method.getName() };
+        return new String[] {"name: " + method.getId() };
     }
 
     @Override

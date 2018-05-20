@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.set;
 
 import org.jcodings.specific.USASCIIEncoding;
@@ -359,7 +360,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod
     public RubyArray to_a(final ThreadContext context) {
         // except MRI relies on Hash order so we do as well
-        return this.hash.keys();
+        return this.hash.keys(context);
     }
 
     // Returns self if no arguments are given.
@@ -466,7 +467,7 @@ public class RubySet extends RubyObject implements Set {
     /**
      * Returns true if the set contains the given object.
      */
-    @JRubyMethod(name = "include?", alias = { "member?" })
+    @JRubyMethod(name = "include?", alias = { "member?", "===" })
     public RubyBoolean include_p(final ThreadContext context, IRubyObject obj) {
         return context.runtime.newBoolean( containsImpl(obj) );
     }
@@ -859,7 +860,7 @@ public class RubySet extends RubyObject implements Set {
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if ( this == other ) return context.runtime.getTrue();
+        if ( this == other ) return context.tru;
         if ( getMetaClass().isInstance(other) ) {
             return this.hash.op_equal(context, ((RubySet) other).hash); // @hash == ...
         }
@@ -867,12 +868,18 @@ public class RubySet extends RubyObject implements Set {
             RubySet that = (RubySet) other;
             if ( this.size() == that.size() ) { // && includes all of our elements :
                 for ( IRubyObject obj : elementsOrdered() ) {
-                    if ( ! that.containsImpl(obj) ) return context.runtime.getFalse();
+                    if ( ! that.containsImpl(obj) ) return context.fals;
                 }
-                return context.runtime.getTrue();
+                return context.tru;
             }
         }
-        return context.runtime.getFalse();
+        return context.fals;
+    }
+
+    @JRubyMethod(name = "reset")
+    public IRubyObject reset(ThreadContext context) {
+        this.hash.rehash();
+        return this;
     }
 
     @JRubyMethod(name = "eql?")
@@ -880,7 +887,7 @@ public class RubySet extends RubyObject implements Set {
         if ( other instanceof RubySet ) {
             return this.hash.op_eql(context, ((RubySet) other).hash);
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @Override
@@ -1080,7 +1087,7 @@ public class RubySet extends RubyObject implements Set {
 
     // Returns a string containing a human-readable representation of the set.
     // e.g. "#<Set: {element1, element2, ...}>"
-    @JRubyMethod(name = "inspect")
+    @JRubyMethod(name = "inspect", alias = "to_s")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
 

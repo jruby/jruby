@@ -9,12 +9,20 @@ class TestRange < Test::Unit::TestCase
     assert_equal((0..2), Range.new(0, 2))
     assert_equal((0..2), Range.new(0, 2, false))
     assert_equal((0...2), Range.new(0, 2, true))
+
+    assert_raise(ArgumentError) { (1.."3") }
+
+    obj = Object.new
+    def obj.<=>(other)
+      raise RuntimeError, "cmp"
+    end
+    assert_raise_with_message(RuntimeError, "cmp") { (obj..3) }
   end
 
   def test_frozen_initialize
     r = Range.allocate
     r.freeze
-    assert_raise(RuntimeError){r.__send__(:initialize, 1, 2)}
+    assert_raise(FrozenError){r.__send__(:initialize, 1, 2)}
   end
 
   def test_range_string
@@ -379,12 +387,15 @@ class TestRange < Test::Unit::TestCase
     assert_raise(TypeError) { [][o] }
     class << o; attr_accessor :end end
     o.end = 0
-    assert_raise(NoMethodError) { [][o] }
+    assert_raise(TypeError) { [][o] }
     def o.exclude_end=(v) @exclude_end = v end
     def o.exclude_end?() @exclude_end end
     o.exclude_end = false
     assert_nil([0][o])
     assert_raise(RangeError) { [0][o] = 1 }
+    class << o
+      private :begin, :end
+    end
     o.begin = 10
     o.end = 10
     assert_nil([0][o])
@@ -638,17 +649,6 @@ class TestRange < Test::Unit::TestCase
     assert_equal(nil, (bignum...bignum+ary.size).bsearch {|i| false })
 
     assert_raise(TypeError) { ("a".."z").bsearch {} }
-  end
-
-  def test_bsearch_with_mathn
-    assert_separately ['-r', 'mathn'], %q{
-      msg = '[ruby-core:25740]'
-      answer = (1..(1 << 100)).bsearch{|x|
-        assert_predicate(x, :integer?, msg)
-        x >= 42
-      }
-      assert_equal(42, answer, msg)
-    }, ignore_stderr: true
   end
 
   def test_each_no_blockarg

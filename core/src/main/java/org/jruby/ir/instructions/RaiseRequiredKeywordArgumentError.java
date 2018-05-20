@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -13,15 +14,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 // FIXME: Consider making argument error a single more generic instruction and combining with RaiseArgumentError
 public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements FixedArityInstr {
-    private String name;
+    private RubySymbol name;
 
-    public RaiseRequiredKeywordArgumentError(String name) {
+    public RaiseRequiredKeywordArgumentError(RubySymbol name) {
         super(Operation.RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR);
 
         this.name = name;
     }
 
-    public String getName() {
+    public String getId() {
+        return name.idString();
+    }
+
+    public RubySymbol getName() {
         return name;
     }
 
@@ -37,12 +42,12 @@ public class RaiseRequiredKeywordArgumentError extends NoOperandInstr implements
     }
 
     public static RaiseRequiredKeywordArgumentError decode(IRReaderDecoder d) {
-        return new RaiseRequiredKeywordArgumentError(d.decodeString());
+        return new RaiseRequiredKeywordArgumentError(d.decodeSymbol());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name);
+        throw IRRuntimeHelpers.newRequiredKeywordArgumentError(context, name.idString());
     }
 
     @Override

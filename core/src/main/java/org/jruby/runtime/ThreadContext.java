@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,6 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime;
 
 import org.jcodings.Encoding;
@@ -508,7 +509,7 @@ public final class ThreadContext {
         Frame frame = stack[index];
 
         // if the frame was captured, we must replace it but not clear
-        if (frame.isCaptured()) {
+        if (frame.captured) {
             stack[index] = new Frame();
         } else {
             frame.clear();
@@ -744,7 +745,7 @@ public final class ThreadContext {
      */
     public void renderCurrentBacktrace(StringBuilder sb) {
         TraceType traceType = runtime.getInstanceConfig().getTraceType();
-        BacktraceData backtraceData = traceType.getBacktrace(this, false);
+        BacktraceData backtraceData = traceType.getBacktrace(this);
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
@@ -764,11 +765,10 @@ public final class ThreadContext {
         // MRI started returning [] instead of nil some time after 1.9 (#4891)
         if (traceLength < 0) return runtime.newEmptyArray();
 
-        final RubyClass stringClass = runtime.getString();
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
         for (int i = 0; i < traceLength; i++) {
-            traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
+            traceArray[i] = RubyStackTraceElement.to_s_mri(this, fullTrace[i + level]);
         }
 
         RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
@@ -801,7 +801,7 @@ public final class ThreadContext {
 
     private RubyStackTraceElement[] getFullTrace(Integer length, StackTraceElement[] stacktrace) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
+        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace).getBacktrace(runtime);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
@@ -825,7 +825,7 @@ public final class ThreadContext {
     }
 
     public RubyStackTraceElement[] gatherCallerBacktrace() {
-        return Gather.CALLER.getBacktraceData(this, false).getBacktrace(runtime);
+        return Gather.CALLER.getBacktraceData(this).getBacktrace(runtime);
     }
 
     public boolean isEventHooksEnabled() {
@@ -862,7 +862,7 @@ public final class ThreadContext {
 
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
-        return TraceType.printBacktraceJRuby(
+        return TraceType.printBacktraceJRuby(null,
                 new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
                 ex.getClass().getName(),
                 ex.getLocalizedMessage(),

@@ -87,10 +87,10 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         }
 
         if (interpreterContext == null) {
-            if (Options.IR_PRINT.load()) {
+            if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
-                LOG.info("Printing simple IR for " + closure.getName() + ":\n" + new String(baos.toByteArray()));
+                LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
             interpreterContext = closure.getInterpreterContext();
@@ -100,12 +100,12 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     @Override
     public String getClassName(ThreadContext context) {
-        return closure.getName();
+        return closure.getId();
     }
 
     @Override
     public String getName() {
-        return closure.getName();
+        return closure.getId();
     }
 
     @Override

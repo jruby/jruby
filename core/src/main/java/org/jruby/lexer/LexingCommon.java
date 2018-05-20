@@ -13,11 +13,17 @@ import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.ext.JavaLang;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
+import org.jruby.util.KCode;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -88,7 +94,7 @@ public abstract class LexingCommon {
     protected ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCII_ENCODING);
     protected ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCII_ENCODING);
     protected ByteList EQ = new ByteList(new byte[] {'='}, USASCII_ENCODING);
-    public static final ByteList AMPERSAND_AMPERSAND = new ByteList(new byte[] {'&', '&'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList AMPERSAND_AMPERSAND = CommonByteLists.AMPERSAND_AMPERSAND;
     protected ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCII_ENCODING);
     public ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCII_ENCODING);
     public final ByteList BANG = new ByteList(new byte[] {'!'}, USASCII_ENCODING);
@@ -116,7 +122,7 @@ public abstract class LexingCommon {
     protected ByteList MINUS = new ByteList(new byte[] {'-'}, USASCII_ENCODING);
     protected ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCII_ENCODING);
     protected ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCII_ENCODING);
-    public static final ByteList OR_OR = new ByteList(new byte[] {'|', '|'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList OR_OR = CommonByteLists.OR_OR;
     protected ByteList OR = new ByteList(new byte[] {'|'}, USASCII_ENCODING);
     protected ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCII_ENCODING);
     protected ByteList PLUS = new ByteList(new byte[] {'+'}, USASCII_ENCODING);
@@ -251,6 +257,10 @@ public abstract class LexingCommon {
         return heredoc_indent;
     }
 
+    public int getHeredocLineIndent() {
+        return heredoc_line_indent;
+    }
+
     public int getLeftParenBegin() {
         return leftParenBegin;
     }
@@ -347,15 +357,12 @@ public abstract class LexingCommon {
                 commandStart = true;
                 return tSTRING_DBEG;
             default:
-                // We did not find significant char after # so push it back to
-                // be processed as an ordinary string.
-                pushback(c);
                 return 0;
         }
 
-        pushback(c);
-
+        // We found #@, #$, #@@ but we don't know what at this point (check for valid chars).
         if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
+            pushback(c);
             setValue("#" + significant);
             return tSTRING_DVAR;
         }
@@ -863,12 +870,16 @@ public abstract class LexingCommon {
     // When the heredoc identifier specifies <<-EOF that indents before ident. are ok (the '-').
     public static final int STR_FUNC_INDENT=0x20;
     public static final int STR_FUNC_LABEL=0x40;
+    public static final int STR_FUNC_LIST=0x4000;
+    public static final int STR_FUNC_TERM=0x8000;
 
     public static final int str_label = STR_FUNC_LABEL;
     public static final int str_squote = 0;
     public static final int str_dquote = STR_FUNC_EXPAND;
     public static final int str_xquote = STR_FUNC_EXPAND;
     public static final int str_regexp = STR_FUNC_REGEXP | STR_FUNC_ESCAPE | STR_FUNC_EXPAND;
+    public static final int str_sword = STR_FUNC_QWORDS | STR_FUNC_LIST;
+    public static final int str_dword = STR_FUNC_QWORDS | STR_FUNC_EXPAND | STR_FUNC_LIST;
     public static final int str_ssym   = STR_FUNC_SYMBOL;
     public static final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
 
@@ -919,7 +930,7 @@ public abstract class LexingCommon {
         return (isLexState(lex_state, EXPR_LABEL|EXPR_ENDFN) && !commandState) || isARG();
     }
 
-    protected boolean isLabelSuffix() {
+    public boolean isLabelSuffix() {
         return peek(':') && !peek(':', 1);
     }
 
@@ -940,6 +951,10 @@ public abstract class LexingCommon {
      */
     public static boolean isOctChar(int c) {
         return '0' <= c && c <= '7';
+    }
+
+    public static boolean isSpace(int c) {
+        return c == ' ' || ('\t' <= c && c <= '\r');
     }
 
     protected boolean isSpaceArg(int c, boolean spaceSeen) {
@@ -979,9 +994,6 @@ public abstract class LexingCommon {
         return -1;
     }
 
-    public static final String magicString = "^[^\\S]*([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*[^\\S]*$";
-    public static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
-
     public boolean parser_magic_comment(ByteList magicLine) {
         boolean indicator = false;
         int vbeg, vend;
@@ -1001,9 +1013,6 @@ public abstract class LexingCommon {
 
         /* %r"([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*" */
         while (length > 0) {
-            int i;
-            long n = 0;
-
             for (; length > 0; str++, --length) {
                 char c = magicLine.charAt(str);
 
@@ -1086,5 +1095,121 @@ public abstract class LexingCommon {
             return true;
         }
         return false;
+    }
+
+    protected abstract RegexpOptions parseRegexpFlags() throws IOException;
+
+    protected RegexpOptions parseRegexpFlags(StringBuilder unknownFlags) throws IOException {
+        RegexpOptions options = new RegexpOptions();
+        int c;
+
+        newtok(true);
+        for (c = nextc(); c != EOF && Character.isLetter(c); c = nextc()) {
+            switch (c) {
+            case 'i':
+                options.setIgnorecase(true);
+                break;
+            case 'x':
+                options.setExtended(true);
+                break;
+            case 'm':
+                options.setMultiline(true);
+                break;
+            case 'o':
+                options.setOnce(true);
+                break;
+            case 'n':
+                options.setExplicitKCode(KCode.NONE);
+                break;
+            case 'e':
+                options.setExplicitKCode(KCode.EUC);
+                break;
+            case 's':
+                options.setExplicitKCode(KCode.SJIS);
+                break;
+            case 'u':
+                options.setExplicitKCode(KCode.UTF8);
+                break;
+            case 'j':
+                options.setJava(true);
+                break;
+            default:
+                unknownFlags.append((char) c);
+                break;
+            }
+        }
+        pushback(c);
+
+        return options;
+    }
+
+    public void checkRegexpFragment(Ruby runtime, ByteList value, RegexpOptions options) {
+        setRegexpEncoding(runtime, value, options);
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject $ex = context.getErrorInfo();
+        try {
+            RubyRegexp.preprocessCheck(runtime, value);
+        } catch (RaiseException re) {
+            context.setErrorInfo($ex);
+            compile_error(re.getMessage());
+        }
+    }
+
+    public void checkRegexpSyntax(Ruby runtime, ByteList value, RegexpOptions options) {
+        final String stringValue = value.toString();
+        // Joni doesn't support these modifiers - but we can fix up in some cases - let the error delay until we try that
+        if (stringValue.startsWith("(?u)") || stringValue.startsWith("(?a)") || stringValue.startsWith("(?d)"))
+            return;
+
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject $ex = context.getErrorInfo();
+        try {
+            // This is only for syntax checking but this will as a side-effect create an entry in the regexp cache.
+            RubyRegexp.newRegexpParser(runtime, value, (RegexpOptions)options.clone());
+        } catch (RaiseException re) {
+            context.setErrorInfo($ex);
+            compile_error(re.getMessage());
+        }
+    }
+
+    protected abstract void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding);
+
+    // MRI: reg_fragment_setenc_gen
+    public void setRegexpEncoding(Ruby runtime, ByteList value, RegexpOptions options) {
+        Encoding optionsEncoding = options.setup(runtime);
+
+        // Change encoding to one specified by regexp options as long as the string is compatible.
+        if (optionsEncoding != null) {
+            if (optionsEncoding != value.getEncoding() && !is7BitASCII(value)) {
+                mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
+            }
+
+            value.setEncoding(optionsEncoding);
+        } else if (options.isEncodingNone()) {
+            if (value.getEncoding() != ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+                mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
+            }
+            value.setEncoding(ASCII8BIT_ENCODING);
+        } else if (getEncoding() == USASCII_ENCODING) {
+            if (!is7BitASCII(value)) {
+                value.setEncoding(USASCII_ENCODING); // This will raise later
+            } else {
+                value.setEncoding(ASCII8BIT_ENCODING);
+            }
+        }
+    }
+
+    private boolean is7BitASCII(ByteList value) {
+      return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
+    }
+
+    // TODO: Put somewhere more consolidated (similiar
+    protected char optionsEncodingChar(Encoding optionEncoding) {
+        if (optionEncoding == USASCII_ENCODING) return 'n';
+        if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
+        if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
+        if (optionEncoding == UTF8_ENCODING) return 'u';
+
+        return ' ';
     }
 }

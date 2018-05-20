@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.embed.jsr223;
 
 import javax.script.Invocable;
@@ -617,6 +618,21 @@ public class JRubyEngineTest {
     }
 
     /**
+     * Test of invokeMethod method throwing an exception with a null message.
+     */
+    @Test
+    public void testInvokeMethodWithJavaException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
+        try {
+            Object result = ((Invocable) instance).invokeMethod(Object.class,"trigger_npe", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            // javax.script.ScriptException is expected
+        }
+    }
+
+    /**
      * Test of invokeFunction method, of class Jsr223JRubyEngine.
      */
     //@Test
@@ -640,6 +656,21 @@ public class JRubyEngineTest {
         assertTrue(((String)result).startsWith("Happy") || ((String) result).startsWith("You have"));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
+    }
+
+    /**
+     * Test of invokeFunction method throwing an exception with a null message.
+     */
+    @Test
+    public void testInvokeFunctionWithJavaException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
+        try {
+            Object result = ((Invocable) instance).invokeFunction("trigger_npe", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            // javax.script.ScriptException is expected
+        }
     }
 
     /**

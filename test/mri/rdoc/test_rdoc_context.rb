@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require File.expand_path '../xref_test_case', __FILE__
 
 class TestRDocContext < XrefTestCase
@@ -481,6 +481,32 @@ class TestRDocContext < XrefTestCase
     assert_equal expected_attrs, attrs
   end
 
+  def test_each_section_only_display
+    sects  = []
+    consts = []
+    attrs  = []
+
+    @c7.each_section do |section, constants, attributes|
+      sects  << section
+      consts << constants
+      attrs  << attributes
+    end
+
+    assert_equal [nil], sects.map { |section| section.title }
+
+    expected_consts = [
+      @c7.constants.select(&:display?).sort
+    ]
+
+    assert_equal expected_consts, consts
+
+    expected_attrs = [
+      @c7.attributes.select(&:display?).sort
+    ]
+
+    assert_equal expected_attrs, attrs
+  end
+
   def test_each_section_enumerator
     assert_kind_of Enumerator, @c1.each_section
   end
@@ -693,6 +719,7 @@ class TestRDocContext < XrefTestCase
 
     assert_equal [@pub, @prot, @priv], @vis.method_list
     assert_equal [@apub, @aprot, @apriv], @vis.attributes
+    assert_equal [@cpub, @cpriv], @vis.constants
   end
 
   def test_remove_invisible_nodoc
@@ -702,6 +729,7 @@ class TestRDocContext < XrefTestCase
 
     assert_equal [@pub, @prot, @priv], @vis.method_list
     assert_equal [@apub, @aprot, @apriv], @vis.attributes
+    assert_equal [@cpub, @cpriv], @vis.constants
   end
 
   def test_remove_invisible_protected
@@ -711,6 +739,7 @@ class TestRDocContext < XrefTestCase
 
     assert_equal [@pub, @prot], @vis.method_list
     assert_equal [@apub, @aprot], @vis.attributes
+    assert_equal [@cpub], @vis.constants
   end
 
   def test_remove_invisible_public
@@ -720,6 +749,7 @@ class TestRDocContext < XrefTestCase
 
     assert_equal [@pub], @vis.method_list
     assert_equal [@apub], @vis.attributes
+    assert_equal [@cpub], @vis.constants
   end
 
   def test_remove_invisible_public_force
@@ -729,11 +759,13 @@ class TestRDocContext < XrefTestCase
     @prot.force_documentation = true
     @apriv.force_documentation = true
     @aprot.force_documentation = true
+    @cpriv.force_documentation = true
 
     @vis.remove_invisible :public
 
     assert_equal [@pub, @prot, @priv], @vis.method_list
     assert_equal [@apub, @aprot, @apriv], @vis.attributes
+    assert_equal [@cpub, @cpriv], @vis.constants
   end
 
   def test_remove_invisible_in_protected
@@ -866,6 +898,27 @@ class TestRDocContext < XrefTestCase
     assert_equal [nil, 'Public', 'Internal'], titles
   end
 
+  def test_visibility_def
+    assert_equal :private, @c6.find_method_named('priv1').visibility
+    assert_equal :protected, @c6.find_method_named('prot1').visibility
+    assert_equal :public, @c6.find_method_named('pub1').visibility
+    assert_equal :private, @c6.find_method_named('priv2').visibility
+    assert_equal :protected, @c6.find_method_named('prot2').visibility
+    assert_equal :public, @c6.find_method_named('pub2').visibility
+    assert_equal :private, @c6.find_method_named('priv3').visibility
+    assert_equal :protected, @c6.find_method_named('prot3').visibility
+    assert_equal :public, @c6.find_method_named('pub3').visibility
+    assert_equal :private, @c6.find_method_named('priv4').visibility
+    assert_equal :protected, @c6.find_method_named('prot4').visibility
+    assert_equal :public, @c6.find_method_named('pub4').visibility
+    assert_equal :private, @c6.find_method_named('priv5').visibility
+    assert_equal :protected, @c6.find_method_named('prot5').visibility
+    assert_equal :public, @c6.find_method_named('pub5').visibility
+    assert_equal :private, @c6.find_method_named('priv6').visibility
+    assert_equal :protected, @c6.find_method_named('prot6').visibility
+    assert_equal :public, @c6.find_method_named('pub6').visibility
+  end
+
   def util_visibilities
     @pub  = RDoc::AnyMethod.new nil, 'pub'
     @prot = RDoc::AnyMethod.new nil, 'prot'
@@ -874,6 +927,9 @@ class TestRDocContext < XrefTestCase
     @apub  = RDoc::Attr.new nil, 'pub',  'RW', nil
     @aprot = RDoc::Attr.new nil, 'prot', 'RW', nil
     @apriv = RDoc::Attr.new nil, 'priv', 'RW', nil
+
+    @cpub  = RDoc::Constant.new 'CONST_PUBLIC', nil, nil
+    @cpriv = RDoc::Constant.new 'CONST_PRIVATE', nil, nil
 
     @vis = RDoc::NormalClass.new 'Vis'
     @vis.add_method @pub
@@ -884,11 +940,16 @@ class TestRDocContext < XrefTestCase
     @vis.add_attribute @aprot
     @vis.add_attribute @apriv
 
+    @vis.add_constant @cpub
+    @vis.add_constant @cpriv
+
     @prot.visibility = :protected
     @priv.visibility = :private
 
     @aprot.visibility = :protected
     @apriv.visibility = :private
+
+    @cpriv.visibility = :private
   end
 
 end

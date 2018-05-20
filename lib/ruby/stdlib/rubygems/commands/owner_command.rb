@@ -40,7 +40,9 @@ permission to.
       options[:remove] << value
     end
 
-    add_option '-h', '--host HOST', 'Use another gemcutter-compatible host' do |value, options|
+    add_option '-h', '--host HOST',
+               'Use another gemcutter-compatible host',
+               '  (e.g. https://rubygems.org)' do |value, options|
       options[:host] = value
     end
   end
@@ -62,7 +64,7 @@ permission to.
     end
 
     with_response response do |resp|
-      owners = YAML.load resp.body
+      owners = Gem::SafeYAML.load resp.body
 
       say "Owners for gem: #{name}"
       owners.each do |owner|

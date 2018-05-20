@@ -14,7 +14,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_initialize_on_frozen_array
-    assert_raises(RuntimeError) {
+    assert_raises(FrozenError) {
       [1, 2, 3].freeze.instance_eval { initialize }
     }
   end
@@ -60,6 +60,20 @@ class TestArray < Test::Unit::TestCase
         puts "#{__method__} : #{e}" if $VERBOSE
       end
     end
+  end
+
+  # GH-5141
+  def test_concat_self
+    arr = [1]
+    arr.concat(arr)
+    arr.concat(arr)
+    arr.concat(arr)
+    assert_equal [1, 1, 1, 1, 1, 1, 1, 1], arr
+
+    arr = [1, 2]
+    arr.concat(arr)
+    arr.concat(arr)
+    assert_equal [1, 2, 1, 2, 1, 2, 1, 2], arr
   end
 
 end

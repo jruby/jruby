@@ -1,5 +1,6 @@
 require 'erb'
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "ERB.new" do
   before :all do
@@ -31,21 +32,21 @@ END
   it "compiles eRuby script into ruby code when trim mode is 0 or not specified" do
     expected = "<ul>\n\n\n\n<li>1</li>\n\n\n\n<li>2</li>\n\n\n\n<li>3</li>\n\n\n</ul>\n"
     [0, '', nil].each do |trim_mode|
-      ERB.new(@eruby_str, nil, trim_mode).result.should == expected
+      ERBSpecs.new_erb(@eruby_str, trim_mode: trim_mode).result.should == expected
     end
   end
 
   it "removes '\n' when trim_mode is 1 or '>'" do
     expected = "<ul>\n<li>1</li>\n<li>2</li>\n<li>3</li>\n</ul>\n"
     [1, '>'].each do |trim_mode|
-      ERB.new(@eruby_str, nil, trim_mode).result.should == expected
+      ERBSpecs.new_erb(@eruby_str, trim_mode: trim_mode).result.should == expected
     end
   end
 
   it "removes spaces at beginning of line and '\n' when trim_mode is 2 or '<>'" do
     expected = "<ul>\n<li>1</li>\n<li>2</li>\n<li>3</li>\n</ul>\n"
     [2, '<>'].each do |trim_mode|
-      ERB.new(@eruby_str, nil, trim_mode).result.should == expected
+      ERBSpecs.new_erb(@eruby_str, trim_mode: trim_mode).result.should == expected
     end
   end
 
@@ -61,7 +62,7 @@ END
 </ul>
 END
 
-    ERB.new(input, nil, '-').result.should == expected
+    ERBSpecs.new_erb(input, trim_mode: '-').result.should == expected
   end
 
 
@@ -75,23 +76,23 @@ END
 END
 
     lambda {
-      ERB.new(input, nil, '-').result
+      ERBSpecs.new_erb(input, trim_mode: '-').result
     }.should raise_error(SyntaxError)
   end
 
   it "regards lines starting with '%' as '<% ... %>' when trim_mode is '%'" do
     expected = "<ul>\n  <li>1\n  \n  <li>2\n  \n  <li>3\n  \n\n</ul>\n%%\n"
-    ERB.new(@eruby_str2, nil, "%").result.should == expected
+    ERBSpecs.new_erb(@eruby_str2, trim_mode: "%").result.should == expected
   end
   it "regards lines starting with '%' as '<% ... %>' and remove \"\\n\" when trim_mode is '%>'" do
     expected = "<ul>\n  <li>1    <li>2    <li>3  </ul>\n%%\n"
-    ERB.new(@eruby_str2, nil, '%>').result.should == expected
+    ERBSpecs.new_erb(@eruby_str2, trim_mode: '%>').result.should == expected
   end
 
 
   it "regard lines starting with '%' as '<% ... %>' and remove \"\\n\" when trim_mode is '%<>'" do
     expected = "<ul>\n  <li>1\n  \n  <li>2\n  \n  <li>3\n  \n</ul>\n%%\n"
-    ERB.new(@eruby_str2, nil, '%<>').result.should == expected
+    ERBSpecs.new_erb(@eruby_str2, trim_mode: '%<>').result.should == expected
   end
 
 
@@ -106,13 +107,18 @@ END
 %%%
 END
 
-    ERB.new(input, nil, '%-').result.should == expected
+    ERBSpecs.new_erb(input, trim_mode: '%-').result.should == expected
   end
 
   it "changes '_erbout' variable name in the produced source" do
     input = @eruby_str
-    match_erbout = ERB.new(input, nil, nil).src
-    match_buf = ERB.new(input, nil, nil, 'buf').src
+    if RUBY_VERSION >= '2.6'
+      match_erbout = ERB.new(input, trim_mode: nil).src
+      match_buf = ERB.new(input, trim_mode: nil, eoutvar: 'buf').src
+    else
+      match_erbout = ERB.new(input, nil, nil).src
+      match_buf = ERB.new(input, nil, nil, 'buf').src
+    end
     match_erbout.gsub("_erbout", "buf").should == match_buf
   end
 
@@ -123,8 +129,8 @@ END
 <b><%#= item %></b>
 <%# end %>
 END
-    ERB.new(input).result.should == "\n<b></b>\n\n"
-    ERB.new(input, nil, '<>').result.should == "<b></b>\n"
+  ERBSpecs.new_erb(input).result.should == "\n<b></b>\n\n"
+    ERBSpecs.new_erb(input, trim_mode: '<>').result.should == "<b></b>\n"
   end
 
   it "forget local variables defined previous one" do

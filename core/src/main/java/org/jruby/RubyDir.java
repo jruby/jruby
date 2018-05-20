@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,6 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -62,6 +63,8 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.TypeConverter;
+import org.jruby.ast.util.ArgsUtil;
 
 /**
  * .The Ruby built-in class Dir.
@@ -183,14 +186,61 @@ public class RubyDir extends RubyObject {
         }
     }
 
+    // returns null (no kwargs present), "" kwargs but no base key, "something" kwargs with base key (which might be "").
+    private static String globOptions(ThreadContext context, IRubyObject[] args, int[] flags) {
+        Ruby runtime = context.runtime;
+
+        if (args.length > 1) {
+            IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
+            if (tmp.isNil()) {
+                if (flags != null) {
+                    flags[0] = RubyNumeric.num2int(args[1]);
+                }
+            } else {
+                String[] keys = flags != null ? new String[] {"base", "flags"} : new String[] {"base"};
+                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
+                String base = rets[0] == UNDEF || rets[0].isNil() ? "" : RubyFile.get_path(context, rets[0]).asJavaString();
+
+                // Deep down in glob things are unhappy if base is not absolute.
+                if (!base.isEmpty()) {
+                    JRubyFile file = new JRubyFile(base);
+
+                    // FIXME: This is a bit of a hot mess.  Deep down in the ancient caves of glob land we do not
+                    // like see a base which is not an absolute path.  JRubyFile by itself uses what I am guessing
+                    // is the JVM CWD and not the runtimes CWD so if path is not absolute I remake the thing again...
+                    if (!file.isAbsolute()) {
+                        base = new JRubyFile(runtime.getCurrentDirectory(), base).getAbsolutePath();
+                    }
+                }
+                if (flags != null) flags[0] = rets[1] == UNDEF ? 0 : RubyNumeric.num2int(rets[1]);
+                return base;
+            }
+        }
+
+        return null;
+    }
+
     @JRubyMethod(name = "[]", rest = true, meta = true)
     public static IRubyObject aref(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        String base = globOptions(context, args, null);
         List<ByteList> dirs;
+
         if (args.length == 1) {
-            dirs = Dir.push_glob(runtime, getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
+            String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
+            dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), 0);
         } else {
-            dirs = dirGlobs(context, getCWD(runtime), args, 0);
+            IRubyObject[] arefArgs;
+            if (base != null) { // kwargs are present
+                arefArgs = new IRubyObject[args.length - 1];
+                System.arraycopy(args, 0, arefArgs, 0, args.length - 1);
+            } else {
+                arefArgs = args;
+                base = "";
+            }
+
+            String dir = base.isEmpty() ? runtime.getCurrentDirectory() : base;
+            dirs = dirGlobs(context, dir, arefArgs, 0);
         }
 
         return asRubyStringList(runtime, dirs);
@@ -206,17 +256,24 @@ public class RubyDir extends RubyObject {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.
      */
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        int flags = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;
-
+        int[] flags = new int[] { 0 };
+        String base = globOptions(context, args, flags);
         List<ByteList> dirs;
-        IRubyObject tmp = args[0].checkArrayType();
-        if (tmp.isNil()) {
-            dirs = Dir.push_glob(runtime, runtime.getCurrentDirectory(), globArgumentAsByteList(context, args[0]), flags);
+
+        if (!(base == null || base.isEmpty()) && !(new File(base).exists())){
+            dirs = new ArrayList<ByteList>();
         } else {
-            dirs = dirGlobs(context, getCWD(runtime), ((RubyArray) tmp).toJavaArray(), flags);
+            IRubyObject tmp = args[0].checkArrayType();
+            String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
+
+            if (tmp.isNil()) {
+                dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), flags[0]);
+            } else {
+                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), flags[0]);
+            }
         }
 
         if (block.isGiven()) {
@@ -238,27 +295,44 @@ public class RubyDir extends RubyObject {
         return RubyArray.newArrayMayCopy(getRuntime(), JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
     }
 
+    public static RubyArray entries(IRubyObject recv, IRubyObject path) {
+        return entries(recv.getRuntime().getCurrentContext(), recv, path);
+    }
+
+    public static RubyArray entries(IRubyObject recv, IRubyObject path, IRubyObject arg, IRubyObject opts) {
+        return entries(recv.getRuntime().getCurrentContext(), recv, path, opts);
+    }
+
     /**
      * Returns an array containing all of the filenames in the given directory.
      */
-    public static RubyArray entries(IRubyObject recv, IRubyObject path) {
-        return entries19(recv.getRuntime().getCurrentContext(), recv, path);
+    @JRubyMethod(name = "entries", meta = true)
+    public static RubyArray entries(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+
+        return entriesCommon(context, path.asJavaString(), runtime.getDefaultEncoding());
     }
 
     @JRubyMethod(name = "entries", meta = true)
-    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
-        return entriesCommon(context, path.asJavaString());
+    public static RubyArray entries(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+        Encoding encoding = runtime.getDefaultInternalEncoding();
+
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, opts);
+
+        if (!maybeHash.isNil()) {
+            IRubyObject maybeEncoding = ArgsUtil.extractKeywordArg(context, "encoding", maybeHash);
+            if (!maybeEncoding.isNil()) {
+                encoding = runtime.getEncodingService().getEncodingFromObject(maybeEncoding);
+            }
+        }
+        return entriesCommon(context, path.asJavaString(), encoding);
     }
 
-    @JRubyMethod(name = "entries", meta = true)
-    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
-        // FIXME: do something with opts
-        return entriesCommon(context, path.asJavaString());
-    }
-
-    private static RubyArray entriesCommon(ThreadContext context, String path) {
+    private static RubyArray entriesCommon(ThreadContext context, String path, Encoding encoding) {
         Ruby runtime = context.runtime;
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path, null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
@@ -266,7 +340,12 @@ public class RubyDir extends RubyObject {
         FileResource directory = JRubyFile.createResource(context, path);
         String[] files = getEntries(context, directory, adjustedPath);
 
-        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertJavaArrayToRuby(runtime, files));
+        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertStringArrayToRuby(runtime, files, new JavaUtil.StringConverter() {
+            public IRubyObject convert(Ruby runtime, Object object) {
+                if (object == null) return runtime.getNil();
+                return RubyString.newString(runtime, (String)object, encoding);
+            }
+        }));
     }
 
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;
@@ -334,6 +413,26 @@ public class RubyDir extends RubyObject {
     }
 
     /**
+     * Returns an array containing all of the filenames except for "." and ".."
+     * in the given directory.
+     */
+    @JRubyMethod(name = "children", meta = true)
+    public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return childrenCommon(context, recv, arg, context.nil);
+    }
+
+    @JRubyMethod(name = "children", meta = true)
+    public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        return childrenCommon(context, recv, arg, opts);
+    }
+
+    private static RubyArray childrenCommon(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        RubyArray entries = entries(context, recv, arg, opts);
+        entries.removeIf(f -> f.equals(".") || f.equals(".."));
+        return entries;
+    }
+
+    /**
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
      */
@@ -357,6 +456,37 @@ public class RubyDir extends RubyObject {
         }
 
         return runtime.newFixnum(0);
+    }
+
+    /**
+     * Executes the block once for each entry in the directory except
+     * for "." and "..", passing the filename of each entry as parameter
+     * to the block.
+     */
+    @JRubyMethod(name = "each_child", meta = true)
+    public static IRubyObject each_child(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
+        RubyString pathString = RubyFile.get_path(context, arg);
+
+        return eachChildCommon(context, recv, context.runtime, pathString, null, block);
+    }
+
+    /**
+     * Executes the block once for each entry in the directory except
+     * for "." and "..", passing the filename of each entry as parameter
+     * to the block.
+     */
+    @JRubyMethod(name = "each_child", meta = true)
+    public static IRubyObject each_child(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject enc, Block block) {
+        RubyString pathString = RubyFile.get_path(context, arg);
+        RubyEncoding encoding;
+
+        if (enc instanceof RubyEncoding) {
+            encoding = (RubyEncoding) enc;
+        } else {
+            throw context.runtime.newTypeError(enc, context.runtime.getEncoding());
+        }
+
+        return eachChildCommon(context, recv, context.runtime, pathString, encoding, block);
     }
 
     /**
@@ -386,6 +516,22 @@ public class RubyDir extends RubyObject {
         }
 
         return foreachCommon(context, recv, context.runtime, pathString, encoding, block);
+    }
+
+    private static IRubyObject eachChildCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, RubyEncoding encoding, Block block) {
+        if (block.isGiven()) {
+            RubyClass dirClass = runtime.getDir();
+            RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[]{_path}, block);
+
+            dir.each_child(context, block);
+            return runtime.getNil();
+        }
+
+        if (encoding == null) {
+            return enumeratorize(runtime, recv, "each_child", _path);
+        } else {
+            return enumeratorize(runtime, recv, "each_child", new IRubyObject[]{_path, encoding});
+        }
     }
 
     private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, RubyEncoding encoding, Block block) {
@@ -524,10 +670,35 @@ public class RubyDir extends RubyObject {
     }
 
     /**
+     * Executes the block once for each child in the directory
+     * (i.e. all the directory entries except for "." and "..").
+     */
+    public IRubyObject each_child(ThreadContext context, Encoding enc, Block block) {
+        checkDir();
+
+        String[] contents = snapshot;
+        for (pos = 0; pos < contents.length; pos++) {
+            if (!(contents[pos].equals(".") || contents[pos].equals(".."))) {
+                block.yield(context, RubyString.newString(context.runtime, contents[pos], enc));
+            }
+        }
+
+        return this;
+    }
+
+    /**
      * Executes the block once for each entry in the directory.
      */
     public IRubyObject each(ThreadContext context, Block block) {
         return each(context, context.runtime.getDefaultInternalEncoding(), block);
+    }
+
+    /**
+     * Executes the block once for each child in the directory
+     * (i.e. all the directory entries except for "." and "..").
+     */
+    public IRubyObject each_child(ThreadContext context, Block block) {
+        return each_child(context, context.runtime.getDefaultInternalEncoding(), block);
     }
 
     @JRubyMethod(name = "each")
@@ -586,7 +757,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
-        return path == null ? context.runtime.getNil() : path.strDup(context.runtime);
+        return path == null ? context.nil : path.strDup(context.runtime);
     }
 
     @JRubyMethod
@@ -621,7 +792,7 @@ public class RubyDir extends RubyObject {
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
         RubyFileStat fileStat = runtime.newFileStat(path.asJavaString(), false);
         boolean isDirectory = fileStat.directory_p().isTrue();
-        return runtime.newBoolean(isDirectory && entries19(context, recv, arg).getLength() <= 2);
+        return runtime.newBoolean(isDirectory && entries(context, recv, arg).getLength() <= 2);
     }
 
     @JRubyMethod(name = "exist?", meta = true)
@@ -836,6 +1007,16 @@ public class RubyDir extends RubyObject {
         }
 
         return (RubyString) home;
+    }
+
+    @Deprecated
+    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return entries(context, recv, arg);
+    }
+
+    @Deprecated
+    public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        return entries(context, recv, arg, opts);
     }
 
 }

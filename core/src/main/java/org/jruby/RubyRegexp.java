@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,6 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import static org.jruby.anno.FrameField.BACKREF;
@@ -47,6 +48,7 @@ import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.Syntax;
+import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -148,7 +150,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private static Regex makeRegexp(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         try {
             int p = bytes.getBegin();
-            return new Regex(bytes.getUnsafeBytes(), p, p + bytes.getRealSize(), options.toJoniOptions(), enc, Syntax.DEFAULT, runtime.getWarnings());
+            return new Regex(bytes.getUnsafeBytes(), p, p + bytes.getRealSize(), options.toJoniOptions(), enc, Syntax.DEFAULT, runtime.getRegexpWarnings());
         } catch (Exception e) {
             RegexpSupport.raiseRegexpError19(runtime, bytes, enc, options, e.getMessage());
             return null; // not reached
@@ -407,29 +409,34 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 pattern.getEncoding() + " regexp with " + strEnc + " string)");
     }
 
-    private Encoding checkEncoding(RubyString str, boolean warn) {
-        if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
+    private Encoding prepareEncoding(RubyString str, boolean warn) {
+        Encoding enc = str.getEncoding();
+        int cr = str.scanForCodeRange();
+        if (cr == StringSupport.CR_BROKEN) {
+            throw getRuntime().newArgumentError("invalid byte sequence in " + enc);
         }
         check();
-        Encoding enc = str.getEncoding();
-        if (!enc.isAsciiCompatible()) {
-            if (enc != pattern.getEncoding()) encodingMatchError(getRuntime(), pattern, enc);
+        Encoding patternEnc = pattern.getEncoding();
+        if (patternEnc == enc) {
+        } else if (cr == StringSupport.CR_7BIT && patternEnc == USASCIIEncoding.INSTANCE) {
+            enc = patternEnc;
+        } else if (!enc.isAsciiCompatible()) {
+            encodingMatchError(getRuntime(), pattern, enc);
         } else if (options.isFixed()) {
-            if (enc != pattern.getEncoding() &&
-               (!pattern.getEncoding().isAsciiCompatible() ||
-               str.scanForCodeRange() != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
-            enc = pattern.getEncoding();
+            if (enc != patternEnc &&
+               (!patternEnc.isAsciiCompatible() ||
+               cr != StringSupport.CR_7BIT)) encodingMatchError(getRuntime(), pattern, enc);
+            enc = patternEnc;
         }
-        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && str.scanForCodeRange() != StringSupport.CR_7BIT) {
-            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "regexp match /.../n against to " + enc + " string");
+        if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && cr != StringSupport.CR_7BIT) {
+            getRuntime().getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "historical binary regexp match /.../n against " + enc + " string");
         }
         return enc;
     }
 
     public final Regex preparePattern(RubyString str) {
         // checkEncoding does `check();` no need to here
-        Encoding enc = checkEncoding(str, true);
+        Encoding enc = prepareEncoding(str, true);
         if (enc == pattern.getEncoding()) return pattern;
         return getPreprocessedRegexpFromCache(getRuntime(), this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
     }
@@ -648,6 +655,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     c = bytes[p] & 0xff;
                 } else {
                     cl = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (cl < 0) {
+                        p += StringSupport.length(enc, bytes, p, end);
+                        continue;
+                    }
                     c = enc.mbcToCode(bytes, p, end);
                 }
 
@@ -920,8 +931,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (!arg2.isNil()) {
             ByteList kcodeBytes = arg2.convertToString().getByteList();
-            if ((kcodeBytes.getRealSize() > 0 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin()] == 'n') ||
-                (kcodeBytes.getRealSize() > 1 && kcodeBytes.getUnsafeBytes()[kcodeBytes.getBegin() + 1] == 'N')) {
+            if (kcodeBytes.getRealSize() > 0 && (kcodeBytes.get(0) == 'n' || kcodeBytes.get(0) == 'N')) {
+                newOptions.setEncodingNone(true);
                 return regexpInitialize(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, newOptions);
             } else {
                 getRuntime().getWarnings().warn("encoding option is ignored - " + kcodeBytes);
@@ -1022,10 +1033,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) {
-            return context.runtime.getTrue();
+            return context.tru;
         }
         if (!(other instanceof RubyRegexp)) {
-            return context.runtime.getFalse();
+            return context.fals;
         }
         RubyRegexp otherRegex = (RubyRegexp) other;
 
@@ -1401,7 +1412,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
                 if (bytes[p] == ':' && bytes[p + len - 1] == ')') {
                     try {
-                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, str.getEncoding(), Syntax.DEFAULT);
+                        new Regex(bytes, ++p, p + (len -= 2), Option.DEFAULT, str.getEncoding(), Syntax.DEFAULT, WarnCallback.NONE);
                         err = false;
                     } catch (JOniException e) {
                         err = true;
@@ -1431,21 +1442,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } while (true);
     }
 
-    public ByteList[] getByteNames() {
-        int nameLength = pattern.numberOfNames();
-        if (nameLength == 0) return EMPTY_BYTELIST_ARRAY;
-
-        ByteList[] names = new ByteList[nameLength];
-        int j = 0;
-        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
-            NameEntry e = i.next();
-            names[j++] = new ByteList(e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding(), true);
-        }
-
-        return names;
-    }
-
-    @Deprecated
+    /**
+     * returns all names in a regexp pattern as id (8859_1) strings
+     * @return array of id strings.
+     */
     public String[] getNames() {
         int nameLength = pattern.numberOfNames();
         if (nameLength == 0) return EMPTY_STRING_ARRAY;
@@ -1604,7 +1604,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     // rb_reg_regsub
-    static RubyString regsub19(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
+    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
         Ruby runtime = context.runtime;
 
         RubyString val = null;

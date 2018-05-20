@@ -36,7 +36,7 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + newIRModuleBody.getName() };
+        return new String[] { "name: " + newIRModuleBody.getId() };
     }
 
     @Override

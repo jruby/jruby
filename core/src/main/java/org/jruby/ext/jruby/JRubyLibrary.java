@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,6 +28,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.jruby;
 
 import org.jcodings.specific.ASCIIEncoding;
@@ -82,21 +83,22 @@ public class JRubyLibrary implements Library {
         JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        /**
-         * JRuby::CONFIG ~ shortcut for JRuby.runtime.instance_config
-         * @since 9.2
-         */
-        IRubyObject config = Java.getInstance(runtime, runtime.getInstanceConfig());
-        config.getMetaClass().defineAlias("rubygems_disabled?", "isDisableGems");
-        config.getMetaClass().defineAlias("did_you_mean_disabled?", "isDisableDidYouMean");
-        JRuby.setConstant("CONFIG", config);
+        RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
+        CONFIG.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
     }
 
-    @Deprecated // old JRuby.defineModuleUnder("CONFIG")
+    /**
+     * JRuby::CONFIG
+     */
     public static class JRubyConfig {
-        // @JRubyMethod(name = "rubygems_disabled?")
+        @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
             return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+        }
+
+        @JRubyMethod(name = "did_you_mean_disabled?")
+        public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
@@ -105,7 +107,7 @@ public class JRubyLibrary implements Library {
      * version uses ObjectProxyCache to guarantee the same wrapper is returned
      * as long as it is in use somewhere.
      */
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, name = {"reference", "ref"})
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return Java.getInstance(context.runtime, obj, false);
     }
@@ -128,7 +130,7 @@ public class JRubyLibrary implements Library {
      * Unwrap the given Java-integration-wrapped object, returning the unwrapped
      * object. If the wrapped object is not a Ruby object, an error will raise.
      */
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, name = {"dereference", "deref"})
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Object unwrapped = JavaUtil.unwrapIfJavaObject(obj);
         if (unwrapped == obj) {
@@ -199,15 +201,6 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
-    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
-        return runtime.newString(launcher);
-    }
-
-
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
@@ -267,7 +260,7 @@ public class JRubyLibrary implements Library {
 
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
         RootNode node = (RootNode) parseImpl(context, args, block);
-        IRManager manager = new IRManager(context.runtime.getInstanceConfig());
+        IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
         manager.setDryRun(true);
         IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
         scope.setScriptDynamicScope(node.getScope());
@@ -295,7 +288,7 @@ public class JRubyLibrary implements Library {
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
         return CompiledScript.newInstance(context, new IRubyObject[] {
                 filename,
-                runtime.newString(scope.getName()),
+                scope.getName(),
                 content,
                 Java.getInstance(runtime, bytes)
         }, Block.NULL_BLOCK);

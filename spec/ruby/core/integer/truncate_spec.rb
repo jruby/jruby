@@ -1,10 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/to_i', __FILE__)
-require File.expand_path('../shared/integer_rounding', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/to_i'
+require_relative 'shared/integer_rounding'
 
 describe "Integer#truncate" do
-  it_behaves_like(:integer_to_i, :truncate)
-  it_behaves_like(:integer_rounding_positive_precision, :truncate)
+  it_behaves_like :integer_to_i, :truncate
+  it_behaves_like :integer_rounding_positive_precision, :truncate
 
   ruby_version_is "2.4" do
     context "precision argument specified as part of the truncate method is negative" do

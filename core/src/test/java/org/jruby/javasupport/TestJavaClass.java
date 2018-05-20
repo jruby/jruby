@@ -69,7 +69,7 @@ public class TestJavaClass extends junit.framework.TestCase {
 
         Object type;
         //Class klass = runtime.evalScriptlet("java.lang.Object").getJavaClass();
-        //System.out.println(klass + " " + klass.getName());
+        //System.out.println(klass + " " + klass.getId());
         type = runtime.getClass("Object").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
         assertEquals("Object", ((RubyClass) type).getName());

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,33 +30,28 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * RubyMethod call without any arguments
  *
  */
 public class VCallNode extends Node implements INameNode {
-    private ByteList name;
+    private RubySymbol name;
 
-    public VCallNode(ISourcePosition position, ByteList name) {
+    public VCallNode(ISourcePosition position, RubySymbol name) {
         super(position, false);
 
         this.name = name;
         setNewline();
-    }
-
-    @Deprecated
-    public VCallNode(ISourcePosition position, String name) {
-        this(position, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {
@@ -75,11 +70,7 @@ public class VCallNode extends Node implements INameNode {
      * Gets the methodName.
      * @return Returns a String
      */
-    public String getName() {
-        return StringSupport.byteListAsString(name);
-    }
-
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
     }
     

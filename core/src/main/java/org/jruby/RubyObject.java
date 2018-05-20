@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -37,6 +37,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.IOException;
@@ -62,6 +63,8 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+
+import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.cli.Options;
 
 /**
@@ -144,107 +147,6 @@ public class RubyObject extends RubyBasicObject {
         }
     };
 
-    public static final ObjectAllocator OBJECT_VAR0_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar0(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR1_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar1(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR2_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar2(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR3_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar3(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR4_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar4(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR5_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar5(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR6_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar6(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR7_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar7(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR8_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar8(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator OBJECT_VAR9_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyObjectVar9(runtime, klass);
-        }
-    };
-
-    public static final ObjectAllocator[] FIELD_ALLOCATORS = {
-        OBJECT_ALLOCATOR,
-        OBJECT_VAR0_ALLOCATOR,
-        OBJECT_VAR1_ALLOCATOR,
-        OBJECT_VAR2_ALLOCATOR,
-        OBJECT_VAR3_ALLOCATOR,
-        OBJECT_VAR4_ALLOCATOR,
-        OBJECT_VAR5_ALLOCATOR,
-        OBJECT_VAR6_ALLOCATOR,
-        OBJECT_VAR7_ALLOCATOR,
-        OBJECT_VAR8_ALLOCATOR,
-        OBJECT_VAR9_ALLOCATOR
-    };
-
-    public static final Set<ObjectAllocator> FIELD_ALLOCATOR_SET =
-            Collections.unmodifiableSet(new HashSet<ObjectAllocator>(Arrays.asList(FIELD_ALLOCATORS)));
-
-    public static final Class[] FIELD_ALLOCATED_CLASSES = {
-        RubyObject.class,
-        RubyObjectVar0.class,
-        RubyObjectVar1.class,
-        RubyObjectVar2.class,
-        RubyObjectVar3.class,
-        RubyObjectVar4.class,
-        RubyObjectVar5.class,
-        RubyObjectVar6.class,
-        RubyObjectVar7.class,
-        RubyObjectVar8.class,
-        RubyObjectVar9.class,
-    };
-
     /**
      * Allocator that inspects all methods for instance variables and chooses
      * a concrete class to construct based on that. This allows using
@@ -260,17 +162,7 @@ public class RubyObject extends RubyBasicObject {
                 System.err.println(klass + ";" + foundVariables);
             }
 
-            int count = 0;
-            for (String name : foundVariables) {
-                klass.getVariableTableManager().getVariableAccessorForVar(name, count);
-                count++;
-                if (count >= 10) break;
-            }
-
-            ObjectAllocator allocator = FIELD_ALLOCATORS[count];
-            Class reified = FIELD_ALLOCATED_CLASSES[count];
-            klass.setAllocator(allocator);
-            klass.setReifiedClass(reified);
+            ObjectAllocator allocator = RubyObjectSpecializer.specializeForVariables(klass, foundVariables);
 
             // invalidate metaclass so new allocator is picked up for specialized .new
             klass.getMetaClass().invalidateCacheDescendants();
@@ -332,13 +224,22 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * The default toString method is just a wrapper that calls the
+     * Ruby "to_s" method.  This will raise if it is not actually a Ruby String.
+     *
+     * @param context thread context this is executing on.
+     * @return the string.
+     */
+    public RubyString toRubyString(ThreadContext context) {
+        return sites(context).to_s.call(context, this, this).convertToString();
+    }
+
+    /**
+     * The default toString method is just a wrapper that calls the
      * Ruby "to_s" method.
      */
     @Override
     public String toString() {
-        ThreadContext context = getRuntime().getCurrentContext();
-        RubyString rubyString = sites(context).to_s.call(context, this, this).convertToString();
-        return rubyString.getUnicodeValue();
+        return toRubyString(getRuntime().getCurrentContext()).getUnicodeValue();
     }
 
     /**
@@ -478,18 +379,20 @@ public class RubyObject extends RubyBasicObject {
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
      */
-    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
-        if (a == b) {
-            return true;
-        } else if (a instanceof RubySymbol) {
-            return false;
-        } else if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
-            return ((RubyFixnum)a).fastEqual((RubyFixnum) b);
-        } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
-            return ((RubyFloat)a).fastEqual((RubyFloat)b);
-        } else {
-            return invokedynamic(context, a, OP_EQUAL, b).isTrue();
+    public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
+        if (a == b) return true;
+        if (a instanceof RubySymbol) return false;
+
+        return fastNumEqualInternal(context, a, b);
+    }
+
+    private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
+        if (a instanceof RubyFixnum) {
+            if (b instanceof RubyFixnum) return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
+        } else if (a instanceof RubyFloat) {
+            if (b instanceof RubyFloat) return ((RubyFloat) a).fastEqual((RubyFloat) b);
         }
+        return invokedynamic(context, a, OP_EQUAL, b).isTrue();
     }
 
     /**
@@ -497,16 +400,13 @@ public class RubyObject extends RubyBasicObject {
      * equality, and then calling the "eql?" method.
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
-        if (a == b) {
-            return true;
-        } else if (a instanceof RubySymbol) {
-            return false;
-        } else if (a instanceof RubyNumeric) {
+        if (a == b) return true;
+        if (a instanceof RubySymbol) return false;
+        if (a instanceof RubyNumeric) {
             if (a.getClass() != b.getClass()) return false;
-            return equalInternal(context, a, b);
-        } else {
-            return invokedynamic(context, a, EQL, b).isTrue();
+            return fastNumEqualInternal(context, a, b);
         }
+        return invokedynamic(context, a, EQL, b).isTrue();
     }
 
     /**

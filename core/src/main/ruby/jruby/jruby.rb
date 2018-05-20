@@ -38,10 +38,6 @@ module JRuby
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def compile(content, filename = '', extra_position_info = false); end if false
 
-    # The current runtime's config (a `org.jruby.RubyInstanceConfig` instance).
-    # Changes to the configuration won't be reflected in the runtime, meant to be read-only.
-    CONFIG = runtime.instance_config if false
-
   end
 
   # NOTE: This is not a public API and is subject to change at our whim.

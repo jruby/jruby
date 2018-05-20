@@ -34,6 +34,10 @@ public abstract class OneOperandBranchInstr extends BranchInstr {
         }
     }
 
+    public void setJumpTarget(Label target) {
+        this.jumpTarget = target;
+    }
+
     public Label getJumpTarget() {
         return jumpTarget;
     }

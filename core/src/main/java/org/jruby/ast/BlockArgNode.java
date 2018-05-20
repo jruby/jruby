@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,37 +29,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  *	An explicit block argument (&amp;my_block) in parameter list.
  */
 public class BlockArgNode extends Node implements INameNode {
     private final int count;
-    private ByteList name;
+    private RubySymbol name;
 
-    public BlockArgNode(ISourcePosition position, int count, ByteList name) {
+    public BlockArgNode(ISourcePosition position, int count, RubySymbol name) {
         super(position, false);
         this.count = count;
         this.name = name;
     }
 
-    @Deprecated
-    public BlockArgNode(ISourcePosition position, int count, String name) {
-        this(position, count, StringSupport.stringAsByteList(name));
-    }
-
-
     public BlockArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getIndex(), argNode.getByteName());
+        this(argNode.getPosition(), argNode.getIndex(), argNode.getName());
     }
 
     public NodeType getNodeType() {
@@ -87,17 +81,8 @@ public class BlockArgNode extends Node implements INameNode {
      * 
      * @return it's name
      */
-    public String getName() {
-        return StringSupport.byteListAsString(name);
-    }
-
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
-    }
-
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
     }
 	
     public List<Node> childNodes() {

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -32,6 +32,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jcodings.Encoding;
@@ -49,8 +50,10 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 
+import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -116,12 +119,69 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(signum() < 0);
+        return context.runtime.newBoolean(isNegative());
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(signum() > 0);
+        return context.runtime.newBoolean(isPositive());
+    }
+
+    @Override
+    public boolean isNegative() {
+        return signum() < 0;
+    }
+
+    @Override
+    public boolean isPositive() {
+        return signum() > 0;
+    }
+
+    /*  =============
+     *  Class Methods
+     *  =============
+     */
+
+    /** rb_int_s_isqrt
+     *
+     */
+    @JRubyMethod(meta = true)
+    public static IRubyObject sqrt(ThreadContext context, IRubyObject self, IRubyObject num) {
+        return num.convertToInteger().sqrt(context);
+    }
+
+    public abstract IRubyObject sqrt(ThreadContext context);
+
+    // floorSqrt :: unsigned long -> unsigned int
+    // Gives the exact floor of the square root of x, treated as unsigned.
+    // Public domain code from http://www.codecodex.com/wiki/Calculate_an_integer_square_root
+    public static final int floorSqrt(final long x) {
+        if ((x & 0xfff0000000000000L) == 0L) return (int) StrictMath.sqrt(x);
+        final long result = (long) StrictMath.sqrt(2.0d*(x >>> 1));
+        return result*result - x > 0L ? (int) result - 1 : (int) result;
+    }
+
+    // floorSqrt :: BigInteger -> BigInteger
+    // Gives the exact floor of the square root of x, returning null (like Math.sqrt's NaN) if x is negative.
+    //    // Public domain code from http://www.codecodex.com/wiki/Calculate_an_integer_square_root
+    public static final BigInteger floorSqrt(final BigInteger x) {
+        if (x == null) return null;
+
+        final int zeroCompare = x.compareTo(BigInteger.ZERO);
+        if (zeroCompare <  0) return null;
+        if (zeroCompare == 0) return BigInteger.ZERO;
+
+        int bit = Math.max(0, (x.bitLength() - 63) & 0xfffffffe); // last even numbered bit in first 64 bits
+        BigInteger result = BigInteger.valueOf(floorSqrt(x.shiftRight(bit).longValue()) & 0xffffffffL);
+        bit >>>= 1;
+        result = result.shiftLeft(bit);
+        while (bit != 0) {
+            bit--;
+            final BigInteger resultHigh = result.setBit(bit);
+            if (resultHigh.multiply(resultHigh).compareTo(x) <= 0) result = resultHigh;
+        }
+
+        return result;
     }
 
     /*  ================
@@ -311,8 +371,6 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
-    @Deprecated
-    public static final ByteList[] SINGLE_CHAR_BYTELISTS19;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
         for (int i = 0; i < 256; i++) {
@@ -320,8 +378,9 @@ public abstract class RubyInteger extends RubyNumeric {
             SINGLE_CHAR_BYTELISTS[i] = bytes;
             bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
         }
-        SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
     }
+    @Deprecated
+    public static final ByteList[] SINGLE_CHAR_BYTELISTS19 = SINGLE_CHAR_BYTELISTS;
 
     static ByteList singleCharByteList(final byte index) {
         return SINGLE_CHAR_BYTELISTS[index & 0xFF];
@@ -340,7 +399,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
         Encoding enc;
 
-        if (0xff < i) {
+        if (i > 0xff) {
             enc = runtime.getDefaultInternalEncoding();
             if (enc == null) {
                 throw runtime.newRangeError(toString() + " out of char range");
@@ -372,6 +431,11 @@ public abstract class RubyInteger extends RubyNumeric {
         return chrCommon(context, i, enc);
     }
 
+    @Deprecated
+    public RubyString chr19(ThreadContext context, IRubyObject arg) {
+        return chr(context, arg);
+    }
+
     private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
         if (value > 0xFFFFFFFFL) {
             throw context.runtime.newRangeError(this + " out of char range");
@@ -379,11 +443,6 @@ public abstract class RubyInteger extends RubyNumeric {
         int c = (int) value;
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         return EncodingUtils.encUintChr(context, c, enc);
-    }
-
-    @Deprecated
-    public final RubyString chr19(ThreadContext context, IRubyObject arg) {
-        return chr(context, arg);
     }
 
     /** int_ord
@@ -446,11 +505,7 @@ public abstract class RubyInteger extends RubyNumeric {
         int ndigits = num2int(digits);
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
-
-        if (ndigits > 0) {
-            return RubyKernel.new_float(runtime, this);
-        }
-        if (ndigits == 0) {
+        if (ndigits >= 0) {
             return this;
         }
 
@@ -464,7 +519,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /*
      * MRI: rb_int_round
      */
-    protected IRubyObject roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
+    public RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
         Ruby runtime = context.runtime;
 
         RubyNumeric f, h, n, r;
@@ -486,12 +541,12 @@ public abstract class RubyInteger extends RubyNumeric {
 	        /* then int_pow overflow */
             return RubyFixnum.zero(runtime);
         }
-        h = (RubyNumeric) f.idiv(context, int2fix(runtime, 2));
+        h = (RubyNumeric) f.idiv(context, 2);
         r = (RubyNumeric) this.op_mod(context, f);
         n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
         if (r.isPositive(context).isTrue() ||
-                (r.zero_p(context).isTrue() && doRoundCheck(context, roundingMode, this, n, f))) {
+                (r.isZero() && doRoundCheck(context, roundingMode, this, n, f))) {
             n = (RubyNumeric) n.op_plus(context, f);
         }
         return n;
@@ -574,20 +629,34 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return (op_mod_two(context, this) != 0) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "even?")
     public RubyBoolean even_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (sites(context).op_mod.call(context, this, this, RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return (op_mod_two(context, this) == 0) ? context.tru : context.fals;
+    }
+
+    private static long op_mod_two(ThreadContext context, RubyInteger self) {
+        return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).getLongValue();
+    }
+
+    @JRubyMethod(name = "allbits?")
+    public IRubyObject allbits_p(ThreadContext context, IRubyObject other) {
+        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        return ((RubyInteger) op_and(context, mask)).op_equal(context, mask);
+    }
+
+    @JRubyMethod(name = "anybits?")
+    public IRubyObject anybits_p(ThreadContext context, IRubyObject other) {
+        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        return ((RubyInteger) op_and(context, mask)).zero_p(context).isTrue() ? context.fals : context.tru;
+    }
+
+    @JRubyMethod(name = "nobits?")
+    public IRubyObject nobits_p(ThreadContext context, IRubyObject other) {
+        IRubyObject mask = TypeConverter.checkIntegerType(context, other);
+        return ((RubyInteger) op_and(context, mask)).zero_p(context);
     }
 
     @JRubyMethod(name = "pred")
@@ -605,16 +674,9 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // MRI: rb_int_fdiv_double and rb_int_fdiv in one
     @Override
+    @JRubyMethod(name = "fdiv")
     public IRubyObject fdiv(ThreadContext context, IRubyObject y) {
-        RubyInteger x = this;
-        if (y instanceof RubyInteger && !((RubyInteger) y).zero_p(context).isTrue()) {
-            IRubyObject gcd = gcd(context, y);
-            if (!((RubyInteger) gcd).zero_p(context).isTrue()) {
-                x = (RubyInteger) div(context, gcd);
-                y = ((RubyInteger) y).div(context, gcd);
-            }
-        }
-        return x.fdivDouble(context, y);
+        return fdivDouble(context, y);
     }
 
     public abstract IRubyObject fdivDouble(ThreadContext context, IRubyObject y);
@@ -632,25 +694,25 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
-        other = RubyInteger.intValue(context, other);
-        return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
+        final RubyInteger otherInt = RubyInteger.intValue(context, other);
+        return context.runtime.newArray(f_gcd(context, this, otherInt), f_lcm(context, this, otherInt));
     }
 
-    static IRubyObject intValue(ThreadContext context, IRubyObject num) {
-        IRubyObject i;
+    static RubyInteger intValue(ThreadContext context, IRubyObject num) {
+        RubyInteger i;
         if (( i = RubyInteger.toInteger(context, num) ) == null) {
             throw context.runtime.newTypeError("not an integer");
         }
         return i;
     }
 
-    static IRubyObject toInteger(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyInteger) return num;
+    static RubyInteger toInteger(ThreadContext context, IRubyObject num) {
+        if (num instanceof RubyInteger) return (RubyInteger) num;
         if (num instanceof RubyNumeric && !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
             return null;
         }
         if (num instanceof RubyString) return null; // do not want String#to_i
-        return num.checkCallMethod(context, sites(context).to_i_checked);
+        return (RubyInteger) num.checkCallMethod(context, sites(context).to_i_checked);
     }
 
     @JRubyMethod(name = "digits")
@@ -673,8 +735,8 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFixnum.one(context.runtime);
     }
 
-    @JRubyMethod(name = "to_s")
     @Override
+    @JRubyMethod(name = {"to_s", "inspect"})
     public abstract RubyString to_s();
 
     @JRubyMethod(name = "to_s")
@@ -686,11 +748,23 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "+")
     public abstract IRubyObject op_plus(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_plus(ThreadContext context, long other) {
+        return op_plus(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "-")
     public abstract IRubyObject op_minus(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_minus(ThreadContext context, long other) {
+        return op_minus(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "*")
     public abstract IRubyObject op_mul(ThreadContext context, IRubyObject other);
+
+    public IRubyObject op_mul(ThreadContext context, long other) {
+        return op_mul(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
 
     // MRI: rb_int_idiv, polymorphism handles fixnum vs bignum
     @JRubyMethod(name = "div")
@@ -707,8 +781,86 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"%", "modulo"})
     public abstract IRubyObject op_mod(ThreadContext context, IRubyObject other);
 
+    public IRubyObject op_mod(ThreadContext context, long other) {
+        return op_mod(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = "**")
     public abstract IRubyObject op_pow(ThreadContext context, IRubyObject other);
+
+    @JRubyMethod(name = "pow")
+    public IRubyObject pow(ThreadContext context, IRubyObject other) {
+        return sites(context).op_pow.call(context, this, this, other);
+    }
+
+    private final long HALF_LONG_MSB = 0x80000000L;
+
+    // MRI: rb_int_powm
+    @JRubyMethod(name = "pow")
+    public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
+        Ruby runtime = context.runtime;
+
+        RubyInteger a = this;
+
+        boolean negaFlg = false;
+        if (!(b instanceof RubyInteger)) {
+            throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
+        }
+        RubyInteger intB = (RubyInteger) b;
+        if (negativeInt(context, intB)) {
+            throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
+        }
+        if (!(m instanceof RubyInteger)) {
+            throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless all arguments are integers");
+        }
+
+        if (negativeInt(context, m)) {
+            m = sites(context).op_uminus.call(context, m, m);
+            negaFlg = true;
+        }
+
+        if (!positiveInt(context, m)) {
+            throw runtime.newZeroDivisionError();
+        }
+        if (m instanceof RubyFixnum) {
+            long halfVal = HALF_LONG_MSB;
+            long mm = m.convertToInteger().getLongValue();
+            RubyFixnum modulo = (RubyFixnum) a.modulo(context, m);
+            if (mm <= halfVal) {
+                return modulo.intPowTmp1(context, intB, mm, negaFlg);
+            } else {
+                return modulo.intPowTmp2(context, intB, mm, negaFlg);
+            }
+        } else if (m instanceof RubyBignum) {
+            return ((RubyInteger) a.modulo(context, m)).intPowTmp3(context, intB, (RubyBignum) m, negaFlg);
+        }
+        // not reached
+        throw new RuntimeException("BUG: unexpected type " + m.getType());
+    }
+
+    protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {
+        Ruby runtime = context.runtime;
+
+        BigInteger xn, yn, mn, zn;
+
+        if (this instanceof RubyFixnum) {
+            xn = BigInteger.valueOf(this.getLongValue());
+        } else {
+            xn = this.getBigIntegerValue();
+        }
+        if (y instanceof RubyFixnum) {
+            yn = BigInteger.valueOf(y.getLongValue());
+        } else {
+            yn = y.getBigIntegerValue();
+        }
+        mn = m.getBigIntegerValue();
+
+        zn = xn.modPow(yn, mn);
+        if (negaFlg & zn.signum() == 1) {
+            zn = zn.negate();
+        }
+        return RubyBignum.bignorm(runtime, zn);
+    }
 
     @JRubyMethod(name = "abs")
     public abstract IRubyObject abs(ThreadContext context);
@@ -719,7 +871,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return abs(context);
     }
 
-    @JRubyMethod(name = "==")
+    @JRubyMethod(name = {"==", "==="})
     @Override
     public abstract IRubyObject op_equal(ThreadContext context, IRubyObject other);
 
@@ -745,8 +897,16 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "<<")
     public abstract IRubyObject op_lshift(ThreadContext context, IRubyObject other);
 
+    public RubyInteger op_lshift(ThreadContext context, long other) {
+        return (RubyInteger) op_lshift(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     @JRubyMethod(name = ">>")
     public abstract IRubyObject op_rshift(ThreadContext context, IRubyObject other);
+
+    public RubyInteger op_rshift(ThreadContext context, long other) {
+        return (RubyInteger) op_rshift(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
 
     @JRubyMethod(name = "to_f")
     public abstract IRubyObject to_f(ThreadContext context);
@@ -760,20 +920,38 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "bit_length")
     public abstract IRubyObject bit_length(ThreadContext context);
 
+    boolean isOne() {
+        return getBigIntegerValue().equals(BigInteger.ONE);
+    }
+
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_gt(context, this, other);
     }
 
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_lt(context, this, other);
     }
 
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_ge(context, this, other);
     }
 
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         return RubyComparable.op_le(context, this, other);
+    }
+
+    @JRubyMethod(name = "remainder")
+    public IRubyObject remainder(ThreadContext context, IRubyObject dividend) {
+        return context.nil;
+    }
+
+    @JRubyMethod(name = "divmod")
+    public IRubyObject divmod(ThreadContext context, IRubyObject other) {
+        return context.nil;
     }
 
     public IRubyObject op_uminus() {
@@ -788,10 +966,12 @@ public abstract class RubyInteger extends RubyNumeric {
         return op_aref(getRuntime().getCurrentContext(), other);
     }
 
+    @Deprecated // no longer used
     public IRubyObject op_lshift(IRubyObject other) {
         return op_lshift(getRuntime().getCurrentContext(), other);
     }
 
+    @Deprecated // no longer used
     public IRubyObject op_rshift(IRubyObject other) {
         return op_rshift(getRuntime().getCurrentContext(), other);
     }

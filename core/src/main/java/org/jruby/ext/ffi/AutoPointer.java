@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -20,6 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.PhantomReferenceReaper;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.runtime.Visibility.*;
 
@@ -38,7 +38,7 @@ public class AutoPointer extends Pointer {
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
         RubyClass autoptrClass = module.defineClassUnder(AUTOPTR_CLASS_NAME,
                 module.getClass("Pointer"),
-                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(AutoPointer.class) : AutoPointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(AutoPointer.class) : AutoPointerAllocator.INSTANCE);
         autoptrClass.defineAnnotatedMethods(AutoPointer.class);
         autoptrClass.defineAnnotatedConstants(AutoPointer.class);
         autoptrClass.setReifiedClass(AutoPointer.class);
@@ -157,7 +157,7 @@ public class AutoPointer extends Pointer {
         reaper = null;
         referent = null;
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease=")
@@ -170,7 +170,7 @@ public class AutoPointer extends Pointer {
 
         r.autorelease(autorelease.isTrue());
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease?")

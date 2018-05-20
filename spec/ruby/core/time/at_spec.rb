@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Time.at" do
   describe "passed Numeric" do
@@ -34,7 +34,7 @@ describe "Time.at" do
     describe "passed BigDecimal" do
       it "doesn't round input value" do
         require 'bigdecimal'
-        Time.at(BigDecimal.new('1.1')).to_f.should == 1.1
+        Time.at(BigDecimal('1.1')).to_f.should == 1.1
       end
     end
   end
@@ -48,7 +48,7 @@ describe "Time.at" do
     it "creates a dup time object with the value given by time" do
       t1 = Time.new
       t2 = Time.at(t1)
-      t1.object_id.should_not == t2.object_id
+      t1.should_not equal t2
     end
 
     it "returns a UTC time if the argument is UTC" do

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.anno;
 
 import jnr.ffi.provider.jffi.SkinnyMethodAdapter;
@@ -110,6 +111,7 @@ public class IndyBinder extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
+    @SuppressWarnings("deprecation")
     public void processType(TypeElement cd) {
         // process inner classes
         for (TypeElement innerType : ElementFilter.typesIn(cd.getEnclosedElements())) {
@@ -187,6 +189,8 @@ public class IndyBinder extends AbstractProcessor {
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
                 if (anno == null) continue;
+
+                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
 
                 methodCount++;
 
@@ -274,8 +278,8 @@ public class IndyBinder extends AbstractProcessor {
 
             mv.start();
 
-            AnnotationBinder.populateMethodIndex(readGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodReadFieldsPacked"));
-            AnnotationBinder.populateMethodIndex(writeGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodWriteFieldsPacked"));
+            AnnotationHelper.populateMethodIndex(readGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodReadFieldsPacked"));
+            AnnotationHelper.populateMethodIndex(writeGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodWriteFieldsPacked"));
 
             mv.voidreturn();
             mv.end();
@@ -353,7 +357,12 @@ public class IndyBinder extends AbstractProcessor {
                 }
                 buffer.append(')');
 
-                Handle handle = new Handle(isStatic ? H_INVOKESTATIC : H_INVOKEVIRTUAL, qualifiedName.toString().replace('.', '/'), method.getSimpleName().toString(), Method.getMethod(buffer.toString()).getDescriptor());
+                Handle handle = new Handle(
+                        isStatic ? H_INVOKESTATIC : H_INVOKEVIRTUAL,
+                        qualifiedName.toString().replace('.', '/'),
+                        method.getSimpleName().toString(),
+                        Method.getMethod(buffer.toString()).getDescriptor(),
+                        false);
 
                 int handleOffset = calculateHandleOffset(method.getParameters().size(), anno.required(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
 
@@ -362,16 +371,7 @@ public class IndyBinder extends AbstractProcessor {
 
                 meta |= anno.meta();
 
-                int specificArity = -1;
-                if (desc.optional == 0 && !desc.rest) {
-                    if (desc.required == 0) {
-                        if (desc.actualRequired <= 3) {
-                            specificArity = desc.actualRequired;
-                        }
-                    } else if (desc.required >= 0 && desc.required <= 3) {
-                        specificArity = desc.required;
-                    }
-                }
+                int specificArity = desc.calculateSpecificCallArity();
 
                 if (specificArity != -1) {
                     if (specificArity < min) min = specificArity;

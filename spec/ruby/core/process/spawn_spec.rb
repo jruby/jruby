@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 newline = "\n"
 platform_is :windows do
@@ -26,7 +26,7 @@ describe :process_spawn_does_not_close_std_streams, shared: true do
       code = "STDERR.puts 'hello'"
       cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
       ruby_exe(cmd, args: "2> #{@output}")
-      File.binread(@output).should == "hello#{newline}"
+      File.binread(@output).should =~ /hello#{newline}/
     end
   end
 end

@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -32,6 +32,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.builtin;
 
 import java.util.List;
@@ -227,14 +228,6 @@ public interface IRubyObject {
     RubyInteger convertToInteger();
 
     /**
-     * @param convertMethod
-     * @param convertMethodIndex
-     * @see #convertToInteger(String)
-     */
-    @Deprecated
-    RubyInteger convertToInteger(int convertMethodIndex, String convertMethod);
-
-    /**
      * Converts this Ruby object to an Integer.
      * @param convertMethod method to use e.g. to_i
      * @return an integer value
@@ -258,11 +251,6 @@ public interface IRubyObject {
      * @return nil if type check failed
      */
     IRubyObject checkStringType();
-
-    /**
-     * @deprecated Use {@link #checkStringType()} instead.
-     */
-    IRubyObject checkStringType19();
     
     /**
      *
@@ -275,7 +263,7 @@ public interface IRubyObject {
      *
      * @param type The target type to which the object should be converted.
      */
-    Object toJava(Class type);
+    <T> T toJava(Class<T> type);
 
     /**
      * RubyMethod dup.
@@ -408,4 +396,21 @@ public interface IRubyObject {
 
     public Object getVariable(int index);
     public void setVariable(int index, Object value);
+
+    /**
+     * @deprecated Use {@link #checkStringType()} instead.
+     */
+    default IRubyObject checkStringType19() {
+        return checkStringType();
+    }
+
+    /**
+     * @param convertMethod
+     * @param convertMethodIndex
+     * @see #convertToInteger(String)
+     */
+    @Deprecated
+    default RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
+        return convertToInteger(convertMethod);
+    }
 }

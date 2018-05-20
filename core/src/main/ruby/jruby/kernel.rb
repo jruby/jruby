@@ -31,5 +31,6 @@ load 'jruby/kernel/file.rb'
 load 'jruby/kernel/basicobject.rb'
 load 'jruby/kernel/hash.rb'
 load 'jruby/kernel/string.rb'
+load 'jruby/kernel/pp.rb'
 
 $" << 'thread.rb'

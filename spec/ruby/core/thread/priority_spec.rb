@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Thread#priority" do
   before :each do
@@ -64,8 +64,9 @@ describe "Thread#priority=" do
   end
 
   it "sets priority even when the thread has died" do
-    @thread.join
-    @thread.priority = 3
-    @thread.priority.should == 3
+    thread = Thread.new {}
+    thread.join
+    thread.priority = 3
+    thread.priority.should == 3
   end
 end

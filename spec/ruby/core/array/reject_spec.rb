@@ -1,17 +1,17 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/enumeratorize', __FILE__)
-require File.expand_path('../shared/delete_if', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/enumeratorize'
+require_relative 'shared/delete_if'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Array#reject" do
   it "returns a new array without elements for which block is true" do
     ary = [1, 2, 3, 4, 5]
     ary.reject { true }.should == []
     ary.reject { false }.should == ary
-    ary.reject { false }.object_id.should_not == ary.object_id
+    ary.reject { false }.should_not equal ary
     ary.reject { nil }.should == ary
-    ary.reject { nil }.object_id.should_not == ary.object_id
+    ary.reject { nil }.should_not equal ary
     ary.reject { 5 }.should == []
     ary.reject { |i| i < 3 }.should == [3, 4, 5]
     ary.reject { |i| i % 2 == 0 }.should == [1, 3, 5]

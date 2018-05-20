@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport;
 
 import java.lang.reflect.Constructor;
@@ -498,7 +499,7 @@ public class Java implements Library {
         // solved here by adding an exception-throwing "inherited"
         if ( Modifier.isFinal(clazz.getModifiers()) ) {
             final String clazzName = clazz.getCanonicalName();
-            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
+            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw context.runtime.newTypeError("can not extend final Java class: " + clazzName);
@@ -570,7 +571,7 @@ public class Java implements Library {
 
         final RubyClass subclassSingleton = subclass.getSingletonClass();
         subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
-        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC) {
+        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
@@ -587,7 +588,7 @@ public class Java implements Library {
         private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<>(8);
 
         JCreateMethod(RubyModule cls) {
-            super(cls, PUBLIC);
+            super(cls, PUBLIC, "__jcreate!");
         }
 
         private static JavaProxyClass getProxyClass(final IRubyObject self) {
@@ -1052,7 +1053,7 @@ public class Java implements Library {
         }
 
         final RubyClass singleton = parentPackage.getSingletonClass();
-        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage));
+        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }
 
@@ -1061,8 +1062,8 @@ public class Java implements Library {
         private final RubyModule packageOrClass;
         private final RubyModule parentPackage;
 
-        JavaAccessor(final RubyClass singleton, final RubyModule packageOrClass, final RubyModule parentPackage) {
-            super(singleton, PUBLIC);
+        JavaAccessor(final RubyClass singleton, final RubyModule packageOrClass, final RubyModule parentPackage, final String name) {
+            super(singleton, PUBLIC, name);
             this.parentPackage = parentPackage; this.packageOrClass = packageOrClass;
         }
 
@@ -1092,7 +1093,7 @@ public class Java implements Library {
     static final class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
 
         ProcToInterface(final RubyClass singletonClass) {
-            super(singletonClass, PUBLIC);
+            super(singletonClass, PUBLIC, "call");
         }
 
         @Override // method_missing impl :
@@ -1120,12 +1121,12 @@ public class Java implements Library {
             return this;
         }
 
-        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+        final ConcreteMethod getConcreteMethod(String name) { return new ConcreteMethod(name); }
 
         final class ConcreteMethod extends org.jruby.internal.runtime.methods.JavaMethod {
 
-            ConcreteMethod() {
-                super(ProcToInterface.this.implementationClass, Visibility.PUBLIC);
+            ConcreteMethod(String name) {
+                super(ProcToInterface.this.implementationClass, Visibility.PUBLIC, name);
             }
 
             @Override
@@ -1499,7 +1500,7 @@ public class Java implements Library {
 
     private static final class DummyInitialize extends JavaMethodZero {
 
-        DummyInitialize(final RubyClass clazz) { super(clazz, PRIVATE); }
+        DummyInitialize(final RubyClass clazz) { super(clazz, PRIVATE, "initialize"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -1609,7 +1610,7 @@ public class Java implements Library {
                     Object.class.getMethod(method.getName(), method.getParameterTypes());
                     continue; // abstract but implemented by java.lang.Object
                 }
-                catch (NoSuchMethodException e) { /* fall-thorough */ }
+                catch (NoSuchMethodException e) { /* fall-through */ }
                 catch (SecurityException e) {
                     // NOTE: we could try check for FunctionalInterface on Java 8
                 }
@@ -1619,35 +1620,6 @@ public class Java implements Library {
             else return null; // not a functional iface
         }
         return single;
-    }
-
-    static final boolean JAVA8;
-    static {
-        boolean java8 = false;
-        final String version = SafePropertyAccessor.getProperty("java.version", "0.0");
-        if ( version.length() > 2 ) {
-            int v = Character.getNumericValue( version.charAt(0) );
-            if ( v > 8 ) java8 = true; // 9.0
-            else if ( v == 1 ) {
-                v = Character.getNumericValue( version.charAt(2) ); // 1.8
-                if ( v < 10 && v >= 8 ) java8 = true;
-            }
-            // seems as no Java 10 support ... yet :)
-        }
-        JAVA8 = java8;
-    }
-
-    // TODO if about to compile against Java 8 this does not need to be reflective
-    static boolean isDefaultMethod(final Method method) {
-        if ( JAVA8 ) {
-            try {
-                return (Boolean) Method.class.getMethod("isDefault").invoke(method);
-            }
-            catch (NoSuchMethodException ex) { throw new RuntimeException(ex); }
-            catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
-            catch (Exception ex) { /* noop */ }
-        }
-        return false;
     }
 
     /**

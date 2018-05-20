@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: false
 require 'rbconfig'
 
@@ -29,14 +30,7 @@ require_relative 'lib/zombie_hunter'
 #require_relative 'lib/iseq_loader_checker'
 
 if ENV['COVERAGE']
-  %w[doclie simplecov-html simplecov].each do |f|
-    $LOAD_PATH.unshift "#{src_testdir}/../coverage/#{f}/lib"
-  end
-
-  require 'simplecov'
-  SimpleCov.start do
-    add_filter "/test/"
-  end
+  require_relative "../tool/test-coverage.rb"
 end
 
 begin

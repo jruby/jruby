@@ -27,21 +27,23 @@ describe :kernel_require_basic, shared: true do
 
     # Can't make a file unreadable on these platforms
     platform_is_not :windows, :cygwin do
-      describe "with an unreadable file" do
-        before :each do
-          @path = tmp("unreadable_file.rb")
-          touch @path
-          File.chmod 0000, @path
-        end
+      as_user do
+        describe "with an unreadable file" do
+          before :each do
+            @path = tmp("unreadable_file.rb")
+            touch @path
+            File.chmod 0000, @path
+          end
 
-        after :each do
-          File.chmod 0666, @path
-          rm_r @path
-        end
+          after :each do
+            File.chmod 0666, @path
+            rm_r @path
+          end
 
-        it "raises a LoadError" do
-          File.exist?(@path).should be_true
-          lambda { @object.send(@method, @path) }.should raise_error(LoadError)
+          it "raises a LoadError" do
+            File.exist?(@path).should be_true
+            lambda { @object.send(@method, @path) }.should raise_error(LoadError)
+          end
         end
       end
     end
@@ -452,21 +454,7 @@ describe :kernel_require, shared: true do
       ScratchPad.recorded.should == []
     end
 
-    ruby_version_is "2.2"..."2.3" do
-      it "complex, enumerator, rational and unicode_normalize are already required" do
-        provided = %w[complex enumerator rational unicode_normalize]
-        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
-        provided.each { |feature|
-          features.should =~ /\b#{feature}\.(rb|so)$/
-        }
-
-        code = provided.map { |f| "puts require #{f.inspect}\n" }.join
-        required = ruby_exe(code, options: '--disable-gems')
-        required.should == "false\n" * provided.size
-      end
-    end
-
-    ruby_version_is "2.3"..."2.5" do
+    ruby_version_is ""..."2.5" do
       it "complex, enumerator, rational, thread and unicode_normalize are already required" do
         provided = %w[complex enumerator rational thread unicode_normalize]
         features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')

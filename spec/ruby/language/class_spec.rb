@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/class', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/class'
 
 ClassSpecsNumber = 12
 
@@ -13,11 +13,9 @@ describe "The class keyword" do
     ClassSpecsKeywordWithSemicolon.should be_an_instance_of(Class)
   end
 
-  ruby_version_is "2.3" do
-    it "does not raise a SyntaxError when opening a class without a semicolon" do
-      eval "class ClassSpecsKeywordWithoutSemicolon end"
-      ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
-    end
+  it "does not raise a SyntaxError when opening a class without a semicolon" do
+    eval "class ClassSpecsKeywordWithoutSemicolon end"
+    ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
   end
 end
 

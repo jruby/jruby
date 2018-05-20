@@ -1,7 +1,7 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/constants', __FILE__)
-require File.expand_path('../fixtures/constants_sclass', __FILE__)
-require File.expand_path('../fixtures/constant_visibility', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/constants'
+require_relative 'fixtures/constants_sclass'
+require_relative 'fixtures/constant_visibility'
 
 # Read the documentation in fixtures/constants.rb for the guidelines and
 # rationale for the structure and organization of these specs.
@@ -404,24 +404,22 @@ describe "Constant resolution within a singleton class (class << obj)" do
     ConstantSpecs::CS_SINGLETON1.foo.should == 1
   end
 
-  ruby_version_is "2.3" do
-    it "uses its own namespace for each object" do
-      a = ConstantSpecs::CS_SINGLETON2[0].foo
-      b = ConstantSpecs::CS_SINGLETON2[1].foo
-      [a, b].should == [1, 2]
-    end
+  it "uses its own namespace for each object" do
+    a = ConstantSpecs::CS_SINGLETON2[0].foo
+    b = ConstantSpecs::CS_SINGLETON2[1].foo
+    [a, b].should == [1, 2]
+  end
 
-    it "uses its own namespace for nested modules" do
-      a = ConstantSpecs::CS_SINGLETON3[0].x
-      b = ConstantSpecs::CS_SINGLETON3[1].x
-      a.should_not equal(b)
-    end
+  it "uses its own namespace for nested modules" do
+    a = ConstantSpecs::CS_SINGLETON3[0].x
+    b = ConstantSpecs::CS_SINGLETON3[1].x
+    a.should_not equal(b)
+  end
 
-    it "allows nested modules to have proper resolution" do
-      a = ConstantSpecs::CS_SINGLETON4_CLASSES[0].new
-      b = ConstantSpecs::CS_SINGLETON4_CLASSES[1].new
-      [a.foo, b.foo].should == [1, 2]
-    end
+  it "allows nested modules to have proper resolution" do
+    a = ConstantSpecs::CS_SINGLETON4_CLASSES[0].new
+    b = ConstantSpecs::CS_SINGLETON4_CLASSES[1].new
+    [a.foo, b.foo].should == [1, 2]
   end
 end
 

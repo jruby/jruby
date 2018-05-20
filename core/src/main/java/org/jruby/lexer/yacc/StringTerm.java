@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.lexer.yacc;
 
 import java.io.IOException;
@@ -33,7 +34,6 @@ import org.jruby.ast.RegexpNode;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
 import static org.jruby.lexer.LexingCommon.*;
@@ -73,36 +73,54 @@ public class StringTerm extends StrTerm {
     }
 
     private int endFound(RubyLexer lexer) throws IOException {
-            if ((flags & STR_FUNC_QWORDS) != 0) {
-                flags = -1;
-                lexer.getPosition();
-                return ' ';
-            }
+        if ((flags & STR_FUNC_QWORDS) != 0) {
+            flags |= STR_FUNC_TERM;
+            lexer.pushback(0);
+            lexer.getPosition();
+            return ' ';
+        }
 
-            if ((flags & STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = parseRegexpFlags(lexer);
-                ByteList regexpBytelist = ByteList.create("");
+        lexer.setStrTerm(null);
 
-                lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
-                return RubyParser.tREGEXP_END;
-            }
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            RegexpOptions options = lexer.parseRegexpFlags();
+            ByteList regexpBytelist = ByteList.create("");
+            lexer.setState(EXPR_END | EXPR_ENDARG);
+            lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
+            return RubyParser.tREGEXP_END;
+        }
 
-            lexer.setValue("" + end);
-            return RubyParser.tSTRING_END;
+        if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+            lexer.nextc();
+            lexer.setState(EXPR_BEG | EXPR_LABEL);
+            return RubyParser.tLABEL_END;
+        }
+
+        lexer.setState(EXPR_END | EXPR_ENDARG);
+        lexer.setValue("" + end);
+        return RubyParser.tSTRING_END;
     }
 
     public int parseString(RubyLexer lexer) throws IOException {
         boolean spaceSeen = false;
         int c;
 
-        if (flags == -1) {
+        if ((flags & STR_FUNC_TERM) != 0) {
+            if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
+            lexer.setState(EXPR_END|EXPR_ENDARG);
             lexer.setValue("" + end);
-            return RubyParser.tSTRING_END;
+            lexer.setStrTerm(null);
+            return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
         }
 
         c = lexer.nextc();
         if ((flags & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
             do { c = lexer.nextc(); } while (Character.isWhitespace(c));
+            spaceSeen = true;
+        }
+
+        if ((flags & STR_FUNC_LIST) != 0) {
+            flags &= ~STR_FUNC_LIST;
             spaceSeen = true;
         }
 
@@ -119,14 +137,11 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
 
-            if (token != 0) {
-                return token;
-            } else {
-                buffer.append(c);
-            }
-        } else {
-            lexer.pushback(c);
+            if (token != 0) return token;
+
+            buffer.append('#');  // not an expansion to variable so it is just a literal.
         }
+        lexer.pushback(c); // pushback API is deceptive here...we are just pushing index back one and not pushing c back necessarily.
 
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
@@ -138,55 +153,6 @@ public class StringTerm extends StrTerm {
 
         lexer.setValue(lexer.createStr(buffer, flags));
         return RubyParser.tSTRING_CONTENT;
-    }
-
-    private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {
-        RegexpOptions options = new RegexpOptions();
-        int c;
-        StringBuilder unknownFlags = new StringBuilder(10);
-
-        lexer.newtok(true);
-        for (c = lexer.nextc(); c != EOF
-                && Character.isLetter(c); c = lexer.nextc()) {
-            switch (c) {
-            case 'i':
-                options.setIgnorecase(true);
-                break;
-            case 'x':
-                options.setExtended(true);
-                break;
-            case 'm':
-                options.setMultiline(true);
-                break;
-            case 'o':
-                options.setOnce(true);
-                break;
-            case 'n':
-                options.setExplicitKCode(KCode.NONE);
-                break;
-            case 'e':
-                options.setExplicitKCode(KCode.EUC);
-                break;
-            case 's':
-                options.setExplicitKCode(KCode.SJIS);
-                break;
-            case 'u':
-                options.setExplicitKCode(KCode.UTF8);
-                break;
-            case 'j':
-                options.setJava(true);
-                break;
-            default:
-                unknownFlags.append((char) c);
-                break;
-            }
-        }
-        lexer.pushback(c);
-        if (unknownFlags.length() != 0) {
-            lexer.compile_error(PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
-                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
-        }
-        return options;
     }
 
     private void mixedEscape(RubyLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {

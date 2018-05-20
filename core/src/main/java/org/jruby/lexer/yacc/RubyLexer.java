@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,6 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.lexer.yacc;
 
 import java.io.IOException;
@@ -62,6 +63,7 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.RubyParser;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
@@ -258,9 +260,8 @@ public class RubyLexer extends LexingCommon {
         return (Keyword) byteList2Keyword.get(str);
     }
 
-    @Deprecated
     public static Keyword getKeyword(String str) {
-        return (Keyword) map.get(str);
+        return map.get(str);
     }
     
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
@@ -272,8 +273,10 @@ public class RubyLexer extends LexingCommon {
     public int tokenize_ident(int result) {
         // FIXME: Get token from newtok index to lex_p?
         ByteList value = createTokenByteList();
+        Ruby runtime = parserSupport.getConfiguration().getRuntime();
+        String id = runtime.newSymbol(value).idString();
 
-        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(value) >= 0) {
+        if (isLexState(last_state, EXPR_DOT|EXPR_FNAME) && parserSupport.getCurrentScope().isDefined(id) >= 0) {
             setState(EXPR_END);
         }
 
@@ -438,6 +441,23 @@ public class RubyLexer extends LexingCommon {
         parserSupport.getConfiguration().setFrozenStringLiteral(b == 1);
     }
 
+    @Override
+    protected RegexpOptions parseRegexpFlags() throws IOException {
+        StringBuilder unknownFlags = new StringBuilder(10);
+        RegexpOptions options = parseRegexpFlags(unknownFlags);
+        if (unknownFlags.length() != 0) {
+            compile_error(PID.REGEXP_UNKNOWN_OPTION, "unknown regexp option" +
+                    (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags);
+        }
+        return options;
+    }
+
+    @Override
+    protected void mismatchedRegexpEncodingError(Encoding optionEncoding, Encoding encoding) {
+        compile_error(PID.REGEXP_ENCODING_MISMATCH, "regexp encoding option '" + optionsEncodingChar(optionEncoding) +
+                "' differs from source encoding '" + encoding + "'");
+    }
+
     private final ByteList TRUE = new ByteList(new byte[] {'t', 'r', 'u', 'e'});
     private final ByteList FALSE = new ByteList(new byte[] {'f', 'a', 'l', 's', 'e'});
     protected int asTruth(String name, ByteList value) {
@@ -488,7 +508,7 @@ public class RubyLexer extends LexingCommon {
             type = RubyParser.tIMAGINARY;
         }
 
-        setState(EXPR_ENDARG);
+        setState(EXPR_END|EXPR_ENDARG);
         return type;
     }
 
@@ -606,16 +626,12 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_dword, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return RubyParser.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StringTerm(/* str_squote | */ STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_sword, begin, end, ruby_sourceline);
             yaccValue = "%"+c+begin;
             return RubyParser.tQWORDS_BEG;
 
@@ -636,15 +652,11 @@ public class RubyLexer extends LexingCommon {
             return RubyParser.tSYMBEG;
         
         case 'I':
-            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_dword, begin, end, ruby_sourceline);
             yaccValue = "%" + c + begin;
             return RubyParser.tSYMBOLS_BEG;
         case 'i':
-            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end, ruby_sourceline);
-            do {c = nextc();} while (Character.isWhitespace(c));
-            pushback(c);
+            lex_strterm = new StringTerm(str_sword, begin, end, ruby_sourceline);
             yaccValue = "%" + c + begin;
             return RubyParser.tQSYMBOLS_BEG;
         default:
@@ -817,6 +829,13 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tRPAREN: System.err.print("tRPAREN,"); break;
             case RubyParser.tLABEL: System.err.print("tLABEL("+ value() +":),"); break;
             case RubyParser.tLABEL_END: System.err.print("tLABEL_END"); break;
+            case RubyParser.keyword_def: System.err.print("keyword_def,"); break;
+            case RubyParser.keyword_do: System.err.print("keyword_do,"); break;
+            case RubyParser.keyword_do_block: System.err.print("keyword_do_block,"); break;
+            case RubyParser.keyword_do_cond: System.err.print("keyword_do_cond,"); break;
+            case RubyParser.keyword_do_lambda: System.err.print("keyword_do_lambda,"); break;
+            case RubyParser.keyword_end: System.err.print("keyword_end,"); break;
+            case RubyParser.keyword_yield: System.err.print("keyword_yield,"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
             case RubyParser.tDSTAR: System.err.print("tDSTAR"); break;
@@ -844,26 +863,7 @@ public class RubyLexer extends LexingCommon {
         boolean commandState;
         boolean tokenSeen = this.tokenSeen;
         
-        if (lex_strterm != null) {
-            int tok = lex_strterm.parseString(this);
-
-            if (tok == RubyParser.tSTRING_END && (lex_strterm.getFlags() & STR_FUNC_LABEL) != 0) {
-                if ((isLexState(lex_state, EXPR_BEG|EXPR_ENDFN) && !conditionState.isInState() ||
-                        isARG()) && isLabelSuffix()) {
-                    nextc();
-                    tok = RubyParser.tLABEL_END;
-                    setState(EXPR_BEG|EXPR_LABEL);
-                    lex_strterm = null;
-                }
-            }
-
-            if (tok == RubyParser.tSTRING_END || tok == RubyParser.tREGEXP_END) {
-                lex_strterm = null;
-                setState(EXPR_END|EXPR_ENDARG);
-            }
-
-            return tok;
-        }
+        if (lex_strterm != null) return lex_strterm.parseString(this);
 
         commandState = commandStart;
         commandStart = false;
@@ -887,8 +887,10 @@ public class RubyLexer extends LexingCommon {
                 continue;
             case '#': {	/* it's a comment */
                 this.tokenSeen = tokenSeen;
-                if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
-                    if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
+                if (!tokenSeen || warnings.isVerbose()) {
+                    if (!parser_magic_comment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
+                        if (comment_at_top()) set_file_encoding(lex_p, lex_pend);
+                    }
                 }
                 lex_p = lex_pend;
             }
@@ -1077,8 +1079,11 @@ public class RubyLexer extends LexingCommon {
     }
 
     private int identifierToken(int result, ByteList value) {
+        Ruby runtime = parserSupport.getConfiguration().getRuntime();
+        String id = runtime.newSymbol(value).idString();
+
         if (result == RubyParser.tIDENTIFIER && !isLexState(last_state, EXPR_DOT|EXPR_FNAME) &&
-                parserSupport.getCurrentScope().isDefined(value) >= 0) {
+                parserSupport.getCurrentScope().isDefined(id) >= 0) {
             setState(EXPR_END|EXPR_LABEL);
         }
 
@@ -1143,7 +1148,7 @@ public class RubyLexer extends LexingCommon {
             result = RubyParser.tIVAR;
         }
 
-        if (c == EOF || Character.isSpaceChar(c)) {
+        if (c == EOF || isSpace(c)) {
             if (result == RubyParser.tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
@@ -1304,7 +1309,6 @@ public class RubyLexer extends LexingCommon {
                 if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
-                setState(EXPR_END);
                 yaccValue = createTokenByteList();
                 return RubyParser.tGVAR;
 
@@ -1382,12 +1386,10 @@ public class RubyLexer extends LexingCommon {
             yaccValue = new NthRefNode(getPosition(), ref);
             return RubyParser.tNTH_REF;
         case '0':
-            setState(EXPR_END);
-
             return identifierToken(RubyParser.tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
-                if (c == EOF || Character.isSpaceChar(c)) {
+                if (c == EOF || isSpace(c)) {
                     compile_error(PID.CVAR_BAD_NAME, "`$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
@@ -1570,9 +1572,8 @@ public class RubyLexer extends LexingCommon {
         parenNest++;
         int c = '[';
         if (isAfterOperator()) {
-            setState(EXPR_ARG);
-            
             if ((c = nextc()) == ']') {
+                setState(EXPR_ARG);
                 if (peek('=')) {
                     nextc();
                     yaccValue = LBRACKET_RBRACKET_EQ;
@@ -1582,7 +1583,7 @@ public class RubyLexer extends LexingCommon {
                 return RubyParser.tAREF;
             }
             pushback(c);
-            setState(getState() | EXPR_LABEL);
+            setState(EXPR_ARG|EXPR_LABEL);
             yaccValue = LBRACKET;
             return '[';
         } else if (isBEG() || (isARG() && (spaceSeen || isLexState(lex_state, EXPR_LABELED)))) {
@@ -1622,8 +1623,7 @@ public class RubyLexer extends LexingCommon {
 
         conditionState.stop();
         cmdArgumentState.stop();
-        setState(EXPR_BEG);
-        if (c != RubyParser.tLBRACE_ARG) setState(getState() | EXPR_LABEL);
+        setState(c == RubyParser.tLBRACE_ARG ? EXPR_BEG : EXPR_BEG|EXPR_LABEL);
         if (c != RubyParser.tLBRACE) commandStart = true;
         yaccValue = getPosition();
 
@@ -1898,6 +1898,7 @@ public class RubyLexer extends LexingCommon {
         }
 
         ByteList oneCharBL = new ByteList(1);
+        oneCharBL.setEncoding(getEncoding());
         oneCharBL.append(c);
         yaccValue = new StrNode(getPosition(), oneCharBL);
         setState(EXPR_END);
@@ -1908,7 +1909,7 @@ public class RubyLexer extends LexingCommon {
         parenNest--;
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         yaccValue = RBRACKET;
         return RubyParser.tRBRACK;
     }
@@ -1916,7 +1917,7 @@ public class RubyLexer extends LexingCommon {
     private int rightCurly() {
         conditionState.restart();
         cmdArgumentState.restart();
-        setState(EXPR_ENDARG);
+        setState(EXPR_END);
         yaccValue = RCURLY;
         int tok = braceNest == 0 ? RubyParser.tSTRING_DEND : RubyParser.tRCURLY;
         braceNest--;
@@ -2341,7 +2342,7 @@ public class RubyLexer extends LexingCommon {
                 pushback(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                return scanHex(2, false, "Invalid escape character syntax");
+                return scanHex(2, false, "Invalid hex escape");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space

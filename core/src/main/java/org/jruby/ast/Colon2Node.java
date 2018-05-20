@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,15 +29,15 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /** 
  * Represents a '::' constant access or method call (Java::JavaClass).
@@ -45,14 +45,9 @@ import org.jruby.util.StringSupport;
 public abstract class Colon2Node extends Colon3Node implements INameNode {
     protected final Node leftNode;
 
-    public Colon2Node(ISourcePosition position, Node leftNode, ByteList name) {
+    public Colon2Node(ISourcePosition position, Node leftNode, RubySymbol name) {
         super(position, name, leftNode != null && leftNode.containsVariableAssignment);
         this.leftNode = leftNode;
-    }
-
-    @Deprecated
-    public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        this(position, leftNode, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {

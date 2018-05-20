@@ -1,11 +1,11 @@
 # -*- encoding: binary -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/codepoints', __FILE__)
-require File.expand_path('../shared/each_codepoint_without_block', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/codepoints'
+require_relative 'shared/each_codepoint_without_block'
 
 with_feature :encoding do
   describe "String#codepoints" do
-    it_behaves_like(:string_codepoints, :codepoints)
+    it_behaves_like :string_codepoints, :codepoints
 
     it "returns an Array when no block is given" do
       "abc".send(@method).should == [?a.ord, ?b.ord, ?c.ord]

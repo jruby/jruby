@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.anno;
 
 import java.lang.annotation.Annotation;
@@ -144,5 +145,27 @@ public abstract class MethodDescriptor<T> {
 
         int arityRequired = Math.max(required, actualRequired);
         arity = (optional > 0 || rest) ? -(arityRequired + 1) : arityRequired;
+    }
+
+    public final static int MAX_REQUIRED_UNBOXED_ARITY = 3;
+
+    /**
+     * Returns a value useful for number of arguments we need for arity when generating call methods used by
+     * invokers and the JIT.  Note: MAX_REQUIRED_UNBOXED_ARITY looks like some tweakable setting but it is merely
+     * for documentation.  All our non-generated internal code is also locked to the same specific arities so we
+     * cannot just change this value and be happy.
+     *
+     * @return arity value of specific required arity which can be used as an unboxed call or -1 for all other cases.
+     */
+    public int calculateSpecificCallArity() {
+        if (optional == 0 && !rest) {
+            if (required == 0) {
+                if (actualRequired <= MAX_REQUIRED_UNBOXED_ARITY) return actualRequired;
+            } else if (required >= 0 && required <= MAX_REQUIRED_UNBOXED_ARITY) {
+                return required;
+            }
+        }
+
+        return -1;
     }
 }

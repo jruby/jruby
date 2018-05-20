@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,13 +23,16 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
+
+import java.util.List;
 
 /**
  * This is utility class to convert given timezone into integer based timezone
  * diff. It's ported from ext/date/date_parse.c in MRI 2.3.1 under BSDL.
- * @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_parse.c
  */
+// @see https://github.com/ruby/ruby/blob/394fa89c67722d35bdda89f10c7de5c304a5efb1/ext/date/date_parse.c
 public class TimeZoneConverter {
     // Ports zones_source in ext/date/date_parse.c in MRI 2.3.1 under BSDL.
     private static int getOffsetFromZonesSource(String z) {
@@ -379,6 +382,8 @@ public class TimeZoneConverter {
         }
     }
 
+    public static final int INVALID_ZONE = Integer.MIN_VALUE;
+
     /**
      * Ports date_zone_to_diff from ext/date/date_parse.c in MRI 2.3.1 under BSDL.
      */
@@ -418,27 +423,27 @@ public class TimeZoneConverter {
             sign = false;
         } else {
             // if z doesn't start with "+" or "-", invalid
-            return Integer.MIN_VALUE;
+            return INVALID_ZONE;
         }
         z = z.substring(1);
 
         int hour = 0, min = 0, sec = 0;
-        if (z.contains(":")) {
-            final String[] splited = z.split(":");
-            if (splited.length == 2) {
-                hour = Integer.parseInt(splited[0]);
-                min = Integer.parseInt(splited[1]);
+        if (z.indexOf(':') != -1) {
+            final List<String> splited = StringSupport.split(z, ':');
+            if (splited.size() == 2) {
+                hour = Integer.parseInt(splited.get(0));
+                min = Integer.parseInt(splited.get(1));
             } else {
-                hour = Integer.parseInt(splited[0]);
-                min = Integer.parseInt(splited[1]);
-                sec = Integer.parseInt(splited[2]);
+                hour = Integer.parseInt(splited.get(0));
+                min = Integer.parseInt(splited.get(1));
+                sec = Integer.parseInt(splited.get(2));
             }
 
-        } else if (z.contains(",") || z.contains(".")) {
+        } else if (z.indexOf(',') != -1 || z.indexOf('.') != -1) {
             // TODO min = Rational(fr.to_i, 10**fr.size) * 60
             String[] splited = z.split("[\\.,]");
             hour = Integer.parseInt(splited[0]);
-            min = (int)(Integer.parseInt(splited[1]) * 60 / Math.pow(10, splited[1].length()));
+            min = (int) (Integer.parseInt(splited[1]) * 60 / Math.pow(10, splited[1].length()));
 
         } else {
             final int len = z.length();
@@ -469,6 +474,6 @@ public class TimeZoneConverter {
         return sign ? offset : -offset;
     }
 
-    private TimeZoneConverter() {
-    }
+    private TimeZoneConverter() { /* no instances */ }
+
 }

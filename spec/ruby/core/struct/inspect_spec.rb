@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/inspect', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/inspect'
 
 describe "Struct#inspect" do
   it "returns a string representation of some kind" do
@@ -11,5 +11,5 @@ describe "Struct#inspect" do
     Whiskey.new('Jack', 100).inspect.should == '#<struct Whiskey name="Jack", ounces=100>'
   end
 
-  it_behaves_like(:struct_inspect, :inspect)
+  it_behaves_like :struct_inspect, :inspect
 end

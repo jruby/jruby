@@ -5,7 +5,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,36 +29,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Access a dynamic variable (e.g. block scope local variable).
  */
 public class DVarNode extends Node implements INameNode, IScopedNode, SideEffectFree {
     // The name of the variable
-    private ByteList name;
+    private RubySymbol name;
     
     // A scoped location of this variable (high 16 bits is how many scopes down and low 16 bits
     // is what index in the right scope to set the value.
     private int location;
 
-    public DVarNode(ISourcePosition position, int location, ByteList name) {
+    public DVarNode(ISourcePosition position, int location, RubySymbol name) {
         super(position, false);
         this.location = location;
         this.name = name;
-    }
-
-    @Deprecated
-    public DVarNode(ISourcePosition position, int location, String name) {
-        this(position, location, StringSupport.stringAsByteList(name));
     }
 
     public NodeType getNodeType() {
@@ -96,21 +91,8 @@ public class DVarNode extends Node implements INameNode, IScopedNode, SideEffect
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
-        return StringSupport.byteListAsString(name);
-    }
-
-    public ByteList getByteName() {
+    public RubySymbol getName() {
         return name;
-    }
-    
-    /**
-     * Sets the name of this variable (for refactoring support)
-     * @param name to set the variable to
-     */
-    @Deprecated
-    public void setName(String name) {
-        this.name = StringSupport.stringAsByteList(name);
     }
     
     public List<Node> childNodes() {

@@ -50,18 +50,6 @@ public class Bootstrap {
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
     public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, int.class, String.class, int.class);
     public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, int.class, String.class, int.class);
-    public static final Class[] REIFIED_OBJECT_CLASSES = {
-        RubyObjectVar0.class,
-        RubyObjectVar1.class,
-        RubyObjectVar2.class,
-        RubyObjectVar3.class,
-        RubyObjectVar4.class,
-        RubyObjectVar5.class,
-        RubyObjectVar6.class,
-        RubyObjectVar7.class,
-        RubyObjectVar8.class,
-        RubyObjectVar9.class,
-    };
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
     static final Lookup LOOKUP = MethodHandles.lookup();
 
@@ -142,27 +130,57 @@ public class Bootstrap {
     }
 
     public static Handle string() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "string",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
+                false);
     }
 
     public static Handle fstring() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "fstring", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "fstring",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class),
+                false);
     }
 
     public static Handle bytelist() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "bytelist", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "bytelist",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class),
+                false);
     }
 
     public static Handle array() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "array", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "array",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
     }
 
     public static Handle hash() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "hash", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "hash",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
     }
 
     public static Handle kwargsHash() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "kwargsHash", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "kwargsHash",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
     }
 
     public static Handle invokeSuper() {
@@ -170,11 +188,21 @@ public class Bootstrap {
     }
 
     public static Handle ivar() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "ivar", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "ivar",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
     }
 
     public static Handle global() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "globalBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "globalBootstrap",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class),
+                false);
     }
 
     public static RubyString string(MutableCallSite site, ByteList value, int cr, ThreadContext context) throws Throwable {
@@ -215,11 +243,21 @@ public class Bootstrap {
     }
 
     public static Handle contextValue() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "contextValue", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "contextValue",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
     }
 
     public static Handle contextValueString() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "contextValueString", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "contextValueString",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class),
+                false);
     }
 
     public static CallSite contextValue(Lookup lookup, String name, MethodType type) {
@@ -244,21 +282,21 @@ public class Bootstrap {
     }
 
     public static IRubyObject True(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.runtime.getTrue().constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.runtime.getTrue());
+        MethodHandle constant = (MethodHandle)context.tru.constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.tru);
 
         site.setTarget(constant);
 
-        return context.runtime.getTrue();
+        return context.tru;
     }
 
     public static IRubyObject False(ThreadContext context, MutableCallSite site) {
-        MethodHandle constant = (MethodHandle)context.runtime.getFalse().constant();
-        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.runtime.getFalse());
+        MethodHandle constant = (MethodHandle)context.fals.constant();
+        if (constant == null) constant = (MethodHandle)OptoFactory.newConstantWrapper(IRubyObject.class, context.fals);
 
         site.setTarget(constant);
 
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     public static Ruby runtime(ThreadContext context, MutableCallSite site) {
@@ -845,7 +883,12 @@ public class Bootstrap {
     }
 
     public static Handle getBootstrapHandle(String name, Class type, String sig) {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(type), name, sig);
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(type),
+                name,
+                sig,
+                false);
     }
 
     public static CallSite checkpointBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
@@ -949,7 +992,12 @@ public class Bootstrap {
     }
 
     public static Handle prepareBlock() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "prepareBlock", sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, long.class));
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "prepareBlock",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, long.class),
+                false);
     }
 
     public static CallSite prepareBlock(Lookup lookup, String name, MethodType type, MethodHandle bodyHandle, MethodHandle scopeHandle, long encodedSignature) throws Throwable {

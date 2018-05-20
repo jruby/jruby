@@ -74,6 +74,12 @@ class TestRegexp < Test::Unit::TestCase
     end
   end
 
+  def test_to_s_extended_subexp
+    re = /#\g#{"\n"}/x
+    re = /#{re}/
+    assert_warn('', '[ruby-core:82328] [Bug #13798]') {re.to_s}
+  end
+
   def test_union
     assert_equal :ok, begin
       Regexp.union(
@@ -1224,6 +1230,17 @@ class TestRegexp < Test::Unit::TestCase
         end
       end
     end;
+  end
+
+  def test_absent
+    assert_equal(0, /(?~(a|c)c)/ =~ "abb")
+    assert_equal("abb", $&)
+
+    assert_equal(0, /\/\*((?~\*\/))\*\// =~ "/*abc*def/xyz*/ /* */")
+    assert_equal("abc*def/xyz", $1)
+
+    assert_equal(0, /(?~(a)c)/ =~ "abb")
+    assert_nil($1)
   end
 
   # This assertion is for porting x2() tests in testpy.py of Onigmo.

@@ -205,6 +205,13 @@ class TestIO < Test::Unit::TestCase
     assert_raises(Errno::EBADF) { f.close }
   end
 
+  if WINDOWS
+    # Opening a file should raise EISDIR on Windows, but not raise on other platforms.
+    def test_open_read_directory
+      assert_raises(Errno::EISDIR) { File.open('.', 'r') }
+    end
+  end
+    
   def test_open_child_of_file
     ensure_files @file
     assert_raises(WINDOWS ? Errno::ENOENT : Errno::ENOTDIR) { File.open(File.join(@file, 'child')) }
@@ -578,6 +585,34 @@ class TestIO < Test::Unit::TestCase
   def test_stringio_gets_nil_separator_limit
     stringio = StringIO.new 'abcde'
     assert_equal 'ab', stringio.gets(nil, 2)
+  end
+
+  # jruby/jruby#4796
+  def test_io_copy_stream_does_not_leak_io_like_objects
+    in_stream = Tempfile.new('4796')
+    in_stream.write('1234567890')
+    in_stream.rewind
+    
+    out_stream = Object.new
+    def out_stream.write(stuff)
+      stuff.length
+    end
+    def out_stream.read(*n)
+      nil
+    end
+
+    fu = JRuby.runtime.fileno_util
+
+    before = fu.number_of_wrappers
+
+    100.times do
+      IO.copy_stream(in_stream, out_stream)
+      IO.copy_stream(out_stream, in_stream)
+    end
+
+    after = fu.number_of_wrappers
+
+    assert_equal before, after, "no wrappers should have been registered"
   end
 
 end

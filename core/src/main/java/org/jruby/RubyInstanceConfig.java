@@ -4,7 +4,7 @@
  * The contents of this file are subject to the Eclipse Public
  * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.posix.util.Platform;
@@ -1529,7 +1530,7 @@ public class RubyInstanceConfig {
 
     private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
-    private String profilingService;
+    private String profilingService = Options.CLI_PROFILING_SERVICE.load();;
 
     private ClassLoader loader = defaultClassLoader();
 
@@ -1884,14 +1885,11 @@ public class RubyInstanceConfig {
     private static int initGlobalJavaVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
-            case "1.6" : return Opcodes.V1_6; // 50
-            case "1.7" : return Opcodes.V1_7; // 51
+            case "1.6" :
+            case "1.7" : throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
             case "1.8" : case "8" : return Opcodes.V1_8; // 52
-            // NOTE: JDK 9 now returns "9" instead of "1.9"
-            case "1.9" : case "9" : return Opcodes.V1_8 + 1; // 53
             default :
-                System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
-                return Opcodes.V1_7;
+                return Opcodes.V9;
         }
     }
 

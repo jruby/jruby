@@ -1,8 +1,8 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/to_i', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/to_i'
 
 describe "Float#truncate" do
-  it_behaves_like(:float_to_i, :truncate)
+  it_behaves_like :float_to_i, :truncate
 
   ruby_version_is "2.4" do
     it "returns self truncated to an optionally given precision" do

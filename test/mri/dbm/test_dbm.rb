@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'test/unit'
 require 'tmpdir'
 
@@ -405,7 +405,7 @@ if defined? DBM
       assert_equal('foo', @dbm.delete(key) {|k| k.replace 'called block'; :blockval})
       assert_equal(0, @dbm.size)
 
-      key = 'no called block'
+      key = 'no called block'.dup
       assert_equal(:blockval, @dbm.delete(key) {|k| k.replace 'called block'; :blockval})
       assert_equal(0, @dbm.size)
     end
@@ -625,7 +625,7 @@ if defined? DBM
     def test_freeze
       DBM.open("#{@tmproot}/a") {|d|
         d.freeze
-        assert_raise(RuntimeError) { d["k"] = "v" }
+        assert_raise(FrozenError) { d["k"] = "v" }
       }
     end
   end
