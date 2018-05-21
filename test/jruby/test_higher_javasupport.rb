@@ -1382,7 +1382,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     str = 'fo0'.to_java('java.lang.CharSequence')
     assert_equal 'o'.ord, str.charAt(1)
     assert_equal 3, str.length
-    assert_equal 'o0', str.subSequence(1, 2)
+    assert_equal 'f', str.subSequence(0, 1)
+    assert_equal 'o0', str.subSequence(1, 3)
     assert 'fo0'.to_java.contentEquals('fo0')
     assert_java_raises(java.lang.StringIndexOutOfBoundsException) { str.charAt(5) }
     assert_java_raises(java.lang.StringIndexOutOfBoundsException) { str.charAt(-2) }
