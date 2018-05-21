@@ -111,34 +111,36 @@ public final class ArgsUtil {
      */
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String... validKeys) {
         IRubyObject[] ret = new IRubyObject[validKeys.length];
-        int index = 0;
-        HashSet<RubySymbol> validKeySet = new HashSet<RubySymbol>();
+
+        HashSet<RubySymbol> validKeySet = new HashSet<>(ret.length);
 
         // Build the return values
-        for(String key : validKeys) {
+        for (int i=0; i<validKeys.length; i++) {
+            final String key = validKeys[i];
             RubySymbol keySym = context.runtime.newSymbol(key);
             if (options.containsKey(keySym)) {
-                ret[index] = options.fastARef(keySym);
+                ret[i] = options.fastARef(keySym);
             } else {
-                ret[index] = RubyBasicObject.UNDEF;
+                ret[i] = RubyBasicObject.UNDEF;
             }
-            index++;
             validKeySet.add(keySym);
         }
 
         // Check for any unknown keys
-        for(Object obj : options.keySet()) {
-            if (!validKeySet.contains(obj)) {
-                throw context.runtime.newArgumentError("unknown keyword: " + obj);
+        options.visitAll(context, new RubyHash.Visitor() {
+            public void visit(IRubyObject key, IRubyObject value) {
+                if (!validKeySet.contains(key)) {
+                    throw context.runtime.newArgumentError("unknown keyword: " + key);
+                }
             }
-        }
+        }, null);
 
         return ret;
     }
 
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
         IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, args);
-        if(options instanceof RubyHash) {
+        if (options instanceof RubyHash) {
             return extractKeywordArgs(context, (RubyHash)options, validKeys);
         } else {
             return null;
