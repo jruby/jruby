@@ -51,11 +51,8 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
-<<<<<<< HEAD
 import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
-=======
->>>>>>> jruby-9.1
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
@@ -162,21 +159,32 @@ public class RubyDateFormatter {
         FORMAT_MICROSEC_EPOCH;
 
         Format() {}
+
         Format(char conversion) {
-            CONVERSION2TOKEN[conversion] = new Token(this);
+            addToConversions(conversion, new Token(this));
         }
+
         Format(char conversion, char alias) {
             this(conversion);
-            CONVERSION2TOKEN[alias] = CONVERSION2TOKEN[conversion];
+            addToConversions(alias, conversionToToken(conversion));
+        }
+
+        // This is still an ugly side effect but avoids jruby/jruby#5179 or class init hacks by forcing all accesses
+        // to initialize the Format class via the Token class.
+        private static void addToConversions(char conversion, Token token) {
+            CONVERSION2TOKEN[conversion] = token;
+        }
+
+        private static Token conversionToToken(int conversion) {
+            return CONVERSION2TOKEN[conversion];
         }
     }
-    //static final Format INSTANTIATE_ENUM = Format.FORMAT_WEEK_LONG;
 
     public static void main(String[] args) {
         // composed + special, keys of the switch below
         StringBuilder buf = new StringBuilder("cDxFnQRrTXtvZ+z");
         for (int i = 'A'; i <= 'z'; i++) {
-            if (CONVERSION2TOKEN[i] != null) {
+            if (Format.conversionToToken(i) != null) {
                 buf.append((char) i);
             }
         }
@@ -201,7 +209,7 @@ public class RubyDateFormatter {
         }
 
         public static Token format(char c) {
-            return CONVERSION2TOKEN[c];
+            return Format.conversionToToken(c);
         }
 
         public static Token zoneOffsetColons(int colons) {
@@ -243,15 +251,7 @@ public class RubyDateFormatter {
      */
     public RubyDateFormatter(ThreadContext context) {
         super();
-<<<<<<< HEAD
         this.runtime = context.runtime;
-=======
-        this.context = context;
-        // FIXME: Java does not seem to initialize the enum values until the first one is accessed but during
-        // construction of enum values we set the enum values into a static array.  We look at that static array
-        // before we formally reference a Format.  The following line will work around this by forcing enum loading...someone change this code :P
-        Format staticInitializerHack = Format.FORMAT_SPECIAL;
->>>>>>> jruby-9.1
         lexer = new StrftimeLexer((Reader) null);
     }
 
