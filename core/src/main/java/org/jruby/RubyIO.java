@@ -4386,7 +4386,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     // ignore EOF, reached end of input
                     return context.runtime.newFixnum(size);
                 } catch (IOException ioe) {
-                    ioe.printStackTrace();
                     throw runtime.newIOErrorFromException(ioe);
                 } finally {
                     if (userProvidedReadIO) {

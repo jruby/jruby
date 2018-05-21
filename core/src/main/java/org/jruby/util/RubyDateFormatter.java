@@ -51,8 +51,11 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.JulianChronology;
+<<<<<<< HEAD
 import org.jruby.Ruby;
 import org.jruby.RubyNumeric;
+=======
+>>>>>>> jruby-9.1
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
@@ -79,7 +82,7 @@ public class RubyDateFormatter {
     private final Ruby runtime;
     private final StrftimeLexer lexer;
 
-    static enum Format {
+    enum Format {
         /** encoding to give to output */
         FORMAT_ENCODING,
         /** raw string, no formatting */
@@ -240,7 +243,15 @@ public class RubyDateFormatter {
      */
     public RubyDateFormatter(ThreadContext context) {
         super();
+<<<<<<< HEAD
         this.runtime = context.runtime;
+=======
+        this.context = context;
+        // FIXME: Java does not seem to initialize the enum values until the first one is accessed but during
+        // construction of enum values we set the enum values into a static array.  We look at that static array
+        // before we formally reference a Format.  The following line will work around this by forcing enum loading...someone change this code :P
+        Format staticInitializerHack = Format.FORMAT_SPECIAL;
+>>>>>>> jruby-9.1
         lexer = new StrftimeLexer((Reader) null);
     }
 
