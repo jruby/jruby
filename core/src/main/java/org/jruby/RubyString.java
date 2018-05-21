@@ -6169,10 +6169,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Override
     public <T> T toJava(Class<T> target) {
-        if (target.isAssignableFrom(String.class)) {
+        // converting on Comparable.class due target.isAssignableFrom(String.class) compatibility (< 9.2)
+        if (target == String.class || target == Comparable.class || target == Object.class) {
             return target.cast(decodeString());
         }
-        if (target.isAssignableFrom(ByteList.class)) {
+        if (target == CharSequence.class) { // explicitly here
+            return (T) this; // used to convert to java.lang.String (< 9.2)
+        }
+        if (target == ByteList.class) {
             return target.cast(value);
         }
         if (target == Character.class || target == Character.TYPE) {

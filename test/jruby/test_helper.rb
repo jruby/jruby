@@ -128,6 +128,15 @@ module TestHelper
     assert run_in_sub_runtime(script)
   end
 
+  def assert_java_raises(type)
+    begin
+      yield
+      fail("expected to raise (#{type}) but did not")
+    rescue java.lang.Throwable => ex
+      raise(ex) unless ex.is_a?(type)
+    end
+  end
+
   def self.included(base)
     if defined? Test::Unit::TestCase
       if base < Test::Unit::TestCase
