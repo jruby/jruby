@@ -936,6 +936,16 @@ public final class Ruby implements Constantizable {
             allModules.add(module);
         }
     }
+
+    public void eachModule(Consumer<RubyModule> func) {
+        synchronized (allModules) {
+            for (RubyModule module : allModules) {
+                func.accept(module);
+            }
+        }
+    }
+
+    @Deprecated
     public void eachModule(Function1<Object, IRubyObject> func) {
         synchronized (allModules) {
             for (RubyModule module : allModules) {
