@@ -4782,7 +4782,6 @@ float_loop:
     public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
         final Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
-        RubyString str;
         IRubyObject buffer = context.nil;
 
         if (opts != context.nil) {
@@ -4792,17 +4791,16 @@ float_loop:
             }
         }
 
-        if (!buffer.isNil()) {
-            str = (RubyString) buffer;
-        } else {
-            str = RubyString.newString(runtime, "");
-        }
+        final RubyString pack = pack(context, obj);
 
-        try {
-            return str.append(pack(context, obj));
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw concurrentModification(context.runtime, e);
+        if (buffer != context.nil) {
+            try {
+                return ((RubyString) buffer).append(pack);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw concurrentModification(context.runtime, e);
+            }
         }
+        return pack;
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
