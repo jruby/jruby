@@ -92,7 +92,6 @@ public final class ArgsUtil {
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject... args) {
         if (args.length >= 1) {
             return TypeConverter.checkHashType(runtime, args[args.length - 1]);
-            
         }
         return runtime.getNil();
     }
@@ -118,11 +117,8 @@ public final class ArgsUtil {
         for (int i=0; i<validKeys.length; i++) {
             final String key = validKeys[i];
             RubySymbol keySym = context.runtime.newSymbol(key);
-            if (options.containsKey(keySym)) {
-                ret[i] = options.fastARef(keySym);
-            } else {
-                ret[i] = RubyBasicObject.UNDEF;
-            }
+            IRubyObject val = options.fastARef(keySym);
+            ret[i] = val != null ? val : RubyBasicObject.UNDEF;
             validKeySet.add(keySym);
         }
 
@@ -147,20 +143,24 @@ public final class ArgsUtil {
         }
     }
 
+    public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, RubyHash opts) {
+        return opts.op_aref(context, context.runtime.newSymbol(keyword));
+    }
+
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject arg) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
 
-        if (!opts.isNil()) return ((RubyHash) opts).op_aref(context, context.runtime.newSymbol(keyword));
+        if (opts == context.nil) return context.nil;
 
-        return context.nil;
+        return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject... args) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
 
-        if (!opts.isNil()) return ((RubyHash) opts).op_aref(context, context.runtime.newSymbol(keyword));
+        if (opts == context.nil) return context.nil;
 
-        return context.nil;
+        return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
     public static IRubyObject extractArg(int index, IRubyObject _default, IRubyObject... args) {

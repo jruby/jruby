@@ -39,21 +39,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyRational;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -1667,12 +1653,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(ThreadContext context, IRubyObject arg) {
+        if (arg == context.nil) return getRoundingMode(context.runtime);
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
         if (opts != context.nil) {
-            arg = ArgsUtil.extractKeywordArg(context, "half", opts);
-            if (arg == context.nil) {
-                return getRoundingMode(context.runtime);
-            }
+            arg = ArgsUtil.extractKeywordArg(context, "half", (RubyHash) opts);
+            if (arg == context.nil) return getRoundingMode(context.runtime);
             String roundingMode = arg.asJavaString();
             switch (roundingMode) {
                 case "up":
@@ -1684,9 +1669,6 @@ public class RubyBigDecimal extends RubyNumeric {
                 default :
                     throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
             }
-        }
-        if (arg == context.nil) {
-            return getRoundingMode(context.runtime);
         }
         if (arg instanceof RubySymbol) {
             String roundingMode = arg.asJavaString();
