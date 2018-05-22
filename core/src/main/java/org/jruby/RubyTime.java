@@ -41,10 +41,7 @@ package org.jruby;
 import jnr.posix.POSIX;
 import jnr.posix.Timeval;
 import org.jcodings.specific.USASCIIEncoding;
-import org.joda.time.Chronology;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.IllegalFieldValueException;
+import org.joda.time.*;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
@@ -65,8 +62,12 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.TypeConverter;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -431,10 +432,6 @@ public class RubyTime extends RubyObject {
         this.dt = dt;
     }
 
-    public long getTimeInMillis() {
-        return dt.getMillis();
-    }
-
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
         return newTime(runtime, new DateTime(milliseconds));
     }
@@ -468,11 +465,6 @@ public class RubyTime extends RubyObject {
         RubyTime t = new RubyTime(runtime, runtime.getTime(), dt);
         t.setNSec(nsec);
         return t;
-    }
-
-    @Override
-    public Class<?> getJavaClass() {
-        return Date.class;
     }
 
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
@@ -877,8 +869,8 @@ public class RubyTime extends RubyObject {
      * @return micro seconds (only)
      * @see #getTimeInMicros()
      */
-    public long getMicros() {
-        return getTimeInMillis() % 1000 * 1000 + getUSec();
+    public int getMicros() {
+        return (int) (getTimeInMillis() % 1000) * 1000 + (int) getUSec();
     }
 
     /**
@@ -886,7 +878,7 @@ public class RubyTime extends RubyObject {
      * @param micros the microseconds to be set
      * @see #getMicros()
      */
-    public void setMicros(long micros) {
+    public void setMicros(int micros) {
         long millis = getTimeInMillis();
         millis = ( millis - (millis % 1000) ) + (micros / 1000);
         dt = dt.withMillis(millis);
@@ -894,9 +886,9 @@ public class RubyTime extends RubyObject {
     }
 
     /**
-     * @deprecated use {@link #setMicros(long)} instead
+     * @deprecated use {@link #setMicros(int)} instead
      */
-    public void setMicroseconds(long micros) { setMicros(micros); }
+    public void setMicroseconds(long micros) { setMicros((int) micros); }
 
     /**
      * @deprecated use {@link #getMicros()} instead
@@ -905,13 +897,12 @@ public class RubyTime extends RubyObject {
     	return getMicros();
     }
 
-
     /**
      * Return the nano-seconds of this time.
      * @return nano seconds (only)
      */
-    public long getNanos() {
-        return (getTimeInMillis() % 1000) * 1_000_000 + getNSec();
+    public int getNanos() {
+        return (int) (getTimeInMillis() % 1000) * 1_000_000 + (int) getNSec();
     }
 
     /**
@@ -919,7 +910,7 @@ public class RubyTime extends RubyObject {
      * @param nanos the nanoseconds to be set
      * @see #getNanos()
      */
-    public void setNanos(long nanos) {
+    public void setNanos(int nanos) {
         long millis = getTimeInMillis();
         millis = ( millis - (millis % 1000) ) + (nanos / 1_000_000);
         dt = dt.withMillis(millis);
@@ -1047,10 +1038,6 @@ public class RubyTime extends RubyObject {
 
     public DateTime getDateTime() {
         return this.dt;
-    }
-
-    public Date getJavaDate() {
-        return this.dt.toDate();
     }
 
     @JRubyMethod
@@ -1414,17 +1401,30 @@ public class RubyTime extends RubyObject {
         return s_mload(context, (RubyTime) ((RubyClass) recv).allocate(), from);
     }
 
+    // Java API
+
+    @Override
+    public Class<?> getJavaClass() {
+        return Date.class;
+    }
+
     @Override
     public <T> T toJava(Class<T> target) {
-        if (target == Date.class) {
+        // retain some compatibility with `target.isAssignableFrom(Date.class)` (pre 9.2)
+        if (target == Date.class || target == Comparable.class || target == Object.class) {
             return target.cast(getJavaDate());
         }
         if (target == Calendar.class || target == GregorianCalendar.class) {
             return target.cast(dt.toGregorianCalendar());
         }
-        if (target == DateTime.class) {
+
+        // target == Comparable.class and target == Object.class already handled above
+
+        if (target.isAssignableFrom(DateTime.class) && target != Serializable.class) {
             return target.cast(this.dt);
         }
+
+        // SQL
         if (target == java.sql.Date.class) {
             return target.cast(new java.sql.Date(dt.getMillis()));
         }
@@ -1432,12 +1432,115 @@ public class RubyTime extends RubyObject {
             return target.cast(new java.sql.Time(dt.getMillis()));
         }
         if (target == java.sql.Timestamp.class) {
-            return target.cast(new java.sql.Timestamp(dt.getMillis()));
+            java.sql.Timestamp timestamp = new java.sql.Timestamp(dt.getMillis());
+            timestamp.setNanos(getNanos());
+            return target.cast(timestamp);
         }
-        if (target.isAssignableFrom(Date.class)) {
-            return target.cast(getJavaDate());
+
+        // Java 8
+        if (target != Serializable.class) {
+            if (target.isAssignableFrom(Instant.class)) { // covers Temporal/TemporalAdjuster
+                return (T) toInstant();
+            }
+            if (target.isAssignableFrom(LocalDateTime.class)) { // java.time.chrono.ChronoLocalDateTime.class
+                return (T) toLocalDateTime();
+            }
+            if (target.isAssignableFrom(ZonedDateTime.class)) { // java.time.chrono.ChronoZonedDateTime.class
+                return (T) toZonedDateTime();
+            }
+            if (target.isAssignableFrom(OffsetDateTime.class)) {
+                return (T) toOffsetDateTime();
+            }
         }
+
         return super.toJava(target);
+    }
+
+    /**
+     * @return millis since epoch this (date-time) value represents
+     * @since 9.2 (public)
+     */
+    public long getTimeInMillis() {
+        return dt.getMillis();
+    }
+
+    /**
+     * @return year
+     * @since 9.2
+     */
+    public int getYear() { return dt.getYear(); }
+
+    /**
+     * @return month-of-year (1..12)
+     * @since 9.2
+     */
+    public int getMonth() { return dt.getMonthOfYear(); }
+
+    /**
+     * @return day-of-month
+     * @since 9.2
+     */
+    public int getDay() { return dt.getDayOfMonth(); }
+
+    /**
+     * @return hour-of-day (0..23)
+     * @since 9.2
+     */
+    public int getHour() { return dt.getHourOfDay(); }
+
+    /**
+     * @return minute-of-hour
+     * @since 9.2
+     */
+    public int getMinute() { return dt.getMinuteOfHour(); }
+
+    /**
+     * @return second-of-minute
+     * @since 9.2
+     */
+    public int getSecond() { return dt.getSecondOfMinute(); }
+
+    // getUsec / getNsec
+
+    /**
+     * @return a Java (legacy) Date instance
+     * @since 1.7
+     */
+    public Date getJavaDate() {
+        return this.dt.toDate();
+    }
+
+    /**
+     * @return an instant
+     * @since 9.2
+     */
+    public java.time.Instant toInstant() {
+        return java.time.Instant.ofEpochMilli(getTimeInMillis()).plusNanos(getNSec());
+    }
+
+    /**
+     * @return a date time
+     * @since 9.2
+     */
+    public LocalDateTime toLocalDateTime() {
+        return LocalDateTime.of(getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond(), getNanos());
+    }
+
+    /**
+     * @return a date time
+     * @since 9.2
+     */
+    public ZonedDateTime toZonedDateTime() {
+        return ZonedDateTime.of(toLocalDateTime(), ZoneId.of(dt.getZone().getID()));
+    }
+
+    /**
+     * @return a date time
+     * @since 9.2
+     */
+    public OffsetDateTime toOffsetDateTime() {
+        final int offset = dt.getZone().getOffset(dt.getMillis()) / 1000;
+        return OffsetDateTime.of(toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
     }
 
     // MRI: time.c ~ rb_time_interval 1.9 ... invokes time_timespec(VALUE num, TRUE)

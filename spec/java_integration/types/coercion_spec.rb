@@ -12,7 +12,7 @@ java_import "java_integration.fixtures.PrivateConstructor"
 describe "Java String and primitive-typed methods" do
   it "should coerce to Ruby types when returned" do
     expect(CoreTypeMethods.getString).to be_kind_of(String)
-    expect(CoreTypeMethods.getString).to eq("foo");
+    expect(CoreTypeMethods.getString).to eq("foo")
 
     expect(CoreTypeMethods.getByte).to be_kind_of(Integer)
     expect(CoreTypeMethods.getByte).to eq(1)
@@ -792,35 +792,23 @@ describe "Time\"to_java" do
     end
   end
 
-  describe "when passed java.sql.Date" do
+  describe 'java.sql date types' do
     it "coerces to java.sql.Date" do
       t = Time.now
       d = t.to_java(java.sql.Date)
       expect(d.class).to eq(java.sql.Date)
     end
-  end
 
-  describe "when passed java.sql.Time" do
     it "coerces to java.sql.Time" do
       t = Time.now
       d = t.to_java(java.sql.Time)
       expect(d.class).to eq(java.sql.Time)
     end
-  end
 
-  describe "when passed java.sql.Timestamp" do
     it "coerces to java.sql.Timestamp" do
       t = Time.now
       d = t.to_java(java.sql.Timestamp)
       expect(d.class).to eq(java.sql.Timestamp)
-    end
-  end
-
-  describe "when passed org.joda.time.DateTime" do
-    it "coerces to org.joda.time.DateTime" do
-      t = Time.now
-      d = t.to_java(org.joda.time.DateTime)
-      expect(d.class).to eq(org.joda.time.DateTime)
     end
   end
 
@@ -829,6 +817,55 @@ describe "Time\"to_java" do
       t = Time.now
       d = t.to_java(java.lang.Object)
       expect(d.class).to eq(java.util.Date)
+    end
+  end
+
+  describe "when passed java.io.Serializable" do
+    it "returns RubyTime instance" do
+      t = Time.at(0)
+      expect(t.to_java('java.io.Serializable').class).to eq(org.jruby.RubyTime)
+    end
+  end
+
+  describe 'joda types' do
+    it "coerces to org.joda.time.DateTime" do
+      t = Time.at(0)
+      d = t.to_java(org.joda.time.DateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+
+    it "coerces to DateTime from ReadableDateTime interface" do
+      t = Time.now
+      d = t.to_java(org.joda.time.ReadableDateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+  end
+
+  describe 'java 8 types' do
+    it "coerces to java.time.Instant" do
+      t = Time.at(0)
+      expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+    end
+
+    it "coerces to Temporal to Instant" do
+      t = Time.at(0, 123456.789)
+      d = t.to_java(java.time.temporal.Temporal)
+      expect(d.class).to eq(java.time.Instant)
+      expect(d.to_s).to eq('1970-01-01T00:00:00.123456789Z')
+    end
+
+    it "coerces to LocalDateTime" do
+      t = Time.new(2002, 10, 31, 12, 24, 48)
+      d = t.to_java(java.time.LocalDateTime)
+      expect(d.class).to eq(java.time.LocalDateTime)
+      expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
+    end
+
+    it "coerces to ZonedDateTime" do
+      t = Time.new(2018, 10, 31, 10, 20, 50.123456, '+02:00')
+      d = t.to_java(java.time.chrono.ChronoZonedDateTime)
+      expect(d.class).to eq(java.time.ZonedDateTime)
+      expect(d).to eq(java.time.ZonedDateTime.of(2018, 10, 31, 10, 20, 50, 123456 * 1000, java.time.ZoneId.of('+02:00')))
     end
   end
 end
