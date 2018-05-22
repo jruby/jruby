@@ -30,10 +30,9 @@ package org.jruby.runtime.ivars;
 import org.jruby.ReifiedRubyObject;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
-import org.jruby.RubyObjectVar9;
 
 /**
- * A variable accessor that accesses a var9 field directly;
+ * A variable accessor that accesses a get/setVariable# directly;
  */
 public class VariableAccessorVar9 extends FieldVariableAccessor {
     /**

@@ -39,7 +39,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.StandardError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -123,12 +122,10 @@ public class RubyNumeric extends RubyObject {
     public static RoundingMode getRoundingMode(ThreadContext context, IRubyObject opts) {
         IRubyObject halfArg = ArgsUtil.extractKeywordArg(context, "half", opts);
 
-        if (halfArg.isNil()) {
-            return RoundingMode.HALF_UP;
-        } else if (halfArg instanceof RubySymbol) {
-            String halfString = halfArg.toString();
+        if (halfArg == context.nil) return RoundingMode.HALF_UP;
 
-            switch (halfString) {
+        if (halfArg instanceof RubySymbol) {
+            switch (((RubySymbol) halfArg).asJavaString()) {
                 case "up":
                     return RoundingMode.HALF_UP;
                 case "even":
@@ -941,7 +938,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     // TODO: Fold kwargs into the @JRubyMethod decorator
-    static final String[] validStepArgs = new String[] {"to", "by"};
+    private static final String[] STEP_KEYS = new String[] {"to", "by"};
 
     /**
      * num_step
@@ -981,7 +978,7 @@ public class RubyNumeric extends RubyObject {
                 newArgs[0] = to = args[0];
         }
         if (!hash.isNil()) {
-            IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, validStepArgs);
+            IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, STEP_KEYS);
             if (values[0] != UNDEF) {
                 if (argc > 0) throw runtime.newArgumentError("to is given twice");
                 newArgs[0] = to = values[0];

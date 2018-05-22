@@ -5,8 +5,6 @@ STDLIB_FILES = %w[
   benchmark.rb
   cgi
   cgi.rb
-  cmath.rb
-  csv.rb
   date
   date.rb
   debug.rb
@@ -15,7 +13,6 @@ STDLIB_FILES = %w[
   drb.rb
   e2mmap.rb
   erb.rb
-  fileutils.rb
   find.rb
   forwardable
   forwardable.rb
@@ -48,7 +45,6 @@ STDLIB_FILES = %w[
   rinda
   rss
   rss.rb
-  scanf.rb
   set.rb
   shell
   shell.rb
@@ -65,8 +61,6 @@ STDLIB_FILES = %w[
   uri
   uri.rb
   weakref.rb
-  webrick
-  webrick.rb
   yaml
   yaml.rb
 ]

@@ -1645,15 +1645,6 @@ public final class Ruby implements Constantizable {
         new ThreadFiberLibrary().load(this, false);
     }
 
-    private RubyClass defineClassIfAllowed(String name, RubyClass superClass) {
-	// TODO: should probably apply the null object pattern for a
-	// non-allowed class, rather than null
-        if (superClass != null && profile.allowClass(name)) {
-            return defineClass(name, superClass, superClass.getAllocator());
-        }
-        return null;
-    }
-
     private Map<Integer, RubyClass> errnos = new HashMap<Integer, RubyClass>();
 
     public RubyClass getErrno(int n) {
@@ -1791,8 +1782,8 @@ public final class Ruby implements Constantizable {
     }
 
     private void addBuiltinIfAllowed(String name, Library lib) {
-        if(profile.allowBuiltin(name)) {
-            loadService.addBuiltinLibrary(name,lib);
+        if (profile.allowBuiltin(name)) {
+            loadService.addBuiltinLibrary(name, lib);
         }
     }
 
@@ -4268,13 +4259,16 @@ public final class Ruby implements Constantizable {
      */
     public RaiseException newStopIteration(IRubyObject result, String message) {
         final ThreadContext context = getCurrentContext();
-        if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            RubyException ex = RubyStopIteration.newInstance(context, result, message);
-            return ex.toThrowable();
-        }
-        if ( message == null ) message = STOPIERATION_BACKTRACE_MESSAGE;
+
+        if (message == null) message = STOPIERATION_BACKTRACE_MESSAGE;
+
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
-        return RaiseException.from(ex, disabledBacktrace());
+
+        if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
+            ex.forceBacktrace(disabledBacktrace());
+        }
+
+        return ex.toThrowable();
     }
 
     @Deprecated
@@ -4823,6 +4817,12 @@ public final class Ruby implements Constantizable {
         return dataClass;
     }
 
+    /**
+     * @return Class -> extension initializer map
+     * @note Internal API, subject to change!
+     */
+    public Map<Class, Consumer<RubyModule>> getJavaExtensionDefinitions() { return javaExtensionDefinitions; }
+
     @Deprecated
     private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
         @Override
@@ -5292,6 +5292,8 @@ public final class Ruby implements Constantizable {
     public final JavaSites sites = new JavaSites();
 
     private volatile MRIRecursionGuard mriRecursionGuard;
+
+    private final Map<Class, Consumer<RubyModule>> javaExtensionDefinitions = new WeakHashMap<>(); // caller-syncs
 
     // For strptime processing we cache the parsed format strings since most applications
     // reuse the same formats over and over.  This is also unbounded (for now) since all applications

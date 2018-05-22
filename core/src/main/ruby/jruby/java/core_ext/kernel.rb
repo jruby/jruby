@@ -33,4 +33,4 @@ module Kernel
   def org
     JavaUtilities.get_package_module_dot_format('org') # stub
   end
-end if false
+end if false # only here for doc -> implementation at org.jruby.javasupport.ext.Kernel

@@ -4601,7 +4601,7 @@ rational_loop:
                     if (result instanceof RubyInteger) {
                         result = ((RubyInteger) result).op_plus(context, value);
                     } else if (result instanceof RubyRational) {
-                        result = ((RubyRational) result).op_add(context, value);
+                        result = ((RubyRational) result).op_plus(context, value);
                     } else {
                         throw runtime.newTypeError("BUG: unexpected type in rational part of Array#sum");
                     }
@@ -4780,29 +4780,27 @@ float_loop:
 
     @JRubyMethod(name = "pack")
     public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
-        RubyString str;
         IRubyObject buffer = context.nil;
 
-        if (!opts.isNil()) {
-            buffer = ArgsUtil.extractKeywordArg(context, "buffer", opts);
+        if (opts != context.nil) {
+            buffer = ArgsUtil.extractKeywordArg(context, "buffer", (RubyHash) opts);
             if (!buffer.isNil() && !(buffer instanceof RubyString)) {
                 throw runtime.newTypeError(str(runtime, "buffer must be String, not ", types(runtime, buffer.getType())));
             }
         }
 
-        if (!buffer.isNil()) {
-            str = (RubyString) buffer;
-        } else {
-            str = RubyString.newString(runtime, "");
-        }
+        final RubyString pack = pack(context, obj);
 
-        try {
-            return str.append(pack(context, obj));
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw concurrentModification(context.runtime, e);
+        if (buffer != context.nil) {
+            try {
+                return ((RubyString) buffer).append(pack);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw concurrentModification(context.runtime, e);
+            }
         }
+        return pack;
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)

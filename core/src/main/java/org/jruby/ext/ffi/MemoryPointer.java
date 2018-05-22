@@ -10,6 +10,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -19,7 +20,7 @@ public class MemoryPointer extends Pointer {
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass memptrClass = module.defineClassUnder("MemoryPointer",
                 module.getClass("Pointer"),
-                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
         memptrClass.defineAnnotatedMethods(MemoryPointer.class);
         memptrClass.defineAnnotatedConstants(MemoryPointer.class);
         memptrClass.setReifiedClass(MemoryPointer.class);

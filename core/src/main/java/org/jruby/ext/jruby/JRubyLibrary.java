@@ -32,11 +32,7 @@
 package org.jruby.ext.jruby;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.Node;
@@ -83,21 +79,22 @@ public class JRubyLibrary implements Library {
         JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        /**
-         * JRuby::CONFIG ~ shortcut for JRuby.runtime.instance_config
-         * @since 9.2
-         */
-        IRubyObject config = Java.getInstance(runtime, runtime.getInstanceConfig());
-        config.getMetaClass().defineAlias("rubygems_disabled?", "isDisableGems");
-        config.getMetaClass().defineAlias("did_you_mean_disabled?", "isDisableDidYouMean");
-        JRuby.setConstant("CONFIG", config);
+        RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
+        CONFIG.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
     }
 
-    @Deprecated // old JRuby.defineModuleUnder("CONFIG")
+    /**
+     * JRuby::CONFIG
+     */
     public static class JRubyConfig {
-        // @JRubyMethod(name = "rubygems_disabled?")
+        @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
             return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+        }
+
+        @JRubyMethod(name = "did_you_mean_disabled?")
+        public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
@@ -200,14 +197,16 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
-    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
-        return runtime.newString(launcher);
+    @JRubyMethod(name = "set_last_exit_status", module = true) // used from JRuby::ProcessManager
+    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
+                                                   IRubyObject status, IRubyObject pid) {
+        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
+                status.convertToInteger().getLongValue(),
+                pid.convertToInteger().getLongValue()
+        );
+        context.setLastExitStatus(processStatus);
+        return processStatus;
     }
-
 
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {

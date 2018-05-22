@@ -437,8 +437,6 @@ public class PosixShim {
             errno = Errno.ELOOP;
         } catch (ResourceException resourceException) {
             throw resourceException.newRaiseException(runtime);
-        } catch (IOException e) {
-            errno = Helpers.errnoFromException(e);
         }
         return null;
     }

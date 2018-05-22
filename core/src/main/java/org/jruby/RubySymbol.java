@@ -261,7 +261,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                         index == 2 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
                         index > 2 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
 
-        return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
+        return valid && getBytes().length() >= 3; // FIXME: good enough on length check?  Trying to avoid counter.
     }
 
 

@@ -285,7 +285,11 @@ public class JavaClass extends JavaObject {
 
     @JRubyMethod(name = "for_name", required = 1, meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return forNameVerbose(recv.getRuntime(), name.asJavaString());
+        return for_name(recv, name.asJavaString());
+    }
+
+    static JavaClass for_name(IRubyObject recv, String name) {
+        return forNameVerbose(recv.getRuntime(), name);
     }
 
     @JRubyMethod

@@ -79,7 +79,7 @@ public class RubyDateFormatter {
     private final Ruby runtime;
     private final StrftimeLexer lexer;
 
-    static enum Format {
+    enum Format {
         /** encoding to give to output */
         FORMAT_ENCODING,
         /** raw string, no formatting */
@@ -159,21 +159,32 @@ public class RubyDateFormatter {
         FORMAT_MICROSEC_EPOCH;
 
         Format() {}
+
         Format(char conversion) {
-            CONVERSION2TOKEN[conversion] = new Token(this);
+            addToConversions(conversion, new Token(this));
         }
+
         Format(char conversion, char alias) {
             this(conversion);
-            CONVERSION2TOKEN[alias] = CONVERSION2TOKEN[conversion];
+            addToConversions(alias, conversionToToken(conversion));
+        }
+
+        // This is still an ugly side effect but avoids jruby/jruby#5179 or class init hacks by forcing all accesses
+        // to initialize the Format class via the Token class.
+        private static void addToConversions(char conversion, Token token) {
+            CONVERSION2TOKEN[conversion] = token;
+        }
+
+        private static Token conversionToToken(int conversion) {
+            return CONVERSION2TOKEN[conversion];
         }
     }
-    //static final Format INSTANTIATE_ENUM = Format.FORMAT_WEEK_LONG;
 
     public static void main(String[] args) {
         // composed + special, keys of the switch below
         StringBuilder buf = new StringBuilder("cDxFnQRrTXtvZ+z");
         for (int i = 'A'; i <= 'z'; i++) {
-            if (CONVERSION2TOKEN[i] != null) {
+            if (Format.conversionToToken(i) != null) {
                 buf.append((char) i);
             }
         }
@@ -198,7 +209,7 @@ public class RubyDateFormatter {
         }
 
         public static Token format(char c) {
-            return CONVERSION2TOKEN[c];
+            return Format.conversionToToken(c);
         }
 
         public static Token zoneOffsetColons(int colons) {

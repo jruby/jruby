@@ -46,7 +46,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -191,12 +190,8 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     @JRubyMethod(name = "accept_nonblock")
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
-
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", _opts) != runtime.getFalse();
-
-        return accept_nonblock(context, runtime, exception);
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
+        return accept_nonblock(context, context.runtime, extractExceptionArg(context, opts));
     }
 
     public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {

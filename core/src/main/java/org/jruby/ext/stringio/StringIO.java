@@ -33,18 +33,7 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.ObjectFlags;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyIO;
-import org.jruby.RubyInteger;
-import org.jruby.RubyKernel;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -57,6 +46,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -1341,18 +1331,20 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
         public static IRubyObject read_nonblock(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
 
+            boolean exception = true;
             IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
 
-            if (!opts.isNil()) args = Arrays.copyOf(args, args.length - 1);
-
-            boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
+            if (opts != context.nil) {
+                args = ArraySupport.newCopy(args, args.length - 1);
+                exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) opts) != context.fals;
+            }
 
             IRubyObject val = self.callMethod(context, "read", args);
-            if (val.isNil()) {
+            if (val == context.nil) {
                 if (!exception) return context.nil;
-                throw context.runtime.newEOFError();
+                throw runtime.newEOFError();
             }
 
             return val;

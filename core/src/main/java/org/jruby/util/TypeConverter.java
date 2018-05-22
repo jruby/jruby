@@ -393,21 +393,22 @@ public class TypeConverter {
 
     // rb_convert_to_integer
     public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         IRubyObject tmp;
 
         for (;;) {
-            if (val instanceof RubyFloat) {
-                if (base != 0) raiseIntegerBaseError(context);
-                return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
-            } else if (val instanceof RubyInteger) {
-                if (base != 0) raiseIntegerBaseError(context);
-                return val;
-            } else if (val instanceof RubyString) {
-                return RubyNumeric.str2inum(context.runtime, (RubyString)val, base, true);
-            } else if (val instanceof RubyNil) {
-                if (base != 0) raiseIntegerBaseError(context);
-                throw context.runtime.newTypeError("can't convert nil into Integer");
+            switch (val.getMetaClass().getClassIndex()) {
+                case FLOAT:
+                    if (base != 0) raiseIntegerBaseError(context);
+                    return RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) val).getValue());
+                case INTEGER:
+                    if (base != 0) raiseIntegerBaseError(context);
+                    return val;
+                case STRING:
+                    return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                case NIL:
+                    if (base != 0) raiseIntegerBaseError(context);
+                    throw context.runtime.newTypeError("can't convert nil into Integer");
             }
 
             if (base != 0) {
@@ -419,22 +420,22 @@ public class TypeConverter {
             break;
         }
 
-        tmp = TypeConverter.convertToType(context, val, runtime.getString(), "to_int", false);
-        return (tmp != context.nil) ? tmp : val.convertToInteger("to_i");
+        tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
+        return (tmp != context.nil) ? tmp : TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked);
     }
 
     // MRI: rb_Array
     public static RubyArray rb_Array(ThreadContext context, IRubyObject val) {
         IRubyObject tmp = checkArrayType(val); // to_ary
 
-        if (tmp.isNil()) {
+        if (tmp == context.nil) {
             TypeConverterSites sites = sites(context);
             tmp = convertToTypeWithCheck(context, val, context.runtime.getArray(), sites.to_a_checked);
-            if (tmp.isNil()) {
+            if (tmp == context.nil) {
                 return context.runtime.newArray(val);
             }
         }
-        return (RubyArray)tmp;
+        return (RubyArray) tmp;
     }
 
     // MRI: to_ary
