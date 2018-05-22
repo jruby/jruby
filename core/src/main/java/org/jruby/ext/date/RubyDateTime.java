@@ -50,6 +50,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.io.Serializable;
+import java.time.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
  * In MRI, since 2.x, all of date.rb has been moved to native (C) code.
@@ -57,6 +63,7 @@ import org.jruby.util.ByteList;
  * NOTE: There's still date.rb, where this gets bootstrapped from.
  *
  * @see RubyDate
+ * @since 9.2
  *
  * @author kares
  */
@@ -471,6 +478,55 @@ public class RubyDateTime extends RubyDate {
     @JRubyMethod(meta = true)
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject string, IRubyObject format) {
         return RubyDate._strptime(context, self, string, format);
+    }
+
+    // Java API
+
+    /**
+     * @return a date time
+     */
+    public LocalDateTime toLocalDateTime() {
+        return LocalDateTime.of(getYear(), getMonth(), getDay(), getHour(), getMinute(), getSecond(), getNanos());
+    }
+
+    /**
+     * @return a date time
+     */
+    public ZonedDateTime toZonedDateTime() {
+        return ZonedDateTime.of(toLocalDateTime(), ZoneId.of(dt.getZone().getID()));
+    }
+
+    /**
+     * @return a date time
+     */
+    public OffsetDateTime toOffsetDateTime() {
+        final int offset = dt.getZone().getOffset(dt.getMillis()) / 1000;
+        return OffsetDateTime.of(toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+    }
+
+    @Override
+    public <T> T toJava(Class<T> target) {
+        if (target == Comparable.class || target == Object.class) {
+            return super.toJava(target);
+        }
+
+        // Java 8
+        if (target != Serializable.class) {
+            if (target.isAssignableFrom(Instant.class)) { // covers Temporal/TemporalAdjuster
+                return (T) toInstant();
+            }
+            if (target.isAssignableFrom(LocalDateTime.class)) { // java.time.chrono.ChronoLocalDateTime.class
+                return (T) toLocalDateTime();
+            }
+            if (target.isAssignableFrom(ZonedDateTime.class)) { // java.time.chrono.ChronoZonedDateTime.class
+                return (T) toZonedDateTime();
+            }
+            if (target.isAssignableFrom(OffsetDateTime.class)) {
+                return (T) toOffsetDateTime();
+            }
+        }
+
+        return super.toJava(target);
     }
 
 }

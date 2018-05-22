@@ -679,7 +679,7 @@ describe "Fixnum\#to_java" do
   end
 end
 
-describe "String\#to_java" do
+describe "String#to_java" do
   it "coerces to java.lang.String by default" do
     str = "123".to_java
     expect(str.class).to eq(java.lang.String)
@@ -718,7 +718,7 @@ describe "String\#to_java" do
   end
 end
 
-describe "Class\#to_java" do
+describe "Class#to_java" do
   describe "when passed java.lang.Class.class" do
     cls = java.lang.Class
 
@@ -775,7 +775,7 @@ describe "Class\#to_java" do
   end
 end
 
-describe "Time\"to_java" do
+describe "Time#to_java" do
   describe "when passed java.util.Date" do
     it "coerces to java.util.Date" do
       t = Time.now
@@ -866,6 +866,114 @@ describe "Time\"to_java" do
       d = t.to_java(java.time.chrono.ChronoZonedDateTime)
       expect(d.class).to eq(java.time.ZonedDateTime)
       expect(d).to eq(java.time.ZonedDateTime.of(2018, 10, 31, 10, 20, 50, 123456 * 1000, java.time.ZoneId.of('+02:00')))
+    end
+  end
+end
+
+describe "Date/DateTime#to_java" do
+
+  before(:all) { require 'date' }
+
+  describe "when passed java.util.Date" do
+    it "coerces to java.util.Date" do
+      t = Date.today
+      d = t.to_java(java.util.Date)
+      expect(d.class).to eq(java.util.Date)
+    end
+  end
+
+  describe "when passed java.util.Calendar" do
+    it "coerces to java.util.Calendar" do
+      t = Date.today
+      d = t.to_java(java.util.Calendar)
+      expect(d.class).to be < java.util.Calendar
+    end
+  end
+
+  describe 'java.sql date types' do
+    it "coerces to java.sql.Date" do
+      t = Date.today
+      d = t.to_java(java.sql.Date)
+      expect(d.class).to eq(java.sql.Date)
+    end
+
+    it "coerces to java.sql.Time" do
+      t = Date.today
+      d = t.to_java(java.sql.Time)
+      expect(d.class).to eq(java.sql.Time)
+    end
+
+    it "coerces to java.sql.Timestamp" do
+      t = Date.today
+      d = t.to_java(java.sql.Timestamp)
+      expect(d.class).to eq(java.sql.Timestamp)
+    end
+  end
+
+  describe "when passed java.lang.Object" do
+    it "coerces to java.util.Date" do
+      t = Date.today
+      d = t.to_java(java.lang.Object)
+      expect(d.class).to eq(java.util.Date)
+    end
+  end
+
+  describe "when passed java.io.Serializable" do
+    it "returns RubyTime instance" do
+      t = Date.new
+      expect(t.to_java('java.io.Serializable').class.to_java.name).to eq('Java::OrgJrubyExtDate::RubyDate')
+    end
+  end
+
+  describe 'joda types' do
+    it "coerces to org.joda.time.DateTime" do
+      t = Date.new(0)
+      d = t.to_java(org.joda.time.DateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+
+    it "coerces to DateTime from ReadableDateTime interface" do
+      t = Date.today
+      d = t.to_java(org.joda.time.ReadableDateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+
+      t = DateTime.now
+      d = t.to_java(org.joda.time.ReadableDateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+  end
+
+  describe 'java 8 types' do
+    it "coerces to java.time.Instant" do
+      t = Date.new(0)
+      expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+      local_date = java.time.LocalDate.of(-1, 12, 30) # joda-time vs ruby-date rules
+      expect(t.to_java(java.time.Instant)).to eq(local_date.atTime(0, 0).toInstant(java.time.ZoneOffset::UTC))
+
+      t = Time.new(1970, 1, 1, 00, 00, 42, '+00:00').to_datetime
+      expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+      expect(t.to_java(java.time.Instant)).to eq(java.time.Instant::EPOCH.plusSeconds(42))
+    end
+
+    it "coerces to Temporal to Instant" do
+      t = Time.at(0, 123456.789).to_datetime
+      d = t.to_java(java.time.temporal.Temporal)
+      expect(d.class).to eq(java.time.Instant)
+      expect(d.to_s).to eq('1970-01-01T00:00:00.123456789Z')
+    end
+
+    it "coerces to LocalDate" do
+      t = Time.new(2002, 10, 31, 12, 24, 48).to_date
+      d = t.to_java(java.time.LocalDate)
+      expect(d.class).to eq(java.time.LocalDate)
+      expect(d).to eq(java.time.LocalDate.of(2002, 10, 31))
+    end
+
+    it "coerces to LocalDateTime" do
+      t = Time.new(2002, 10, 31, 12, 24, 48).to_datetime
+      d = t.to_java(java.time.LocalDateTime)
+      expect(d.class).to eq(java.time.LocalDateTime)
+      expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
     end
   end
 end
