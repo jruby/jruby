@@ -433,9 +433,9 @@ public class RubyKernel {
     public static IRubyObject new_hash(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         IRubyObject tmp;
         Ruby runtime = context.runtime;
-        if (arg.isNil()) return RubyHash.newHash(runtime);
+        if (arg == context.nil) return RubyHash.newHash(runtime);
         tmp = TypeConverter.checkHashType(context, sites(context).to_hash_checked, arg);
-        if (tmp.isNil()) {
+        if (tmp == context.nil) {
             if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) {
                 return RubyHash.newHash(runtime);
             }
@@ -444,38 +444,36 @@ public class RubyKernel {
         return tmp;
     }
 
+    @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return new_integer19(context, recv, object);
+        return TypeConverter.convertToInteger(context, object, 0);
     }
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
+    public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base) {
+        return TypeConverter.convertToInteger(context, object, RubyNumeric.num2int(base));
+    }
+
+    @Deprecated
     public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return newIntegerCommon(context, object, 0);
-    }
-
-    @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
-    public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base) {
-        return newIntegerCommon(context, object, RubyNumeric.num2int(base));
-    }
-
-    private static IRubyObject newIntegerCommon(ThreadContext context, IRubyObject object, int bs) {
-        return TypeConverter.convertToInteger(context, object, bs);
-    }
-
-    public static IRubyObject new_string(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        return new_string19(context, recv, object);
+        return new_integer(context, recv, object);
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
+    public static IRubyObject new_string(ThreadContext context, IRubyObject recv, IRubyObject object) {
         Ruby runtime = context.runtime;
         KernelSites sites = sites(context);
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites.to_str_checked, object, runtime.getString());
-        if (tmp.isNil()) {
+        if (tmp == context.nil) {
             tmp = TypeConverter.convertToType(context, object, runtime.getString(), sites(context).to_s_checked);
         }
         return tmp;
+    }
+
+    @Deprecated
+    public static IRubyObject new_string19(ThreadContext context, IRubyObject recv, IRubyObject object) {
+        return new_string(context, recv, object);
     }
 
     // MRI: rb_f_p_internal
