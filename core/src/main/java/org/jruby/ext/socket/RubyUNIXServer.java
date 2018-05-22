@@ -36,7 +36,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -110,12 +109,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
 
     @JRubyMethod
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
-
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", _opts) != runtime.getFalse();
-
-        return accept_nonblock(context, runtime, exception);
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
+        return accept_nonblock(context, context.runtime, extractExceptionArg(context, opts));
     }
 
     public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {

@@ -39,7 +39,6 @@ import java.nio.channels.SelectableChannel;
 
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.ProtocolFamily;
-import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 
@@ -196,10 +195,9 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         int argc = args.length;
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-        if (!opts.isNil()) argc--;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+        if (opts != context.nil) argc--;
 
         IRubyObject length, flags, str;
         length = flags = context.nil; str = null;
@@ -210,18 +208,17 @@ public class RubyBasicSocket extends RubyIO {
             case 1: length = args[0];
         }
 
-        boolean ex = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
         // TODO: implement flags
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
         ByteList bytes = doReadNonblock(context, buffer);
 
         if (bytes == null) {
-            if (!ex) return context.runtime.newSymbol("wait_readable");
+            if (!extractExceptionArg(context, opts)) return context.runtime.newSymbol("wait_readable");
             throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
-        if (str != null && !str.isNil()) {
+        if (str != null && str != context.nil) {
             str = str.convertToString();
             ((RubyString) str).setValue(bytes);
             return str;
@@ -681,6 +678,10 @@ public class RubyBasicSocket extends RubyIO {
         RuntimeException ex = SocketUtils.sockerr(runtime, msg);
         if ( cause != null ) ex.initCause(cause);
         return ex;
+    }
+
+    static boolean extractExceptionArg(ThreadContext context, IRubyObject opts) {
+        return ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals;
     }
 
     private static int asNumber(IRubyObject val) {

@@ -41,7 +41,6 @@ import java.net.ProtocolFamily;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.MulticastSocket;
-import java.net.SocketOption;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.net.DatagramPacket;
@@ -271,10 +270,9 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     public static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         int argc = args.length;
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (!opts.isNil()) argc--;
+        if (opts != context.nil) argc--;
 
         IRubyObject length, flags, str;
         length = flags = str = context.nil;
@@ -285,9 +283,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             case 1: length = args[0];
         }
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
-
-        return recvfrom_nonblock(socket, context, length, flags, str, exception);
+        return recvfrom_nonblock(socket, context, length, flags, str, extractExceptionArg(context, opts));
     }
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
