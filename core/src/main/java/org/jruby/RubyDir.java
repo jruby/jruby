@@ -321,12 +321,11 @@ public class RubyDir extends RubyObject {
         Encoding encoding = runtime.getDefaultInternalEncoding();
 
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
-        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, opts);
 
-        if (!maybeHash.isNil()) {
-            IRubyObject maybeEncoding = ArgsUtil.extractKeywordArg(context, "encoding", maybeHash);
-            if (!maybeEncoding.isNil()) {
-                encoding = runtime.getEncodingService().getEncodingFromObject(maybeEncoding);
+        if (opts != context.nil) {
+            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, "encoding", opts);
+            if (encodingArg != context.nil) {
+                encoding = runtime.getEncodingService().getEncodingFromObject(encodingArg);
             }
         }
         return entriesCommon(context, path.asJavaString(), encoding);

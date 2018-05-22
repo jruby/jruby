@@ -1381,15 +1381,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: rb_io_write_nonblock
     @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
-        Ruby runtime = context.runtime;
-        IRubyObject str;
-        IRubyObject opts = context.nil;
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", argv) != context.fals;
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", argv) != runtime.getFalse();
+        IRubyObject str = argv[0];
 
-        str = argv[0];
-
-        return ioWriteNonblock(context, runtime, str, !exception);
+        return ioWriteNonblock(context, context.runtime, str, !exception);
     }
 
     // MRI: io_write_nonblock
@@ -2905,18 +2901,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
-        return doReadNonblock(context, args, true);
+        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != context.fals;
+        return doReadNonblock(context, args, exception);
     }
 
     // MRI: io_read_nonblock
-    public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
-        final Ruby runtime = context.runtime;
-
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", args) != runtime.getFalse();
-
+    public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean exception) {
         IRubyObject ret = getPartial(context, args, true, !exception);
-
-        return ret.isNil() ? nonblockEOF(runtime, !exception) : ret;
+        return ret == context.nil ? nonblockEOF(context.runtime, !exception) : ret;
     }
 
     // MRI: io_nonblock_eof(VALUE opts)
