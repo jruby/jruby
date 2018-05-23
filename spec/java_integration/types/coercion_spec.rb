@@ -694,10 +694,10 @@ describe "String#to_java" do
   end
 
   describe "when passed java.lang.CharSequence" do
-    it "coerces to java.lang.String" do
+    it "returns a RubyString" do
       cs = "123".to_java java.lang.CharSequence
 
-      expect(cs.class).to eq(java.lang.String)
+      expect(cs.class).to eq(org.jruby.RubyString)
     end
   end
 
@@ -706,6 +706,15 @@ describe "String#to_java" do
       cs = "123".to_java java.lang.Object
 
       expect(cs.class).to eq(java.lang.String)
+    end
+  end
+
+  describe "when passed org.jruby.util.ByteList" do
+    it "coerces to java.lang.String" do
+      cs = "123".to_java 'org.jruby.util.ByteList'
+
+      expect(cs.class).to eq(org.jruby.util.ByteList)
+      expect(cs.toString).to eq('123')
     end
   end
 

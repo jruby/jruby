@@ -117,7 +117,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements EncodingCapable, MarshalEncoding, CodeRangeable {
+public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable {
     public static final String DEBUG_INFO_FIELD = "@debug_created_info";
 
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
@@ -2518,14 +2518,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return value.getRealSize();
     }
 
-    /** rb_str_length
-     *
-     */
-    public RubyFixnum length() {
-        return length19();
+    // MRI: rb_str_length
+    @JRubyMethod(name = {"length", "size"})
+    public RubyFixnum rubyLength(final ThreadContext context) {
+        return rubyLength(context.runtime);
     }
 
-    @JRubyMethod(name = {"length", "size"})
+    private RubyFixnum rubyLength(final Ruby runtime) {
+        return runtime.newFixnum(strLength());
+    }
+
+    @Deprecated
     public RubyFixnum length19() {
         return getRuntime().newFixnum(strLength());
     }
@@ -2533,6 +2536,38 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "bytesize")
     public RubyFixnum bytesize() {
         return getRuntime().newFixnum(value.getRealSize());
+    }
+
+
+    // CharSequence
+
+    @Override
+    public int length() {
+        return strLength();
+    }
+
+    @Override
+    public char charAt(int offset) {
+        int length = value.getRealSize();
+
+        if (length < 1) throw new StringIndexOutOfBoundsException(offset);
+
+        Encoding enc = value.getEncoding();
+        if (singleByteOptimizable(enc)) {
+            if (offset >= length || offset < 0) throw new StringIndexOutOfBoundsException(offset);
+            return (char) value.get(offset);
+        }
+
+        return multibyteCharAt(enc, offset, length);
+    }
+
+    @Override
+    public CharSequence subSequence(int start, int end) {
+        IRubyObject subStr = substr19(getRuntime(), start, end - start);
+        if (subStr.isNil()) {
+            throw new StringIndexOutOfBoundsException("String index out of range: <" + start + ", " + end + ")");
+        }
+        return (RubyString) subStr;
     }
 
     private SizeFn eachByteSizeFn() {
@@ -3337,7 +3372,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int p;
         int s = value.getBegin();
         int end = s + length;
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
 
         if (beg < 0) {
             if (len > -beg) len = -beg;
@@ -3379,6 +3414,38 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             len = StringSupport.offset(enc, bytes, p, end, len);
         }
         return makeShared(runtime, p - s, len);
+    }
+
+    private char multibyteCharAt(Encoding enc, int beg, int length) {
+        int p;
+        int s = value.getBegin();
+        int end = s + length;
+        byte[] bytes = value.getUnsafeBytes();
+
+
+        if (beg > 0 && beg > StringSupport.strLengthFromRubyString(this, enc)) {
+            throw new StringIndexOutOfBoundsException(beg);
+        }
+
+        if (isCodeRangeValid() && enc.isUTF8()) {
+            p = StringSupport.utf8Nth(bytes, s, end, beg);
+        } else if (enc.isFixedWidth()) {
+            int w = enc.maxLength();
+            p = s + beg * w;
+            if (p > end || w > end - p) {
+                throw new StringIndexOutOfBoundsException(beg);
+            }
+        } else if ((p = StringSupport.nth(enc, bytes, s, end, beg)) == end) {
+            throw new StringIndexOutOfBoundsException(beg);
+        }
+        int codepoint = enc.mbcToCode(bytes, p, end);
+
+        if (Character.isBmpCodePoint(codepoint)) {
+            return (char) codepoint;
+        }
+
+        // we can only return high surrogate here
+        return Character.highSurrogate(codepoint);
     }
 
     /* rb_str_splice */
@@ -5543,7 +5610,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {
-                return self.length();
+                return self.rubyLength(getRuntime());
             }
         };
     }
@@ -5651,7 +5718,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
         else {
             if (wantarray)
-                ary = RubyArray.newArray(runtime, str.length().getLongValue());
+                ary = RubyArray.newArray(runtime, str.length());
             else
                 return enumeratorizeWithSize(context, str, name, eachCodepointSizeFn());
         }
@@ -5704,11 +5771,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private SizeFn eachCodepointSizeFn() {
-        final RubyString self = this;
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {
-                return self.length();
+                return rubyLength(getRuntime());
             }
         };
     }
@@ -5716,14 +5782,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private static ByteList GRAPHEME_CLUSTER_PATTERN = new ByteList(new byte[] {(byte)'\\', (byte)'X'});
 
     private SizeFn eachGraphemeClusterSizeFn() {
-        final RubyString self = this;
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {
-                Ruby runtime = self.getRuntime();
-                ByteList value = self.getByteList();
+                Ruby runtime = getRuntime();
+                ByteList value = getByteList();
                 Encoding enc = value.getEncoding();
-                if (!enc.isUnicode() || isSingleByteOptimizable(self, enc)) return self.length();
+                if (!enc.isUnicode() || isSingleByteOptimizable(RubyString.this, enc)) return rubyLength(runtime);
 
                 Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
                 int beg = value.getBegin();
@@ -6104,10 +6169,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @Override
     public <T> T toJava(Class<T> target) {
-        if (target.isAssignableFrom(String.class)) {
+        // converting on Comparable.class due target.isAssignableFrom(String.class) compatibility (< 9.2)
+        if (target == String.class || target == Comparable.class || target == Object.class) {
             return target.cast(decodeString());
         }
-        if (target.isAssignableFrom(ByteList.class)) {
+        if (target == CharSequence.class) { // explicitly here
+            return (T) this; // used to convert to java.lang.String (< 9.2)
+        }
+        if (target == ByteList.class) {
             return target.cast(value);
         }
         if (target == Character.class || target == Character.TYPE) {
