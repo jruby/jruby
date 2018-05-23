@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScriptBody;
@@ -44,14 +45,10 @@ import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
-import org.jruby.util.ClasspathLauncher;
 
 import java.io.ByteArrayInputStream;
 
@@ -305,6 +302,54 @@ public class JRubyLibrary implements Library {
     public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
         CoreExt.loadStringExtensions(context.runtime);
         return context.nil;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), false);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        boolean recurseAll = false;
+        opts = ArgsUtil.getOptionsArg(context.runtime, opts);
+        if (opts != context.nil) {
+            IRubyObject all = ((RubyHash) opts).fastARef(context.runtime.newSymbol("all"));
+            if (all != null) recurseAll = all.isTrue();
+        }
+        return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), recurseAll);
+    }
+
+    private static RubyArray subclasses(ThreadContext context, final IRubyObject recv,
+                                          final RubyClass klass, final boolean recurseAll) {
+
+        final RubyArray subclasses = RubyArray.newArray(context.runtime);
+
+        RubyClass singletonClass = ((RubyClass) klass).getSingletonClass();
+        RubyObjectSpace.each_objectInternal(context, recv, new IRubyObject[] { singletonClass },
+                new Block(new JavaInternalBlockBody(context.runtime, Signature.ONE_ARGUMENT) {
+
+                    @Override
+                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                        return doYield(context, null, args[0]);
+                    }
+
+                    @Override
+                    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+                        if (klass != value) {
+                            if (recurseAll) {
+                                return subclasses.append(value);
+                            }
+                            if (((RubyClass) value).superclass(context) == klass) {
+                                return subclasses.append(value);
+                            }
+                        }
+                        return context.nil;
+                    }
+
+                })
+        );
+        return subclasses;
     }
 
 }

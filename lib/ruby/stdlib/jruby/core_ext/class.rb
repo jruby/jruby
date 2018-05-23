@@ -27,19 +27,10 @@ class Class
   private_constant :JClass
 
   ##
-  # Get an array of all known subclasses of this class. If recursive == true,
-  # include all descendants.
+  # @deprecated since JRuby 9.2, use `JRuby.subclasses_of(klass)`
   def subclasses(recursive = false)
-    subclasses = []
-    ObjectSpace.each_object(singleton_class) do |klass|
-      next if klass.equal? self
-      if recursive
-        subclasses << klass
-      else
-        subclasses << klass if klass.superclass.equal? self
-      end
-    end
-    subclasses
+    warn("klass.subclasses is deprecated, use JRuby.subclasses(klass) instead", uplevel: 1)
+    JRuby.subclasses(self, all: recursive)
   end
 
   ##

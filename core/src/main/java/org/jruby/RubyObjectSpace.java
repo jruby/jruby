@@ -45,7 +45,6 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakValuedIdentityMap;
-import org.jruby.util.func.Function1;
 
 @JRubyModule(name="ObjectSpace")
 public class RubyObjectSpace {
@@ -129,17 +128,13 @@ public class RubyObjectSpace {
         if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {
 
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
-            runtime.eachModule(new Function1<Object, IRubyObject>() {
-                public Object apply(IRubyObject arg1) {
-                    if (rubyClass.isInstance(arg1)) {
-                        if (arg1 instanceof IncludedModule) {
+            runtime.eachModule((module) -> {
+                    if (rubyClass.isInstance(module)) {
+                        if (!(module instanceof IncludedModule)) {
                             // do nothing for included wrappers or singleton classes
-                        } else {
-                            modules.add(arg1); // store the module to avoid concurrent modification exceptions
+                            modules.add(module); // store the module to avoid concurrent modification exceptions
                         }
                     }
-                    return null;
-                }
             });
 
             final int count = modules.size();
@@ -155,9 +150,8 @@ public class RubyObjectSpace {
             block.yield(context, attached); int count = 1;
             if (attached instanceof RubyClass) {
                 for (RubyClass child : ((RubyClass) attached).subclasses(true)) {
-                    if (child instanceof IncludedModule) {
+                    if (!(child instanceof IncludedModule)) {
                         // do nothing for included wrappers or singleton classes
-                    } else {
                         count++; block.yield(context, child);
                     }
                 }
