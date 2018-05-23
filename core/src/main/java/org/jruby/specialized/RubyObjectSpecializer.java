@@ -121,7 +121,9 @@ public class RubyObjectSpecializer {
                 klass.getVariableTableManager().getVariableAccessorForVar(name, i);
                 i++;
             }
-            final int count = i;
+
+            // until variable accessors are generated as well, we limit generation to statically available size
+            final int count = Math.min(i, ReifiedRubyObject.REIFIED_MAX);
 
             // create a new one
             final String[] newFields = varList(count);

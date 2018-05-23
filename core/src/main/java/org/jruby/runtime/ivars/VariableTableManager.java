@@ -609,7 +609,20 @@ public class VariableTableManager {
                 newVariableAccessor = new VariableAccessorVar9(realClass, name, newIndex, id);
                 break;
             default:
-                newVariableAccessor = new VariableAccessor(realClass, name, newIndex, id);
+                if (Options.VOLATILE_VARIABLES.load()) {
+                    if (UnsafeHolder.U == null) {
+                        newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
+                    } else {
+                        newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+                    }
+                } else {
+                    if (UnsafeHolder.U == null) {
+                        newVariableAccessor = new NonvolatileVariableAccessor(realClass, name, newIndex, id);
+                    } else {
+                        // We still need safe updating of the vartable, so we fall back on sync here too.
+                        newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+                    }
+                }
         }
 
         final String[] newVariableNames = new String[newIndex + 1];

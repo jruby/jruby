@@ -32,6 +32,8 @@ package org.jruby;
  * the overhead of creating and managing a separate array and reference.
  */
 public abstract class ReifiedRubyObject extends RubyObject {
+    public static int REIFIED_MAX = 10;
+
     public ReifiedRubyObject(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
