@@ -265,7 +265,7 @@ class TestDate < Test::Unit::TestCase
   def test_sec_fraction
     d = DateTime.new(2018, 2, 20, 12, 58, Rational(10, 3))
     if defined? JRUBY_VERSION # confirm its set the same as before 9.2
-      assert_equal 1519131483333, d.to_java.getDateTime.millis
+      assert_equal 1519131483333, d.to_java('org.jruby.ext.date.RubyDateTime').getDateTime.millis
     end
     assert_equal Rational(1, 3), d.sec_fraction
   end

@@ -49,8 +49,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
@@ -60,11 +58,13 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import java.io.Serializable;
+import java.time.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+
 import static org.jruby.ext.date.DateUtils.*;
-import static org.jruby.ext.date.RubyDateTime.getDay;
-import static org.jruby.ext.date.RubyDateTime.getHour;
-import static org.jruby.ext.date.RubyDateTime.getMinute;
-import static org.jruby.ext.date.RubyDateTime.getSecond;
 import static org.jruby.util.Numeric.*;
 
 /**
@@ -72,6 +72,8 @@ import static org.jruby.util.Numeric.*;
  * In MRI, since 2.x, all of date.rb has been moved to native (C) code.
  *
  * NOTE: There's still date.rb, where this gets bootstrapped from.
+ *
+ * @since 9.2
  *
  * @author enebo
  * @author kares
@@ -413,7 +415,7 @@ public class RubyDate extends RubyObject {
         final int y = (sg > 0) ? getYear(year) : year.convertToInteger().getIntValue();
         final int m = getMonth(month);
         final long[] rest = new long[] { 0, 1 };
-        final int d = (int) getDay(context, mday, rest);
+        final int d = (int) RubyDateTime.getDay(context, mday, rest);
 
         DateTime dt = civilDate(context, y, m ,d, getChronology(context, sg, 0));
 
@@ -543,7 +545,7 @@ public class RubyDate extends RubyObject {
 
     private static RubyDate jdImpl(ThreadContext context, IRubyObject self, IRubyObject jd, final long sg) {
         final long[] rest = new long[] { 0, 1 };
-        long jdi = getDay(context, jd, rest);
+        long jdi = RubyDateTime.getDay(context, jd, rest);
         RubyNumeric ajd = jd_to_ajd(context, jdi);
 
         return new RubyDate(context, (RubyClass) self, ajd, rest, 0, sg);
@@ -553,15 +555,15 @@ public class RubyDate extends RubyObject {
         final RubyFixnum zero = RubyFixnum.zero(context.runtime);
         int ival;
 
-        ival = getHour(context, zero, rest);
+        ival = RubyDateTime.getHour(context, zero, rest);
         dt = dt.plusHours(ival);
 
         if (rest[0] != 0) {
-            ival = getMinute(context, zero, rest);
+            ival = RubyDateTime.getMinute(context, zero, rest);
             dt = dt.plusMinutes(ival);
 
             if (rest[0] != 0) {
-                ival = getSecond(context, zero, rest);
+                ival = RubyDateTime.getSecond(context, zero, rest);
                 dt = dt.plusSeconds(ival);
 
                 final long r0 = rest[0], r1 = rest[1];
@@ -616,7 +618,7 @@ public class RubyDate extends RubyObject {
         IRubyObject day = (len > 1) ? args[1] : RubyFixnum.newFixnum(context.runtime, 1);
 
         final long[] rest = new long[] { 0, 1 };
-        final int d = (int) getDay(context, day, rest);
+        final int d = (int) RubyDateTime.getDay(context, day, rest);
         Long jd = validOrdinalImpl(year, d, sg);
         if (jd == null) {
             throw context.runtime.newArgumentError("invalid date");
@@ -1649,6 +1651,112 @@ public class RubyDate extends RubyObject {
             return RubyFixnum.newFixnum(context.runtime, yi >= 69 ? yi + 1900 : yi + 2000);
         }
         return y;
+    }
+
+    // Java API
+
+    /**
+     * @return year
+     */
+    public int getYear() { return dt.getYear(); }
+
+    /**
+     * @return month-of-year (1..12)
+     */
+    public int getMonth() { return dt.getMonthOfYear(); }
+
+    /**
+     * @return day-of-month
+     */
+    public int getDay() { return dt.getDayOfMonth(); }
+
+    /**
+     * @return hour-of-day (0..23)
+     */
+    public int getHour() { return dt.getHourOfDay(); }
+
+    /**
+     * @return minute-of-hour
+     */
+    public int getMinute() { return dt.getMinuteOfHour(); }
+
+    /**
+     * @return second-of-minute
+     */
+    public int getSecond() { return dt.getSecondOfMinute(); }
+
+    /**
+     * @return the nano second part (only) of time
+     */
+    public int getNanos() {
+        final Ruby runtime = getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        RubyNumeric usec = (RubyNumeric) subMillis(runtime).op_mul(context, RubyFixnum.newFixnum(runtime, 1_000_000));
+        return (int) usec.getLongValue();
+    }
+
+    public Date toDate() {
+        return this.dt.toDate();
+    }
+
+    /**
+     * @return an instant
+     */
+    public java.time.Instant toInstant() {
+        return java.time.Instant.ofEpochMilli(dt.getMillis()).plusNanos(getNanos());
+    }
+
+    /**
+     * @return a (local) date
+     */
+    public LocalDate toLocalDate() {
+        return LocalDate.of(getYear(), getMonth(), getDay());
+    }
+
+    @Override
+    public Class getJavaClass() {
+        return Date.class; // for compatibility with RubyTime
+    }
+
+    @Override
+    public <T> T toJava(Class<T> target) {
+        // retain compatibility with RubyTime (`target.isAssignableFrom(Date.class)`)
+        if (target == Date.class || target == Comparable.class || target == Object.class) {
+            return target.cast(toDate());
+        }
+        if (target == Calendar.class || target == GregorianCalendar.class) {
+            return target.cast(dt.toGregorianCalendar());
+        }
+
+        // target == Comparable.class and target == Object.class already handled above
+        if (target.isAssignableFrom(DateTime.class) && target != Serializable.class) {
+            return target.cast(this.dt);
+        }
+
+        // SQL
+        if (target == java.sql.Date.class) {
+            return target.cast(new java.sql.Date(dt.getMillis()));
+        }
+        if (target == java.sql.Time.class) {
+            return target.cast(new java.sql.Time(dt.getMillis()));
+        }
+        if (target == java.sql.Timestamp.class) {
+            java.sql.Timestamp timestamp = new java.sql.Timestamp(dt.getMillis());
+            timestamp.setNanos(getNanos());
+            return target.cast(timestamp);
+        }
+
+        // Java 8
+        if (target != Serializable.class) {
+            if (target.isAssignableFrom(java.time.Instant.class)) { // covers Temporal/TemporalAdjuster
+                return (T) toInstant();
+            }
+            if (target.isAssignableFrom(LocalDate.class)) { // java.time.chrono.ChronoLocalDate.class
+                return (T) toLocalDate();
+            }
+        }
+
+        return super.toJava(target);
     }
 
 }
