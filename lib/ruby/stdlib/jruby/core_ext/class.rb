@@ -29,8 +29,8 @@ class Class
   ##
   # @deprecated since JRuby 9.2, use `JRuby.subclasses_of(klass)`
   def subclasses(recursive = false)
-    warn("klass.subclasses is deprecated, use JRuby.subclasses_of(klass) instead", uplevel: 1)
-    JRuby.subclasses_of(self, all: recursive)
+    warn("klass.subclasses is deprecated, use JRuby.subclasses(klass) instead", uplevel: 1)
+    JRuby.subclasses(self, all: recursive)
   end
 
   ##

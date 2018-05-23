@@ -305,22 +305,22 @@ public class JRubyLibrary implements Library {
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject subclasses_of(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return subclassesOf(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), false);
+    public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), false);
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject subclasses_of(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+    public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
         boolean recurseAll = false;
         opts = ArgsUtil.getOptionsArg(context.runtime, opts);
         if (opts != context.nil) {
             IRubyObject all = ((RubyHash) opts).fastARef(context.runtime.newSymbol("all"));
             if (all != null) recurseAll = all.isTrue();
         }
-        return subclassesOf(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), recurseAll);
+        return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), recurseAll);
     }
 
-    private static RubyArray subclassesOf(ThreadContext context, final IRubyObject recv,
+    private static RubyArray subclasses(ThreadContext context, final IRubyObject recv,
                                           final RubyClass klass, final boolean recurseAll) {
 
         final RubyArray subclasses = RubyArray.newArray(context.runtime);
