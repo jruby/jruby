@@ -1021,21 +1021,14 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, Ruby runtime, IRubyObject num) {
-        CachingCallSite cmp = sites(context).op_lt;
-        RubyFixnum zero = RubyFixnum.zero(runtime);
-        IRubyObject r;
-
-        if (num instanceof RubyFixnum) {
-            if (cmp.retrieveCache(runtime.getInteger()).method.isBuiltin()) {
-                return ((RubyFixnum) num).getLongValue() < 0;
-            }
-        } else if (num instanceof RubyBignum) {
-            if (cmp.retrieveCache(runtime.getInteger()).method.isBuiltin()) {
-                return ((RubyBignum) num).isNegative(context).isTrue();
+        if (num instanceof RubyInteger) {
+            if (context.sites.Integer.op_lt.isBuiltin(runtime.getInteger())) {
+                return ((RubyInteger) num).isNegative();
             }
         }
 
-        r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        IRubyObject r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
         if (r == null) {
             ((RubyNumeric) num).coerceFailed(context, zero);
         }

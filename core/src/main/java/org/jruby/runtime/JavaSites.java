@@ -220,8 +220,8 @@ public class JavaSites {
     }
 
     public static class IntegerSites {
-        public final CallSite op_gt = new FunctionalCachingCallSite(">");
-        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
