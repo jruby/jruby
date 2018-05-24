@@ -37,7 +37,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
 
 @JRubyModule(name="Math")
 public class RubyMath {
@@ -89,51 +88,51 @@ public class RubyMath {
         return (y < 0.0) ? -abs : abs;
     }
 
-    public static RubyFloat atan2(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
-        return atan219(context, recv, x, y);
-    }
-
     @JRubyMethod(name = "atan2", required = 2, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat atan219(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
+    public static RubyFloat atan2(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
         double valuea = RubyNumeric.num2dbl(context, x);
         double valueb = RubyNumeric.num2dbl(context, y);
         
         return RubyFloat.newFloat(context.runtime, Math.atan2(valuea, valueb));
     }
 
-    public static RubyFloat cos(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return cos19(context, recv, x);
+    @Deprecated
+    public static RubyFloat atan219(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
+        return atan2(context, recv, x, y);
     }
 
     @JRubyMethod(name = "cos", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat cos19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat cos(ThreadContext context, IRubyObject recv, IRubyObject x) {
         return RubyFloat.newFloat(context.runtime, Math.cos(RubyNumeric.num2dbl(context, x)));
     }
 
-    public static RubyFloat sin(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return sin19(context, recv, x);
+    @Deprecated
+    public static RubyFloat cos19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return cos(context, recv, x);
     }
 
     @JRubyMethod(name = "sin", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat sin19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat sin(ThreadContext context, IRubyObject recv, IRubyObject x) {
         return RubyFloat.newFloat(context.runtime, Math.sin(RubyNumeric.num2dbl(context, x)));
     }
 
-    public static RubyFloat tan(ThreadContext context, IRubyObject recv,  IRubyObject x) {
-        return tan19(context, recv, x);
+    @Deprecated
+    public static RubyFloat sin19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return sin(context, recv, x);
     }
 
     @JRubyMethod(name = "tan", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat tan19(ThreadContext context, IRubyObject recv,  IRubyObject x) {
+    public static RubyFloat tan(ThreadContext context, IRubyObject recv,  IRubyObject x) {
         return RubyFloat.newFloat(context.runtime, Math.tan(RubyNumeric.num2dbl(context, x)));
     }
-    
-    public static RubyFloat asin(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asin19(context, recv, x);
+
+    @Deprecated
+    public static RubyFloat tan19(ThreadContext context, IRubyObject recv,  IRubyObject x) {
+        return tan(context, recv, x);
     }
 
     @JRubyMethod(name = "asin", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat asin19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat asin(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("asin");
@@ -141,65 +140,71 @@ public class RubyMath {
         return RubyFloat.newFloat(context.runtime, Math.asin(value));
     }
 
-    public static RubyFloat acos(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return acos19(context, recv, x);
+    @Deprecated
+    public static RubyFloat asin19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return asin(context, recv, x);
     }
 
     @JRubyMethod(name = "acos", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat acos19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat acos(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("acos");
 
         return RubyFloat.newFloat(context.runtime, Math.acos(value));
     }
-    
-    public static RubyFloat atan(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return atan19(context, recv, x);
+
+    @Deprecated
+    public static RubyFloat acos19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return acos(context, recv, x);
     }
 
     @JRubyMethod(name = "atan", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat atan19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat atan(ThreadContext context, IRubyObject recv, IRubyObject x) {
         return RubyFloat.newFloat(context.runtime, Math.atan(RubyNumeric.num2dbl(context, x)));
     }
 
-    public static RubyFloat cosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return cosh19(context, recv, x);
-    }    
+    @Deprecated
+    public static RubyFloat atan19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return atan(context, recv, x);
+    }
 
     @JRubyMethod(name = "cosh", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat cosh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat cosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         
         return RubyFloat.newFloat(context.runtime, (Math.exp(value) + Math.exp(-value)) / 2.0);
-    }    
+    }
 
-    public static RubyFloat sinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return sinh19(context, recv, x);
+    @Deprecated
+    public static RubyFloat cosh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return cosh(context, recv, x);
     }
 
     @JRubyMethod(name = "sinh", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat sinh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat sinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         
         return RubyFloat.newFloat(context.runtime, (Math.exp(value) - Math.exp(-value)) / 2.0);
     }
-    
-    public static RubyFloat tanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return tanh19(context, recv, x);
-    }          
+
+    @Deprecated
+    public static RubyFloat sinh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return sinh(context, recv, x);
+    }
 
     @JRubyMethod(name = "tanh", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat tanh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat tanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         return RubyFloat.newFloat(context.runtime, Math.tanh(RubyNumeric.num2dbl(context, x)));
-    }          
-    
-    public static RubyFloat acosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return acosh19(context, recv, x);
+    }
+
+    @Deprecated
+    public static RubyFloat tanh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return tanh(context, recv, x);
     }
 
     @JRubyMethod(name = "acosh", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat acosh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat acosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         double result;
         
@@ -215,7 +220,12 @@ public class RubyMath {
         
         return RubyFloat.newFloat(context.runtime,result);
     }
-    
+
+    @Deprecated
+    public static RubyFloat acosh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return acosh(context, recv, x);
+    }
+
     public static final double[] ASINH_COEF = {
         -.12820039911738186343372127359268e+0,
         -.58811761189951767565211757138362e-1,
@@ -238,14 +248,10 @@ public class RubyMath {
         .13815248844526692155868802298129e-15,
         -.21916688282900363984955142264149e-16,
         .34904658524827565638313923706880e-17
-    };      
-    
-    public static RubyFloat asinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asinh19(context, recv, x);
-    }
+    };
 
     @JRubyMethod(name = "asinh", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat asinh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat asinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         double  y = Math.abs(value);
         double result;
@@ -265,6 +271,11 @@ public class RubyMath {
 
         return RubyFloat.newFloat(context.runtime, result);        
     }
+
+    @Deprecated
+    public static RubyFloat asinh19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return asinh(context, recv, x);
+    }
     
     public static final double[] ATANH_COEF = {
         .9439510239319549230842892218633e-1,
@@ -283,25 +294,16 @@ public class RubyMath {
         .1002418816804109126136995722837e-15,
         .6698674738165069539715526882986e-17,
         .4497954546494931083083327624533e-18
-    };    
-
-    public static RubyFloat atanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return atanh_19(context, recv, x);
-    }
+    };
 
     @JRubyMethod(name = "atanh", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat atanh_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat atanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("atanh");
 
-        return RubyFloat.newFloat(context.runtime, atanh_common(recv, x));
-    }
-
-    private static double atanh_common(IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(recv.getRuntime(), x).getDoubleValue();
-        double  y = Math.abs(value);
-        double  result;
+        final double y = Math.abs(value);
+        final double result;
 
         if (Double.isNaN(value)) {
             result = Double.NaN;
@@ -317,47 +319,63 @@ public class RubyMath {
             result = Double.NaN;
         }
 
-        return result;
-
+        return RubyFloat.newFloat(context.runtime, result);
     }
-    
-    public static RubyFloat exp(ThreadContext context, IRubyObject recv, IRubyObject exponent) {
-        return exp19(context, recv, exponent);
+
+    @Deprecated
+    public static RubyFloat atanh_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return atanh(context, recv, x);
     }
 
     @JRubyMethod(name = "exp", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat exp19(ThreadContext context, IRubyObject recv, IRubyObject exponent) {
+    public static RubyFloat exp(ThreadContext context, IRubyObject recv, IRubyObject exponent) {
         return RubyFloat.newFloat(context.runtime, Math.exp(RubyNumeric.num2dbl(context, exponent)));
+    }
+
+    @Deprecated
+    public static RubyFloat exp19(ThreadContext context, IRubyObject recv, IRubyObject exponent) {
+        return exp(context, recv, exponent);
     }
 
     private static RubyFloat logCommon(ThreadContext context, double value, double base, String msg) {
         if (value < 0 || base < 0) throw context.runtime.newMathDomainError(msg);
 
-        return RubyFloat.newFloat(context.runtime, Math.log(value)/Math.log(base));
+        return RubyFloat.newFloat(context.runtime, Math.log(value) / Math.log(base));
     }
 
     /** Returns the natural logarithm of x.
      * 
      */
-    @JRubyMethod(name = "log", required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat log_19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        double value = RubyNumeric.num2dbl(context, args[0]);
-        double base = Math.E;
+    @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
+    public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject val) {
+        double value = RubyNumeric.num2dbl(context, val);
+        return logCommon(context, value, Math.E, "log");
+    }
+
+    @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
+    public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject val, IRubyObject base) {
+        double value = RubyNumeric.num2dbl(context, val);
+        double _base = RubyNumeric.num2dbl(context, base);
+        return logCommon(context, value, _base, "log");
+    }
+
+    public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 2) {
-            base = RubyNumeric.num2dbl(context, args[1]);
+            return log(context, recv, args[0], args[1]);
         }
-        return logCommon(context, value, base, "log");
+        return log(context, recv, args[0]);
+    }
+
+    @Deprecated
+    public static RubyFloat log_19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return log(context, recv, args);
     }
 
     /** Returns the base 10 logarithm of x.
      * 
      */
-    public static RubyFloat log10(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return log10_19(context, recv, x);
-    }
-
     @JRubyMethod(name = "log10", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat log10_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat log10(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
 
         if (value < 0) {
@@ -367,38 +385,38 @@ public class RubyMath {
         return RubyFloat.newFloat(context.runtime, Math.log10(value));
     }
 
+    @Deprecated
+    public static RubyFloat log10_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return log10(context, recv, x);
+    }
+
     /** Returns the base 2 logarithm of x.
      *
      */
-    public static RubyFloat log2(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return log2_19(context, recv, x);
-    }
-
     @JRubyMethod(name = "log2", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat log2_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat log2(ThreadContext context, IRubyObject recv, IRubyObject x) {
         return logCommon(context, RubyNumeric.num2dbl(context, x), 2, "log2");
     }
 
-    public static RubyFloat sqrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return sqrt19(context, recv, x);
+    @Deprecated
+    public static RubyFloat log2_19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return log2(context, recv, x);
     }
 
     @JRubyMethod(name = "sqrt", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat sqrt19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat sqrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
-        double result;
 
-        if (value < 0) {
-            throw context.runtime.newMathDomainError("sqrt");
-        } else if (value == 0.0) {
-            result = 0.0;
-        } else {
-            result = Math.sqrt(value);
-        }
+        if (value < 0) throw context.runtime.newMathDomainError("sqrt");
 
-        return RubyFloat.newFloat(context.runtime, result);
+        return RubyFloat.newFloat(context.runtime, value == 0.0 ? 0.0 : Math.sqrt(value));
     }
-    
+
+    @Deprecated
+    public static RubyFloat sqrt19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return sqrt(context, recv, x);
+    }
+
     @JRubyMethod(name = "cbrt", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cbrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double result = Math.cbrt(RubyNumeric.num2dbl(context, x));
@@ -440,12 +458,8 @@ public class RubyMath {
      * Where mantissa is in the range of [.5, 1)
      *
      */
-    public static RubyArray frexp(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        return frexp19(context, recv, other);
-    }
-
     @JRubyMethod(name = "frexp", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyArray frexp19(ThreadContext context, IRubyObject recv, IRubyObject other) {
+    public static RubyArray frexp(ThreadContext context, IRubyObject recv, IRubyObject other) {
         double mantissa = RubyNumeric.num2dbl(context, other);
         short sign = 1;
         long exponent = 0;
@@ -469,17 +483,22 @@ public class RubyMath {
                                  RubyNumeric.int2fix(context.runtime, exponent));
     }
 
+    @Deprecated
+    public static RubyArray frexp19(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        return frexp(context, recv, other);
+    }
+
     /*
      * r = x * 2 ** y
      */
-    public static RubyFloat ldexp(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
-        return ldexp19(context, recv, mantissa, exponent);
-    }
-
     @JRubyMethod(name = "ldexp", required = 2, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat ldexp19(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
+    public static RubyFloat ldexp(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
         return RubyFloat.newFloat(context.runtime, 
                 RubyNumeric.num2dbl(context, mantissa) * Math.pow(2.0, RubyNumeric.num2int(exponent)));
+    }
+
+    public static RubyFloat ldexp19(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
+        return ldexp(context, recv, mantissa, exponent);
     }
 
     public static final double[] ERFC_COEF = {
@@ -498,13 +517,9 @@ public class RubyMath {
          .710359900371425297116899083947e-17,
          -.126124551191552258324954248533e-18
     };
-    
-    public static RubyFloat erf(IRubyObject recv, IRubyObject x) {
-        return erf19(recv.getRuntime().getCurrentContext(), recv, x);
-    }
 
     @JRubyMethod(name = "erf", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat erf19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat erf(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
 
         double  result;
@@ -523,6 +538,10 @@ public class RubyMath {
         }
         
         return RubyFloat.newFloat(context.runtime,result);
+    }
+
+    public static RubyFloat erf19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return erf(context, recv, x);
     }
 
     public static final double[] ERFC2_COEF = {
@@ -586,13 +605,9 @@ public class RubyMath {
          -.562681717632940809299928521323e-18,
          .194744338223207851429197867821e-18
     };
-        
-    public static RubyFloat erfc(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return erfc19(context, recv, x);
-    }
 
     @JRubyMethod(name = "erfc", required = 1, module = true, visibility = Visibility.PRIVATE)
-    public static RubyFloat erfc19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+    public static RubyFloat erfc(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         double  result;
         double  y = Math.abs(value);
@@ -616,6 +631,11 @@ public class RubyMath {
             }
         }
         return RubyFloat.newFloat(context.runtime,result);        
+    }
+
+    @Deprecated
+    public static RubyFloat erfc19(ThreadContext context, IRubyObject recv, IRubyObject x) {
+        return erfc(context, recv, x);
     }
 
     private static final double FACTORIAL[] = {
