@@ -453,16 +453,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     @Override
-    public IRubyObject op_plus(ThreadContext context, long otherValue) {
+    public IRubyObject op_plus(ThreadContext context, long other) {
         try {
-            return newFixnum(context.runtime, Math.addExact(value, otherValue));
+            return newFixnum(context.runtime, Math.addExact(value, other));
         } catch (ArithmeticException ae) {
-            return addAsBignum(context, otherValue);
+            return addAsBignum(context, other);
         }
     }
 
-    public IRubyObject op_plus(ThreadContext context, double otherValue) {
-        return context.runtime.newFloat((double) value + otherValue);
+    public IRubyObject op_plus(ThreadContext context, double other) {
+        return context.runtime.newFloat((double) value + other);
     }
 
     public IRubyObject op_plus_one(ThreadContext context) {
@@ -516,16 +516,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     @Override
-    public IRubyObject op_minus(ThreadContext context, long otherValue) {
+    public IRubyObject op_minus(ThreadContext context, long other) {
         try {
-            return newFixnum(context.runtime, Math.subtractExact(value, otherValue));
+            return newFixnum(context.runtime, Math.subtractExact(value, other));
         } catch (ArithmeticException ae) {
-            return subtractAsBignum(context, otherValue);
+            return subtractAsBignum(context, other);
         }
     }
 
-    public IRubyObject op_minus(ThreadContext context, double otherValue) {
-        return context.runtime.newFloat((double) value - otherValue);
+    public IRubyObject op_minus(ThreadContext context, double other) {
+        return context.runtime.newFloat((double) value - other);
     }
 
     /**
@@ -549,14 +549,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             return newFixnum(context.runtime, Math.subtractExact(value, 2));
         } catch (ArithmeticException ae) {
             return subtractAsBignum(context, 2);
-        }
-    }
-
-    private RubyInteger subtractFixnum(ThreadContext context, RubyFixnum other) {
-        try {
-            return newFixnum(context.runtime, Math.subtractExact(value, other.value));
-        } catch (ArithmeticException ae) {
-            return subtractAsBignum(context, other.value);
         }
     }
 
@@ -586,24 +578,27 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     private IRubyObject multiplyOther(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
         if (other instanceof RubyBignum) {
             return ((RubyBignum) other).op_mul(context, this.value);
         }
         if (other instanceof RubyFloat) {
-            return runtime.newFloat((double) value * ((RubyFloat) other).value);
+            return op_mul(context, ((RubyFloat) other).value);
         }
         return coerceBin(context, sites(context).op_times, other);
     }
 
     @Override
-    public IRubyObject op_mul(ThreadContext context, long otherValue) {
+    public IRubyObject op_mul(ThreadContext context, long other) {
         Ruby runtime = context.runtime;
         try {
-            return newFixnum(runtime, Math.multiplyExact(value, otherValue));
+            return newFixnum(runtime, Math.multiplyExact(value, other));
         } catch (ArithmeticException ae) {
-            return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
+            return RubyBignum.newBignum(runtime, value).op_mul(context, other);
         }
+    }
+
+    public IRubyObject op_mul(ThreadContext context, double other) {
+        return context.runtime.newFloat((double) value * other);
     }
 
     /** fix_div
