@@ -767,7 +767,7 @@ public class RubyRational extends RubyNumeric {
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            if (den instanceof RubyFixnum && ((RubyFixnum) den).getLongValue() == 1) return f_cmp(context, num, other);
+            if (den instanceof RubyFixnum && ((RubyFixnum) den).value == 1) return f_cmp(context, num, other);
             return f_cmp(context, this, RubyRational.newRationalBang(context, getMetaClass(), other));
         }
         if (other instanceof RubyFloat) {
@@ -778,8 +778,8 @@ public class RubyRational extends RubyNumeric {
             final RubyInteger num1, num2;
             if (num instanceof RubyFixnum && den instanceof RubyFixnum &&
                 otherRational.num instanceof RubyFixnum && otherRational.den instanceof RubyFixnum) {
-                num1 = f_imul(context, ((RubyFixnum)num).getLongValue(), ((RubyFixnum)otherRational.den).getLongValue());
-                num2 = f_imul(context, ((RubyFixnum)otherRational.num).getLongValue(), ((RubyFixnum)den).getLongValue());
+                num1 = f_imul(context, ((RubyFixnum) num).value, ((RubyFixnum) otherRational.den).value);
+                num2 = f_imul(context, ((RubyFixnum) otherRational.num).value, ((RubyFixnum) den).value);
             } else {
                 num1 = f_mul(context, num, otherRational.den);
                 num2 = f_mul(context, otherRational.num, den);
@@ -1044,7 +1044,7 @@ public class RubyRational extends RubyNumeric {
         s = newRationalBang(context, getMetaClass(), (RubyInteger) s);
         s = ((RubyRational) s).op_div(context, b);
 
-        if (s instanceof RubyRational && f_cmp(context, (RubyInteger) n, 1).getLongValue() < 0) {
+        if (s instanceof RubyRational && f_cmp(context, (RubyInteger) n, 1).value < 0) {
             s = ((RubyRational) s).truncate(context);
         }
 
