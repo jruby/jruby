@@ -701,7 +701,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Deprecated // no to be used in user-lang
     @JRubyMethod(name = "new", meta = true)
     public static RubyBigDecimal new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated");
+        context.runtime.getWarnings().warning(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated");
         return newInstance(context, recv, arg);
     }
 
