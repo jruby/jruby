@@ -46,8 +46,6 @@ public abstract class AssignableNode extends Node {
     public AssignableNode(ISourcePosition position, Node valueNode, boolean containsAssignment) {
         super(position, containsAssignment);
         
-        assert valueNode != null : "valueNode is not null";
-        
         this.valueNode = valueNode;
     }
     
