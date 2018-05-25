@@ -252,7 +252,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "close")
     public IRubyObject close() {
-        return null;
+        return realIo;
     }
 
     @JRubyMethod(name = "level")

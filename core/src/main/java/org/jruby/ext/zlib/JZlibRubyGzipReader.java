@@ -565,7 +565,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             }
         }
         this.closed = true;
-        return getRuntime().getNil();
+        return realIo;
     }
 
     @JRubyMethod(name = "eof")

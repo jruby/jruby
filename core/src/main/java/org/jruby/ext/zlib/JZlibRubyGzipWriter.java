@@ -192,7 +192,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         
         this.closed = true;
         
-        return getRuntime().getNil();
+        return realIo;
     }
 
     @JRubyMethod(name = {"append", "<<"}, required = 1)
