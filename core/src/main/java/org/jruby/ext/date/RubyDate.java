@@ -171,7 +171,7 @@ public class RubyDate extends RubyObject {
     }
 
     RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, Chronology chronology, int off) {
-        this(context, klass, ajd, chronology, off, 0);
+        this(context, klass, ajd, chronology, off, ITALY);
     }
 
     RubyDate(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, long start) {
@@ -315,9 +315,9 @@ public class RubyDate extends RubyObject {
             return new RubyDate(context.runtime, (RubyClass) self, (DateTime) JavaUtil.unwrapJavaValue(ajd));
         }
         if (self == getDateTime(context.runtime)) {
-            return new RubyDateTime(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, ITALY);
+            return new RubyDateTime(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0);
         }
-        return new RubyDate(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, ITALY);
+        return new RubyDate(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0);
     }
 
     /**

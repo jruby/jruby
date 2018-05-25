@@ -787,4 +787,77 @@ class TestDate < Test::Unit::TestCase
     assert_equal -1199, dt.year
   end
 
+  def test_marshaling_with_active_support_like_calculation # GH-5188
+    time = ActiveSupport.time_advance(Time.now, days: 1)
+    date = time.to_date
+
+    dump = Marshal.dump(date)
+    assert_equal time.to_date, Marshal.load(dump)
+  end
+
+  module ActiveSupport
+
+    module_function
+
+    def time_advance(time, options)
+      unless options[:weeks].nil?
+        options[:weeks], partial_weeks = options[:weeks].divmod(1)
+        options[:days] = options.fetch(:days, 0) + 7 * partial_weeks
+      end
+
+      unless options[:days].nil?
+        options[:days], partial_days = options[:days].divmod(1)
+        options[:hours] = options.fetch(:hours, 0) + 24 * partial_days
+      end
+
+      d = date_advance(time.to_date, options)
+      d = d.gregorian if d.julian?
+      time_advanced_by_date = time_change(time, year: d.year, month: d.month, day: d.day)
+      seconds_to_advance = \
+        options.fetch(:seconds, 0) + options.fetch(:minutes, 0) * 60 + options.fetch(:hours, 0) * 3600
+
+      #if seconds_to_advance.zero?
+        time_advanced_by_date
+      #else
+      #  time_advanced_by_date.since(seconds_to_advance)
+      #end
+    end
+
+    def time_change(time, options)
+      new_year  = options.fetch(:year, time.year)
+      new_month = options.fetch(:month, time.month)
+      new_day   = options.fetch(:day, time.day)
+      new_hour  = options.fetch(:hour, time.hour)
+      new_min   = options.fetch(:min, options[:hour] ? 0 : time.min)
+      new_sec   = options.fetch(:sec, (options[:hour] || options[:min]) ? 0 : time.sec)
+
+      if new_nsec = options[:nsec]
+        raise ArgumentError, "Can't change both :nsec and :usec at the same time: #{options.inspect}" if options[:usec]
+        new_usec = Rational(new_nsec, 1000)
+      else
+        new_usec = options.fetch(:usec, (options[:hour] || options[:min] || options[:sec]) ? 0 : Rational(time.nsec, 1000))
+      end
+
+      if time.utc?
+        ::Time.utc(new_year, new_month, new_day, new_hour, new_min, new_sec, new_usec)
+      elsif time.zone
+        ::Time.local(new_year, new_month, new_day, new_hour, new_min, new_sec, new_usec)
+      else
+        raise ArgumentError, "argument out of range" if new_usec >= 1000000
+        ::Time.new(new_year, new_month, new_day, new_hour, new_min, new_sec + (new_usec.to_r / 1000000), time.utc_offset)
+      end
+    end
+
+    def date_advance(date, options)
+      options = options.dup
+      d = date
+      d = d >> options.delete(:years) * 12 if options[:years]
+      d = d >> options.delete(:months)     if options[:months]
+      d = d +  options.delete(:weeks) * 7  if options[:weeks]
+      d = d +  options.delete(:days)       if options[:days]
+      d
+    end
+
+  end
+
 end
