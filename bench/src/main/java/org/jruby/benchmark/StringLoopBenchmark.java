@@ -46,7 +46,8 @@ public class StringLoopBenchmark {
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
     public void benchShortJavaStringLoop(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) equalsJava(SHORT_STR, SHORT.decodeString(), blackhole);
+        final String str = SHORT.decodeString();
+        for (int i = 0; i < INVOCATIONS; i++) equalsJava(SHORT_STR, str, blackhole);
     }
 
     @Benchmark
@@ -64,7 +65,8 @@ public class StringLoopBenchmark {
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
     public void benchLongJavaStringLoop(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) equalsJava(LONG_STR, LONG.decodeString(), blackhole);
+        final String str = LONG.decodeString();
+        for (int i = 0; i < INVOCATIONS; i++) equalsJava(LONG_STR, str, blackhole);
     }
 
     @Benchmark
