@@ -482,7 +482,7 @@ public class RubyDate extends RubyObject {
     }
 
     static Long validCivilImpl(IRubyObject year, IRubyObject month, IRubyObject day, final long sg) {
-        final int y = (sg > 0) ? getYear(year) : year.convertToInteger().getIntValue();
+        final int y = year.convertToInteger().getIntValue();
         final int m = getMonth(month);
         final int d = day.convertToInteger().getIntValue();
 

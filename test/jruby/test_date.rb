@@ -781,4 +781,10 @@ class TestDate < Test::Unit::TestCase
     assert_equal 3r/100_000, dt.send(:sec_fraction)
   end
 
+  def test_parse_bc_date_time # GH-5191
+    dt = DateTime.parse('1200-02-15 14:13:20-00:00:00 BC')
+    assert_equal '#<DateTime: -1199-02-15T14:13:20+00:00 ((1283169j,51200s,0n),+0s,2299161j)>', dt.inspect
+    assert_equal -1199, dt.year
+  end
+
 end
