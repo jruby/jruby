@@ -1114,18 +1114,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_equal
      *
      */
+    @JRubyMethod(name = {"==", "==="})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        return op_equal19(context, other);
-    }
-
-    @JRubyMethod(name = {"==", "==="})
-    public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-        if (this == other) return runtime.getTrue();
+        if (this == other) return context.tru;
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            return StringSupport.areComparable(this, otherString) && value.equal(otherString.value) ? runtime.getTrue() : runtime.getFalse();
+            return StringSupport.areComparable(this, otherString) && value.equal(otherString.value) ? context.tru : context.fals;
         }
         return op_equalCommon(context, other);
     }
@@ -3824,13 +3819,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IRubyObject afterEnd = succ.call(context, end, end);
         RubyString current = strDup(context.runtime);
 
-        while (!current.op_equal19(context, afterEnd).isTrue()) {
+        while (!current.op_equal(context, afterEnd).isTrue()) {
             IRubyObject next = null;
-            if (excl || !current.op_equal19(context, end).isTrue()) next = succ.call(context, current, current);
+            if (excl || !current.op_equal(context, end).isTrue()) next = succ.call(context, current, current);
             block.yield(context, asSymbol ? runtime.newSymbol(current.toString()) : current);
             if (next == null) break;
             current = next.convertToString();
-            if (excl && current.op_equal19(context, end).isTrue()) break;
+            if (excl && current.op_equal(context, end).isTrue()) break;
             if (current.getByteList().length() > end.getByteList().length() || current.getByteList().length() == 0) break;
         }
         return this;
@@ -6507,4 +6502,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject insert19(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
         return insert(context, indexArg, stringArg);
     }
+
+    @Deprecated
+    public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
+        return op_equal(context, other);
+    }
+
 }
