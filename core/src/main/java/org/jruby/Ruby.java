@@ -4716,6 +4716,20 @@ public final class Ruby implements Constantizable {
      * could cause contention under heavy concurrent load, so a reexamination
      * of this design might be warranted.
      *
+     * Because RubyString.equals does not consider encoding, and MRI's logic for deduplication does need to consider
+     * encoding, we use a wrapper object as the key. These wrappers need to be used on all get operations, so if we
+     * don't need to insert anything we reuse that wrapper the next time.
+     *
+     * The logic here reads like this:
+     *
+     * 1. If the string is not a natural String object, just freeze and return it.
+     * 2. Use the wrapper from the thread-local cache or create and set a new one.
+     * 3. Use the wrapper to look up the deduplicated string.
+     * 4. If there's a dedup in the cache, clear the wrapper for next time and return the dedup.
+     * 5. Remove the wrapper from the threadlocal to avoid reusing it, since we'll insert it.
+     * 6. Atomically set the new entry or repair the GCed entry that already exists.
+     * 7. Return the newly-deduplicated string.
+     *
      * @param string the string to freeze-dup if an equivalent does not already exist
      * @return the freeze-duped version of the string
      */
@@ -4727,10 +4741,22 @@ public final class Ruby implements Constantizable {
             return duped;
         }
 
-        WeakReference<RubyString> dedupedRef = dedupMap.get(string);
+        // Get cached wrapper or create new
+        FStringEqual wrapper = DEDUP_WRAPPER_CACHE.get();
+        if (wrapper == null) {
+            wrapper = new FStringEqual(string);
+            DEDUP_WRAPPER_CACHE.set(wrapper);
+        } else {
+            wrapper.string = string;
+        }
+
+        WeakReference<RubyString> dedupedRef = dedupMap.get(wrapper);
         RubyString deduped;
 
         if (dedupedRef == null || (deduped = dedupedRef.get()) == null) {
+            // We will insert wrapper one way or another so clear from threadlocal
+            DEDUP_WRAPPER_CACHE.remove();
+
             // Never use incoming value as key
             deduped = string.strDup(this);
             deduped.setFrozen(true);
@@ -4738,7 +4764,8 @@ public final class Ruby implements Constantizable {
             final WeakReference<RubyString> weakref = new WeakReference<>(deduped);
 
             // try to insert new
-            dedupedRef = dedupMap.computeIfAbsent(deduped, key -> weakref);
+            wrapper.string = deduped;
+            dedupedRef = dedupMap.computeIfAbsent(wrapper, key -> weakref);
             if (dedupedRef == null) return deduped;
 
             // entry exists, return result if not vacated
@@ -4747,21 +4774,40 @@ public final class Ruby implements Constantizable {
 
             // ref is there but vacated, try to replace it until we have a result
             while (true) {
-                dedupedRef = dedupMap.computeIfPresent(string, (key, old) -> old.get() == null ? weakref : old);
+                wrapper.string = string;
+                dedupedRef = dedupMap.computeIfPresent(wrapper, (key, old) -> old.get() == null ? weakref : old);
 
                 // return result if not vacated
                 unduped = dedupedRef.get();
                 if (unduped != null) return unduped;
             }
-        } else if (deduped.getEncoding() != string.getEncoding()) {
-            // if encodings don't match, new string loses; can't dedup
-            // FIXME: This may never happen, if we are properly considering encoding in RubyString.hashCode
-            deduped = string.strDup(this);
-            deduped.setFrozen(true);
+        } else {
+            // Do not retain string if we can reuse the wrapper
+            wrapper.string = null;
         }
 
         return deduped;
     }
+
+    static class FStringEqual {
+        RubyString string;
+        FStringEqual(RubyString string) {
+            this.string = string;
+        }
+        public boolean equals(Object other) {
+            if (other instanceof FStringEqual) {
+                RubyString otherString = ((FStringEqual) other).string;
+                return this.string.equals(otherString) && this.string.getEncoding() == otherString.getEncoding();
+            }
+            return false;
+        }
+
+        public int hashCode() {
+            return string.hashCode();
+        }
+    }
+
+    private final ThreadLocal<FStringEqual> DEDUP_WRAPPER_CACHE = new ThreadLocal<>();
 
     public int getRuntimeNumber() {
         return runtimeNumber;
@@ -5264,7 +5310,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private ConcurrentHashMap<RubyString, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
