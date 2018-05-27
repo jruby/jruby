@@ -439,7 +439,7 @@ public class RubyDateTime extends RubyDate {
         DateTime dt = this.dt;
 
         dt = new DateTime(
-                dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
+                adjustJodaYear(dt.getYear()), dt.getMonthOfYear(), dt.getDayOfMonth(),
                 dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
                 dt.getMillisOfSecond(), RubyTime.getTimeZone(runtime, this.off)
         );

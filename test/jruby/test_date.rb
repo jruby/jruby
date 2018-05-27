@@ -7,7 +7,7 @@ class TestDate < Test::Unit::TestCase
     require 'date'
   end
 
-  def test_years_around_0 # Joda Time vs (Ruby) Date
+  def test_year_around_0 # Joda Time vs (Ruby) Date
     (-2..2).each do |year|
       assert_equal year, Date.new(year).year
       assert_equal year, DateTime.new(year).year
@@ -16,6 +16,28 @@ class TestDate < Test::Unit::TestCase
         assert_equal year, DateTime.new(year, 1, 1, 0, 0, 0, 0, sg).year
       end
     end
+  end
+
+  def test_year_around_0_to_time
+    (-5..5).each do |year|
+      assert_equal year, Date.new(year).to_time.year
+      assert_equal year, DateTime.new(year).to_time.year
+      [Date::GREGORIAN, Date::ITALY, Date::ENGLAND, Date::JULIAN].each do |sg|
+        date = Date.new(year, 1, 1, sg)
+        assert_equal year, date.to_time.year, "#{date.inspect}'s to_time: #{date.to_time.inspect} differs in year"
+        date = DateTime.new(year, 1, 1, 0, 0, 0, 0, sg)
+        assert_equal year, date.to_time.year, "#{date.inspect}'s to_time: #{date.to_time.inspect} differs in year"
+      end
+    end
+  end
+
+  def test_year_negative_to_time
+    assert_equal -10, Date.new(-10).to_time.year
+    assert_equal -100, Date.new(-100).to_time.year
+    assert_equal -10000, Date.new(-10000).to_time.year
+    assert_equal -20000, DateTime.new(-20000).to_time.year
+    assert_equal -10000, Date.new(-10000, 1, 1).to_time.year
+    assert_equal -20000, DateTime.new(-20000, 1, 1, 0, 0, 0).to_time.year
   end
 
   def test_new_civil

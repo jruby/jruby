@@ -902,7 +902,7 @@ public class RubyDate extends RubyObject {
         return new RubyFixnum(context.runtime, cutover);
     }
 
-    private int adjustJodaYear(int year) {
+    final int adjustJodaYear(int year) {
         if (year < 0 && isJulian()) {
             // Joda-time returns -x for year x BC in JulianChronology (so there is no year 0),
             // while date.rb returns -x+1, following astronomical year numbering (with year 0)
@@ -1573,7 +1573,7 @@ public class RubyDate extends RubyObject {
         final Ruby runtime = context.runtime;
         DateTime dt = this.dt;
 
-        dt = new DateTime(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(),
+        dt = new DateTime(adjustJodaYear(dt.getYear()), dt.getMonthOfYear(), dt.getDayOfMonth(),
                 0, 0, 0,
                 RubyTime.getLocalTimeZone(runtime)
         );
