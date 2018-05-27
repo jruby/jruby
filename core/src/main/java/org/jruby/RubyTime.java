@@ -125,8 +125,6 @@ public class RubyTime extends RubyObject {
         return ClassIndex.TIME;
     }
 
-    private static transient Object[] tzValue; // (RubyString, String) - assuming single runtime or same ENV['TZ']
-
     public static String getEnvTimeZone(Ruby runtime) {
         RubyString tz = runtime.tzVar;
         if (tz == null) {
@@ -140,12 +138,7 @@ public class RubyTime extends RubyObject {
 
         if (entry.key != tz) runtime.tzVar = (RubyString) entry.key;
 
-        Object[] tzVal = tzValue;
-        if (tzVal != null && tzVal[0] == entry.value) return (String) tzVal[1]; // cache RubyString -> String
-
-        final String val = (entry.value instanceof RubyString) ? ((RubyString) entry.value).asJavaString() : null;
-        tzValue = new Object[] { entry.value, val };
-        return val;
+        return (entry.value instanceof RubyString) ? ((RubyString) entry.value).asJavaString() : null;
     }
 
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
