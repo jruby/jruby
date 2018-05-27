@@ -623,7 +623,7 @@ public class RubyRational extends RubyNumeric {
         return coerceBin(context, sites(context).op_times, other);
     }
 
-    final IRubyObject op_mul(ThreadContext context, RubyInteger other) {
+    public IRubyObject op_mul(ThreadContext context, RubyInteger other) {
         return f_muldiv(context, getMetaClass(), num, den, other, RubyFixnum.one(context.runtime), true);
     }
 
