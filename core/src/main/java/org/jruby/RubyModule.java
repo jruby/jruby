@@ -963,6 +963,18 @@ public class RubyModule extends RubyObject {
 
         return includedModule;
     }
+
+    /**
+     * Finds a module that is within the current module (or class).
+     *
+     * @param name to be found in this module (or class)
+     * @return the module or null if no such module
+     * @since 9.2
+     */
+    public RubyModule getModule(String name) {
+        return (RubyModule) getConstantAt(name);
+    }
+
     /**
      * Finds a class that is within the current module (or class).
      *
@@ -970,11 +982,7 @@ public class RubyModule extends RubyObject {
      * @return the class or null if no such class
      */
     public RubyClass getClass(String name) {
-        IRubyObject module;
-        if ((module = getConstantAt(name)) instanceof RubyClass) {
-            return (RubyClass)module;
-        }
-        return null;
+        return (RubyClass) getConstantAt(name);
     }
 
     @Deprecated

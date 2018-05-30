@@ -961,7 +961,7 @@ public final class Ruby implements Constantizable {
      * @return The module or null if not found
      */
     public RubyModule getModule(String name) {
-        return (RubyModule) objectClass.getConstantAt(name);
+        return objectClass.getModule(name);
     }
 
     @Deprecated
@@ -1008,7 +1008,7 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * A variation of defineClass that allows passing in an array of subplementary
+     * A variation of defineClass that allows passing in an array of supplementary
      * call sites for improving dynamic invocation performance.
      *
      * @param name The name for the new class
