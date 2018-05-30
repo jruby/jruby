@@ -184,10 +184,10 @@ public class LoadService {
     protected RubyArray loadPath;
     protected StringArraySet loadedFeatures;
     protected RubyArray loadedFeaturesDup;
-    private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<String, String>();
-    protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
+    private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
+    protected final Map<String, Library> builtinLibraries = new HashMap<>(36);
 
-    protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
+    protected final Map<String, JarFile> jarFiles = new HashMap<>();
 
     protected final Ruby runtime;
     protected final LibrarySearcher librarySearcher;
