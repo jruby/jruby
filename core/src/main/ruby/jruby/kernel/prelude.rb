@@ -1,5 +1,6 @@
 class Thread
-  MUTEX_FOR_THREAD_EXCLUSIVE = Mutex.new # :nodoc:
+  MUTEX_FOR_THREAD_EXCLUSIVE = Thread::Mutex.new # :nodoc:
+  private_constant :MUTEX_FOR_THREAD_EXCLUSIVE
 
   # call-seq:
   #    Thread.exclusive { block }   => obj
@@ -7,11 +8,9 @@ class Thread
   # Wraps the block in a single, VM-global Mutex.synchronize, returning the
   # value of the block. A thread executing inside the exclusive section will
   # only block other threads which also use the Thread.exclusive mechanism.
-  def self.exclusive
-    warn "Thread.exclusive is deprecated, use Mutex", caller
-    MUTEX_FOR_THREAD_EXCLUSIVE.synchronize{
-      yield
-    }
+  def self.exclusive(&block)
+    warn "Thread.exclusive is deprecated, use Thread::Mutex", caller
+    MUTEX_FOR_THREAD_EXCLUSIVE.synchronize(&block)
   end
 end
 
