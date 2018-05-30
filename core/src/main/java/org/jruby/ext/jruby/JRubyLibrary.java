@@ -53,9 +53,11 @@ import org.jruby.util.ByteList;
 import java.io.ByteArrayInputStream;
 
 /**
- * Native part of require 'jruby'. Provides methods for swapping between the
- * normal Ruby reference to an object and the Java-integration-wrapped
- * reference.
+ * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
+ * object and the Java-integration-wrapped reference.
+ *
+ * Parts of JRuby name-space are loaded even without <code>require 'jruby'<code/>, those live under JRuby::Util.
+ * @see JRubyUtilLibrary
  */
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
@@ -192,16 +194,6 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.runtime.newFixnum(System.identityHashCode(obj));
-    }
-
-    // used from jruby/kernel/proc.rb
-    @JRubyMethod(name = "set_meta_class", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject set_meta_class(ThreadContext context, IRubyObject recv, IRubyObject obj, IRubyObject klass) {
-        if (!(klass instanceof RubyClass)) {
-            klass = klass.getMetaClass();
-        }
-        ((RubyObject) obj).setMetaClass((RubyClass) klass);
-        return context.nil;
     }
 
     @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager

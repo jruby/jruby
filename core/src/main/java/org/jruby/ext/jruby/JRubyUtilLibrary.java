@@ -128,6 +128,16 @@ public class JRubyUtilLibrary implements Library {
         return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
     }
 
+    // used from jruby/kernel/proc.rb
+    @JRubyMethod(meta = true, name = "set_meta_class")
+    public static IRubyObject set_meta_class(ThreadContext context, IRubyObject recv, IRubyObject obj, IRubyObject klass) {
+        if (!(klass instanceof RubyClass)) {
+            klass = klass.getMetaClass();
+        }
+        ((RubyObject) obj).setMetaClass((RubyClass) klass);
+        return context.nil;
+    }
+
     /**
      * Preffered way to boot-up JRuby extensions (available as <code>>JRuby.load_ext</code>).
      * @param context
