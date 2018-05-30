@@ -8,6 +8,7 @@ class Object
     warn "#{__method__} is deprecated. Use java_import."
     java_import(include_class, &block)
   end
+  private :include_class
 
   # @deprecated
   def java_kind_of?(other) # TODO: this can go away now, but people may be using it
