@@ -149,42 +149,39 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "[]", rest = true, meta = true)
     public static IRubyObject create(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyClass klass = (RubyClass) recv;
-        Ruby runtime = context.runtime;
-        RubyHash hash;
+        final Ruby runtime = context.runtime;
 
         if (args.length == 1) {
             IRubyObject tmp = TypeConverter.convertToTypeWithCheck(
                     args[0], runtime.getHash(), "to_hash");
 
-            if (!tmp.isNil()) {
-                RubyHash otherHash = (RubyHash) tmp;
-                return new RubyHash(runtime, klass, otherHash);
+            if (tmp != context.nil) {
+                return new RubyHash(runtime, (RubyClass) recv, (RubyHash) tmp);
             }
 
             tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
-            if (!tmp.isNil()) {
-                hash = (RubyHash)klass.allocate();
-                RubyArray arr = (RubyArray)tmp;
-                for(int i = 0, j = arr.getLength(); i<j; i++) {
+            if (tmp != context.nil) {
+                RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
+                RubyArray arr = (RubyArray) tmp;
+                for (int i = 0, j = arr.getLength(); i<j; i++) {
                     IRubyObject e = arr.entry(i);
                     IRubyObject v = TypeConverter.convertToTypeWithCheck(e, runtime.getArray(), "to_ary");
                     IRubyObject key;
                     IRubyObject val = runtime.getNil();
-                    if(v.isNil()) {
+                    if (v == context.nil) {
                         runtime.getWarnings().warn("wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
                         runtime.getWarnings().warn("ignoring wrong elements is deprecated, remove them explicitly");
                         runtime.getWarnings().warn("this causes ArgumentError in the next release");
                         continue;
                     }
-                    switch(((RubyArray)v).getLength()) {
+                    switch (((RubyArray) v).getLength()) {
                     default:
-                        throw runtime.newArgumentError("invalid number of elements (" + ((RubyArray)v).getLength() + " for 1..2)");
-                        case 2:
-                        val = ((RubyArray)v).entry(1);
+                        throw runtime.newArgumentError("invalid number of elements (" + ((RubyArray) v).getLength() + " for 1..2)");
+                    case 2:
+                        val = ((RubyArray) v).entry(1);
                     case 1:
-                        key = ((RubyArray)v).entry(0);
-                        hash.fastASet(key, val);
+                        key = ((RubyArray) v).entry(0);
+                        hash.fastASetCheckString(runtime, key, val);
                     }
                 }
                 return hash;
@@ -195,8 +192,8 @@ public class RubyHash extends RubyObject implements Map {
             throw runtime.newArgumentError("odd number of arguments for Hash");
         }
 
-        hash = (RubyHash)klass.allocate();
-        for (int i=0; i < args.length; i+=2) hash.op_aset(context, args[i], args[i+1]);
+        RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
+        for (int i=0; i < args.length; i+=2) hash.fastASetCheckString(runtime, args[i], args[i+1]);
 
         return hash;
     }
