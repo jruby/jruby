@@ -308,7 +308,7 @@ public class JRubyLibrary implements Library {
         }, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
         CoreExt.loadStringExtensions(context.runtime);
         return context.nil;

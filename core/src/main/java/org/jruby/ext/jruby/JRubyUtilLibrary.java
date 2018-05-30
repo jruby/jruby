@@ -34,15 +34,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyHash;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
 
@@ -128,6 +126,62 @@ public class JRubyUtilLibrary implements Library {
             extra_gem_paths[i++] = runtime.newString(gemPath);
         }
         return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
+    }
+
+    /**
+     * Preffered way to boot-up JRuby extensions (available as <code>>JRuby.load_ext</code>).
+     * @param context
+     * @param recv
+     * @param klass
+     * @return loading outcome
+     */
+    @JRubyMethod(module = true, name = { "load_ext" })
+    public static IRubyObject load_ext(ThreadContext context, IRubyObject recv, IRubyObject klass) {
+        if (klass instanceof RubySymbol) {
+            switch(((RubySymbol) klass).asJavaString()) {
+                case "string" : CoreExt.loadStringExtensions(context.runtime); return context.tru;
+                default : throw context.runtime.newArgumentError(':' + ((RubySymbol) klass).asJavaString());
+            }
+        }
+        return loadExtension(context.runtime, klass.convertToString().toString()) ? context.tru : context.fals;
+    }
+
+    private static boolean loadExtension(final Ruby runtime, final String className) {
+        Class<?> clazz = runtime.getJavaSupport().loadJavaClassQuiet(className);
+        // 1. BasicLibraryService interface
+        if (BasicLibraryService.class.isAssignableFrom(clazz)) {
+            try {
+                return ((BasicLibraryService) clazz.newInstance()).basicLoad(runtime);
+            } catch (ReflectiveOperationException e) {
+                final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
+                ex.initCause(e); throw ex;
+            } catch (Exception e) {
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                ex.initCause(e); throw ex;
+            }
+        }
+        // 2 org.jruby.runtime.load.Library
+        if (Library.class.isAssignableFrom(clazz)) {
+            try {
+                ((Library) clazz.newInstance()).load(runtime, false);
+                return true;
+            } catch (ReflectiveOperationException e) {
+                final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
+                ex.initCause(e); throw ex;
+            } catch (Exception e) {
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                ex.initCause(e); throw ex;
+            }
+        }
+        // 3. public static void/boolean load(Ruby runtime) convention
+        try {
+            Object result = clazz.getMethod("load", Ruby.class).invoke(null, runtime);
+            return (result instanceof Boolean) && ! ((Boolean) result).booleanValue() ? false : true;
+        }
+        catch (Exception e) {
+            final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+            ex.initCause(e); throw ex;
+        }
     }
 
     @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
