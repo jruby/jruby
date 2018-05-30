@@ -1,5 +1,7 @@
 # This file boots the Ruby-based parts of JRuby.
 
+require 'jruby/util' # stuff boot depends on (compared to a full require 'jruby')
+
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/jruby/type.rb'
 load 'jruby/kernel/signal.rb'

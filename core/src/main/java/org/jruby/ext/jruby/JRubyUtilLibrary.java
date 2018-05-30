@@ -60,6 +60,7 @@ public class JRubyUtilLibrary implements Library {
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
         JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
         JRubyUtil.setConstant("ON_WINDOWS", runtime.newBoolean(org.jruby.platform.Platform.IS_WINDOWS));
+        JRubyUtil.setConstant("ON_SOLARIS", runtime.newBoolean(org.jruby.platform.Platform.IS_SOLARIS));
     }
 
     @JRubyMethod(module = true)
