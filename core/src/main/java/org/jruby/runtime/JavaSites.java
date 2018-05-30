@@ -18,6 +18,7 @@ public class JavaSites {
     public final KernelSites Kernel = new KernelSites();
     public final ObjectSites Object = new ObjectSites();
     public final ArraySites Array = new ArraySites();
+    public final Array2Sites Array2 = new Array2Sites();
     public final StringSites String = new StringSites();
     public final HashSites Hash = new HashSites();
     public final NumericSites Numeric = new NumericSites();
@@ -120,6 +121,11 @@ public class JavaSites {
         public final CallSite op_cmp_sort = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt_sort = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_sort = new FunctionalCachingCallSite("<");
+    }
+
+    public static class Array2Sites {
+        public final CachingCallSite op_cmp_fixnum = new FunctionalCachingCallSite("<=>");
+        public final CachingCallSite op_cmp_string = new FunctionalCachingCallSite("<=>");
     }
 
     public static class StringSites {

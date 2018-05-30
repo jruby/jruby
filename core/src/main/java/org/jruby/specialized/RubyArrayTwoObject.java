@@ -9,6 +9,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -263,8 +264,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         Ruby runtime = context.runtime;
 
         // One check per specialized fast-path to make the check invariant.
-        final boolean fixnumBypass = !honorOverride || runtime.getFixnum().isMethodBuiltin("<=>");
-        final boolean stringBypass = !honorOverride || runtime.getString().isMethodBuiltin("<=>");
+        JavaSites.Array2Sites sites = sites(context);
+        final boolean fixnumBypass = !honorOverride || sites.op_cmp_fixnum.retrieveCache(runtime.getFixnum()).method.isBuiltin();
+        final boolean stringBypass = !honorOverride || sites.op_cmp_string.retrieveCache(runtime.getString()).method.isBuiltin();
 
         IRubyObject o1 = car;
         IRubyObject o2 = cdr;
@@ -332,5 +334,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         } else {
             return new RubyArrayTwoObject(this);
         }
+    }
+
+    private static final JavaSites.Array2Sites sites(ThreadContext context) {
+        return context.sites.Array2;
     }
 }
