@@ -495,15 +495,14 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         synchronized (ptr) {
             final RubyString string = ptr.string;
-            final ByteList stringByteList = string.getByteList();
-            final byte[] stringBytes = stringByteList.getUnsafeBytes();
+            final ByteList stringBytes = string.getByteList();
             int rlen = string.size() - pos;
 
             if (len > rlen) len = rlen;
             if (len < 0) len = 0;
 
             if (len == 0) return RubyString.newEmptyString(runtime, enc);
-            return RubyString.newStringShared(runtime, stringBytes, stringByteList.getBegin() + pos, len, enc);
+            return RubyString.newStringShared(runtime, stringBytes.getUnsafeBytes(), stringBytes.getBegin() + pos, len, enc);
         }
     }
 
@@ -628,7 +627,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
     private IRubyObject getline(ThreadContext context, final IRubyObject rs, int limit, boolean chomp) {
         Ruby runtime = context.runtime;
 
-        IRubyObject str;
+        RubyString str;
 
         checkReadable();
 
@@ -772,8 +771,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
     }
 
     private void strioExtend(int pos, int len) {
-        checkModifiable();
-
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
@@ -781,6 +778,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             if (pos + len > olen) {
                 ptr.string.resize(pos + len);
                 if (pos > olen) {
+                    ptr.string.modify19();
                     ByteList ptrByteList = ptr.string.getByteList();
                     // zero the gap
                     Arrays.fill(ptrByteList.getUnsafeBytes(),
@@ -1183,12 +1181,12 @@ public class StringIO extends RubyObject implements EncodingCapable {
         synchronized (ptr) {
             final Encoding enc = ptr.enc;
             final Encoding encStr = str.getEncoding();
-            final ByteList strByteList = str.getByteList();
             if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
                     // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                     && encStr != ASCIIEncoding.INSTANCE) {
                 str = EncodingUtils.strConvEnc(context, str, encStr, enc);
             }
+            final ByteList strByteList = str.getByteList();
             len = str.size();
             if (len == 0) return 0;
             checkModifiable();
