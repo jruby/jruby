@@ -502,6 +502,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             if (len < 0) len = 0;
 
             if (len == 0) return RubyString.newEmptyString(runtime, enc);
+            string.setByteListShared(); // we only share the byte[] buffer but its easier this way
             return RubyString.newStringShared(runtime, stringBytes.getUnsafeBytes(), stringBytes.getBegin() + pos, len, enc);
         }
     }
@@ -652,7 +653,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             if (limit > 0 && s + limit < e) {
                 e = ptr.enc.rightAdjustCharHead(stringBytes, s, s + limit, e);
             }
-            if (rs.isNil()) {
+            if (rs == context.nil) {
                 if (chomp) {
                     w = chompNewlineWidth(stringBytes, s, e);
                 }

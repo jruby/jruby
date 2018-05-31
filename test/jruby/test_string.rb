@@ -96,6 +96,17 @@ class TestString < Test::Unit::TestCase
     assert_equal(2, "abc\u{3042 3044 3046}".count("^\u3042", "^\u3044", "^\u3046", "^c"))
   end
 
+  # GH-5203
+  def test_string_buffer_sharing_in_stringio; require 'stringio'
+    zero = 0
+    strio = StringIO.new "123\nabcdefghijklmnopqrstuvxyz\n#{zero}\n"
+    ary = []; strio.each_line { |line| ary << line }
+    strio.rewind
+    strio.write('456')
+    assert_equal ["123\n", "abcdefghijklmnopqrstuvxyz\n", "0\n"], ary
+    assert_equal "456\nabcdefghijklmnopqrstuvxyz\n0\n", strio.string
+  end
+
   private
 
   def do_sub buf, e1, e2, e3
