@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
@@ -51,10 +52,11 @@ public class Getline {
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        final IRubyObject nil = context.nil;
 
         boolean chomp = false;
         long limit;
-        IRubyObject opt, optArg = context.nil, sepArg = null, limArg = null;
+        IRubyObject opt, optArg = nil, sepArg = null, limArg = null;
 
         switch (argc) {
             case 1:
@@ -71,52 +73,50 @@ public class Getline {
                 break;
         }
 
-        opt = ArgsUtil.getOptionsArg(context.runtime, optArg);
+        final Ruby runtime = context.runtime;
 
-        if (opt.isNil()) {
+        opt = ArgsUtil.getOptionsArg(runtime, optArg);
+
+        if (opt == nil) {
             if (argc == 1) {
                 sepArg = arg0;
             } else if (argc == 2) {
                 limArg = arg1;
             }
         } else {
-            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", opt);
+            IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", (RubyHash) opt);
             if (chompKwarg != null) {
                 chomp = chompKwarg.isTrue();
             }
         }
 
-        Ruby runtime = context.runtime;
         IRubyObject rs = runtime.getRecordSeparatorVar().get();
-        IRubyObject lim = context.nil;
+        IRubyObject lim = nil;
 
         if (sepArg != null && limArg == null) { // argc == 1
-            IRubyObject tmp = context.nil;
-
-            if (sepArg.isNil() || !(tmp = TypeConverter.checkStringType(runtime, sepArg)).isNil()) {
+            IRubyObject tmp = nil;
+            if (sepArg == nil || (tmp = TypeConverter.checkStringType(runtime, sepArg)) != nil) {
                 rs = tmp;
             } else {
                 lim = sepArg;
             }
         } else if (sepArg != null && limArg != null) { // argc >= 2
             rs = sepArg;
-            if (!rs.isNil()) {
+            if (rs != nil) {
                 rs = rs.convertToString();
             }
             lim = limArg;
         }
 
         // properly encode rs
-        if (!rs.isNil()) {
-            Encoding enc_rs;
-
-            enc_rs = ((RubyString) rs).getEncoding();
+        if (rs != nil) {
+            final RubyString rs_s = ((RubyString) rs);
+            final Encoding enc_rs = rs_s.getEncoding();
             if (enc_io != enc_rs &&
-                    (((RubyString) rs).scanForCodeRange() != StringSupport.CR_7BIT ||
-                            (((RubyString) rs).size() > 0 && !enc_io.isAsciiCompatible()))) {
+                    (rs_s.scanForCodeRange() != StringSupport.CR_7BIT ||
+                            (rs_s.size() > 0 && !enc_io.isAsciiCompatible()))) {
                 if (rs == runtime.getGlobalVariables().getDefaultSeparator()) {
-                    rs = RubyString.newStringLight(runtime, 0, enc_io);
-                    ((RubyString) rs).catAscii(NEWLINE_BYTES, 0, 1);
+                    rs = RubyString.newStringLight(runtime, 2, enc_io).cat('\n', enc_io);
                 }
                 else {
                     throw runtime.newArgumentError("encoding mismatch: " + enc_io + " IO with " + enc_rs + " RS");
@@ -124,10 +124,9 @@ public class Getline {
             }
         }
 
-        limit = lim.isNil() ? -1 : lim.convertToInteger().getLongValue();
+        limit = lim == nil ? -1 : lim.convertToInteger().getLongValue();
 
         return getline.getline(context, self, rs, (int) limit, chomp, block);
     }
 
-    private static final byte[] NEWLINE_BYTES = { (byte) '\n' };
 }
