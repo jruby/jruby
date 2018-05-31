@@ -592,19 +592,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newStringShared(Ruby runtime, byte[] bytes) {
-        return newStringShared(runtime, new ByteList(bytes, false));
+        return newStringShared(runtime, bytes, ASCIIEncoding.INSTANCE);
     }
 
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, Encoding encoding) {
-        return newStringShared(runtime, new ByteList(bytes, encoding, false));
+        return newStringShared(runtime, bytes, 0, bytes.length, encoding);
     }
 
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length) {
-        return newStringShared(runtime, new ByteList(bytes, start, length, false));
+        return newStringShared(runtime, bytes, start, length, ASCIIEncoding.INSTANCE);
     }
 
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length, Encoding encoding) {
-        return newStringShared(runtime, new ByteList(bytes, start, length, encoding, false));
+        ByteList byteList = new ByteList(bytes, start, length, encoding, false);
+        RubyString str = new RubyString(runtime, runtime.getString(), byteList);
+        str.shareLevel = SHARE_LEVEL_BUFFER;
+        return str;
     }
 
     public static RubyString newEmptyString(Ruby runtime) {
@@ -1370,7 +1373,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public final RubyString cat(int ch) {
-        return cat((byte)ch);
+        return cat((byte) ch);
     }
 
     public final RubyString cat(int code, Encoding enc) {
@@ -1382,14 +1385,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // rb_enc_str_buf_cat
-    public final int cat(byte[]bytes, int p, int len, Encoding enc) {
-        int cr = CR_UNKNOWN;
-        cr = EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, cr);
-        return cr;
+    public final int cat(byte[] bytes, int p, int len, Encoding enc) {
+        return EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_UNKNOWN);
     }
 
     // rb_str_buf_cat_ascii
-    public final RubyString catAscii(byte[]bytes, int ptr, int ptrLen) {
+    public final RubyString catAscii(byte[] bytes, int ptr, int ptrLen) {
         Encoding enc = value.getEncoding();
         if (enc.isAsciiCompatible()) {
             EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, ptr, ptrLen), enc, CR_7BIT);
@@ -5824,7 +5825,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int beg = value.getBegin();
         int end = beg + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        byte[] bytes = value.getUnsafeBytes();
         Matcher matcher = reg.matcher(bytes, beg, end);
 
         while (beg < end) {
