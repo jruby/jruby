@@ -31,13 +31,14 @@ package org.jruby.ext.jruby;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
@@ -54,9 +55,9 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
-    // JRuby::Util no longer used by JRuby itself
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyModule JRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
+        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
+        RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
         JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
         JRubyUtil.setConstant("ON_WINDOWS", runtime.newBoolean(org.jruby.platform.Platform.IS_WINDOWS));
@@ -91,23 +92,49 @@ public class JRubyUtilLibrary implements Library {
         return context.runtime.newBoolean(context.runtime.getPosix().isNative());
     }
 
-    @JRubyMethod(name = "classloader_resources", module = true) // used from RGs' JRuby defaults
-    public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = recv.getRuntime();
-        String resource = arg.convertToString().toString();
-        final List<RubyString> urlStrings = new ArrayList<>();
+    @Deprecated
+    public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
+        return class_loader_resources(recv.getRuntime().getCurrentContext(), recv, name);
+    }
+
+    /**
+     * @note class_loader_resources alias exists since 9.2
+     * @param context
+     * @param recv
+     * @param args (name, raw: false, path: false)
+     * @return an enumerable of class-loader resources
+     */ // used from RGs' JRuby defaults (as well as jar_dependencies)
+    @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1)
+    public static IRubyObject class_loader_resources(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        final Ruby runtime = context.runtime;
+
+        final ClassLoader loader = runtime.getJRubyClassLoader();
+        final String name = args[0].convertToString().asJavaString();
+        final RubyArray resources = RubyArray.newArray(runtime);
+
+        boolean raw = false, path = false;
+        if (args.length > 1 && args[1] instanceof RubyHash) {
+            IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "raw", "path");
+            raw  = values[0] != null && values[0] != RubyBasicObject.UNDEF && values[0].isTrue();
+            path = values[1] != null && values[1] != RubyBasicObject.UNDEF && values[1].isTrue();
+        }
+        
         try {
-            Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
-            while (urls.hasMoreElements()) {
-                URL url = urls.nextElement();
-                String urlString = getPath(url);
-                urlStrings.add(runtime.newString(urlString));
+            Enumeration<URL> e = loader.getResources(name);
+            while (e.hasMoreElements()) {
+                final URL entry = e.nextElement();
+                if (path) {
+                    resources.append( RubyString.newString(runtime, getPath(entry)) );
+                } else if (raw) {
+                    resources.append( Java.getInstance(runtime, entry) );
+                } else {
+                    resources.append( RubyString.newString(runtime, entry.toString()) ); // toExternalForm
+                }
             }
-            return RubyArray.newArray(runtime, urlStrings);
+        } catch (IOException ex) {
+            throw context.runtime.newIOErrorFromException(ex);
         }
-        catch (IOException ignore) {
-            return runtime.newEmptyArray();
-        }
+        return resources;
     }
 
     @JRubyMethod(meta = true) // for RubyGems' JRuby defaults
