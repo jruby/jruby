@@ -3895,10 +3895,6 @@ public class RubyModule extends RubyObject {
         return getConstantNoConstMissing(name, inherit, true);
     }
 
-    public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
-        return getConstantSkipAutoload(name, true, true);
-    }
-
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit, boolean includeObject) {
         IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, true);
 
@@ -3907,6 +3903,15 @@ public class RubyModule extends RubyObject {
         }
 
         return constant;
+    }
+
+    public final IRubyObject getConstantNoConstMissingSkipAutoload(String name) {
+        return getConstantSkipAutoload(name, true, true);
+    }
+
+    @Deprecated
+    public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
+        return getConstantSkipAutoload(name, true, true);
     }
 
     // returns UNDEF for un-loaded autoload constants
