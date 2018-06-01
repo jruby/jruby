@@ -64,6 +64,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.thread.Mutex;
 import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -2143,6 +2144,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return "0x" + Integer.toHexString(System.identityHashCode(this));
     }
 
+    private static final String MUTEX_FOR_THREAD_EXCLUSIVE = "MUTEX_FOR_THREAD_EXCLUSIVE";
+
+    @Deprecated // Thread.exclusive(&block)
+    @JRubyMethod(meta = true)
+    public static IRubyObject exclusive(ThreadContext context, IRubyObject recv, Block block) {
+        recv.callMethod(context, "warn", context.runtime.newString("Thread.exclusive is deprecated, use Thread::Mutex"));
+        return getMutexForThreadExclusive(context, (RubyClass) recv).synchronize(context, block);
+    }
+
+    private static Mutex getMutexForThreadExclusive(ThreadContext context, RubyClass recv) {
+        Mutex mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
+        if (mutex != null) return mutex;
+        synchronized (recv) {
+            mutex = (Mutex) recv.getConstantNoConstMissing(MUTEX_FOR_THREAD_EXCLUSIVE, false, false);
+            if (mutex == null) {
+                mutex = Mutex.newInstance(context, context.runtime.getThread().getClass("Mutex"), NULL_ARRAY, Block.NULL_BLOCK);
+                recv.setConstant(MUTEX_FOR_THREAD_EXCLUSIVE, mutex, true);
+            }
+            return mutex;
+        }
+    }
+
     /**
      * This is intended to be used to raise exceptions in Ruby threads from non-
      * Ruby threads like Timeout's thread.
@@ -2170,21 +2193,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Deprecated
     public boolean selectForAccept(RubyIO io) {
         return select(io, SelectionKey.OP_ACCEPT);
-    }
-
-    @Deprecated // moved to ruby kernel
-    public static IRubyObject exclusive(ThreadContext context, IRubyObject recv, Block block) {
-        Ruby runtime = context.runtime;
-        ThreadService ts = runtime.getThreadService();
-        boolean critical = ts.getCritical();
-
-        ts.setCritical(true);
-
-        try {
-            return block.yieldSpecific(context);
-        } finally {
-            ts.setCritical(critical);
-        }
     }
 
     @Deprecated
