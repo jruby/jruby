@@ -311,6 +311,48 @@ DO NOT MODIFIY - GENERATED CODE
         <targetPath>${jruby.complete.gems}</targetPath>
         <directory>${gem.home}</directory>
         <includes>
+          <include>cache/did_you_mean*1.2.0.gem</include>
+          <include>gems/did_you_mean*1.2.0/*</include>
+          <include>specifications/did_you_mean*1.2.0.gemspec</include>
+          <include>cache/minitest*${minitest.version}.gem</include>
+          <include>gems/minitest*${minitest.version}/*</include>
+          <include>specifications/minitest*${minitest.version}.gemspec</include>
+          <include>cache/net-telnet*0.1.1.gem</include>
+          <include>gems/net-telnet*0.1.1/*</include>
+          <include>specifications/net-telnet*0.1.1.gemspec</include>
+          <include>cache/power_assert*${power_assert.version}.gem</include>
+          <include>gems/power_assert*${power_assert.version}/*</include>
+          <include>specifications/power_assert*${power_assert.version}.gemspec</include>
+          <include>cache/rake*${rake.version}.gem</include>
+          <include>gems/rake*${rake.version}/*</include>
+          <include>specifications/rake*${rake.version}.gemspec</include>
+          <include>cache/test-unit*${test-unit.version}.gem</include>
+          <include>gems/test-unit*${test-unit.version}/*</include>
+          <include>specifications/test-unit*${test-unit.version}.gemspec</include>
+          <include>cache/xmlrpc*0.3.0.gem</include>
+          <include>gems/xmlrpc*0.3.0/*</include>
+          <include>specifications/xmlrpc*0.3.0.gemspec</include>
+        </includes>
+        <excludes>
+          <exclude>gems/cmath*1.0.0/*</exclude>
+          <exclude>gems/csv*1.0.0/*</exclude>
+          <exclude>gems/fileutils*1.1.0/*</exclude>
+          <exclude>gems/ipaddr*1.2.0/*</exclude>
+          <exclude>gems/jar-dependencies*${jar-dependencies.version}/*</exclude>
+          <exclude>gems/jruby-readline*1.2.2/*</exclude>
+          <exclude>gems/jruby-openssl*0.10.0/*</exclude>
+          <exclude>gems/json*${json.version}/*</exclude>
+          <exclude>gems/psych*3.0.2/*</exclude>
+          <exclude>gems/rake-ant*1.0.4/*</exclude>
+          <exclude>gems/rdoc*${rdoc.version}/*</exclude>
+          <exclude>gems/scanf*1.0.0/*</exclude>
+          <exclude>gems/webrick*1.4.2/*</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <targetPath>${jruby.complete.gems}</targetPath>
+        <directory>${gem.home}</directory>
+        <includes>
           <include>gems/rake-${rake.version}/bin/r*</include>
           <include>gems/rdoc-${rdoc.version}/bin/r*</include>
           <include>specifications/default/*.gemspec</include>

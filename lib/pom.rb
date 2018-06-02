@@ -298,8 +298,23 @@ project 'JRuby Lib Setup' do
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
   build do
-
-    # both resources are includes for the $jruby_home/lib directory
+    resource do
+      directory '${gem.home}'
+      # assume all dependencies are met with this gems + the default gems
+      incl = bundled_gems.collect do |bgem|
+        [
+          "cache/#{bgem[0]}*#{bgem[1]}.gem",
+          "gems/#{bgem[0]}*#{bgem[1]}/*",
+          "specifications/#{bgem[0]}*#{bgem[1]}.gemspec"
+        ]
+      end.flatten
+      excl = default_gems.collect do |bgem|
+        "gems/#{bgem.name}*#{bgem.version}/*"
+      end
+      includes incl
+      excludes excl
+      target_path '${jruby.complete.gems}'
+    end
 
     resource do
       directory '${gem.home}'
