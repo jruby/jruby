@@ -1957,7 +1957,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
-        RubyArray result = RubyArray.newBlankArray(context.runtime, args.length);
+        RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
             result.store(i, op_aref(context, args[i]));
         }
@@ -1966,8 +1966,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "fetch_values", rest = true)
     public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyArray result = RubyArray.newBlankArray(context.runtime, args.length);
-
+        RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
             result.store(i, fetch(context, args[i], block));
         }

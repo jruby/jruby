@@ -1149,30 +1149,31 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "transpose")
     public RubyArray transpose() {
-        RubyArray tmp, result = null;
 
         int alen = realLength;
         if (alen == 0) return aryDup();
 
         Ruby runtime = getRuntime();
+
         int elen = -1;
+        RubyArray[] result = null;
         for (int i = 0; i < alen; i++) {
-            tmp = elt(i).convertToArray();
+            RubyArray tmp = elt(i).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
-                result = newBlankArray(runtime, elen);
+                result = new RubyArray[elen];
                 for (int j = 0; j < elen; j++) {
-                    result.store(j, newBlankArray(runtime, alen));
+                    result[j] = newBlankArray(runtime, alen);
                 }
             } else if (elen != tmp.realLength) {
                 throw runtime.newIndexError("element size differs (" + tmp.realLength
                         + " should be " + elen + ")");
             }
             for (int j = 0; j < elen; j++) {
-                ((RubyArray) result.elt(j)).store(i, tmp.elt(j));
+                result[j].store(i, tmp.elt(j));
             }
         }
-        return result;
+        return new RubyArray(runtime, result);
     }
 
     /** rb_values_at (internal)
@@ -3861,10 +3862,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
         }
 
-        RubyArray result = useBlock ? null : newBlankArray(runtime, resultLen);
+        RubyArray result = useBlock ? null : newBlankArrayInternal(runtime, resultLen);
 
         for (int i = 0; i < resultLen; i++) {
-            RubyArray sub = newBlankArray(runtime, n);
+            RubyArray sub = newBlankArrayInternal(runtime, n);
             for (int j = 0; j < n; j++) sub.store(j, arrays[j].entry(counters[j]));
 
             if (useBlock) {
@@ -4052,7 +4053,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private static void yieldValues(ThreadContext context, int r, int[] p, int pStart, RubyArray values, Block block) {
-        RubyArray result = newBlankArray(context.runtime, r);
+        RubyArray result = newBlankArrayInternal(context.runtime, r);
 
         for (int j = 0; j < r; j++) {
             result.store(j, values.eltInternal(p[j + pStart]));
@@ -4761,6 +4762,22 @@ float_loop:
         }
 
         return newArray(runtime, size);
+    }
+
+    // when caller is sure to set all elements (avoids nil elements initialization)
+    static RubyArray newBlankArrayInternal(Ruby runtime, int size) {
+        switch (size) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, null);
+                break;
+            case 2:
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, null, null);
+                break;
+        }
+
+        return new RubyArray(runtime, size);
     }
 
     @JRubyMethod(name = "try_convert", meta = true)
