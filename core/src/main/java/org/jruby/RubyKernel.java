@@ -1101,8 +1101,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
-        Ruby runtime = context.runtime;
-        Integer[] ll = levelAndLengthFromArgs(runtime, level, length, 1);
+        Integer[] ll = levelAndLengthFromArgs(context, level, length, 1);
         Integer levelInt = ll[0], lengthInt = ll[1];
 
         return context.createCallerBacktrace(levelInt, lengthInt, Thread.currentThread().getStackTrace());
@@ -1124,8 +1123,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
-        Ruby runtime = context.runtime;
-        Integer[] ll = levelAndLengthFromArgs(runtime, level, length, 1);
+        Integer[] ll = levelAndLengthFromArgs(context, level, length, 1);
         Integer levelInt = ll[0], lengthInt = ll[1];
 
         return context.createCallerLocations(levelInt, lengthInt, Thread.currentThread().getStackTrace());
@@ -1134,7 +1132,7 @@ public class RubyKernel {
     /**
      * Retrieve the level and length from given args, if non-null.
      */
-    static Integer[] levelAndLengthFromArgs(Ruby runtime, IRubyObject _level, IRubyObject _length, int defaultLevel) {
+    static Integer[] levelAndLengthFromArgs(ThreadContext context, IRubyObject _level, IRubyObject _length, int defaultLevel) {
         int level;
         Integer length = null;
         if (_length != null) {
@@ -1142,12 +1140,9 @@ public class RubyKernel {
             length = RubyNumeric.fix2int(_length);
         } else if (_level != null && _level instanceof RubyRange) {
             RubyRange range = (RubyRange) _level;
-            ThreadContext context = runtime.getCurrentContext();
             level = RubyNumeric.fix2int(range.first(context));
             length = RubyNumeric.fix2int(range.last(context)) - level;
-            if (!range.exclude_end_p().isTrue()){
-                length++;
-            }
+            if (!range.isExcludeEnd()) length++;
             length = length < 0 ? 0 : length;
         } else if (_level != null) {
             level = RubyNumeric.fix2int(_level);
@@ -1156,10 +1151,10 @@ public class RubyKernel {
         }
 
         if (level < 0) {
-            throw runtime.newArgumentError("negative level (" + level + ')');
+            throw context.runtime.newArgumentError("negative level (" + level + ')');
         }
         if (length != null && length < 0) {
-            throw runtime.newArgumentError("negative size (" + length + ')');
+            throw context.runtime.newArgumentError("negative size (" + length + ')');
         }
 
         return new Integer[] {level, length};
