@@ -1630,8 +1630,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread may have finished
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
-        Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
         Integer levelInt = ll[0], lengthInt = ll[1];
 
         return myContext.createCallerBacktrace(levelInt, lengthInt, getNativeThread().getStackTrace());
@@ -1661,8 +1660,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread may have finished
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
-        Ruby runtime = context.runtime;
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(runtime, level, length, 0);
+        Integer[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
         Integer levelInt = ll[0], lengthInt = ll[1];
 
         return myContext.createCallerLocations(levelInt, lengthInt, getNativeThread().getStackTrace());
