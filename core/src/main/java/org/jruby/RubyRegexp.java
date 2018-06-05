@@ -1492,11 +1492,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             int[] backrefs = e.getBackRefs();
-            RubyArray ary = RubyArray.newBlankArray(runtime, backrefs.length);
+            RubyArray ary = RubyArray.newBlankArrayInternal(runtime, backrefs.length);
 
-            int index = 0;
-            for (int backref : backrefs) {
-                ary.store(index++, RubyFixnum.newFixnum(runtime, backref));
+            for (int idx = 0; idx<backrefs.length; idx++) {
+                ary.store(idx, RubyFixnum.newFixnum(runtime, backrefs[idx]));
             }
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);
