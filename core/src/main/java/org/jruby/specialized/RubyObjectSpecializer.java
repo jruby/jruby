@@ -32,30 +32,20 @@ import me.qmx.jitescript.JiteClass;
 import org.jruby.ReifiedRubyObject;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.NonBlockingHashMapLong;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Set;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
-import static org.objectweb.asm.Opcodes.*;
 
 /**
  * A code generator for Ruby objects, to map known instance variables into fields.
@@ -68,7 +58,7 @@ public class RubyObjectSpecializer {
 
     private static final NonBlockingHashMapLong<ObjectAllocator> specializedFactories = new NonBlockingHashMapLong<>();
 
-    private static ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
+    private static final ClassDefiningClassLoader LOADER = new OneShotClassLoader(Ruby.getClassLoader());
 
     public static ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
         int size = foundVariables.size();
@@ -77,18 +67,18 @@ public class RubyObjectSpecializer {
         if (allocator != null) return allocator;
 
         final String clsPath = "org/jruby/gen/RubyObject" + size;
-        final String clsName = clsPath.replaceAll("/", ".");
+        final String clsName = clsPath.replace('/', '.');
 
         // try to load the class, in case we have parallel generation happening
         Class p;
 
         try {
-            p = CDCL.loadClass(clsName);
+            p = LOADER.loadClass(clsName);
         } catch (ClassNotFoundException cnfe) {
             // try again under lock
-            synchronized (CDCL) {
+            synchronized (LOADER) {
                 try {
-                    p = CDCL.loadClass(clsName);
+                    p = LOADER.loadClass(clsName);
                 } catch (ClassNotFoundException cnfe2) {
                     // proceed to actually generate the class
                     p = generateInternal(klass, foundVariables, clsPath, clsName);
@@ -114,7 +104,7 @@ public class RubyObjectSpecializer {
 
     private static Class generateInternal(RubyClass klass, final Set<String> names, final String clsPath, final String clsName) {
         // ensure only one thread will attempt to generate and define the new class
-        synchronized (CDCL) {
+        synchronized (LOADER) {
             // set up table for all names and gather count
             int i = 0;
             for (String name : names) {
@@ -270,10 +260,10 @@ public class RubyObjectSpecializer {
     }
 
     private static Class defineClass(JiteClass jiteClass) {
-        return CDCL.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_7));
+        return LOADER.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_8));
     }
 
     private static String classNameFromJiteClass(JiteClass jiteClass) {
-        return jiteClass.getClassName().replaceAll("/", ".");
+        return jiteClass.getClassName().replace('/', '.');
     }
 }
