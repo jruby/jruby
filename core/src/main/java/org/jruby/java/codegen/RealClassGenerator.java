@@ -53,6 +53,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
+import org.jruby.util.ClassLoaderAwareWriter;
 import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -165,16 +166,16 @@ public abstract class RealClassGenerator {
      */
     public static Class defineOldStyleImplClass(final Ruby ruby, final String name,
         final String[] superTypeNames, final Map<String, List<Method>> simpleToAll,
-        final ClassDefiningClassLoader classLoader) {
+        final ClassDefiningClassLoader loader) {
 
         Class newClass;
-        synchronized (classLoader) {
+        synchronized (loader) {
             // try to load the specified name; only if that fails, try to define the class
             try {
-                newClass = classLoader.loadClass(name);
+                newClass = loader.loadClass(name);
             }
             catch (ClassNotFoundException ex) {
-                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                ClassWriter cw = new ClassLoaderAwareWriter(loader.asClassLoader(), ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                 String pathName = name.replace('.', '/');
 
                 // construct the class, implementing all supertypes
@@ -277,7 +278,7 @@ public abstract class RealClassGenerator {
 
                 // create the class
                 final byte[] bytecode = cw.toByteArray();
-                newClass = classLoader.defineClass(name, bytecode);
+                newClass = loader.defineClass(name, bytecode);
                 if ( DEBUG ) writeClassFile(name, bytecode);
             }
         }

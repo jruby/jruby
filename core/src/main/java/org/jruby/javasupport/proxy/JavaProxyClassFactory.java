@@ -45,6 +45,7 @@ import org.jruby.Ruby;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.ClassLoaderAwareWriter;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -162,7 +163,7 @@ public class JavaProxyClassFactory {
     private JavaProxyClass generate(ClassDefiningClassLoader loader, String targetClassName,
                                     Class superClass, Class[] interfaces,
                                     Map<MethodKey, MethodData> methods, Type selfType) {
-        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces);
+        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces, loader);
 
         GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
 
@@ -205,8 +206,9 @@ public class JavaProxyClassFactory {
     }
 
     private static ClassWriter beginProxyClass(final String className,
-            final Class superClass, final Class[] interfaces) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        final Class superClass, final Class[] interfaces, final ClassDefiningClassLoader loader) {
+
+        ClassWriter cw = new ClassLoaderAwareWriter(loader.asClassLoader(), ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
         // start class
         cw.visit(JAVA_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
