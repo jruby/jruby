@@ -1886,8 +1886,9 @@ public class RubyInstanceConfig {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
             case "1.6" :
+                return Opcodes.V1_6;
             case "1.7" :
-                throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
+                return Opcodes.V1_7;
             case "1.8" : case "8" : default :
                 return Opcodes.V1_8; // 52
             case "9" :
