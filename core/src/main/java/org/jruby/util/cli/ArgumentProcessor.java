@@ -37,7 +37,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.StringSupport;
-import org.jruby.util.func.Function2;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
 /**
@@ -601,7 +601,7 @@ public class ArgumentProcessor {
     }
 
     private void enableDisableFeature(String name, boolean enable) {
-        Function2<Boolean, ArgumentProcessor, Boolean> feature = FEATURES.get(name);
+        BiFunction<ArgumentProcessor, Boolean, Void> feature = FEATURES.get(name);
 
         if (feature == null) {
             config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
@@ -794,54 +794,39 @@ public class ArgumentProcessor {
         return false;
     }
 
-    private static final Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> FEATURES;
+    private static final Map<String, BiFunction<ArgumentProcessor, Boolean, Void>> FEATURES;
 
     static {
-        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>(12, 1);
-        Function2<Boolean, ArgumentProcessor, Boolean> function2;
+        Map<String, BiFunction<ArgumentProcessor, Boolean, Void>> features = new HashMap<>(12, 1);
+        BiFunction<ArgumentProcessor, Boolean, Void> function;
 
-        features.put("all", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+        features.put("all", new BiFunction<ArgumentProcessor, Boolean, Void>() {
+            public Void apply(ArgumentProcessor processor, Boolean enable) {
                 // disable all features
-                for (Map.Entry<String, Function2<Boolean, ArgumentProcessor, Boolean>> entry : FEATURES.entrySet()) {
+                for (Map.Entry<String, BiFunction<ArgumentProcessor, Boolean, Void>> entry : FEATURES.entrySet()) {
                     if (entry.getKey().equals("all")) continue; // skip self
                     entry.getValue().apply(processor, enable);
                 }
-                return true;
+                return null;
             }
         });
-        features.put("gem", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableGems(!enable);
-                return true;
-            }
+        features.put("gem", (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableGems(!enable); return null;
         });
-        features.put("gems", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableGems(!enable);
-                return true;
-            }
+        features.put("gems", (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableGems(!enable); return null;
         });
-        features.put("did-you-mean", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableDidYouMean(!enable);
-                return true;
-            }
+        features.put("did-you-mean", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableDidYouMean(!enable); return null;
         });
-        features.put("did_you_mean", function2); // alias
-        features.put("rubyopt", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableRUBYOPT(!enable);
-                return true;
-            }
+        features.put("did_you_mean", function); // alias
+        features.put("rubyopt", (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableRUBYOPT(!enable); return null;
         });
-        features.put("frozen-string-literal", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setFrozenStringLiteral(enable);
-                return true;
-            }
+        features.put("frozen-string-literal", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setFrozenStringLiteral(enable); return null;
         });
-        features.put("frozen_string_literal", function2); // alias
+        features.put("frozen_string_literal", function); // alias
 
         FEATURES = features;
     }

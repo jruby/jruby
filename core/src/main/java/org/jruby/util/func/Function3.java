@@ -29,6 +29,7 @@
 
 package org.jruby.util.func;
 
+@Deprecated
 public interface Function3<R,A0,A1,A2> {
     public R apply(A0 a0, A1 a1, A2 a2);
 }
