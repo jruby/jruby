@@ -43,9 +43,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ASM;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.ClassLoaderAwareWriter;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -208,7 +208,7 @@ public class JavaProxyClassFactory {
     private static ClassWriter beginProxyClass(final String className,
         final Class superClass, final Class[] interfaces, final ClassDefiningClassLoader loader) {
 
-        ClassWriter cw = new ClassLoaderAwareWriter(loader.asClassLoader(), ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        ClassWriter cw = ASM.newClassWriter(loader.asClassLoader());
 
         // start class
         cw.visit(JAVA_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,

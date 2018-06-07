@@ -51,9 +51,9 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ASM;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
-import org.jruby.util.ClassLoaderAwareWriter;
 import org.jruby.util.Loader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -175,7 +175,7 @@ public abstract class RealClassGenerator {
                 newClass = loader.loadClass(name);
             }
             catch (ClassNotFoundException ex) {
-                ClassWriter cw = new ClassLoaderAwareWriter(loader.asClassLoader(), ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                ClassWriter cw = ASM.newClassWriter(loader.asClassLoader());
                 String pathName = name.replace('.', '/');
 
                 // construct the class, implementing all supertypes
