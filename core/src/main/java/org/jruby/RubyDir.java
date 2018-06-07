@@ -308,7 +308,7 @@ public class RubyDir extends RubyObject {
 
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
 
-        return entriesCommon(context, path.asJavaString(), runtime.getDefaultEncoding());
+        return entriesCommon(context, path.asJavaString(), runtime.getDefaultEncoding(), false);
     }
 
     @JRubyMethod(name = "entries", meta = true)
@@ -324,10 +324,10 @@ public class RubyDir extends RubyObject {
                 encoding = runtime.getEncodingService().getEncodingFromObject(encodingArg);
             }
         }
-        return entriesCommon(context, path.asJavaString(), encoding);
+        return entriesCommon(context, path.asJavaString(), encoding, false);
     }
 
-    private static RubyArray entriesCommon(ThreadContext context, String path, Encoding encoding) {
+    private static RubyArray entriesCommon(ThreadContext context, String path, Encoding encoding, final boolean childrenOnly) {
         Ruby runtime = context.runtime;
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path, null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
@@ -335,12 +335,17 @@ public class RubyDir extends RubyObject {
         FileResource directory = JRubyFile.createResource(context, path);
         String[] files = getEntries(context, directory, adjustedPath);
 
-        return RubyArray.newArrayMayCopy(runtime, JavaUtil.convertStringArrayToRuby(runtime, files, new JavaUtil.StringConverter() {
-            public IRubyObject convert(Ruby runtime, Object object) {
-                if (object == null) return runtime.getNil();
-                return RubyString.newString(runtime, (String)object, encoding);
+        RubyArray result = RubyArray.newArray(runtime, files.length);
+        for (String file : files) {
+            if (childrenOnly) { // removeIf(f -> f.equals(".") || f.equals(".."));
+                final int len = file.length();
+                if (len == 1 && file.charAt(0) == '.') continue;
+                if (len == 2 && file.charAt(0) == '.' && file.charAt(1) == '.') continue;
             }
-        }));
+
+            result.append( RubyString.newString(runtime, file, encoding) );
+        }
+        return result;
     }
 
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;
@@ -422,9 +427,16 @@ public class RubyDir extends RubyObject {
     }
 
     private static RubyArray childrenCommon(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
-        RubyArray entries = entries(context, recv, arg, opts);
-        entries.removeIf(f -> f.equals(".") || f.equals(".."));
-        return entries;
+        Encoding encoding = null;
+        if (opts != context.nil) {
+            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, "encoding", opts);
+            if (encodingArg != context.nil) {
+                encoding = context.runtime.getEncodingService().getEncodingFromObject(encodingArg);
+            }
+        }
+        if (encoding == null) encoding = context.runtime.getDefaultEncoding();
+
+        return entriesCommon(context, RubyFile.get_path(context, arg).asJavaString(), encoding, true);
     }
 
     /**
