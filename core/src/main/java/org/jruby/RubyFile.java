@@ -44,7 +44,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.NotImplementedError;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -65,11 +64,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.file.FileStore;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.ArrayList;
@@ -88,8 +83,8 @@ import static org.jruby.util.io.EncodingUtils.vmode;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
 /**
- * Ruby File class equivalent in java.
- **/
+ * The Ruby File class.
+ */
 @JRubyClass(name="File", parent="IO", include="FileTest")
 public class RubyFile extends RubyIO implements EncodingCapable {
 
@@ -298,7 +293,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject flock(ThreadContext context, IRubyObject operation) {
 
         // Solaris uses a ruby-ffi version defined in jruby/kernel/file.rb, so re-dispatch
-        if (org.jruby.platform.Platform.IS_SOLARIS) {
+        if (Platform.IS_SOLARIS) {
             return callMethod(context, "flock", operation);
         }
 
@@ -423,7 +418,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     public static final FileTime getBirthtimeWithNIO(String pathString) {
         // FIXME: birthtime is in stat, so we should use that if platform supports it (#2152)
-        // TODO: This requires Java 7 APIs and may not work on Android
         Path path = Paths.get(pathString);
         PosixFileAttributeView view = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
         try {
@@ -943,10 +937,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFileStat(path.getUnicodeValue(), true).ftype();
     }
 
-    /*
-     * Fixme:  This does not have exact same semantics as RubyArray.join, but they
-     * probably could be consolidated (perhaps as join(args[], sep, doChomp)).
-     */
     @JRubyMethod(rest = true, meta = true)
     public static RubyString join(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return doJoin(context, recv, args);
@@ -2116,14 +2106,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public <T> T toJava(Class<T> target) {
         if (target == File.class) {
             final String path = getPath();
-            return path == null ? null : target.cast(new File(path));
+            return path == null ? null : (T) new File(path);
+        }
+        if (target == Path.class || target == Watchable.class) {
+            final String path = getPath();
+            return path == null ? null : (T) FileSystems.getDefault().getPath(path);
         }
         return super.toJava(target);
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
-        final String separator = runtime.getClass("File").getConstant("SEPARATOR").toString();
+        final String separator = runtime.getFile().getConstant("SEPARATOR").toString();
 
         final RubyArray argsAry = RubyArray.newArrayMayCopy(runtime, args);
 
