@@ -5,23 +5,29 @@ import jnr.posix.FileStat;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.jar.JarEntry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public abstract class JarResource extends AbstractFileResource {
-    private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
+abstract class JarResource extends AbstractFileResource {
 
     private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
-        if (!pathname.contains("!")) return null;  // Optimization: no ! no jar!
+        int bang = pathname.indexOf('!');
+        if (bang == -1) return null;  // no ! no jar!
 
-        Matcher matcher = PREFIX_MATCH.matcher(pathname);
-        String sanitized = matcher.matches() ? matcher.group(1) : pathname;
+        if (pathname.startsWith("jar:")) {
+            if (pathname.startsWith("file:", 4)) {
+                pathname = pathname.substring(9); bang -= 9; // 4 + 5
+            }
+            else {
+                pathname = pathname.substring(4); bang -= 4;
+            }
+        }
+        else if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5); bang -= 5;
+        }
 
-        int bang = sanitized.indexOf('!');
-        String jarPath = sanitized.substring(0, bang);
-        String entryPath = sanitized.substring(bang + 1);
+        String jarPath = pathname.substring(0, bang);
+        String entryPath = pathname.substring(bang + 1);
         // normalize path -- issue #2017
         if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
 
@@ -38,24 +44,22 @@ public abstract class JarResource extends AbstractFileResource {
     private static JarResource createJarResource(String jarPath, String entryPath, boolean rootSlashPrefix) {
         JarCache.JarIndex index = jarCache.getIndex(jarPath);
 
-        if (index == null) {
-            // Jar doesn't exist
+        if (index == null) { // Jar doesn't exist
             try {
                 jarPath = URLDecoder.decode(jarPath, "UTF-8");
                 entryPath = URLDecoder.decode(entryPath, "UTF-8");
-            } catch (IllegalArgumentException iae) {
+            }
+            catch (IllegalArgumentException e) {
                 // something in the path did not decode, so it's probably not a URI
                 // See jruby/jruby#2264.
                 return null;
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
+            }
+            catch (UnsupportedEncodingException e) {
+                throw new AssertionError(e);
             }
             index = jarCache.getIndex(jarPath);
 
-            if (index == null) {
-                // Jar doesn't exist
-                return null;
-            }
+            if (index == null) return null; // Jar doesn't exist
         }
 
         // Try it as directory first, because jars tend to have foo/ entries
@@ -63,7 +67,8 @@ public abstract class JarResource extends AbstractFileResource {
         String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
             return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
-        } else if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
+        }
+        if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
             entries = index.getDirEntries(entryPath.substring(0, entryPath.length() - 1));
 
             if (entries != null) {
