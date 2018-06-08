@@ -32,6 +32,7 @@
 
 package org.jruby;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -69,7 +70,7 @@ import static org.jruby.RubyString.UTF8;
  * @author  jvoegele
  */
 @JRubyClass(name = "Dir", include = "Enumerable")
-public class RubyDir extends RubyObject {
+public class RubyDir extends RubyObject implements Closeable {
     private RubyString path;       // What we passed to the constructor for method 'path'
     protected FileResource dir;
     private long lastModified = Long.MIN_VALUE;
@@ -649,13 +650,15 @@ public class RubyDir extends RubyObject {
      * Closes the directory stream.
      */
     @JRubyMethod(name = "close")
-    public IRubyObject close() {
+    public IRubyObject close(ThreadContext context) {
+        close();
+        return context.nil;
+    }
+
+    public final void close() {
         // Make sure any read()s after close fail.
         checkDirIgnoreClosed();
-
         isOpen = false;
-
-        return getRuntime().getNil();
     }
 
     /**
