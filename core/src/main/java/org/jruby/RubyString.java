@@ -120,8 +120,8 @@ import static org.jruby.RubyEnumerator.SizeFn;
 public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable {
     public static final String DEBUG_INFO_FIELD = "@debug_created_info";
 
-    private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
-    private static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
+    static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
+    static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
     // string doesn't share any resources
     private static final int SHARE_LEVEL_NONE = 0;

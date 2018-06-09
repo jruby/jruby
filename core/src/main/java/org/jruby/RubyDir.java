@@ -32,11 +32,13 @@
 
 package org.jruby;
 
-import static org.jruby.RubyEnumerator.enumeratorize;
-
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Watchable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,14 +46,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import jnr.posix.FileStat;
-
-import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyClass;
-
 import jnr.posix.util.Platform;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -62,21 +61,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
 import org.jruby.ast.util.ArgsUtil;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.RubyString.UTF8;
+
 /**
- * .The Ruby built-in class Dir.
+ * The Ruby built-in class Dir.
  *
  * @author  jvoegele
  */
 @JRubyClass(name = "Dir", include = "Enumerable")
-public class RubyDir extends RubyObject {
+public class RubyDir extends RubyObject implements Closeable {
     private RubyString path;       // What we passed to the constructor for method 'path'
     protected FileResource dir;
     private long lastModified = Long.MIN_VALUE;
     private String[] snapshot;     // snapshot of contents of directory
     private int pos;               // current position in directory
     private boolean isOpen = true;
-
-    private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
 
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
 
@@ -650,13 +650,15 @@ public class RubyDir extends RubyObject {
      * Closes the directory stream.
      */
     @JRubyMethod(name = "close")
-    public IRubyObject close() {
+    public IRubyObject close(ThreadContext context) {
+        close();
+        return context.nil;
+    }
+
+    public final void close() {
         // Make sure any read()s after close fail.
         checkDirIgnoreClosed();
-
         isOpen = false;
-
-        return getRuntime().getNil();
     }
 
     /**
@@ -767,6 +769,11 @@ public class RubyDir extends RubyObject {
     @JRubyMethod
     public IRubyObject to_path(ThreadContext context) {
         return path(context);
+    }
+
+    public String getPath() {
+        if (path == null) return null;
+        return path.asJavaString();
     }
 
     /** Returns the next entry from this directory. */
@@ -992,17 +999,18 @@ public class RubyDir extends RubyObject {
         return getHomeDirectoryPath(context, context.runtime.getENV().op_aref(context, homeKey));
     }
 
+    private static final ByteList user_home = new ByteList(new byte[] {'u','s','e','r','.','h','o','m','e'}, false);
+
     static RubyString getHomeDirectoryPath(ThreadContext context, IRubyObject home) {
         final Ruby runtime = context.runtime;
 
         if (home == null || home == context.nil) {
             IRubyObject ENV_JAVA = runtime.getObject().getConstant("ENV_JAVA");
-            home = ENV_JAVA.callMethod(context, "[]", runtime.newString("user.home"));
+            home = ENV_JAVA.callMethod(context, "[]", RubyString.newString(runtime, user_home, UTF8));
         }
 
         if (home == null || home == context.nil) {
-            RubyHash ENV = (RubyHash) runtime.getObject().getConstant("ENV");
-            home = ENV.op_aref(context, runtime.newString("LOGDIR"));
+            home = context.runtime.getENV().op_aref(context, runtime.newString("LOGDIR"));
         }
 
         if (home == null || home == context.nil) {
@@ -1010,6 +1018,19 @@ public class RubyDir extends RubyObject {
         }
 
         return (RubyString) home;
+    }
+
+    @Override
+    public <T> T toJava(Class<T> target) {
+        if (target == File.class) {
+            final String path = getPath();
+            return path == null ? null : (T) new File(path);
+        }
+        if (target == Path.class || target == Watchable.class) {
+            final String path = getPath();
+            return path == null ? null : (T) FileSystems.getDefault().getPath(path);
+        }
+        return super.toJava(target);
     }
 
     @Deprecated
