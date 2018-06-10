@@ -80,6 +80,7 @@ public class RubyFileTest {
         return recv.getRuntime().newBoolean(stat != null && stat.isCharDev());
     }
 
+    @Deprecated
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
         return directory_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -118,6 +119,7 @@ public class RubyFileTest {
         }
     }
 
+    @Deprecated
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
         return exist_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -131,6 +133,7 @@ public class RubyFileTest {
                 !Ruby.isSecurityRestricted() && fileResource(context, path).exists());
     }
 
+    @Deprecated
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
         return file_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -194,6 +197,7 @@ public class RubyFileTest {
         return recv.getRuntime().newBoolean(stat != null && stat.isNamedPipe());
     }
 
+    @Deprecated
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
         return readable_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -247,6 +251,7 @@ public class RubyFileTest {
         return context.runtime.newFixnum(stat.st_size());
     }
 
+    @Deprecated
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
         return size_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -292,6 +297,7 @@ public class RubyFileTest {
         return filename.getRuntime().newBoolean(fileResource(filename).canWrite());
     }
 
+    @Deprecated
     public static RubyBoolean zero_p(IRubyObject recv, IRubyObject filename) {
         return zero_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }

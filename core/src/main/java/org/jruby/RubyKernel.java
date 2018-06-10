@@ -1445,16 +1445,14 @@ public class RubyKernel {
         int cmd;
         if (args[0] instanceof RubyFixnum) {
             cmd = (int)((RubyFixnum) args[0]).getLongValue();
-        } else if (args[0] instanceof RubyString &&
-                ((RubyString) args[0]).getByteList().length() > 0) {
+        } else if (args[0] instanceof RubyString && ((RubyString) args[0]).getByteList().length() > 0) {
             // MRI behavior: use first byte of string value if len > 0
             cmd = ((RubyString) args[0]).getByteList().charAt(0);
         } else {
             cmd = (int) args[0].convertToInteger().getLongValue();
         }
 
-        // MRI behavior: raise ArgumentError for 'unknown command' before
-        // checking number of args.
+        // MRI behavior: raise ArgumentError for 'unknown command' before checking number of args
         switch(cmd) {
         case 'A': case 'b': case 'c': case 'C': case 'd': case 'e': case 'f': case 'g': case 'G':
         case 'k': case 'M': case 'l': case 'o': case 'O': case 'p': case 'r': case 'R': case 's':
@@ -1490,11 +1488,11 @@ public class RubyKernel {
         case 'C': // ?C  | Time    | Last change time for file1
             return context.runtime.newFileStat(args[1].convertToString().toString(), false).ctime();
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
-            return RubyFileTest.directory_p(recv, args[1]);
+            return RubyFileTest.directory_p(context, recv, args[1]);
         case 'e': // ?e  | boolean | True if file1 exists
-            return RubyFileTest.exist_p(recv, args[1]);
+            return RubyFileTest.exist_p(context, recv, args[1]);
         case 'f': // ?f  | boolean | True if file1 exists and is a regular file
-            return RubyFileTest.file_p(recv, args[1]);
+            return RubyFileTest.file_p(context, recv, args[1]);
         case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
             return RubyFileTest.setgid_p(recv, args[1]);
         case 'G': // ?G  | boolean | True if file1 exists and has a group ownership equal to the caller's group
@@ -1512,12 +1510,11 @@ public class RubyKernel {
         case 'p': // ?p  | boolean | True if file1 exists and is a fifo
             return RubyFileTest.pipe_p(recv, args[1]);
         case 'r': // ?r  | boolean | True if file1 is readable by the effective uid/gid of the caller
-            return RubyFileTest.readable_p(recv, args[1]);
+            return RubyFileTest.readable_p(context, recv, args[1]);
         case 'R': // ?R  | boolean | True if file is readable by the real uid/gid of the caller
-            // FIXME: Need to implement an readable_real_p in FileTest
-            return RubyFileTest.readable_p(recv, args[1]);
+            return RubyFileTest.readable_p(context, recv, args[1]);
         case 's': // ?s  | int/nil | If file1 has nonzero size, return the size, otherwise nil
-            return RubyFileTest.size_p(recv, args[1]);
+            return RubyFileTest.size_p(context, recv, args[1]);
         case 'S': // ?S  | boolean | True if file1 exists and is a socket
             return RubyFileTest.socket_p(recv, args[1]);
         case 'u': // ?u  | boolean | True if file1 has the setuid bit set
@@ -1532,7 +1529,7 @@ public class RubyKernel {
         case 'X': // ?X  | boolean | True if file1 exists and is executable by the real uid/gid
             return RubyFileTest.executable_real_p(recv, args[1]);
         case 'z': // ?z  | boolean | True if file1 exists and has a zero length
-            return RubyFileTest.zero_p(recv, args[1]);
+            return RubyFileTest.zero_p(context, recv, args[1]);
         case '=': // ?=  | boolean | True if the modification times of file1 and file2 are equal
             return context.runtime.newFileStat(args[1].convertToString().toString(), false).mtimeEquals(args[2]);
         case '<': // ?<  | boolean | True if the modification time of file1 is prior to that of file2
