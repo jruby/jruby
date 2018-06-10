@@ -115,10 +115,7 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static String normalizeSeps(String path) {
-        if (Platform.IS_WINDOWS) {
-            return path.replace(File.separatorChar, '/');
-        }
-        return path;
+        return Platform.IS_WINDOWS ? path.replace(File.separatorChar, '/') : path;
     }
 
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
@@ -128,19 +125,22 @@ public class JRubyFile extends JavaSecuredFile {
         if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
         }
-        File internal = new JavaSecuredFile(pathname);
+        return createNoUnicodeConversion(cwd, pathname, new File(pathname));
+    }
+
+    private static JRubyFile createNoUnicodeConversion(String cwd, String pathname, File path) {
         // File and company do not seem to recognize bare \ and / on Windows as absolute.  Cheat!
-        if (internal.isAbsolute() || Platform.IS_WINDOWS && (pathname.startsWith("/") || pathname.startsWith("\\"))) {
-            return new JRubyFile(internal);
+        if (path.isAbsolute() || Platform.IS_WINDOWS && (pathname.startsWith("/") || pathname.startsWith("\\"))) {
+            return new JRubyFile(path);
         }
-        if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
+        if (cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
             return new JRubyFile(cwd + '/' + pathname);
         }
-        internal = new JavaSecuredFile(cwd, pathname);
-        if(!internal.isAbsolute()) {
+        path = new File(cwd, pathname);
+        if (!path.isAbsolute()) {
             throw new IllegalArgumentException("Neither current working directory ("+cwd+") nor pathname ("+pathname+") led to an absolute path");
         }
-        return new JRubyFile(internal);
+        return new JRubyFile(path);
     }
 
     public static String getFileProperty(String property) {
@@ -250,42 +250,27 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public File[] listFiles() {
-        File[] files = super.listFiles();
-        if (files == null) {
-            return null;
-        }
-
-        JRubyFile[] smartFiles = new JRubyFile[files.length];
-        for (int i = 0, j = files.length; i < j; i++) {
-            smartFiles[i] = createNoUnicodeConversion(super.getAbsolutePath(), files[i].getPath());
-        }
-        return smartFiles;
+        return convertFiles(super.listFiles());
     }
 
     @Override
     public File[] listFiles(final FileFilter filter) {
-        final File[] files = super.listFiles(filter);
-        if (files == null) {
-            return null;
-        }
-
-        JRubyFile[] smartFiles = new JRubyFile[files.length];
-        for (int i = 0,j = files.length; i < j; i++) {
-            smartFiles[i] = createNoUnicodeConversion(super.getAbsolutePath(), files[i].getPath());
-        }
-        return smartFiles;
+        return convertFiles(super.listFiles(filter));
     }
 
     @Override
     public File[] listFiles(final FilenameFilter filter) {
-        final File[] files = super.listFiles(filter);
-        if (files == null) {
-            return null;
-        }
+        return convertFiles(super.listFiles(filter));
+    }
 
+    private JRubyFile[] convertFiles(final File[] files) {
+        if (files == null) return null; // non-existent directory
+
+        final String absolutePath = super.getAbsolutePath();
         JRubyFile[] smartFiles = new JRubyFile[files.length];
-        for (int i = 0,j = files.length; i < j; i++) {
-            smartFiles[i] = createNoUnicodeConversion(super.getAbsolutePath(), files[i].getPath());
+        for (int i = 0; i < files.length; i++) {
+            final File file = files[i];
+            smartFiles[i] = createNoUnicodeConversion(absolutePath, file.getPath(), file);
         }
         return smartFiles;
     }
