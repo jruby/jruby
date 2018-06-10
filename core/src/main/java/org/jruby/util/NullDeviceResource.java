@@ -1,28 +1,23 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
+
+import static org.jruby.util.RegularFileResource.mapFileNotFoundOnGetChannel;
 
 /**
  * Represents a the NUL: device on Windows, which is not a normal file.
  */
-public class NullDeviceResource extends AbstractFileResource {
-    private static final JRubyFile file = new JRubyFile("NUL:");
-    private final POSIX posix;
+final class NullDeviceResource implements FileResource {
 
-    NullDeviceResource(POSIX posix) {
-        this.posix = posix;
-    }
+    private static final JRubyFile file = new JRubyFile("NUL:");
+
+    NullDeviceResource() { /* no-op */ }
 
     @Override
     public String absolutePath() {
@@ -55,7 +50,8 @@ public class NullDeviceResource extends AbstractFileResource {
     }
 
     public int errno() {
-        return posix.errno();
+        // we're not using posix.stat + Java does treat us with a FileNotFoundException
+        return Errno.ENOENT.intValue();
     }
 
     @Override
@@ -104,21 +100,19 @@ public class NullDeviceResource extends AbstractFileResource {
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile() {
-        return file;
-    }
+    public boolean isNull() { return true; }
 
     @Override
-    InputStream openInputStream() throws IOException {
+    public InputStream openInputStream() throws IOException {
         return new FileInputStream(file);
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-        return createChannel(flags);
+    public Channel openChannel(int flags, int perm) throws IOException {
+        return createChannel(ModeFlags.createModeFlags(flags));
     }
 
-    private Channel createChannel(ModeFlags flags) throws ResourceException {
+    private Channel createChannel(ModeFlags flags) throws IOException {
         FileChannel fileChannel;
 
         /* Because RandomAccessFile does not provide a way to pass append
@@ -141,14 +135,18 @@ public class NullDeviceResource extends AbstractFileResource {
                 RandomAccessFile raf = new RandomAccessFile(file, flags.toJavaModeString());
                 fileChannel = raf.getChannel();
             }
-        } catch (FileNotFoundException fnfe) {
-            // Jave throws FileNotFoundException both if the file doesn't exist or there were
-            // permission issues, but Ruby needs to disambiguate those two cases
-            throw file.exists() ?
-                    new ResourceException.PermissionDenied(absolutePath()) :
-                    new ResourceException.NotFound(absolutePath());
+        }
+        catch (FileNotFoundException ex) {
+            throw mapFileNotFoundOnGetChannel(this, ex);
         }
 
         return fileChannel;
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        if (type == File.class || type == JRubyFile.class) return (T) file;
+        throw new UnsupportedOperationException("unwrap: " + type.getName());
+    }
+
 }

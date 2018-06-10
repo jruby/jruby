@@ -593,7 +593,7 @@ public class RubyDir extends RubyObject implements Closeable {
         if (path.startsWith("uri:")) {
             throw runtime.newErrnoEACCESError(path);
         }
-        File newDir = getDir(runtime, path, false).hackyGetJRubyFile();
+        File newDir = getDir(runtime, path, false).unwrap(File.class);
 
         String name = path.replace('\\', '/');
 

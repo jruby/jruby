@@ -1514,6 +1514,7 @@ public class ChannelStream implements Stream, Finalizable {
         return stream;
     }
 
+    @Deprecated // no longer used
     public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());

@@ -76,17 +76,17 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     private static FileResource createResource(Ruby runtime, String cwd, String pathname, boolean isFile) {
-        FileResource emptyResource = EmptyFileResource.create(pathname);
-        if (emptyResource != null) return emptyResource;
+        FileResource resource = EmptyFileResource.create(pathname);
+        if (resource != null) return resource;
 
         // This will work against anything potentially containing a '!' in it and does not require a scheme.
         // (see test/test_java_on_load_path.rb: $LOAD_PATH << "test/test_jruby_1332.jar!"; require 'test_jruby_1332.rb'
-        FileResource jarResource = JarResource.create(pathname);
-        if (jarResource != null) return jarResource;
+        resource = JarResource.create(pathname);
+        if (resource != null) return resource;
 
         if (Platform.IS_WINDOWS &&
                 (pathname.equalsIgnoreCase("nul") || pathname.equalsIgnoreCase("nul:"))) {
-            return new NullDeviceResource(runtime.getPosix());
+            return new NullDeviceResource();
         }
 
         if (pathname.indexOf(':') > 0) { // scheme-oriented resources
@@ -100,18 +100,16 @@ public class JRubyFile extends JavaSecuredFile {
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);
 
-                if (pathname.length() == 0) return EmptyFileResource.create(pathname);
+                if (pathname.length() == 0) return EmptyFileResource.INSTANCE;
             }
         }
 
-        File internal = new JavaSecuredFile(pathname);
-        if (cwd != null && !internal.isAbsolute() && (cwd.startsWith("uri:") || cwd.startsWith("file:"))) {
+        if (cwd != null && (cwd.startsWith("uri:") || cwd.startsWith("file:")) && !new File(pathname).isAbsolute()) {
             return createResource(runtime, null, cwd + '/' + pathname);
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        JRubyFile f = create(cwd, pathname);
-        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, f);
+        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, create(cwd, pathname));
     }
 
     public static String normalizeSeps(String path) {

@@ -28,7 +28,7 @@ import org.jruby.util.io.PosixShim;
 /**
  * Represents a "regular" file, backed by regular file system.
  */
-class RegularFileResource extends AbstractFileResource {
+class RegularFileResource implements FileResource {
     private final JRubyFile file;
     private final POSIX posix;
 
@@ -159,47 +159,27 @@ class RegularFileResource extends AbstractFileResource {
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile() {
-        return file;
-    }
-
-    @Override
-    InputStream openInputStream() throws IOException {
+    public InputStream openInputStream() throws IOException {
+        if (!exists()) {
+            throw new ResourceException.NotFound(absolutePath());
+        }
+        if (isDirectory()) {
+            throw new ResourceException.FileIsDirectory(absolutePath());
+        }
         return new FileInputStream(file);
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
+    public Channel openChannel(final int flags, int perm) throws IOException {
+        final ModeFlags modeFlags = ModeFlags.createModeFlags(flags);
         if (posix.isNative() && !Platform.IS_WINDOWS) {
-            int fd = posix.open(absolutePath(), flags.getFlags(), perm);
-            if (fd < 0) {
-                Errno errno = Errno.valueOf(posix.errno());
-                switch (errno) {
-                    case EACCES:
-                        throw new ResourceException.PermissionDenied(absolutePath());
-                    case EEXIST:
-                        throw new ResourceException.FileExists(absolutePath());
-                    case EINVAL:
-                        throw new ResourceException.InvalidArguments(absolutePath());
-                    case ENOENT:
-                        throw new ResourceException.NotFound(absolutePath());
-                    case ELOOP:
-                        throw new ResourceException.TooManySymlinks(absolutePath());
-                    case EISDIR:
-                        throw new ResourceException.FileIsDirectory(absolutePath());
-                    case ENOTDIR:
-                        throw new ResourceException.FileIsNotDirectory(absolutePath());
-                    case EMFILE:
-                    default:
-                        throw new ResourceException.IOError(new IOException(errno.description()));
-
-                }
-            }
+            int fd = posix.open(absolutePath(), modeFlags.getFlags(), perm);
+            if (fd < 0) throwFromErrno(posix.errno());
             posix.fcntlInt(fd, Fcntl.F_SETFD, posix.fcntl(fd, Fcntl.F_GETFD) | FcntlLibrary.FD_CLOEXEC);
             return new NativeDeviceChannel(fd);
         }
 
-        if (flags.isCreate()) {
+        if (modeFlags.isCreate()) {
             boolean fileCreated;
             try {
                 fileCreated = file.createNewFile();
@@ -214,15 +194,15 @@ class RegularFileResource extends AbstractFileResource {
                     throw new ResourceException.PermissionDenied(absolutePath());
                 } else {
                     // for all other IO errors, we report it as general IO error
-                    throw new ResourceException.IOError(ioe);
+                    throw ioe;
                 }
             }
 
-            if (!fileCreated && flags.isExclusive()) {
+            if (!fileCreated && modeFlags.isExclusive()) {
                 throw new ResourceException.FileExists(absolutePath());
             }
 
-            Channel channel = createChannel(flags);
+            Channel channel = createChannel(modeFlags);
 
             // attempt to set the permissions, if we have been passed a POSIX instance,
             // perm is > 0, and only if the file was created in this call.
@@ -243,10 +223,10 @@ class RegularFileResource extends AbstractFileResource {
             throw new ResourceException.NotFound(absolutePath());
         }
 
-        return createChannel(flags);
+        return createChannel(modeFlags);
     }
 
-    private Channel createChannel(ModeFlags flags) throws ResourceException {
+    private Channel createChannel(ModeFlags flags) throws IOException {
         SeekableByteChannel fileChannel;
 
         try{
@@ -262,21 +242,69 @@ class RegularFileResource extends AbstractFileResource {
                 // does not have these semantics so we wrap it to support this unusual case.
                 if (flags.isAppendable()) fileChannel = new AppendModeChannel((FileChannel) fileChannel);
             }
-        } catch (FileNotFoundException fnfe) {
-            // Jave throws FileNotFoundException both if the file doesn't exist or there were
-            // permission issues, but Ruby needs to disambiguate those two cases
-            throw file.exists() ?
-                    new ResourceException.PermissionDenied(absolutePath()) :
-                    new ResourceException.NotFound(absolutePath());
+        }
+        catch (FileNotFoundException ex) {
+            throw mapFileNotFoundOnGetChannel(this, ex);
         }
 
         try {
             if (flags.isTruncate()) fileChannel.truncate(0);
-        } catch (IOException ioe) {
+        }
+        catch (IOException ioe) {
             // ignore; it's a pipe or fifo that can't be truncated (we only care about illegal seek).
-            if (!ioe.getMessage().equals("Illegal seek")) throw new ResourceException.IOError(ioe);
+            if (!"Illegal seek".equals(ioe.getMessage())) throw ioe;
         }
 
         return fileChannel;
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        if (type == File.class || type == JRubyFile.class) return (T) file;
+        throw new UnsupportedOperationException("unwrap: " + type.getName());
+    }
+
+    static IOException mapFileNotFoundOnGetChannel(final FileResource file, final FileNotFoundException ex) {
+        // Java throws FileNotFoundException both if the file doesn't exist or there were
+        // permission issues, but Ruby needs to disambiguate those two cases
+        return file.exists() ?
+                new ResourceException.PermissionDenied(file.absolutePath()) :
+                new ResourceException.NotFound(file.absolutePath());
+    }
+
+    private void throwFromErrno(final int err) throws IOException {
+        Errno errno = Errno.valueOf(err);
+        switch (errno) {
+            case EACCES:
+                throw new ResourceException.PermissionDenied(absolutePath());
+            case EEXIST:
+                throw new ResourceException.FileExists(absolutePath());
+            case EINVAL:
+                throw new ResourceException.InvalidArguments(absolutePath());
+            case ENOENT:
+                throw new ResourceException.NotFound(absolutePath());
+            case ELOOP:
+                throw new ResourceException.TooManySymlinks(absolutePath());
+            case EISDIR:
+                throw new ResourceException.FileIsDirectory(absolutePath());
+            case ENOTDIR:
+                throw new ResourceException.FileIsNotDirectory(absolutePath());
+            case EMFILE:
+            default:
+                throw new InternalIOException(errno.description());
+
+        }
+    }
+
+    static class InternalIOException extends IOException {
+
+        InternalIOException(final String message) {
+            super(message);
+        }
+
+        @Override
+        public Throwable fillInStackTrace() { return this; }
+
+    }
+
 }

@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -416,7 +417,7 @@ public class PosixShim {
         return ret;
     }
 
-    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
+    public Channel open(String cwd, String path, int flags, int perm) {
         if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
             path = "NUL:";
         }
@@ -435,10 +436,17 @@ public class PosixShim {
             errno = Errno.EACCES;
         } catch (ResourceException.TooManySymlinks e) {
             errno = Errno.ELOOP;
-        } catch (ResourceException resourceException) {
-            throw resourceException.newRaiseException(runtime);
+        } catch (ResourceException ex) {
+            throw ex.newRaiseException(runtime);
+        } catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
         }
         return null;
+    }
+
+    // no longer used
+    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
+        return open(cwd, path, flags, perm);
     }
 
     @Deprecated // special case is already handled with JRubyFile.createResource

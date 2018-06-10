@@ -1,7 +1,5 @@
 package org.jruby.util;
 
-import jnr.posix.POSIX;
-import org.jruby.util.io.ModeFlags;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,6 +13,7 @@ import java.nio.channels.Channel;
  * just that.</p>
  */
 class JarDirectoryResource extends JarResource {
+
     private final String path;
     private final String[] contents;
 
@@ -62,14 +61,21 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    InputStream openInputStream() throws IOException {
+    public InputStream openInputStream() throws IOException {
         throw new ResourceException.FileIsDirectory(path);
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-        // opening a directory seems to blow up with EACCESS in jruby (although MRI allows instantiation but blows up on read).
+    public Channel openChannel(final int flags, int perm) throws ResourceException {
+        // opening a directory seems to blow up with EACCESS in jruby
+        // (although MRI allows instantiation but blows up on read).
         // So mimicking that for now.
         throw new ResourceException.PermissionDenied(absolutePath());
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        throw new UnsupportedOperationException("unwrap: " + type.getName());
+    }
+
 }

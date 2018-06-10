@@ -1509,7 +1509,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Deprecated // Use fileResource instead
     public static JRubyFile file(IRubyObject pathOrFile) {
-      return fileResource(pathOrFile).hackyGetJRubyFile();
+        return fileResource(pathOrFile).unwrap(JRubyFile.class);
     }
 
     @Override

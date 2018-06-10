@@ -2,8 +2,8 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 
-// TODO needs a better name like ReadOnlyFileStat
-class JarFileStat implements FileStat {
+final class JarFileStat implements FileStat {
+
     private final FileResource resource;
 
     public JarFileStat(FileResource resource) {
@@ -122,88 +122,87 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isReadable() {
-            return resource.canRead();
-        }
+        return resource.canRead();
+    }
 
-        @Override
-        public boolean isReadableReal() {
-            return resource.canRead();
-        }
+    @Override
+    public boolean isReadableReal() {
+        return resource.canRead();
+    }
 
-        @Override
-        public boolean isWritable() {
-            return false;
-        }
+    @Override
+    public boolean isWritable() {
+        return false;
+    }
 
-        @Override
-        public boolean isWritableReal() {
-            return false;
-        }
+    @Override
+    public boolean isWritableReal() {
+        return false;
+    }
 
-        @Override
-        public boolean isSetgid() {
-            return false;
-        }
+    @Override
+    public boolean isSetgid() {
+        return false;
+    }
 
-        @Override
-        public boolean isSetuid() {
-            return false;
-        }
+    @Override
+    public boolean isSetuid() {
+        return false;
+    }
 
-        @Override
-        public boolean isSocket() {
-            return false;
-        }
+    @Override
+    public boolean isSocket() {
+        return false;
+    }
 
-        @Override
-        public boolean isSticky() {
-            return false;
-        }
+    @Override
+    public boolean isSticky() {
+        return false;
+    }
 
-        @Override
-        public boolean isSymlink() {
-            return false;
-        }
+    @Override
+    public boolean isSymlink() {
+        return false;
+    }
 
-        @Override
-        public int major(long l) {
-            return -1;
-        }
+    @Override
+    public int major(long l) {
+        return -1;
+    }
 
-        @Override
-        public int minor(long l) {
-            return -1;
-        }
+    @Override
+    public int minor(long l) {
+        return -1;
+    }
 
-        @Override
-        public int mode() {
-            return -1;
-        }
+    @Override
+    public int mode() {
+        return -1;
+    }
 
-        @Override
-        public long mtime() {
-            return resource.lastModified();
-        }
+    @Override
+    public long mtime() {
+        return resource.lastModified();
+    }
 
-        @Override
-        public int nlink() {
-            return -1;
-        }
+    @Override
+    public int nlink() {
+        return -1;
+    }
 
-        @Override
-        public long rdev() {
-            return -1;
-        }
+    @Override
+    public long rdev() {
+        return -1;
+    }
 
-        @Override
-        public long st_size() {
-            return resource.length();
-        }
+    @Override
+    public long st_size() {
+        return resource.length();
+    }
 
-        @Override
-        public int uid() {
-            return 0;
-        }
-
+    @Override
+    public int uid() {
+        return 0;
+    }
 
 }

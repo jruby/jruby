@@ -1255,9 +1255,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         fd = sysopenInternal(runtime, data);
         if (fd == null) {
             if (data.errno != null) {
-                throw runtime.newErrnoFromErrno(data.errno, fname.toString());
+                throw runtime.newErrnoFromErrno(data.errno, fname);
             } else {
-                throw runtime.newSystemCallError(fname.toString());
+                throw runtime.newSystemCallError(fname);
             }
         }
         return fd;
@@ -1288,7 +1288,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 //            flags |= O_NOINHERIT;
 //        #endif
         PosixShim shim = new PosixShim(runtime);
-        ret = shim.open(runtime.getCurrentDirectory(), data.fname, ModeFlags.createModeFlags(data.oflags), data.perm);
+        ret = shim.open(runtime.getCurrentDirectory(), data.fname, data.oflags, data.perm);
         if (ret == null) {
             data.errno = shim.errno;
             return null;

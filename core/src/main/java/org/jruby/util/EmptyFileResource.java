@@ -2,19 +2,20 @@ package org.jruby.util;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
-import org.jruby.util.io.ModeFlags;
+
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.channels.Channel;
 
-public class EmptyFileResource implements FileResource {
+class EmptyFileResource implements FileResource {
     // All empty resources are the same and immutable, so may as well
     // cache the instance
-    private static final EmptyFileResource INSTANCE = new EmptyFileResource();
+    static final EmptyFileResource INSTANCE = new EmptyFileResource();
 
     public static EmptyFileResource create(String pathname) {
-        return (pathname == null || "".equals(pathname)) ?
-            INSTANCE : null;
+        return (pathname == null || pathname.isEmpty()) ? INSTANCE : null;
     }
 
     @Override
@@ -30,10 +31,6 @@ public class EmptyFileResource implements FileResource {
     @Override
     public boolean exists() {
         return false;
-    }
-
-    public int errno() {
-        return Errno.ENOENT.intValue();
     }
 
     @Override
@@ -67,9 +64,7 @@ public class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public String[] list() {
-        return StringSupport.EMPTY_STRING_ARRAY;
-    }
+    public String[] list() { return null; }
 
     @Override
     public long lastModified() {
@@ -92,20 +87,29 @@ public class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile() {
-        // It is somewhat weird that we're returning the NOT_EXIST instance that this resource is
-        // intending to replace. However, that should go away once we get rid of the hacky method, so
-        // should be okay for now.
-        return JRubyFile.DUMMY;
+    public int errno() {
+        return Errno.ENOENT.intValue();
     }
 
     @Override
-    public InputStream inputStream() throws ResourceException {
+    public InputStream openInputStream() throws IOException {
         throw new ResourceException.NotFound("");
     }
 
     @Override
-    public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
+    public Channel openChannel(int flags, int perm) throws IOException {
         throw new ResourceException.NotFound(absolutePath());
     }
+
+    @Override
+    public <T> T unwrap(Class<T> type) throws UnsupportedOperationException {
+        if (type == File.class || type == JRubyFile.class) return (T) JRubyFile.DUMMY;
+        throw new UnsupportedOperationException("unwrap: " + type.getName());
+    }
+
+    @Override
+    public String toString() {
+        return "";
+    }
+
 }

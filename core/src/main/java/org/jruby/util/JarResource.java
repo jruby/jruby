@@ -6,7 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.jar.JarEntry;
 
-abstract class JarResource extends AbstractFileResource {
+abstract class JarResource implements FileResource {
 
     private static final JarCache jarCache = new JarCache();
 
@@ -88,11 +88,13 @@ abstract class JarResource extends AbstractFileResource {
         return jarCache.remove(jarPath);
     }
 
-    private final String jarPrefix;
+    final CharSequence jarPrefix;
     private final JarFileStat fileStat;
 
     protected JarResource(String jarPath, boolean rootSlashPrefix) {
-        this.jarPrefix = rootSlashPrefix ? jarPath + "!/" : jarPath + "!";
+        StringBuilder prefix = new StringBuilder(jarPath.length() + 2);
+        prefix.append(jarPath).append('!');
+        this.jarPrefix = rootSlashPrefix ? prefix.append('/') : prefix;
         this.fileStat = new JarFileStat(this);
     }
 
@@ -124,6 +126,11 @@ abstract class JarResource extends AbstractFileResource {
     }
 
     @Override
+    public boolean canExecute() {
+        return false;
+    }
+
+    @Override
     public boolean isSymLink() {
         // Jar archives shouldn't contain symbolic links, or it would break portability. `jar`
         // command behavior seems to comform to that (it unwraps syumbolic links when creating a jar
@@ -140,13 +147,19 @@ abstract class JarResource extends AbstractFileResource {
 
     @Override
     public FileStat lstat() {
-      return stat(); // jars don't have symbolic links, so lstat == stat
+        return stat(); // jars don't have symbolic links, so lstat == stat
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile() {
-      return JRubyFile.DUMMY;
+    public int errno() {
+        return 0; // stat() never fails
+    }
+
+    @Override
+    public boolean isNull() {
+        return false;
     }
 
     abstract protected String entryName();
+
 }

@@ -37,21 +37,15 @@ import static org.jruby.RubyFile.fileResource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 
 import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.FileResource;
-import org.jruby.util.NullDeviceResource;
 import org.jruby.util.TypeConverter;
 
 @JRubyModule(name = "FileTest")
@@ -310,7 +304,7 @@ public class RubyFileTest {
 
         // FIXME: Ultimately we should return a valid stat() from this but without massive NUL coverage
         // this is less risky.
-        if (resource instanceof NullDeviceResource) return runtime.newBoolean(true);
+        if (resource.isNull()) return runtime.newBoolean(true);
 
         FileStat stat = resource.stat();
 

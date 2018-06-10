@@ -1,9 +1,5 @@
 package org.jruby.util;
 
-import jnr.posix.POSIX;
-import org.jruby.util.io.ModeFlags;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -19,53 +15,60 @@ import java.util.jar.JarEntry;
  * </p>
  */
 class JarFileResource extends JarResource {
-  private final JarCache.JarIndex index;
-  private final JarEntry entry;
 
-  JarFileResource(String jarPath, boolean rootSlashPrefix, JarCache.JarIndex index, JarEntry entry) {
-    super(jarPath, rootSlashPrefix);
-    this.index = index;
-    this.entry = entry;
-  }
+    private final JarCache.JarIndex index;
+    private final JarEntry entry;
 
-  @Override
-  public String entryName() {
-    return entry.getName();
-  }
+    JarFileResource(String jarPath, boolean rootSlashPrefix, JarCache.JarIndex index, JarEntry entry) {
+        super(jarPath, rootSlashPrefix);
+        this.index = index;
+        this.entry = entry;
+    }
 
-  @Override
-  public boolean isDirectory() {
-    return false;
-  }
+    @Override
+    public String entryName() {
+        return entry.getName();
+    }
 
-  @Override
-  public boolean isFile() {
-    return true;
-  }
+    @Override
+    public boolean isDirectory() {
+        return false;
+    }
 
-  @Override
-  public long length() {
-    return entry.getSize();
-  }
+    @Override
+    public boolean isFile() {
+        return true;
+    }
 
-  @Override
-  public long lastModified() {
-    return entry.getTime();
-  }
+    @Override
+    public long length() {
+        return entry.getSize();
+    }
 
-  @Override
-  public String[] list() {
-    // Files cannot be listed
-    return null;
-  }
+    @Override
+    public long lastModified() {
+        return entry.getTime();
+    }
 
-  @Override
-  InputStream openInputStream() {
-    return index.getInputStream(entry);
-  }
+    @Override
+    public String[] list() {
+        return null; // Files cannot be listed
+    }
 
-  @Override
-  public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-    return Channels.newChannel(inputStream());
-  }
+    @Override
+    public InputStream openInputStream() {
+        return index.getInputStream(entry);
+    }
+
+    @Override
+    public Channel openChannel(int flags, int perm) {
+        return Channels.newChannel(openInputStream());
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> type) {
+        if (type == JarEntry.class) return (T) entry;
+        throw new UnsupportedOperationException("unwrap: " + type.getName());
+    }
+
 }
