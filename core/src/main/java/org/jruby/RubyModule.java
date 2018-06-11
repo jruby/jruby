@@ -58,6 +58,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.FrameField;
@@ -611,7 +612,8 @@ public class RubyModule extends RubyObject {
         Collections.reverse(parents);
 
         RubyString colons = runtime.newString("::");
-        RubyString fullName = runtime.newString();
+        RubyString fullName = runtime.newString();       // newString creates empty ByteList which ends up as
+        fullName.setEncoding(USASCIIEncoding.INSTANCE);  // ASCII-8BIT.  8BIT is unfriendly to string concats.
         for (RubyString parent:  parents) {
             fullName.cat19(parent).cat19(colons);
         }
