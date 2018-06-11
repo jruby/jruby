@@ -822,12 +822,13 @@ public abstract class RealClassGenerator {
                     }
                 }
             } else {
+                // if the return type is not an IRubyObject implementer, coerce to that type before casting
                 if (!IRubyObject.class.isAssignableFrom(returnType)) {
                     mv.ldc(Type.getType(returnType));
                     mv.invokeinterface(
                         p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
-                    mv.checkcast(p(returnType));
                 }
+                mv.checkcast(p(returnType));
                 mv.areturn();
             }
         } else {
