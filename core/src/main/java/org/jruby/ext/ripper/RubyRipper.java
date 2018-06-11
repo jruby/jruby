@@ -188,6 +188,7 @@ public class RubyRipper extends RubyObject {
         hash.fastASet(runtime.newSymbol("if"), runtime.newFixnum(3));
         hash.fastASet(runtime.newSymbol("if_mod"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("ifop"), runtime.newFixnum(3));
+        hash.fastASet(runtime.newSymbol("kwrest_param"), runtime.newFixnum(1));
         hash.fastASet(runtime.newSymbol("lambda"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("magic_comment"), runtime.newFixnum(2));
         hash.fastASet(runtime.newSymbol("massign"), runtime.newFixnum(2));
