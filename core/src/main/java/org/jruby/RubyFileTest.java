@@ -121,10 +121,11 @@ public class RubyFileTest {
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         // We get_path here to prevent doing it both existsOnClasspath and fileResource (Only call to_path once).
-        RubyString path = get_path(context, filename);
+        return context.runtime.newBoolean(exist(context, get_path(context, filename)));
+    }
 
-        return context.runtime.newBoolean(existsOnClasspath(path) ||
-                !Ruby.isSecurityRestricted() && fileResource(context, path).exists());
+    static boolean exist(ThreadContext context, RubyString path) {
+        return existsOnClasspath(path) || !Ruby.isSecurityRestricted() && fileResource(context, path).exists();
     }
 
     @Deprecated
