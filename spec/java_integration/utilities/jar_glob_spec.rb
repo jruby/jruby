@@ -17,7 +17,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
   before :all do
     FileUtils.rm "glob_test/glob-test.jar", :force => true
     begin
-      FileUtils.rm_rf "glob_test"
+      FileUtils.rm_rf 'glob_test'
     rescue Errno::ENOENT; end
     
     FileUtils.mkdir_p 'glob_target'
@@ -32,11 +32,12 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     FileUtils.rmdir 'glob_target'
     FileUtils.rm    "glob-test.jar",           :force => true
     begin
-      FileUtils.rm    "glob_test/glob-test.jar"
-      FileUtils.rmdir 'glob_test'
+      FileUtils.rm "glob_test/glob-test.jar"
+      FileUtils.rm_f "glob_test/modified-glob-test.jar"
     rescue Errno::EACCES => e
-      puts "Couldn't delete glob_test/glob-test.jar - Windows bug with JarFile holding write-lock after closed"
+      warn "Couldn't delete glob_test/glob-test.jar - Windows bug with JarFile holding write-lock after closed"
     end
+    FileUtils.rmdir 'glob_test'
   end
   
   it "finds the contents inside a jar with Dir.[] in a dir inside the jar" do
@@ -94,8 +95,8 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     end
   end
 
-=begin For some reason, mtime does not update on Jenkins on Cloudbees
   it "respects jar content filesystem changes" do
+    pending('Failing@CloudBees') if ENV['JENKINS_HOME'] && ENV['CI']
     jar_path = File.join(Dir.pwd, 'glob_test', 'modified-glob-test.jar')
     FileUtils.cp 'glob-test.jar', jar_path
 
@@ -118,7 +119,6 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
 
     expect(after - before).to eq(-2)
   end
-=end
 end
 
 describe 'Dir globs (Dir.glob and Dir.[]) +' do
@@ -139,9 +139,7 @@ describe "File.expand_path in a jar" do
     before do
       Dir.mkdir 'spaces test' unless File.exist? 'spaces test'
       File.open('spaces_file.rb', 'w') do |file|
-        file << <<-CODE
-      $foo_dir = File.expand_path(File.dirname(__FILE__))
-CODE
+        file << "$foo_dir = File.expand_path(File.dirname(__FILE__))\n"
       end
       `jar -cf test.jar spaces_file.rb`
 
