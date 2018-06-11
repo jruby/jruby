@@ -359,7 +359,7 @@ public class RubyMath {
         return logCommon(context, value, _base, "log");
     }
 
-    public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         if (args.length == 2) {
             return log(context, recv, args[0], args[1]);
         }

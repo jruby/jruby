@@ -490,15 +490,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return 0; // our <=> contract is to return 0 on non-comparables
     }
 
-    @JRubyMethod(name = "to_sym")
-    public IRubyObject to_sym() {
-        return this;
-    }
+    @JRubyMethod(name = { "to_sym", "intern" })
+    public IRubyObject to_sym() { return this; }
 
-    @JRubyMethod(name = "intern")
-    public IRubyObject to_sym19() {
-        return this;
-    }
+    @Deprecated
+    public IRubyObject to_sym19() { return this; }
 
     @Override
     public IRubyObject taint(ThreadContext context) {
@@ -507,10 +503,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     private RubyString newShared(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
-    }
-
-    private RubyString rubyStringFromString(Ruby runtime) {
-        return RubyString.newString(runtime, symbol);
     }
 
     @JRubyMethod(name = {"succ", "next"})
@@ -587,7 +579,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = {"length", "size"})
     public IRubyObject length() {
-        return newShared(getRuntime()).length19();
+        final Ruby runtime = getRuntime();
+        return RubyFixnum.newFixnum(runtime, newShared(runtime).strLength());
     }
 
     @JRubyMethod(name = "empty?")
