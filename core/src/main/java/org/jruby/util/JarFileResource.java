@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -56,12 +57,12 @@ class JarFileResource extends JarResource {
     }
 
     @Override
-    public InputStream openInputStream() {
+    public InputStream openInputStream() throws IOException {
         return index.getInputStream(entry);
     }
 
     @Override
-    public Channel openChannel(int flags, int perm) {
+    public Channel openChannel(int flags, int perm) throws IOException {
         return Channels.newChannel(openInputStream());
     }
 
