@@ -224,8 +224,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
     }
 
-    private NoSuchMethodException wrapMethodException(Exception e) {
-        return (NoSuchMethodException)new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
+    private static NoSuchMethodException wrapMethodException(Exception e) {
+        return (NoSuchMethodException) new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
     }
 
     public Object invokeFunction(String method, Object... args)
