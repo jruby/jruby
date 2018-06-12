@@ -2143,13 +2143,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        block = block.cloneBlockAndFrame();
-        RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
-
-        // a normal block passed to define_method changes to do arity checking; make it a lambda
-        proc.getBlock().type = Block.Type.LAMBDA;
-
-        newMethod = createProcMethod(name.idString(), visibility, proc);
+        newMethod = createProcMethod(runtime, name.idString(), visibility, block);
 
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
@@ -2172,7 +2166,7 @@ public class RubyModule extends RubyObject {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(name.idString(), visibility, proc);
+            newMethod = createProcMethod(runtime, name.idString(), visibility, proc.getBlock());
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
@@ -2202,13 +2196,15 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private DynamicMethod createProcMethod(String name, Visibility visibility, RubyProc proc) {
-        Block block = proc.getBlock();
+    private DynamicMethod createProcMethod(Ruby runtime, String name, Visibility visibility, Block block) {
+        block = block.cloneBlockAndFrame();
+
         block.getBinding().getFrame().setKlazz(this);
         block.getBinding().getFrame().setName(name);
         block.getBinding().setMethod(name);
 
-        block.type = Block.Type.LAMBDA;
+        // a normal block passed to define_method changes to do arity checking; make it a lambda
+        RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
 
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
