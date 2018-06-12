@@ -7,6 +7,7 @@ import org.jruby.util.io.ModeFlags;
 import java.io.*;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
+import java.nio.file.attribute.FileTime;
 
 import static org.jruby.util.RegularFileResource.mapFileNotFoundOnGetChannel;
 
@@ -37,6 +38,18 @@ final class NullDeviceResource implements FileResource {
     @Override
     public long lastModified() {
         return 0;
+    }
+
+    public FileTime creationTime() {
+        return FileTime.fromMillis(lastModified());
+    }
+
+    public FileTime lastModifiedTime() {
+        return FileTime.fromMillis(lastModified());
+    }
+
+    public FileTime lastAccessTime() {
+        return FileTime.fromMillis(lastModified());
     }
 
     @Override

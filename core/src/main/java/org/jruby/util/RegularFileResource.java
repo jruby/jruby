@@ -15,9 +15,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.RubyFile;
@@ -66,6 +66,26 @@ class RegularFileResource implements FileResource {
     @Override
     public long lastModified() {
         return file.lastModified();
+    }
+
+    public FileTime lastModifiedTime() throws IOException {
+        return FileTime.fromMillis(file.lastModified());
+    }
+
+    public FileTime lastAccessTime() throws IOException {
+        return readAttributes().lastAccessTime();
+    }
+
+    public FileTime creationTime() throws IOException {
+        return readAttributes().creationTime();
+    }
+
+    private transient BasicFileAttributes fileAttributes;
+
+    private BasicFileAttributes readAttributes() throws IOException {
+        if (fileAttributes != null) return fileAttributes;
+        Path path = FileSystems.getDefault().getPath(file.getPath());
+        return fileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
     }
 
     @Override

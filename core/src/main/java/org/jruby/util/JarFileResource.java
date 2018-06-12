@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
+import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
 
 /**
@@ -46,9 +47,16 @@ class JarFileResource extends JarResource {
         return entry.getSize();
     }
 
-    @Override
-    public long lastModified() {
-        return entry.getTime();
+    public FileTime creationTime() {
+        return entry.getCreationTime();
+    }
+
+    public FileTime lastAccessTime() {
+        return entry.getLastAccessTime();
+    }
+
+    public FileTime lastModifiedTime() {
+        return entry.getLastModifiedTime();
     }
 
     @Override
