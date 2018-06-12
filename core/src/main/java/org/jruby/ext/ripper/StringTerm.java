@@ -161,9 +161,9 @@ public class StringTerm extends StrTerm {
             } else {
                 buffer.append(c);
             }
-        } else {
-            lexer.pushback(c);
         }
+        lexer.pushback(c);
+
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
 
