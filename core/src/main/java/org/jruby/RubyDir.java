@@ -351,7 +351,12 @@ public class RubyDir extends RubyObject implements Closeable {
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;
 
     private static String[] getEntries(ThreadContext context, FileResource dir, String path) {
-        if (!dir.isDirectory()) throw context.runtime.newErrnoENOENTError("No such directory: " + path);
+        if (!dir.isDirectory()) {
+            if (dir.exists()) {
+                throw context.runtime.newErrnoENOTDIRError(path);
+            }
+            throw context.runtime.newErrnoENOENTError(path);
+        }
         if (!dir.canRead()) throw context.runtime.newErrnoEACCESError(path);
 
         String[] list = dir.list();
