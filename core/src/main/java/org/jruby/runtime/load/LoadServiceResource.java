@@ -28,6 +28,7 @@
 
 package org.jruby.runtime.load;
 
+import org.jruby.RubyString;
 import org.jruby.util.URLUtil;
 
 import java.io.File;
@@ -50,29 +51,26 @@ public class LoadServiceResource {
     private final String name;
     private final boolean absolute;
     private String absolutePath;
+    private LoadService loadService;
 
-    public LoadServiceResource(URL resource, String name) {
+    public LoadServiceResource(LoadService loadService, URL resource, String name) {
+        this.loadService = loadService;
         this.resource = resource;
         this.path = null;
         this.name = name;
         this.absolute = false;
     }
-
-    public LoadServiceResource(URL resource, String name, boolean absolute) {
-        this.resource = resource;
-        this.path = null;
-        this.name = name;
-        this.absolute = absolute;
-    }
     
-    public LoadServiceResource(File path, String name) {
+    public LoadServiceResource(LoadService loadService, File path, String name) {
+        this.loadService = loadService;
         this.resource = null;
         this.path = path;
         this.name = name;
         this.absolute = false;
     }
 
-    public LoadServiceResource(File path, String name, boolean absolute) {
+    public LoadServiceResource(LoadService loadService, File path, String name, boolean absolute) {
+        this.loadService = loadService;
         this.resource = null;
         this.path = path;
         this.name = name;
@@ -83,17 +81,28 @@ public class LoadServiceResource {
         if (resource != null) {
             InputStream is = resource.openStream();
             try {
+                RubyString processed = loadService.runLoadHooks(resource.getPath(), is);
+                if (processed != null) {
+                    return new LoadServiceResourceInputStream(processed.getBytes());
+                }
                 return new LoadServiceResourceInputStream(is);
             } finally {
                 is.close();
             }
         }
+
         byte[] bytes = new byte[(int)path.length()];
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         FileInputStream fis = new FileInputStream(path);
         FileChannel fc = fis.getChannel();
         fc.read(buffer);
         fis.close();
+
+        RubyString processed = loadService.runLoadHooks(path.getAbsolutePath(), bytes);
+        if (processed != null) {
+            bytes = processed.getBytes();
+        }
+
         return new LoadServiceResourceInputStream(bytes);
     }
 
@@ -147,5 +156,13 @@ public class LoadServiceResource {
 
     public boolean isAbsolute() {
         return absolute;
+    }
+
+    @Deprecated
+    public LoadServiceResource(URL resource, String name, boolean absolute) {
+        this.resource = resource;
+        this.path = null;
+        this.name = name;
+        this.absolute = absolute;
     }
 }

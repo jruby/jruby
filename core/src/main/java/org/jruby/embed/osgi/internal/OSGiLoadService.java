@@ -103,7 +103,7 @@ public class OSGiLoadService extends LoadService {
             if (bundle != null) {
                 URL url = bundle.getEntry(sb.toString());
                 if (url != null) {
-                    return new LoadServiceResource(
+                    return new LoadServiceResource(runtime.getLoadService(),
                             OSGiFileLocator.getLocalURL(url), name);
                 }
             }

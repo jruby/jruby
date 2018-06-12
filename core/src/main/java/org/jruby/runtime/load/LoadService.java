@@ -34,17 +34,21 @@
 
 package org.jruby.runtime.load;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -191,6 +195,8 @@ public class LoadService {
 
     protected final Ruby runtime;
     protected final LibrarySearcher librarySearcher;
+
+    protected final Set<LoadHook> loadHooks = new HashSet<>();
 
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
@@ -1084,7 +1090,7 @@ public class LoadService {
                 debugLogTry("resourceFromCWD", file.toString());
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
-                    foundResource = new LoadServiceResource(file, getFileName(file, namePlusSuffix), absolute);
+                    foundResource = new LoadServiceResource(this, file, getFileName(file, namePlusSuffix), absolute);
                     debugLogFound(foundResource);
                     state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break;
@@ -1138,7 +1144,7 @@ public class LoadService {
                     boolean absolute = true;
 
                     state.setLoadName(file.getPath());
-                    foundResource = new LoadServiceResource(file, state.loadName, absolute);
+                    foundResource = new LoadServiceResource(this, file, state.loadName, absolute);
                     debugLogFound(foundResource);
                     break;
                 }
@@ -1164,7 +1170,7 @@ public class LoadService {
                     URL url = resourceUri.toURL();
                     debugLogTry("resourceFromJarURL", url.toString());
                     if (url.openStream() != null) {
-                        foundResource = new LoadServiceResource(url, namePlusSuffix);
+                        foundResource = new LoadServiceResource(this, url, namePlusSuffix);
                         debugLogFound(foundResource);
                     }
                 } catch (FileNotFoundException e) {
@@ -1191,7 +1197,7 @@ public class LoadService {
                     debugLogTry("resourceFromJarURL", expandedFilename);
                     if(file.getJarEntry(expandedFilename) != null) {
                         URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
-                        foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
+                        foundResource = new LoadServiceResource(this, resourceUri.toURL(), namePlusSuffix);
                         debugLogFound(foundResource);
                     }
                 } catch (URISyntaxException e) {
@@ -1316,7 +1322,7 @@ public class LoadService {
             if (current.getJarEntry(canonicalEntry) != null) {
                 try {
                     URI resourceUri = new URI("jar", "file:" + jarFileName + "!/" + canonicalEntry, null);
-                    foundResource = new LoadServiceResource(resourceUri.toURL(), resourceUri.getSchemeSpecificPart());
+                    foundResource = new LoadServiceResource(this, resourceUri.toURL(), resourceUri.getSchemeSpecificPart());
                     debugLogFound(foundResource);
                 } catch (URISyntaxException e) {
                     throw runtime.newIOError(e.getMessage());
@@ -1405,7 +1411,7 @@ public class LoadService {
                     debugLogTry("resourceFromLoadPath", "'" + actualPath.toString() + "' " + actualPath.isFile() + " " + actualPath.canRead());
                 }
                 if (actualPath.canRead()) {
-                    foundResource = new LoadServiceResource(actualPath, reportedPath, absolute);
+                    foundResource = new LoadServiceResource(this, actualPath, reportedPath, absolute);
                     debugLogFound(foundResource);
                 }
             }
@@ -1452,7 +1458,7 @@ public class LoadService {
                 }
 
                 if (actualPath.isFile() && actualPath.canRead()) {
-                    foundResource = new LoadServiceResource(actualPath, reportedPath);
+                    foundResource = new LoadServiceResource(this, actualPath, reportedPath);
                     debugLogFound(foundResource);
                 }
             }
@@ -1597,7 +1603,7 @@ public class LoadService {
 
         if (loc != null) { // got it
             String path = classpathFilenameFromURL(name, loc, isClasspathScheme);
-            LoadServiceResource foundResource = new LoadServiceResource(loc, path);
+            LoadServiceResource foundResource = new LoadServiceResource(this, loc, path);
             debugLogFound(foundResource);
             return foundResource;
         }
@@ -1654,5 +1660,62 @@ public class LoadService {
 
     protected String getFileName(JRubyFile file, String namePlusSuffix) {
         return file.getAbsolutePath();
+    }
+
+    public interface LoadHook {
+        RubyString callback(String file, RubyString src);
+    }
+
+    public void addLoadHook(LoadHook loadHook) {
+        synchronized (loadHooks) {
+            loadHooks.add(loadHook);
+        }
+    }
+
+    public void removeLoadHook(LoadHook loadHook) {
+        synchronized (loadHooks) {
+            loadHooks.remove(loadHook);
+        }
+    }
+
+    public RubyString runLoadHooks(String file, byte[] src) {
+        if (loadHooks.size() > 0) {
+            synchronized (loadHooks) {
+                RubyString string = RubyString.newString(runtime, src);
+                for (LoadHook loadHook : loadHooks) {
+                    string = loadHook.callback(file, string);
+                }
+                return string;
+            }
+        }
+
+        return null;
+    }
+
+    public RubyString runLoadHooks(String file, InputStream src) throws IOException {
+        if (loadHooks.size() > 0) {
+            synchronized (loadHooks) {
+
+                byte[] bytes = new byte[8192];
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
+
+                int len;
+                while ((len = src.read(bytes)) != -1) {
+                    baos.write(bytes, 0, len);
+                }
+                bytes = baos.toByteArray();
+
+                RubyString string = RubyString.newString(runtime, bytes);
+
+                for (LoadHook loadHook : loadHooks) {
+                    string = loadHook.callback(file, string);
+                }
+
+                return string;
+            }
+        }
+
+        return null;
     }
 }

@@ -112,4 +112,15 @@ module JRuby
 
   autoload :ASM, 'jruby/asm.rb'
 
+  module VM
+    def self.add_load_hook(&block)
+      # kinda gross; interface wants RubyString but RubyNil does not coerce to null due to looking like an IRubyObject
+      new_block = ->(file, src) do
+        new_src = block.call(file, src)
+        new_src.nil? ? nil.to_java : new_src
+      end
+      JRuby.runtime.load_service.add_load_hook(new_block)
+    end
+  end
+
 end
