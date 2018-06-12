@@ -245,7 +245,7 @@ class LibrarySearcher {
             try {
                 ris = resource.inputStream();
 
-                RubyString processed = runtime.getLoadService().runLoadHooks(scriptName, ris);
+                RubyString processed = runtime.getLoadService().runLoadHooks(location, ris);
                 if (processed != null) {
                     runtime.loadFile(scriptName, new LoadServiceResourceInputStream(processed.getBytes()), wrap);
                 } else if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
