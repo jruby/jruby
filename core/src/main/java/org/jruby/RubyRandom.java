@@ -652,7 +652,7 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyBignum state = random.getState();
-        RubyInteger left = RubyNumeric.int2fix(context.runtime, random.getLeft());
+        RubyInteger left = RubyFixnum.newFixnum(context.runtime, (long) random.getLeft());
         RubyArray dump = RubyArray.newArray(context.runtime, state, left, random.getSeed());
         if (hasVariables()) {
             dump.syncVariables(this);
