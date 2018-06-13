@@ -11,7 +11,7 @@ describe "The -I command line option" do
 
   it "adds the path at the front of $LOAD_PATH" do
     lines = ruby_exe(@script, options: "-I fixtures").lines
-    if File.basename(ruby_exe[0]) == "miniruby"
+    if PlatformGuard.implementation? :ruby
       # In a MRI checkout, $PWD ends up as the first entry in $LOAD_PATH.
       # So just assert that it's at the beginning.
       idx = lines.index { |l| l.include?("fixtures") }
@@ -31,19 +31,21 @@ describe "The -I command line option" do
   end
 end
 
-describe "The -I command line option" do
-  before :each do
-    @script = fixture __FILE__, "loadpath.rb"
-    @fixtures = File.dirname(@script)
-    @symlink = tmp("loadpath_symlink")
-    File.symlink(@fixtures, @symlink)
-  end
+platform_is_not :windows do
+  describe "The -I command line option" do
+    before :each do
+      @script = fixture __FILE__, "loadpath.rb"
+      @fixtures = File.dirname(@script)
+      @symlink = tmp("loadpath_symlink")
+      File.symlink(@fixtures, @symlink)
+    end
 
-  after :each do
-    rm_r @symlink
-  end
+    after :each do
+      rm_r @symlink
+    end
 
-  it "does not expand symlinks" do
-    ruby_exe(@script, options: "-I #{@symlink}").lines.should include "#{@symlink}\n"
+    it "does not expand symlinks" do
+      ruby_exe(@script, options: "-I #{@symlink}").lines.should include "#{@symlink}\n"
+    end
   end
 end
