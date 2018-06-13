@@ -2228,13 +2228,19 @@ public class RubyKernel {
 
     @JRubyMethod(name = "remove_instance_variable", required = 1)
     public static IRubyObject remove_instance_variable(ThreadContext context, IRubyObject self, IRubyObject name, Block block) {
-        return ((RubyBasicObject)self).remove_instance_variable(context, name, block);
+        return ((RubyBasicObject) self).remove_instance_variable(context, name, block);
     }
 
     @JRubyMethod(name = "instance_variables")
-    public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).instance_variables19(context);
+    public static RubyArray instance_variables(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject) self).instance_variables(context);
     }
+
+    @Deprecated
+    public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
+        return instance_variables(context, self);
+    }
+
     /* end delegated bindings */
 
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {

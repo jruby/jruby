@@ -2935,37 +2935,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *         @iv = 3
      *       end
      *     end
-     *     Fred.new.instance_variables   #=> ["@iv"]
+     *     Fred.new.instance_variables   #=> [:"@iv"]
      */
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
         List<String> nameList = getInstanceVariableNameList();
         int size = nameList.size();
 
-        RubyArray array = runtime.newArray(nameList.size());
+        RubyArray array = RubyArray.newBlankArrayInternal(runtime, size);
 
         for (int i = 0; i < size; i++) {
-            String name = nameList.get(i);
-            array.store(i, runtime.newString(name));
+            array.store(i, runtime.newSymbol(nameList.get(i)));
         }
 
         return array;
     }
 
-    // In 1.9, return symbols
+    @Deprecated
     public RubyArray instance_variables19(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        List<String> nameList = getInstanceVariableNameList();
-        int size = nameList.size();
-
-        RubyArray array = RubyArray.newBlankArray(runtime, nameList.size());
-
-        for (int i = 0; i < size; i++) {
-            String name = nameList.get(i);
-            array.store(i, runtime.newSymbol(name));
-        }
-
-        return array;
+        return instance_variables(context);
     }
 
     /**
