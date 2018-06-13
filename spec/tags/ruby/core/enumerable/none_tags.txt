@@ -1,0 +1,1 @@
+fails:Enumerable#none? with a block yields multiple arguments when each yields multiple
