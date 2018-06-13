@@ -1905,8 +1905,8 @@ public class RubyKernel {
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         final String __FILE__ = context.gatherCallerBacktrace()[1].getFileName();
-        String dir = RubyFile.dirname(context, __FILE__);
-        return RubyString.newString(context.runtime, dir);
+        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(context.runtime, __FILE__), null, false, true);
+        return RubyString.newString(context.runtime, RubyFile.dirname(context, path.asJavaString()));
     }
 
     @JRubyMethod(module = true)
