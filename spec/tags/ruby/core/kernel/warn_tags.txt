@@ -1,0 +1,4 @@
+fails:Kernel#warn :uplevel keyword argument does not prepend caller information if line number is too big
+fails:Kernel#warn :uplevel keyword argument prepends even if a message is empty or nil
+fails:Kernel#warn :uplevel keyword argument raises ArgumentError if passed negative value
+fails:Kernel#warn :uplevel keyword argument raises ArgumentError if passed -1
