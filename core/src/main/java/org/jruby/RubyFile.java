@@ -689,39 +689,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     static final Pattern PROTOCOL_PATTERN = Pattern.compile(URI_PREFIX_STRING + ".*");
 
-    public static String dirname(ThreadContext context, String jfilename) {
+    public static String dirname(ThreadContext context, final String filename) {
         final RubyClass File = context.runtime.getFile();
-        final String separator = File.getConstant("SEPARATOR").toString();
-        final char separatorChar = separator.charAt(0);
-        String altSeparator = null;
-        char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = File.getConstant("ALT_SEPARATOR");
-        if (rbAltSeparator != context.nil) {
+        IRubyObject sep = File.getConstant("SEPARATOR");
+        final String separator; final char separatorChar;
+        if (sep instanceof RubyString && ((RubyString) sep).size() == 1) {
+            separatorChar = ((RubyString) sep).getByteList().charAt(0);
+            separator = (separatorChar == '/') ? "/" : String.valueOf(separatorChar);
+        }
+        else {
+            separator = sep.toString();
+            separatorChar = separator.isEmpty() ? '\0' : separator.charAt(0);
+        }
+
+        String altSeparator = null; char altSeparatorChar = '\0';
+        final IRubyObject rbAltSeparator = File.getConstantNoConstMissing("ALT_SEPARATOR");
+        if (rbAltSeparator != null && rbAltSeparator != context.nil) {
             altSeparator = rbAltSeparator.toString();
-            altSeparatorChar = altSeparator.charAt(0);
+            if (!altSeparator.isEmpty()) altSeparatorChar = altSeparator.charAt(0);
         }
-        String name = jfilename;
-        if (altSeparator != null) {
-            name = replace(jfilename, altSeparator, separator);
-        }
-        int minPathLength = 1;
-        boolean trimmedSlashes = false;
+
+        String name = filename;
+        if (altSeparator != null) name = replace(filename, altSeparator, separator);
 
         boolean startsWithSeparator = false;
-        if (!name.isEmpty()) {
-            startsWithSeparator = name.charAt(0) == separatorChar;
-        }
+        if (!name.isEmpty()) startsWithSeparator = name.charAt(0) == separatorChar;
 
-        boolean startsWithUNCOnWindows = Platform.IS_WINDOWS && startsWith(name, separatorChar, separatorChar);
-
-        if (startsWithUNCOnWindows) minPathLength = 2;
-
-        boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
-
-        if (startsWithDriveLetterOnWindows) minPathLength = 3;
-
-        // jar like paths
-        if (name.contains(".jar!" + separator)) {
+        int idx; // jar like paths
+        if ((idx = name.indexOf(".jar!")) != -1 && name.startsWith(separator, idx + 5)) {
             int start = name.indexOf("!" + separator) + 1;
             String path = dirname(context, name.substring(start));
             if (path.equals(".") || path.equals(separator)) path = "";
@@ -735,6 +730,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return name.substring(0, start) + path;
         }
 
+        int minPathLength = 1;
+        boolean trimmedSlashes = false;
+
+        boolean startsWithUNCOnWindows = Platform.IS_WINDOWS && startsWith(name, separatorChar, separatorChar);
+
+        if (startsWithUNCOnWindows) minPathLength = 2;
+
+        boolean startsWithDriveLetterOnWindows = startsWithDriveLetterOnWindows(name);
+
+        if (startsWithDriveLetterOnWindows) minPathLength = 3;
+
         while (name.length() > minPathLength && name.charAt(name.length() - 1) == separatorChar) {
             trimmedSlashes = true;
             name = name.substring(0, name.length() - 1);
@@ -744,9 +750,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (startsWithDriveLetterOnWindows && name.length() == 2) {
             if (trimmedSlashes) {
                 // C:\ is returned unchanged
-                result = jfilename.substring(0, 3);
+                result = filename.substring(0, 3);
             } else {
-                result = jfilename.substring(0, 2) + '.';
+                result = filename.substring(0, 2) + '.';
             }
         } else {
             //TODO deal with UNC names
@@ -754,12 +760,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
-                    return jfilename.substring(0, 2) + '.';
+                    return filename.substring(0, 2) + '.';
                 }
                 return ".";
             }
             if (index == 0) {
-                return jfilename.substring(0, 1);
+                return filename.substring(0, 1);
             }
 
             if (startsWithDriveLetterOnWindows && index == 2) {
@@ -769,7 +775,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
 
             if (startsWithUNCOnWindows) {
-                index = jfilename.length();
+                index = filename.length();
                 List<String> split = StringSupport.split(name, separatorChar);
                 int pathSectionCount = 0;
                 for (int i = 0; i < split.size(); i++) {
@@ -777,7 +783,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
                 if (pathSectionCount > 2) index = name.lastIndexOf(separator);
             }
-            result = jfilename.substring(0, index);
+            result = filename.substring(0, index);
         }
 
         // trim leading slashes
