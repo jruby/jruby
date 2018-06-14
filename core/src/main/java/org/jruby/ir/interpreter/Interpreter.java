@@ -33,7 +33,8 @@ import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
-    public static final String ROOT = "(root)";
+    public static final String ROOT = "<main>";
+
     static int interpInstrsCount = 0;
 
     public static void dumpStats() {
