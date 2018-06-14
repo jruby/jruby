@@ -80,7 +80,7 @@ public class JavaProxyMethods {
         return ((JavaObject)recv.dataGetStruct()).op_equal(rhs);
     }
     
-    @JRubyMethod
+    @Deprecated // NOTE: handled by JavaProxy hierarchy (with java.lang.Object#to_s)
     public static IRubyObject to_s(IRubyObject recv) {
         if (recv instanceof JavaProxy) {
             return JavaObject.to_s(recv.getRuntime(), ((JavaProxy) recv).getObject());
@@ -90,7 +90,7 @@ public class JavaProxyMethods {
         return ((RubyBasicObject) recv).to_s();
     }
 
-    @JRubyMethod
+    @Deprecated // NOTE: handled by JavaProxy
     public static IRubyObject inspect(IRubyObject recv) {
         if (recv instanceof RubyBasicObject) {
             return ((RubyBasicObject) recv).hashyInspect();
