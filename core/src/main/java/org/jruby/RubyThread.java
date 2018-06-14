@@ -490,7 +490,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @JRubyMethod
         public IRubyObject label(ThreadContext context) {
             if (element.getFrameType() == FrameType.BLOCK) {
-                if (label != null) label = context.runtime.newString("block in " + element.getMethodName());
+                if (label == null) label = context.runtime.newString("block in " + element.getMethodName());
                 return label;
             }
 
