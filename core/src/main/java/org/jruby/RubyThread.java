@@ -683,7 +683,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     protected static RubyThread startWaiterThread(final Ruby runtime, int pid, Block block) {
-        final IRubyObject waiter = runtime.getClassFromPath("Process::Waiter");
+        final IRubyObject waiter = runtime.getProcess().getConstantAt("Waiter"); // Process::Waiter
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) waiter);
         rubyThread.op_aset(runtime.newSymbol("pid"), runtime.newFixnum(pid));
         rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
