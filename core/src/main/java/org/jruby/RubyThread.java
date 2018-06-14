@@ -77,6 +77,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.ExecutionContext;
+import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -467,7 +468,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject label(ThreadContext context) {
-            return context.runtime.newString(element.getMethodName());
+            String name;
+
+            if (element.getFrameType() == FrameType.BLOCK) {
+                name = "block in " + element.getMethodName();
+            } else {
+                name = element.getMethodName();
+            }
+
+            return context.runtime.newString(name);
         }
 
         @JRubyMethod
