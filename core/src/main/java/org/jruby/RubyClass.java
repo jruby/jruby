@@ -40,6 +40,8 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -2114,7 +2116,7 @@ public class RubyClass extends RubyModule {
                     target.callMethod(context, "marshal_load", data);
                     return target;
                 } else {
-                    throw runtime.newTypeError("class " + getName() + " needs to have method `marshal_load'");
+                    throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `marshal_load'"));
                 }
 
             } else if (!(cache = searchWithCache("marshal_load")).method.isUndefined()) {
@@ -2164,7 +2166,7 @@ public class RubyClass extends RubyModule {
                 if (method.call(context, this, getSingletonClass(), "respond_to?", runtime.newSymbol("_load")).isTrue()) {
                     return callMethod(context, "_load", data);
                 } else {
-                    throw runtime.newTypeError("class " + getName() + " needs to have method `_load'");
+                    throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `_load'"));
                 }
 
             } else if (!(cache = getSingletonClass().searchWithCache("_load")).method.isUndefined()) {
@@ -2176,7 +2178,7 @@ public class RubyClass extends RubyModule {
             } else {
 
                 // provide an error, since it doesn't exist
-                throw runtime.newTypeError("class " + getName() + " needs to have method `_load'");
+                throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `_load'"));
 
             }
         }
