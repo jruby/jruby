@@ -463,6 +463,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public static class Location extends RubyObject {
+        private RubyString baseLabel = null;
+        private RubyString label = null;
+
         public Location(Ruby runtime, RubyClass klass, RubyStackTraceElement element) {
             super(runtime, klass);
             this.element = element;
@@ -475,7 +478,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject base_label(ThreadContext context) {
-            return context.runtime.newString(element.getMethodName());
+            if (baseLabel == null) baseLabel = context.runtime.newString(element.getMethodName());
+            return baseLabel;
         }
 
         @JRubyMethod
@@ -485,15 +489,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject label(ThreadContext context) {
-            String name;
-
             if (element.getFrameType() == FrameType.BLOCK) {
-                name = "block in " + element.getMethodName();
-            } else {
-                name = element.getMethodName();
+                if (label != null) label = context.runtime.newString("block in " + element.getMethodName());
+                return label;
             }
 
-            return context.runtime.newString(name);
+            return base_label(context);
         }
 
         @JRubyMethod
