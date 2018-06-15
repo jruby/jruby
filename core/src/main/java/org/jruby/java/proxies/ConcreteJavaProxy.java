@@ -247,16 +247,6 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     @JRubyMethod
-    public RubyString reflective_inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, reflectiveToString(context, null));
-    }
-
-    @JRubyMethod
-    public RubyString reflective_inspect(ThreadContext context, IRubyObject opts) {
-        return RubyString.newString(context.runtime, reflectiveToString(context, opts == context.nil ? null : opts.convertToHash()));
-    }
-
-    @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         return inspect(context.runtime, null); // -> toStringImpl
     }
@@ -265,9 +255,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     CharSequence toStringImpl(final Ruby runtime, final IRubyObject opts) {
         final ThreadContext context = runtime.getCurrentContext();
         DynamicMethod toString = toStringIfNotFromObject(context);
-        if (toString == null) {
-            return reflectiveToString(context, (RubyHash) opts); // a replacement for java.lang.Object#toString
-        }
+        if (toString == null) return hashyInspect().toString();
         IRubyObject str = toString.call(context, this, getMetaClass(), "toString");
         return str == context.nil ? "null" : str.convertToString(); // we don't return a nil (unlike to_s)
     }
@@ -328,9 +316,9 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         for (final Field field : fields) {
             if (accept(field, excludedFields)) {
-                buffer.append(' ');
                 if (sep == '\0') sep = ',';
                 else buffer.append(sep);
+                buffer.append(' ');
 
                 try {
                     buffer.append(field.getName()).append('=').append(toStringValue(context, field.get(obj)));
