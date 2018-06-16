@@ -90,7 +90,6 @@ jruby/test_loading_builtin_libraries
 jruby/test_null_channel
 jruby/test_irubyobject_java_passing
 jruby/test_jruby_object_input_stream
-jruby/test_jar_on_load_path
 jruby/test_jruby_core_ext
 jruby/test_thread_context_frame_dereferences_unreachable_variables
 jruby/test_context_classloader
@@ -103,7 +102,7 @@ jruby/test_ast_inspector
 jruby/test_jarred_gems
 jruby/test_kernel
 jruby/test_dir_with_plusses
-jruby/test_jar_file
+jruby/test_jar
 # Not sure how to test this, since soft references take too long to collect
 #test_thread_service
 jruby/test_jruby_synchronized

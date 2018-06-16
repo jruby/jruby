@@ -1,8 +1,9 @@
 require 'test/unit'
-require 'jruby'
 
-class TestJarFile < Test::Unit::TestCase
+class TestJar < Test::Unit::TestCase
+
   def test_stat_file_in_jar
+    require 'jruby'
     begin
       url = JRuby.runtime.jruby_class_loader.get_resource 'org/jruby/Ruby.class'
       conn = url.open_connection
@@ -14,4 +15,11 @@ class TestJarFile < Test::Unit::TestCase
       conn.close rescue nil
     end
   end
+
+  def test_jar_on_load_path
+    $LOAD_PATH << "test/jruby/test_jruby_1332.jar!"
+    require 'test_jruby_1332.rb'
+    assert($jruby_1332)
+  end
+
 end
