@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 require 'test/unit'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 
-# TODO fails with enableassertion :(
 class TestURIClassloader < Test::Unit::TestCase
   include TestHelper
 

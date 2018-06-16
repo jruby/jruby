@@ -93,8 +93,7 @@ jruby/test_jruby_object_input_stream
 jruby/test_jruby_core_ext
 jruby/test_thread_context_frame_dereferences_unreachable_variables
 jruby/test_context_classloader
-# fails with -j-ea on java :(
-# jruby/test_uri_classloader
+jruby/test_uri_classloader
 jruby/test_rexml_document
 jruby/test_openssl_stub
 jruby/test_missing_jruby_home
