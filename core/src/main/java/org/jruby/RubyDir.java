@@ -172,14 +172,17 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static String getCWD(Ruby runtime) {
-        if (runtime.getCurrentDirectory().startsWith("uri:")) {
-            return runtime.getCurrentDirectory();
+        final String cwd = runtime.getCurrentDirectory();
+        // ^(uri|jar|file|classpath):([^:]*:)?//?.*
+        if (cwd.startsWith("uri:") || cwd.startsWith("jar:") || cwd.startsWith("file:")) {
+            // "classpath:" mapped into "uri:classloader:"
+            return cwd;
         }
-        try {
-            return new JRubyFile(runtime.getCurrentDirectory()).getCanonicalPath();
+        try { // NOTE: likely not necessary as we already canonicalized while setting?
+            return new JRubyFile(cwd).getCanonicalPath();
         }
-        catch (Exception e) {
-            return runtime.getCurrentDirectory();
+        catch (IOException e) {
+            return cwd;
         }
     }
 
@@ -378,30 +381,25 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyString path = args.length == 1 ?
             StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
             getHomeDirectoryPath(context);
+
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
-        final String realPath;
-        final String oldCwd = runtime.getCurrentDirectory();
-        if (PROTOCOL_PATTERN.matcher(adjustedPath).matches()) {
-            realPath = adjustedPath;
-        }
-        else {
-            FileResource dir = getDir(runtime, adjustedPath, true);
-            realPath = dir.canonicalPath();
-        }
+        
+        adjustedPath = getExistingDir(runtime, adjustedPath).canonicalPath();
 
         IRubyObject result;
         if (block.isGiven()) {
+            final String oldCwd = runtime.getCurrentDirectory();
             // FIXME: Don't allow multiple threads to do this at once
-            runtime.setCurrentDirectory(realPath);
+            runtime.setCurrentDirectory(adjustedPath);
             try {
                 result = block.yield(context, path);
             } finally {
-                getDir(runtime, oldCwd, true); // needed in case the block deleted the oldCwd
+                getExistingDir(runtime, oldCwd); // needed in case the block deleted the oldCwd
                 runtime.setCurrentDirectory(oldCwd);
             }
         } else {
-            runtime.setCurrentDirectory(realPath);
+            runtime.setCurrentDirectory(adjustedPath);
             result = runtime.newFixnum(0);
         }
 
@@ -409,8 +407,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     /**
-     * Changes the root directory (only allowed by super user).  Not available
-     * on all platforms.
+     * Changes the root directory (only allowed by super user).  Not available on all platforms.
      */
     @JRubyMethod(name = "chroot", required = 1, meta = true)
     public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
@@ -418,8 +415,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     /**
-     * Returns an array containing all of the filenames except for "." and ".."
-     * in the given directory.
+     * Returns an array containing all of the filenames except for "." and ".." in the given directory.
      */
     @JRubyMethod(name = "children", meta = true)
     public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
@@ -445,8 +441,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     /**
-     * Deletes the directory specified by <code>path</code>.  The directory must
-     * be empty.
+     * Deletes the directory specified by <code>path</code>.  The directory must be empty.
      */
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
         return rmdir19(recv.getRuntime().getCurrentContext(), recv, path);
@@ -573,7 +568,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "home", optional = 1, meta = true)
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length > 0 && !args[0].isNil()) return getHomeDirectoryPath(context, args[0].toString());
+        if (args.length > 0 && args[0] != context.nil) return getHomeDirectoryPath(context, args[0].toString());
 
         return getHomeDirectoryPath(context);
     }
@@ -583,25 +578,31 @@ public class RubyDir extends RubyObject implements Closeable {
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
      */
-    public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
-        return mkdir19(recv.getRuntime().getCurrentContext(), recv, args);
-    }
-
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
-    public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         Ruby runtime = context.runtime;
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
         return mkdirCommon(runtime, path.asJavaString(), args);
     }
 
+    @Deprecated
+    public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
+        return mkdir(recv.getRuntime().getCurrentContext(), recv, args);
+    }
+
+    @Deprecated
+    public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return mkdir(context, recv, args);
+    }
+
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
-        if (path.startsWith("uri:")) {
-            throw runtime.newErrnoEACCESError(path);
-        }
-        File newDir = getDir(runtime, path, false).unwrap(File.class);
+        if (path.startsWith("uri:")) throw runtime.newErrnoEACCESError(path);
+
+        path = dirFromPath(path, runtime);
+        FileResource res = JRubyFile.createResource(runtime, path);
+        if (res.isDirectory()) throw runtime.newErrnoEEXISTError(path);
 
         String name = path.replace('\\', '/');
-
         boolean startsWithDriveLetterOnWindows = RubyFile.startsWithDriveLetterOnWindows(name);
 
         // don't attempt to create a dir for drive letters
@@ -614,6 +615,7 @@ public class RubyDir extends RubyObject implements Closeable {
             if (path.length() == 4 && (path.charAt(0) == '/' && path.charAt(3) == '/')) return RubyFixnum.zero(runtime);
         }
 
+        File newDir = res.unwrap(File.class);
         if (File.separatorChar == '\\') newDir = new File(newDir.getPath());
 
         int mode = args.length == 2 ? ((int) args[1].convertToInteger().getLongValue()) : 0777;
@@ -847,13 +849,13 @@ public class RubyDir extends RubyObject implements Closeable {
      *
      * @param   path path for which to return the <code>File</code> object.
      * @param   mustExist is true the directory must exist.  If false it must not.
-     */
+     */ // split out - no longer used
     protected static FileResource getDir(final Ruby runtime, final String path, final boolean mustExist) {
         String dir = dirFromPath(path, runtime);
 
         FileResource result = JRubyFile.createResource(runtime, dir);
 
-        if (mustExist && !result.exists()) {
+        if (mustExist && (result == null || !result.exists())) {
             throw runtime.newErrnoENOENTError(dir);
         }
 
@@ -867,6 +869,17 @@ public class RubyDir extends RubyObject implements Closeable {
             throw runtime.newErrnoEEXISTError(dir);
         }
 
+        return result;
+    }
+
+    private static FileResource getExistingDir(final Ruby runtime, final String path) {
+        FileResource result = JRubyFile.createResource(runtime, path);
+        if (result == null || !result.exists()) {
+            throw runtime.newErrnoENOENTError(path);
+        }
+        if (!result.isDirectory()) {
+            throw runtime.newErrnoENOTDIRError(path);
+        }
         return result;
     }
 

@@ -25,11 +25,13 @@ class TestURIClassloader < Test::Unit::TestCase
     ensure_cwd do
       Dir.chdir( 'uri:classloader://' )
       assert_include Dir[ '*' ], 'Rakefile'
+      assert_equal 'uri:classloader:/', Dir.pwd
     end
 
     ensure_cwd do
       JRuby.runtime.current_directory = 'uri:classloader://'
       assert_include Dir[ '*' ], 'Rakefile'
+      #assert_equal 'uri:classloader://', Dir.pwd
     end
   end
 
@@ -39,6 +41,7 @@ class TestURIClassloader < Test::Unit::TestCase
     ensure_cwd do
       Dir.chdir( 'uri:classloader://.' )
       assert_include Dir[ '*' ], 'Rakefile'
+      assert_equal 'uri:classloader:/', Dir.pwd
     end
 
     ensure_cwd do
@@ -58,6 +61,7 @@ class TestURIClassloader < Test::Unit::TestCase
     ensure_cwd do
       Dir.chdir 'uri:classloader://lib/..'
       assert_include Dir[ '*' ], 'Rakefile'
+      assert_equal 'uri:classloader:/', Dir.pwd
     end
 
     ensure_cwd do

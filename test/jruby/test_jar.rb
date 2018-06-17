@@ -22,4 +22,24 @@ class TestJar < Test::Unit::TestCase
     assert($jruby_1332)
   end
 
+  def test_file_jar_path
+    jar_file = 'file:' + File.expand_path('gem.jar', File.dirname(__FILE__))
+    in_jar_file = "#{jar_file}!/specifications"
+    assert File.directory? in_jar_file
+    Dir.chdir in_jar_file
+    assert File.exists?(Dir.pwd), "#{Dir.pwd} does not exist!"
+    some_path = File.expand_path('SOME')
+    assert some_path.end_with?('test/jruby/gem.jar!/specifications/SOME')
+    assert_false File.exists?(some_path), "#{some_path} does exist!"
+    existing_path = File.expand_path('mygem-1.0.0.gemspec')
+    assert_true File.exists?(existing_path), "#{existing_path} does not exist!"
+    assert_true File.file?(existing_path)
+  end
+
+  @@work_dir = Dir.pwd
+
+  def teardown
+    Dir.chdir(@@work_dir)
+  end
+
 end
