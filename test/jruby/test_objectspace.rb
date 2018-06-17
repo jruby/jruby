@@ -1,8 +1,9 @@
-require 'jruby'
 require 'test/unit'
 
 class TestObjectSpace < Test::Unit::TestCase
+
   def setup
+    require 'jruby'
     @objectspace = JRuby.objectspace
     JRuby.objectspace = true
   end
