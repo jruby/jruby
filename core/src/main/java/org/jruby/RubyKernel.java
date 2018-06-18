@@ -65,7 +65,6 @@ import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
@@ -88,6 +87,7 @@ import java.util.Set;
 
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.FILENAME;
 import static org.jruby.anno.FrameField.LASTLINE;
@@ -1227,37 +1227,38 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject _message) {
-        final Ruby runtime = context.runtime;
-
         if (_message instanceof RubyArray) {
             RubyArray messageArray = _message.convertToArray();
             for (int i = 0; i < messageArray.size(); i++) warn(context, recv, messageArray.eltOk(i));
             return context.nil;
         }
 
-        RubyString message = _message.convertToString();
+        return warn(context, recv, _message.convertToString());
+    }
+
+    static IRubyObject warn(ThreadContext context, IRubyObject recv, RubyString message) {
+        final Ruby runtime = context.runtime;
+
         if (!message.endsWithAsciiChar('\n')) {
-            message = (RubyString) message.op_plus19(context, runtime.newString("\n"));
+            message = (RubyString) message.op_plus19(context, runtime.newString(singleCharByteList((byte) '\n')));
         }
 
         if (recv == runtime.getWarning()) {
             return RubyWarnings.warn(context, recv, message);
-        } else {
-            return sites(context).warn.call(context, recv, runtime.getWarning(), message);
         }
+        return sites(context).warn.call(context, recv, runtime.getWarning(), message);
     }
 
-    public static final String[] WARN_VALID_KEYS = {"uplevel"};
+    public static final String[] WARN_VALID_KEYS = { "uplevel" };
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         boolean kwargs = false;
         int uplevel = -1;
+
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
-            if (!tmp.isNil()) {
+            if (tmp != context.nil) {
                 kwargs = true;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, WARN_VALID_KEYS);
                 uplevel = rets[0] == UNDEF ? 0 : RubyNumeric.num2int(rets[0]);
@@ -1266,20 +1267,15 @@ public class RubyKernel {
 
         // FIXME: This is not particularly efficient.
         int numberOfMessages = kwargs ? args.length - 1 : args.length;
-        IRubyObject newline = runtime.newString("\n");
 
         if (kwargs) {
-            RubyStackTraceElement[] elements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context).getBacktrace(context.runtime);
+            RubyStackTraceElement element = context.runtime.getInstanceConfig().getTraceType().getBacktraceElement(context, uplevel);
 
-            // User can ask for level higher than stack
-            if (elements.length <= uplevel + 1) uplevel = -1;
-
-            int index = uplevel + 1;
             RubyString baseMessage = context.runtime.newString();
-            baseMessage.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + ": warning: ");
+            baseMessage.catString(element.getFileName() + ':' + element.getLineNumber() + ": warning: ");
 
             for (int i = 0; i < numberOfMessages; i++) {
-                warn(context, recv, baseMessage.op_plus19(context, args[i]));
+                warn(context, recv, (RubyString) baseMessage.op_plus19(context, args[i]));
             }
         } else {
             for (int i = 0; i < numberOfMessages; i++) {
