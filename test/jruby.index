@@ -65,6 +65,7 @@ jruby/test_random
 jruby/test_rbconfig
 jruby/test_require_once
 jruby/test_respond_to
+jruby/test_set
 jruby/test_socket
 jruby/test_string_java_bytes
 jruby/test_string_printf
