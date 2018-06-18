@@ -81,13 +81,15 @@ public class RubyStackTraceElement implements java.io.Serializable {
 
     public static RubyString to_s_mri(ThreadContext context, RubyStackTraceElement element) {
         RubySymbol methodSym = context.runtime.newSymbol(element.getMethodName());
-        RubyString line = context.runtime.newString(new ByteList(methodSym.getBytes().length() + element.getFileName().length() + 10));
+        RubyString line = context.runtime.newString(new ByteList(methodSym.getBytes().length() + element.getFileName().length() + 18));
 
         line.setEncoding(methodSym.getEncoding());
+
         line.cat(element.getFileName().getBytes());
         line.cat(CommonByteLists.COLON);
         line.cat(ConvertBytes.longToByteList(element.getLineNumber()));
         line.cat(CommonByteLists.BACKTRACE_IN);
+        if (element.getFrameType() == FrameType.BLOCK) line.catString("block in ");
         line.cat(methodSym.getBytes());
         line.cat('\'');
 
