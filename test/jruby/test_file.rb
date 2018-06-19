@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'rbconfig'
 require 'fileutils'
 require 'tempfile'
-require 'pathname'
-require 'jruby'
 
 class TestFile < Test::Unit::TestCase
   include TestHelper
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup
     @teardown_blocks = []
@@ -99,7 +95,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   # JRUBY-3849
-  def test_expand_path_encoding
+  def test_expand_path_encoding; require 'pathname'
     assert_equal(Encoding.find('UTF-8'), File.expand_path('/'.force_encoding('UTF-8')).encoding)
     assert_equal(Encoding.find('US-ASCII'), File.expand_path('/'.force_encoding('US-ASCII')).encoding)
     assert_equal(Encoding.find('UTF-8'), File.expand_path(Pathname.new('/'.force_encoding('UTF-8'))).encoding)
@@ -143,14 +139,12 @@ class TestFile < Test::Unit::TestCase
       assert_equal "C:/temp", File.dirname("C:/temp/foobar.txt")
     end
 
-	def test_windows_network_path
-
-		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share\\file.bat"))
-		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share"))
-		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$\\boot.bat"))
-		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$"))
-
-	end
+    def test_windows_network_path
+      assert_equal("\\\\network\\share", File.dirname("\\\\network\\share\\file.bat"))
+      assert_equal("\\\\network\\share", File.dirname("\\\\network\\share"))
+      assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$\\boot.bat"))
+      assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$"))
+    end
 
     def test_expand_path_windows
       assert_equal("C:/", File.expand_path("C:/"))
@@ -213,10 +207,6 @@ class TestFile < Test::Unit::TestCase
       ### assert_equal("//one/two", File.expand_path("/two", "//one"))
     end
 
-    def test_pathname_windows
-      assert_equal(Pathname('foo.bar.rb').expand_path.relative_path_from(Pathname(Dir.pwd)), Pathname('foo.bar.rb'))
-    end
-
     # JRUBY-3132
     def test_realpath_windows
       assert_equal('C:/', File.realpath('C:/'))
@@ -263,11 +253,11 @@ class TestFile < Test::Unit::TestCase
       assert_equal("//two", File.expand_path("//two", "//one"))
       assert_equal("/", File.expand_path("/two/..", "//one"))
 
-      # Corner cases that fail with JRuby on Linux (but pass with MRI 1.8.6)
+      # Corner cases that fail with JRuby on Linux (but pass with MRI 2.5)
       #
-      # assert_equal("", File.expand_path("//two/..", "//one"))
-      # assert_equal("", File.expand_path("///two/..", "//one"))
-      # assert_equal("/blah", File.expand_path("///two/../blah", "//one"))
+      #assert_equal("/", File.expand_path("//two/..", "//one"))
+      #assert_equal("/", File.expand_path("///two/..", "//one"))
+      #assert_equal("/blah", File.expand_path("///two/../blah", "//one"))
     end
 
     def test_expand_path_with_file_prefix_slash
@@ -386,12 +376,6 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_with_file_url_relative_path
       jruby_specific_test
       assert_equal "file:#{Dir.pwd}/foo/bar", File.expand_path("file:foo/bar")
-    end
-
-    # GH-3150
-    def test_expand_path_with_pathname_and_uri_path
-      jruby_specific_test
-      assert_equal 'uri:classloader://foo', File.expand_path('foo', Pathname.new('uri:classloader:/'))
     end
 
     # GH-3176

@@ -1,6 +1,5 @@
 require 'rbconfig'
 require 'jruby' if defined?(JRUBY_VERSION)
-require 'tempfile'
 
 module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
@@ -19,9 +18,7 @@ module TestHelper
            exe = 'java'
            exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
            # assume the parent CL of jruby-classloader has a getUrls method
-           urls = JRuby.runtime.getJRubyClassLoader.parent.get_ur_ls.collect do |u|
-             u.path
-           end
+           urls = JRuby.runtime.getJRubyClassLoader.parent.getURLs.collect { |u| u.path }
            urls.unshift '.'
            exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.Main"
            exe
@@ -32,7 +29,7 @@ module TestHelper
            exe
          end
 
-  if (WINDOWS)
+  if WINDOWS
     RUBY.gsub!('/', '\\')
     DEVNULL = 'NUL:'
   else
@@ -87,7 +84,7 @@ module TestHelper
   end
   private :sh
 
-  def with_temp_script(script, filename="test-script")
+  def with_temp_script(script, filename="test-script"); require 'tempfile'
     Tempfile.open([filename, ".rb"]) do |f|
       begin
         # we ignore errors writing to the tempfile to ensure the test tries to run
