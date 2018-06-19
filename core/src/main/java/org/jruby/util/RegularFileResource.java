@@ -32,8 +32,9 @@ class RegularFileResource implements FileResource {
     private final JRubyFile file;
     private final POSIX posix;
 
-    RegularFileResource(POSIX posix, File file) {
-        this(posix, file.getAbsolutePath());
+    RegularFileResource(POSIX posix, JRubyFile file) {
+        this.file = file;
+        this.posix = posix;
     }
 
     protected RegularFileResource(POSIX posix, String filename) {
@@ -90,9 +91,7 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean exists() {
-        // MRI behavior: Even broken symlinks should return true.
-        // FIXME: Where is the above statement true?  For RubyFile{,Test} it does not seem to be.
-        return file.exists(); // || isSymLink();
+        return file.exists();
     }
 
     @Override
