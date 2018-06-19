@@ -1521,6 +1521,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, pathOrFile));
         return JRubyFile.createResource(runtime, path.toString());
     }
+
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.
@@ -1716,7 +1717,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // Special /dev/null of windows
         if (Platform.IS_WINDOWS && ("NUL:".equalsIgnoreCase(relativePath) || "NUL".equalsIgnoreCase(relativePath))) {
-            return RubyString.newString(runtime, "//./" + relativePath.substring(0, 3), fsenc);
+            return RubyString.newString(runtime, concat("//./", relativePath.substring(0, 3)), fsenc);
         }
 
         // treat uri-like and jar-like path as absolute
@@ -1873,7 +1874,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } else if (!Platform.IS_WINDOWS) {
             if (relativePath.length() > 0 && relativePath.charAt(0) == '/') {
                 padSlashes = countSlashes(relativePath);
-            } else if (cwd.length() > 0 && cwd.charAt(0) == '/') {
+            } else {
                 padSlashes = countSlashes(cwd);
             }
         }
@@ -1902,31 +1903,45 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         if (canonicalPath == null) canonicalPath = canonicalize(null, pathFile.getAbsolutePath());
 
-        String realPath = new StringBuilder(padSlashes.length() + canonicalPath.length())
-                .append(padSlashes).append(canonicalPath).toString();
-
-        if (realPath.startsWith("file:") && preFix.length() > 0) realPath = realPath.substring(5);
-
-        if (canonicalize) {
-            try {
-                realPath = JRubyFile.normalizeSeps(new File(realPath).getCanonicalPath());
-            } catch (IOException ioe) {
-                // Earlier canonicalization will have to do.
+        CharSequence realPath;
+        if (padSlashes.isEmpty()) {
+            realPath = canonicalPath;
+        }
+        else {
+            realPath = concat(padSlashes, canonicalPath);
+            if (preFix.length() > 0 && padSlashes.startsWith("file:")) {
+                realPath = realPath.toString().substring(5);
             }
         }
-        if (postFix.contains("..")) {
-            postFix = '!' + canonicalizePath(postFix.substring(1));
-            if (Platform.IS_WINDOWS /* && startsWith(postFix, '!') */) {
-                postFix = postFix.replace('\\', '/');
-                if (startsWithDriveLetterOnWindows(postFix.substring(1))) {
-                    postFix = '!' + postFix.substring(3);
-                }
-            }
-        }
+
+        if (canonicalize) realPath = canonicalNormalized(realPath);
+
+        if (postFix.contains("..")) postFix = adjustPostFixDotDot(postFix);
+
         return concatStrings(runtime, preFix, realPath, postFix, enc);
     }
 
-    private static RubyString concatStrings(final Ruby runtime, String s1, String s2, String s3, Encoding enc) {
+    private static String canonicalNormalized(CharSequence realPath) {
+        final String path = realPath.toString();
+        try {
+            return JRubyFile.normalizeSeps(new File(path).getCanonicalPath());
+        } catch (IOException ioe) {
+            return path;
+        }
+    }
+
+    private static String adjustPostFixDotDot(String postFix) {
+        postFix = '!' + canonicalizePath(postFix.substring(1));
+        if (Platform.IS_WINDOWS /* && startsWith(postFix, '!') */) {
+            postFix = postFix.replace('\\', '/');
+            if (startsWithDriveLetterOnWindows(postFix.substring(1))) {
+                postFix = '!' + postFix.substring(3);
+            }
+        }
+        return postFix;
+    }
+
+    private static RubyString concatStrings(final Ruby runtime, String s1, CharSequence s2, String s3, Encoding enc) {
         StringBuilder str =
                 new StringBuilder(s1.length() + s2.length() + s3.length()).append(s1).append(s2).append(s3);
         return new RubyString(runtime, runtime.getString(), str, enc);
@@ -2039,16 +2054,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static String countSlashes(String stringToCheck) {
         // Count number of extra slashes in the beginning of the string.
         int slashCount = 0;
-        for (int i = 0; i < stringToCheck.length(); i++) {
-            if (stringToCheck.charAt(i) == '/') {
+
+        final int len = stringToCheck.length();
+        if (len > 0 && stringToCheck.charAt(0) == '/') {
+            // If there are N slashes, then we want N-1.
+            if (len > 1 && stringToCheck.charAt(1) == '/') {
                 slashCount++;
-            } else {
-                break;
+                for (int i = 2; i < len; i++) {
+                    if (stringToCheck.charAt(i) == '/') {
+                        slashCount++;
+                    } else {
+                        break;
+                    }
+                }
             }
         }
-
-        // If there are N slashes, then we want N-1.
-        if (slashCount > 0) slashCount--;
 
         if (slashCount < SLASHES.length) {
             return SLASHES[slashCount];

@@ -445,6 +445,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return new RubyString(runtime, runtime.getString(), str);
     }
 
+    public static RubyString newString(Ruby runtime, CharSequence str, Encoding encoding) {
+        return new RubyString(runtime, runtime.getString(), str, encoding);
+    }
+
     public static RubyString newString(Ruby runtime, String str) {
         return new RubyString(runtime, runtime.getString(), str);
     }
