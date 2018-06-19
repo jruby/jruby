@@ -1406,4 +1406,13 @@ class TestFile < Test::Unit::TestCase
       assert_equal(result.end_with?(postfix), true, result + " ends with "  + postfix)
     end
   end
+
+  def test_file_exists_ending_with_slash
+    assert File.exist?(__FILE__)
+    assert_false File.exist?(__FILE__ + '/')
+
+    assert File.exist?(File.dirname(__FILE__))
+    assert File.exist?(File.dirname(__FILE__) + '/')
+  end
+
 end

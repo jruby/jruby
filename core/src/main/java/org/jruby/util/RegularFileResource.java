@@ -29,16 +29,20 @@ import org.jruby.util.io.PosixShim;
  * Represents a "regular" file, backed by regular file system.
  */
 class RegularFileResource implements FileResource {
+
     private final JRubyFile file;
+    private final String filePath; // original (non-normalized) file-path
     private final POSIX posix;
 
-    RegularFileResource(POSIX posix, JRubyFile file) {
+    RegularFileResource(POSIX posix, JRubyFile file, String filePath) {
         this.file = file;
+        this.filePath = filePath;
         this.posix = posix;
     }
 
     protected RegularFileResource(POSIX posix, String filename) {
         this.file = new JRubyFile(filename);
+        this.filePath = filename;
         this.posix = posix;
     }
 
@@ -91,7 +95,17 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean exists() {
-        return file.exists();
+        if (file.exists()) {
+            String path = filePath;
+            if (path.length() > 1 && path.charAt(path.length() - 1) == '/') {
+                path = file.getPathDefault();
+                if (path.length() > 0 && path.charAt(path.length() - 1) != '/' && !isDirectory()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -123,11 +137,7 @@ class RegularFileResource implements FileResource {
             BasicFileAttributes attrs = Files.readAttributes(file.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 
             return attrs != null && attrs.isSymbolicLink();
-        } catch (SecurityException se) {
-            return false;
-        } catch (IOException ie) {
-            return false;
-        } catch (UnsupportedOperationException uoe) {
+        } catch (SecurityException|IOException|UnsupportedOperationException ex) {
             return false;
         }
     }
