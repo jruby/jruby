@@ -1279,25 +1279,28 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         for (int i = 0; i < args.length; i++) {
             RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[i]));
-            JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+            JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
 
-            boolean isSymlink = RubyFileTest.symlink_p(recv, filename).isTrue();
             // Broken symlinks considered by exists() as non-existing,
             // so we need to check for symlinks explicitly.
-            if (!lToDelete.exists() && !isSymlink) {
+            if (!file.exists() && !isSymlink(context, file)) {
                 throw runtime.newErrnoENOENTError(filename.getUnicodeValue());
             }
 
-            if (lToDelete.isDirectory() && !isSymlink) {
-                throw runtime.newErrnoEPERMError(filename.getUnicodeValue());
+            if (file.isDirectory() && !isSymlink(context, file)) {
+                throw runtime.newErrnoEISDirError(filename.getUnicodeValue());
             }
 
-            if (!lToDelete.delete()) {
+            if (!file.delete()) {
                 throw runtime.newErrnoEACCESError(filename.getUnicodeValue());
             }
         }
 
         return runtime.newFixnum(args.length);
+    }
+
+    private static boolean isSymlink(ThreadContext context, JRubyFile file) {
+        return FileResource.wrap(context.runtime.getPosix(), file).isSymLink();
     }
 
     @JRubyMethod(rest = true, meta = true)

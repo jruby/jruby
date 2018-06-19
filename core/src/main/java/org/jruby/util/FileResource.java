@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import jnr.posix.FileStat;
+import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
 
 import java.nio.channels.Channel;
@@ -12,6 +13,10 @@ import java.nio.channels.Channel;
  * This is a shared interface for files loaded as {@link java.io.File} and {@link java.util.zip.ZipEntry}.
  */
 public interface FileResource {
+
+    static FileResource wrap(POSIX posix, JRubyFile file) {
+        return new RegularFileResource(posix, file, file.getPathDefault());
+    }
 
     String absolutePath();
     String canonicalPath();

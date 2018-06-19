@@ -1288,9 +1288,7 @@ class TestFile < Test::Unit::TestCase
   # JRUBY-4859
   def test_file_delete_directory
     Dir.mkdir("dir_tmp")
-    assert_raise(Errno::EPERM) {
-      File.delete "dir_tmp"
-    }
+    assert_raise(Errno::EISDIR) { File.delete "dir_tmp" }
   ensure
     Dir.rmdir("dir_tmp")
   end
