@@ -125,7 +125,11 @@ public class RubyFileTest {
     }
 
     static boolean exist(ThreadContext context, RubyString path) {
-        return existsOnClasspath(path) || !Ruby.isSecurityRestricted() && fileResource(context, path).exists();
+        final String pathStr = path.decodeString();
+        if (!Ruby.isSecurityRestricted()) {
+            if (JRubyFile.createResource(context.runtime, pathStr).exists()) return true;
+        }
+        return existsOnClasspath(context, pathStr);
     }
 
     @Deprecated
@@ -473,24 +477,17 @@ public class RubyFileTest {
         return stat;
     }
 
-    private static boolean existsOnClasspath(IRubyObject path) {
-        if (path instanceof RubyFile) {
-            return false;
-        }
+    private static boolean existsOnClasspath(ThreadContext context, String path) {
+        if (path.startsWith("classpath:/")) {
+            path = path.substring("classpath:/".length());
 
-        Ruby runtime = path.getRuntime();
-        RubyString pathStr = get_path(runtime.getCurrentContext(), path);
-        String pathJStr = pathStr.getUnicodeValue();
-        if (pathJStr.startsWith("classpath:/")) {
-            pathJStr = pathJStr.substring("classpath:/".length());
-
-            ClassLoader classLoader = runtime.getJRubyClassLoader();
+            ClassLoader classLoader = context.runtime.getJRubyClassLoader();
             // handle security-sensitive case
-            if (Ruby.isSecurityRestricted() && classLoader == null) {
-                classLoader = runtime.getInstanceConfig().getLoader();
+            if (classLoader == null && Ruby.isSecurityRestricted()) {
+                classLoader = context.runtime.getInstanceConfig().getLoader();
             }
 
-            InputStream is = classLoader.getResourceAsStream(pathJStr);
+            InputStream is = classLoader.getResourceAsStream(path);
             if (is != null) {
                 try {
                     is.close();
