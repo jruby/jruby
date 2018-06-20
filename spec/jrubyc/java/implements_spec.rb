@@ -11,20 +11,19 @@ describe "A Ruby class generating a Java stub" do
     it "generates a class that implements the given interfaces" do
       cls = generate("class Foo; java_implements 'Runnable'; end").classes[0]
 
-      cls.interfaces.length.should == 1
-      cls.interfaces[0].should == "Runnable"
+      expect( cls.interfaces.length ).to be 1
+      expect( cls.interfaces ).to eql [ 'Runnable' ]
 
       java = cls.to_s
-      java.should match /^public class Foo extends RubyObject implements Runnable/
+      expect( java ).to match /^public class Foo extends RubyObject implements Runnable/
 
       cls = generate("class Foo; java_implements 'Runnable', 'Serializable'; end").classes[0]
 
-      cls.interfaces.length.should == 2
-      cls.interfaces[0].should == "Runnable"
-      cls.interfaces[1].should == "Serializable"
+      expect( cls.interfaces.length ).to be 2
+      expect( cls.interfaces ).to eql [ 'Runnable', 'Serializable' ]
 
       java = cls.to_s
-      java.should match /^public class Foo extends RubyObject implements Runnable, Serializable/
+      expect( java ).to match /^public class Foo extends RubyObject implements Runnable, Serializable/
     end
   end
 end
