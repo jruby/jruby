@@ -30,7 +30,7 @@ default_gems = [
     ImportedGem.new('fileutils', '1.1.0'),
     ImportedGem.new('ipaddr', '1.2.0'),
     ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
-    ImportedGem.new('jruby-readline', '1.3.0'),
+    ImportedGem.new('jruby-readline', '1.3.5'),
     ImportedGem.new('jruby-openssl', '0.10.0'),
     ImportedGem.new('json', '${json.version}'),
     ImportedGem.new('psych', '3.0.2'),
