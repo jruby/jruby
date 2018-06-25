@@ -424,13 +424,8 @@ public class RubySet extends RubyObject implements Set {
             }
         }
         else {
-            set.callMethod(context, "each", IRubyObject.NULL_ARRAY, new Block(
-                new EachBody(context.runtime) {
-                    IRubyObject yieldImpl(ThreadContext context, IRubyObject e) {
-                        addFlattened(context, seen, e); return context.nil;
-                    }
-                })
-            );
+            // call on superclasses to get SetLike impl
+            getType().getSuperClass().finvoke(context, this, "flatten_merge", set);
         }
     }
 
@@ -495,7 +490,9 @@ public class RubySet extends RubyObject implements Set {
                     size() >= ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
-        throw context.runtime.newArgumentError("value must be a set");
+
+        // call on superclasses to get SetLike impl
+        return getType().getSuperClass().finvoke(context, this, "superset?", set);
     }
 
     // Returns true if the set is a proper superset of the given set.
@@ -510,7 +507,9 @@ public class RubySet extends RubyObject implements Set {
                     size() > ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
-        throw context.runtime.newArgumentError("value must be a set");
+
+        // call on superclasses to get SetLike impl
+        return getType().getSuperClass().finvoke(context, this, "proper_superset?", set);
     }
 
     @JRubyMethod(name = "subset?", alias = { "<=" })
@@ -524,7 +523,9 @@ public class RubySet extends RubyObject implements Set {
                     size() <= ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
-        throw context.runtime.newArgumentError("value must be a set");
+
+        // call on superclasses to get SetLike impl
+        return getType().getSuperClass().finvoke(context, this, "subset?", set);
     }
 
     @JRubyMethod(name = "proper_subset?", alias = { "<" })
@@ -538,7 +539,9 @@ public class RubySet extends RubyObject implements Set {
                     size() < ((RubySet) set).size() && allElementsIncluded((RubySet) set)
             );
         }
-        throw context.runtime.newArgumentError("value must be a set");
+
+        // call on superclasses to get SetLike impl
+        return getType().getSuperClass().finvoke(context, this, "proper_subset?", set);
     }
 
     /**
@@ -549,7 +552,9 @@ public class RubySet extends RubyObject implements Set {
         if ( set instanceof RubySet ) {
             return context.runtime.newBoolean( intersect((RubySet) set) );
         }
-        throw context.runtime.newArgumentError("value must be a set");
+
+        // call on superclasses to get SetLike impl
+        return getType().getSuperClass().finvoke(context, this, "intersect?", set);
     }
 
     public boolean intersect(final RubySet set) {
@@ -577,7 +582,9 @@ public class RubySet extends RubyObject implements Set {
         if ( set instanceof RubySet ) {
             return context.runtime.newBoolean( ! intersect((RubySet) set) );
         }
-        throw context.runtime.newArgumentError("value must be a set");
+
+        // call on superclasses to get SetLike impl
+        return context.runtime.newBoolean(!getType().getSuperClass().finvoke(context, this, "intersect?", set).isTrue());
     }
 
     @JRubyMethod
@@ -873,7 +880,9 @@ public class RubySet extends RubyObject implements Set {
                 return context.tru;
             }
         }
-        return context.fals;
+
+        // call on superclasses to get SetLike impl
+        return getType().getSuperClass().finvoke(context, this, "==", other);
     }
 
     @JRubyMethod(name = "reset")
