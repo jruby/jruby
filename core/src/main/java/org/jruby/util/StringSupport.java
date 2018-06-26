@@ -1083,6 +1083,15 @@ public final class StringSupport {
         return strLengthFromRubyStringFull(string, bytes, bytes.getEncoding());
     }
 
+    public static int strLengthFromRubyString(CodeRangeable string, final ByteList bytes, final Encoding enc) {
+        if (isSingleByteOptimizable(string, enc)) return bytes.getRealSize();
+        // NOTE: strLengthFromRubyStringFull but without string.setCodeRange(..)
+        if (string.isCodeRangeValid() && enc.isUTF8()) return utf8Length(bytes);
+
+        long lencr = strLengthWithCodeRange(bytes, enc);
+        return unpackResult(lencr);
+    }
+
     private static int strLengthFromRubyStringFull(CodeRangeable string, ByteList bytes, Encoding enc) {
         if (string.isCodeRangeValid() && enc.isUTF8()) return utf8Length(bytes);
 
