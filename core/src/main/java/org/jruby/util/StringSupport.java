@@ -1782,19 +1782,13 @@ public final class StringSupport {
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, IRubyObject opts, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
 
-        Encoding enc;
-        IRubyObject line, rs, orig = str;
-        int ptr, pend, subptr, subend, rsptr, hit, adjusted;
-        int pos, len, rslen;
-        boolean paragraph_mode = false;
+        Encoding enc; IRubyObject line, orig = str;
+        int ptr, pend, subptr, subend, hit, adjusted;
+
         boolean rsnewline = false;
         boolean chomp = false;
 
-        IRubyObject ary = null;
-
-        rs = arg;
-
-        if (!opts.isNil()) {
+        if (opts != context.nil) {
             IRubyObject _chomp = ArgsUtil.extractKeywordArg(context, "chomp", opts);
             chomp = _chomp != null || _chomp.isTrue();
         }
@@ -1804,146 +1798,134 @@ public final class StringSupport {
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
                     runtime.getWarnings().warn("given block not used");
-                    ary = runtime.newEmptyArray();
                 } else {
                     runtime.getWarnings().warning("passing a block to String#lines is deprecated");
                     wantarray = false;
                 }
             }
         }
-        else {
-            if (wantarray) {
-                ary = runtime.newEmptyArray();
-            } else {
-                return enumeratorize(runtime, str, name, Helpers.arrayOf(arg, opts));
-            }
+        else if (!wantarray) {
+            return enumeratorize(runtime, str, name, Helpers.arrayOf(arg, opts));
         }
 
-        if (rs.isNil()) {
-            if (wantarray) {
-                ((RubyArray)ary).push(str);
-                return ary;
-            }
+        if (arg == context.nil) { // rs
+            if (wantarray) return RubyArray.newArray(runtime, str);
             else {
                 block.yieldSpecific(context, str);
                 return orig;
             }
         }
 
-        // simulate jump to end
-        end: do {
-            str = str.newFrozen();
-            byte[] strBytes = str.getByteList().unsafeBytes();
-            ptr = subptr = str.getByteList().begin();
-            pend = ptr + str.size();
-            len = str.size();
-            rs = rs.convertToString();
-            rslen = ((RubyString) rs).size();
+        final RubyArray ary = wantarray ? RubyArray.newArray(runtime) : null;
 
-            IRubyObject defaultSep = context.runtime.getGlobalVariables().get("$/");
-            if (rs == defaultSep)
-                enc = str.getEncoding();
-            else
-                enc = str.checkEncoding((RubyString) rs);
+        final IRubyObject defaultSep = runtime.getGlobalVariables().get("$/");
+        RubyString rs = arg.convertToString();
 
-            byte[] rsbytes;
-            if (rslen == 0) {
-                /* paragraph mode */
-                int[] n = {0};
-                int eol = NULL_POINTER;
-                subend = subptr;
-                while (subend < pend) {
-                    do {
-                        if (EncodingUtils.encAscget(strBytes, subend, pend, n, enc) != '\r') {
-                            n[0] = 0;
-                        }
-                        rslen = n[0] + length(enc, strBytes, subend + n[0], pend);
-                        if (enc.isNewLine(strBytes, subend + n[0], pend)) {
-                            if (eol == subend) break;
-                            subend += rslen;
-                            if (subptr != NULL_POINTER) eol = subend;
-                        }
-                        else {
-                            if (subptr == NULL_POINTER) subptr = subend;
-                            subend += rslen;
-                        }
-                        rslen = 0;
-                    } while (subend < pend);
-                    if (subptr == NULL_POINTER) break;
-                    line = str.makeSharedString(runtime, subptr - ptr,
-                            subend - subptr + (chomp ? 0 : rslen));
-                    if (wantarray) {
-                        ((RubyArray) ary).push(line);
-                    } else {
-                        block.yield(context, line);
-                        str.modifyCheck(strBytes, len);
-                    }
-                    subptr = eol = NULL_POINTER;
-                }
-                break end;
-            } else {
-                ByteList rsByteList = ((RubyString) rs).getByteList();
-                rsbytes = rsByteList.unsafeBytes();
-                rsptr = rsByteList.begin();
-                if (rsByteList.length() == enc.minLength() &&
-                        enc.isNewLine(rsbytes, rsptr, rsByteList.length())) {
-                    rsnewline = true;
-                }
+        str = str.newFrozen();
+        byte[] strBytes = str.getByteList().unsafeBytes();
+        ptr = subptr = str.getByteList().begin();
+        final int len = str.size();
+        pend = ptr + len;
+        int rslen = rs.size();
+
+        enc = (rs == defaultSep) ? str.getEncoding() : str.checkEncoding(rs);
+
+        if (rslen == 0) {
+            rbStrEnumerateLinesEmptySep(str, context, chomp, block, ary, strBytes, ptr, len, pend, enc, subptr);
+            return wantarray ? ary : orig; // end
+        }
+
+        ByteList rsByteList = rs.getByteList();
+        byte[] rsbytes = rsByteList.unsafeBytes();
+        int rsptr = rsByteList.begin();
+        if (rsByteList.length() == enc.minLength() && enc.isNewLine(rsbytes, rsptr, rsByteList.length())) {
+            rsnewline = true;
+        }
+
+        if (rs == defaultSep && !enc.isAsciiCompatible()) {
+            rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
+            rs = (RubyString) EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+            rsByteList = rs.getByteList();
+            rsbytes = rsByteList.unsafeBytes();
+            rsptr = rsByteList.begin();
+            rslen = rsByteList.realSize();
+        }
+
+        while (subptr < pend) {
+            int pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
+            if (pos < 0) break;
+            hit = subptr + pos;
+            adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
+            if (hit != adjusted) {
+                subptr = adjusted;
+                continue;
             }
-
-            if (rs == defaultSep && !enc.isAsciiCompatible()) {
-                rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
-                rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-                ByteList rsByteList = ((RubyString) rs).getByteList();
-                rsbytes = rsByteList.unsafeBytes();
-                rsptr = rsByteList.begin();
-                rslen = rsByteList.realSize();
-            }
-
-            while (subptr < pend) {
-                pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
-                if (pos < 0) break;
-                hit = subptr + pos;
-                adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
-                if (hit != adjusted) {
-                    subptr = adjusted;
-                    continue;
-                }
-                subend = hit += rslen;
-                if (chomp) {
-                    if (rsnewline) {
-                        subend = chomp_newline(strBytes, subptr, subend, enc);
-                    } else {
-                        subend -= rslen;
-                    }
-                }
-                line = str.substr(runtime, subptr - ptr, subend - subptr);
-                if (wantarray) {
-                    ((RubyArray) ary).push(line);
+            subend = hit += rslen;
+            if (chomp) {
+                if (rsnewline) {
+                    subend = chomp_newline(strBytes, subptr, subend, enc);
                 } else {
-                    block.yieldSpecific(context, line);
-                    str.modifyCheck(strBytes, len);
+                    subend -= rslen;
                 }
-                subptr = hit;
             }
+            line = str.substr(runtime, subptr - ptr, subend - subptr);
+            if (wantarray) ary.append(line);
+            else {
+                block.yieldSpecific(context, line);
+                str.modifyCheck(strBytes, len);
+            }
+            subptr = hit;
+        }
 
-            if (subptr != pend) {
-                if (chomp) {
-                    pend = chomp_newline(strBytes, subptr, pend, enc);
-                } else if (pend - subptr >= rslen &&
-                        ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
-                    pend -= rslen;
-                }
-                line = str.substr(runtime, subptr - ptr, pend - subptr);
-                if (wantarray) {
-                    ((RubyArray) ary).push(line);
-                } else {
-                    block.yieldSpecific(context, line);
-                }
+        if (subptr != pend) {
+            if (chomp) {
+                pend = chomp_newline(strBytes, subptr, pend, enc);
+            } else if (pend - subptr >= rslen &&
+                    ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
+                pend -= rslen;
             }
-        } while (false); // label "end"
+            line = str.substr(runtime, subptr - ptr, pend - subptr);
+            if (wantarray) ary.append(line);
+            else block.yieldSpecific(context, line);
+        }
 
         return wantarray ? ary : orig;
+    }
+
+    private static void rbStrEnumerateLinesEmptySep(RubyString str,
+        ThreadContext context, final boolean chomp, Block block, RubyArray ary,
+        final byte[] strBytes, final int ptr, final int len,
+        final int pend, final Encoding enc, int subptr) {
+        /* paragraph mode */
+        int[] n = {0};
+        int eol = NULL_POINTER;
+        int subend = subptr;
+        while (subend < pend) {
+            int rslen;
+            do {
+                if (EncodingUtils.encAscget(strBytes, subend, pend, n, enc) != '\r') n[0] = 0;
+                rslen = n[0] + length(enc, strBytes, subend + n[0], pend);
+                if (enc.isNewLine(strBytes, subend + n[0], pend)) {
+                    if (eol == subend) break;
+                    subend += rslen;
+                    if (subptr != NULL_POINTER) eol = subend;
+                }
+                else {
+                    if (subptr == NULL_POINTER) subptr = subend;
+                    subend += rslen;
+                }
+                rslen = 0;
+            } while (subend < pend);
+            if (subptr == NULL_POINTER) break;
+            RubyString line = str.makeSharedString(context.runtime, subptr - ptr,
+                    subend - subptr + (chomp ? 0 : rslen));
+            if (ary != null) ary.append(line); // wantarray
+            else {
+                block.yield(context, line);
+                str.modifyCheck(strBytes, len);
+            }
+            subptr = eol = NULL_POINTER;
+        }
     }
 
     private static int chomp_newline(byte[] bytes, int p, int e, Encoding enc) {
@@ -1951,8 +1933,7 @@ public final class StringSupport {
         if (enc.isNewLine(bytes, prev, e)) {
             e = prev;
             prev = enc.prevCharHead(bytes, p, e, e);
-            if (prev != -1 && EncodingUtils.encAscget(bytes, prev, e, null, enc) == '\r')
-                e = prev;
+            if (prev != -1 && EncodingUtils.encAscget(bytes, prev, e, null, enc) == '\r') e = prev;
         }
         return e;
     }
