@@ -2367,9 +2367,10 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "to_s", alias = "inspect")
     @Override
     public RubyString to_s() {
+        Ruby runtime = getRuntime();
         if(isSingleton()){
             IRubyObject attached = ((MetaClass) this).getAttached();
-            RubyString buffer = getRuntime().newString("#<Class:");
+            RubyString buffer = runtime.newString("#<Class:");
 
             if (attached != null) { // FIXME: figure out why we getService null sometimes
                 if (attached instanceof RubyClass || attached instanceof RubyModule) {
@@ -2378,12 +2379,12 @@ public class RubyModule extends RubyObject {
                     buffer.cat19((RubyString) attached.anyToString());
                 }
             }
-            buffer.cat19(getRuntime().newString(">"));
+            buffer.cat19(runtime.newString(">"));
 
             return buffer;
         }
 
-        return rubyName();
+        return rubyName().strDup(runtime);
     }
 
     /** rb_mod_eqq
