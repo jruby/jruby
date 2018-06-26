@@ -31,12 +31,12 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
         String jarPath = pathname.substring(0, bang);
         String entryPath = pathname.substring(bang + 1);
         // normalize path -- issue #2017
-        if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
+        if (StringSupport.startsWith(entryPath, '/', '/')) entryPath = entryPath.substring(1);
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
 
-        if (resource == null && entryPath.startsWith("/")) {
+        if (resource == null && StringSupport.startsWith(entryPath, '/')) {
             resource = createJarResource(jarPath, entryPath.substring(1), true);
         }
 

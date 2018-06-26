@@ -861,7 +861,6 @@ public final class StringSupport {
     }
 
     public static ByteList dumpCommon(Ruby runtime, ByteList byteList, boolean quoteOnlyIfNeeded) {
-        ByteList buf = null;
         Encoding enc = byteList.getEncoding();
         boolean includingsNonprintable = false;
 
@@ -920,58 +919,53 @@ public final class StringSupport {
         if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
         while (p < end) {
             int c = bytes[p++] & 0xff;
-            if (c == '"' || c == '\\') {
-                out[q++] = '\\';
-                out[q++] = (byte)c;
-            } else if (c == '#') {
-                if (isEVStr(bytes, p, end)) out[q++] = '\\';
-                out[q++] = '#';
-            } else if (c == '\n') {
-                out[q++] = '\\';
-                out[q++] = 'n';
-            } else if (c == '\r') {
-                out[q++] = '\\';
-                out[q++] = 'r';
-            } else if (c == '\t') {
-                out[q++] = '\\';
-                out[q++] = 't';
-            } else if (c == '\f') {
-                out[q++] = '\\';
-                out[q++] = 'f';
-            } else if (c == '\013') {
-                out[q++] = '\\';
-                out[q++] = 'v';
-            } else if (c == '\010') {
-                out[q++] = '\\';
-                out[q++] = 'b';
-            } else if (c == '\007') {
-                out[q++] = '\\';
-                out[q++] = 'a';
-            } else if (c == '\033') {
-                out[q++] = '\\';
-                out[q++] = 'e';
-            } else if (ASCIIEncoding.INSTANCE.isPrint(c)) {
-                out[q++] = (byte)c;
-            } else {
-                out[q++] = '\\';
-                outBytes.setRealSize(q);
-                if (enc.isUTF8()) {
-                    int n = preciseLength(enc, bytes, p - 1, end) - 1;
-                    if (MBCLEN_CHARFOUND_LEN(n) > 0) {
-                        int cc = codePoint(runtime, enc, bytes, p - 1, end);
+            switch (c) {
+                case '"': case '\\':
+                    out[q++] = '\\'; out[q++] = (byte)c; break;
+                case '#':
+                    if (isEVStr(bytes, p, end)) out[q++] = '\\';
+                    out[q++] = '#';
+                    break;
+                case '\n':
+                    out[q++] = '\\'; out[q++] = 'n'; break;
+                case '\r':
+                    out[q++] = '\\'; out[q++] = 'r'; break;
+                case '\t':
+                    out[q++] = '\\'; out[q++] = 't'; break;
+                case '\f':
+                    out[q++] = '\\'; out[q++] = 'f'; break;
+                case '\013':
+                    out[q++] = '\\'; out[q++] = 'v'; break;
+                case '\010':
+                    out[q++] = '\\'; out[q++] = 'b'; break;
+                case '\007':
+                    out[q++] = '\\'; out[q++] = 'a'; break;
+                case '\033':
+                    out[q++] = '\\'; out[q++] = 'e'; break;
+                default:
+                    if (ASCIIEncoding.INSTANCE.isPrint(c)) {
+                        out[q++] = (byte)c;
+                    } else {
+                        out[q++] = '\\';
                         outBytes.setRealSize(q);
-                        p += n;
-                        if (cc <= 0xFFFF) {
-                            Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
-                        } else {
-                            Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
+                        if (enc.isUTF8()) {
+                            int n = preciseLength(enc, bytes, p - 1, end) - 1;
+                            if (MBCLEN_CHARFOUND_LEN(n) > 0) {
+                                int cc = codePoint(runtime, enc, bytes, p - 1, end);
+                                outBytes.setRealSize(q);
+                                p += n;
+                                if (cc <= 0xFFFF) {
+                                    Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
+                                } else {
+                                    Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
+                                }
+                                q = outBytes.getRealSize();
+                                continue;
+                            }
                         }
+                        Sprintf.sprintf(runtime, outBytes, "x%02X", c);
                         q = outBytes.getRealSize();
-                        continue;
                     }
-                }
-                Sprintf.sprintf(runtime, outBytes, "x%02X", c);
-                q = outBytes.getRealSize();
             }
         }
         if ((quoteOnlyIfNeeded && includingsNonprintable) || !quoteOnlyIfNeeded) out[q++] = '"';
@@ -1777,11 +1771,10 @@ public final class StringSupport {
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
-        if (opts.isNil()) {
+        if (opts == context.nil) {
             return rbStrEnumerateLines(str, context, name, arg, context.nil, block, wantarray);
-        } else {
-            return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
         }
+        return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
     }
 
     private static int NULL_POINTER = -1;
