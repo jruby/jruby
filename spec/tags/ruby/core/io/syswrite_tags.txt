@@ -1,1 +1,0 @@
-fails:IO#syswrite on a pipe raises Errno::EPIPE if the read end is closed
