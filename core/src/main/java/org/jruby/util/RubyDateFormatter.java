@@ -351,7 +351,7 @@ public class RubyDateFormatter {
                         addToPattern(compiledPattern, " Y");
                         break;
                     default:
-                        throw new Error("Unknown special char: "+c);
+                        throw new AssertionError("Unknown special char: " + c);
                     }
                 }
             }

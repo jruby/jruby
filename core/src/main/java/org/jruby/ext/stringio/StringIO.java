@@ -350,7 +350,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return each(context, args[0], args[1], args[2], block);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -395,7 +395,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return each_line(context, args[0], args[1], args[2], block);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -570,7 +570,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return gets(context, args[0], args[1], args[2]);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -924,7 +924,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 return readlines(context, args[0], args[1], args[2]);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 

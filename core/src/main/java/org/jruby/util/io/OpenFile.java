@@ -1051,11 +1051,10 @@ public class OpenFile implements Finalizable {
                 if (searchlen > 0) {
                     byte[] pBytes = READ_CHAR_PENDING_PTR();
                     p = READ_CHAR_PENDING_OFF();
-                    if (0 < limit && limit < searchlen)
-                        searchlen = limit;
+                    if (0 < limit && limit < searchlen) searchlen = limit;
                     e = memchr(pBytes, p, delim, searchlen);
                     if (e != -1) {
-                        int len = (int)(e-p+1);
+                        int len = e - p + 1;
                         if (str == null) {
                             strp[0] = str = new ByteList(pBytes, p, len);
                         } else {
@@ -1094,11 +1093,10 @@ public class OpenFile implements Finalizable {
             if (pending > 0) {
                 byte[] pBytes = READ_DATA_PENDING_PTR();
                 int p = READ_DATA_PENDING_OFF();
-                int e = -1;
                 int last;
 
                 if (limit > 0 && pending > limit) pending = limit;
-                e = memchr(pBytes, p, delim, pending);
+                int e = memchr(pBytes, p, delim, pending);
                 if (e != -1) pending = e - p + 1;
                 if (str != null) {
                     last = str.getRealSize();
@@ -1123,7 +1121,7 @@ public class OpenFile implements Finalizable {
         return EOF;
     }
 
-    private int memchr(byte[] pBytes, int p, int delim, int length) {
+    private static int memchr(byte[] pBytes, int p, int delim, int length) {
         for (int i = p; i < p + length; i++) {
             if ((pBytes[i] & 0xFF) == delim) {
                 return i;
@@ -1498,15 +1496,15 @@ public class OpenFile implements Finalizable {
                         i[0] = 0;
                         if (!needconv) {
                             if (pBytes[p] != term) return true;
-                            i[0] = (int) cnt;
+                            i[0] = cnt;
                             while ((--i[0] != 0) && pBytes[++p] == term) ;
                         } else {
                             int e = p + cnt;
                             if (EncodingUtils.encAscget(pBytes, p, e, i, enc) != term) return true;
                             while ((p += i[0]) < e && EncodingUtils.encAscget(pBytes, p, e, i, enc) == term) ;
-                            i[0] = (int) (e - p);
+                            i[0] = (e - p);
                         }
-                        shiftCbuf(context, (int) cnt - i[0], null);
+                        shiftCbuf(context, cnt - i[0], null);
                     }
                 } while (moreChar(context) != MORE_CHAR_FINISHED);
                 return false;
@@ -1522,7 +1520,7 @@ public class OpenFile implements Finalizable {
                     int i;
                     if (cnt > buf.length) cnt = buf.length;
                     if ((pBytes[p] & 0xFF) != term) return true;
-                    i = (int) cnt;
+                    i = cnt;
                     while (--i != 0 && (pBytes[++p] & 0xFF) == term) ;
                     if (readBufferedData(buf, 0, cnt - i) == 0) /* must not fail */
                         throw context.runtime.newRuntimeError("failure copying buffered IO bytes");
@@ -2605,7 +2603,7 @@ public class OpenFile implements Finalizable {
             int flags, flags2, ret;
             flags = posix.fcntlGetFD(fd); /* should not fail except EBADF. */
             if (flags == -1) {
-                throw new RuntimeException(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_GETFD) failed: %s", fd, posix.errno.description()));
+                throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_GETFD) failed: %s", fd, posix.errno.description()));
             }
             if (fd <= 2)
                 flags2 = flags & ~FcntlLibrary.FD_CLOEXEC; /* Clear CLOEXEC for standard file descriptors: 0, 1, 2. */
@@ -2614,7 +2612,7 @@ public class OpenFile implements Finalizable {
             if (flags != flags2) {
                 ret = posix.fcntlSetFD(fd, flags2);
                 if (ret == -1) {
-                    throw new RuntimeException(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_SETFD) failed: %s", fd, flags2, posix.errno.description()));
+                    throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_SETFD) failed: %s", fd, flags2, posix.errno.description()));
                 }
             }
         }

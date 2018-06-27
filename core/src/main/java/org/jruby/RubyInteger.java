@@ -833,7 +833,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return ((RubyInteger) a.modulo(context, m)).intPowTmp3(context, intB, (RubyBignum) m, negaFlg);
         }
         // not reached
-        throw new RuntimeException("BUG: unexpected type " + m.getType());
+        throw new AssertionError("BUG: unexpected type " + m.getType());
     }
 
     protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {

@@ -2380,20 +2380,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     };
 
-    private IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return gets(context);
-            case 1:
-                return gets(context, args[0]);
-            case 2:
-                return gets(context, args[0], args[1]);
-            default:
-                Arity.raiseArgumentError(context, args.length, 0, 2);
-                return null; // not reached
-        }
-    }
-
     public boolean getBlocking() {
         return openFile.isBlocking();
     }
@@ -3381,7 +3367,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 return each(context, args[0], args[1], args[2], block);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -3425,7 +3411,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 return each_line(context, args[0], args[1], args[2], block);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -3471,7 +3457,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 return readlines(context, args[0], args[1], args[2]);
             default:
                 Arity.raiseArgumentError(context, args.length, 0, 3);
-                throw new RuntimeException("BUG");
+                throw new AssertionError("BUG");
         }
     }
 
@@ -3901,7 +3887,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     return io.readlines(context, args[1], args[2], args[3]);
                 default:
                     Arity.raiseArgumentError(context, args.length, 1, 4);
-                    throw new RuntimeException("BUG");
+                    throw new AssertionError("BUG");
             }
         } finally { io.close(); }
     }
