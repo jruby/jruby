@@ -1,1 +1,2 @@
 windows(hangs):IO#write_nonblock writes to the current position after IO#read
+fails:IO#write_nonblock on a pipe raises Errno::EPIPE if the read end is closed
