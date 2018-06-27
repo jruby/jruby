@@ -2833,11 +2833,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean locked = fptr.lock();
         try {
             fptr.checkCharReadable(context);
-            if (c.isNil()) return c;
-            if (c instanceof RubyFixnum) {
-                c = EncodingUtils.encUintChr(context, (int) ((RubyFixnum) c).getLongValue(), fptr.readEncoding(runtime));
-            } else if (c instanceof RubyBignum) {
-                c = EncodingUtils.encUintChr(context, (int) ((RubyBignum) c).getLongValue(), fptr.readEncoding(runtime));
+            if (c == context.nil) return c;
+            if (c instanceof RubyInteger) {
+                c = EncodingUtils.encUintChr(context, (int) ((RubyInteger) c).getLongValue(), fptr.readEncoding(runtime));
             } else {
                 c = c.convertToString();
             }
@@ -3277,14 +3275,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             fptr.clearReadConversion();
                             if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
                                 enc = fptr.encs.enc;
-                                throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                                throw runtime.newArgumentError("invalid byte sequence in " + enc);
                             }
                             return this;
                         }
                     }
                     if (StringSupport.MBCLEN_INVALID_P(r)) {
                         enc = fptr.encs.enc;
-                        throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                        throw runtime.newArgumentError("invalid byte sequence in " + enc);
                     }
                     n = StringSupport.MBCLEN_CHARFOUND_LEN(r);
                     if (fptr.encs.enc != null) {
@@ -3309,23 +3307,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     fptr.rbuf.len -= n;
                     block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
                 } else if (StringSupport.MBCLEN_INVALID_P(r)) {
-                    throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    throw runtime.newArgumentError("invalid byte sequence in " + enc);
                 } else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
                     byte[] cbuf = new byte[8];
                     int p = 0;
                     int more = StringSupport.MBCLEN_NEEDMORE_LEN(r);
-                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc);
                     more += n = fptr.rbuf.len;
-                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc);
                     while ((n = fptr.readBufferedData(cbuf, p, more)) > 0) {
                         p += n;
                         if ((more -= n) <= 0) break;
 
-                        if (fptr.fillbuf(context) < 0) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                        if (fptr.fillbuf(context) < 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
                         if ((n = fptr.rbuf.len) > more) n = more;
                     }
                     r = enc.length(cbuf, 0, p);
-                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc);
                     c = enc.mbcToCode(cbuf, 0, p);
                     block.yield(context, runtime.newFixnum(c));
                 } else {
@@ -4067,7 +4065,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 process = ShellLauncher.popen(runtime, pOpen.cmdPlusArgs, pOpen.env, modes);
             }
 
-            checkPopenOptions(options);
+            if (options != null) {
+                checkUnsupportedOptions(context, options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
+            }
 
             io.setupPopen(runtime, modes, process);
 
@@ -4587,96 +4587,91 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioOptions;
     }
 
-    private static final Set<String> UNSUPPORTED_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(new String[] {
-            "unsetenv_others",
-            "prgroup",
-            "new_pgroup",
-            "rlimit_resourcename",
-            "chdir",
-            "umask",
-            "in",
-            "out",
-            "err",
-            "close_others"
-    }));
+    static final Set<String> ALL_SPAWN_OPTIONS;
+    static final String[] UNSUPPORTED_SPAWN_OPTIONS;
 
-    private static final Set<String> ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(new String[] {
-            "unsetenv_others",
-            "prgroup",
-            "new_pgroup",
-            "rlimit_resourcename",
-            "chdir",
-            "umask",
-            "in",
-            "out",
-            "err",
-            "close_others"
-    }));
+    static {
+        String[] SPAWN_OPTIONS = new String[] {
+                "unsetenv_others",
+                "prgroup",
+                "new_pgroup",
+                "rlimit_resourcename",
+                "chdir",
+                "umask",
+                "in",
+                "out",
+                "err",
+                "close_others"
+        };
+        UNSUPPORTED_SPAWN_OPTIONS = new String[] {
+                "unsetenv_others",
+                "prgroup",
+                "new_pgroup",
+                "rlimit_resourcename",
+                "chdir",
+                "umask",
+                "in",
+                "out",
+                "err",
+                "close_others"
+        };
 
-    /**
-     * Warn when using exec with unsupported options.
-     *
-     * @param options
-     */
+        ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
+    }
+
+    @Deprecated
     public static void checkExecOptions(IRubyObject options) {
-        checkUnsupportedOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
-        checkValidOptions(options, ALL_SPAWN_OPTIONS);
+        if (options instanceof RubyHash) {
+            RubyHash opts = (RubyHash) options;
+            ThreadContext context = opts.getRuntime().getCurrentContext();
+
+            checkValidSpawnOptions(context, opts);
+            checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+        }
     }
 
-    /**
-     * Warn when using spawn with unsupported options.
-     *
-     * @param options
-     */
+    @Deprecated
     public static void checkSpawnOptions(IRubyObject options) {
-        checkUnsupportedOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
-        checkValidOptions(options, ALL_SPAWN_OPTIONS);
+        if (options instanceof RubyHash) {
+            RubyHash opts = (RubyHash) options;
+            ThreadContext context = opts.getRuntime().getCurrentContext();
+
+            checkValidSpawnOptions(context, opts);
+            checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
+        }
     }
 
-    /**
-     * Warn when using spawn with unsupported options.
-     *
-     * @param options
-     */
+    @Deprecated
     public static void checkPopenOptions(IRubyObject options) {
-        checkUnsupportedOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
+        if (options instanceof RubyHash) {
+            RubyHash opts = (RubyHash) options;
+            ThreadContext context = opts.getRuntime().getCurrentContext();
+
+            checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
+        }
     }
 
-    /**
-     * Warn when using unsupported options.
-     *
-     * @param options
-     */
-    private static void checkUnsupportedOptions(IRubyObject options, Set<String> unsupported, String error) {
-        if (options == null || options.isNil() || !(options instanceof RubyHash)) return;
-
-        RubyHash optsHash = (RubyHash)options;
-        Ruby runtime = optsHash.getRuntime();
-
+    static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
+        final Ruby runtime = context.runtime;
         for (String key : unsupported) {
-            if (optsHash.containsKey(runtime.newSymbol(key))) {
+            if (opts.fastARef(runtime.newSymbol(key)) != null) {
                 runtime.getWarnings().warn(error + ": " + key);
             }
         }
     }
 
-    /**
-     * Error when using unknown option.
-     *
-     * @param options
-     */
-    private static void checkValidOptions(IRubyObject options, Set<String> valid) {
-        if (options == null || options.isNil() || !(options instanceof RubyHash)) return;
-
-        RubyHash optsHash = (RubyHash)options;
-        Ruby runtime = optsHash.getRuntime();
-
-        for (Object opt : optsHash.keySet()) {
-            if (opt instanceof RubySymbol || opt instanceof RubyFixnum || opt instanceof RubyArray || valid.contains(opt.toString())) {
-                continue;
+    static void checkValidSpawnOptions(ThreadContext context, RubyHash opts) {
+        for (Object opt : opts.directKeySet()) {
+            if (opt instanceof RubySymbol) {
+                if (!ALL_SPAWN_OPTIONS.contains(((RubySymbol) opt).idString())) {
+                    throw context.runtime.newArgumentError("wrong exec option symbol: " + opt);
+                }
             }
-
-            throw runtime.newTypeError("wrong exec option: " + opt);
+            else if (opt instanceof RubyString) {
+                if (!ALL_SPAWN_OPTIONS.contains(((RubyString) opt).toString())) {
+                    throw context.runtime.newArgumentError("wrong exec option: " + opt);
+                }
+            }
         }
     }
 

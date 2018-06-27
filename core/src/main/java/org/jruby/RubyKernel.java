@@ -88,6 +88,9 @@ import java.util.Set;
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.RubyIO.checkUnsupportedOptions;
+import static org.jruby.RubyIO.checkValidSpawnOptions;
+import static org.jruby.RubyIO.UNSUPPORTED_SPAWN_OPTIONS;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.FILENAME;
 import static org.jruby.anno.FrameField.LASTLINE;
@@ -1730,9 +1733,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        return execCommon(runtime, null, args[0], null, args);
+        return execCommon(context, null, args[0], null, args);
     }
 
     /* Actual exec definition which calls this internal version is specified
@@ -1740,19 +1741,23 @@ public class RubyKernel {
      */
     @JRubyMethod(required = 4, visibility = PRIVATE)
     public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         IRubyObject env = args[0];
         IRubyObject prog = args[1];
         IRubyObject options = args[2];
-        RubyArray cmdArgs = (RubyArray)args[3];
+        RubyArray cmdArgs = (RubyArray) args[3];
 
-        RubyIO.checkExecOptions(options);
+        if (options instanceof RubyHash) checkExecOptions(context, (RubyHash) options);
 
-        return execCommon(runtime, env, prog, options, cmdArgs.toJavaArray());
+        return execCommon(context, env, prog, options, cmdArgs.toJavaArray());
     }
 
-    private static IRubyObject execCommon(Ruby runtime, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
+    static void checkExecOptions(ThreadContext context, RubyHash opts) {
+        checkValidSpawnOptions(context, opts);
+        checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+    }
+
+    private static IRubyObject execCommon(ThreadContext context, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
         // This is a fairly specific hack for empty string, but it does the job
         if (args.length == 1) {
             RubyString command = args[0].convertToString();
@@ -1767,7 +1772,6 @@ public class RubyKernel {
             }
         }
 
-        ThreadContext context = runtime.getCurrentContext();
         if (env != null && !env.isNil()) {
             RubyHash envMap = env.convertToHash();
             if (envMap != null) {
