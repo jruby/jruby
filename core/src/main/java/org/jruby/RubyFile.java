@@ -1340,17 +1340,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // rb_file_size but not using stat
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        OpenFile fptr;
-        long size;
+        return RubyFixnum.newFixnum(context.runtime, getSize(context));
+    }
 
-        fptr = getOpenFileChecked();
+    final long getSize(ThreadContext context) {
+        OpenFile fptr = getOpenFileChecked();
+
         if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
             flushRaw(context, false);
         }
 
-        size = fptr.posix.size(fptr.fd());
-
-        return RubyFixnum.newFixnum(context.runtime, size);
+        return fptr.posix.size(fptr.fd());
     }
 
     @JRubyMethod(meta = true)
