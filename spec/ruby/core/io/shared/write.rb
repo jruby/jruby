@@ -87,7 +87,7 @@ describe :io_write, shared: true do
 
     it "raises Errno::EPIPE if the read end is closed" do
       @r.close
-      -> { @w.send(@method, "foo") }.should raise_error(Errno::EPIPE, "Broken pipe")
+      -> { @w.send(@method, "foo") }.should raise_error(Errno::EPIPE, /Broken pipe/)
     end
   end
 end
