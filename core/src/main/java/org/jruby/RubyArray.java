@@ -4521,13 +4521,11 @@ fixnum_loop:
 
                 if (value instanceof RubyFixnum) {
                     /* should not overflow long type */
-                    long other = ((RubyFixnum) value).getLongValue();
-                    long sum2 = sum + other;
-                    if (Helpers.additionOverflowed(sum, other, sum2)) {
+                    try {
+                        sum = Math.addExact(sum, ((RubyFixnum) value).getLongValue());
+                    } catch (ArithmeticException ae) {
                         is_bignum = true;
                         break fixnum_loop;
-                    } else {
-                        sum = sum2;
                     }
                 } else if (value instanceof RubyBignum) {
                     is_bignum = true;

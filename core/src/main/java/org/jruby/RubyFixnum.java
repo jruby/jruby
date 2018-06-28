@@ -454,19 +454,19 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject op_plus(ThreadContext context, long otherValue) {
-        long result = value + otherValue;
-        if (Helpers.additionOverflowed(value, otherValue, result)) {
+        try {
+            return newFixnum(Math.addExact(value, otherValue));
+        } catch (ArithmeticException ae) {
             return addAsBignum(context, otherValue);
         }
-        return newFixnum(context.runtime, result);
     }
 
     public IRubyObject op_plus_one(ThreadContext context) {
-        long result = value + 1;
-        if (result == Long.MIN_VALUE) {
+        try {
+            return newFixnum(context.runtime, Math.addExact(value, 1));
+        } catch (ArithmeticException ae) {
             return addAsBignum(context, 1);
         }
-        return newFixnum(context.runtime, result);
     }
 
     public IRubyObject op_plus_two(ThreadContext context) {
@@ -479,12 +479,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     private RubyInteger addFixnum(ThreadContext context, RubyFixnum other) {
-        long otherValue = other.value;
-        long result = value + otherValue;
-        if (Helpers.additionOverflowed(value, otherValue, result)) {
+        try {
+            return newFixnum(context.runtime, Math.addExact(value, other.value));
+        } catch (ArithmeticException ae) {
             return (RubyInteger) addAsBignum(context, other);
         }
-        return newFixnum(context.runtime, result);
     }
 
     private IRubyObject addAsBignum(ThreadContext context, RubyFixnum other) {
@@ -518,37 +517,35 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject op_minus(ThreadContext context, long otherValue) {
-        long result = value - otherValue;
-        if (Helpers.subtractionOverflowed(value, otherValue, result)) {
+        try {
+            return newFixnum(context.runtime, Math.subtractExact(value, otherValue));
+        } catch (ArithmeticException ae) {
             return subtractAsBignum(context, otherValue);
         }
-        return newFixnum(context.runtime, result);
     }
 
     public IRubyObject op_minus_one(ThreadContext context) {
-        long result = value - 1;
-        if (result == Long.MAX_VALUE) {
+        try {
+            return newFixnum(context.runtime, Math.subtractExact(value, 1));
+        } catch (ArithmeticException ae) {
             return subtractAsBignum(context, 1);
         }
-        return newFixnum(context.runtime, result);
     }
 
     public IRubyObject op_minus_two(ThreadContext context) {
-        long result = value - 2;
-    //- if (result == Long.MAX_VALUE - 1) {     //-code
-        if (value < result) {                   //+code+patch; maybe use  if (value <= result) {
+        try {
+            return newFixnum(context.runtime, Math.subtractExact(value, 2));
+        } catch (ArithmeticException ae) {
             return subtractAsBignum(context, 2);
         }
-        return newFixnum(context.runtime, result);
     }
 
     private IRubyObject subtractFixnum(ThreadContext context, RubyFixnum other) {
-        long otherValue = other.value;
-        long result = value - otherValue;
-        if (Helpers.subtractionOverflowed(value, otherValue, result)) {
+        try {
+            return newFixnum(context.runtime, Math.subtractExact(value, other.value));
+        } catch (ArithmeticException ae) {
             return subtractAsBignum(context, other);
         }
-        return newFixnum(context.runtime, result);
     }
 
     private IRubyObject subtractAsBignum(ThreadContext context, RubyFixnum other) {
@@ -591,36 +588,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject op_mul(ThreadContext context, long otherValue) {
-        // See JRUBY-6612 for reasons for these different cases.
-        // The problem is that these Java long calculations overflow:
-        //   value == -1; otherValue == Long.MIN_VALUE;
-        //   result = value * othervalue;  #=> Long.MIN_VALUE (overflow)
-        //   result / value  #=>  Long.MIN_VALUE (overflow) == otherValue
-
-        final Ruby runtime = context.runtime;
-        final long value = this.value;
-
-        // fast check for known ranges that won't overflow
-        if (value <= 3037000499L && otherValue <= 3037000499L &&
-                value >= -3037000499L && otherValue >= -3037000499L) {
-            return newFixnum(runtime, value * otherValue);
+        Ruby runtime = context.runtime;
+        try {
+            return newFixnum(runtime, Math.multiplyExact(value, otherValue));
+        } catch (ArithmeticException ae) {
+            return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
         }
-
-        if (value == 0 || otherValue == 0) {
-            return RubyFixnum.zero(runtime);
-        }
-        if (value == -1) {
-            if (otherValue != Long.MIN_VALUE) {
-                return newFixnum(runtime, -otherValue);
-            }
-        } else {
-            long result = value * otherValue;
-            if (result / value == otherValue) {
-                return newFixnum(runtime, result);
-            }
-        }
-        // if here (value * otherValue) overflows long, so must return Bignum
-        return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
     }
 
     /** fix_div
