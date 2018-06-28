@@ -169,8 +169,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Override
     public void setEncoding(Encoding encoding) {
-        modify();
-        value.setEncoding(encoding);
+        if (encoding != value.getEncoding()) {
+            if (shareLevel == SHARE_LEVEL_BYTELIST) modify();
+            else modifyCheck();
+            value.setEncoding(encoding);
+        }
     }
 
     @Override
@@ -1666,14 +1669,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this);
-        return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
+        return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
     @JRubyMethod(name = "match", reads = BACKREF)
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, IRubyObject pos, Block block) {
         RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
         IRubyObject result = sites(context).match.call(context, coercedPattern, coercedPattern, this, pos);
-        return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
+        return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
     @JRubyMethod(name = "match", required = 1, rest = true)
@@ -1684,7 +1687,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyRegexp pattern = getPattern(context.runtime, args[0]);
         args[0] = this;
         IRubyObject result = sites(context).match.call(context, pattern, pattern, args);
-        return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
+        return block.isGiven() && result != context.nil ? block.yield(context, result) : result;
     }
 
     @JRubyMethod(name = "match?")
@@ -5997,11 +6000,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (encindex == null) return this;
         if (newstr_p[0] == this) {
-            this.setEncoding(encindex);
+            setEncoding(encindex);
             return this;
         }
         replace(newstr_p[0]);
-        this.setEncoding(encindex);
+        setEncoding(encindex);
         return this;
     }
 

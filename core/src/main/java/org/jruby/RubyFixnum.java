@@ -399,10 +399,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyString to_s() {
-        ByteList bl = ConvertBytes.longToByteList(value, 10);
-        RubyString str = getRuntime().newString(bl);
-        str.setEncoding(USASCIIEncoding.INSTANCE);
-        return str;
+        ByteList bytes = ConvertBytes.longToByteList(value, 10);
+        return RubyString.newString(getRuntime(), bytes, USASCIIEncoding.INSTANCE);
     }
 
     @Override
@@ -411,9 +409,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-        ByteList bl = ConvertBytes.longToByteList(value, base);
-        bl.setEncoding(USASCIIEncoding.INSTANCE);
-        return getRuntime().newString(bl);
+        ByteList bytes = ConvertBytes.longToByteList(value, base);
+        return RubyString.newString(getRuntime(), bytes, USASCIIEncoding.INSTANCE);
     }
 
     /** fix_to_sym
