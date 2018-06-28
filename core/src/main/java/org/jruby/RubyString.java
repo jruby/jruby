@@ -894,6 +894,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (shareLevel != SHARE_LEVEL_BYTELIST) shareLevel = SHARE_LEVEL_BYTELIST;
     }
 
+    final void setBufferShared() {
+        if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
+    }
+
     /**
      * Check that the string can be modified, raising error otherwise.
      *

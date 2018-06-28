@@ -750,7 +750,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean chompCR = chomp;
 
         fptr.SET_BINARY_MODE();
-        Encoding enc = getReadEncoding();
+        final Encoding enc = getReadEncoding();
 
         if (rs != context.nil) {
             RubyString rsStr = (RubyString) rs;
@@ -780,16 +780,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             chompCR = chomp && rslen == 1 && newline == '\n';
         }
 
+        final ByteList strCache = cache != null ? cache.allocate() : null;
         try {
-            ByteList[] strPtr = { str != null ? str.getByteList() : null };
+            final ByteList[] strPtr = { str != null ? str.getByteList() : strCache };
+            final int[] limit_p = { limit };
 
-            int[] limit_p = {limit};
             while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
                 int s, p, pp, e;
 
-                byte[] strBytes = strPtr[0].getUnsafeBytes();
-                int realSize = strPtr[0].getRealSize();
-                int begin = strPtr[0].getBegin();
+                final byte[] strBytes = strPtr[0].getUnsafeBytes();
+                final int realSize = strPtr[0].getRealSize();
+                final int begin = strPtr[0].getBegin();
 
                 if (c == newline) {
                     if (realSize < rslen) continue;
@@ -826,6 +827,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     str.setValue(strPtr[0]);
                 } else {
                     str = runtime.newString(strPtr[0]);
+                    if (strCache != null) str.setBufferShared();
                 }
             }
 
@@ -833,16 +835,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 // FIXME: This may block more often than it should, to clean up extraneous newlines
                 fptr.swallow(context, '\n');
             }
-            if (str != null) {
-                EncodingUtils.ioEncStr(runtime, str, fptr);
+            if (str != null) { // io_enc_str :
+                str.setTaint(true);
+                str.setEncoding(enc);
             }
         } finally {
-            //
+            if (strCache != null) {
+                if (cache.release(strCache)) str = null; // cached buffer not used
+            }
         }
 
-        if (str != null && !noLimit) {
-            fptr.incrementLineno(runtime, this);
-        }
+        if (str != null && !noLimit) fptr.incrementLineno(runtime, this);
 
         return str == null ? context.nil : str;
     }
@@ -4515,12 +4518,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         private byte[] buffer = ByteList.NULL_ARRAY;
 
-        final void release(ByteList bytes) {
+        // @return true if bytes buffer was not used
+        final boolean release(ByteList bytes) {
+            final byte[] prev = buffer;
             buffer = bytes.getUnsafeBytes();
+            return prev == buffer && bytes.getRealSize() == 0;
         }
 
         final ByteList allocate() {
-            return new ByteList(buffer, 0, buffer.length, false);
+            return new ByteList(buffer, 0, 0, false);
         }
     }
 
