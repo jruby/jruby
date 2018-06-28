@@ -20,4 +20,4 @@ class String
 
 end
 
-JRuby.send(:load_string_ext)
+JRuby::Util.load_ext(:string)

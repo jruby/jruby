@@ -53,9 +53,11 @@ import org.jruby.util.ByteList;
 import java.io.ByteArrayInputStream;
 
 /**
- * Native part of require 'jruby'. Provides methods for swapping between the
- * normal Ruby reference to an object and the Java-integration-wrapped
- * reference.
+ * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
+ * object and the Java-integration-wrapped reference.
+ *
+ * Parts of JRuby name-space are loaded even without <code>require 'jruby'<code/>, those live under JRuby::Util.
+ * @see JRubyUtilLibrary
  */
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
@@ -194,7 +196,7 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(name = "set_last_exit_status", module = true) // used from JRuby::ProcessManager
+    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
     public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
                                                    IRubyObject status, IRubyObject pid) {
         RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
@@ -298,7 +300,7 @@ public class JRubyLibrary implements Library {
         }, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
         CoreExt.loadStringExtensions(context.runtime);
         return context.nil;
