@@ -4487,13 +4487,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * See http://ruby-doc.org/core-1.9.3/IO.html#method-c-new for the format of modes in options
      */
     protected IOOptions updateIOOptionsFromOptions(ThreadContext context, RubyHash options, IOOptions ioOptions) {
-        if (options == null || options.isNil()) return ioOptions;
+        if (options == null || options == context.nil) return ioOptions;
 
         final Ruby runtime = context.runtime;
 
-        final RubySymbol mode = runtime.newSymbol("mode");
-        if (options.containsKey(mode)) {
-            ioOptions = parseIOOptions(options.fastARef(mode));
+        final IRubyObject mode = options.fastARef(runtime.newSymbol("mode"));
+        if (mode != null) {
+            ioOptions = parseIOOptions(mode);
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
@@ -4501,7 +4501,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // not obliterate what came before.
 
         final RubySymbol binmode = runtime.newSymbol("binmode");
-        if (options.containsKey(binmode) && options.fastARef(binmode).isTrue()) {
+        if (isTrue(options.fastARef(binmode))) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
@@ -4509,24 +4509,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // :binmode option is ORed in with other options. It does
         // not obliterate what came before.
 
-        if (options.containsKey(binmode) && options.fastARef(binmode).isTrue()) {
+        if (isTrue(options.fastARef(binmode))) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
-        final RubySymbol textmode = runtime.newSymbol("textmode");
-        if (options.containsKey(textmode) && options.fastARef(textmode).isTrue()) {
+        if (isTrue(options.fastARef(runtime.newSymbol("textmode")))) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
         }
 
-        final RubySymbol open_args = runtime.newSymbol("open_args");
         // TODO: Waaaay different than MRI.  They uniformly have all opening logic
         // do a scan of args before anything opens.  We do this logic in a less
         // consistent way.  We should consider re-impling all IO/File construction
         // logic.
-        if (options.containsKey(open_args)) {
-            IRubyObject args = options.fastARef(open_args);
-
-            RubyArray openArgs = args.convertToArray();
+        IRubyObject open_args = options.fastARef(runtime.newSymbol("open_args"));
+        if (open_args != null) {
+            RubyArray openArgs = open_args.convertToArray();
 
             for (int i = 0; i < openArgs.size(); i++) {
                 IRubyObject arg = openArgs.eltInternal(i);
@@ -4545,6 +4542,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         return ioOptions;
     }
+
+    private static boolean isTrue(IRubyObject val) { return val != null && val.isTrue(); }
 
     static final Set<String> ALL_SPAWN_OPTIONS;
     static final String[] UNSUPPORTED_SPAWN_OPTIONS;
