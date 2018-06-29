@@ -717,9 +717,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         modifyCheck();
 
-        RubyArray origArr = orig.convertToArray();
-
         if (this == orig) return this;
+
+        RubyArray origArr = orig.convertToArray();
 
         origArr.unpack();
 
@@ -737,11 +737,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     @JRubyMethod(name = "to_s")
-    @Override
-    public IRubyObject to_s() {
-        return inspect();
+    public RubyString to_s(ThreadContext context) {
+        return inspect(context);
     }
 
+    @Override
+    public IRubyObject to_s() {
+        return to_s(getRuntime().getCurrentContext());
+    }
 
     public boolean includes(ThreadContext context, IRubyObject item) {
         int myBegin = this.begin;
@@ -756,6 +759,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return false;
     }
 
+    @Deprecated
     public RubyFixnum hash19(ThreadContext context) {
         return hash(context);
     }
@@ -1675,17 +1679,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     *
     */
     @JRubyMethod(name = "inspect")
-    @Override
-    public IRubyObject inspect() {
-        if (realLength == 0) return RubyString.newStringShared(getRuntime(), EMPTY_ARRAY_BYTELIST);
-        if (getRuntime().isInspecting(this)) return  RubyString.newStringShared(getRuntime(), RECURSIVE_ARRAY_BYTELIST);
+    public RubyString inspect(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BYTELIST);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BYTELIST);
 
         try {
-            getRuntime().registerInspecting(this);
-            return inspectAry(getRuntime().getCurrentContext());
+            runtime.registerInspecting(this);
+            return (RubyString) inspectAry(context);
         } finally {
-            getRuntime().unregisterInspecting(this);
+            runtime.unregisterInspecting(this);
         }
+    }
+
+    @Override
+    public IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
     }
 
     /**
