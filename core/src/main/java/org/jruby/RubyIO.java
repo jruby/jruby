@@ -679,7 +679,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public IRubyObject getline(ThreadContext context, IRubyObject separator) {
-        return getlineImpl(context, separator, -1, false, null);
+        return getlineImpl(context, separator, -1, false);
     }
 
     /**
@@ -687,19 +687,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      *
      */
     public IRubyObject getline(ThreadContext context, IRubyObject separator, long limit) {
-        return getlineImpl(context, separator, (int) limit, false, null);
-    }
-
-    private IRubyObject getline(ThreadContext context, IRubyObject separator, long limit, ByteListCache cache) {
-        return getlineImpl(context, separator, (int) limit, false, cache);
+        return getlineImpl(context, separator, (int) limit, false);
     }
 
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineImpl(ThreadContext context, IRubyObject rs,
-                                    final int limit, final boolean chomp, final ByteListCache cache) {
+    private IRubyObject getlineImpl(ThreadContext context, IRubyObject rs, final int limit, final boolean chomp) {
         Ruby runtime = context.runtime;
 
         final OpenFile fptr = getOpenFileChecked();
@@ -726,7 +721,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 return fptr.getlineFast(context, enc, this, chomp);
             }
 
-            return getlineImplSlowPart(context, fptr, str, rs, limit, chomp, cache);
+            return getlineImplSlowPart(context, fptr, str, rs, limit, chomp);
 
         } finally {
             if (locked) fptr.unlock();
@@ -734,7 +729,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private IRubyObject getlineImplSlowPart(ThreadContext context, final OpenFile fptr,
-        RubyString str, IRubyObject rs, final int limit, final boolean chomp, final ByteListCache cache) {
+        RubyString str, IRubyObject rs, final int limit, final boolean chomp) {
 
         Ruby runtime = context.runtime;
 
@@ -780,69 +775,61 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             chompCR = chomp && rslen == 1 && newline == '\n';
         }
 
-        final ByteList strCache = cache != null ? cache.allocate() : null;
-        try {
-            final ByteList[] strPtr = { str != null ? str.getByteList() : strCache };
-            final int[] limit_p = { limit };
+        final ByteList[] strPtr = { str != null ? str.getByteList() : null };
+        final int[] limit_p = { limit };
 
-            while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
-                int s, p, pp, e;
+        while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
+            int s, p, pp, e;
 
-                final byte[] strBytes = strPtr[0].getUnsafeBytes();
-                final int realSize = strPtr[0].getRealSize();
-                final int begin = strPtr[0].getBegin();
+            final byte[] strBytes = strPtr[0].getUnsafeBytes();
+            final int realSize = strPtr[0].getRealSize();
+            final int begin = strPtr[0].getBegin();
 
-                if (c == newline) {
-                    if (realSize < rslen) continue;
-                    s = begin;
-                    e = s + realSize;
-                    p = e - rslen;
-                    pp = enc.leftAdjustCharHead(strBytes, s, p, e);
-                    if (pp != p) continue;
-                    if (ByteList.memcmp(strBytes, p, rsptrBytes, rsptr, rslen) == 0) {
-                        if (chomp) {
-                            if (chompCR && p > s && strBytes[p-1] == '\r') --p;
-                            strPtr[0].length(p - s);
-                        }
-                        break;
+            if (c == newline) {
+                if (realSize < rslen) continue;
+                s = begin;
+                e = s + realSize;
+                p = e - rslen;
+                pp = enc.leftAdjustCharHead(strBytes, s, p, e);
+                if (pp != p) continue;
+                if (ByteList.memcmp(strBytes, p, rsptrBytes, rsptr, rslen) == 0) {
+                    if (chomp) {
+                        if (chompCR && p > s && strBytes[p-1] == '\r') --p;
+                        strPtr[0].length(p - s);
                     }
-                }
-                if (limit_p[0] == 0) {
-                    s = begin;
-                    p = s + realSize;
-                    pp = enc.leftAdjustCharHead(strBytes, s, p - 1, p);
-                    if (extraLimit != 0 &&
-                            StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strBytes, pp, p))) {
-                        limit_p[0] = 1;
-                        extraLimit--;
-                    } else {
-                        noLimit = true;
-                        break;
-                    }
+                    break;
                 }
             }
-            // limit = limit_p[0];
-            if (strPtr[0] != null) {
-                if (str != null) {
-                    str.setValue(strPtr[0]);
+            if (limit_p[0] == 0) {
+                s = begin;
+                p = s + realSize;
+                pp = enc.leftAdjustCharHead(strBytes, s, p - 1, p);
+                if (extraLimit != 0 &&
+                        StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strBytes, pp, p))) {
+                    limit_p[0] = 1;
+                    extraLimit--;
                 } else {
-                    str = runtime.newString(strPtr[0]);
-                    if (strCache != null) str.setBufferShared();
+                    noLimit = true;
+                    break;
                 }
             }
+        }
+        // limit = limit_p[0];
+        if (strPtr[0] != null) {
+            if (str != null) {
+                str.setValue(strPtr[0]);
+            } else {
+                str = runtime.newString(strPtr[0]);
+            }
+        }
 
-            if (rspara && c != OpenFile.EOF) {
-                // FIXME: This may block more often than it should, to clean up extraneous newlines
-                fptr.swallow(context, '\n');
-            }
-            if (str != null) { // io_enc_str :
-                str.setTaint(true);
-                str.setEncoding(enc);
-            }
-        } finally {
-            if (strCache != null) {
-                if (cache.release(strCache)) str = null; // cached buffer not used
-            }
+        if (rspara && c != OpenFile.EOF) {
+            // FIXME: This may block more often than it should, to clean up extraneous newlines
+            fptr.swallow(context, '\n');
+        }
+        if (str != null) { // io_enc_str :
+            str.setTaint(true);
+            str.setEncoding(enc);
         }
 
         if (str != null && !noLimit) fptr.incrementLineno(runtime, this);
@@ -868,15 +855,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // mri: io_input_encoding
     public Encoding getInputEncoding() {
         return openFile.inputEncoding(getRuntime());
-    }
-
-    private static final String VENDOR;
-    static { String v = SafePropertyAccessor.getProperty("java.VENDOR") ; VENDOR = (v == null) ? "" : v; };
-    private static final String msgEINTR = "Interrupted system call";
-
-    // FIXME: We needed to use this to raise an appropriate error somewhere...find where...I think IRB related when suspending process?
-    public static boolean restartSystemCall(Exception e) {
-        return VENDOR.startsWith("Apple") && e.getMessage().equals(msgEINTR);
     }
 
     // IO class methods.
@@ -2357,7 +2335,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static final Getline.Callback<RubyIO, IRubyObject> GETLINE = new Getline.Callback<RubyIO, IRubyObject>() {
         @Override
         public IRubyObject getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            IRubyObject result = self.getlineImpl(context, rs, limit, chomp, null);
+            IRubyObject result = self.getlineImpl(context, rs, limit, chomp);
 
             if (result != context.nil) context.setLastLine(result);
 
@@ -2368,10 +2346,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static final Getline.Callback<RubyIO, RubyIO> GETLINE_YIELD = new Getline.Callback<RubyIO, RubyIO>() {
         @Override
         public RubyIO getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            ByteListCache cache = new ByteListCache();
 
             IRubyObject line;
-            while ((line = self.getlineImpl(context, rs, limit, chomp, cache)) != context.nil) {
+            while ((line = self.getlineImpl(context, rs, limit, chomp)) != context.nil) {
                 block.yieldSpecific(context, line);
             }
 
@@ -2382,11 +2359,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static final Getline.Callback<RubyIO, RubyArray> GETLINE_ARY = new Getline.Callback<RubyIO, RubyArray>() {
         @Override
         public RubyArray getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            ByteListCache cache = new ByteListCache();
+            
             RubyArray ary = context.runtime.newArray();
             IRubyObject line;
 
-            while ((line = self.getlineImpl(context, rs, limit, chomp, cache)) != context.nil) {
+            while ((line = self.getlineImpl(context, rs, limit, chomp)) != context.nil) {
                 ary.append(line);
             }
 
@@ -4507,30 +4484,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     /**
-     * Caching reference to allocated byte-lists, allowing for internal byte[] to be
-     * reused, rather than reallocated.
-     *
-     * Predominately used on {@link RubyIO#getline(Ruby, ByteList)} and variants.
-     *
-     * @author realjenius
-     */
-    private static class ByteListCache {
-
-        private byte[] buffer = ByteList.NULL_ARRAY;
-
-        // @return true if bytes buffer was not used
-        final boolean release(ByteList bytes) {
-            final byte[] prev = buffer;
-            buffer = bytes.getUnsafeBytes();
-            return prev == buffer && bytes.getRealSize() == 0;
-        }
-
-        final ByteList allocate() {
-            return new ByteList(buffer, 0, 0, false);
-        }
-    }
-
-    /**
      * See http://ruby-doc.org/core-1.9.3/IO.html#method-c-new for the format of modes in options
      */
     protected IOOptions updateIOOptionsFromOptions(ThreadContext context, RubyHash options, IOOptions ioOptions) {
@@ -4884,22 +4837,22 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator) {
-        return getline(runtime.getCurrentContext(), runtime.newString(separator), -1, null);
+        return getline(runtime.getCurrentContext(), runtime.newString(separator), -1);
     }
 
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
-        return getline(runtime.getCurrentContext(), runtime.newString(separator), limit, null);
+        return getline(runtime.getCurrentContext(), runtime.newString(separator), limit);
     }
 
     @Deprecated
     public IRubyObject getline(ThreadContext context, ByteList separator) {
-        return getline(context, RubyString.newString(context.runtime, separator), -1, null);
+        return getline(context, RubyString.newString(context.runtime, separator), -1);
     }
 
     @Deprecated
     public IRubyObject getline(ThreadContext context, ByteList separator, long limit) {
-        return getline(context, RubyString.newString(context.runtime, separator), limit, null);
+        return getline(context, RubyString.newString(context.runtime, separator), limit);
     }
 
     @Deprecated
