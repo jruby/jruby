@@ -2774,6 +2774,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    public final RubyString prepend(byte ch) {
+        modify(value.getRealSize() + 1);
+        final int beg = value.getBegin();
+        if (beg > 0) {
+            value.getUnsafeBytes()[beg - 1] = ch;
+            value.setBegin(beg - 1);
+            return this;
+        }
+        value.prepend(ch);
+        return this;
+    }
+
+    public final RubyString prepend(int ch) {
+        return prepend((byte) ch);
+    }
+
     /** rb_str_crypt
      *
      */
