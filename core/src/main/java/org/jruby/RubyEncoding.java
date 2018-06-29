@@ -39,6 +39,8 @@ import java.nio.charset.CodingErrorAction;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
@@ -179,43 +181,40 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return null;
     }
 
-    public static byte[] encodeUTF8(CharSequence cs) {
-        return getUTF8Coder().encode(cs);
-    }
-
     public static byte[] encodeUTF8(String str) {
-        return getUTF8Coder().encode(str);
+        return encodeUTF8((CharSequence) str);
     }
 
-    private static final int CHAR_ARRAY_BASE;
-    private static final int BYTE_ARRAY_BASE;
-    private static final Field VALUE_FIELD;
-    private static final long VALUE_FIELD_OFFSET;
-    static {
-        Field valueField = null;
-        try {
-            valueField = String.class.getDeclaredField("value");
-        } catch (Exception e) {
+    public static byte[] encodeUTF8(CharSequence str) {
+        if (str.length() > CHAR_THRESHOLD) {
+            return getBytes(UTF8.encode(CharBuffer.wrap(str)));
         }
-        VALUE_FIELD = valueField;
-        long valueFieldOffset = -1;
-        try {
-            valueFieldOffset = UnsafeHolder.U.objectFieldOffset(VALUE_FIELD);
-        } catch (Exception e) {
+        return getBytes(getUTF8Coder().encode(str));
+    }
+
+    static ByteList doEncodeUTF8(CharSequence str) {
+        if (str.length() > CHAR_THRESHOLD) {
+            return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
         }
-        VALUE_FIELD_OFFSET = valueFieldOffset;
-        int charArrayBase = -1;
-        try {
-            charArrayBase = UnsafeHolder.U.arrayBaseOffset(char[].class);
-        } catch (Exception e) {
+        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+    }
+
+    private static byte[] getBytes(final ByteBuffer buffer) {
+        byte[] bytes = new byte[buffer.limit()];
+        buffer.get(bytes);
+        return bytes;
+    }
+
+    private static ByteList getByteList(final ByteBuffer buffer, final Encoding enc, final boolean shared) {
+        byte[] bytes; int off;
+        if (!shared && buffer.hasArray()) { // HeapByteBuffer
+            bytes = buffer.array();
+            off = buffer.arrayOffset();
+        } else {
+            bytes = getBytes(buffer);
+            off = 0;
         }
-        CHAR_ARRAY_BASE = charArrayBase;
-        int byteArrayBase = -1;
-        try {
-            byteArrayBase = UnsafeHolder.U.arrayBaseOffset(byte[].class);
-        } catch (Exception e) {
-        }
-        BYTE_ARRAY_BASE = byteArrayBase;
+        return new ByteList(bytes, off, off + buffer.limit(), enc, false);
     }
 
     public static byte[] encodeUTF16(String str) {
@@ -225,6 +224,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static byte[] encodeUTF16(CharSequence str) {
         return encode(str, UTF16);
     }
+
+    static ByteList doEncodeUTF16(CharSequence str) {
+        return doEncode(str, UTF16, UTF16BEEncoding.INSTANCE);
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {
@@ -232,6 +234,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         byte[] bytes = new byte[buffer.limit()];
         buffer.get(bytes);
         return bytes;
+    }
+
+    static ByteList doEncode(CharSequence cs, Charset charset, Encoding enc) {
+        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc, false);
     }
 
     public static byte[] encode(String str, Charset charset) {
@@ -242,11 +248,14 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public static String decodeUTF8(byte[] bytes, int start, int length) {
-        return getUTF8Coder().decode(bytes, start, length);
+        if (length > CHAR_THRESHOLD) {
+            return UTF8.decode(ByteBuffer.wrap(bytes, start, length)).toString();
+        }
+        return getUTF8Coder().decode(bytes, start, length).toString();
     }
 
     public static String decodeUTF8(byte[] bytes) {
-        return getUTF8Coder().decode(bytes);
+        return decodeUTF8(bytes, 0, bytes.length);
     }
 
     public static String decode(byte[] bytes, int start, int length, Charset charset) {
@@ -257,11 +266,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
     }
 
+    /** The maximum number of characters we can encode/decode in our cached buffers */
+    private static final int CHAR_THRESHOLD = 1024;
+
     private static class UTF8Coder {
         private final CharsetEncoder encoder = UTF8.newEncoder();
         private final CharsetDecoder decoder = UTF8.newDecoder();
-        /** The maximum number of characters we can encode/decode in our cached buffers */
-        private static final int CHAR_THRESHOLD = 1024;
         /** The resulting encode/decode buffer sized by the max number of
          * characters (using 4 bytes per char possible for utf-8) */
         private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
@@ -273,65 +283,48 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
 
-        public final byte[] encode(CharSequence cs) {
-            ByteBuffer buffer;
-            if (cs.length() > CHAR_THRESHOLD) {
-                buffer = UTF8.encode(CharBuffer.wrap(cs));
-            } else {
-                Buffer buf = buffer = byteBuffer;
-                CharBuffer cbuffer = charBuffer;
-                Buffer cbuf = cbuffer;
-                buf.clear();
-                cbuf.clear();
-                cbuffer.put(cs.toString());
-                cbuf.flip();
-                encoder.encode(cbuffer, buffer, true);
-                buf.flip();
-            }
+        public final ByteBuffer encode(CharSequence cs) {
+            ByteBuffer buf = byteBuffer;
+            CharBuffer cbuffer = charBuffer;
+            Buffer cbuf = cbuffer;
+            buf.clear();
+            cbuf.clear();
+            cbuffer.put(cs.toString());
+            cbuf.flip();
+            encoder.encode(cbuffer, buf, true);
+            buf.flip();
 
-            byte[] bytes = new byte[buffer.limit()];
-            buffer.get(bytes);
-            return bytes;
+            return buf;
         }
 
-        public final String decode(byte[] bytes, int start, int length) {
-            CharBuffer cbuffer;
-            if (length > CHAR_THRESHOLD) {
-                cbuffer = UTF8.decode(ByteBuffer.wrap(bytes, start, length));
-            } else {
-                Buffer cbuf = cbuffer = charBuffer;
-                ByteBuffer buffer = byteBuffer;
-                Buffer buf = buffer;
-                cbuf.clear();
-                buf.clear();
-                buffer.put(bytes, start, length);
-                buf.flip();
-                decoder.decode(buffer, cbuffer, true);
-                cbuf.flip();
-            }
+        public final CharBuffer decode(byte[] bytes, int start, int length) {
+            CharBuffer cbuf = charBuffer;
+            ByteBuffer buffer = byteBuffer;
+            Buffer buf = buffer;
+            cbuf.clear();
+            buf.clear();
+            buffer.put(bytes, start, length);
+            buf.flip();
+            decoder.decode(buffer, cbuf, true);
+            cbuf.flip();
 
-            return cbuffer.toString();
+            return cbuf;
         }
 
-        public final String decode(byte[] bytes) {
-            return decode(bytes, 0, bytes.length);
-        }
     }
 
     /**
      * UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
      * See JRUBY-6522
      */
-    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER =
-        new ThreadLocal<SoftReference<UTF8Coder>>();
+    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER = new ThreadLocal<>();
 
     private static UTF8Coder getUTF8Coder() {
         UTF8Coder coder;
         SoftReference<UTF8Coder> ref = UTF8_CODER.get();
         if (ref == null || (coder = ref.get()) == null) {
             coder = new UTF8Coder();
-            ref = new SoftReference<UTF8Coder>(coder);
-            UTF8_CODER.set(ref);
+            UTF8_CODER.set(new SoftReference<>(coder));
         }
 
         return coder;

@@ -509,13 +509,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newUTF8String(Ruby runtime, String str) {
-        ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
-        return new RubyString(runtime, runtime.getString(), byteList);
+        return new RubyString(runtime, runtime.getString(), RubyEncoding.doEncodeUTF8(str));
     }
 
     public static RubyString newUTF16String(Ruby runtime, String str) {
-        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str), UTF16BEEncoding.INSTANCE, false);
-        return new RubyString(runtime, runtime.getString(), byteList);
+        return new RubyString(runtime, runtime.getString(), RubyEncoding.doEncodeUTF16(str));
     }
 
     public static RubyString newUnicodeString(Ruby runtime, CharSequence str) {
@@ -528,13 +526,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newUTF8String(Ruby runtime, CharSequence str) {
-        ByteList byteList = new ByteList(RubyEncoding.encodeUTF8(str), UTF8Encoding.INSTANCE, false);
-        return new RubyString(runtime, runtime.getString(), byteList);
+        return new RubyString(runtime, runtime.getString(), RubyEncoding.doEncodeUTF8(str));
     }
 
     public static RubyString newUTF16String(Ruby runtime, CharSequence str) {
-        ByteList byteList = new ByteList(RubyEncoding.encodeUTF16(str), UTF16BEEncoding.INSTANCE, false);
-        return new RubyString(runtime, runtime.getString(), byteList);
+        return new RubyString(runtime, runtime.getString(), RubyEncoding.doEncodeUTF16(str));
     }
 
     /**
@@ -6158,6 +6154,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
+        if (encoding == UTF8) {
+            return RubyEncoding.doEncodeUTF8(value);
+        }
 
         Charset charset = EncodingUtils.charsetForEncoding(encoding);
 
@@ -6166,16 +6165,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return EncodingUtils.transcodeString(value.toString(), encoding, 0);
         }
 
-        byte[] bytes;
-        if (charset == RubyEncoding.UTF8) {
-            bytes = RubyEncoding.encodeUTF8(value);
-        } else if (charset == RubyEncoding.UTF16) {
-            bytes = RubyEncoding.encodeUTF16(value);
-        } else {
-            bytes = RubyEncoding.encode(value, charset);
+        if (charset == RubyEncoding.UTF16) {
+            byte[] bytes = RubyEncoding.encodeUTF16(value);
+            return new ByteList(bytes, encoding, false);
         }
 
-        return new ByteList(bytes, encoding, false);
+        return RubyEncoding.doEncode(value, charset, encoding);
     }
 
     @Override
