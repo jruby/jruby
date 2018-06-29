@@ -219,16 +219,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public static byte[] encodeUTF16(String str) {
-        if (VALUE_FIELD_OFFSET == -1) return encode(str, UTF16);
-        char[] chars = (char[]) UnsafeHolder.U.getObject(str, VALUE_FIELD_OFFSET);
-        int length = chars.length * 2;
-        byte[] bytes = new byte[length];
-        UnsafeHolder.U.copyMemory(chars, CHAR_ARRAY_BASE, bytes, BYTE_ARRAY_BASE, length);
-        return bytes;
+        return encode(str, UTF16);
     }
 
     public static byte[] encodeUTF16(CharSequence str) {
-        return encodeUTF16(str.toString());
+        return encode(str, UTF16);
+    }
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {
