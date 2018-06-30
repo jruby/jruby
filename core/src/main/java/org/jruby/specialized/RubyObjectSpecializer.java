@@ -29,9 +29,9 @@ package org.jruby.specialized;
 import me.qmx.jitescript.CodeBlock;
 import me.qmx.jitescript.JDKVersion;
 import me.qmx.jitescript.JiteClass;
-import org.jruby.ReifiedRubyObject;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyObject;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -146,7 +146,7 @@ public class RubyObjectSpecializer {
 
     private static Class generateInternal(int size, final String clsPath) {
         // ensure only one thread will attempt to generate and define the new class
-        final String baseName = p(ReifiedRubyObject.class);
+        final String baseName = p(RubyObject.class);
 
         final JiteClass jiteClass = new JiteClass(clsPath, baseName, new String[0]) {{
             for (int i = 0; i < size; i++) {
@@ -177,7 +177,7 @@ public class RubyObjectSpecializer {
 
                 aload(0);
                 iload(1);
-                invokespecial(p(ReifiedRubyObject.class), "getVariable", sig(Object.class, int.class));
+                invokespecial(p(RubyObject.class), "getVariable", sig(Object.class, int.class));
                 areturn();
             }});
 
@@ -193,7 +193,7 @@ public class RubyObjectSpecializer {
                 aload(0);
                 iload(1);
                 aload(2);
-                invokespecial(p(ReifiedRubyObject.class), "setVariable", sig(void.class, int.class, Object.class));
+                invokespecial(p(RubyObject.class), "setVariable", sig(void.class, int.class, Object.class));
                 voidreturn();
             }});
         }};
