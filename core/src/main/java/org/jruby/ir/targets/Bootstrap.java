@@ -451,12 +451,12 @@ public class Bootstrap {
         MethodHandle getValue;
 
         if (accessor instanceof FieldVariableAccessor) {
-            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            MethodHandle getter = ((FieldVariableAccessor)accessor).getGetter();
             getValue = Binder.from(site.type())
                     .drop(0, 2)
                     .filterReturn(filter)
                     .cast(methodType(Object.class, self.getClass()))
-                    .getFieldQuiet(LOOKUP, "var" + offset);
+                    .invoke(getter);
         } else {
             getValue = Binder.from(site.type())
                     .drop(0, 2)
@@ -486,12 +486,12 @@ public class Bootstrap {
         MethodHandle setValue;
 
         if (accessor instanceof FieldVariableAccessor) {
-            int offset = ((FieldVariableAccessor)accessor).getOffset();
+            MethodHandle setter = ((FieldVariableAccessor)accessor).getSetter();
             setValue = Binder.from(site.type())
                     .drop(0, 2)
                     .filterReturn(filter)
                     .cast(methodType(void.class, self.getClass(), Object.class))
-                    .invokeVirtualQuiet(LOOKUP, "setVariable" + offset);
+                    .invoke(setter);
         } else {
             setValue = Binder.from(site.type())
                     .drop(0, 2)
@@ -708,8 +708,7 @@ public class Bootstrap {
 
         if (accessor instanceof FieldVariableAccessor) {
             direct = true;
-            int offset = ((FieldVariableAccessor)accessor).getOffset();
-            getValue = lookup().findGetter(self.getClass(), "var" + offset, Object.class);
+            getValue = ((FieldVariableAccessor) accessor).getGetter();
             getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
         } else {
             getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
@@ -765,8 +764,7 @@ public class Bootstrap {
 
         if (accessor instanceof FieldVariableAccessor) {
             direct = true;
-            int offset = ((FieldVariableAccessor)accessor).getOffset();
-            setValue = findVirtual(self.getClass(), "setVariable" + offset, methodType(void.class, Object.class));
+            setValue = ((FieldVariableAccessor)accessor).getSetter();
             setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
         } else {
             setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
