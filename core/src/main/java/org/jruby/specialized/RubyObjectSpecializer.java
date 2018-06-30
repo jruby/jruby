@@ -41,6 +41,8 @@ import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -93,21 +95,22 @@ public class RubyObjectSpecializer {
                 }
 
                 try {
-                    // LMF version not working currently
-
-                    //                MethodType invokeType = MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class);
-                    //                CallSite allocatorSite = LambdaMetafactory.metafactory(
-                    //                        lookup,
-                    //                        "allocate",
-                    //                        MethodType.methodType(ObjectAllocator.class),
-                    //                        invokeType,
-                    //                        allocatorHandle,
-                    //                        invokeType);
-                    //                allocator = (ObjectAllocator) allocatorSite.dynamicInvoker().invokeExact();
-
                     MethodHandle allocatorHandle = LOOKUP
                             .findConstructor(specialized, MethodType.methodType(void.class, Ruby.class, RubyClass.class))
                             .asType(MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class));
+
+                    // LMF version not working currently
+//                    MethodType invokeType = MethodType.methodType(specialized, Ruby.class, RubyClass.class);
+//                    MethodType smaType = MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class);
+//                    CallSite allocatorSite = LambdaMetafactory.metafactory(
+//                            LOOKUP,
+//                            "allocate",
+//                            MethodType.methodType(ObjectAllocator.class),
+//                            smaType,
+//                            allocatorHandle,
+//                            invokeType);
+//
+//                    ObjectAllocator allocator = (ObjectAllocator) allocatorSite.dynamicInvoker().invokeExact();
 
                     ObjectAllocator allocator = (runtime, klazz) -> {
                         try {
