@@ -95,9 +95,9 @@ public class RubyObjectSpecializer {
                 }
 
                 try {
-                    MethodHandle allocatorHandle = LOOKUP
-                            .findConstructor(specialized, MethodType.methodType(void.class, Ruby.class, RubyClass.class))
-                            .asType(MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class));
+//                    MethodHandle allocatorHandle = LOOKUP
+//                            .findConstructor(specialized, MethodType.methodType(void.class, Ruby.class, RubyClass.class))
+//                            .asType(MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class));
 
                     // LMF version not working currently
 //                    MethodType invokeType = MethodType.methodType(specialized, Ruby.class, RubyClass.class);
@@ -112,14 +112,16 @@ public class RubyObjectSpecializer {
 //
 //                    ObjectAllocator allocator = (ObjectAllocator) allocatorSite.dynamicInvoker().invokeExact();
 
-                    ObjectAllocator allocator = (runtime, klazz) -> {
-                        try {
-                            return (IRubyObject) allocatorHandle.invokeExact(runtime, klazz);
-                        } catch (Throwable t) {
-                            Helpers.throwException(t);
-                            return null;
-                        }
-                    };
+//                    ObjectAllocator allocator = (runtime, klazz) -> {
+//                        try {
+//                            return (IRubyObject) allocatorHandle.invokeExact(runtime, klazz);
+//                        } catch (Throwable t) {
+//                            Helpers.throwException(t);
+//                            return null;
+//                        }
+//                    };
+
+                    ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].newInstance();
 
                     SPECIALIZED_CLASSES.put(size, cna = new ClassAndAllocator(specialized, allocator));
                 } catch (Throwable t) {
@@ -199,9 +201,26 @@ public class RubyObjectSpecializer {
                 invokespecial(p(RubyObject.class), "setVariable", sig(void.class, int.class, Object.class));
                 voidreturn();
             }});
+
+            // allocator class
+            addChildClass(new JiteClass(clsPath + "Allocator", p(Object.class), Helpers.arrayOf(p(ObjectAllocator.class))) {{
+                defineDefaultConstructor();
+
+                defineMethod("allocate", ACC_PUBLIC, sig(IRubyObject.class, Ruby.class, RubyClass.class), new CodeBlock() {{
+                    newobj(clsPath);
+                    dup();
+                    aload(1);
+                    aload(2);
+                    invokespecial(clsPath, "<init>", sig(void.class, Ruby.class, RubyClass.class));
+                    areturn();
+                }});
+            }});
         }};
 
-        return defineClass(jiteClass);
+        Class specializedClass = defineClass(jiteClass);
+        defineClass(jiteClass.getChildClasses().get(0));
+
+        return specializedClass;
     }
 
     private static void genGetSwitch(String clsPath, int size, CodeBlock block, int offsetVar) {
