@@ -114,21 +114,6 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
-        String[] names = name.split(":");
-        String operation = names[0];
-        String varName = names[1];
-        VariableSite site = new VariableSite(type, varName, "noname", 0);
-        MethodHandle handle;
-
-        handle = lookup.findStatic(Bootstrap.class, operation, type.insertParameterTypes(0, VariableSite.class));
-
-        handle = handle.bindTo(site);
-        site.setTarget(handle.asType(site.type()));
-
-        return site;
-    }
-
     public static Handle string() {
         return new Handle(
                 Opcodes.H_INVOKESTATIC,
@@ -185,15 +170,6 @@ public class Bootstrap {
 
     public static Handle invokeSuper() {
         return SuperInvokeSite.BOOTSTRAP;
-    }
-
-    public static Handle ivar() {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                p(Bootstrap.class),
-                "ivar",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
-                false);
     }
 
     public static Handle global() {
@@ -442,11 +418,7 @@ public class Bootstrap {
     private static MethodHandle createAttrReaderHandle(InvokeSite site, IRubyObject self, RubyClass cls, VariableAccessor accessor) {
         MethodHandle nativeTarget;
 
-        MethodHandle filter = Binder
-                .from(IRubyObject.class, IRubyObject.class)
-                .insert(1, cls.getRuntime().getNil())
-                .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
-                .invokeStaticQuiet(lookup(), Bootstrap.class, "valueOrNil");
+        MethodHandle filter = cls.getClassRuntime().getNullToNilHandle();
 
         MethodHandle getValue;
 
@@ -695,148 +667,6 @@ public class Bootstrap {
         return length;
     }
 
-    public static IRubyObject ivarGet(VariableSite site, IRubyObject self) throws Throwable {
-        RubyClass realClass = self.getMetaClass().getRealClass();
-        VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name());
-
-        // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = self.getRuntime().getNullToNilHandle();
-
-        // get variable value and filter with nullToNil
-        MethodHandle getValue;
-        boolean direct = false;
-
-        if (accessor instanceof FieldVariableAccessor) {
-            direct = true;
-            getValue = ((FieldVariableAccessor) accessor).getGetter();
-            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class));
-        } else {
-            getValue = findStatic(VariableAccessor.class, "getVariable", methodType(Object.class, RubyBasicObject.class, int.class));
-            getValue = explicitCastArguments(getValue, methodType(Object.class, IRubyObject.class, int.class));
-            getValue = insertArguments(getValue, 1, accessor.getIndex());
-        }
-
-        getValue = filterReturnValue(getValue, nullToNil);
-
-        // prepare fallback
-        MethodHandle fallback = null;
-        if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
-            fallback = findStatic(Bootstrap.class, "ivarGetFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
-            fallback = fallback.bindTo(site);
-            site.setTarget(fallback);
-            return (IRubyObject)fallback.invokeWithArguments(self);
-        } else {
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                if (direct) {
-                    LOG.info(site.name() + "\tget field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
-                } else {
-                    LOG.info(site.name() + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
-                }
-            }
-            fallback = site.getTarget();
-            site.incrementChainCount();
-        }
-
-        // prepare test
-        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
-        test = insertArguments(test, 0, accessor.getClassId());
-
-        getValue = guardWithTest(test, getValue, fallback);
-
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
-        site.setTarget(getValue);
-
-        return (IRubyObject)getValue.invokeExact(self);
-    }
-
-    public static IRubyObject ivarGetFail(VariableSite site, IRubyObject self) throws Throwable {
-        return site.getVariable(self);
-    }
-
-    public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
-        RubyClass realClass = self.getMetaClass().getRealClass();
-        VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name());
-
-        // set variable value and fold by returning value
-        MethodHandle setValue;
-        boolean direct = false;
-
-        if (accessor instanceof FieldVariableAccessor) {
-            direct = true;
-            setValue = ((FieldVariableAccessor)accessor).getSetter();
-            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, IRubyObject.class));
-        } else {
-            setValue = findStatic(accessor.getClass(), "setVariableChecked", methodType(void.class, RubyBasicObject.class, RubyClass.class, int.class, Object.class));
-            setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, RubyClass.class, int.class, IRubyObject.class));
-            setValue = insertArguments(setValue, 1, realClass, accessor.getIndex());
-        }
-
-        // prepare fallback
-        MethodHandle fallback = null;
-        if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
-            fallback = findStatic(Bootstrap.class, "ivarSetFail", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
-            fallback = fallback.bindTo(site);
-            site.setTarget(fallback);
-            fallback.invokeExact(self, value);
-        } else {
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                if (direct) {
-                    LOG.info(site.name() + "\tset field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
-                } else {
-                    LOG.info(site.name() + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
-                }
-            }
-            fallback = site.getTarget();
-            site.incrementChainCount();
-        }
-
-        // prepare test
-        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
-        test = insertArguments(test, 0, accessor.getClassId());
-        test = dropArguments(test, 1, IRubyObject.class);
-
-        setValue = guardWithTest(test, setValue, fallback);
-
-        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
-        site.setTarget(setValue);
-
-        setValue.invokeExact(self, value);
-    }
-
-    public static void ivarSetFail(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
-        site.setVariable(self, value);
-    }
-
-    private static MethodHandle findStatic(Class target, String name, MethodType type) {
-        return findStatic(lookup(), target, name, type);
-    }
-
-    private static MethodHandle findStatic(Lookup lookup, Class target, String name, MethodType type) {
-        try {
-            return lookup.findStatic(target, name, type);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static MethodHandle findVirtual(Class target, String name, MethodType type) {
-        return findVirtual(lookup(), target, name, type);
-    }
-
-    private static MethodHandle findVirtual(Lookup lookup, Class target, String name, MethodType type) {
-        try {
-            return lookup.findVirtual(target, name, type);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static boolean testRealClass(int id, IRubyObject self) {
-        return id == ((RubyBasicObject)self).getMetaClass().getRealClass().id;
-    }
-
     public static boolean testType(RubyClass original, IRubyObject self) {
         // naive test
         return ((RubyBasicObject)self).getMetaClass() == original;
@@ -845,23 +675,8 @@ public class Bootstrap {
     ///////////////////////////////////////////////////////////////////////////
     // Fixnum binding
 
-    public static IRubyObject instVarNullToNil(IRubyObject value, IRubyObject nil, String name) {
-        if (value == null) {
-            Ruby runtime = nil.getRuntime();
-            if (runtime.isVerbose()) {
-                nil.getRuntime().getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
-            }
-            return nil;
-        }
-        return value;
-    }
-
     public static boolean testModuleMatch(ThreadContext context, IRubyObject arg0, int id) {
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
-    }
-
-    private static String extractSourceInfo(VariableSite site) {
-        return " (" + site.file() + ":" + site.line() + ")";
     }
 
     public static Handle getFixnumOperatorHandle() {
