@@ -1835,7 +1835,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject upcase_bang(ThreadContext context, int flags) {
-        Ruby runtime = context.runtime;
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
         if (((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) ||
@@ -1852,10 +1851,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 s++;
             }
         } else {
-            flags = caseMap(runtime, flags, enc);
+            flags = caseMap(context.runtime, flags, enc);
         }
 
-        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
+        if ((flags & Config.CASE_MODIFIED) != 0) {
+            clearCodeRange();
+            return this;
+        } else {
+            return context.nil;
+        }
     }
 
     /** rb_str_downcase / rb_str_downcase_bang
@@ -1909,7 +1913,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject downcase_bang(ThreadContext context, int flags) {
-        Ruby runtime = context.runtime;
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
         if (((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) ||
@@ -1926,10 +1929,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 s++;
             }
         } else {
-            flags = caseMap(runtime, flags, enc);
+            flags = caseMap(context.runtime, flags, enc);
         }
 
-        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
+        if ((flags & Config.CASE_MODIFIED) != 0) {
+            clearCodeRange();
+            return this;
+        } else {
+            return context.nil;
+        }
     }
 
     /** rb_str_swapcase / rb_str_swapcase_bang
@@ -1982,11 +1990,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject swapcase_bang(ThreadContext context, int flags) {
-        Ruby runtime = context.runtime;
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
-        flags = caseMap(runtime, flags, enc);
-        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
+        flags = caseMap(context.runtime, flags, enc);
+        if ((flags & Config.CASE_MODIFIED) != 0) {
+            clearCodeRange();
+            return this;
+        } else {
+            return context.nil;
+        }
     }
 
     /** rb_str_capitalize / rb_str_capitalize_bang
@@ -2039,17 +2051,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject capitalize_bang(ThreadContext context, int flags) {
-        Ruby runtime = context.runtime;
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
             modifyCheck();
-            return runtime.getNil();
+            return context.nil;
         }
 
-        flags = caseMap(runtime, flags, enc);
-        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
+        flags = caseMap(context.runtime, flags, enc);
+        if ((flags & Config.CASE_MODIFIED) != 0) {
+            clearCodeRange();
+            return this;
+        } else {
+            return context.nil;
+        }
     }
 
     /** rb_str_dump
