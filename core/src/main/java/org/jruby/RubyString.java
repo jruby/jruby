@@ -1852,14 +1852,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         } else {
             flags = caseMap(context.runtime, flags, enc);
+            if ((flags & Config.CASE_MODIFIED) != 0) clearCodeRange();
         }
 
-        if ((flags & Config.CASE_MODIFIED) != 0) {
-            clearCodeRange();
-            return this;
-        } else {
-            return context.nil;
-        }
+        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
     /** rb_str_downcase / rb_str_downcase_bang
@@ -1930,14 +1926,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         } else {
             flags = caseMap(context.runtime, flags, enc);
+            if ((flags & Config.CASE_MODIFIED) != 0) clearCodeRange();
         }
 
-        if ((flags & Config.CASE_MODIFIED) != 0) {
-            clearCodeRange();
-            return this;
-        } else {
-            return context.nil;
-        }
+        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
     /** rb_str_swapcase / rb_str_swapcase_bang
