@@ -1,11 +1,7 @@
 package org.jruby.runtime.invokedynamic;
 
-import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.ir.targets.Bootstrap;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.invoke.CallSite;
@@ -59,29 +55,6 @@ public class VariableSite extends MutableCallSite {
 
     public synchronized void clearChainCount() {
         chainCount = 0;
-    }
-
-    public final IRubyObject getVariable(IRubyObject object) {
-        VariableAccessor variableAccessor = accessor;
-        RubyClass cls = object.getMetaClass().getRealClass();
-        if (variableAccessor.getClassId() != cls.hashCode()) {
-            accessor = variableAccessor = cls.getVariableAccessorForRead(name);
-        }
-        IRubyObject value = (IRubyObject) variableAccessor.get(object);
-        if (value != null) {
-            return value;
-        }
-        return object.getRuntime().getNil();
-    }
-
-    public final IRubyObject setVariable(IRubyObject object, IRubyObject value) {
-        VariableAccessor variableAccessor = accessor;
-        RubyClass cls = object.getMetaClass().getRealClass();
-        if (variableAccessor.getClassId() != cls.hashCode()) {
-            accessor = variableAccessor = cls.getVariableAccessorForWrite(name);
-        }
-        variableAccessor.set(object, value);
-        return value;
     }
 
     public String file() {
@@ -145,7 +118,7 @@ public class VariableSite extends MutableCallSite {
         MethodHandle fallback = null;
         if (chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name() + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo());
-            fallback = findStatic(Bootstrap.class, "ivarGetFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
+            fallback = findVirtual(VariableSite.class, "ivarGetFail", methodType(IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(this);
             setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self);
@@ -162,7 +135,7 @@ public class VariableSite extends MutableCallSite {
         }
 
         // prepare test
-        MethodHandle test = findStatic(Bootstrap.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        MethodHandle test = findStatic(VariableSite.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
         test = insertArguments(test, 0, accessor.getClassId());
 
         getValue = guardWithTest(test, getValue, fallback);
@@ -173,8 +146,17 @@ public class VariableSite extends MutableCallSite {
         return (IRubyObject)getValue.invokeExact(self);
     }
 
-    public static IRubyObject ivarGetFail(VariableSite site, IRubyObject self) throws Throwable {
-        return site.getVariable(self);
+    public IRubyObject ivarGetFail(IRubyObject self) {
+        VariableAccessor variableAccessor = accessor;
+        RubyClass cls = self.getMetaClass().getRealClass();
+        if (variableAccessor.getClassId() != cls.hashCode()) {
+            accessor = variableAccessor = cls.getVariableAccessorForRead(name);
+        }
+        IRubyObject value = (IRubyObject) variableAccessor.get(self);
+        if (value != null) {
+            return value;
+        }
+        return self.getRuntime().getNil();
     }
 
     public void ivarSet(IRubyObject self, IRubyObject value) throws Throwable {
@@ -228,8 +210,13 @@ public class VariableSite extends MutableCallSite {
         setValue.invokeExact(self, value);
     }
 
-    public void ivarSetFail(IRubyObject self, IRubyObject value) throws Throwable {
-        setVariable(self, value);
+    public void ivarSetFail(IRubyObject self, IRubyObject value) {
+        VariableAccessor variableAccessor = accessor;
+        RubyClass cls = self.getMetaClass().getRealClass();
+        if (variableAccessor.getClassId() != cls.hashCode()) {
+            accessor = variableAccessor = cls.getVariableAccessorForWrite(name);
+        }
+        variableAccessor.set(self, value);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
