@@ -192,6 +192,13 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return getBytes(getUTF8Coder().encode(str));
     }
 
+    static ByteList doEncodeUTF8(String str) {
+        if (str.length() > CHAR_THRESHOLD) {
+            return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
+        }
+        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+    }
+
     static ByteList doEncodeUTF8(CharSequence str) {
         if (str.length() > CHAR_THRESHOLD) {
             return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
@@ -283,15 +290,29 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
 
-        public final ByteBuffer encode(CharSequence cs) {
+        public final ByteBuffer encode(String str) {
             ByteBuffer buf = byteBuffer;
-            CharBuffer cbuffer = charBuffer;
-            Buffer cbuf = cbuffer;
+            CharBuffer cbuf = charBuffer;
             buf.clear();
             cbuf.clear();
-            cbuffer.put(cs.toString());
+            cbuf.put(str);
             cbuf.flip();
-            encoder.encode(cbuffer, buf, true);
+            encoder.encode(cbuf, buf, true);
+            buf.flip();
+
+            return buf;
+        }
+
+        public final ByteBuffer encode(CharSequence str) {
+            ByteBuffer buf = byteBuffer;
+            CharBuffer cbuf = charBuffer;
+            buf.clear();
+            cbuf.clear();
+            // NOTE: doesn't matter is we toString here in terms of speed
+            // ... so we "safe" some space at least by not copy-ing char[]
+            for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
+            cbuf.flip();
+            encoder.encode(cbuf, buf, true);
             buf.flip();
 
             return buf;
@@ -299,13 +320,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
         public final CharBuffer decode(byte[] bytes, int start, int length) {
             CharBuffer cbuf = charBuffer;
-            ByteBuffer buffer = byteBuffer;
-            Buffer buf = buffer;
+            ByteBuffer buf = byteBuffer;
             cbuf.clear();
             buf.clear();
-            buffer.put(bytes, start, length);
+            buf.put(bytes, start, length);
             buf.flip();
-            decoder.decode(buffer, cbuf, true);
+            decoder.decode(buf, cbuf, true);
             cbuf.flip();
 
             return cbuf;
