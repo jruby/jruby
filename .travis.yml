@@ -125,3 +125,13 @@ addons:
     packages:
 #      - oracle-java9-installer
       - haveged
+
+deploy:
+  - provider: script
+    script: mvn deploy -Pdist --settings .travis-maven-settings.xml -DskipTests=true -B
+    on:
+      branch: master
+  - provider: script
+    script: mvn deploy -Pdist --settings .travis-maven-settings.xml -DskipTests=true -B
+    on:
+      branch: jruby-9.1
