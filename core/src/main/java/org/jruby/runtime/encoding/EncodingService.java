@@ -10,7 +10,6 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -24,7 +23,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
@@ -46,7 +44,7 @@ public final class EncodingService {
     private static final ByteList INTERNAL_BL = ByteList.create("internal");
     private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
 
-    public EncodingService (Ruby runtime) {
+    public EncodingService(Ruby runtime) {
         this.runtime = runtime;
         encodings = EncodingDB.getEncodings();
         aliases = EncodingDB.getAliases();
@@ -219,18 +217,15 @@ public final class EncodingService {
     }
 
     public IRubyObject getDefaultExternal() {
-        IRubyObject defaultExternal = convertEncodingToRubyEncoding(runtime.getDefaultExternalEncoding());
-
-        if (defaultExternal.isNil()) {
+        Encoding defaultEncoding = runtime.getDefaultExternalEncoding();
+        if (defaultEncoding == null) {
             // TODO: MRI seems to default blindly to US-ASCII and we were using Charset default from Java...which is right?
             ByteList encodingName = ByteList.create("US-ASCII");
-            Encoding encoding = runtime.getEncodingService().loadEncoding(encodingName);
+            defaultEncoding = runtime.getEncodingService().loadEncoding(encodingName);
 
-            runtime.setDefaultExternalEncoding(encoding);
-            defaultExternal = convertEncodingToRubyEncoding(encoding);
+            runtime.setDefaultExternalEncoding(defaultEncoding);
         }
-
-        return defaultExternal;
+        return getEncoding(defaultEncoding);
     }
 
     public IRubyObject getDefaultInternal() {
@@ -282,11 +277,7 @@ public final class EncodingService {
         if ( ! ((RubyString) arg).getEncoding().isAsciiCompatible() ) {
             return null;
         }
-        if (error) {
-            return findEncoding((RubyString)arg);
-        } else {
-            return findEncodingNoError((RubyString)arg);
-        }
+        return findEncodingCommon(((RubyString) arg).getByteList(), error);
     }
 
     private Encoding getEncodingFromNKFName(final String name) {
@@ -404,8 +395,8 @@ public final class EncodingService {
      * @return the charset
      */
     public Charset charsetForEncoding(Encoding encoding) {
-        if (encoding.toString().equals("ASCII-8BIT")) {
-            return Charset.forName("ISO-8859-1");
+        if (encoding == ASCIIEncoding.INSTANCE) {
+            return RubyEncoding.ISO;
         }
 
         if (encoding == ISO8859_16Encoding.INSTANCE) {
@@ -413,7 +404,7 @@ public final class EncodingService {
         }
 
         try {
-            return Charset.forName(encoding.toString());
+            return EncodingUtils.charsetForEncoding(encoding);
         } catch (UnsupportedCharsetException uce) {
             throw runtime.newEncodingCompatibilityError("no java.nio.charset.Charset found for encoding `" + encoding.toString() + "'");
         }
