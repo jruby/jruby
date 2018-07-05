@@ -358,13 +358,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
-        this(runtime, rubyClass, value, null);
+        this(runtime, rubyClass, value, UTF8);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, Encoding enc) {
         super(runtime, rubyClass);
         assert value != null;
-        if (enc == null) enc = UTF8;
+        assert enc != null;
+
+        this.value = encodeBytelist(value, enc);
+    }
+
+    private RubyString(Ruby runtime, RubyClass rubyClass, String value, Encoding enc) {
+        super(runtime, rubyClass);
+        assert value != null;
+        assert enc != null;
 
         this.value = encodeBytelist(value, enc);
     }
@@ -449,7 +457,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newString(Ruby runtime, CharSequence str) {
-        return new RubyString(runtime, runtime.getString(), str);
+        return new RubyString(runtime, runtime.getString(), str, UTF8);
     }
 
     public static RubyString newString(Ruby runtime, CharSequence str, Encoding encoding) {
@@ -457,7 +465,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newString(Ruby runtime, String str) {
-        return new RubyString(runtime, runtime.getString(), str);
+        return new RubyString(runtime, runtime.getString(), str, UTF8);
     }
 
     public static RubyString newString(Ruby runtime, String str, Encoding encoding) {
@@ -6173,6 +6181,26 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return RubyEncoding.doEncode(value, charset, encoding);
     }
 
+    static ByteList encodeBytelist(String value, Encoding encoding) {
+        if (encoding == UTF8) {
+            return RubyEncoding.doEncodeUTF8(value);
+        }
+
+        Charset charset = EncodingUtils.charsetForEncoding(encoding);
+
+        // if null charset, let our transcoder handle it
+        if (charset == null) {
+            return EncodingUtils.transcodeString(value, encoding, 0);
+        }
+
+        if (charset == RubyEncoding.UTF16) {
+            byte[] bytes = RubyEncoding.encodeUTF16(value);
+            return new ByteList(bytes, encoding, false);
+        }
+
+        return RubyEncoding.doEncode(value, charset, encoding);
+    }
+
     @Override
     public <T> T toJava(Class<T> target) {
         // converting on Comparable.class due target.isAssignableFrom(String.class) compatibility (< 9.2)
@@ -6205,28 +6233,25 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IRubyObject buf = context.nil;
         byte[] repBytes;
         int rep;
-        int replen = -1;
+        int replen;
         boolean tainted = false;
 
         if (block.isGiven()) {
-            if (!repl.isNil()) {
+            if (repl != context.nil) {
                 throw runtime.newArgumentError("both of block and replacement given");
             }
-            replen = 0;
         }
 
-        if (cr == CR_7BIT || cr == CR_VALID)
-            return context.nil;
+        if (cr == CR_7BIT || cr == CR_VALID) return context.nil;
 
         enc = EncodingUtils.STR_ENC_GET(this);
-        if (!repl.isNil()) {
+        if (repl != context.nil) {
             repl = EncodingUtils.strCompatAndValid(context, repl, enc);
             tainted |= repl.isTaint();
         }
 
-        if (enc.isDummy()) {
-            return context.nil;
-        }
+        if (enc.isDummy()) return context.nil;
+
         encidx = enc;
 
         if (enc.isAsciiCompatible()) {
@@ -6477,11 +6502,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Deprecated
     public final RubyString strDup() {
         return strDup(getRuntime(), getMetaClass().getRealClass());
-    }
-
-    @Deprecated
-    final RubyString strDup(RubyClass clazz) {
-        return strDup(getRuntime(), getMetaClass());
     }
 
     @Deprecated

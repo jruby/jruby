@@ -232,6 +232,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return encode(str, UTF16);
     }
 
+    static ByteList doEncodeUTF16(String str) {
+        return doEncode(str, UTF16, UTF16BEEncoding.INSTANCE);
+    }
+
     static ByteList doEncodeUTF16(CharSequence str) {
         return doEncode(str, UTF16, UTF16BEEncoding.INSTANCE);
     }
@@ -241,6 +245,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         byte[] bytes = new byte[buffer.limit()];
         buffer.get(bytes);
         return bytes;
+    }
+
+    static ByteList doEncode(String cs, Charset charset, Encoding enc) {
+        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc, false);
     }
 
     static ByteList doEncode(CharSequence cs, Charset charset, Encoding enc) {
