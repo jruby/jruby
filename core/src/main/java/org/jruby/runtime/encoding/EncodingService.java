@@ -18,6 +18,7 @@ import java.io.Console;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
@@ -160,26 +161,30 @@ public final class EncodingService {
     public Encoding loadEncoding(ByteList name) {
         Entry entry = findEncodingOrAliasEntry(name);
         if (entry == null) return null;
+        loadEncodingEntry(entry); // should not attempt RubyEncoding#getEncoding() here
+        return entry.getEncoding();
+    }
+
+    private RubyEncoding loadEncodingEntry(final Entry entry) {
         Encoding enc = entry.getEncoding(); // load the encoding
         int index = enc.getIndex();
+        RubyEncoding[] encodingIndex = this.encodingIndex;
         if (index >= encodingIndex.length) {
-            RubyEncoding tmp[] = new RubyEncoding[index + 4];
-            System.arraycopy(encodingIndex, 0, tmp, 0, encodingIndex.length);
-            encodingIndex = tmp;
+            encodingIndex = this.encodingIndex = Arrays.copyOf(encodingIndex, index + 4);
         }
-        encodingIndex[index] = (RubyEncoding)encodingList[entry.getIndex()];
-        return enc;
+        return encodingIndex[index] = (RubyEncoding) encodingList[entry.getIndex()];
     }
 
     public RubyEncoding getEncoding(Encoding enc) {
         int index = enc.getIndex();
         RubyEncoding rubyEncoding;
+        RubyEncoding[] encodingIndex = this.encodingIndex;
         if (index < encodingIndex.length && (rubyEncoding = encodingIndex[index]) != null) {
             return rubyEncoding;
         }
-
-        enc = loadEncoding(new ByteList(enc.getName(), false));
-        return encodingIndex[enc.getIndex()];
+        // loadEncoding :
+        Entry entry = findEncodingOrAliasEntry(enc.getName());
+        return loadEncodingEntry(entry);
     }
 
     public void defineEncodings() {
@@ -436,14 +441,13 @@ public final class EncodingService {
         }
 
         public Encoding toEncoding(Ruby runtime) {
-            EncodingService service = runtime.getEncodingService();
             switch (this) {
-            case LOCALE: return service.getLocaleEncoding();
+            case LOCALE: return runtime.getEncodingService().getLocaleEncoding();
             case EXTERNAL: return runtime.getDefaultExternalEncoding();
             case INTERNAL: return runtime.getDefaultInternalEncoding();
             case FILESYSTEM: return runtime.getDefaultFilesystemEncoding();
             default:
-                throw new RuntimeException("invalid SpecialEncoding: " + this);
+                throw new AssertionError("invalid SpecialEncoding: " + this);
             }
         }
     }

@@ -116,14 +116,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public final Encoding getEncoding() {
-        // TODO: make threadsafe
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
         return encoding;
     }
 
     private static Encoding extractEncodingFromObject(IRubyObject obj) {
         if (obj instanceof RubyEncoding) return ((RubyEncoding) obj).getEncoding();
-        if (obj instanceof RubySymbol) return ((RubySymbol) obj).asString().getEncoding();
         if (obj instanceof EncodingCapable) return ((EncodingCapable) obj).getEncoding();
 
         return null;
