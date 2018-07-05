@@ -163,6 +163,10 @@ public final class StringSupport {
         return (str.length() == 1) && str.charAt(0) == chr;
     }
 
+    public static boolean contentEquals(final CharSequence str, final int chr1, final int chr2) {
+        return (str.length() == 2) && str.charAt(0) == chr1 && str.charAt(1) == chr2;
+    }
+
     public static CharSequence concat(final CharSequence str1, final CharSequence str2) {
         return new StringBuilder(str1.length() + str2.length()).append(str1).append(str2);
     }
