@@ -499,7 +499,11 @@ public class Bootstrap {
         } else if (method instanceof MixedModeIRMethod) {
             DynamicMethod actualMethod = ((MixedModeIRMethod)method).getActualMethod();
             if (actualMethod instanceof CompiledIRMethod) {
-                compiledIRMethod = (CompiledIRMethod)actualMethod;
+                compiledIRMethod = (CompiledIRMethod) actualMethod;
+            } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(site.name() + "\tfailed direct binding due to unjitted method " + Bootstrap.logMethod(method));
+                }
             }
         }
 
