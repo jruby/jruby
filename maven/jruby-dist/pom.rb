@@ -24,21 +24,10 @@ project 'JRuby Dist' do
                                             'outputDirectory' =>  '${project.build.directory}' } ] )
     end
 
-    execute :pack200 do |ctx|
-      jruby_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
-                                   'META-INF/jruby.home/**/*.jar' ) ]
-      gem_home = Dir[ File.join( ctx.project.build.directory.to_pathname,
-                                  'rubygems-provided/**/*.jar' ) ]
-      lib_dir = Dir[ File.join( ctx.basedir.to_pathname,
-                                '../../lib/*.jar' ) ]
-
-      (jruby_home + gem_home + lib_dir).each do |f|
-        file = f.sub /.jar$/, ''
-        unless File.exists?( file + '.pack.gz' )
-          puts "pack200 #{f.sub(/.*jruby.home./, '').sub(/.*rubygems-provided./, '')}"
-          system('pack200', "#{file}.pack.gz", "#{file}.jar")
-        end
-      end
+    execute :install4j do |ctx|
+      script = File.join(ctx.basedir.to_s, 'create_windows_installer.sh')
+      outputfile = File.join(ctx.project.build.directory.to_pathname, "#{ctx.project.build.finalName}-windows.exe")
+      `#{script} #{outputfile}`
     end
 
     execute :fix_executable_bits do |ctx|
@@ -58,9 +47,15 @@ project 'JRuby Dist' do
             :tarLongFileMode =>  'gnu' ) do
       execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
                      :descriptors => [ 'src/main/assembly/bin.xml' ] )
-      execute_goals( :single, :id => 'bin200.tar.gz',
-                     :attach => false,
-                     :descriptors => [ 'src/main/assembly/bin200.xml' ] )
+    end
+
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+      execute_goal( 'attach-artifact',
+                    :id => 'attach-windows-artifacts',
+                    :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-windows.exe',
+                                      :type => 'exe',
+                                      :classifier => 'windows' } ] )
+
     end
   end
 
@@ -91,7 +86,13 @@ project 'JRuby Dist' do
                                     type: 'zip.sha256'},
                                   { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha512',
                                     classifier: :src,
-                                    type: 'zip.sha512'} ] )
+                                    type: 'zip.sha512'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-windows.exe.sha256',
+                                    classifier: :windows,
+                                    type: 'exe.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-windows.exe.sha512',
+                                    classifier: :windows,
+                                    type: 'exe.sha512'} ] )
     end
   end
 
@@ -123,7 +124,7 @@ project 'JRuby Dist' do
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',
-                      :id => 'attach-artifacts',
+                      :id => 'attach-src-artifacts',
                       :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-src.zip',
                                         :type => 'zip',
                                         :classifier => 'src' } ] )
