@@ -357,6 +357,10 @@ public abstract class InvokeSite extends MutableCallSite {
                     .permute("self")
                     .identity()
                     .handle();
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+            }
         }
 
         return mh;

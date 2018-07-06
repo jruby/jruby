@@ -359,6 +359,10 @@ public class Bootstrap {
 
             if (mh != null) {
                 mh = insertArguments(mh, 3, implClass, site.name());
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(site.name() + "\tbound directly to handle " + Bootstrap.logMethod(method));
+                }
             }
         }
 
@@ -375,6 +379,10 @@ public class Bootstrap {
 
         if (site.arity > 3) {
             binder = binder.collect("args", "arg.*");
+        }
+
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            LOG.info(site.name() + "\tbound indirectly " + Bootstrap.logMethod(method));
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
@@ -538,6 +546,10 @@ public class Bootstrap {
                     .append("frameName", String.class, site.name());
 
             mh = binder.invoke(mh).handle();
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(site.name() + "\tbound to jitted method " + Bootstrap.logMethod(method));
+            }
         }
 
         return mh;
@@ -607,6 +619,10 @@ public class Bootstrap {
                                 .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
                                 .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
                                 .handle();
+                    }
+
+                    if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                        LOG.info(site.name() + "\tbound directly to JVM method " + Bootstrap.logMethod(method));
                     }
                 }
 
@@ -1084,7 +1100,7 @@ public class Bootstrap {
         return new ConstantCallSite(blockMaker);
     }
 
-    private static String logMethod(DynamicMethod method) {
+    static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
 
