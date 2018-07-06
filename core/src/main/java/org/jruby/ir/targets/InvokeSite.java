@@ -13,6 +13,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.JIT;
 import org.jruby.runtime.Block;
@@ -329,6 +330,7 @@ public abstract class InvokeSite extends MutableCallSite {
         if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
+        if (mh == null) mh = buildAliasHandle(method, self, dispatchClass);
         if (mh == null) mh = Bootstrap.buildGenericHandle(this, method, dispatchClass);
 
         assert mh != null : "we should have a method handle of some sort by now";
@@ -360,6 +362,28 @@ public abstract class InvokeSite extends MutableCallSite {
 
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildAliasHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
+        MethodHandle mh = null;
+
+        if (method instanceof AliasMethod) {
+            AliasMethod alias = (AliasMethod) method;
+            DynamicMethod innerMethod = alias.getRealMethod();
+            String name = alias.getName();
+
+            // Use a second site to mimic invocation from AliasMethod
+            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(lookup(), "callFunctional:" + name, type(), literalClosure ? 1 : 0, file, line);
+            mh = innerSite.getHandle(self, dispatchClass, innerMethod);
+
+            alias.setHandle(mh);
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
             }
         }
 
