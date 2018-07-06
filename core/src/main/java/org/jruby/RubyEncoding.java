@@ -185,7 +185,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static byte[] encodeUTF8(CharSequence str) {
         if (str.length() > CHAR_THRESHOLD) {
-            return getBytes(UTF8.encode(CharBuffer.wrap(str)));
+            return getBytes(UTF8.encode(toCharBuffer(str)));
         }
         return getBytes(getUTF8Coder().encode(str));
     }
@@ -199,9 +199,13 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     static ByteList doEncodeUTF8(CharSequence str) {
         if (str.length() > CHAR_THRESHOLD) {
-            return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
+            return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
         }
         return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+    }
+
+    private static CharBuffer toCharBuffer(CharSequence str) {
+        return str instanceof CharBuffer ? (CharBuffer) str : CharBuffer.wrap(str);
     }
 
     private static byte[] getBytes(final ByteBuffer buffer) {
@@ -250,7 +254,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     static ByteList doEncode(CharSequence cs, Charset charset, Encoding enc) {
-        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc, false);
+        return getByteList(charset.encode(toCharBuffer(cs)), enc, false);
     }
 
     public static byte[] encode(String str, Charset charset) {
