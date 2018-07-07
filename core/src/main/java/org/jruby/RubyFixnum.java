@@ -88,7 +88,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
     public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
     public static final boolean USE_CACHE = Options.USE_FIXNUM_CACHE.load();
-    public static final int CACHE_OFFSET = Options.FIXNUM_CACHE_RANGE.load();
+    public static final int CACHE_OFFSET;
+    static {
+        int cacheRange = 0;
+        if (USE_CACHE) {
+            cacheRange = Options.FIXNUM_CACHE_RANGE.load();
+            if (cacheRange < 0) cacheRange = 0;
+        }
+        CACHE_OFFSET = cacheRange;
+    }
 
     private static IRubyObject fixCoerce(IRubyObject x) {
         do {
@@ -213,31 +221,31 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET];
+        return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new RubyFixnum(runtime, 0);
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 1];
+        return CACHE_OFFSET > 1 ? runtime.fixnumCache[CACHE_OFFSET + 1] : new RubyFixnum(runtime, 1);
     }
 
     public static RubyFixnum two(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 2];
+        return CACHE_OFFSET > 2 ? runtime.fixnumCache[CACHE_OFFSET + 2] : new RubyFixnum(runtime, 2);
     }
 
     public static RubyFixnum three(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 3];
+        return CACHE_OFFSET > 3 ? runtime.fixnumCache[CACHE_OFFSET + 3] : new RubyFixnum(runtime, 3);
     }
 
     public static RubyFixnum four(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 4];
+        return CACHE_OFFSET > 4 ? runtime.fixnumCache[CACHE_OFFSET + 4] : new RubyFixnum(runtime, 4);
     }
 
     public static RubyFixnum five(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 5];
+        return CACHE_OFFSET > 5 ? runtime.fixnumCache[CACHE_OFFSET + 5] : new RubyFixnum(runtime, 5);
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET - 1];
+        return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new RubyFixnum(runtime, -1);
     }
 
     @Override
