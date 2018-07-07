@@ -22,8 +22,6 @@ public class TestRubyFixnum extends junit.framework.TestCase {
         num = RubyFixnum.zero(runtime);
         assertEquals(runtime.newFixnum(0), num);
         assertEquals(0, num.getLongValue());
-
-        System.out.println("ZEROO\n\n");
     }
 
     @Test
