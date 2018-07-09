@@ -394,7 +394,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 mh = MethodHandles.filterReturnValue(equalHandle, filter);
 
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                    LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+                    LOG.info(name() + "\tbound as specialized " + name() + ":" + Bootstrap.logMethod(method));
                 }
             }
         }
