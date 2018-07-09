@@ -375,16 +375,27 @@ public abstract class InvokeSite extends MutableCallSite {
         MethodHandle mh = null;
 
         Ruby runtime = self.getRuntime();
-        if (name().equals("!=") && method.getImplementationClass() == runtime.getBasicObject() && method.isBuiltin()) {
-            // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:==", type(), literalClosure ? 1 : 0, file, line);
-            MethodHandle equalHandle = equalSite.dynamicInvoker();
 
-            MethodHandle filter = insertArguments(NEGATE, 1, runtime.getNil(), runtime.getTrue(), runtime.getFalse());
-            mh = MethodHandles.filterReturnValue(equalHandle, filter);
+        if (method.isBuiltin()) {
 
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+            CallSite equalSite = null;
+
+            if (method.getImplementationClass() == runtime.getBasicObject() && name().equals("!=")) {
+                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:==", type(), literalClosure ? 1 : 0, file, line);
+            } else if (method.getImplementationClass() == runtime.getKernel() && name().equals("!~")) {
+                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:=~", type(), literalClosure ? 1 : 0, file, line);
+            }
+
+            if (equalSite != null) {
+                // Bind a second site as a dynamic invoker to guard against changes in new object's type
+                MethodHandle equalHandle = equalSite.dynamicInvoker();
+
+                MethodHandle filter = insertArguments(NEGATE, 1, runtime.getNil(), runtime.getTrue(), runtime.getFalse());
+                mh = MethodHandles.filterReturnValue(equalHandle, filter);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+                }
             }
         }
 
