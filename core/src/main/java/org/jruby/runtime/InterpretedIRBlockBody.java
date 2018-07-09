@@ -95,14 +95,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        context.setCurrentBlockType(Block.Type.PROC);
+        context.setCurrentBlockType(block.type);
         InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
         return Interpreter.INTERPRET_BLOCK(context, block, null, ic, args, block.getBinding().getMethod(), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        context.setCurrentBlockType(Block.Type.NORMAL);
+        context.setCurrentBlockType(block.type);
         InterpreterContext ic = ensureInstrsReady(); // so we get debugging output
         return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }

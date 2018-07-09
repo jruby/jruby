@@ -146,7 +146,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        context.setCurrentBlockType(Block.Type.PROC);
+        context.setCurrentBlockType(block.type);
         try {
             return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), (IRubyObject)null, args, blockArg, block.getBinding().getMethod(), block.type);
         } catch (Throwable t) {
@@ -157,7 +157,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        context.setCurrentBlockType(Block.Type.NORMAL);
+        context.setCurrentBlockType(block.type);
+//        if (block.type != Block.Type.NORMAL) System.out.println("MISMATCH: " + getScope());
         try {
             return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, Block.NULL_BLOCK, block.getBinding().getMethod(), block.type);
         } catch (Throwable t) {
