@@ -1747,7 +1747,7 @@ public class IRRuntimeHelpers {
             args = IRubyObject.NULL_ARRAY;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        boolean isProcCall = block.type == Block.Type.PROC;
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
         if (block.type == Block.Type.LAMBDA) {
             if (!isProcCall && sig.arityValue() != -1 && sig.required() != 1) {
@@ -1832,7 +1832,7 @@ public class IRRuntimeHelpers {
             return args;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        boolean isProcCall = block.type == Block.Type.PROC;
         if (isProcCall) {
             if (args.length == 0) {
                 args = context.runtime.getSingleNilArray();
@@ -1853,7 +1853,7 @@ public class IRRuntimeHelpers {
             args = IRubyObject.NULL_ARRAY;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        boolean isProcCall = block.type == Block.Type.PROC;
         if (block.type == Block.Type.LAMBDA) {
             org.jruby.runtime.Signature sig = block.getBody().getSignature();
             // We don't need to check for the 1 required arg case here

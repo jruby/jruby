@@ -257,14 +257,6 @@ public final class ThreadContext {
         return errorInfo;
     }
 
-    public Block.Type getCurrentBlockType() {
-        return currentBlockType;
-    }
-
-    public void setCurrentBlockType(Block.Type type) {
-        currentBlockType = type;
-    }
-
     public Throwable getSavedExceptionInLambda() {
         return savedExcInLambda;
     }
