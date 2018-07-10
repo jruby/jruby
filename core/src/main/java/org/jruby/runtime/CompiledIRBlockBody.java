@@ -10,12 +10,17 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 public class CompiledIRBlockBody extends IRBlockBody {
-    protected final MethodHandle handle;
+    protected final MethodHandle callHandle;
+    protected final MethodHandle yieldHandle;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
         super(closure, Signature.decode(encodedSignature));
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
-        this.handle = handle;
+        this.callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);
+        this.yieldHandle = MethodHandles.insertArguments(
+                MethodHandles.insertArguments(handle, 2, closure.getStaticScope()),
+                4,
+                Block.NULL_BLOCK);
         // Done in the interpreter (WrappedIRClosure) but we do it here
         closure.getStaticScope().determineModule();
     }
@@ -58,8 +63,12 @@ public class CompiledIRBlockBody extends IRBlockBody {
         return true;
     }
 
-    public MethodHandle getHandle() {
-        return handle;
+    public MethodHandle getCallHandle() {
+        return callHandle;
+    }
+
+    public MethodHandle getYieldHandle() {
+        return yieldHandle;
     }
 
 //    protected volatile MethodHandle normalYieldSpecificHandle;
@@ -147,7 +156,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         try {
-            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), (IRubyObject)null, args, blockArg);
+            return (IRubyObject) callHandle.invokeExact(context, block, args, blockArg);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
@@ -157,7 +166,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         try {
-            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, Block.NULL_BLOCK);
+            return (IRubyObject) yieldHandle.invokeExact(context, block, self, args);
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
