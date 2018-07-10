@@ -106,7 +106,7 @@ public class OSEnvironment {
             if ( ! (val instanceof String) ) continue; // Java devs can stuff non-string objects into env
             final String key = (String) val;
 
-            if (Platform.IS_WINDOWS && key.startsWith("=")) continue;
+            if (Platform.IS_WINDOWS && StringSupport.startsWith(key, '=')) continue;
 
             val = entry.getValue();
             if ( ! (val instanceof String) ) continue; // Java devs can stuff non-string objects into env
@@ -114,8 +114,8 @@ public class OSEnvironment {
             // Ensure PATH is encoded like filesystem
             Encoding valueEncoding = keyEncoding;
             if ( org.jruby.platform.Platform.IS_WINDOWS ?
-                    key.toString().equalsIgnoreCase("PATH") :
-                    key.toString().equals("PATH") ) {
+                    key.equalsIgnoreCase("PATH") :
+                    key.equals("PATH") ) {
                 valueEncoding = runtime.getEncodingService().getFileSystemEncoding();
             }
 

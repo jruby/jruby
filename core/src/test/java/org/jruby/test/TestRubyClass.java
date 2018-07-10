@@ -5,7 +5,6 @@
 
 package org.jruby.test;
 
-import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
@@ -14,7 +13,8 @@ import org.jruby.RubyObject;
  *
  * @author headius
  */
-public class TestRubyClass extends TestCase {
+public class TestRubyClass extends junit.framework.TestCase {
+
     Ruby runtime;
     
     public TestRubyClass(String testName) {
@@ -42,7 +42,6 @@ public class TestRubyClass extends TestCase {
         }
     }
 
-    // TODO add test methods here. The name must begin with 'test'. For example:
     public void testSetClassAllocator() {
         // start out with a default RubyObject allocator
         RubyClass newClass = runtime.defineClass("TestSetClassAllocatorClass", runtime.getObject(), runtime.getObject().getAllocator());

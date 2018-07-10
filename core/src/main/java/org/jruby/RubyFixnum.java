@@ -40,15 +40,11 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,7 +59,7 @@ import org.jruby.util.cli.Options;
 import static org.jruby.util.Numeric.f_odd_p;
 
 /**
- * Implementation of the Fixnum class.
+ * Implementation of the Integer (Fixnum internal) class.
  */
 public class RubyFixnum extends RubyInteger implements Constantizable {
 
@@ -88,7 +84,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     public static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1; // 0x3fff_ffff
     public static final long MIN_MARSHAL_FIXNUM = - (1L << 30);   // -0x4000_0000
     public static final boolean USE_CACHE = Options.USE_FIXNUM_CACHE.load();
-    public static final int CACHE_OFFSET = Options.FIXNUM_CACHE_RANGE.load();
+    public static final int CACHE_OFFSET;
+    static {
+        int cacheRange = 0;
+        if (USE_CACHE) {
+            cacheRange = Options.FIXNUM_CACHE_RANGE.load();
+            if (cacheRange < 0) cacheRange = 0;
+        }
+        CACHE_OFFSET = cacheRange;
+    }
 
     private static IRubyObject fixCoerce(IRubyObject x) {
         do {
@@ -124,7 +128,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public Object constant() {
         Object constant = null;
-        long value = this.value;
+        final long value = this.value;
 
         if (value < CACHE_OFFSET && value >= -CACHE_OFFSET) {
             Object[] fixnumConstants = getRuntime().fixnumConstants;
@@ -144,7 +148,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public final boolean eql(IRubyObject other) {
-        return other instanceof RubyFixnum && value == ((RubyFixnum)other).value;
+        return other instanceof RubyFixnum && value == ((RubyFixnum) other).value;
     }
 
     @Override
@@ -208,41 +212,42 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return runtime.fixnumCache[(int) value + CACHE_OFFSET];
     }
 
-    public RubyFixnum newFixnum(long newValue) {
+    @Deprecated // not used
+    public final RubyFixnum newFixnum(long newValue) {
         return newFixnum(getRuntime(), newValue);
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET];
+        return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new RubyFixnum(runtime, 0);
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 1];
+        return CACHE_OFFSET > 1 ? runtime.fixnumCache[CACHE_OFFSET + 1] : new RubyFixnum(runtime, 1);
     }
 
     public static RubyFixnum two(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 2];
+        return CACHE_OFFSET > 2 ? runtime.fixnumCache[CACHE_OFFSET + 2] : new RubyFixnum(runtime, 2);
     }
 
     public static RubyFixnum three(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 3];
+        return CACHE_OFFSET > 3 ? runtime.fixnumCache[CACHE_OFFSET + 3] : new RubyFixnum(runtime, 3);
     }
 
     public static RubyFixnum four(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 4];
+        return CACHE_OFFSET > 4 ? runtime.fixnumCache[CACHE_OFFSET + 4] : new RubyFixnum(runtime, 4);
     }
 
     public static RubyFixnum five(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 5];
+        return CACHE_OFFSET > 5 ? runtime.fixnumCache[CACHE_OFFSET + 5] : new RubyFixnum(runtime, 5);
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET - 1];
+        return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new RubyFixnum(runtime, -1);
     }
 
     @Override
     public RubyFixnum hash() {
-        return newFixnum(hashCode());
+        return newFixnum(getRuntime(), hashCode());
     }
 
     @Override
@@ -452,7 +457,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject op_plus(ThreadContext context, long otherValue) {
         try {
-            return newFixnum(Math.addExact(value, otherValue));
+            return newFixnum(context.runtime, Math.addExact(value, otherValue));
         } catch (ArithmeticException ae) {
             return addAsBignum(context, otherValue);
         }
@@ -1294,7 +1299,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject size(ThreadContext context) {
-        return newFixnum((long) ((BIT_SIZE + 7) / 8));
+        return newFixnum(context.runtime, (long) ((BIT_SIZE + 7) / 8));
     }
 
     @Deprecated
@@ -1343,7 +1348,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject id() {
         if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
-            return newFixnum(2 * value + 1);
+            return newFixnum(getRuntime(), 2 * value + 1);
         }
 
         return super.id();

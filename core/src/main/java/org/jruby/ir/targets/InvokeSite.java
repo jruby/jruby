@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 
 /**
@@ -175,7 +176,8 @@ public abstract class InvokeSite extends MutableCallSite {
         return method.call(context, self, selfClass, methodName, args, block);
     }
 
-    private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(lookup(), "escape");
+    private static final MethodHandles.Lookup LOOKUP = lookup();
+    private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(LOOKUP, "escape");
     private static final Map<Signature, MethodHandle> BLOCK_ESCAPES = Collections.synchronizedMap(new HashMap<Signature, MethodHandle>());
 
     private static MethodHandle getBlockEscape(Signature signature) {
@@ -326,6 +328,7 @@ public abstract class InvokeSite extends MutableCallSite {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
         MethodHandle mh = buildNewInstanceHandle(method, self);
+        if (mh == null) mh = buildNotEqualHandle(method, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
@@ -345,15 +348,15 @@ public abstract class InvokeSite extends MutableCallSite {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
+            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
                     .cast(IRubyObject.class, RubyClass.class)
                     .insert(0, new Class[] {ObjectAllocator.class, Ruby.class}, recvClass.getAllocator(), self.getRuntime())
-                    .invokeVirtualQuiet(lookup(), "allocate");
+                    .invokeVirtualQuiet(LOOKUP, "allocate");
 
-            mh = SmartBinder.from(lookup(), signature)
+            mh = SmartBinder.from(LOOKUP, signature)
                     .filter("self", allocFilter)
                     .fold("dummy", initHandle)
                     .permute("self")
@@ -368,6 +371,43 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
+    MethodHandle buildNotEqualHandle(DynamicMethod method, IRubyObject self) {
+        MethodHandle mh = null;
+
+        Ruby runtime = self.getRuntime();
+
+        if (method.isBuiltin()) {
+
+            CallSite equalSite = null;
+
+            if (method.getImplementationClass() == runtime.getBasicObject() && name().equals("!=")) {
+                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:==", type(), literalClosure ? 1 : 0, file, line);
+            } else if (method.getImplementationClass() == runtime.getKernel() && name().equals("!~")) {
+                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:=~", type(), literalClosure ? 1 : 0, file, line);
+            }
+
+            if (equalSite != null) {
+                // Bind a second site as a dynamic invoker to guard against changes in new object's type
+                MethodHandle equalHandle = equalSite.dynamicInvoker();
+
+                MethodHandle filter = insertArguments(NEGATE, 1, runtime.getNil(), runtime.getTrue(), runtime.getFalse());
+                mh = MethodHandles.filterReturnValue(equalHandle, filter);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound as specialized " + name() + ":" + Bootstrap.logMethod(method));
+                }
+            }
+        }
+
+        return mh;
+    }
+
+    public static final MethodHandle NEGATE = Binder.from(IRubyObject.class, IRubyObject.class, RubyNil.class, RubyBoolean.True.class, RubyBoolean.False.class).invokeStaticQuiet(LOOKUP, InvokeSite.class, "negate");
+
+    public static IRubyObject negate(IRubyObject object, RubyNil nil, RubyBoolean.True tru, RubyBoolean.False fals) {
+        return object == nil || object == fals ? tru : fals;
+    }
+
     MethodHandle buildAliasHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
         MethodHandle mh = null;
 
@@ -377,7 +417,7 @@ public abstract class InvokeSite extends MutableCallSite {
             String name = alias.getName();
 
             // Use a second site to mimic invocation from AliasMethod
-            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(lookup(), "callFunctional:" + name, type(), literalClosure ? 1 : 0, file, line);
+            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type(), literalClosure ? 1 : 0, file, line);
             mh = innerSite.getHandle(self, dispatchClass, innerMethod);
 
             alias.setHandle(mh);
@@ -488,7 +528,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private MethodHandle bindToFail() {
         MethodHandle target;
-        setTarget(target = prepareBinder(false).invokeVirtualQuiet(lookup(), "fail"));
+        setTarget(target = prepareBinder(false).invokeVirtualQuiet(LOOKUP, "fail"));
         return target;
     }
 
@@ -582,5 +622,5 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private static final MethodHandle TEST_CLASS = Binder
             .from(boolean.class, Object.class, Class.class)
-            .invokeStaticQuiet(lookup(), InvokeSite.class, "testClass");
+            .invokeStaticQuiet(LOOKUP, InvokeSite.class, "testClass");
 }

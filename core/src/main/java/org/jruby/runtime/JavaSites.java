@@ -8,6 +8,8 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 
+import java.lang.invoke.MutableCallSite;
+
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /**
@@ -64,6 +66,7 @@ public class JavaSites {
         public final CallSite inspect = new FunctionalCachingCallSite("inspect");
         public final CallSite match = new FunctionalCachingCallSite("=~");
         public final CallSite call = new FunctionalCachingCallSite("call");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
     }
 
     public static class ObjectSites {
