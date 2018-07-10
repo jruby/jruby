@@ -66,8 +66,8 @@ public class CheckArityInstr extends NoOperandInstr implements FixedArityInstr {
         return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeBoolean(), d.decodeInt());
     }
 
-    public void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block.Type blockType) {
-        IRRuntimeHelpers.checkArity(context, scope, args, required, opt, rest, receivesKeywords, restKey, blockType);
+    public void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block block) {
+        IRRuntimeHelpers.checkArity(context, scope, args, required, opt, rest, receivesKeywords, restKey, block);
     }
 
     @Override

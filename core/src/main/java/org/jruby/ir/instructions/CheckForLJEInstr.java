@@ -57,8 +57,8 @@ public class CheckForLJEInstr extends NoOperandInstr {
         return new String[] { "definedWithinMethod: " + definedWithinMethod};
     }
 
-    public void check(ThreadContext context, DynamicScope dynamicScope, Block.Type blockType) {
-        IRRuntimeHelpers.checkForLJE(context, dynamicScope, definedWithinMethod, blockType);
+    public void check(ThreadContext context, DynamicScope dynamicScope, Block block) {
+        IRRuntimeHelpers.checkForLJE(context, dynamicScope, definedWithinMethod, block);
     }
 
     @Override
