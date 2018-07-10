@@ -8,6 +8,7 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -66,57 +67,59 @@ public class YieldSite extends MutableCallSite {
     }
 
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject arg) throws Throwable {
-//        BlockBody body = block.getBody();
-//        MethodHandle target;
-//
-//        if (block.getBody() instanceof CompiledIRBlockBody) {
-//            CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
-//
-//            target = unwrap ? compiledBody.getNormalYieldUnwrapHandle() : compiledBody.getNormalYieldHandle();
-//        } else {
-//            target = Binder.from(type())
-//                    .append(unwrap)
-//                    .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "yield");
-//        }
-//
-//        MethodHandle fallback = getTarget();
-//        MethodHandle test = body.getTestBlockBody();
-//
-//        MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
-//
-//        setTarget(guard);
-//
-//        return (IRubyObject)target.invokeExact(context, block, arg);
+        if (Options.INVOKEDYNAMIC_YIELD.load()) {
+            BlockBody body = block.getBody();
+            MethodHandle target;
 
-        // Fully MH-based dispatch for these still seems slower than megamorphic path
+            if (block.getBody() instanceof CompiledIRBlockBody) {
+                CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
+
+                target = unwrap ? compiledBody.getNormalYieldUnwrapHandle() : compiledBody.getNormalYieldHandle();
+            } else {
+                target = Binder.from(type())
+                        .append(unwrap)
+                        .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "yield");
+            }
+
+            MethodHandle fallback = getTarget();
+            MethodHandle test = body.getTestBlockBody();
+
+            MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
+
+            setTarget(guard);
+
+            return (IRubyObject) target.invokeExact(context, block, arg);
+        }
+
         return IRRuntimeHelpers.yield(context, block, arg, unwrap);
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) throws Throwable {
-//        BlockBody body = block.getBody();
-//        MethodHandle target;
-//
-//        if (block.getBody() instanceof CompiledIRBlockBody) {
-//            CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
-//
-//            target = compiledBody.getNormalYieldSpecificHandle();
-//        } else {
-//            target = Binder.from(type())
-//                    .permute(0, 1)
-//                    .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
-//        }
-//
-//        MethodHandle fallback = getTarget();
-//        MethodHandle test = body.getTestBlockBody();
-//
-//        MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
-//
-//        setTarget(guard);
-//
-//        return (IRubyObject)target.invokeExact(context, block);
+        if (Options.INVOKEDYNAMIC_YIELD.load()) {
+            BlockBody body = block.getBody();
+            MethodHandle target;
 
-        // Fully MH-based dispatch for these still seems slower than megamorphic path
-        return IRRuntimeHelpers.yieldSpecific(context, block);
+            if (block.getBody() instanceof CompiledIRBlockBody) {
+                CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
+
+                target = compiledBody.getNormalYieldSpecificHandle();
+            } else {
+                target = Binder.from(type())
+                        .permute(0, 1)
+                        .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
+            }
+
+            MethodHandle fallback = getTarget();
+            MethodHandle test = body.getTestBlockBody();
+
+            MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
+
+            setTarget(guard);
+
+            return (IRubyObject) target.invokeExact(context, block);
+        }
+
+        return block.yieldSpecific(context);
     }
 
     public IRubyObject yieldValues(ThreadContext context, Block block, IRubyObject[] args) {
