@@ -133,7 +133,12 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadSelfBlock() {
-        adapter.aload(signature.argOffset(JVMVisitor.SELF_BLOCK_NAME));
+        int selfBlockOffset = signature.argOffset(JVMVisitor.SELF_BLOCK_NAME);
+        if (selfBlockOffset == -1) {
+            adapter.aconst_null();
+        } else {
+            adapter.aload(selfBlockOffset);
+        }
     }
 
     public void loadStaticScope() {
@@ -160,18 +165,6 @@ public abstract class IRBytecodeAdapter {
     public void loadFrameName() {
         // when present, should be second-to-last element in signature
         adapter.aload(signature.argCount() - 1);
-    }
-
-    public void loadSuperName() {
-        adapter.aload(5);
-    }
-
-    public void loadBlockType() {
-        if (signature.argOffset("type") == -1) {
-            adapter.aconst_null();
-        } else {
-            adapter.aload(signature.argOffset("type"));
-        }
     }
 
     public void storeSelf() {

@@ -147,7 +147,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         try {
-            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), (IRubyObject)null, args, blockArg, block.getBinding().getMethod(), block.type);
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), (IRubyObject)null, args, blockArg, block.getBinding().getMethod());
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
@@ -157,7 +157,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         try {
-            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, Block.NULL_BLOCK, block.getBinding().getMethod(), block.type);
+            return (IRubyObject)handle.invokeExact(context, block, getStaticScope(), self, args, Block.NULL_BLOCK, block.getBinding().getMethod());
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
