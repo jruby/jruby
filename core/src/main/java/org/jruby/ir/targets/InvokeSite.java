@@ -15,6 +15,7 @@ import org.jruby.RubyNil;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.ir.JIT;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -411,7 +412,9 @@ public abstract class InvokeSite extends MutableCallSite {
     MethodHandle buildAliasHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
         MethodHandle mh = null;
 
-        if (method instanceof AliasMethod) {
+        if (method instanceof PartialDelegatingMethod) {
+            mh = getHandle(self, dispatchClass, ((PartialDelegatingMethod) method).getDelegate());
+        } else if (method instanceof AliasMethod) {
             AliasMethod alias = (AliasMethod) method;
             DynamicMethod innerMethod = alias.getRealMethod();
             String name = alias.getName();
