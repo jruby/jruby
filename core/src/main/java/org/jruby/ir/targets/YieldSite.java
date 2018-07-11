@@ -5,10 +5,11 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CompiledIRBlockBody;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -26,6 +27,8 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class YieldSite extends MutableCallSite {
     private final boolean unwrap;
+
+    private static final Logger LOG = LoggerFactory.getLogger(YieldSite.class);
 
     public YieldSite(MethodType type, boolean unwrap) {
         super(type);
@@ -74,8 +77,16 @@ public class YieldSite extends MutableCallSite {
             if (block.getBody() instanceof CompiledIRBlockBody) {
                 CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
 
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info("yield \tbound directly as yield:" + Bootstrap.logBlock(block));
+                }
+
                 target = unwrap ? compiledBody.getNormalYieldUnwrapHandle() : compiledBody.getNormalYieldHandle();
             } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info("yield \tbound indirectly as yield:" + Bootstrap.logBlock(block));
+                }
+
                 target = Binder.from(type())
                         .append(unwrap)
                         .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "yield");
@@ -102,8 +113,16 @@ public class YieldSite extends MutableCallSite {
             if (block.getBody() instanceof CompiledIRBlockBody) {
                 CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
 
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info("yield \tbound directly as yieldSpecific:" + Bootstrap.logBlock(block));
+                }
+
                 target = compiledBody.getNormalYieldSpecificHandle();
             } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info("yield \tbound indirectly as yieldSpecific:" + Bootstrap.logBlock(block));
+                }
+
                 target = Binder.from(type())
                         .permute(0, 1)
                         .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
@@ -123,6 +142,12 @@ public class YieldSite extends MutableCallSite {
     }
 
     public IRubyObject yieldValues(ThreadContext context, Block block, IRubyObject[] args) {
+        if (Options.INVOKEDYNAMIC_YIELD.load()) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info("yield \tbound indirectly as yieldValues:" + Bootstrap.logBlock(block));
+            }
+        }
+
         return block.yieldValues(context, args);
     }
 }

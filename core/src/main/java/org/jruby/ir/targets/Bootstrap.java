@@ -1108,6 +1108,10 @@ public class Bootstrap {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
 
+    static String logBlock(Block block) {
+        return "[" + block.getBody() + " " + block.getFrame() + "]";
+    }
+
     private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);
 
     private static final MethodHandle FRAME_SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameScopeBinding");
