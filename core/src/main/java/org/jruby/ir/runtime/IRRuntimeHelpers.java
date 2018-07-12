@@ -535,7 +535,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, 
+    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args,
         org.jruby.runtime.Signature signature) {
         return frobnicateKwargsArgument(context, args, signature.required());
     }
