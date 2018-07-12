@@ -719,6 +719,14 @@ public class Bootstrap {
 
         boolean isStatic = nativeCall.isStatic();
 
+        // This logic does not handle closure conversion yet
+        if (site.fullSignature.lastArgType() == Block.class) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(site.name() + "\tattempted passed a closure calling Java method: " + Bootstrap.logMethod(method));
+            }
+            return null;
+        }
+
         // mismatched arity not supported
         if (isStatic) {
             if (site.arity != nativeCall.getNativeSignature().length - 1) {
