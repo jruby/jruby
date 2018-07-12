@@ -1,6 +1,10 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+import com.headius.invokebinder.Binder;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRMethod;
@@ -10,6 +14,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -30,7 +35,24 @@ public class CompiledIRMethod extends AbstractIRMethod {
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
                             Visibility visibility, RubyModule implementationClass, boolean hasKwargs) {
         super(method, visibility, implementationClass);
-        this.variable = variable;
+
+        if (hasKwargs) {
+            MethodType type = variable.type();
+            int params = type.parameterCount();
+            MethodHandle frobnicate = Binder
+                    .from(type.changeReturnType(IRubyObject[].class))
+                    .dropLast(params - 4)
+                    .drop(1, 2)
+                    .append(signature)
+                    .invoke(FROBNICATE);
+            this.variable = Binder
+                    .from(type)
+                    .fold(frobnicate)
+                    .permute(type.parameterType(params - 1) == Block.class ? new int[] {1, 2, 3, 0, 5, 6, 7, 8} : new int[] {1, 2, 3, 0, 5, 6, 7})
+                    .invoke(variable);
+        } else {
+            this.variable = variable;
+        }
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
@@ -42,6 +64,10 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
         setHandle(variable);
     }
+
+    private static final MethodHandle FROBNICATE = Binder
+            .from(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, Signature.class)
+            .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "frobnicateKwargsArgument");
 
     public MethodHandle getHandleFor(int arity) {
         if (specificArity != -1 && arity == specificArity) {
@@ -69,8 +95,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
-
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, implementationClass.getMethodLocation(), name);
         }
@@ -134,8 +158,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
-
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
         }
