@@ -548,7 +548,7 @@ public class Bootstrap {
             mh = binder.invoke(mh).handle();
 
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                LOG.info(site.name() + "\tbound to jitted method " + Bootstrap.logMethod(method));
+                LOG.info(site.name() + "\tbound directly to jitted method " + Bootstrap.logMethod(method));
             }
         }
 
@@ -576,6 +576,9 @@ public class Bootstrap {
                         binder = SmartBinder.from(lookup(), site.signature);
                     } else {
                         // arity mismatch...leave null and use DynamicMethod.call below
+                        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                            LOG.info(site.name() + "\tdid not match the primary arity for a native method " + Bootstrap.logMethod(method));
+                        }
                     }
                 } else {
                     // varargs
@@ -1109,7 +1112,7 @@ public class Bootstrap {
     }
 
     static String logMethod(DynamicMethod method) {
-        return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
+        return "[#" + method.getSerialNumber() + " " + method.getImplementationClass().getMethodLocation() + "]";
     }
 
     static String logBlock(Block block) {
