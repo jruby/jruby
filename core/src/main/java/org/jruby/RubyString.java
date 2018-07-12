@@ -3496,26 +3496,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_aref, rb_str_aref_m
      *
      */
-    public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return op_aref19(context, arg1, arg2);
-    }
-
-    public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        return op_aref19(context, arg);
-    }
-
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
-    public IRubyObject op_aref19(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
         if (arg1 instanceof RubyRegexp) return subpat(context, (RubyRegexp) arg1, arg2);
         return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
-    public IRubyObject op_aref19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         if (arg instanceof RubyFixnum) {
-            return op_aref19(runtime, RubyNumeric.fix2int((RubyFixnum)arg));
+            return op_aref(runtime, RubyNumeric.fix2int((RubyFixnum)arg));
         } else if (arg instanceof RubyRegexp) {
             return subpat(context, (RubyRegexp) arg);
         } else if (arg instanceof RubyString) {
@@ -3535,7 +3527,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
             }
         }
-        return op_aref19(runtime, RubyNumeric.num2int(arg));
+        return op_aref(runtime, RubyNumeric.num2int(arg));
     }
 
     @JRubyMethod
@@ -3548,7 +3540,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return byteARef(context.runtime, arg);
     }
 
-    private IRubyObject op_aref19(Ruby runtime, int idx) {
+    private IRubyObject op_aref(Ruby runtime, int idx) {
         IRubyObject str = substr19(runtime, idx, 1);
         return !str.isNil() && ((RubyString) str).value.getRealSize() == 0 ? runtime.getNil() : str;
     }
@@ -3617,18 +3609,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     /** rb_str_aset, rb_str_aset_m
      *
      */
-    public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return op_aset19(context, arg0, arg1);
-    }
-
-    public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return op_aset19(context, arg0, arg1, arg2);
-    }
-
     @JRubyMethod(name = "[]=", reads = BACKREF)
-    public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+    public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (arg0 instanceof RubyFixnum) {
-            return op_aset19(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
+            return op_aset(context, RubyNumeric.fix2int((RubyFixnum)arg0), arg1);
         } else if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp) arg0, null, arg1);
             return arg1;
@@ -3654,16 +3638,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 return arg1;
             }
         }
-        return op_aset19(context, RubyNumeric.num2int(arg0), arg1);
+        return op_aset(context, RubyNumeric.num2int(arg0), arg1);
     }
 
-    private IRubyObject op_aset19(ThreadContext context, int idx, IRubyObject arg1) {
+    private IRubyObject op_aset(ThreadContext context, int idx, IRubyObject arg1) {
         StringSupport.replaceInternal19(context.runtime, idx, 1, this, arg1.convertToString());
         return arg1;
     }
 
     @JRubyMethod(name = "[]=", reads = BACKREF)
-    public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (arg0 instanceof RubyRegexp) {
             subpatSet(context, (RubyRegexp)arg0, arg1, arg2);
         } else {
@@ -3695,14 +3679,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
         } else {
-            op_aset19(context, arg0, RubyString.newEmptyString(context.runtime));
+            op_aset(context, arg0, RubyString.newEmptyString(context.runtime));
         }
         return result;
     }
 
     @JRubyMethod(name = "slice!", reads = BACKREF, writes = BACKREF)
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        IRubyObject result = op_aref19(context, arg0, arg1);
+        IRubyObject result = op_aref(context, arg0, arg1);
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
         } else {
@@ -6522,6 +6506,26 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Deprecated
     public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref19(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        return op_aref(context, arg1, arg2);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref19(ThreadContext context, IRubyObject arg) {
+        return op_aref(context, arg);
+    }
+
+    @Deprecated
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return op_aset(context, arg0, arg1);
+    }
+
+    @Deprecated
+    public IRubyObject op_aset19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return op_aset(context, arg0, arg1, arg2);
     }
 
 }
