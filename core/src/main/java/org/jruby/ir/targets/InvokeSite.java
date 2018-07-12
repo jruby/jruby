@@ -12,6 +12,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
+import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -335,6 +336,7 @@ public abstract class InvokeSite extends MutableCallSite {
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
         if (mh == null) mh = buildAliasHandle(method, self, dispatchClass);
+        if (mh == null) mh = buildStructHandle(method, self, dispatchClass);
         if (mh == null) mh = Bootstrap.buildGenericHandle(this, method, dispatchClass);
 
         assert mh != null : "we should have a method handle of some sort by now";
@@ -427,6 +429,56 @@ public abstract class InvokeSite extends MutableCallSite {
 
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildStructHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
+        MethodHandle mh = null;
+
+        if (method instanceof RubyStruct.Accessor) {
+            if (arity == 0) {
+                RubyStruct.Accessor accessor = (RubyStruct.Accessor) method;
+                int index = accessor.getIndex();
+
+                mh = Binder.from(type())
+                        .cast(type().changeParameterType(2, RubyStruct.class))
+                        .permute(2)
+                        .append(index)
+                        .invokeVirtual(LOOKUP, "get");
+
+                method.setHandle(mh);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound directly as Struct accessor " + Bootstrap.logMethod(method));
+                }
+            } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tcalled struct accessor with arity > 0 " + Bootstrap.logMethod(method));
+                }
+            }
+        } else if (method instanceof RubyStruct.Mutator) {
+            if (arity == 1) {
+                RubyStruct.Mutator mutator = (RubyStruct.Mutator) method;
+                int index = mutator.getIndex();
+
+                mh = Binder.from(type())
+                        .cast(type().changeParameterType(2, RubyStruct.class))
+                        .permute(2, 3)
+                        .append(index)
+                        .invokeVirtual(LOOKUP, "set");
+
+                method.setHandle(mh);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound directly as Struct mutator " + Bootstrap.logMethod(method));
+                }
+            } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tcalled struct mutator with arity > 1 " + Bootstrap.logMethod(method));
+                }
             }
         }
 
