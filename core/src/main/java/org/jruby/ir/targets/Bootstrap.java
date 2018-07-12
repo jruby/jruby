@@ -722,7 +722,7 @@ public class Bootstrap {
         // This logic does not handle closure conversion yet
         if (site.fullSignature.lastArgType() == Block.class) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                LOG.info(site.name() + "\tattempted passed a closure calling Java method: " + Bootstrap.logMethod(method));
+                LOG.info(site.name() + "\tpassed a closure to Java method " + nativeCall + ": " + Bootstrap.logMethod(method));
             }
             return null;
         }
