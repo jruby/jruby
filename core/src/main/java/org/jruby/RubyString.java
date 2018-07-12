@@ -3497,13 +3497,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
-    public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.runtime;
-        if (arg1 instanceof RubyRegexp) return subpat(context, (RubyRegexp) arg1, arg2);
-        return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
-    }
-
-    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         if (arg instanceof RubyFixnum) {
@@ -3528,6 +3521,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
         return op_aref(runtime, RubyNumeric.num2int(arg));
+    }
+
+    @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF)
+    public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.runtime;
+        if (arg1 instanceof RubyRegexp) return subpat(context, (RubyRegexp) arg1, arg2);
+        return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod
