@@ -382,7 +382,7 @@ public class Bootstrap {
         }
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-            LOG.info(site.name() + "\tbound indirectly " + Bootstrap.logMethod(method));
+            LOG.info(site.name() + "\tbound indirectly " + method + ", " + Bootstrap.logMethod(method));
         }
 
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
