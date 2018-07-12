@@ -2255,7 +2255,9 @@ public class RubyModule extends RubyObject {
 
         RubyModule originalModule = (RubyModule)original;
 
-        if (!getMetaClass().isSingleton()) setMetaClass(originalModule.getSingletonClassClone());
+        if (!getMetaClass().isSingleton()) {
+            setMetaClass(originalModule.getSingletonClassCloneAndAttach(this));
+        }
         setSuperClass(originalModule.getSuperClass());
         if (originalModule.hasVariables()) syncVariables(originalModule);
         syncConstants(originalModule);
@@ -2376,7 +2378,12 @@ public class RubyModule extends RubyObject {
                 if (attached instanceof RubyClass || attached instanceof RubyModule) {
                     buffer.cat19(attached.inspect().convertToString());
                 } else {
-                    buffer.cat19((RubyString) attached.anyToString());
+                    try {
+                        buffer.cat19((RubyString) attached.anyToString());
+                    } catch (NullPointerException npe) {
+                        npe.printStackTrace();
+                        throw npe;
+                    }
                 }
             }
             buffer.cat19(runtime.newString(">"));
