@@ -38,6 +38,7 @@ env:
     - PHASE='-Prake -Dtask=test:jruby'
     #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
     - PHASE='-Prake -Dtask=test:jruby:jit'
+    - PHASE='-Prake -Dtask=test:jruby:jit' JRUBY_OPTS=-Xcompile.invokedynamic
     - PHASE='-Prake -Dtask=test:jruby:aot'
     - PHASE='-Prake -Dtask=test:mri'
     - PHASE='-Prake -Dtask=test:mri:fullint'
