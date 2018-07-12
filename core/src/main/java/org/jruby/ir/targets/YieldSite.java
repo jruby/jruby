@@ -124,7 +124,7 @@ public class YieldSite extends MutableCallSite {
                 }
 
                 target = Binder.from(type())
-                        .permute(0, 1)
+                        .permute(1, 0)
                         .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
             }
 
