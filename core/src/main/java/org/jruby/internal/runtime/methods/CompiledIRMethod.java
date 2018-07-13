@@ -25,49 +25,27 @@ public class CompiledIRMethod extends AbstractIRMethod {
     private final MethodHandle specific;
     private final int specificArity;
 
-    private final boolean hasKwargs;
-
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
-                            RubyModule implementationClass, boolean hasKwargs) {
-        this(variable, null, -1, method, visibility, implementationClass, hasKwargs);
+                            RubyModule implementationClass) {
+        this(variable, null, -1, method, visibility, implementationClass);
     }
 
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
-                            Visibility visibility, RubyModule implementationClass, boolean hasKwargs) {
+                            Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
 
-        if (hasKwargs) {
-            MethodType type = variable.type();
-            int params = type.parameterCount();
-            MethodHandle frobnicate = Binder
-                    .from(type.changeReturnType(IRubyObject[].class))
-                    .dropLast(params - 4)
-                    .drop(1, 2)
-                    .append(signature)
-                    .invoke(FROBNICATE);
-            this.variable = Binder
-                    .from(type)
-                    .fold(frobnicate)
-                    .permute(type.parameterType(params - 1) == Block.class ? new int[] {1, 2, 3, 0, 5, 6, 7, 8} : new int[] {1, 2, 3, 0, 5, 6, 7})
-                    .invoke(variable);
-        } else {
-            this.variable = variable;
-        }
+
+        this.variable = variable;
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
-        this.specificArity = hasKwargs ? -1 : specificArity;
+        this.specificArity = method.receivesKeywordArgs() ? -1 : specificArity;
         this.method.getStaticScope().determineModule();
-        this.hasKwargs = hasKwargs;
 
         assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
     }
-
-    private static final MethodHandle FROBNICATE = Binder
-            .from(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, Signature.class)
-            .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "frobnicateKwargsArgument");
 
     public MethodHandle getHandleFor(int arity) {
         if (specificArity != -1 && arity == specificArity) {
@@ -230,10 +208,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
     @Override
     public String toString() {
         return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
-    }
-
-    public boolean hasKwargs() {
-        return hasKwargs;
     }
 
 }
