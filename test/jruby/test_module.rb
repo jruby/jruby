@@ -9,6 +9,15 @@ class ModuleTest < Test::Unit::TestCase
       Module.new.instance_eval { prepend_features(1) }
     end
   end
+  
+  module XXX
+  end
+  
+  def test_module_name_is_not_mutated
+    assert_false XXX.to_s.object_id != XXX.to_s.object_id
+    XXX.to_s.downcase!
+    assert_equal XXX.to_s, "XXX"
+  end
 
   module M
     C = 'public';  public_constant  :C

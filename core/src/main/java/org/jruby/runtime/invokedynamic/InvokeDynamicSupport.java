@@ -133,4 +133,14 @@ public class InvokeDynamicSupport {
             throw new RuntimeException(nae);
         }
     }
+
+    public static MethodHandle findVirtual(Class target, String name, MethodType type) {
+        try {
+            return lookup().findVirtual(target, name, type);
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        } catch (IllegalAccessException nae) {
+            throw new RuntimeException(nae);
+        }
+    }
 }

@@ -9,7 +9,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
@@ -45,6 +44,16 @@ public class TraceType {
         return gather.getBacktraceData(context);
     }
 
+    public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
+        // NOTE: could be optimized not to walk the whole stack
+        RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);
+
+        // User can ask for level higher than stack
+        if (elements.length <= uplevel + 1) uplevel = -1;
+
+        return elements[uplevel + 1];
+    }
+
     /**
      * Get an integrated Ruby/Java backtrace if the current Gather type is NORMAL
      *
@@ -68,13 +77,6 @@ public class TraceType {
         buffer.append("Backtrace generated:\n");
 
         renderBacktraceJRuby(runtime, trace, buffer, false);
-
-        // NOTE: other logXxx method do not remove the new-line
-        // ... but if this is desired they should do so as well
-        //final int len = buffer.length();
-        //if ( len > 0 && buffer.charAt(len - 1) == '\n' ) {
-        //    buffer.setLength(len - 1); // remove last '\n'
-        //}
 
         LOG.info(buffer.toString());
     }

@@ -36,7 +36,7 @@ class Proc
   # otherwise looks just like Proc in every way. This allows us to override
   # the methods with different behavior without constructing a singleton every
   # time a proc is curried by using some JRuby-specific tricks below.
-  curried_prototype = proc{}
+  curried_prototype = proc {}
   curried_prototype.instance_eval do
     def binding
       raise ArgumentError, "cannot create binding from f proc"
@@ -52,7 +52,7 @@ class Proc
   end
 
   # Yank the singleton class out of the curried prototype object.
-  Curried = JRuby.reference(curried_prototype).meta_class
+  Curried = curried_prototype
   private_constant :Curried
 
   def self.__make_curry_proc__(proc, passed, arity)
@@ -70,7 +70,7 @@ class Proc
     end
 
     # Replace the curried proc's class with our prototype singleton class
-    JRuby.reference(f).meta_class = Curried
+    JRuby.send(:set_meta_class, f, Curried)
 
     f
   end

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.channels.Channel;
+import java.nio.file.attribute.FileTime;
 
 /**
  * Represents a directory in a jar.
@@ -39,16 +40,27 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    public long lastModified() {
-        // Iterating over matching entries is expensive, so let's return that we've never been
-        // modified
+    public long length() {
+        // this pseudo-directory doesn't take up any space
         return 0L;
     }
 
     @Override
-    public long length() {
-        // this pseudo-directory doesn't take up any space
+    public long lastModified() {
+        // Iterating over matching entries is expensive, so let's return that we've never been modified
         return 0L;
+    }
+
+    public FileTime creationTime() {
+        return null; // NOTE: not implemented
+    }
+
+    public FileTime lastAccessTime() {
+        return null; // NOTE: not implemented
+    }
+
+    public FileTime lastModifiedTime() {
+        return null; // NOTE: not implemented
     }
 
     @Override

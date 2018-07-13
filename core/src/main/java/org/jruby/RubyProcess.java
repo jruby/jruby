@@ -1419,7 +1419,6 @@ public class RubyProcess {
                 Block.NULL_BLOCK);
     }
 
-    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
         Ruby runtime = context.runtime;
@@ -1427,7 +1426,6 @@ public class RubyProcess {
         return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), CLOCK_UNIT_FLOAT_SECOND);
     }
 
-    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
         Ruby runtime = context.runtime;
@@ -1451,9 +1449,10 @@ public class RubyProcess {
         long nanos;
 
         if (_clock_id instanceof RubySymbol) {
-            if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
+            RubySymbol clock_id = (RubySymbol) _clock_id;
+            if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
                 nanos = System.nanoTime();
-            } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
+            } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 POSIX posix = runtime.getPosix();
                 if (posix.isNative()) {
                     Timeval tv = posix.allocateTimeval();
@@ -1479,9 +1478,10 @@ public class RubyProcess {
         long nanos;
 
         if (_clock_id instanceof RubySymbol) {
-            if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
+            RubySymbol clock_id = (RubySymbol) _clock_id;
+            if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
                 nanos = 1;
-            } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
+            } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 nanos = 1000000;
             } else {
                 throw runtime.newErrnoEINVALError("clock_gettime");

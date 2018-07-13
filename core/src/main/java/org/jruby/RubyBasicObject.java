@@ -1253,8 +1253,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * The != method implemented for BasicObject. Note that this version is currently
-     * replaced by a Ruby version in basicobject.rb for better caching characteristics.
+     * The != method implemented for BasicObject.
      *
      * @param context thread context
      * @param other other object
@@ -1262,7 +1261,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "!=", required = 1)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(!invokedynamic(context, this, OP_EQUAL, other).isTrue());
+        return context.runtime.newBoolean(!sites(context).op_equal.call(context, this, this, other).isTrue());
     }
 
     /**
@@ -2802,8 +2801,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Invert the match operator. Note that this version is currently
-     * replaced by a Ruby version in basicobject.rb for better caching characteristics.
+     * Invert the match operator.
      *
      * @param context
      * @param arg
@@ -2935,37 +2933,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *         @iv = 3
      *       end
      *     end
-     *     Fred.new.instance_variables   #=> ["@iv"]
+     *     Fred.new.instance_variables   #=> [:"@iv"]
      */
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
         List<String> nameList = getInstanceVariableNameList();
         int size = nameList.size();
 
-        RubyArray array = runtime.newArray(nameList.size());
+        RubyArray array = RubyArray.newBlankArrayInternal(runtime, size);
 
         for (int i = 0; i < size; i++) {
-            String name = nameList.get(i);
-            array.store(i, runtime.newString(name));
+            array.store(i, runtime.newSymbol(nameList.get(i)));
         }
 
         return array;
     }
 
-    // In 1.9, return symbols
+    @Deprecated
     public RubyArray instance_variables19(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        List<String> nameList = getInstanceVariableNameList();
-        int size = nameList.size();
-
-        RubyArray array = RubyArray.newBlankArray(runtime, nameList.size());
-
-        for (int i = 0; i < size; i++) {
-            String name = nameList.get(i);
-            array.store(i, runtime.newSymbol(name));
-        }
-
-        return array;
+        return instance_variables(context);
     }
 
     /**

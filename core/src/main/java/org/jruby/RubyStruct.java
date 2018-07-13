@@ -817,7 +817,7 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
-    private static class Accessor extends DynamicMethod {
+    public static class Accessor extends DynamicMethod {
         private final int index;
 
         public Accessor(RubyClass newStruct, String name, int index) {
@@ -840,9 +840,13 @@ public class RubyStruct extends RubyObject {
         public DynamicMethod dup() {
             return new Accessor((RubyClass) getImplementationClass(), name, index);
         }
+
+        public int getIndex() {
+            return index;
+        }
     }
 
-    private static class Mutator extends DynamicMethod {
+    public static class Mutator extends DynamicMethod {
         private final int index;
 
         public Mutator(RubyClass newStruct, String name, int index) {
@@ -864,6 +868,10 @@ public class RubyStruct extends RubyObject {
         @Override
         public DynamicMethod dup() {
             return new Mutator((RubyClass) getImplementationClass(), name, index);
+        }
+
+        public int getIndex() {
+            return index;
         }
     }
 

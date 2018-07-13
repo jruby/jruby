@@ -81,6 +81,7 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
 public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
+    @Deprecated
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
@@ -569,12 +570,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        return newShared(context.runtime).op_aref19(context, arg);
+        return newShared(context.runtime).op_aref(context, arg);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return newShared(context.runtime).op_aref19(context, arg1, arg2);
+        return newShared(context.runtime).op_aref(context, arg1, arg2);
     }
 
     @JRubyMethod(name = {"length", "size"})
@@ -662,7 +663,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().getEncoding(symbolBytes.getEncoding());
+        return context.runtime.getEncodingService().getEncoding(getEncoding());
     }
 
     @JRubyMethod

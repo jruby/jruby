@@ -62,15 +62,16 @@ public class JVMVisitor extends IRVisitor {
     private static final boolean DEBUG = false;
     public static final String BLOCK_ARG_NAME = "blockArg";
     public static final String SELF_BLOCK_NAME = "selfBlock";
+    public static final String SUPER_NAME_NAME = "superName";
 
     private static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "scope", "self", BLOCK_ARG_NAME, "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
+            .appendArgs(new String[]{"context", "scope", "self", BLOCK_ARG_NAME, "class", "superName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
     private static final Signature METHOD_SIGNATURE_VARARGS = METHOD_SIGNATURE_BASE.insertArg(BLOCK_ARG_NAME, "args", IRubyObject[].class);
 
     public static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "args", BLOCK_ARG_NAME, "superName", "type"}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
+            .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "args", BLOCK_ARG_NAME}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
 
     public JVMVisitor(Ruby runtime) {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
@@ -202,6 +203,17 @@ public class JVMVisitor extends IRVisitor {
             org.objectweb.asm.Label syntheticEnd = new org.objectweb.asm.Label();
             rescueEndForStart.put(currentRegionStart, syntheticEnd);
             syntheticEndForStart.put(currentBlockStart, syntheticEnd);
+        }
+
+        if (scope instanceof IRMethod) {
+            if (scope.receivesKeywordArgs()) {
+                // pre-frobnicate the args on the way in
+                m.loadContext();
+                m.loadArgs();
+                m.adapter.pushInt(scope.getStaticScope().getSignature().required());
+                m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class));
+                m.storeArgs();
+            }
         }
 
         for (BasicBlock bb: bbs) {
@@ -1158,8 +1170,8 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().ldc(rest);
         jvmAdapter().ldc(receivesKeywords);
         jvmAdapter().ldc(restKey);
-        jvmMethod().loadBlockType();
-        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.Type.class));
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.class));
     }
 
     @Override
@@ -1167,8 +1179,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmLoadLocal(DYNAMIC_SCOPE);
         jvmAdapter().ldc(checkForljeinstr.isDefinedWithinMethod());
-        jvmMethod().loadBlockType();
-        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
+        jvmMethod().loadSelfBlock();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.class));
     }
 
         @Override
@@ -1977,25 +1989,21 @@ public class JVMVisitor extends IRVisitor {
                 jvmMethod().loadContext();
                 jvmLoadLocal(DYNAMIC_SCOPE);
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmMethod().loadBlockType();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handlePropagatedBreak", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Object.class, Block.Type.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handlePropagatedBreak", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Object.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case HANDLE_NONLOCAL_RETURN:
-                jvmMethod().loadStaticScope();
                 jvmLoadLocal(DYNAMIC_SCOPE);
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmMethod().loadBlockType();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleNonlocalReturn", sig(IRubyObject.class, StaticScope.class, DynamicScope.class, Object.class, Block.Type.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleNonlocalReturn", sig(IRubyObject.class, DynamicScope.class, Object.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 jvmMethod().loadContext();
-                jvmMethod().loadStaticScope();
                 jvmLoadLocal(DYNAMIC_SCOPE);
                 visit(runtimehelpercall.getArgs()[0]);
-                jvmMethod().loadBlockType();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleBreakAndReturnsInLambdas", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, DynamicScope.class, Object.class, Block.Type.class));
+                jvmMethod().loadSelfBlock();
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleBreakAndReturnsInLambdas", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Object.class, Block.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_BACKREF:

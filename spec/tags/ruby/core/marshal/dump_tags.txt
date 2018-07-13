@@ -21,3 +21,4 @@ fails:Marshal.dump with an Exception contains the filename in the backtrace
 fails:Marshal.dump with a Symbol dumps a binary encoded Symbol
 fails(travis):Marshal.dump with a String dumps a String with instance variables
 fails(travis):Marshal.dump with an Exception dumps the message for the exception
+fails:Marshal.dump when passed a StringIO should raise an error

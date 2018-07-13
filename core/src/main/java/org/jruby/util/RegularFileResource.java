@@ -15,9 +15,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.RubyFile;
@@ -29,15 +29,20 @@ import org.jruby.util.io.PosixShim;
  * Represents a "regular" file, backed by regular file system.
  */
 class RegularFileResource implements FileResource {
+
     private final JRubyFile file;
+    private final String filePath; // original (non-normalized) file-path
     private final POSIX posix;
 
-    RegularFileResource(POSIX posix, File file) {
-        this(posix, file.getAbsolutePath());
+    RegularFileResource(POSIX posix, JRubyFile file, String filePath) {
+        this.file = file;
+        this.filePath = filePath;
+        this.posix = posix;
     }
 
     protected RegularFileResource(POSIX posix, String filename) {
         this.file = new JRubyFile(filename);
+        this.filePath = filename;
         this.posix = posix;
     }
 
@@ -68,11 +73,39 @@ class RegularFileResource implements FileResource {
         return file.lastModified();
     }
 
+    public FileTime lastModifiedTime() throws IOException {
+        return FileTime.fromMillis(file.lastModified());
+    }
+
+    public FileTime lastAccessTime() throws IOException {
+        return readAttributes().lastAccessTime();
+    }
+
+    public FileTime creationTime() throws IOException {
+        return readAttributes().creationTime();
+    }
+
+    private transient BasicFileAttributes fileAttributes;
+
+    private BasicFileAttributes readAttributes() throws IOException {
+        if (fileAttributes != null) return fileAttributes;
+        Path path = FileSystems.getDefault().getPath(file.getPath());
+        return fileAttributes = Files.readAttributes(path, BasicFileAttributes.class);
+    }
+
     @Override
     public boolean exists() {
-        // MRI behavior: Even broken symlinks should return true.
-        // FIXME: Where is the above statement true?  For RubyFile{,Test} it does not seem to be.
-        return file.exists(); // || isSymLink();
+        if (file.exists()) {
+            String path = filePath;
+            if (path.length() > 1 && path.charAt(path.length() - 1) == '/') {
+                path = file.getPathDefault();
+                if (path.length() > 0 && path.charAt(path.length() - 1) != '/' && !isDirectory()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -104,11 +137,7 @@ class RegularFileResource implements FileResource {
             BasicFileAttributes attrs = Files.readAttributes(file.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
 
             return attrs != null && attrs.isSymbolicLink();
-        } catch (SecurityException se) {
-            return false;
-        } catch (IOException ie) {
-            return false;
-        } catch (UnsupportedOperationException uoe) {
+        } catch (SecurityException|IOException|UnsupportedOperationException ex) {
             return false;
         }
     }

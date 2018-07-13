@@ -460,6 +460,7 @@ describe "A Ruby class generating a Java stub" do
 
   describe "when no class definitions are present in the target script" do
     before do
+      require 'tempfile'
       @source = Tempfile.new('jrubyc_method_spec')
     end
 

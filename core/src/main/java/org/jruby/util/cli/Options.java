@@ -102,6 +102,7 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_CLASS_VALUES = bool(INVOKEDYNAMIC, "invokedynamic.class.values", false, "Use ClassValue to store class-specific data.");
     public static final Option<Integer> INVOKEDYNAMIC_GLOBAL_MAXFAIL = integer(INVOKEDYNAMIC, "invokedynamic.global.maxfail", 0, "Maximum global cache failures after which to use slow path.");
     public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", false, "Use MethodHandles rather than generated code to bind Ruby methods.");
+    public static final Option<Boolean> INVOKEDYNAMIC_YIELD = bool(INVOKEDYNAMIC, "invokedynamic.yield", false, "Bind yields directly using invokedynamic.");
 
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
     public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_METHODS_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
@@ -167,9 +168,9 @@ public class Options {
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
     public static final Option<Boolean> ENUMERATOR_LIGHTWEIGHT = bool(MISCELLANEOUS, "enumerator.lightweight", true, "Use lightweight Enumerator#next logic when possible.");
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
-    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !REIFY_CLASSES.load(), "Attempt to expand instance vars into Java fields");
+    public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", false, "Always ensure volatile semantics for instance variables.");
+    public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Attempt to expand instance vars into Java fields");
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
-    public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", true, "Always ensure volatile semantics for instance variables.");
     public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
     public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");
     public static final Option<Boolean> USE_FIXNUM_CACHE = bool(MISCELLANEOUS, "fixnum.cache", true, "Use a cache of low-valued Fixnum objects.");

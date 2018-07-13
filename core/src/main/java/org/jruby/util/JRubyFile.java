@@ -52,7 +52,13 @@ public class JRubyFile extends JavaSecuredFile {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
-        return createNoUnicodeConversion(cwd, pathname);
+        if (pathname == null || pathname.length() == 0 || Ruby.isSecurityRestricted()) {
+            return JRubyFile.DUMMY;
+        }
+        if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5);
+        }
+        return createNoUnicodeConversion(cwd, pathname, new File(pathname));
     }
 
     public static FileResource createResource(ThreadContext context, String pathname) {
@@ -91,7 +97,7 @@ public class JRubyFile extends JavaSecuredFile {
 
         if (pathname.indexOf(':') > 0) { // scheme-oriented resources
             if (pathname.startsWith("classpath:")) {
-                pathname = pathname.replace("classpath:", "uri:classloader:/");
+                pathname = "uri:classloader:/" + pathname.substring(10);
             }
 
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
@@ -109,21 +115,11 @@ public class JRubyFile extends JavaSecuredFile {
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, create(cwd, pathname));
+        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, create(cwd, pathname), pathname);
     }
 
     public static String normalizeSeps(String path) {
         return Platform.IS_WINDOWS ? path.replace(File.separatorChar, '/') : path;
-    }
-
-    private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
-        if (pathname == null || pathname.length() == 0 || Ruby.isSecurityRestricted()) {
-            return JRubyFile.DUMMY;
-        }
-        if (pathname.startsWith("file:")) {
-            pathname = pathname.substring(5);
-        }
-        return createNoUnicodeConversion(cwd, pathname, new File(pathname));
     }
 
     private static JRubyFile createNoUnicodeConversion(String cwd, String pathname, File path) {
@@ -182,6 +178,10 @@ public class JRubyFile extends JavaSecuredFile {
     @Override
     public String getPath() {
         return normalizeSeps(super.getPath());
+    }
+
+    final String getPathDefault() {
+        return super.getPath();
     }
 
     @Override

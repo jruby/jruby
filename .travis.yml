@@ -38,6 +38,7 @@ env:
     - PHASE='-Prake -Dtask=test:jruby'
     #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
     - PHASE='-Prake -Dtask=test:jruby:jit'
+    - PHASE='-Prake -Dtask=test:jruby:jit' JRUBY_OPTS=-Xcompile.invokedynamic
     - PHASE='-Prake -Dtask=test:jruby:aot'
     - PHASE='-Prake -Dtask=test:mri'
     - PHASE='-Prake -Dtask=test:mri:fullint'
@@ -123,5 +124,16 @@ services:
 addons:
   apt:
     packages:
-#      - oracle-java9-installer
       - haveged
+
+deploy:
+  - provider: script
+    script: ./mvnw deploy -Pdist --settings .travis-maven-settings.xml -DskipTests=true -B
+    on:
+      branch: master
+      repo: jruby/jruby # do not attempt deploying from forks
+  - provider: script
+    script: ./mvnw deploy -Pdist --settings .travis-maven-settings.xml -DskipTests=true -B
+    on:
+      branch: jruby-9.1
+      repo: jruby/jruby # do not attempt deploying from forks

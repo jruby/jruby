@@ -1,6 +1,10 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+import com.headius.invokebinder.Binder;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRMethod;
@@ -10,6 +14,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,23 +25,22 @@ public class CompiledIRMethod extends AbstractIRMethod {
     private final MethodHandle specific;
     private final int specificArity;
 
-    private final boolean hasKwargs;
-
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
-                            RubyModule implementationClass, boolean hasKwargs) {
-        this(variable, null, -1, method, visibility, implementationClass, hasKwargs);
+                            RubyModule implementationClass) {
+        this(variable, null, -1, method, visibility, implementationClass);
     }
 
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
-                            Visibility visibility, RubyModule implementationClass, boolean hasKwargs) {
+                            Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
+
+
         this.variable = variable;
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
-        this.specificArity = hasKwargs ? -1 : specificArity;
+        this.specificArity = method.receivesKeywordArgs() ? -1 : specificArity;
         this.method.getStaticScope().determineModule();
-        this.hasKwargs = hasKwargs;
 
         assert method.hasExplicitCallProtocol();
 
@@ -69,8 +73,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
-
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, implementationClass.getMethodLocation(), name);
         }
@@ -134,8 +136,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        if (hasKwargs) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, signature);
-
         try {
             return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
         }
@@ -208,10 +208,6 @@ public class CompiledIRMethod extends AbstractIRMethod {
     @Override
     public String toString() {
         return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
-    }
-
-    public boolean hasKwargs() {
-        return hasKwargs;
     }
 
 }

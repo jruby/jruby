@@ -36,15 +36,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import junit.framework.TestCase;
-
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
 
 /**
  * @author Benoit
  */
-public class TestRubyBase extends TestCase {
+public class TestRubyBase extends junit.framework.TestCase {
     protected Ruby runtime;
     private PrintStream out;
 
@@ -68,11 +66,11 @@ public class TestRubyBase extends TestCase {
      * @param script the String to eval as a String
      * @return the value printed out on  stdout and stderr by 
      **/
-    protected String eval(String script) throws Exception {
+    protected String eval(String script) {
         return eval(script, "test");
     }
 
-    protected final String eval(String script, String fileName) throws Exception {
+    protected final String eval(String script, String fileName) {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         out = new PrintStream(result);
         RubyIO lStream = new RubyIO(runtime, out);

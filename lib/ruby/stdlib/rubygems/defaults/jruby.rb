@@ -97,7 +97,7 @@ class Gem::Specification
       JRuby::Util.extra_gem_paths.each do |path|
         stuff << File.join(path, 'specifications')
       end
-      stuff += JRuby::Util.classloader_resources('specifications')
+      stuff += JRuby::Util.class_loader_resources('specifications', path: true)
       # some classloader return directory info.
       # use only the "protocols" which jruby understands
       stuff.select { |s| File.directory?( s ) }

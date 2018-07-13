@@ -1,18 +1,24 @@
 package org.jruby.util;
 
 import jnr.posix.FileStat;
+import org.jruby.runtime.Helpers;
 
-final class JarFileStat implements FileStat {
+import java.io.IOException;
+import java.nio.file.attribute.FileTime;
 
-    private final FileResource resource;
+final class DummyResourceStat implements FileStat {
 
-    public JarFileStat(FileResource resource) {
-        this.resource = resource;
+    // NOTE: maybe move this to FileResource
+    interface FileResourceExt extends FileResource {
+        FileTime creationTime() throws IOException;
+        FileTime lastAccessTime() throws IOException;
+        FileTime lastModifiedTime() throws IOException;
     }
 
-    @Override
-    public long atime() {
-        return resource.lastModified();
+    private final FileResourceExt resource;
+
+    DummyResourceStat(FileResourceExt resource) {
+        this.resource = resource;
     }
 
     @Override
@@ -26,18 +32,13 @@ final class JarFileStat implements FileStat {
     }
 
     @Override
-    public long ctime() {
-        return resource.lastModified();
-    }
-
-    @Override
     public long dev() {
         return -1;
     }
 
     @Override
     public String ftype() {
-        return "zip file entry";
+        return "unknown";
     }
 
     @Override
@@ -102,7 +103,7 @@ final class JarFileStat implements FileStat {
 
     @Override
     public boolean isIdentical(FileStat fs) {
-        return fs instanceof JarFileStat && ((JarFileStat)fs).resource.equals(resource);
+        return fs instanceof DummyResourceStat && ((DummyResourceStat) fs).resource.equals(resource);
     }
 
     @Override
@@ -127,7 +128,7 @@ final class JarFileStat implements FileStat {
 
     @Override
     public boolean isReadableReal() {
-        return resource.canRead();
+        return isReadable();
     }
 
     @Override
@@ -137,7 +138,7 @@ final class JarFileStat implements FileStat {
 
     @Override
     public boolean isWritableReal() {
-        return false;
+        return isWritable();
     }
 
     @Override
@@ -181,11 +182,6 @@ final class JarFileStat implements FileStat {
     }
 
     @Override
-    public long mtime() {
-        return resource.lastModified();
-    }
-
-    @Override
     public int nlink() {
         return -1;
     }
@@ -203,6 +199,42 @@ final class JarFileStat implements FileStat {
     @Override
     public int uid() {
         return 0;
+    }
+
+    @Override
+    public long ctime() {
+        FileTime time = null;
+        try {
+            time = resource.creationTime();
+        }
+        catch (IOException ex) {
+            Helpers.throwException(ex);
+        }
+        return time == null ? 0L : time.toMillis();
+    }
+
+    @Override
+    public long atime() {
+        FileTime time = null;
+        try {
+            time = resource.lastAccessTime();
+        }
+        catch (IOException ex) {
+            Helpers.throwException(ex);
+        }
+        return time == null ? 0L : time.toMillis();
+    }
+
+    @Override
+    public long mtime() {
+        FileTime time = null;
+        try {
+            time = resource.lastModifiedTime();
+        }
+        catch (IOException ex) {
+            Helpers.throwException(ex);
+        }
+        return time == null ? 0L : time.toMillis();
     }
 
 }

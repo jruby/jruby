@@ -140,7 +140,6 @@ public final class ThreadContext {
 
     // These two fields are required to support explicit call protocol
     // (via IR instructions) for blocks.
-    private Block.Type currentBlockType; // See prepareBlockArgs code in IRRuntimeHelpers
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
     /**
@@ -198,7 +197,6 @@ public final class ThreadContext {
         this.nil = runtime.getNil();
         this.tru = runtime.getTrue();
         this.fals = runtime.getFalse();
-        this.currentBlockType = Block.Type.NORMAL;
         this.savedExcInLambda = null;
 
         if (runtime.getInstanceConfig().isProfilingEntireRun()) {
@@ -255,14 +253,6 @@ public final class ThreadContext {
     public IRubyObject setErrorInfo(IRubyObject errorInfo) {
         thread.setErrorInfo(errorInfo);
         return errorInfo;
-    }
-
-    public Block.Type getCurrentBlockType() {
-        return currentBlockType;
-    }
-
-    public void setCurrentBlockType(Block.Type type) {
-        currentBlockType = type;
     }
 
     public Throwable getSavedExceptionInLambda() {

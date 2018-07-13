@@ -1827,7 +1827,7 @@ public class RubyBigDecimal extends RubyNumeric {
     final RubyInteger to_int(Ruby runtime) {
         checkFloatDomain();
         try {
-            return RubyNumeric.int2fix(runtime, value.longValueExact());
+            return RubyFixnum.newFixnum(runtime, value.longValueExact());
         } catch (ArithmeticException ex) {
             return RubyBignum.bignorm(runtime, value.toBigInteger());
         }

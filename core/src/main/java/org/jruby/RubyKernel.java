@@ -65,7 +65,6 @@ import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
@@ -88,6 +87,10 @@ import java.util.Set;
 
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.RubyIO.checkUnsupportedOptions;
+import static org.jruby.RubyIO.checkValidSpawnOptions;
+import static org.jruby.RubyIO.UNSUPPORTED_SPAWN_OPTIONS;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.FILENAME;
 import static org.jruby.anno.FrameField.LASTLINE;
@@ -1227,37 +1230,38 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject _message) {
-        final Ruby runtime = context.runtime;
-
         if (_message instanceof RubyArray) {
             RubyArray messageArray = _message.convertToArray();
             for (int i = 0; i < messageArray.size(); i++) warn(context, recv, messageArray.eltOk(i));
             return context.nil;
         }
 
-        RubyString message = _message.convertToString();
+        return warn(context, recv, _message.convertToString());
+    }
+
+    static IRubyObject warn(ThreadContext context, IRubyObject recv, RubyString message) {
+        final Ruby runtime = context.runtime;
+
         if (!message.endsWithAsciiChar('\n')) {
-            message = (RubyString) message.op_plus19(context, runtime.newString("\n"));
+            message = (RubyString) message.op_plus19(context, runtime.newString(singleCharByteList((byte) '\n')));
         }
 
         if (recv == runtime.getWarning()) {
             return RubyWarnings.warn(context, recv, message);
-        } else {
-            return sites(context).warn.call(context, recv, runtime.getWarning(), message);
         }
+        return sites(context).warn.call(context, recv, runtime.getWarning(), message);
     }
 
-    public static final String[] WARN_VALID_KEYS = {"uplevel"};
+    public static final String[] WARN_VALID_KEYS = { "uplevel" };
 
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         boolean kwargs = false;
         int uplevel = -1;
+
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
-            if (!tmp.isNil()) {
+            if (tmp != context.nil) {
                 kwargs = true;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, WARN_VALID_KEYS);
                 uplevel = rets[0] == UNDEF ? 0 : RubyNumeric.num2int(rets[0]);
@@ -1266,20 +1270,15 @@ public class RubyKernel {
 
         // FIXME: This is not particularly efficient.
         int numberOfMessages = kwargs ? args.length - 1 : args.length;
-        IRubyObject newline = runtime.newString("\n");
 
         if (kwargs) {
-            RubyStackTraceElement[] elements = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context).getBacktrace(context.runtime);
+            RubyStackTraceElement element = context.runtime.getInstanceConfig().getTraceType().getBacktraceElement(context, uplevel);
 
-            // User can ask for level higher than stack
-            if (elements.length <= uplevel + 1) uplevel = -1;
-
-            int index = uplevel + 1;
             RubyString baseMessage = context.runtime.newString();
-            baseMessage.catString(elements[index].getFileName() + ":" + (elements[index].getLineNumber()) + ": warning: ");
+            baseMessage.catString(element.getFileName() + ':' + element.getLineNumber() + ": warning: ");
 
             for (int i = 0; i < numberOfMessages; i++) {
-                warn(context, recv, baseMessage.op_plus19(context, args[i]));
+                warn(context, recv, (RubyString) baseMessage.op_plus19(context, args[i]));
             }
         } else {
             for (int i = 0; i < numberOfMessages; i++) {
@@ -1734,9 +1733,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        return execCommon(runtime, null, args[0], null, args);
+        return execCommon(context, null, args[0], null, args);
     }
 
     /* Actual exec definition which calls this internal version is specified
@@ -1744,19 +1741,23 @@ public class RubyKernel {
      */
     @JRubyMethod(required = 4, visibility = PRIVATE)
     public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         IRubyObject env = args[0];
         IRubyObject prog = args[1];
         IRubyObject options = args[2];
-        RubyArray cmdArgs = (RubyArray)args[3];
+        RubyArray cmdArgs = (RubyArray) args[3];
 
-        RubyIO.checkExecOptions(options);
+        if (options instanceof RubyHash) checkExecOptions(context, (RubyHash) options);
 
-        return execCommon(runtime, env, prog, options, cmdArgs.toJavaArray());
+        return execCommon(context, env, prog, options, cmdArgs.toJavaArray());
     }
 
-    private static IRubyObject execCommon(Ruby runtime, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
+    static void checkExecOptions(ThreadContext context, RubyHash opts) {
+        checkValidSpawnOptions(context, opts);
+        checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+    }
+
+    private static IRubyObject execCommon(ThreadContext context, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
         // This is a fairly specific hack for empty string, but it does the job
         if (args.length == 1) {
             RubyString command = args[0].convertToString();
@@ -1771,7 +1772,6 @@ public class RubyKernel {
             }
         }
 
-        ThreadContext context = runtime.getCurrentContext();
         if (env != null && !env.isNil()) {
             RubyHash envMap = env.convertToHash();
             if (envMap != null) {
@@ -1905,8 +1905,8 @@ public class RubyKernel {
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         final String __FILE__ = context.gatherCallerBacktrace()[1].getFileName();
-        String dir = RubyFile.dirname(context, __FILE__);
-        return RubyString.newString(context.runtime, dir);
+        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(context.runtime, __FILE__), null, false, true);
+        return RubyString.newString(context.runtime, RubyFile.dirname(context, path.asJavaString()));
     }
 
     @JRubyMethod(module = true)
@@ -2228,13 +2228,19 @@ public class RubyKernel {
 
     @JRubyMethod(name = "remove_instance_variable", required = 1)
     public static IRubyObject remove_instance_variable(ThreadContext context, IRubyObject self, IRubyObject name, Block block) {
-        return ((RubyBasicObject)self).remove_instance_variable(context, name, block);
+        return ((RubyBasicObject) self).remove_instance_variable(context, name, block);
     }
 
     @JRubyMethod(name = "instance_variables")
-    public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).instance_variables19(context);
+    public static RubyArray instance_variables(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject) self).instance_variables(context);
     }
+
+    @Deprecated
+    public static RubyArray instance_variables19(ThreadContext context, IRubyObject self) {
+        return instance_variables(context, self);
+    }
+
     /* end delegated bindings */
 
     public static IRubyObject gsub(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {

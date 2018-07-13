@@ -115,8 +115,8 @@ public class IRRuntimeHelpers {
 
     // FIXME: ENEBO: If we inline this instr then dynScope will be for the inlined dynscope and that scope could be many things.
     //   CheckForLJEInstr.clone should convert this as appropriate based on what it is being inlined into.
-    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block.Type blockType) {
-        if (inLambda(blockType)) return; // break/return in lambda unconditionally a return.
+    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block block) {
+        if (inLambda(block.type)) return; // break/return in lambda unconditionally a return.
 
         dynScope = getContainingMethodsDynamicScope(dynScope);
         StaticScope staticScope = dynScope.getStaticScope();
@@ -167,7 +167,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject handleNonlocalReturn(StaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(DynamicScope dynScope, Object rjExc) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null; // Unreachable
@@ -220,12 +220,12 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, DynamicScope dynScope, Object exc, Block block) throws RuntimeException {
         if (exc instanceof IRWrappedLambdaReturnValue) {
             // Wrap the return value in an exception object and push it through the nonlocal return exception
             // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
-        } else if (exc instanceof IRReturnJump && inReturnScope(blockType, (IRReturnJump) exc, dynScope)) {
+        } else if (exc instanceof IRReturnJump && inReturnScope(block.type, (IRReturnJump) exc, dynScope)) {
             if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
             return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
@@ -251,7 +251,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc, Block.Type blockType) {
+    public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc) {
         if (!(bjExc instanceof IRBreakJump)) {
             Helpers.throwException((Throwable)bjExc);
             return null; // Unreachable
@@ -521,7 +521,7 @@ public class IRRuntimeHelpers {
     }
 
     public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, int required, int opt, boolean rest,
-                                  boolean receivesKwargs, int restKey, Block.Type blockType) {
+                                  boolean receivesKwargs, int restKey, Block block) {
         int argsLength = args.length;
         RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
 
@@ -530,45 +530,55 @@ public class IRRuntimeHelpers {
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
 
-        if ((blockType == null || blockType.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
+        if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
             Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
         }
     }
 
-    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, 
-        org.jruby.runtime.Signature signature) {
-        return frobnicateKwargsArgument(context, args, signature.required());
-    }
-
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
         // No kwarg because required args slurp them up.
-        return args.length <= requiredArgsCount ? args : frobnicateKwargsArgument(context, args);
-    }
+        int length = args.length;
 
-    private static IRubyObject[] frobnicateKwargsArgument(final ThreadContext context, IRubyObject[] args) {
-        final IRubyObject kwargs = toHash(args[args.length - 1], context);
-        if (kwargs != null) {
-            if (kwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
+        if (length <= requiredArgsCount) return args;
+
+        final IRubyObject maybeKwargs = toHash(args[length - 1], context);
+
+        if (maybeKwargs != null) {
+            if (maybeKwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
                 return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
             }
 
-            DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
-            // We know toHash makes null, nil, or Hash
-            ((RubyHash) kwargs).visitAll(context, visitor, null);
+            RubyHash kwargs = (RubyHash) maybeKwargs;
 
-            if (visitor.syms == null) {
-                // no symbols, use empty kwargs hash
-                visitor.syms = RubyHash.newSmallHash(context.runtime);
+            if (kwargs.allSymbols()) {
+                args[length - 1] = kwargs;
+            } else {
+                args = homogenizeKwargs(context, args, kwargs);
             }
-
-            if (visitor.others != null) { // rest args exists too expand args
-                IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-                System.arraycopy(args, 0, newArgs, 0, args.length);
-                args = newArgs;
-                args[args.length - 2] = visitor.others; // opt args
-            }
-            args[args.length - 1] = visitor.syms; // kwargs hash
         }
+
+        return args;
+    }
+
+    private static IRubyObject[] homogenizeKwargs(ThreadContext context, IRubyObject[] args, RubyHash kwargs) {
+        DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
+
+        // We know toHash makes null, nil, or Hash
+        kwargs.visitAll(context, visitor, null);
+
+        if (visitor.syms == null) {
+            // no symbols, use empty kwargs hash
+            visitor.syms = RubyHash.newSmallHash(context.runtime);
+        }
+
+        if (visitor.others != null) { // rest args exists too expand args
+            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+            System.arraycopy(args, 0, newArgs, 0, args.length);
+            args = newArgs;
+            args[args.length - 2] = visitor.others; // opt args
+        }
+        args[args.length - 1] = visitor.syms; // kwargs hash
+
         return args;
     }
 
@@ -1355,7 +1365,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, IRScope irModule, Object rubyContainer) {
         RubyModule newRubyModule = newRubyModuleFromIR(context, irModule, rubyContainer);
-        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule, false);
+        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule);
     }
 
     private static RubyModule newRubyModuleFromIR(ThreadContext context, IRScope irModule, Object rubyContainer) {
@@ -1379,7 +1389,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, Object container, Object superClass) {
         RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
 
-        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass, false);
+        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
     }
 
     public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
@@ -1430,7 +1440,7 @@ public class IRRuntimeHelpers {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(methodName.idString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        rubyClass.addMethod(methodName.idString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", methodName);
@@ -1441,7 +1451,7 @@ public class IRRuntimeHelpers {
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        rubyClass.addMethod(method.getId(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
+        rubyClass.addMethod(method.getId(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
@@ -1484,7 +1494,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, method.receivesKeywordArgs());
+        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
@@ -1499,7 +1509,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz, method.receivesKeywordArgs());
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
@@ -1747,7 +1757,7 @@ public class IRRuntimeHelpers {
             args = IRubyObject.NULL_ARRAY;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        boolean isProcCall = block.type == Block.Type.PROC;
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
         if (block.type == Block.Type.LAMBDA) {
             if (!isProcCall && sig.arityValue() != -1 && sig.required() != 1) {
@@ -1832,7 +1842,7 @@ public class IRRuntimeHelpers {
             return args;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        boolean isProcCall = block.type == Block.Type.PROC;
         if (isProcCall) {
             if (args.length == 0) {
                 args = context.runtime.getSingleNilArray();
@@ -1853,7 +1863,7 @@ public class IRRuntimeHelpers {
             args = IRubyObject.NULL_ARRAY;
         }
 
-        boolean isProcCall = context.getCurrentBlockType() == Block.Type.PROC;
+        boolean isProcCall = block.type == Block.Type.PROC;
         if (block.type == Block.Type.LAMBDA) {
             org.jruby.runtime.Signature sig = block.getBody().getSignature();
             // We don't need to check for the 1 required arg case here

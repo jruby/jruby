@@ -1,10 +1,6 @@
 package org.jruby.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -12,6 +8,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 
 import jnr.constants.platform.Errno;
@@ -20,7 +17,7 @@ import jnr.posix.FileStat;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
-public class URLResource implements FileResource {
+public class URLResource implements FileResource, DummyResourceStat.FileResourceExt {
 
     public static String URI = "uri:";
     public static String CLASSLOADER = "classloader:";
@@ -33,7 +30,6 @@ public class URLResource implements FileResource {
     private final URL url;
     private final String pathname;
 
-    private final JarFileStat fileStat;
     private final ClassLoader cl;
 
     URLResource(String uri, URL url, String[] files) {
@@ -50,12 +46,10 @@ public class URLResource implements FileResource {
         this.url = url;
         this.cl = cl;
         this.pathname = pathname;
-        this.fileStat = new JarFileStat(this);
     }
 
     @Override
-    public String absolutePath()
-    {
+    public String absolutePath() {
         return uri;
     }
 
@@ -64,32 +58,18 @@ public class URLResource implements FileResource {
     }
 
     @Override
-    public boolean exists()
-    {
+    public boolean exists() {
         return url != null || pathname != null || list != null;
     }
 
     @Override
-    public boolean isDirectory()
-    {
+    public boolean isDirectory() {
         return list != null;
     }
 
     @Override
-    public boolean isFile()
-    {
+    public boolean isFile() {
         return list == null && (url != null || pathname != null);
-    }
-
-    @Override
-    public long lastModified() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public int errno() {
-        return Errno.ENOENT.intValue();
     }
 
     @Override
@@ -107,9 +87,8 @@ public class URLResource implements FileResource {
             }
 
             is.close();
-        } catch (IOException e) {
-            if (is != null) try { is.close(); } catch (IOException e2) {}
         }
+        catch (IOException e) { close(is); }
 
         return totalRead;
     }
@@ -130,8 +109,30 @@ public class URLResource implements FileResource {
     public boolean isSymLink() { return false; }
 
     @Override
+    public long lastModified() {
+        return 0L; // not implemented - problematic for a classpath resource
+    }
+
+    public FileTime lastModifiedTime() {
+        return null; // not implemented - problematic for a classpath resource
+    }
+
+    public FileTime lastAccessTime() {
+        return null; // not implemented - problematic for a classpath resource
+    }
+
+    public FileTime creationTime() {
+        return null; // not implemented - problematic for a classpath resource
+    }
+
+    @Override
+    public int errno() {
+        return Errno.ENOENT.intValue();
+    }
+
+    @Override
     public FileStat stat() {
-        return fileStat;
+        return new DummyResourceStat(this);
     }
 
     @Override
@@ -155,6 +156,24 @@ public class URLResource implements FileResource {
     @Override
     public Channel openChannel( int flags, int perm ) throws IOException {
         return Channels.newChannel(openInputStream());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof URLResource) {
+            return uri.equals(((URLResource) obj).uri);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 17 * uri.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + absolutePath() + '}';
     }
 
     public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean asFile) {
@@ -193,9 +212,8 @@ public class URLResource implements FileResource {
                         isDirectory = addDirectoriesFromClassloader(cl, list, pathname, isDirectory);
                     }
                     if (isDirectory) files = list.toArray(new String[list.size()]);
-                } catch (IOException e) {
-                  // we tried
                 }
+                catch (IOException e) { /* we tried */ }
             }
         }
         return new URLResource(URI_CLASSLOADER + '/' + pathname, cl, url == null ? null : pathname, files);
@@ -203,7 +221,7 @@ public class URLResource implements FileResource {
 
     private static boolean addDirectoriesFromClassloader(ClassLoader cl, Set<String> list, String pathname, boolean isDirectory) throws IOException {
         if (cl instanceof URLClassLoader ) {
-            for (URL u : ((URLClassLoader)cl).getURLs()) {
+            for (URL u : ((URLClassLoader) cl).getURLs()) {
                 if (u.getFile().endsWith(".jar") && u.getProtocol().equals("file")) {
                     u = new URL("jar:" + u + "!/" + pathname);
                     isDirectory = addDirectoryEntries(list, u, isDirectory);
@@ -258,16 +276,14 @@ public class URLResource implements FileResource {
 
             url = new URL(pathname);
             // we do not want to deal with those url here like this though they are valid url/uri
-            if (url.getProtocol().startsWith("http")){
-                return null;
-            }
+            if (url.getProtocol().startsWith("http")) return null;
         }
         catch (MalformedURLException e) { // file does not exists
-            return new URLResource(URI + pathname, (URL)null, null);
+            return new URLResource(URI + pathname, null, null);
         }
         String[] files = asFile ? null : listFiles(pathname);
         if (files != null) {
-            return new URLResource(URI + pathname, (URL)null, files);
+            return new URLResource(URI + pathname, null, files);
         }
         try {
             InputStream is = url.openStream();
@@ -282,7 +298,7 @@ public class URLResource implements FileResource {
             return new URLResource(URI + pathname, url, null);
         }
         catch (IOException e) { // can not open stream - treat it as not existing file
-            return new URLResource(URI + pathname, (URL)null, null);
+            return new URLResource(URI + pathname, null, null);
         }
     }
 
@@ -302,22 +318,16 @@ public class URLResource implements FileResource {
             return null;
         }
         finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                }
-                catch (IOException ignored) { }
-            }
+            close(reader);
         }
     }
 
     private static String[] listClassLoaderFiles(ClassLoader classloader, String pathname) {
         try {
-            String path = pathname + (pathname.equals("") || pathname.endsWith("/") ? ".jrubydir" : "/.jrubydir");
+            String path = pathname + (pathname.isEmpty() || pathname.endsWith("/") ? ".jrubydir" : "/.jrubydir");
             Enumeration<URL> urls = classloader.getResources(path);
-            if (!urls.hasMoreElements()) {
-                return null;
-            }
+            if (!urls.hasMoreElements()) return null;
+
             Set<String> result = new LinkedHashSet<>();
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
@@ -343,6 +353,12 @@ public class URLResource implements FileResource {
         }
         catch (IOException e) {
             return null;
+        }
+    }
+
+    private static void close(final Closeable resource) {
+        if (resource != null) {
+            try { resource.close(); } catch (IOException ex) {}
         }
     }
 

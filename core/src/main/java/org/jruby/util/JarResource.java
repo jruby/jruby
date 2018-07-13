@@ -2,11 +2,13 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
 
-abstract class JarResource implements FileResource {
+abstract class JarResource implements FileResource, DummyResourceStat.FileResourceExt {
 
     private static final JarCache jarCache = new JarCache();
 
@@ -29,12 +31,12 @@ abstract class JarResource implements FileResource {
         String jarPath = pathname.substring(0, bang);
         String entryPath = pathname.substring(bang + 1);
         // normalize path -- issue #2017
-        if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
+        if (StringSupport.startsWith(entryPath, '/', '/')) entryPath = entryPath.substring(1);
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
 
-        if (resource == null && entryPath.startsWith("/")) {
+        if (resource == null && StringSupport.startsWith(entryPath, '/')) {
             resource = createJarResource(jarPath, entryPath.substring(1), true);
         }
 
@@ -88,19 +90,21 @@ abstract class JarResource implements FileResource {
         return jarCache.remove(jarPath);
     }
 
-    final CharSequence jarPrefix;
-    private final JarFileStat fileStat;
+    private final CharSequence jarPrefix;
 
-    protected JarResource(String jarPath, boolean rootSlashPrefix) {
+    JarResource(String jarPath, boolean rootSlashPrefix) {
         StringBuilder prefix = new StringBuilder(jarPath.length() + 2);
         prefix.append(jarPath).append('!');
         this.jarPrefix = rootSlashPrefix ? prefix.append('/') : prefix;
-        this.fileStat = new JarFileStat(this);
     }
 
+    private transient String absolutePath;
+
     @Override
-    public String absolutePath() {
-        return jarPrefix + entryName();
+    public final String absolutePath() {
+        String path = this.absolutePath;
+        if (path != null) return path;
+        return this.absolutePath = jarPrefix + entryName();
     }
 
     @Override
@@ -140,9 +144,13 @@ abstract class JarResource implements FileResource {
         return false;
     }
 
+    private transient FileStat fileStat;
+
     @Override
     public FileStat stat() {
-        return fileStat;
+        FileStat fileStat = this.fileStat;
+        if (fileStat != null) return fileStat;
+        return this.fileStat = new DummyResourceStat(this);
     }
 
     @Override
@@ -160,6 +168,39 @@ abstract class JarResource implements FileResource {
         return false;
     }
 
-    abstract protected String entryName();
+    public abstract FileTime creationTime() throws IOException;
+    public abstract FileTime lastAccessTime() throws IOException;
+    public abstract FileTime lastModifiedTime() throws IOException;
+
+    @Override
+    public long lastModified() {
+        FileTime mod = null;
+        try {
+            mod = lastModifiedTime();
+        }
+        catch (IOException ex) { /* -1 invalid? */ }
+        return mod == null ? 0L : mod.toMillis();
+    }
+
+    abstract String entryName();
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + absolutePath() + '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof JarResource) {
+            JarResource that = (JarResource) obj;
+            return this.absolutePath().equals(that.absolutePath());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 11 * entryName().hashCode();
+    }
 
 }

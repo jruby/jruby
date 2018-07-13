@@ -1,1 +1,2 @@
 fails:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
+fails:Kernel#eval with a magic encoding comment ignores the magic encoding comment if it is after a frozen_string_literal magic comment

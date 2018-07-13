@@ -151,7 +151,7 @@ describe "Collection Ruby extensions" do
 
     # immutable and non-Cloneable
     arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList.new
-    expect { arr.dup }.to raise_error # Java::JavaLang::UnsupportedOperationException
+    expect { arr.dup }.to raise_error(Java::JavaLang::UnsupportedOperationException)
 
     arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList2::INSTANCE
     expect { arr.dup }.to raise_error(Java::JavaLang::IllegalStateException) # since 9.2 (swallowed previously)
@@ -188,7 +188,7 @@ describe "Collection Ruby extensions" do
 
     # immutable and non-Cloneable
     arr = Java::java_integration::fixtures::coll::NonCloneableImmutableList.new
-    expect { arr.clone }.to raise_error # Java::JavaLang::UnsupportedOperationException
+    expect { arr.clone }.to raise_error(java.lang.UnsupportedOperationException)
   end
 
   it '#include?' do

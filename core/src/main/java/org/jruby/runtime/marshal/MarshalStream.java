@@ -210,7 +210,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public static String getPathFromClass(RubyModule clazz) {
-        String path = clazz.getName();
+        RubyString path = clazz.rubyName();
         
         if (path.charAt(0) == '#') {
             Ruby runtime = clazz.getRuntime();
@@ -221,10 +221,14 @@ public class MarshalStream extends FilterOutputStream {
         RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
         Ruby runtime = clazz.getRuntime();
 
-        if (runtime.getClassFromPath(path) != real) {
+        // FIXME: This is weird why we do this.  rubyName should produce something which can be referred so what example
+        // will this fail on?  If there is a failing case then passing asJavaString may be broken since it will not be
+        // a properly encoded string.  If this is an issue we should make a clazz.IdPath where all segments are returned
+        // by their id names.
+        if (runtime.getClassFromPath(path.asJavaString()) != real) {
             throw runtime.newTypeError(str(runtime, types(runtime, clazz), " can't be referred"));
         }
-        return path;
+        return path.asJavaString();
     }
     
     private void writeObjectData(IRubyObject value) throws IOException {
