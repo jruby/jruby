@@ -535,40 +535,50 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args,
-        org.jruby.runtime.Signature signature) {
-        return frobnicateKwargsArgument(context, args, signature.required());
-    }
-
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
         // No kwarg because required args slurp them up.
-        return args.length <= requiredArgsCount ? args : frobnicateKwargsArgument(context, args);
-    }
+        int length = args.length;
 
-    private static IRubyObject[] frobnicateKwargsArgument(final ThreadContext context, IRubyObject[] args) {
-        final IRubyObject kwargs = toHash(args[args.length - 1], context);
-        if (kwargs != null) {
-            if (kwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
+        if (length <= requiredArgsCount) return args;
+
+        final IRubyObject maybeKwargs = toHash(args[length - 1], context);
+
+        if (maybeKwargs != null) {
+            if (maybeKwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
                 return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
             }
 
-            DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
-            // We know toHash makes null, nil, or Hash
-            ((RubyHash) kwargs).visitAll(context, visitor, null);
+            RubyHash kwargs = (RubyHash) maybeKwargs;
 
-            if (visitor.syms == null) {
-                // no symbols, use empty kwargs hash
-                visitor.syms = RubyHash.newSmallHash(context.runtime);
+            if (kwargs.allSymbols()) {
+                args[length - 1] = kwargs;
+            } else {
+                args = homogenizeKwargs(context, args, kwargs);
             }
-
-            if (visitor.others != null) { // rest args exists too expand args
-                IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-                System.arraycopy(args, 0, newArgs, 0, args.length);
-                args = newArgs;
-                args[args.length - 2] = visitor.others; // opt args
-            }
-            args[args.length - 1] = visitor.syms; // kwargs hash
         }
+
+        return args;
+    }
+
+    private static IRubyObject[] homogenizeKwargs(ThreadContext context, IRubyObject[] args, RubyHash kwargs) {
+        DivvyKeywordsVisitor visitor = new DivvyKeywordsVisitor();
+
+        // We know toHash makes null, nil, or Hash
+        kwargs.visitAll(context, visitor, null);
+
+        if (visitor.syms == null) {
+            // no symbols, use empty kwargs hash
+            visitor.syms = RubyHash.newSmallHash(context.runtime);
+        }
+
+        if (visitor.others != null) { // rest args exists too expand args
+            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+            System.arraycopy(args, 0, newArgs, 0, args.length);
+            args = newArgs;
+            args[args.length - 2] = visitor.others; // opt args
+        }
+        args[args.length - 1] = visitor.syms; // kwargs hash
+
         return args;
     }
 

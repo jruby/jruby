@@ -692,6 +692,23 @@ public class RubyHash extends RubyObject implements Map {
         if (count > 0) throw concurrentModification();
     }
 
+    public <T> boolean allSymbols() {
+        int startGeneration = generation;
+        // visit not more than size entries
+        RubyHashEntry head = this.head;
+        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+            if (startGeneration != generation) {
+                startGeneration = generation;
+                entry = head.nextAdded;
+                if (entry == head) break;
+            }
+            if (entry != null && entry.isLive()) {
+                if (!(entry.key instanceof RubySymbol)) return false;
+            }
+        }
+        return true;
+    }
+
     /* ============================
      * End of hash internals
      * ============================
