@@ -884,18 +884,34 @@ public class RubyHash extends RubyObject implements Map {
 
     public <T> boolean allSymbols() {
         int startGeneration = generation;
-        // visit not more than size entries
-        RubyHashEntry head = this.head;
-        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+        long count = size;
+        IRubyObject key;
+        int start = this.start;
+
+        for (int i = start; i < getLength(); i++) {
+            IRubyObject[] entries = this.entries;
+            key = entries[i * NUMBER_OF_ENTRIES];
             if (startGeneration != generation) {
                 startGeneration = generation;
-                entry = head.nextAdded;
-                if (entry == head) break;
+                key = entries[start * NUMBER_OF_ENTRIES];
+                i = 0;
+                if (start == 0 || start == 1)
+                    break;
             }
-            if (entry != null && entry.isLive()) {
-                if (!(entry.key instanceof RubySymbol)) return false;
-            }
+
+            if(key == null)
+                continue;
+
+            if (!(key instanceof RubySymbol)) return false;
+
+            count--;
         }
+
+        // it does not handle all concurrent modification cases,
+        // but at least provides correct marshal as we have exactly size entries visited (count == 0)
+        // or if count < 0 - skipped concurrent modification checks
+        if (count > 0) throw concurrentModification();
+
         return true;
     }
 
