@@ -32,7 +32,7 @@ profile 'cuba' do
 end
 
 profile 'rails4' do
-  properties :framework => 'rails4', 'wildfly.javaOpts' => '-XX:MaxPermSize=512m'
+  properties :framework => 'rails4', 'wildfly.javaOpts' => '-XX:MaxMetaspaceSize=512m'
 end
 
 profile 'webrick' do
