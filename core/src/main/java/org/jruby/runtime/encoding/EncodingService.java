@@ -51,9 +51,8 @@ public final class EncodingService {
         aliases = EncodingDB.getAliases();
         ascii8bit = encodings.get("ASCII-8BIT".getBytes()).getEncoding();
 
-        Charset javaDefaultCharset = Charset.defaultCharset();
-        ByteList javaDefaultBL = new ByteList(javaDefaultCharset.name().getBytes());
-        Entry javaDefaultEntry = findEncodingOrAliasEntry(javaDefaultBL);
+        String javaDefaultCharset = Charset.defaultCharset().name();
+        Entry javaDefaultEntry = findEncodingOrAliasEntry(javaDefaultCharset.getBytes());
         javaDefault = javaDefaultEntry == null ? ascii8bit : javaDefaultEntry.getEncoding();
 
         encodingList = new IRubyObject[encodings.size()];
@@ -204,15 +203,15 @@ public final class EncodingService {
     }
 
     public void defineAliases() {
-        HashEntryIterator hei = aliases.entryIterator();
-        while (hei.hasNext()) {
+        HashEntryIterator i = aliases.entryIterator();
+        while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
-                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
-            Entry ee = e.value;
+                    ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
+            Entry entry = e.value;
 
             // The constant names must be treated by the the <code>encodingNames</code> helper.
             for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
-                defineEncodingConstant(runtime, (RubyEncoding) encodingList[ee.getIndex()], constName);
+                defineEncodingConstant(runtime, (RubyEncoding) encodingList[entry.getIndex()], constName);
             }
         }
     }
@@ -478,7 +477,7 @@ public final class EncodingService {
 
     private Entry findEntryFromEncoding(Encoding e) {
         if (e == null) return null;
-        return findEncodingEntry(new ByteList(e.getName()));
+        return findEncodingEntry(e.getName());
     }
 
     @Deprecated
