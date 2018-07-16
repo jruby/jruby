@@ -610,7 +610,7 @@ public abstract class InvokeSite extends MutableCallSite {
         }
     }
 
-    public RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
+    public static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
         return ((RubyBasicObject) self).getMetaClass();
     }
