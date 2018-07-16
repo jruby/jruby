@@ -180,17 +180,6 @@ public class RubyDateFormatter {
         }
     }
 
-    public static void main(String[] args) {
-        // composed + special, keys of the switch below
-        StringBuilder buf = new StringBuilder("cDxFnQRrTXtvZ+z");
-        for (int i = 'A'; i <= 'z'; i++) {
-            if (Format.conversionToToken(i) != null) {
-                buf.append((char) i);
-            }
-        }
-        System.out.println(buf.toString());
-    }
-
     public static class Token {
         private final Format format;
         private final Object data;
@@ -276,7 +265,7 @@ public class RubyDateFormatter {
             throw runtime.newArgumentError("format should have ASCII compatible encoding");
         }
 
-        final List<Token> compiledPattern = new LinkedList<Token>();
+        final List<Token> compiledPattern = new LinkedList<>();
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
         }
@@ -681,4 +670,5 @@ public class RubyDateFormatter {
     public Date parse(String source, ParsePosition pos) {
         throw new UnsupportedOperationException();
     }
+
 }
