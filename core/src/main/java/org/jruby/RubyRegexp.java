@@ -329,7 +329,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, RegexpOptions options) {
         try {
-            return new RubyRegexp(runtime, pattern, (RegexpOptions)options.clone());
+            return new RubyRegexp(runtime, pattern, options.clone());
         } catch (RaiseException re) {
             throw runtime.newSyntaxError(re.getMessage());
         }
@@ -341,13 +341,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * have this extra source info in the error message
      */
     public static RubyRegexp newRegexpParser(Ruby runtime, ByteList pattern, RegexpOptions options) {
-        return new RubyRegexp(runtime, pattern, (RegexpOptions)options.clone());
+        return new RubyRegexp(runtime, pattern, options.clone());
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newDRegexp(Ruby runtime, RubyString pattern, RegexpOptions options) {
         try {
-            return new RubyRegexp(runtime, pattern.getByteList(), (RegexpOptions)options.clone());
+            return new RubyRegexp(runtime, pattern.getByteList(), options.clone());
         } catch (RaiseException re) {
             throw runtime.newRegexpError(re.getMessage());
         }
@@ -959,7 +959,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private IRubyObject initializeByRegexp(RubyRegexp regexp) {
         // Clone and toggle flags since this is no longer a literal regular expression
         // but it did come from one.
-        RegexpOptions newOptions = (RegexpOptions) regexp.getOptions().clone();
+        RegexpOptions newOptions = regexp.getOptions().clone();
         newOptions.setLiteral(false);
         return regexpInitialize(regexp.str, regexp.getEncoding(), newOptions);
     }
@@ -1361,7 +1361,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         check();
 
         Ruby runtime = getRuntime();
-        RegexpOptions newOptions = (RegexpOptions)options.clone();
+        RegexpOptions newOptions = options.clone();
         int p = str.getBegin();
         int len = str.getRealSize();
         byte[] bytes = str.getUnsafeBytes();
@@ -1438,7 +1438,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RegexpSupport.appendRegexpString19(runtime, result, bytes, p, len, str.getEncoding(), null);
 
             result.append((byte)')');
-            return (RubyString) RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
+            return (RubyString) RubyString.newString(runtime, result, getEncoding()).infectBy(this);
         } while (true);
     }
 
