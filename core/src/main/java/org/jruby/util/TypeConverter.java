@@ -409,6 +409,10 @@ public class TypeConverter {
                 case NIL:
                     if (base != 0) raiseIntegerBaseError(context);
                     throw context.runtime.newTypeError("can't convert nil into Integer");
+                default: // MRI checks String sub-classes
+                    if (val instanceof RubyString) {
+                        return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                    }
             }
 
             if (base != 0) {
