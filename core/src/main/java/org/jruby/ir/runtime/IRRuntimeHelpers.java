@@ -82,6 +82,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 
@@ -102,11 +103,11 @@ public class IRRuntimeHelpers {
         // Since that is exactly what we want to figure out here, am just using that flag here.
         // But, this is ugly (as is the original hack in the current runtime).  What is really
         // needed is a new block type -- a block that is used to define a method body.
-        return blockType == Block.Type.LAMBDA && !scope.isArgumentScope();
+        return blockType == LAMBDA && !scope.isArgumentScope();
     }
 
     public static boolean inLambda(Block.Type blockType) {
-        return blockType == Block.Type.LAMBDA;
+        return blockType == LAMBDA;
     }
 
     public static boolean inProc(Block.Type blockType) {
@@ -1652,7 +1653,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void pushExitBlock(ThreadContext context, Block blk) {
-        context.runtime.pushEndBlock(context.runtime.newProc(Block.Type.LAMBDA, blk));
+        context.runtime.pushEndBlock(context.runtime.newProc(LAMBDA, blk));
     }
 
     @JIT
@@ -1743,24 +1744,17 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject[] prepareBlockArgsInternal(ThreadContext context, Block block, IRubyObject[] args) {
-        if (args == null) {
-            args = IRubyObject.NULL_ARRAY;
+        if (args == null) args = IRubyObject.NULL_ARRAY;
+
+        switch (block.type) {
+            case LAMBDA:
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            case PROC:
+                return prepareProcArgs(context, block, args);
         }
 
-        boolean isProcCall = block.type == Block.Type.PROC;
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
-        if (block.type == Block.Type.LAMBDA) {
-            if (!isProcCall && sig.arityValue() != -1 && sig.required() != 1) {
-                args = toAry(context, args);
-            }
-            sig.checkArity(context.runtime, args);
-            return args;
-        }
-
-        if (isProcCall) {
-            return prepareProcArgs(context, block, args);
-        }
-
         int arityValue = sig.arityValue();
         if (!sig.hasKwargs() && arityValue >= -1 && arityValue <= 1) {
             return args;
@@ -1810,37 +1804,29 @@ public class IRRuntimeHelpers {
      */
     @Interp @JIT
     public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
-        if (args == null) {
-            args = IRubyObject.NULL_ARRAY;
-        }
+        if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        if (block.type == Block.Type.LAMBDA) {
-            block.getSignature().checkArity(context.runtime, args);
-        }
+        if (block.type == LAMBDA) block.getSignature().checkArity(context.runtime, args);
 
         return args;
     }
 
     @Interp @JIT
     public static IRubyObject[] prepareSingleBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
-        if (args == null) {
-            args = IRubyObject.NULL_ARRAY;
-        }
+        if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        if (block.type == Block.Type.LAMBDA) {
-            block.getBody().getSignature().checkArity(context.runtime, args);
-            return args;
-        }
-
-        boolean isProcCall = block.type == Block.Type.PROC;
-        if (isProcCall) {
-            if (args.length == 0) {
-                args = context.runtime.getSingleNilArray();
-            } else if (args.length == 1) {
-                args = prepareProcArgs(context, block, args);
-            } else {
-                args = new IRubyObject[] { args[0] };
-            }
+        switch (block.type) {
+            case LAMBDA:
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            case PROC:
+                if (args.length == 0) {
+                    args = context.runtime.getSingleNilArray();
+                } else if (args.length == 1) {
+                    args = prepareProcArgs(context, block, args);
+                } else {
+                    args = new IRubyObject[] { args[0] };
+                }
         }
 
         // If there are insufficient args, ReceivePreReqdInstr will return nil
@@ -1849,29 +1835,19 @@ public class IRRuntimeHelpers {
 
     @Interp @JIT
     public static IRubyObject[] prepareFixedBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
-        if (args == null) {
-            args = IRubyObject.NULL_ARRAY;
-        }
+        if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        boolean isProcCall = block.type == Block.Type.PROC;
-        if (block.type == Block.Type.LAMBDA) {
-            org.jruby.runtime.Signature sig = block.getBody().getSignature();
-            // We don't need to check for the 1 required arg case here
-            // since that goes down the prepareSingleBlockArgs route
-            if (!isProcCall && sig.arityValue() != 1) {
-                args = toAry(context, args);
-            }
-            sig.checkArity(context.runtime, args);
-            return args;
+        switch (block.type) {
+            case LAMBDA:
+                block.getBody().getSignature().checkArity(context.runtime, args);
+                return args;
+            case PROC:
+                return prepareProcArgs(context, block, args);
+            default:
+                // If we need more than 1 reqd arg, convert a single value to an array if possible.
+                // If there are insufficient args, ReceivePreReqdInstr will return nil
+                return toAry(context, args);
         }
-
-        if (isProcCall) {
-            return prepareProcArgs(context, block, args);
-        }
-
-        // If we need more than 1 reqd arg, convert a single value to an array if possible.
-        // If there are insufficient args, ReceivePreReqdInstr will return nil
-        return toAry(context, args);
     }
 
     // This is the placeholder for scenarios not handled by specialized instructions.
