@@ -104,12 +104,10 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     private static final class RubyHashMap extends RubyHash {
 
-        static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
-
         private final MapJavaProxy receiver;
 
         RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
-            super(runtime, runtime.getHash(), runtime.getNil(), EMPTY_TABLE, 0);
+            super(runtime, runtime.getHash(), runtime.getNil());
             this.receiver = receiver;
         }
 
@@ -225,14 +223,14 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             Object value = map.get(convertedKey);
 
             if (value != null) {
-                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
+                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value));
             }
 
             return NO_ENTRY;
         }
 
         @Override
-        public RubyHashEntry internalDelete(final IRubyObject key) {
+        public IRubyObject internalDelete(final IRubyObject key) {
             final Map map = mapDelegate();
             Object convertedKey = key.toJava(Object.class);
             Object value = map.get(convertedKey);
@@ -240,9 +238,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             if (value != null) {
                 map.remove(convertedKey);
                 setSize( map.size() );
-                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
+                return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value);
             }
-            return NO_ENTRY;
+            return null;
         }
 
         @Override // NOTE: likely won't be called
