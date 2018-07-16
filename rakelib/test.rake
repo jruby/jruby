@@ -48,7 +48,7 @@ namespace :test do
   task :rake_targets => long_tests
   task :extended => long_tests
 
-  max_meta_size = ENV_JAVA['java.specification.version'] > '1.7' ? '-XX:MaxMetaspaceSize' : '-XX:MaxPermSize'
+  max_meta_size = "-XX:MaxMetaspaceSize"
   get_meta_size = proc do |default_size = 452|
     (ENV['JAVA_OPTS'] || '').index(max_meta_size) || (ENV['JRUBY_OPTS'] || '').index(max_meta_size) ?
         '' : "-J#{max_meta_size}=#{default_size}M"
