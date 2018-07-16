@@ -406,6 +406,10 @@ public class TypeConverter {
                     return val;
                 case STRING:
                     return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                case CLASS:
+                    if(val instanceof RubyString) {
+                        return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true);
+                    }
                 case NIL:
                     if (base != 0) raiseIntegerBaseError(context);
                     throw context.runtime.newTypeError("can't convert nil into Integer");
