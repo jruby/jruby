@@ -57,14 +57,16 @@ public class SwitchPointInvalidator implements Invalidator {
     }
     
     public synchronized Object getData() {
-        return switchPoint == DUMMY ? switchPoint = new SwitchPoint() : switchPoint;
+        SwitchPoint switchPoint = this.switchPoint;
+        return switchPoint == DUMMY ? this.switchPoint = new SwitchPoint() : switchPoint;
     }
     
     public synchronized SwitchPoint replaceSwitchPoint() {
+        SwitchPoint switchPoint = this.switchPoint;
         if (switchPoint == DUMMY) return switchPoint;
 
         SwitchPoint oldSwitchPoint = switchPoint;
-        switchPoint = new SwitchPoint();
+        this.switchPoint = new SwitchPoint();
         return oldSwitchPoint;
     }
 }
