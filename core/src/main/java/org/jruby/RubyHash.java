@@ -272,7 +272,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public static final RubyHash newSmallHash(Ruby runtime) {
-        return new RubyHash(runtime, 1);
+        return new RubyHash(runtime, MRI_INITIAL_CAPACITY << 1);
     }
 
     public static RubyHash newKwargs(Ruby runtime, String key, IRubyObject value) {
@@ -375,7 +375,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private final void allocFirst(int buckets) {
         // TODO: We need to verify this is a power of two
-        if ((buckets / NUMBER_OF_ENTRIES ) < MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
+        if ((buckets / NUMBER_OF_ENTRIES) <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
             // linear search, we do not need the bins array
             entries = new IRubyObject[MRI_INITIAL_CAPACITY << 1];
             hashes = new int[MRI_INITIAL_CAPACITY << 1];
