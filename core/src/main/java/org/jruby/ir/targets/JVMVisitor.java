@@ -205,6 +205,17 @@ public class JVMVisitor extends IRVisitor {
             syntheticEndForStart.put(currentBlockStart, syntheticEnd);
         }
 
+        if (scope instanceof IRMethod) {
+            if (scope.receivesKeywordArgs()) {
+                // pre-frobnicate the args on the way in
+                m.loadContext();
+                m.loadArgs();
+                m.adapter.pushInt(scope.getStaticScope().getSignature().required());
+                m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class));
+                m.storeArgs();
+            }
+        }
+
         for (BasicBlock bb: bbs) {
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
