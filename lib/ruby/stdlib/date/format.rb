@@ -558,18 +558,18 @@ class Date
     # Newer MRI version (written in C converts non-strings to strings
     # and also has other checks like all ascii.
     if str.kind_of?(::String)
-      str = str.dup
+      # no-op
     elsif str.respond_to?(:to_str)
-      str = str.to_str.dup
+      str = str.to_str
     else
       raise TypeError, "no implicit conversion of #{str.class.name} into String"
     end
+    # we do not str = str.dup since we do a gsub (instead of gsub!)
 
     e = Format::Bag.new
-
     e._comp = comp
 
-    str.gsub!(/[^-+',.\/:@[:alnum:]\[\]]+/, ' ')
+    str = str.gsub(/[^-+',.\/:@[:alnum:]\[\]]+/, ' ')
 
     _parse_time(str, e) # || _parse_beat(str, e)
     _parse_day(str, e)
