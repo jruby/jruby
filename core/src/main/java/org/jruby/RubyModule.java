@@ -4086,7 +4086,7 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (!IdUtil.isValidConstantName19(name)) {
+        if (!IdUtil.isValidConstantName(name)) {
             throw getRuntime().newNameError("bad constant name " + name, name);
         }
 
@@ -4491,7 +4491,7 @@ public class RubyModule extends RubyObject {
 
     // FIXME: This should really be working with symbol segments (errorName is FQN).
     protected final String validateConstant(String name, IRubyObject errorName) {
-        if (IdUtil.isValidConstantName19(name)) return name;
+        if (IdUtil.isValidConstantName(name)) return name;
 
         Ruby runtime = getRuntime();
 
