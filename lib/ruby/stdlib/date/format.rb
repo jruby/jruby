@@ -577,7 +577,11 @@ class Date
   def self._parse(str, comp=true)
     # Newer MRI version (written in C converts non-strings to strings
     # and also has other checks like all ascii.
-    str = str.to_str if !str.kind_of?(::String) && str.respond_to?(:to_str)
+    if str.kind_of?(::String) || str.respond_to?(:to_str)
+      str = str.to_str if str.respond_to?(:to_str)
+    else
+      raise TypeError, "no implicit conversion of #{str.class.name} into String"
+    end
     str = str.dup
 
     e = Format::Bag.new
