@@ -214,8 +214,14 @@ class Date
   end
   private_class_method :s3e
 
+  ABBR_MONTHS_KEYS = Format::ABBR_MONTHS.keys.join('|').freeze
+  private_constant :ABBR_MONTHS_KEYS
+
+  ABBR_DAYS_KEYS = Format::ABBR_DAYS.keys.join('|').freeze
+  private_constant :ABBR_DAYS_KEYS
+
   def self._parse_day(str, e) # :nodoc:
-    if str.sub!(/\b(#{Format::ABBR_DAYS.keys.join('|')})[^-\d\s]*/io, ' ')
+    if str.sub!(/\b(#{ABBR_DAYS_KEYS})[^-\d\s]*/io, ' ')
       e.wday = Format::ABBR_DAYS[$1.downcase]
       true
 =begin
@@ -289,7 +295,7 @@ class Date
     if str.sub!(
                 /'?(\d+)[^-\d\s]*
                  \s*
-                 (#{Format::ABBR_MONTHS.keys.join('|')})[^-\d\s']*
+                 (#{ABBR_MONTHS_KEYS})[^-\d\s']*
                  (?:
                    \s*
                    (c(?:e|\.e\.)|b(?:ce|\.c\.e\.)|a(?:d|\.d\.)|b(?:c|\.c\.))?
@@ -305,7 +311,7 @@ class Date
 
   def self._parse_us(str, e) # :nodoc:
     if str.sub!(
-                /\b(#{Format::ABBR_MONTHS.keys.join('|')})[^-\d\s']*
+                /\b(#{ABBR_MONTHS_KEYS})[^-\d\s']*
                  \s*
                  ('?\d+)[^-\d\s']*
                  (?:
@@ -345,13 +351,11 @@ class Date
       e.mon = $1.to_i
       e.mday = $2.to_i if $2
       true
-    elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str &&
-        str.sub!(/\b(\d{2}|\d{4})-(\d{3})\b/, ' ')
+    elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str && str.sub!(/\b(\d{2}|\d{4})-(\d{3})\b/, ' ')
       e.year = $1.to_i
       e.yday = $2.to_i
       true
-    elsif /\d-\d{3}\b/ !~ str &&
-        str.sub!(/\b-(\d{3})\b/, ' ')
+    elsif /\d-\d{3}\b/ !~ str && str.sub!(/\b-(\d{3})\b/, ' ')
       e.yday = $1.to_i
       true
     end
@@ -359,11 +363,7 @@ class Date
 
   def self._parse_jis(str, e) # :nodoc:
     if str.sub!(/\b([mtsh])(\d+)\.(\d+)\.(\d+)/i, ' ')
-      era = { 'm'=>1867,
-              't'=>1911,
-              's'=>1925,
-              'h'=>1988
-          }[$1.downcase]
+      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988 }[$1.downcase]
       e.year = $2.to_i + era
       e.mon = $3.to_i
       e.mday = $4.to_i
@@ -372,12 +372,10 @@ class Date
   end
 
   def self._parse_vms(str, e) # :nodoc:
-    if str.sub!(/('?-?\d+)-(#{Format::ABBR_MONTHS.keys.join('|')})[^-]*
-                -('?-?\d+)/iox, ' ')
+    if str.sub!(/('?-?\d+)-(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)/iox, ' ')
       s3e(e, $3, Format::ABBR_MONTHS[$2.downcase].to_s, $1)
       true
-    elsif str.sub!(/\b(#{Format::ABBR_MONTHS.keys.join('|')})[^-]*
-                -('?-?\d+)(?:-('?-?\d+))?/iox, ' ')
+    elsif str.sub!(/\b(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)(?:-('?-?\d+))?/iox, ' ')
       s3e(e, $3, Format::ABBR_MONTHS[$1.downcase].to_s, $2)
       true
     end
@@ -405,7 +403,7 @@ class Date
   end
 
   def self._parse_mon(str, e) # :nodoc:
-    if str.sub!(/\b(#{Format::ABBR_MONTHS.keys.join('|')})\S*/io, ' ')
+    if str.sub!(/\b(#{ABBR_MONTHS_KEYS})\S*/io, ' ')
       e.mon = Format::ABBR_MONTHS[$1.downcase]
       true
     end
