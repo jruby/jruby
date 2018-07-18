@@ -165,69 +165,51 @@ class Date
   end
 
   def self.s3e(e, y, m, d, bc=false)
-    unless String === m
-      m = m.to_s
-    end
-
-    if y && m && !d
-      y, m, d = d, y, m
-    end
+    y, m, d = d, y, m if y && m && !d
 
     if y == nil
       if d && d.size > 2
         y = d
         d = nil
       end
-      if d && d[0,1] == "'"
+      if d && d[0].eql?("'")
         y = d
         d = nil
       end
     end
 
     if y
-      y.scan(/(\d+)(.+)?/)
-      if $2
-        y, d = d, $1
+      s = y.scan(/(\d+)(.+)?/)
+      if s[0] && s[0][1] # $2
+        y, d = d, s[0][0] # $1
       end
     end
 
     if m
-      if m[0,1] == "'" || m.size > 2
+      if m[0].eql?("'") || m.size > 2
         y, m, d = m, d, y # us -> be
       end
     end
 
     if d
-      if d[0,1] == "'" || d.size > 2
+      if d[0].eql?("'") || d.size > 2
         y, d = d, y
       end
     end
 
     if y
-      y =~ /([-+])?(\d+)/
-      if $1 || $2.size > 2
-        c = false
+      if match = y.match(/([-+])?(\d+)/)
+        c = false if match[1] || match[2].size > 2
       end
-      iy = $&.to_i
-      if bc
-        iy = -iy + 1
-      end
-      e.year = iy
+      y = match&.[](0).to_i
+      e.year = bc ? -y + 1 : y
     end
 
-    if m
-      m =~ /\d+/
-      e.mon = $&.to_i
-    end
+    e.mon = m.match(/\d+/)&.[](0).to_i if m
 
-    if d
-      d =~ /\d+/
-      e.mday = $&.to_i
-    end
+    e.mday = d.match(/\d+/)&.[](0).to_i if d
 
-    if c != nil
-      e._comp = c
-    end
+    e._comp = c if c != nil
 
   end
   private_class_method :s3e
@@ -278,7 +260,7 @@ class Date
       t = $1
       e.zone = $2 if $2
 
-      t =~ /\A(\d+)h?
+      match = t.match /\A(\d+)h?
               (?:\s*:?\s*(\d+)m?
                 (?:
                   \s*:?\s*(\d+)(?:[,.](\d+))?s?
@@ -286,17 +268,19 @@ class Date
               )?
             (?:\s*([ap])(?:m\b|\.m\.))?/ix
 
-      e.hour = $1.to_i
-      e.min = $2.to_i if $2
-      e.sec = $3.to_i if $3
-      e.sec_fraction = Rational($4.to_i, 10**$4.size) if $4
-
-      if $5
-        e.hour %= 12
-        if $5.downcase == 'p'
-          e.hour += 12
+      if match
+        e.hour = match[1].to_i
+        e.min = match[2]&.to_i
+        e.sec = match[3]&.to_i
+        e.sec_fraction = Rational(match[4].to_i, 10**match[4].size) if match[4]
+        if match[5]
+          e.hour %= 12
+          e.hour += 12 if match[5].eql?('p') || match[5].eql?('P')
         end
+      else
+        e.hour = 0
       end
+
       true
     end
   end
@@ -314,8 +298,7 @@ class Date
                  )?
                 /iox,
                 ' ') # '
-      s3e(e, $4, Format::ABBR_MONTHS[$2.downcase], $1,
-          $3 && $3[0,1].downcase == 'b')
+      s3e(e, $4, Format::ABBR_MONTHS[$2.downcase].to_s, $1, $3 && $3[0,1].downcase == 'b')
       true
     end
   end
@@ -333,8 +316,7 @@ class Date
                  )?
                 /iox,
                 ' ') # '
-      s3e(e, $4, Format::ABBR_MONTHS[$1.downcase], $2,
-          $3 && $3[0,1].downcase == 'b')
+      s3e(e, $4, Format::ABBR_MONTHS[$1.downcase].to_s, $2, $3 && $3[0,1].downcase == 'b')
       true
     end
   end
@@ -392,11 +374,11 @@ class Date
   def self._parse_vms(str, e) # :nodoc:
     if str.sub!(/('?-?\d+)-(#{Format::ABBR_MONTHS.keys.join('|')})[^-]*
                 -('?-?\d+)/iox, ' ')
-      s3e(e, $3, Format::ABBR_MONTHS[$2.downcase], $1)
+      s3e(e, $3, Format::ABBR_MONTHS[$2.downcase].to_s, $1)
       true
     elsif str.sub!(/\b(#{Format::ABBR_MONTHS.keys.join('|')})[^-]*
                 -('?-?\d+)(?:-('?-?\d+))?/iox, ' ')
-      s3e(e, $3, Format::ABBR_MONTHS[$1.downcase], $2)
+      s3e(e, $3, Format::ABBR_MONTHS[$1.downcase].to_s, $2)
       true
     end
   end
@@ -556,7 +538,7 @@ class Date
       end
       if $5
         e.zone = $5
-        if e.zone[0,1] == '['
+        if e.zone[0] == '['
           o, n, = e.zone[1..-2].split(':')
           e.zone = n || o
           if /\A\d/ =~ o
