@@ -429,7 +429,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(context.runtime);
     }
 
-    private final IRubyObject to_s(Ruby runtime) {
+    private final RubyString to_s(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
 
@@ -440,6 +440,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod
     public IRubyObject id2name(ThreadContext context) {
         return to_s(context);
+    }
+
+    @Override
+    public RubyString asString() {
+        return to_s(getRuntime());
     }
 
     @JRubyMethod(name = "===", required = 1)
