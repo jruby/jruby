@@ -573,9 +573,7 @@ public class IRRuntimeHelpers {
         }
 
         if (visitor.others != null) { // rest args exists too expand args
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            System.arraycopy(args, 0, newArgs, 0, args.length);
-            args = newArgs;
+            args = ArraySupport.newCopy(args, args.length + 1);
             args[args.length - 2] = visitor.others; // opt args
         }
         args[args.length - 1] = visitor.syms; // kwargs hash
