@@ -409,14 +409,14 @@ public class RubyHash extends RubyObject implements Map {
     public static final class RubyHashEntry implements Map.Entry {
         IRubyObject key;
         IRubyObject value;
-        private int hash;
+        private int index;
+        private RubyHash hash;
 
         RubyHashEntry() {
             key = NEVER;
         }
 
-        // TODO: needs to be deprecated as we do not store the hash anymore
-        public RubyHashEntry(int h, IRubyObject k, IRubyObject v) {
+        public RubyHashEntry(IRubyObject k, IRubyObject v, RubyHash h) {
             key = k; value = v; hash = h;
         }
 
@@ -444,7 +444,9 @@ public class RubyHash extends RubyObject implements Map {
         public Object setValue(Object value) {
             IRubyObject oldValue = this.value;
             if (value instanceof IRubyObject) {
-                this.value = (IRubyObject)value;
+                IRubyObject rubyValue = (IRubyObject)value;
+                this.value = rubyValue;
+                this.hash.internalPut(key, rubyValue);
             } else {
                 throw new UnsupportedOperationException("directEntrySet() doesn't support setValue for non IRubyObject instance entries, convert them manually or use entrySet() instead");
             }
@@ -553,10 +555,10 @@ public class RubyHash extends RubyObject implements Map {
         internalPutNoResize(key, value, true);
     }
 
-    protected void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
+    protected IRubyObject internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         checkResize();
 
-        internalPutNoResize(key, value, checkForExisting);
+        return internalPutNoResize(key, value, checkForExisting);
     }
 
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
@@ -695,7 +697,7 @@ public class RubyHash extends RubyObject implements Map {
 
     protected RubyHashEntry internalGetEntry(IRubyObject key) {
         IRubyObject value = internalGet(key);
-        return value == null ? NO_ENTRY : new RubyHashEntry(key, value);
+        return value == null ? NO_ENTRY : new RubyHashEntry(key, value, this);
     }
 
     final RubyHashEntry getEntry(IRubyObject key) {
@@ -2781,7 +2783,7 @@ public class RubyHash extends RubyObject implements Map {
                 peeking = true; // remain where we are
                 throw new NoSuchElementException();
             }
-            return view.convertEntry(getRuntime(), key, value);
+            return view.convertEntry(getRuntime(), RubyHash.this, key, value);
         }
 
         // once hasNext has been called, we commit to next() returning
@@ -2802,14 +2804,14 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private static abstract class EntryView {
-        public abstract Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value);
+        public abstract Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value);
         public abstract boolean contains(RubyHash hash, Object o);
         public abstract boolean remove(RubyHash hash, Object o);
     }
 
     private static final EntryView DIRECT_KEY_VIEW = new EntryView() {
         @Override
-        public Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value) {
+        public Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
             return key;
         }
         @Override
@@ -2826,7 +2828,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final EntryView KEY_VIEW = new EntryView() {
         @Override
-        public Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value) {
+        public Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
             return key.toJava(Object.class);
         }
         @Override
@@ -2841,7 +2843,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final EntryView DIRECT_VALUE_VIEW = new EntryView() {
         @Override
-        public Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value) {
+        public Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
             return value;
         }
         @Override
@@ -2862,7 +2864,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final EntryView VALUE_VIEW = new EntryView() {
         @Override
-        public Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value) {
+        public Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
             return value.toJava(Object.class);
         }
         @Override
@@ -2880,7 +2882,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final EntryView DIRECT_ENTRY_VIEW = new EntryView() {
         @Override
-        public Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value) {
+        public Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
             return new RubyHashEntry(key, value);
         }
         @Override
@@ -2900,45 +2902,49 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final EntryView ENTRY_VIEW = new EntryView() {
         @Override
-        public Object convertEntry(Ruby runtime, IRubyObject key, IRubyObject value) {
-            RubyHashEntry entry = new RubyHashEntry(key, value);
-            return new ConvertingEntry(runtime, entry);
+        public Object convertEntry(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
+            return new ConvertingEntry(runtime, hash, key, value);
         }
         @Override
         public boolean contains(RubyHash hash, Object o) {
             if (!(o instanceof ConvertingEntry)) return false;
             ConvertingEntry entry = (ConvertingEntry)o;
-            RubyHashEntry candidate = hash.internalGetEntry(entry.entry.key);
-            return candidate != NO_ENTRY && entry.entry.equals(candidate);
+            RubyHashEntry tmp = new RubyHashEntry(entry.key, entry.value);
+            RubyHashEntry candidate = hash.internalGetEntry(entry.key);
+            return candidate != NO_ENTRY && tmp.equals(candidate);
         }
         @Override
         public boolean remove(RubyHash hash, Object o) {
             if (!(o instanceof ConvertingEntry)) return false;
             ConvertingEntry entry = (ConvertingEntry)o;
-            return hash.internalDeleteEntry(entry.entry.key, entry.entry.value) != null;
+            return hash.internalDeleteEntry(entry.key, entry.value) != null;
         }
     };
 
     private static class ConvertingEntry implements Map.Entry {
-        private final RubyHashEntry entry;
+        private final IRubyObject key, value;
         private final Ruby runtime;
+        private RubyHash hash;
 
-        public ConvertingEntry(Ruby runtime, RubyHashEntry entry) {
-            this.entry = entry;
+        public ConvertingEntry(Ruby runtime, RubyHash otherHash, IRubyObject key, IRubyObject value) {
+            this.key = key;
+            this.value = value;
             this.runtime = runtime;
+            this.hash = otherHash;
         }
 
         @Override
         public Object getKey() {
-            return entry.key.toJava(Object.class);
+            return key.toJava(Object.class);
         }
         @Override
         public Object getValue() {
-            return entry.value.toJava(Object.class);
+            return value.toJava(Object.class);
         }
         @Override
         public Object setValue(Object o) {
-            return entry.setValue(JavaUtil.convertJavaToUsableRubyObject(runtime, o));
+            IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, o);
+            return hash.internalPut(key, value, true);
         }
 
         @Override
@@ -2946,13 +2952,14 @@ public class RubyHash extends RubyObject implements Map {
             if (!(o instanceof ConvertingEntry)) {
                 return false;
             }
-            ConvertingEntry other = (ConvertingEntry)o;
-            return entry.equals(other.entry);
+            ConvertingEntry otherEntry = (ConvertingEntry)o;
+            return (key == otherEntry.key || key.eql(otherEntry.key)) &&
+                    (value == otherEntry.value || value.equals(otherEntry.value));
         }
 
         @Override
         public int hashCode() {
-            return entry.hashCode();
+            return key.hashCode() ^ value.hashCode();
         }
     }
 
