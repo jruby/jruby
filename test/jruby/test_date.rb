@@ -775,6 +775,10 @@ class TestDate < Test::Unit::TestCase
     str = SubStr.new('2018-07-17')
     d = Date.iso8601(str)
     assert_equal Date.new(2018, 7, 17), d
+
+    d = DateTime.iso8601(str)
+    assert_equal Date.new(2018, 7, 17).to_datetime, d
+
     assert Date._parse(str)
   end
 
@@ -791,14 +795,22 @@ class TestDate < Test::Unit::TestCase
 
     d = Date.parse(str)
     assert_equal Date.new(2018, 7, 17), d
+
+    d = DateTime.parse(str)
+    assert_equal Date.new(2018, 7, 17).to_datetime, d
+
     assert Date._parse(str)
   end
 
   def test_parse_invalid
     assert_raise(TypeError) { Date.iso8601(111) }
+    assert_raise(TypeError) { DateTime.iso8601(111) }
+    assert_raise(TypeError) { DateTime.httpdate(11.1) }
+    assert_raise(TypeError) { DateTime.xmlschema(0.1) }
 
     assert_raise(TypeError) { Date.parse(Object.new) }
     assert_raise(TypeError) { Date._parse(111) }
+    assert_raise(TypeError) { DateTime.parse(111) }
   end
 
   def test_jd_day_fraction
