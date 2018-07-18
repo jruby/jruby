@@ -118,6 +118,8 @@ public class RubyDate extends RubyObject {
         Date.setReifiedClass(RubyDate.class);
         Date.includeModule(runtime.getComparable());
         Date.defineAnnotatedMethods(RubyDate.class);
+        Date.setConstant("ITALY", runtime.newFixnum(ITALY));
+        Date.setConstant("ENGLAND", runtime.newFixnum(ENGLAND));
         return Date;
     }
 

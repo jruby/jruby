@@ -274,11 +274,11 @@ class Date
 
   # The Julian Day Number of the Day of Calendar Reform for Italy
   # and the Catholic countries.
-  ITALY     = 2299161 # 1582-10-15
+  #ITALY     = 2299161 # 1582-10-15
 
   # The Julian Day Number of the Day of Calendar Reform for England
   # and her Colonies.
-  ENGLAND   = 2361222 # 1752-09-14
+  #ENGLAND   = 2361222 # 1752-09-14
 
   # A constant used to indicate that a Date should always use the
   # Julian calendar.

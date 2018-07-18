@@ -778,6 +778,29 @@ class TestDate < Test::Unit::TestCase
     assert Date._parse(str)
   end
 
+  class StrLike
+    def initialize(str) @str = str end
+    attr_reader :str
+    alias to_str str
+  end
+
+  def test_parse_string_like
+    str = StrLike.new '2018-07-17'
+    d = Date.iso8601(str)
+    assert d.is_a?(Date)
+
+    d = Date.parse(str)
+    assert_equal Date.new(2018, 7, 17), d
+    assert Date._parse(str)
+  end
+
+  def test_parse_invalid
+    assert_raise(TypeError) { Date.iso8601(111) }
+
+    assert_raise(TypeError) { Date.parse(Object.new) }
+    assert_raise(TypeError) { Date._parse(111) }
+  end
+
   def test_jd_day_fraction
     t = 86400 * DateTime.new(1970, 1, 1).jd + Time.utc(2018, 3, 18, 23).to_i
     dt = DateTime.jd((t + 0)/86400r)
