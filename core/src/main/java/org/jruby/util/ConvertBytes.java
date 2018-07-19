@@ -30,6 +30,16 @@ public class ConvertBytes {
         this.base = base;
     }
 
+    ConvertBytes(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
+        this.runtime = runtime;
+        this.str = str;
+        this.beg = off + str.getBegin();
+        this.data = str.getUnsafeBytes();
+        this.end = str.getBegin() + end;
+        this.badcheck = badcheck;
+        this.base = base;
+    }
+
     @Deprecated
     public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck, boolean is19) {
         this(runtime, str, base, badcheck);
@@ -231,6 +241,10 @@ public class ConvertBytes {
      */
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
         return new ConvertBytes(runtime, str, base, badcheck).byteListToInum();
+    }
+
+    public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
+        return new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum();
     }
 
     @Deprecated

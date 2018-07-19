@@ -141,56 +141,6 @@ class Date
     end
   end
 
-  def self.s3e(e, y, m, d, bc=false)
-    y, m, d = d, y, m if y && m && !d
-
-    if y == nil
-      if d && d.size > 2
-        y = d
-        d = nil
-      end
-      if d && d[0].eql?("'")
-        y = d
-        d = nil
-      end
-    end
-
-    if y
-      s = y.scan(/(\d+)(.+)?/)
-      if s[0] && s[0][1] # $2
-        y, d = d, s[0][0] # $1
-      end
-    end
-
-    if m
-      if m[0].eql?("'") || m.size > 2
-        y, m, d = m, d, y # us -> be
-      end
-    end
-
-    if d
-      if d[0].eql?("'") || d.size > 2
-        y, d = d, y
-      end
-    end
-
-    if y
-      if match = y.match(/([-+])?(\d+)/)
-        c = false if match[1] || match[2].size > 2
-      end
-      y = match&.[](0).to_i
-      e[:year] = bc ? -y + 1 : y
-    end
-
-    e[:mon] = m.match(/\d+/)&.[](0).to_i if m
-
-    e[:mday] = d.match(/\d+/)&.[](0).to_i if d
-
-    e[:_comp] = c if c != nil
-
-  end
-  private_class_method :s3e
-
   ABBR_MONTHS_KEYS = Format::ABBR_MONTHS.keys.join('|').freeze
   private_constant :ABBR_MONTHS_KEYS
 
@@ -837,9 +787,9 @@ class Date
     end
   end
 
-  def self.set_zone(h, zone) # :nodoc:
-    h[:zone] = zone
-    h[:offset] = zone_to_diff(zone)
+  def self.set_zone(hash, zone) # :nodoc:
+    hash[:zone] = zone
+    hash[:offset] = zone_to_diff(zone)
   end
   private_class_method :set_zone
 

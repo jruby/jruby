@@ -1655,6 +1655,140 @@ public class RubyDate extends RubyObject {
         return y;
     }
 
+    @JRubyMethod(name = "s3e", meta = true, required = 4, optional = 1, visibility = Visibility.PRIVATE)
+    public static IRubyObject _s3e(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        final IRubyObject nil = context.nil;
+
+        final RubyHash hash = (RubyHash) args[0];
+        RubyString y = args[1] == nil ? null : (RubyString) args[1];
+        RubyString m = args[2] == nil ? null : (RubyString) args[2];
+        RubyString d = args[3] == nil ? null : (RubyString) args[3];
+        boolean bc = args.length > 4 ? args[4].isTrue() : false;
+
+        Boolean comp = null; RubyString oy, om, od;
+
+        if (d == null && y != null && m != null) {
+            oy = y; om = m; od = d;
+            y = od; m = oy; d = om;
+        }
+
+        if (y == null) {
+            if (d != null && d.strLength() > 2) {
+                y = d; d = null;
+            } else if (d != null && strPtr(d, '\'')) {
+                y = d; d = null;
+            }
+        }
+
+
+        if (y != null) {
+            int s = skipNonDigitsAndSign(y);
+            int bp = s;
+            char c = s < y.strLength() ? y.charAt(s) : '\0';
+            if (c == '+' || c == '-') s++;
+            int ep = skipDigits(y, s);
+            if (ep != y.strLength()) {
+                oy = y; y = d;
+                d = (RubyString) oy.substr19(context.runtime, bp, ep - bp);
+            }
+        }
+
+        if (m != null) {
+            if (strPtr(m, '\'') || m.strLength() > 2) {
+                /* us -> be */
+                oy = y; om = m; od = d;
+                y = om; m = od; d = oy;
+            }
+        }
+
+        if (d != null) {
+            if (strPtr(d, '\'') || d.strLength() > 2) {
+                oy = y; od = d;
+                y = od; d = oy;
+            }
+        }
+
+        if (y != null) {
+            boolean sign = false;
+
+            int s = skipNonDigitsAndSign(y);
+
+            int bp = s;
+            char c = s < y.strLength() ? y.charAt(s) : '\0';
+            if (c == '+' || c == '-') {
+                s++; sign = true;
+            }
+            if (sign) comp = false;
+            int ep = skipDigits(y, s);
+            if (ep - s > 2) comp = false;
+
+            RubyInteger iy = cstr2num(context.runtime, y, bp, ep);
+            if (bc) iy = (RubyInteger) iy.negate().op_plus(context, 1);
+            set_hash(context, hash, "year", iy);
+        }
+
+        //if (bc) set_hash("_bc", Qtrue);
+
+        if (m != null) {
+            int s = skipNonDigitsAndSign(m);
+
+            int bp = s;
+            int ep = skipDigits(m, s);
+            set_hash(context, hash, "mon", cstr2num(context.runtime, m, bp, ep));
+        }
+
+        if (d != null) {
+            int s = skipNonDigitsAndSign(d);
+
+            int bp = s;
+            int ep = skipDigits(d, s);
+            set_hash(context, hash, "mday", cstr2num(context.runtime, d, bp, ep));
+        }
+
+        if (comp != null) set_hash(context, hash, "_comp", context.runtime.newBoolean(comp));
+
+        return hash;
+    }
+
+    private static void set_hash(final ThreadContext context, RubyHash hash, String key, IRubyObject val) {
+        hash.fastASet(context.runtime.newSymbol(key), val);
+    }
+
+    private static RubyInteger cstr2num(Ruby runtime, RubyString str, int bp, int ep) {
+        if (bp == ep) return RubyFixnum.zero(runtime);
+        return ConvertBytes.byteListToInum(runtime, str.getByteList(), bp, ep, 10, true);
+    }
+
+    private static boolean strPtr(RubyString str, char c) {
+        return str.strLength() > 0 && str.charAt(0) == c;
+    }
+
+    private static boolean isDigit(char c) {
+        switch (c) {
+            case '0': case '1': case '2': case '3': case '4': return true;
+            case '5': case '6': case '7': case '8': case '9': return true;
+            default: return false;
+        }
+    }
+
+    private static int skipNonDigitsAndSign(RubyString str) {
+        int s = 0;
+        while (s < str.length()) {
+            char c = str.charAt(s);
+            if (isDigit(c) || (c == '+' || c == '-')) break;
+            s++;
+        }
+        return s;
+    }
+
+    private static int skipDigits(RubyString str, int off) {
+        int i = off;
+        for (; i < str.length(); i++) {
+            if (!isDigit(str.charAt(i))) return i;
+        }
+        return i;
+    }
+
     // Java API
 
     /**
