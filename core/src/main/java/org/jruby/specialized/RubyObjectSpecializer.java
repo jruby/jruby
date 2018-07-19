@@ -88,7 +88,7 @@ public class RubyObjectSpecializer {
             synchronized (LOADER) {
                 try {
                     // try loading class without generating
-                    specialized = LOADER.loadClass(clsPath.replaceAll("/", "."));
+                    specialized = LOADER.loadClass(clsPath.replace('/', '.'));
                 } catch (ClassNotFoundException cnfe) {
                     // generate specialized class
                     specialized = generateInternal(foundVariables.size(), clsPath);
