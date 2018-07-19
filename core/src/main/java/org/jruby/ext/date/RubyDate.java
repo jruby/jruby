@@ -727,8 +727,7 @@ public class RubyDate extends RubyObject {
         return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start);
     }
 
-    @Deprecated // NOTE: should go away once no date.rb is using it
-    @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1)
     public static IRubyObject _valid_civil_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         final long sg = args.length > 3 ? val2sg(context, args[3]) : GREGORIAN;
         final Long jd = validCivilImpl(args[0], args[1], args[2], sg);

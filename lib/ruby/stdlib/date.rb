@@ -684,10 +684,21 @@ class DateTime < Date
   def self.new_by_frags(elem, sg) # :nodoc:
     raise ArgumentError, 'invalid date' unless elem
     
-    elem = rewrite_frags(elem)
-    elem = complete_frags(elem)
-    unless (jd = valid_date_frags?(elem, sg)) &&
-           (fr = valid_time_frags?(elem))
+
+    # More work to do if not :civil
+    if !elem.key?(:jd) && !elem.key?(:yday) &&
+        (year = elem[:year]) && (mon = elem[:mon]) && (mday = elem[:mday])
+      jd = Date._valid_civil?(year, mon, mday, sg)
+      elem[:hour] ||= 0
+      elem[:min] ||= 0
+      elem[:sec] ||= 0
+      elem[:sec] = 59 if elem[:sec] == 60
+    else
+      elem = rewrite_frags(elem)
+      elem = complete_frags(elem)
+      jd = valid_date_frags?(elem, sg)
+    end
+    unless jd && (fr = valid_time_frags?(elem))
       raise ArgumentError, 'invalid date'
     end
     fr += (elem[:sec_fraction] || 0) / 86400
