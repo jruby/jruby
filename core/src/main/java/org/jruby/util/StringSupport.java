@@ -171,6 +171,42 @@ public final class StringSupport {
         return new StringBuilder(str1.length() + str2.length()).append(str1).append(str2);
     }
 
+    public static String delete(final String str, final char c) { // str.replaceAll(c.toString(), "")
+        char[] ary = null; int end = 0, s = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == c) {
+                if (ary == null) {
+                    ary = new char[str.length() - 1];
+                }
+                end = copy(str, s, i - s, ary, end);
+                s = i + 1;
+            }
+        }
+        return ary == null ? str : new String(ary, 0, end);
+    }
+
+    private static int copy(final String str, final int soff, final int slen, final char[] dest, int doff) {
+        switch(slen) {
+            case 0:
+                break;
+            case 1:
+                dest[doff++] = str.charAt(soff);
+                break;
+            case 2:
+                dest[doff++] = str.charAt(soff);
+                dest[doff++] = str.charAt(soff + 1);
+                break;
+            case 3:
+                dest[doff++] = str.charAt(soff);
+                dest[doff++] = str.charAt(soff + 1);
+                dest[doff++] = str.charAt(soff + 2);
+                break;
+            default:
+                for (int s = soff; s < slen; s++) dest[doff++] = str.charAt(s);
+        }
+        return doff;
+    }
+
     public static String codeRangeAsString(int codeRange) {
         switch (codeRange) {
             case CR_UNKNOWN: return "unknown";

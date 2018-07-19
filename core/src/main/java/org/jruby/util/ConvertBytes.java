@@ -4,10 +4,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
-import org.jruby.RubyInteger;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConvertBytes {
@@ -555,21 +552,19 @@ public class ConvertBytes {
     }
 
     public RubyInteger byteListToInum() {
-        if(str == null) {
-            if(badcheck) invalidString("Integer");
-
-            return runtime.newFixnum(0);
+        if (str == null) {
+            if (badcheck) invalidString("Integer");
+            return RubyFixnum.zero(runtime);
         }
 
         ignoreLeadingWhitespace();
 
         boolean sign = getSign();
 
-        if(beg < end) {
+        if (beg < end) {
             if(data[beg] == '+' || data[beg] == '-') {
-                if(badcheck) invalidString("Integer");
-
-                return runtime.newFixnum(0);
+                if (badcheck) invalidString("Integer");
+                return RubyFixnum.zero(runtime);
             }
         }
 
@@ -580,38 +575,37 @@ public class ConvertBytes {
         squeezeZeroes();
 
         byte c = 0;
-        if(beg < end) {
+        if (beg < end) {
             c = data[beg];
         }
         c = convertDigit(c);
-        if(c < 0 || c >= base) {
-            if(badcheck) invalidString("Integer");
-
-            return runtime.newFixnum(0);
+        if (c < 0 || c >= base) {
+            if (badcheck) invalidString("Integer");
+            return RubyFixnum.zero(runtime);
         }
 
         if (base <= 10) {
-            len *= (trailingLength());
+            len *= trailingLength();
         } else {
-            len *= (end- beg);
+            len *= (end - beg);
         }
 
-        if(len < Long.SIZE-1) {
-            int[] endPlace = new int[]{beg};
+        if (len < Long.SIZE-1) {
+            int[] endPlace = new int[] { beg };
             long val = stringToLong(beg, endPlace, base);
-            if(endPlace[0] < end && data[endPlace[0]] == '_') {
+            if (endPlace[0] < end && data[endPlace[0]] == '_') {
                 return bigParse(len, sign);
             }
-            if(badcheck) {
-                if(endPlace[0] == beg) {
+            if (badcheck) {
+                if (endPlace[0] == beg) {
                     invalidString("Integer"); // no number
                 }
 
-                while(isSpace(endPlace[0])) {
+                while (isSpace(endPlace[0])) {
                     endPlace[0]++;
                 }
 
-                if(endPlace[0] < end) {
+                if (endPlace[0] < end) {
                     invalidString("Integer"); // trailing garbage
                 }
             }
@@ -631,11 +625,11 @@ public class ConvertBytes {
     }
 
     private RubyInteger bigParse(int len, boolean sign) {
-        if(badcheck && beg < end && data[beg] == '_') {
+        if (badcheck && beg < end && data[beg] == '_') {
             invalidString("Integer");
         }
 
-        char[] result = new char[end- beg];
+        char[] result = new char[end - beg];
         int resultIndex = 0;
 
         byte nondigit = -1;
@@ -644,12 +638,10 @@ public class ConvertBytes {
         {
             while(beg < end) {
                 byte c = data[beg++];
-                byte cx = c;
-                if(c == '_') {
-                    if(nondigit != -1) {
-                        if(badcheck) {
-                            invalidString("Integer");
-                        }
+                char cx = (char) c;
+                if (c == '_') {
+                    if (nondigit != -1) {
+                        if (badcheck) invalidString("Integer");
                         break;
                     }
                     nondigit = c;
@@ -657,48 +649,40 @@ public class ConvertBytes {
                 } else if((c = convertDigit(c)) < 0) {
                     break;
                 }
-                if(c >= base) {
-                    break;
-                }
+                if (c >= base) break;
                 nondigit = -1;
-                result[resultIndex++] = (char)cx;
+                result[resultIndex++] = cx;
             }
 
-            if(resultIndex == 0) return runtime.newFixnum(0);
+            if (resultIndex == 0) return RubyFixnum.zero(runtime);
 
             int tmpStr = beg;
             if (badcheck) {
                 // no beg-- here because we don't null-terminate strings
                 if (str.getBegin()+1 < tmpStr && data[tmpStr-1] == '_') invalidString("Integer");
                 while (tmpStr < end && Character.isWhitespace(data[tmpStr])) tmpStr++;
-                if (tmpStr < end) {
-                    invalidString("Integer");
-                }
+                if (tmpStr < end) invalidString("Integer");
 
             }
         }
 
         String s = new String(result, 0, resultIndex);
         BigInteger z = (base == 10) ? stringToBig(s) : new BigInteger(s, base);
-        if(!sign) z = z.negate();
+        if (!sign) z = z.negate();
 
-        if(badcheck) {
-            if(str.getBegin() + 1 < beg && data[beg -1] == '_') {
+        if (badcheck) {
+            if (str.getBegin() + 1 < beg && data[beg -1] == '_') {
                 invalidString("Integer");
             }
-            while(beg < end && isSpace(beg)) {
-                beg++;
-            }
-            if(beg < end) {
-                invalidString("Integer");
-            }
+            while(beg < end && isSpace(beg)) beg++;
+            if (beg < end) invalidString("Integer");
         }
 
         return RubyBignum.bignorm(runtime, z);
     }
 
     private BigInteger stringToBig(String str) {
-        str = str.replaceAll("_", "");
+        str = StringSupport.delete(str, '_');
         int size = str.length();
         int nDigits = 512;
         if (size < nDigits) nDigits = size;
