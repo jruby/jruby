@@ -884,16 +884,15 @@ public class RubyHash extends RubyObject implements Map {
 
     public <T> boolean allSymbols() {
         int startGeneration = generation;
-        // visit not more than size entries
-        RubyHashEntry head = this.head;
-        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+        IRubyObject key;
+        for(int i = start; i < end; i++) {
             if (startGeneration != generation) {
                 startGeneration = generation;
-                entry = head.nextAdded;
-                if (entry == head) break;
+                i = start;
             }
-            if (entry != null && entry.isLive()) {
-                if (!(entry.key instanceof RubySymbol)) return false;
+            key = entries[i * NUMBER_OF_ENTRIES];
+            if(key != null) {
+                if (!(key instanceof RubySymbol)) return false;
             }
         }
         return true;
