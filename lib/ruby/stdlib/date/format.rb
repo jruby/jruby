@@ -510,25 +510,19 @@ class Date
     _parse_mday(str, hash)   ||
     _parse_ddd(str, hash)
 
-    if str.sub!(/\b(bc\b|bce\b|b\.c\.|b\.c\.e\.)/i, ' ')
+    if subs(str, /\b(bc\b|bce\b|b\.c\.|b\.c\.e\.)/i)
       if year = hash[:year]
         hash[:year] = -year + 1
       end
     end
 
-    if str.sub!(/\A\s*(\d{1,2})\s*\z/, ' ')
-      if hash[:hour] && !hash[:mday]
-        v = $1.to_i
-        if 1 <= v && v <= 31
-          hash[:mday] = v
-        end
-      end
-      if hash[:mday] && !hash[:hour]
-        v = $1.to_i
-        if 0 <= v && v <= 24
-          hash[:hour] = v
-        end
-      end
+    if hash[:hour] && !hash[:mday] && (m = subs(str, /\A\s*(\d{1,2})\s*\z/))
+      v = m[1].to_i
+      hash[:mday] = v if 1 <= v && v <= 31
+    end
+    if hash[:mday] && !hash[:hour] && (m ||= subs(str, /\A\s*(\d{1,2})\s*\z/))
+      v = m[1].to_i
+      hash[:hour] = v if 0 <= v && v <= 24
     end
 
     if hash[:_comp]
