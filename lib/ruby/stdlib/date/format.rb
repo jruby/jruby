@@ -667,7 +667,7 @@ class Date
     if /\A\s*-?\d{4}-\d{2}-\d{2} # allow minus, anyway
         (t|\s)
         \d{2}:\d{2}:\d{2}(\.\d+)?
-        (z|[-+]\d{2}:\d{2})\s*\z/ix =~ str
+        (z|[-+]\d{2}:\d{2})\s*\z/ix.match?(str)
       _parse(str)
     else
       {}
@@ -749,20 +749,20 @@ class Date
         (#{Format::ABBR_MONTHS.keys.join('|')})\s+
         -?\d{4}\s+ # allow minus, anyway
         \d{2}:\d{2}:\d{2}\s+
-        gmt\s*\z/iox =~ str
+        gmt\s*\z/iox.match?(str)
       _rfc2822(str)
     elsif /\A\s*(#{Format::DAYS.keys.join('|')})\s*,\s+
         \d{2}\s*-\s*
         (#{Format::ABBR_MONTHS.keys.join('|')})\s*-\s*
         \d{2}\s+
         \d{2}:\d{2}:\d{2}\s+
-        gmt\s*\z/iox =~ str
+        gmt\s*\z/iox.match?(str)
       _parse(str)
     elsif /\A\s*(#{Format::ABBR_DAYS.keys.join('|')})\s+
         (#{Format::ABBR_MONTHS.keys.join('|')})\s+
         \d{1,2}\s+
         \d{2}:\d{2}:\d{2}\s+
-        \d{4}\s*\z/iox =~ str
+        \d{4}\s*\z/iox.match?(str)
       _parse(str)
     else
       {}
@@ -773,8 +773,8 @@ class Date
     if /\A\s*[mtsh]?\d{2}\.\d{2}\.\d{2}
         (t
         (\d{2}:\d{2}(:\d{2}([,.]\d*)?)?
-        (z|[-+]\d{2}(:?\d{2})?)?)?)?\s*\z/ix =~ str
-      if /\A\s*\d/ =~ str
+        (z|[-+]\d{2}(:?\d{2})?)?)?)?\s*\z/ix.match?(str)
+      if /\A\s*\d/.match?(str)
         _parse(str.sub(/\A\s*(\d)/, 'h\1'))
       else
         _parse(str)
