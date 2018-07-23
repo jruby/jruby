@@ -160,7 +160,7 @@ class Date
   end
 
   def self._parse_time(str, hash) # :nodoc:
-    if str.sub!(
+    if m = subs(str,
                 /(
                    (?:
                      \d+\s*:\s*\d+
@@ -187,11 +187,10 @@ class Date
                      [[:alpha:]]+(?:\sdst)?\b
                    )
                  )?
-                /ix,
-                ' ')
+                /ix)
 
-      t = $1
-      hash[:zone] = $2 if $2
+      t = m[1]
+      hash[:zone] = m[2] if m[2]
 
       match = t.match /\A(\d+)h?
               (?:\s*:?\s*(\d+)m?
@@ -219,7 +218,7 @@ class Date
   end
 
   def self._parse_eu(str, hash) # :nodoc:
-    if str.sub!(
+    if m = subs(str,
                 /'?(\d+)[^-\d\s]*
                  \s*
                  (#{ABBR_MONTHS_KEYS})[^-\d\s']*
@@ -229,15 +228,14 @@ class Date
                    \s*
                    ('?-?\d+(?:(?:st|nd|rd|th)\b)?)
                  )?
-                /iox,
-                ' ') # '
-      s3e(hash, $4, Format::ABBR_MONTHS[$2.downcase].to_s, $1, $3 && $3[0,1].downcase == 'b')
+                /iox)
+      s3e(hash, m[4], Format::ABBR_MONTHS[m[2].downcase].to_s, m[1], m[3] && m[3][0,1].downcase == 'b')
       true
     end
   end
 
   def self._parse_us(str, hash) # :nodoc:
-    if str.sub!(
+    if m = subs(str,
                 /\b(#{ABBR_MONTHS_KEYS})[^-\d\s']*
                  \s*
                  ('?\d+)[^-\d\s']*
@@ -247,98 +245,97 @@ class Date
                    \s*
                    ('?-?\d+)
                  )?
-                /iox,
-                ' ') # '
-      s3e(hash, $4, Format::ABBR_MONTHS[$1.downcase].to_s, $2, $3 && $3[0,1].downcase == 'b')
+                /iox)
+      s3e(hash, m[4], Format::ABBR_MONTHS[m[1].downcase].to_s, m[2], m[3] && m[3][0,1].downcase == 'b')
       true
     end
   end
 
   def self._parse_iso(str, hash) # :nodoc:
-    if str.sub!(/('?[-+]?\d+)-(\d+)-('?-?\d+)/, ' ')
-      s3e(hash, $1, $2, $3)
+    if m = subs(str, /('?[-+]?\d+)-(\d+)-('?-?\d+)/)
+      s3e(hash, m[1], m[2], m[3])
       true
     end
   end
 
   def self._parse_iso2(str, hash) # :nodoc:
-    if str.sub!(/\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i, ' ')
-      hash[:cwyear] = $1.to_i if $1
-      hash[:cweek] = $2.to_i
-      hash[:cwday] = $3.to_i if $3
+    if m = subs(str, /\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i)
+      hash[:cwyear] = m[1]&.to_i
+      hash[:cweek] = m[2].to_i
+      hash[:cwday] = m[3]&.to_i
       true
-    elsif str.sub!(/-w-(\d)\b/i, ' ')
-      hash[:cwday] = $1.to_i
+    elsif m = subs(str, /-w-(\d)\b/i)
+      hash[:cwday] = m[1].to_i
       true
-    elsif str.sub!(/--(\d{2})?-(\d{2})\b/, ' ')
-      hash[:mon] = $1.to_i if $1
-      hash[:mday] = $2.to_i
+    elsif m = subs(str, /--(\d{2})?-(\d{2})\b/)
+      hash[:mon] = m[1]&.to_i
+      hash[:mday] = m[2].to_i
       true
-    elsif str.sub!(/--(\d{2})(\d{2})?\b/, ' ')
-      hash[:mon] = $1.to_i
-      hash[:mday] = $2.to_i if $2
+    elsif m = subs(str, /--(\d{2})(\d{2})?\b/)
+      hash[:mon] = m[1].to_i
+      hash[:mday] = m[2]&.to_i
       true
-    elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str && str.sub!(/\b(\d{2}|\d{4})-(\d{3})\b/, ' ')
-      hash[:year] = $1.to_i
-      hash[:yday] = $2.to_i
+    elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str && m = subs(str, /\b(\d{2}|\d{4})-(\d{3})\b/)
+      hash[:year] = m[1].to_i
+      hash[:yday] = m[2].to_i
       true
-    elsif /\d-\d{3}\b/ !~ str && str.sub!(/\b-(\d{3})\b/, ' ')
-      hash[:yday] = $1.to_i
+    elsif /\d-\d{3}\b/ !~ str && m = subs(str, /\b-(\d{3})\b/)
+      hash[:yday] = m[1].to_i
       true
     end
   end
 
   def self._parse_jis(str, hash) # :nodoc:
-    if str.sub!(/\b([mtsh])(\d+)\.(\d+)\.(\d+)/i, ' ')
-      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988 }[$1.downcase]
-      hash[:year] = $2.to_i + era
-      hash[:mon] = $3.to_i
-      hash[:mday] = $4.to_i
+    if m = subs(str, /\b([mtsh])(\d+)\.(\d+)\.(\d+)/i)
+      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988 }[m[1].downcase]
+      hash[:year] = m[2].to_i + era
+      hash[:mon] = m[3].to_i
+      hash[:mday] = m[4].to_i
       true
     end
   end
 
   def self._parse_vms(str, hash) # :nodoc:
-    if str.sub!(/('?-?\d+)-(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)/iox, ' ')
-      s3e(hash, $3, Format::ABBR_MONTHS[$2.downcase].to_s, $1)
+    if m = subs(str, /('?-?\d+)-(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)/iox)
+      s3e(hash, m[3], Format::ABBR_MONTHS[m[2].downcase].to_s, m[1])
       true
-    elsif str.sub!(/\b(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)(?:-('?-?\d+))?/iox, ' ')
-      s3e(hash, $3, Format::ABBR_MONTHS[$1.downcase].to_s, $2)
+    elsif m = subs(str, /\b(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)(?:-('?-?\d+))?/iox)
+      s3e(hash, m[3], Format::ABBR_MONTHS[m[1].downcase].to_s, m[2])
       true
     end
   end
 
   def self._parse_sla(str, hash) # :nodoc:
-    if str.sub!(%r|('?-?\d+)/\s*('?\d+)(?:\D\s*('?-?\d+))?|, ' ') # '
-      s3e(hash, $1, $2, $3)
+    if m = subs(str, %r|('?-?\d+)/\s*('?\d+)(?:\D\s*('?-?\d+))?|) # '
+      s3e(hash, m[1], m[2], m[3])
       true
     end
   end
 
   def self._parse_dot(str, hash) # :nodoc:
-    if str.sub!(%r|('?-?\d+)\.\s*('?\d+)\.\s*('?-?\d+)|, ' ') # '
-      s3e(hash, $1, $2, $3)
+    if m = subs(str, %r|('?-?\d+)\.\s*('?\d+)\.\s*('?-?\d+)|) # '
+      s3e(hash, m[1], m[2], m[3])
       true
     end
   end
 
   def self._parse_year(str, hash) # :nodoc:
-    if str.sub!(/'(\d+)\b/, ' ')
-      hash[:year] = $1.to_i
+    if m = subs(str, /'(\d+)\b/)
+      hash[:year] = m[1].to_i
       true
     end
   end
 
   def self._parse_mon(str, hash) # :nodoc:
-    if str.sub!(/\b(#{ABBR_MONTHS_KEYS})\S*/io, ' ')
-      hash[:mon] = Format::ABBR_MONTHS[$1.downcase]
+    if m = subs(str, /\b(#{ABBR_MONTHS_KEYS})\S*/io)
+      hash[:mon] = Format::ABBR_MONTHS[m[1].downcase]
       true
     end
   end
 
   def self._parse_mday(str, hash) # :nodoc:
-    if str.sub!(/(\d+)(st|nd|rd|th)\b/i, ' ')
-      hash[:mday] = $1.to_i
+    if m = subs(str, /(\d+)(st|nd|rd|th)\b/i)
+      hash[:mday] = m[1].to_i
       true
     end
   end
