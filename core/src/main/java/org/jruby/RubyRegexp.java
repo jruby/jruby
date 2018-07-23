@@ -1069,14 +1069,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "===", required = 1, writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
         arg = operandNoCheck(arg);
         if (arg == context.nil) {
             context.setBackRef(arg);
-            return runtime.getFalse();
+            return context.fals;
         }
         int start = search(context, (RubyString) arg, 0, false);
-        return (start < 0) ? runtime.getFalse() : runtime.getTrue();
+        return (start < 0) ? context.fals : context.tru;
     }
 
     @Deprecated
@@ -1089,7 +1088,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Override
     @JRubyMethod(name = "=~", required = 1, writes = BACKREF, reads = BACKREF)
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
-        final IRubyObject[] strp = { str };
+        final RubyString[] strp = { null };
         int pos = matchPos(context, str, strp, null, 0);
         if (pos < 0) return context.nil;
         pos = ((RubyString) strp[0]).subLength(pos);
@@ -1131,13 +1130,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject str) {
         IRubyObject[] dummy = new IRubyObject[1];
-        return context.runtime.newBoolean(matchPos(context, str, dummy, dummy, 0) >= 0);
+        return context.runtime.newBoolean(matchPos(context, str, null, dummy, 0) >= 0);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject str, IRubyObject pos) {
         IRubyObject[] dummy = new IRubyObject[1];
-        return context.runtime.newBoolean(matchPos(context, str, dummy, dummy, RubyNumeric.num2int(pos)) >= 0);
+        return context.runtime.newBoolean(matchPos(context, str, null, dummy, RubyNumeric.num2int(pos)) >= 0);
     }
 
     private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
@@ -1160,7 +1159,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * @param holder an out param to hold the resulting match object; ignored if null
      * @param pos the position from which to start matching
      */
-    private int matchPos(ThreadContext context, IRubyObject arg, IRubyObject[] strp, IRubyObject[] holder, int pos) {
+    private int matchPos(ThreadContext context, IRubyObject arg, RubyString[] strp, IRubyObject[] holder, int pos) {
         if (arg == context.nil) {
             setBackRefInternal(context, holder, context.nil);
             return -1;
@@ -1180,19 +1179,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /**
      * MRI: rb_reg_search
      *
-     * Holder, if non-null, will receive the backref result rather than setting it into context.
-     */
-    public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
-        return search(context, str, pos, reverse, true, holder);
-    }
-
-    /**
-     * MRI: rb_reg_search
-     *
      * This version uses current thread context to hold the resulting match data.
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
-        return search(context, str, pos, reverse, true, null);
+        return search(context, str, pos, reverse, null);
     }
 
     @Deprecated
@@ -1210,16 +1200,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      *
      * Holder, if non-null, will receive the backref result rather than setting it into context.
      */
-    final int search(ThreadContext context, RubyString str, int pos, boolean reverse, boolean setBackrefStr, IRubyObject[] holder) {
-        Ruby runtime = context.runtime;
-
+    public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
         int result = -1;
         IRubyObject match;
 //        Region regs = null;
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
         int range = beg;
-        boolean tmpreg;
 
         if (pos > str.size() || pos < 0) {
             setBackRefInternal(context, holder, context.nil);
@@ -1227,7 +1214,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         final Regex reg = preparePattern(str);
-        tmpreg = reg != this.pattern;
+        final boolean tmpreg = reg != this.pattern;
         if (!tmpreg) this.useCount++;
 
         match = getBackRefInternal(context, holder);

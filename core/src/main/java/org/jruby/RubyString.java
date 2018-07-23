@@ -1696,16 +1696,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject pattern) {
-        RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
-        IRubyObject result = sites(context).match_p.call(context, coercedPattern, coercedPattern, this);
-        return result;
+        return getPattern(context.runtime, pattern).match_p(context, this);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject pattern, IRubyObject pos) {
-        RubyRegexp coercedPattern = getPattern(context.runtime, pattern);
-        IRubyObject result = sites(context).match_p.call(context, coercedPattern, coercedPattern, this, pos);
-        return result;
+        return getPattern(context.runtime, pattern).match_p(context, this, pos);
     }
 
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
