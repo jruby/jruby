@@ -552,6 +552,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {
+        // we always need to resize now
+        checkResize();
         internalPutNoResize(key, value, true);
     }
 
@@ -2148,6 +2150,8 @@ public class RubyHash extends RubyObject implements Map {
         if (size > 0) {
             alloc();
             size = 0;
+            start = 0;
+            end = 0;
         }
 
         return this;
