@@ -192,13 +192,13 @@ class Date
       t = m[1]
       hash[:zone] = m[2] if m[2]
 
-      match = t.match /\A(\d+)h?
+      match = match(/\A(\d+)h?
               (?:\s*:?\s*(\d+)m?
                 (?:
                   \s*:?\s*(\d+)(?:[,.](\d+))?s?
                 )?
               )?
-            (?:\s*([ap])(?:m\b|\.m\.))?/ix
+            (?:\s*([ap])(?:m\b|\.m\.))?/ix, t)
 
       if match
         hash[:hour] = match[1].to_i
@@ -463,7 +463,7 @@ class Date
         if zone[0] == '['
           o, n, = zone[1..-2].split(':')
           hash[:zone] = n || o
-          if /\A\d/ =~ o
+          if /\A\d/.match? o
             o = format('+%s', o)
           end
           hash[:offset] = zone_to_diff(o)
@@ -546,7 +546,7 @@ class Date
 
   def self._iso8601(str) # :nodoc:
     h = {}
-    if /\A\s*
+    if m = match(/\A\s*
       (?:
           (?<year>[-+]?\d{2,} | -) - (?<mon>\d{2})? - (?<mday>\d{2})
         | (?<year>[-+]?\d{2,})? - (?<yday>\d{3})
@@ -558,38 +558,40 @@ class Date
         (?<hour>\d{2}) : (?<min>\d{2}) (?: :(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
         (?<zone>z | [-+]\d{2}(?::?\d{2})?)?
       )?
-      \s*\z/ix =~ str
+      \s*\z/ix, str)
 
-      if mday
-        h[:mday] = i mday
-        h[:year] = comp_year69(year) if year != "-"
+      if m[:mday]
+        h[:mday] = i m[:mday]
+        h[:year] = comp_year69(m[:year]) if m[:year] != "-"
 
-        if mon
-          h[:mon] = i mon
+        if m[:mon]
+          h[:mon] = i m[:mon]
         else
-          return {} if year != "-"
+          return {} if m[:year] != "-"
         end
-      elsif yday
-        h[:yday] = i yday
-        h[:year] = comp_year69(year) if year
-      elsif cwday
-        h[:cweek] = i cweek
-        h[:cwday] = i cwday
-        h[:cwyear] = comp_year69(cwyear) if cwyear
-      elsif cwday2
-        h[:cwday] = i cwday2
+      elsif m[:yday]
+        h[:yday] = i m[:yday]
+        h[:year] = comp_year69(m[:year]) if m[:year]
+      elsif m[:cwday]
+        h[:cweek] = i m[:cweek]
+        h[:cwday] = i m[:cwday]
+        h[:cwyear] = comp_year69(m[:cwyear]) if m[:cwyear]
+      elsif m[:cwday2]
+        h[:cwday] = i m[:cwday2]
       end
 
-      if hour
-        h[:hour] = i hour
-        h[:min] = i min
-        h[:sec] = i sec if sec
+      if m[:hour]
+        h[:hour] = i m[:hour]
+        h[:min] = i m[:min]
+        h[:sec] = i m[:sec] if m[:sec]
       end
 
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
-      set_zone(h, zone) if zone
+      if sec_fraction = m[:sec_fraction] # JRuby bug fix!
+        h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size)
+      end
+      set_zone(h, m[:zone]) if m[:zone]
 
-    elsif /\A\s*
+    elsif m = match(/\A\s*
       (?:
           (?<year>[-+]?(?:\d{4}|\d{2})|--) (?<mon>\d{2}|-) (?<mday>\d{2})
         | (?<year>[-+]?(?:\d{4}|\d{2})) (?<yday>\d{3})
@@ -601,37 +603,39 @@ class Date
         (?<hour>\d{2}) (?<min>\d{2}) (?:(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
         (?<zone>z | [-+]\d{2}(?:\d{2})?)?
       )?
-      \s*\z/ix =~ str
+      \s*\z/ix, str)
 
-      if mday
-        h[:mday] = i mday
-        h[:year] = comp_year69(year) if year != "--"
-        if mon != "-"
-          h[:mon] = i mon
+      if m[:mday]
+        h[:mday] = i m[:mday]
+        h[:year] = comp_year69(m[:year]) if m[:year] != "--"
+        if m[:mon] != "-"
+          h[:mon] = i m[:mon]
         else
-          return {} if year != "--"
+          return {} if m[:year] != "--"
         end
-      elsif yday
-        h[:yday] = i yday
-        h[:year] = comp_year69(year)
-      elsif yday2
-        h[:yday] = i yday2
-      elsif cwday
-        h[:cweek] = i cweek if cweek != "-"
-        h[:cwday] = i cwday
-        h[:cwyear] = comp_year69(cwyear) if cwyear != "-"
+      elsif m[:yday]
+        h[:yday] = i m[:yday]
+        h[:year] = comp_year69(m[:year])
+      elsif m[:yday2]
+        h[:yday] = i m[:yday2]
+      elsif m[:cwday]
+        h[:cweek] = i m[:cweek] if m[:cweek] != "-"
+        h[:cwday] = i m[:cwday]
+        h[:cwyear] = comp_year69(m[:cwyear]) if m[:cwyear] != "-"
       end
 
-      if hour
-        h[:hour] = i hour
-        h[:min] = i min
-        h[:sec] = i sec if sec
+      if m[:hour]
+        h[:hour] = i m[:hour]
+        h[:min] = i m[:min]
+        h[:sec] = i m[:sec] if m[:sec]
       end
 
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
-      set_zone(h, zone) if zone
+      if sec_fraction = m[:sec_fraction] # JRuby bug fix!
+        h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size)
+      end
+      set_zone(h, m[:zone]) if m[:zone]
 
-    elsif /\A\s*
+    elsif m = match(/\A\s*
       (?<hour>\d{2})
       (?:
         : (?<min>\d{2})
@@ -646,13 +650,15 @@ class Date
           (?<zone>z | [-+]\d{2}(?:\d{2})?)?
         )?
       )
-      \s*\z/ix =~ str
+      \s*\z/ix, str)
 
-      h[:hour] = i hour
-      h[:min] = i min
-      h[:sec] = i sec if sec
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
-      set_zone(h, zone) if zone
+      h[:hour] = i m[:hour]
+      h[:min] = i m[:min]
+      h[:sec] = i m[:sec] if m[:sec]
+      if sec_fraction = m[:sec_fraction] # JRuby bug fix!
+        h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size)
+      end
+      set_zone(h, m[:zone]) if m[:zone]
     end
     h
   end
@@ -669,44 +675,48 @@ class Date
   end
 
   def self._xmlschema(str) # :nodoc:
-    if /\A\s*(-?\d{4,})(?:-(\d{2})(?:-(\d{2}))?)?
+    if m = match(/\A\s*(-?\d{4,})(?:-(\d{2})(?:-(\d{2}))?)?
         (?:t
           (\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?
-        (z|[-+]\d{2}:\d{2})?\s*\z/ix =~ str
+        (z|[-+]\d{2}:\d{2})?\s*\z/ix, str)
       hash = Hash.new
-      hash[:year] = $1.to_i
-      hash[:mon] = $2.to_i if $2
-      hash[:mday] = $3.to_i if $3
-      hash[:hour] = $4.to_i if $4
-      hash[:min] = $5.to_i if $5
-      hash[:sec] = $6.to_i if $6
-      hash[:sec_fraction] = Rational($7.to_i, 10**$7.size) if $7
-      if $8
-        hash[:zone] = $8
-        hash[:offset] = zone_to_diff($8)
+      hash[:year] = m[1].to_i
+      hash[:mon] = m[2].to_i if m[2]
+      hash[:mday] = m[3].to_i if m[3]
+      hash[:hour] = m[4].to_i if m[4]
+      hash[:min] = m[5].to_i if m[5]
+      hash[:sec] = m[6].to_i if m[6]
+      if sf = m[7]
+        hash[:sec_fraction] = Rational(sf.to_i, 10**sf.size)
+      end
+      if zone = m[8]
+        hash[:zone] = zone
+        hash[:offset] = zone_to_diff(zone)
       end
       hash
-    elsif /\A\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?
-        (z|[-+]\d{2}:\d{2})?\s*\z/ix =~ str
+    elsif m = match(/\A\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?
+        (z|[-+]\d{2}:\d{2})?\s*\z/ix, str)
       hash = Hash.new
-      hash[:hour] = $1.to_i if $1
-      hash[:min] = $2.to_i if $2
-      hash[:sec] = $3.to_i if $3
-      hash[:sec_fraction] = Rational($4.to_i, 10**$4.size) if $4
-      if $5
-        hash[:zone] = $5
-        hash[:offset] = zone_to_diff($5)
+      hash[:hour] = m[1].to_i if m[1]
+      hash[:min] = m[2].to_i if m[2]
+      hash[:sec] = m[3].to_i if m[3]
+      if sf = m[4]
+        hash[:sec_fraction] = Rational(sf.to_i, 10**sf.size)
+      end
+      if zone = m[5]
+        hash[:zone] = zone
+        hash[:offset] = zone_to_diff(zone)
       end
       hash
-    elsif /\A\s*(?:--(\d{2})(?:-(\d{2}))?|---(\d{2}))
-        (z|[-+]\d{2}:\d{2})?\s*\z/ix =~ str
+    elsif m = match(/\A\s*(?:--(\d{2})(?:-(\d{2}))?|---(\d{2}))
+        (z|[-+]\d{2}:\d{2})?\s*\z/ix, str)
       hash = Hash.new
-      hash[:mon] = $1.to_i if $1
-      hash[:mday] = $2.to_i if $2
-      hash[:mday] = $3.to_i if $3
-      if $4
-        hash[:zone] = $4
-        hash[:offset] = zone_to_diff($4)
+      hash[:mon] = m[1].to_i if m[1]
+      hash[:mday] = m[2].to_i if m[2]
+      hash[:mday] = m[3].to_i if m[3]
+      if zone = m[4]
+        hash[:zone] = zone
+        hash[:offset] = zone_to_diff(zone)
       end
       hash
     else
@@ -715,14 +725,14 @@ class Date
   end
 
   def self._rfc2822(str) # :nodoc:
-    if /\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
+    if m = match(/\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
         \d{1,2}\s+
         (?:#{Format::ABBR_MONTHS.keys.join('|')})\s+
         -?(\d{2,})\s+ # allow minus, anyway
         \d{2}:\d{2}(:\d{2})?\s*
-        (?:[-+]\d{4}|ut|gmt|e[sd]t|c[sd]t|m[sd]t|p[sd]t|[a-ik-z])\s*\z/iox =~ str
+        (?:[-+]\d{4}|ut|gmt|e[sd]t|c[sd]t|m[sd]t|p[sd]t|[a-ik-z])\s*\z/iox, str)
       hash = _parse(str, false)
-      if $1.size < 4
+      if m[1].size < 4
         if hash[:year] < 50
           hash[:year] += 2000
         elsif hash[:year] < 1000

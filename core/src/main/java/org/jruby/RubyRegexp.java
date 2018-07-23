@@ -1140,7 +1140,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
-        IRubyObject[] holder = setBackref ? null : new IRubyObject[] { context.nil };
+        IRubyObject[] holder = setBackref ? null : new IRubyObject[1];
         if (matchPos(context, str, null, holder, pos) < 0) {
             return context.nil;
         }

@@ -1656,10 +1656,16 @@ public class RubyDate extends RubyObject {
 
     private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
 
-    // str.sub! /reg/, ' '
+    // str.sub! /reg/, ' ' (without $~)
     @JRubyMethod(name = "subs", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _subs(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject reg) {
         return ((RubyString) str).subBangFast(context, (RubyRegexp) reg, RubyString.newStringShared(context.runtime, SPACE));
+    }
+
+    // /re/.match str (without $~)
+    @JRubyMethod(name = "match", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _match(ThreadContext context, IRubyObject self, IRubyObject reg, IRubyObject str) {
+        return ((RubyRegexp) reg).match_m(context, str, false);
     }
 
     @JRubyMethod(name = "s3e", meta = true, required = 4, optional = 1, visibility = Visibility.PRIVATE)
