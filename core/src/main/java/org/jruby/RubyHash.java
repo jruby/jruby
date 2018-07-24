@@ -2764,12 +2764,22 @@ public class RubyHash extends RubyObject implements Map {
                         key = entries[0];
                         value = entries[1];
                         hasNext = RubyHash.this.size > 0;
+                        while(key == null && index < end && hasNext) {
+                            index++;
+                            key = entries[index * NUMBER_OF_ENTRIES];
+                            value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                        }
                     } else {
                         if (index < end) {
                             key = entries[index * NUMBER_OF_ENTRIES];
                             value = entries[(index * NUMBER_OF_ENTRIES) + 1];
                             index++;
                             hasNext = true;
+                            while(key == null && index < end) {
+                                key = entries[index * NUMBER_OF_ENTRIES];
+                                value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                                index++;
+                            }
                         } else {
                             hasNext = false;
                         }
