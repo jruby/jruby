@@ -144,21 +144,6 @@ class Date
   ABBR_MONTHS_KEYS = Format::ABBR_MONTHS.keys.join('|').freeze
   private_constant :ABBR_MONTHS_KEYS
 
-  ABBR_DAYS_KEYS = Format::ABBR_DAYS.keys.join('|').freeze
-  private_constant :ABBR_DAYS_KEYS
-
-  def self._parse_day(str, hash) # :nodoc:
-    if str.sub!(/\b(#{ABBR_DAYS_KEYS})[^-\d\s]*/io, ' ')
-      hash[:wday] = Format::ABBR_DAYS[$1.downcase]
-      true
-=begin
-    elsif str.sub!(/\b(?!\dth)(su|mo|tu|we|th|fr|sa)\b/i, ' ')
-      hash[:wday] = %w(su mo tu we th fr sa).index($1.downcase)
-      true
-=end
-    end
-  end
-
   def self._parse_time(str, hash) # :nodoc:
     if m = subs(str,
                 /(

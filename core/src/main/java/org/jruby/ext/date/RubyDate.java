@@ -49,12 +49,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.ConvertBytes;
-import org.jruby.util.Numeric;
-import org.jruby.util.RubyDateParser;
-import org.jruby.util.TimeZoneConverter;
-import org.jruby.util.TypeConverter;
+import org.jruby.util.*;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -1654,12 +1649,55 @@ public class RubyDate extends RubyObject {
         return y;
     }
 
+    private static final ByteList[] ABBR_DAYS = new ByteList[] {
+            new ByteList(new byte[] { 's','u','n' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'm','o','n' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 't','u','e' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'w','e','d' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 't','h','u' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'f','r','i' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 's','a','t' }, USASCIIEncoding.INSTANCE),
+    };
+
+    private static int day_num(RubyString s) {
+        ByteList sb = s.getByteList();
+        int i;
+        for (i=0; i<ABBR_DAYS.length; i++) {
+            if (sb.caseInsensitiveCmp(ABBR_DAYS[i]) == 0) return i;
+        }
+        return -1;
+    }
+
+    private static final ByteList _parse_day;
+    static {
+        _parse_day = ByteList.create("\\b(sun|mon|tue|wed|thu|fri|sat)[^-\\d\\s]*");
+        _parse_day.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    @JRubyMethod(name = "_parse_day", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _parse_day(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_day, RubyRegexp.RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            final RubyHash hash = (RubyHash) h;
+            int day = day_num((RubyString) ((RubyMatchData) sub).at(1));
+            hash.fastASet(runtime.newSymbol("wday"), RubyFixnum.newFixnum(runtime, day));
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
     private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
+
+    private static IRubyObject subSpace(ThreadContext context, RubyString str, RubyRegexp reg) {
+        return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE));
+    }
 
     // str.sub! /reg/, ' ' (without $~)
     @JRubyMethod(name = "subs", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _subs(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject reg) {
-        return ((RubyString) str).subBangFast(context, (RubyRegexp) reg, RubyString.newStringShared(context.runtime, SPACE));
+        return subSpace(context, (RubyString) str, (RubyRegexp) reg);
     }
 
     // /re/.match str (without $~)
