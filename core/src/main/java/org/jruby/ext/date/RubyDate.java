@@ -1668,6 +1668,94 @@ public class RubyDate extends RubyObject {
         return -1;
     }
 
+    private static final ByteList _parse_time, _parse_time2;
+    static {
+        _parse_time = ByteList.create(
+                "(" +
+                  "(?:" +
+                    "\\d+\\s*:\\s*\\d+" +
+                    "(?:" +
+                      "\\s*:\\s*\\d+(?:[,.]\\d+)?" +
+                    ")?" +
+                  "|" +
+                    "\\d+\\s*h(?:\\s*\\d+m?(?:\\s*\\d+s?)?)?" +
+                  ")" +
+                  "(?:" +
+                    "\\s*" +
+                    "[ap](?:m\\b|\\.m\\.)" +
+                  ")?" +
+                  "|" +
+                    "\\d+\\s*[ap](?:m\\b|\\.m\\.)" +
+                  ")" +
+                  "(?:" +
+                    "\\s*" +
+                    "(" +
+                      "(?:gmt|utc?)?[-+]\\d+(?:[,.:]\\d+(?::\\d+)?)?" +
+                    "|" +
+                      "(?-i:[[:alpha:].\\s]+)(?:standard|daylight)\\stime\\b" +
+                    "|" +
+                      "(?-i:[[:alpha:]]+)(?:\\sdst)?\\b" +
+                    ")" +
+                ")?"
+        );
+        _parse_time.setEncoding(USASCIIEncoding.INSTANCE);
+
+        _parse_time2 = ByteList.create(
+                "\\A(\\d+)h?" +
+                "(?:\\s*:?\\s*(\\d+)m?" +
+                  "(?:" +
+                    "\\s*:?\\s*(\\d+)(?:[,.](\\d+))?s?" +
+                  ")?" +
+                ")?" +
+                "(?:\\s*([ap])(?:m\\b|\\.m\\.))?"
+        );
+        _parse_time2.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_time(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_time, RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED);
+        IRubyObject sub = subSpace(context, str, re);
+        if (sub != context.nil) {
+            RubyMatchData match = (RubyMatchData) sub;
+            final RubyString s1 = (RubyString) match.at(1);
+            final RubyString s2 = matchOrNull(context, match, 2);
+
+            if (s2 != null) hash.fastASet(runtime.newSymbol("zone"), s2);
+
+            re = newRegexpFromCache(runtime, _parse_time2, RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED);
+            sub = re.match_m(context, s1, false);
+            if (sub != context.nil) {
+                match = (RubyMatchData) sub;
+                RubyInteger hour;
+                RubyString m = (RubyString) match.at(1);
+                hash.fastASet(runtime.newSymbol("hour"), hour = (RubyInteger) m.to_i());
+                m = matchOrNull(context, match, 2);
+                hash.fastASet(runtime.newSymbol("min"), m == null ? context.nil : m.to_i());
+                m = matchOrNull(context, match, 3);
+                hash.fastASet(runtime.newSymbol("sec"), m == null ? context.nil : m.to_i());
+                m = matchOrNull(context, match, 4);
+                if (m != null) {
+                    RubyInteger den = (RubyInteger) RubyFixnum.newFixnum(runtime, 10).op_pow(context, m.length());
+                    hash.fastASet(runtime.newSymbol("sec_fraction"), RubyRational.newInstance(context, (RubyInteger) m.to_i(), den));
+                }
+                m = matchOrNull(context, match, 5);
+                if (m != null) {
+                    hour = (RubyInteger) hour.op_mod(context, 12);
+                    if (m.length() == 1 && strPtr(m, 'p') || strPtr(m, 'P')) {
+                        hour = (RubyInteger) hour.op_plus(context, 12);
+                    }
+                    hash.fastASet(runtime.newSymbol("hour"), hour);
+                }
+            } else {
+                hash.fastASet(runtime.newSymbol("hour"), RubyFixnum.zero(runtime));
+            }
+
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
     private static final ByteList[] ABBR_MONTHS = new ByteList[] {
             new ByteList(new byte[] { 'j','a','n' }, USASCIIEncoding.INSTANCE),
             new ByteList(new byte[] { 'f','e','b' }, USASCIIEncoding.INSTANCE),
@@ -1981,11 +2069,6 @@ public class RubyDate extends RubyObject {
 
     private static IRubyObject subSpace(ThreadContext context, RubyString str, RubyRegexp reg) {
         return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE));
-    }
-
-    // NOTE: still in .rb
-    public static IRubyObject _parse_time(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
-        return Helpers.invoke(context, self, "_parse_time", str, h);
     }
 
     // NOTE: still in .rb

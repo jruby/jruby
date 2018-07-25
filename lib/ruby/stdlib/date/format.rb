@@ -141,67 +141,6 @@ class Date
     end
   end
 
-  ABBR_MONTHS_KEYS = Format::ABBR_MONTHS.keys.join('|').freeze
-  private_constant :ABBR_MONTHS_KEYS
-
-  def self._parse_time(str, hash) # :nodoc:
-    if m = subs(str,
-                /(
-                   (?:
-                     \d+\s*:\s*\d+
-                     (?:
-                       \s*:\s*\d+(?:[,.]\d*)?
-                     )?
-                   |
-                     \d+\s*h(?:\s*\d+m?(?:\s*\d+s?)?)?
-                   )
-                   (?:
-                     \s*
-                     [ap](?:m\b|\.m\.)
-                   )?
-                 |
-                   \d+\s*[ap](?:m\b|\.m\.)
-                 )
-                 (?:
-                   \s*
-                   (
-                     (?:gmt|utc?)?[-+]\d+(?:[,.:]\d+(?::\d+)?)?
-                   |
-                     [[:alpha:].\s]+(?:standard|daylight)\stime\b
-                   |
-                     [[:alpha:]]+(?:\sdst)?\b
-                   )
-                 )?
-                /ix)
-
-      t = m[1]
-      hash[:zone] = m[2] if m[2]
-
-      match = match(/\A(\d+)h?
-              (?:\s*:?\s*(\d+)m?
-                (?:
-                  \s*:?\s*(\d+)(?:[,.](\d+))?s?
-                )?
-              )?
-            (?:\s*([ap])(?:m\b|\.m\.))?/ix, t)
-
-      if match
-        hash[:hour] = match[1].to_i
-        hash[:min] = match[2]&.to_i
-        hash[:sec] = match[3]&.to_i
-        hash[:sec_fraction] = Rational(match[4].to_i, 10**match[4].size) if match[4]
-        if match[5]
-          hash[:hour] %= 12
-          hash[:hour] += 12 if match[5].eql?('p') || match[5].eql?('P')
-        end
-      else
-        hash[:hour] = 0
-      end
-
-      true
-    end
-  end
-
   def self._parse_iso2(str, hash) # :nodoc:
     if m = subs(str, /\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i)
       hash[:cwyear] = m[1]&.to_i
@@ -238,6 +177,9 @@ class Date
       true
     end
   end
+
+  ABBR_MONTHS_KEYS = Format::ABBR_MONTHS.keys.join('|').freeze
+  private_constant :ABBR_MONTHS_KEYS
 
   def self._parse_vms(str, hash) # :nodoc:
     if m = subs(str, /('?-?\d+)-(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)/iox)
@@ -382,7 +324,7 @@ class Date
     end
   end
 
-  private_class_method :_parse_time, :_parse_iso2, :_parse_jis, :_parse_vms, :_parse_ddd
+  private_class_method :_parse_iso2, :_parse_jis, :_parse_vms, :_parse_ddd
 
   def self._parse(str, comp=true)
     if str.kind_of?(::String)
