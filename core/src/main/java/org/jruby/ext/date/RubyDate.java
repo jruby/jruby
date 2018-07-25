@@ -1701,7 +1701,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "_parse_day", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _parse_day(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
         final Ruby runtime = context.runtime;
-        RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_day, RubyRegexp.RE_OPTION_IGNORECASE);
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_day, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
             final RubyHash hash = (RubyHash) h;
@@ -1721,7 +1721,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "_parse_mon", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _parse_mon(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
         final Ruby runtime = context.runtime;
-        RubyRegexp re = newRegexpFromCache(runtime, _parse_mon, RubyRegexp.RE_OPTION_IGNORECASE);
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_mon, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
             final RubyHash hash = (RubyHash) h;
@@ -2010,7 +2010,7 @@ public class RubyDate extends RubyObject {
 
         str = str.gsubFast(context, newRegexp(runtime, _parse_impl), RubyString.newStringShared(context.runtime, SPACE), Block.NULL_BLOCK);
 
-        final int flags = check_class(str);
+        int flags = check_class(str);
         if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {
             _parse_day(context, self, str, hash);
         }
@@ -2018,13 +2018,15 @@ public class RubyDate extends RubyObject {
             _parse_time(context, self, str, hash);
         }
 
-        do_parse(context, self, str, hash);
+        do_parse(context, self, str, hash, flags);
 
         // ok:
-        // if (HAVE_ELEM_P(HAVE_ALPHA))
-        parse_bc(context, self, str, hash);
-        // if (HAVE_ELEM_P(HAVE_DIGIT))
-        parse_frag(context, self, str, hash);
+        if ((flags & HAVE_B_b) == HAVE_B_b) { // JRuby opt - instead of HAVE_ALPHA
+            parse_bc(context, self, str, hash);
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) { // NOTE: MRI re-loops string
+            parse_frag(context, self, str, hash);
+        }
 
         if (hashGetTest(context, hash, "_comp")) {
             RubyInteger y;
@@ -2056,49 +2058,59 @@ public class RubyDate extends RubyObject {
         return hash;
     }
 
-    private static void do_parse(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+    private static void do_parse(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash, final int flags) {
         //#ifdef TIGHT_PARSER
         // if (HAVE_ELEM_P(HAVE_ALPHA)) parse_era(str, hash);
         //#endif
 
         IRubyObject res;
 
-        // if (HAVE_ELEM_P(HAVE_ALPHA|HAVE_DIGIT)) {
-        res = _parse_eu(context, self, str, hash);
-        if (res != context.nil) return;
-        res = _parse_us(context, self, str, hash);
-        // }
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT|HAVE_DASH))
-        res = _parse_iso(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT|HAVE_DOT))
-        res = _parse_jis(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_ALPHA|HAVE_DIGIT|HAVE_DASH))
-        res = _parse_vms(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT|HAVE_SLASH))
-        res = _parse_sla(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT|HAVE_DOT))
-        res = _parse_dot(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT))
-        res = _parse_iso2(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT))
-        res = _parse_year(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_ALPHA))
-        res = _parse_mon(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT))
-        res = _parse_mday(context, self, str, hash);
-        if (res != context.nil) return;
-        // if (HAVE_ELEM_P(HAVE_DIGIT))
-        res = _parse_ddd(context, self, str, hash);
-        if (res != context.nil) return;
+        if ((flags & (HAVE_ALPHA|HAVE_DIGIT)) == (HAVE_ALPHA|HAVE_DIGIT)) {
+            res = _parse_eu(context, self, str, hash);
+            if (res != context.nil) return;
+            res = _parse_us(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_DASH)) == (HAVE_DIGIT|HAVE_DASH)) {
+            res = _parse_iso(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_DOT)) == (HAVE_DIGIT|HAVE_DOT)) {
+            res = _parse_jis(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_ALPHA|HAVE_DIGIT|HAVE_DASH)) == (HAVE_ALPHA|HAVE_DIGIT|HAVE_DASH)) {
+            res = _parse_vms(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_SLASH)) == (HAVE_DIGIT|HAVE_SLASH)) {
+            res = _parse_sla(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_DOT)) == (HAVE_DIGIT|HAVE_DOT)) {
+            res = _parse_dot(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_iso2(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_year(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {
+            res = _parse_mon(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_mday(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_ddd(context, self, str, hash);
+            if (res != context.nil) return;
+        }
 
         // MRI does an ERROR here ...
     }
@@ -2109,11 +2121,16 @@ public class RubyDate extends RubyObject {
     private static final int HAVE_DOT   = (1<<3);
     private static final int HAVE_SLASH = (1<<4);
 
-    private static int check_class(RubyString s) {
+    private static final int HAVE_B_b   = (1<<6);
+
+    private static int check_class(RubyString s) { // TODO: we could assume single-byte like MRI, right?
         int flags = 0;
         for (int i=0; i<s.length(); i++) {
             final char c = s.charAt(i);
-            if (isAlpha(c)) flags |= HAVE_ALPHA;
+            if (isAlpha(c)) {
+                flags |= HAVE_ALPHA;
+                if (c == 'B' || c == 'b') flags |= HAVE_B_b;
+            }
             else if (isDigit(c)) flags |= HAVE_DIGIT;
             else if (c == '-') flags |= HAVE_DASH;
             else if (c == '.') flags |= HAVE_DOT;

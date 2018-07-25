@@ -202,47 +202,6 @@ class Date
     end
   end
 
-  # def self._parse_eu(str, hash)
-  #   if m = subs(str,
-  #               /'?(\d+)[^-\d\s]*
-  #                \s*
-  #                (#{ABBR_MONTHS_KEYS})[^-\d\s']*
-  #                (?:
-  #                  \s*
-  #                  (c(?:e|\.e\.)|b(?:ce|\.c\.e\.)|a(?:d|\.d\.)|b(?:c|\.c\.))?
-  #                  \s*
-  #                  ('?-?\d+(?:(?:st|nd|rd|th)\b)?)
-  #                )?
-  #               /iox)
-  #     s3e(hash, m[4], Format::ABBR_MONTHS[m[2].downcase].to_s, m[1], m[3] && m[3][0,1].downcase == 'b')
-  #     true
-  #   end
-  # end
-  #
-  # def self._parse_us(str, hash)
-  #   if m = subs(str,
-  #               /\b(#{ABBR_MONTHS_KEYS})[^-\d\s']*
-  #                \s*
-  #                ('?\d+)[^-\d\s']*
-  #                (?:
-  #                  \s*
-  #                  (c(?:e|\.e\.)|b(?:ce|\.c\.e\.)|a(?:d|\.d\.)|b(?:c|\.c\.))?
-  #                  \s*
-  #                  ('?-?\d+)
-  #                )?
-  #               /iox)
-  #     s3e(hash, m[4], Format::ABBR_MONTHS[m[1].downcase].to_s, m[2], m[3] && m[3][0,1].downcase == 'b')
-  #     true
-  #   end
-  # end
-
-  # def self._parse_iso(str, hash)
-  #   if m = subs(str, /('?[-+]?\d+)-(\d+)-('?-?\d+)/)
-  #     s3e(hash, m[1], m[2], m[3])
-  #     true
-  #   end
-  # end
-
   def self._parse_iso2(str, hash) # :nodoc:
     if m = subs(str, /\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i)
       hash[:cwyear] = m[1]&.to_i
@@ -303,27 +262,6 @@ class Date
       true
     end
   end
-
-  # def self._parse_year(str, hash)
-  #   if m = subs(str, /'(\d+)\b/)
-  #     hash[:year] = m[1].to_i
-  #     true
-  #   end
-  # end
-  #
-  # def self._parse_mon(str, hash)
-  #   if m = subs(str, /\b(#{ABBR_MONTHS_KEYS})\S*/io)
-  #     hash[:mon] = Format::ABBR_MONTHS[m[1].downcase]
-  #     true
-  #   end
-  # end
-  #
-  # def self._parse_mday(str, hash)
-  #   if m = subs(str, /(\d+)(st|nd|rd|th)\b/i)
-  #     hash[:mday] = m[1].to_i
-  #     true
-  #   end
-  # end
 
   def self._parse_ddd(str, hash) # :nodoc:
     if str.sub!(
@@ -464,8 +402,6 @@ class Date
         :_parse_year, :_parse_mon, :_parse_mday, :_parse_ddd
 
   def self._parse(str, comp=true)
-    # Newer MRI version (written in C converts non-strings to strings
-    # and also has other checks like all ascii.
     if str.kind_of?(::String)
       # no-op
     elsif str.respond_to?(:to_str)
@@ -474,59 +410,7 @@ class Date
       raise TypeError, "no implicit conversion of #{str.class.name} into String"
     end
     # we do not str = str.dup since we do a gsub (instead of gsub!)
-
-    str = str.gsub(/[^-+',.\/:@[:alnum:]\[\]]+/, ' ')
-
-    hash = { :_comp => comp }
-
-    _parse_time(str, hash) # || _parse_beat(str, hash)
-    _parse_day(str, hash)
-
-    _parse_eu(str, hash)     ||
-    _parse_us(str, hash)     ||
-    _parse_iso(str, hash)    ||
-    _parse_jis(str, hash)    ||
-    _parse_vms(str, hash)    ||
-    _parse_sla(str, hash)    ||
-    _parse_dot(str, hash)    ||
-    _parse_iso2(str, hash)   ||
-    _parse_year(str, hash)   ||
-    _parse_mon(str, hash)    ||
-    _parse_mday(str, hash)   ||
-    _parse_ddd(str, hash)
-
-    if subs(str, /\b(bc\b|bce\b|b\.c\.|b\.c\.e\.)/i)
-      if year = hash[:year]
-        hash[:year] = -year + 1
-      end
-    end
-
-    if hash[:hour] && !hash[:mday] && (m = subs(str, /\A\s*(\d{1,2})\s*\z/))
-      v = m[1].to_i
-      hash[:mday] = v if 1 <= v && v <= 31
-    end
-    if hash[:mday] && !hash[:hour] && (m ||= subs(str, /\A\s*(\d{1,2})\s*\z/))
-      v = m[1].to_i
-      hash[:hour] = v if 0 <= v && v <= 24
-    end
-
-    if hash[:_comp]
-      if cwyear = hash[:cwyear]
-        if cwyear >= 0 && cwyear <= 99
-          hash[:cwyear] += cwyear >= 69 ? 1900 : 2000
-        end
-      end
-      if year = hash[:year]
-        if year >= 0 && year <= 99
-          hash[:year] += year >= 69 ? 1900 : 2000
-        end
-      end
-    end
-
-    hash[:offset] ||= zone_to_diff(hash[:zone]) if hash[:zone]
-
-    hash.reject! { |k, v| v.nil? || k[0].eql?('_') }
-    hash
+    return _parse_impl(str, :_comp => comp)
   end
 
   def self._iso8601(str) # :nodoc:
