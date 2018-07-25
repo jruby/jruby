@@ -2109,7 +2109,8 @@ public class RubyDate extends RubyObject {
         if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {
             _parse_day(context, self, str, hash);
         }
-        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT
+            && ((flags & (HAVE_COLON|HAVE_M_m|HAVE_H_h|HAVE_S_s)) != 0)) { // JRuby opt
             _parse_time(context, self, str, hash);
         }
 
@@ -2215,21 +2216,38 @@ public class RubyDate extends RubyObject {
     private static final int HAVE_DASH  = (1<<2);
     private static final int HAVE_DOT   = (1<<3);
     private static final int HAVE_SLASH = (1<<4);
-
-    private static final int HAVE_B_b   = (1<<6);
+    // custom, not in MRI :
+    private static final int HAVE_COLON = (1<<6);
+    private static final int HAVE_M_m   = (1<<7); // am|pm 3m
+    private static final int HAVE_H_h   = (1<<8); // 9h
+    private static final int HAVE_S_s   = (1<<9); // 3s
+    private static final int HAVE_B_b   = (1<<10); // bc
 
     private static int check_class(RubyString s) { // TODO: we could assume single-byte like MRI, right?
         int flags = 0;
         for (int i=0; i<s.length(); i++) {
             final char c = s.charAt(i);
-            if (isAlpha(c)) {
-                flags |= HAVE_ALPHA;
-                if (c == 'B' || c == 'b') flags |= HAVE_B_b;
+            switch (c) {
+                case '-': flags |= HAVE_DASH; break;
+                case '.': flags |= HAVE_DOT;  break;
+                case '/': flags |= HAVE_SLASH; break;
+                case ':': flags |= HAVE_COLON; break;
+                case 'b': case 'B':
+                    flags |= HAVE_ALPHA|HAVE_B_b;
+                    break;
+                case 'm': case 'M':
+                    flags |= HAVE_ALPHA|HAVE_M_m;
+                    break;
+                case 'h': case 'H':
+                    flags |= HAVE_ALPHA|HAVE_H_h;
+                    break;
+                case 's': case 'S':
+                    flags |= HAVE_ALPHA|HAVE_S_s;
+                    break;
+                default:
+                    if (isDigit(c)) flags |= HAVE_DIGIT;
+                    else if (isAlpha(c)) flags |= HAVE_ALPHA;
             }
-            else if (isDigit(c)) flags |= HAVE_DIGIT;
-            else if (c == '-') flags |= HAVE_DASH;
-            else if (c == '.') flags |= HAVE_DOT;
-            else if (c == '/') flags |= HAVE_SLASH;
         }
         return flags;
     }
