@@ -1698,13 +1698,11 @@ public class RubyDate extends RubyObject {
         _parse_day.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_day", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_day(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_day(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = newRegexpFromCache(runtime, _parse_day, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
-            final RubyHash hash = (RubyHash) h;
             int day = day_num((RubyString) ((RubyMatchData) sub).at(1));
             hash.fastASet(runtime.newSymbol("wday"), RubyFixnum.newFixnum(runtime, day));
             return context.tru;
@@ -1718,13 +1716,11 @@ public class RubyDate extends RubyObject {
         _parse_mon.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_mon", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_mon(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_mon(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = newRegexpFromCache(runtime, _parse_mon, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
-            final RubyHash hash = (RubyHash) h;
             int mon = mon_num((RubyString) ((RubyMatchData) sub).at(1));
             hash.fastASet(runtime.newSymbol("mon"), RubyFixnum.newFixnum(runtime, mon));
             return context.tru;
@@ -1738,13 +1734,11 @@ public class RubyDate extends RubyObject {
         _parse_year.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_year", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_year(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_year(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_year);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
-            final RubyHash hash = (RubyHash) h;
             hash.fastASet(runtime.newSymbol("year"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
             return context.tru;
         }
@@ -1757,13 +1751,11 @@ public class RubyDate extends RubyObject {
         _parse_mday.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_mday", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_mday(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_mday(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = newRegexpFromCache(runtime, _parse_mday, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
-            final RubyHash hash = (RubyHash) h;
             hash.fastASet(runtime.newSymbol("mday"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
             return context.tru;
         }
@@ -1786,8 +1778,7 @@ public class RubyDate extends RubyObject {
         _parse_eu.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_eu", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_eu(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_eu(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = newRegexpFromCache(runtime, _parse_eu, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
@@ -1800,7 +1791,7 @@ public class RubyDate extends RubyObject {
             RubyString b = matchOrNull(context, match, 3);
             RubyString y = matchOrNull(context, match, 4);
 
-            s3e(context, (RubyHash) h, y, mon, d, b != null && b.length() > 1 && (b.charAt(0) == 'B' || b.charAt(0) == 'b'));
+            s3e(context, hash, y, mon, d, b != null && b.length() > 1 && (b.charAt(0) == 'B' || b.charAt(0) == 'b'));
 
             return context.tru;
         }
@@ -1824,8 +1815,7 @@ public class RubyDate extends RubyObject {
         _parse_us.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_us", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_us(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_us(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = newRegexpFromCache(runtime, _parse_us, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
@@ -1838,7 +1828,7 @@ public class RubyDate extends RubyObject {
             RubyString b = matchOrNull(context, match, 3);
             RubyString y = matchOrNull(context, match, 4);
 
-            s3e(context, (RubyHash) h, y, mon, d, b != null && b.length() > 1 && (b.charAt(0) == 'B' || b.charAt(0) == 'b'));
+            s3e(context, hash, y, mon, d, b != null && b.length() > 1 && (b.charAt(0) == 'B' || b.charAt(0) == 'b'));
 
             return context.tru;
         }
@@ -1863,14 +1853,49 @@ public class RubyDate extends RubyObject {
         _parse_iso.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    @JRubyMethod(name = "_parse_iso", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject _parse_iso(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static IRubyObject _parse_iso(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
         RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_iso);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
         if (sub != context.nil) {
             final RubyMatchData match = (RubyMatchData) sub;
-            s3e(context, (RubyHash) h, (RubyString) match.at(1), (RubyString) match.at(2), (RubyString) match.at(3), false);
+            s3e(context, hash, (RubyString) match.at(1), (RubyString) match.at(2), (RubyString) match.at(3), false);
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_sla;
+    static {
+        _parse_sla = ByteList.create("('?-?\\d+)/\\s*('?\\d+)(?:\\D\\s*('?-?\\d+))?");
+        _parse_sla.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_sla(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        return parse_sla_dot(context, _parse_sla, str, hash);
+    }
+
+    private static final ByteList _parse_dot;
+    static {
+        _parse_dot = ByteList.create("('?-?\\d+)\\.\\s*('?\\d+)\\.\\s*('?-?\\d+)");
+        _parse_dot.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_dot(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        return parse_sla_dot(context, _parse_dot, str, hash);
+    }
+
+    private static IRubyObject parse_sla_dot(ThreadContext context, ByteList pattern, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = RubyRegexp.newRegexp(runtime, pattern);
+        IRubyObject sub = subSpace(context, str, re);
+        if (sub != context.nil) {
+            final RubyMatchData match = (RubyMatchData) sub;
+            RubyString y = matchOrNull(context, match, 1);
+            RubyString mon = matchOrNull(context, match, 2);
+            RubyString d = matchOrNull(context, match, 3);
+
+            s3e(context, hash, y, mon, d, false);
             return context.tru;
         }
         return sub; // nil
@@ -1882,9 +1907,8 @@ public class RubyDate extends RubyObject {
         _parse_bc.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    static void parse_bc(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static void parse_bc(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
-        final RubyHash hash = (RubyHash) h;
 
         RubyRegexp re = newRegexpFromCache(runtime, _parse_bc, RE_OPTION_IGNORECASE);
         IRubyObject sub = subSpace(context, (RubyString) str, re);
@@ -1907,16 +1931,14 @@ public class RubyDate extends RubyObject {
         }
     }
 
-
     private static final ByteList _parse_frag;
     static {
         _parse_frag = ByteList.create("\\A\\s*(\\d{1,2})\\s*\\z");
         _parse_frag.setEncoding(USASCIIEncoding.INSTANCE);
     }
 
-    static void parse_frag(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+    static void parse_frag(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
         final Ruby runtime = context.runtime;
-        final RubyHash hash = (RubyHash) h;
 
         IRubyObject sub = null;
 
@@ -1974,16 +1996,6 @@ public class RubyDate extends RubyObject {
     // NOTE: still in .rb
     public static IRubyObject _parse_vms(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
         return Helpers.invoke(context, self, "_parse_vms", str, h);
-    }
-
-    // NOTE: still in .rb
-    public static IRubyObject _parse_sla(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
-        return Helpers.invoke(context, self, "_parse_sla", str, h);
-    }
-
-    // NOTE: still in .rb
-    public static IRubyObject _parse_dot(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
-        return Helpers.invoke(context, self, "_parse_dot", str, h);
     }
 
     // NOTE: still in .rb

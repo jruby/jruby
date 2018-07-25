@@ -249,20 +249,6 @@ class Date
     end
   end
 
-  def self._parse_sla(str, hash) # :nodoc:
-    if m = subs(str, %r|('?-?\d+)/\s*('?\d+)(?:\D\s*('?-?\d+))?|) # '
-      s3e(hash, m[1], m[2], m[3])
-      true
-    end
-  end
-
-  def self._parse_dot(str, hash) # :nodoc:
-    if m = subs(str, %r|('?-?\d+)\.\s*('?\d+)\.\s*('?-?\d+)|) # '
-      s3e(hash, m[1], m[2], m[3])
-      true
-    end
-  end
-
   def self._parse_ddd(str, hash) # :nodoc:
     if str.sub!(
                 /([-+]?)(\d{2,14})
@@ -396,10 +382,7 @@ class Date
     end
   end
 
-  private_class_method :_parse_day, :_parse_time,
-        :_parse_eu, :_parse_us, :_parse_iso, :_parse_iso2,
-        :_parse_jis, :_parse_vms, :_parse_sla, :_parse_dot,
-        :_parse_year, :_parse_mon, :_parse_mday, :_parse_ddd
+  private_class_method :_parse_time, :_parse_iso2, :_parse_jis, :_parse_vms, :_parse_ddd
 
   def self._parse(str, comp=true)
     if str.kind_of?(::String)
