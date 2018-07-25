@@ -39,22 +39,16 @@ import org.joda.time.chrono.GJChronology;
 import org.joda.time.chrono.GregorianChronology;
 import org.joda.time.chrono.JulianChronology;
 
+import org.joni.Regex;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.ConvertBytes;
-import org.jruby.util.Numeric;
-import org.jruby.util.RubyDateParser;
-import org.jruby.util.TimeZoneConverter;
-import org.jruby.util.TypeConverter;
+import org.jruby.util.*;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -64,6 +58,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import static org.jruby.RubyRegexp.*;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
 
@@ -1654,15 +1649,634 @@ public class RubyDate extends RubyObject {
         return y;
     }
 
+    private static final ByteList[] ABBR_DAYS = new ByteList[] {
+            new ByteList(new byte[] { 's','u','n' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'm','o','n' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 't','u','e' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'w','e','d' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 't','h','u' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'f','r','i' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 's','a','t' }, USASCIIEncoding.INSTANCE),
+    };
+
+    private static int day_num(RubyString s) {
+        ByteList sb = s.getByteList();
+        int i;
+        for (i=0; i<ABBR_DAYS.length; i++) {
+            if (sb.caseInsensitiveCmp(ABBR_DAYS[i]) == 0) return i;
+        }
+        return -1;
+    }
+
+    private static final ByteList _parse_time, _parse_time2;
+    static {
+        _parse_time = ByteList.create(
+                "(" +
+                  "(?:" +
+                    "\\d+\\s*:\\s*\\d+" +
+                    "(?:" +
+                      "\\s*:\\s*\\d+(?:[,.]\\d+)?" +
+                    ")?" +
+                  "|" +
+                    "\\d+\\s*h(?:\\s*\\d+m?(?:\\s*\\d+s?)?)?" +
+                  ")" +
+                  "(?:" +
+                    "\\s*" +
+                    "[ap](?:m\\b|\\.m\\.)" +
+                  ")?" +
+                  "|" +
+                    "\\d+\\s*[ap](?:m\\b|\\.m\\.)" +
+                  ")" +
+                  "(?:" +
+                    "\\s*" +
+                    "(" +
+                      "(?:gmt|utc?)?[-+]\\d+(?:[,.:]\\d+(?::\\d+)?)?" +
+                    "|" +
+                      "(?-i:[[:alpha:].\\s]+)(?:standard|daylight)\\stime\\b" +
+                    "|" +
+                      "(?-i:[[:alpha:]]+)(?:\\sdst)?\\b" +
+                    ")" +
+                ")?"
+        );
+        _parse_time.setEncoding(USASCIIEncoding.INSTANCE);
+
+        _parse_time2 = ByteList.create(
+                "\\A(\\d+)h?" +
+                "(?:\\s*:?\\s*(\\d+)m?" +
+                  "(?:" +
+                    "\\s*:?\\s*(\\d+)(?:[,.](\\d+))?s?" +
+                  ")?" +
+                ")?" +
+                "(?:\\s*([ap])(?:m\\b|\\.m\\.))?"
+        );
+        _parse_time2.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_time(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_time, RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED);
+        IRubyObject sub = subSpace(context, str, re);
+        if (sub != context.nil) {
+            RubyMatchData match = (RubyMatchData) sub;
+            final RubyString s1 = (RubyString) match.at(1);
+            final RubyString s2 = matchOrNull(context, match, 2);
+
+            if (s2 != null) hash.fastASet(runtime.newSymbol("zone"), s2);
+
+            re = newRegexpFromCache(runtime, _parse_time2, RE_OPTION_IGNORECASE | RE_OPTION_EXTENDED);
+            sub = re.match_m(context, s1, false);
+            if (sub != context.nil) {
+                match = (RubyMatchData) sub;
+                RubyInteger hour;
+                RubyString m = (RubyString) match.at(1);
+                hash.fastASet(runtime.newSymbol("hour"), hour = (RubyInteger) m.to_i());
+                m = matchOrNull(context, match, 2);
+                hash.fastASet(runtime.newSymbol("min"), m == null ? context.nil : m.to_i());
+                m = matchOrNull(context, match, 3);
+                hash.fastASet(runtime.newSymbol("sec"), m == null ? context.nil : m.to_i());
+                m = matchOrNull(context, match, 4);
+                if (m != null) {
+                    RubyInteger den = (RubyInteger) RubyFixnum.newFixnum(runtime, 10).op_pow(context, m.length());
+                    hash.fastASet(runtime.newSymbol("sec_fraction"), RubyRational.newInstance(context, (RubyInteger) m.to_i(), den));
+                }
+                m = matchOrNull(context, match, 5);
+                if (m != null) {
+                    hour = (RubyInteger) hour.op_mod(context, 12);
+                    if (m.length() == 1 && strPtr(m, 'p') || strPtr(m, 'P')) {
+                        hour = (RubyInteger) hour.op_plus(context, 12);
+                    }
+                    hash.fastASet(runtime.newSymbol("hour"), hour);
+                }
+            } else {
+                hash.fastASet(runtime.newSymbol("hour"), RubyFixnum.zero(runtime));
+            }
+
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList[] ABBR_MONTHS = new ByteList[] {
+            new ByteList(new byte[] { 'j','a','n' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'f','e','b' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'm','a','r' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'a','p','r' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'm','a','y' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'j','u','n' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'j','u','l' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'a','u','g' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 's','e','p' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'o','c','t' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'n','o','v' }, USASCIIEncoding.INSTANCE),
+            new ByteList(new byte[] { 'd','e','c' }, USASCIIEncoding.INSTANCE),
+    };
+
+    private static int mon_num(RubyString s) {
+        ByteList sb = s.getByteList();
+        int i;
+        for (i=0; i<ABBR_MONTHS.length; i++) {
+            if (sb.caseInsensitiveCmp(ABBR_MONTHS[i]) == 0) return i + 1;
+        }
+        return -1;
+    }
+
+    private static final ByteList _parse_day;
+    static {
+        _parse_day = ByteList.create("\\b(sun|mon|tue|wed|thu|fri|sat)[^-\\d\\s]*");
+        _parse_day.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_day(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_day, RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            int day = day_num((RubyString) ((RubyMatchData) sub).at(1));
+            hash.fastASet(runtime.newSymbol("wday"), RubyFixnum.newFixnum(runtime, day));
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_mon;
+    static {
+        _parse_mon = ByteList.create("\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\S*");
+        _parse_mon.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_mon(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_mon, RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            int mon = mon_num((RubyString) ((RubyMatchData) sub).at(1));
+            hash.fastASet(runtime.newSymbol("mon"), RubyFixnum.newFixnum(runtime, mon));
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_year;
+    static {
+        _parse_year = ByteList.create("'(\\d+)\\b");
+        _parse_year.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_year(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_year);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            hash.fastASet(runtime.newSymbol("year"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_mday;
+    static {
+        _parse_mday = ByteList.create("(\\d+)(st|nd|rd|th)\\b");
+        _parse_mday.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_mday(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_mday, RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            hash.fastASet(runtime.newSymbol("mday"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_eu;
+    static {
+        _parse_eu = ByteList.create(
+                "('?\\d+)[^-\\d\\s]*" +
+                "\\s*" +
+                "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[^-\\d\\s']*" +
+                "(?:" +
+                  "\\s*" +
+                  "(c(?:e|\\.e\\.)|b(?:ce|\\.c\\.e\\.)|a(?:d|\\.d\\.)|b(?:c|\\.c\\.))?" +
+                  "\\s*" +
+                  "('?-?\\d+(?:(?:st|nd|rd|th)\\b)?)" +
+                ")?"
+        );
+        _parse_eu.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_eu(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_eu, RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            final RubyMatchData match = (RubyMatchData) sub;
+
+            RubyString d = (RubyString) match.at(1);
+            RubyString mon = (RubyString) match.at(2);
+            mon = RubyString.newString(runtime, ConvertBytes.longToByteList(mon_num(mon)));
+            RubyString b = matchOrNull(context, match, 3);
+            RubyString y = matchOrNull(context, match, 4);
+
+            s3e(context, hash, y, mon, d, b != null && b.length() > 1 && (b.charAt(0) == 'B' || b.charAt(0) == 'b'));
+
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_us;
+    static {
+        _parse_us = ByteList.create(
+                "\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[^-\\d\\s']*" +
+                "\\s*" +
+                "('?\\d+)[^-\\d\\s']*" +
+                "(?:" +
+                  "\\s*,?" +
+                  "\\s*" +
+                  "(c(?:e|\\.e\\.)|b(?:ce|\\.c\\.e\\.)|a(?:d|\\.d\\.)|b(?:c|\\.c\\.))?" +
+                  "\\s*" +
+                  "('?-?\\d+)" +
+                ")?"
+        );
+        _parse_us.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_us(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_us, RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            final RubyMatchData match = (RubyMatchData) sub;
+
+            RubyString mon = (RubyString) match.at(1);
+            mon = RubyString.newString(runtime, ConvertBytes.longToByteList(mon_num(mon)));
+            RubyString d = (RubyString) match.at(2);
+            RubyString b = matchOrNull(context, match, 3);
+            RubyString y = matchOrNull(context, match, 4);
+
+            s3e(context, hash, y, mon, d, b != null && b.length() > 1 && (b.charAt(0) == 'B' || b.charAt(0) == 'b'));
+
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    // NOTE: without this things get slower than the .rb version of _parse_eu/_parse_us etc.
+    private static RubyRegexp newRegexpFromCache(Ruby runtime, ByteList str, int opts) {
+        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(opts);
+        Regex pattern = getRegexpFromCache(runtime, str, str.getEncoding(), options);
+        return new RubyRegexp(runtime, pattern, str, options);
+    }
+
+    private static RubyString matchOrNull(ThreadContext context, final RubyMatchData match, int i) {
+        IRubyObject val = match.at(i);
+        return val == context.nil ? null : (RubyString) val;
+    }
+
+    private static final ByteList _parse_iso;
+    static {
+        _parse_iso = ByteList.create("('?[-+]?\\d+)-(\\d+)-('?-?\\d+)");
+        _parse_iso.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_iso(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_iso);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            final RubyMatchData match = (RubyMatchData) sub;
+            s3e(context, hash, (RubyString) match.at(1), (RubyString) match.at(2), (RubyString) match.at(3), false);
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_sla;
+    static {
+        _parse_sla = ByteList.create("('?-?\\d+)/\\s*('?\\d+)(?:\\D\\s*('?-?\\d+))?");
+        _parse_sla.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_sla(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        return parse_sla_dot(context, _parse_sla, str, hash);
+    }
+
+    private static final ByteList _parse_dot;
+    static {
+        _parse_dot = ByteList.create("('?-?\\d+)\\.\\s*('?\\d+)\\.\\s*('?-?\\d+)");
+        _parse_dot.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static IRubyObject _parse_dot(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        return parse_sla_dot(context, _parse_dot, str, hash);
+    }
+
+    private static IRubyObject parse_sla_dot(ThreadContext context, ByteList pattern, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+        RubyRegexp re = RubyRegexp.newRegexp(runtime, pattern);
+        IRubyObject sub = subSpace(context, str, re);
+        if (sub != context.nil) {
+            final RubyMatchData match = (RubyMatchData) sub;
+            RubyString y = matchOrNull(context, match, 1);
+            RubyString mon = matchOrNull(context, match, 2);
+            RubyString d = matchOrNull(context, match, 3);
+
+            s3e(context, hash, y, mon, d, false);
+            return context.tru;
+        }
+        return sub; // nil
+    }
+
+    private static final ByteList _parse_bc;
+    static {
+        _parse_bc = ByteList.create("\\b(bc\\b|bce\\b|b\\.c\\.|b\\.c\\.e\\.)");
+        _parse_bc.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static void parse_bc(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+
+        RubyRegexp re = newRegexpFromCache(runtime, _parse_bc, RE_OPTION_IGNORECASE);
+        IRubyObject sub = subSpace(context, (RubyString) str, re);
+        if (sub != context.nil) {
+            //set_hash(context, (RubyHash) h, "_bc", context.tru);
+        }
+
+        boolean bc = sub != context.nil;
+        if (bc || hashGetTest(context, hash, "_bc")) { // if (RTEST(ref_hash("_bc"))) part from _parse
+            RubyInteger y;
+
+            y = (RubyInteger) hashGet(context, hash, "year");
+            if (y != null) {
+                set_hash(context, hash, "year", y.negate().op_plus(context, 1));
+            }
+            y = (RubyInteger) hashGet(context, hash, "cwyear");
+            if (y != null) {
+                set_hash(context, hash, "cwyear", y.negate().op_plus(context, 1));
+            }
+        }
+    }
+
+    private static final ByteList _parse_frag;
+    static {
+        _parse_frag = ByteList.create("\\A\\s*(\\d{1,2})\\s*\\z");
+        _parse_frag.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    static void parse_frag(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
+        final Ruby runtime = context.runtime;
+
+        IRubyObject sub = null;
+
+        if (hashGet(context, hash, "hour") != null && hashGet(context, hash, "mday") == null) {
+            RubyRegexp re = newRegexpFromCache(runtime, _parse_frag, RE_OPTION_IGNORECASE);
+            sub = subSpace(context, (RubyString) str, re);
+            if (sub != context.nil) {
+                RubyInteger v = (RubyInteger) ((RubyString) ((RubyMatchData) sub).at(1)).to_i();
+                long vi = v.getLongValue();
+                if (1 <= vi && vi <= 31) hash.fastASet(runtime.newSymbol("mday"), v);
+            }
+        }
+
+        if (hashGet(context, hash, "mday") != null && hashGet(context, hash, "hour") == null) {
+            if (sub == null) {
+                RubyRegexp re = newRegexpFromCache(runtime, _parse_frag, RE_OPTION_IGNORECASE);
+                sub = subSpace(context, (RubyString) str, re);
+            }
+            if (sub != context.nil) {
+                RubyInteger v = (RubyInteger) ((RubyString) ((RubyMatchData) sub).at(1)).to_i();
+                long vi = v.getLongValue();
+                if (0 <= vi && vi <= 24) hash.fastASet(runtime.newSymbol("hour"), v);
+            }
+        }
+    }
+
+    private static IRubyObject hashGet(final ThreadContext context, final RubyHash hash, final String key) {
+        IRubyObject val = hash.fastARef(context.runtime.newSymbol(key));
+        if (val == null || val == context.nil) return null;
+        return val;
+    }
+
+    private static boolean hashGetTest(final ThreadContext context, final RubyHash hash, final String key) {
+        IRubyObject val = hash.fastARef(context.runtime.newSymbol(key));
+        if (val == null || val == context.nil) return false;
+        return val.isTrue();
+    }
+
+    private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
+
+    private static IRubyObject subSpace(ThreadContext context, RubyString str, RubyRegexp reg) {
+        return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE));
+    }
+
+    // NOTE: still in .rb
+    public static IRubyObject _parse_jis(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+        return Helpers.invoke(context, self, "_parse_jis", str, h);
+    }
+
+    // NOTE: still in .rb
+    public static IRubyObject _parse_vms(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+        return Helpers.invoke(context, self, "_parse_vms", str, h);
+    }
+
+    // NOTE: still in .rb
+    public static IRubyObject _parse_iso2(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+        return Helpers.invoke(context, self, "_parse_iso2", str, h);
+    }
+
+    // NOTE: still in .rb
+    public static IRubyObject _parse_ddd(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject h) {
+        return Helpers.invoke(context, self, "_parse_ddd", str, h);
+    }
+
+    private static final ByteList _parse_impl;
+    static {
+        _parse_impl = ByteList.create("[^-+',.\\/:@[:alnum:]\\[\\]]+");
+        _parse_impl.setEncoding(USASCIIEncoding.INSTANCE);
+    }
+
+    @JRubyMethod(name = "_parse_impl", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _parse_impl(ThreadContext context, IRubyObject self, IRubyObject s, IRubyObject h) {
+        final Ruby runtime = context.runtime;
+
+        RubyString str = (RubyString) s; RubyHash hash = (RubyHash) h;
+
+        str = str.gsubFast(context, newRegexp(runtime, _parse_impl), RubyString.newStringShared(context.runtime, SPACE), Block.NULL_BLOCK);
+
+        int flags = check_class(str);
+        if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {
+            _parse_day(context, self, str, hash);
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT
+            && ((flags & (HAVE_COLON|HAVE_M_m|HAVE_H_h|HAVE_S_s)) != 0)) { // JRuby opt
+            _parse_time(context, self, str, hash);
+        }
+
+        do_parse(context, self, str, hash, flags);
+
+        // ok:
+        if ((flags & HAVE_B_b) == HAVE_B_b) { // JRuby opt - instead of HAVE_ALPHA
+            parse_bc(context, self, str, hash);
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) { // NOTE: MRI re-loops string
+            parse_frag(context, self, str, hash);
+        }
+
+        if (hashGetTest(context, hash, "_comp")) {
+            RubyInteger y;
+
+            y = (RubyInteger) hashGet(context, hash, "cwyear");
+            if (y != null) {
+                long yi = y.getLongValue();
+                if (yi >= 0 && yi <= 99) {
+                    set_hash(context, hash, "cwyear", y.op_plus(context, yi >= 69 ? 1900 : 2000));
+                }
+            }
+            y = (RubyInteger) hashGet(context, hash, "year");
+            if (y != null) {
+                long yi = y.getLongValue();
+                if (yi >= 0 && yi <= 99) {
+                    set_hash(context, hash, "year", y.op_plus(context, yi >= 69 ? 1900 : 2000));
+                }
+            }
+        }
+
+        IRubyObject zone;
+        if (hashGet(context, hash, "offset") == null && (zone = hashGet(context, hash, "zone")) != null) {
+            set_hash(context, hash, "offset", zone_to_diff(context, self, zone));
+        }
+
+        hash.fastDelete(runtime.newSymbol("_bc"));
+        hash.fastDelete(runtime.newSymbol("_comp"));
+
+        return hash;
+    }
+
+    private static void do_parse(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash, final int flags) {
+        //#ifdef TIGHT_PARSER
+        // if (HAVE_ELEM_P(HAVE_ALPHA)) parse_era(str, hash);
+        //#endif
+
+        IRubyObject res;
+
+        if ((flags & (HAVE_ALPHA|HAVE_DIGIT)) == (HAVE_ALPHA|HAVE_DIGIT)) {
+            res = _parse_eu(context, self, str, hash);
+            if (res != context.nil) return;
+            res = _parse_us(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_DASH)) == (HAVE_DIGIT|HAVE_DASH)) {
+            res = _parse_iso(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_DOT)) == (HAVE_DIGIT|HAVE_DOT)) {
+            res = _parse_jis(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_ALPHA|HAVE_DIGIT|HAVE_DASH)) == (HAVE_ALPHA|HAVE_DIGIT|HAVE_DASH)) {
+            res = _parse_vms(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_SLASH)) == (HAVE_DIGIT|HAVE_SLASH)) {
+            res = _parse_sla(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & (HAVE_DIGIT|HAVE_DOT)) == (HAVE_DIGIT|HAVE_DOT)) {
+            res = _parse_dot(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_iso2(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_year(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {
+            res = _parse_mon(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_mday(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+        if ((flags & HAVE_DIGIT) == HAVE_DIGIT) {
+            res = _parse_ddd(context, self, str, hash);
+            if (res != context.nil) return;
+        }
+
+        // MRI does an ERROR here ...
+    }
+
+    private static final int HAVE_ALPHA = (1<<0);
+    private static final int HAVE_DIGIT = (1<<1);
+    private static final int HAVE_DASH  = (1<<2);
+    private static final int HAVE_DOT   = (1<<3);
+    private static final int HAVE_SLASH = (1<<4);
+    // custom, not in MRI :
+    private static final int HAVE_COLON = (1<<6);
+    private static final int HAVE_M_m   = (1<<7); // am|pm 3m
+    private static final int HAVE_H_h   = (1<<8); // 9h
+    private static final int HAVE_S_s   = (1<<9); // 3s
+    private static final int HAVE_B_b   = (1<<10); // bc
+
+    private static int check_class(RubyString s) { // TODO: we could assume single-byte like MRI, right?
+        int flags = 0;
+        for (int i=0; i<s.length(); i++) {
+            final char c = s.charAt(i);
+            switch (c) {
+                case '-': flags |= HAVE_DASH; break;
+                case '.': flags |= HAVE_DOT;  break;
+                case '/': flags |= HAVE_SLASH; break;
+                case ':': flags |= HAVE_COLON; break;
+                case 'b': case 'B':
+                    flags |= HAVE_ALPHA|HAVE_B_b;
+                    break;
+                case 'm': case 'M':
+                    flags |= HAVE_ALPHA|HAVE_M_m;
+                    break;
+                case 'h': case 'H':
+                    flags |= HAVE_ALPHA|HAVE_H_h;
+                    break;
+                case 's': case 'S':
+                    flags |= HAVE_ALPHA|HAVE_S_s;
+                    break;
+                default:
+                    if (isDigit(c)) flags |= HAVE_DIGIT;
+                    else if (isAlpha(c)) flags |= HAVE_ALPHA;
+            }
+        }
+        return flags;
+    }
+
+    // str.sub! /reg/, ' ' (without $~)
+    @JRubyMethod(name = "subs", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _subs(ThreadContext context, IRubyObject self, IRubyObject str, IRubyObject reg) {
+        return subSpace(context, (RubyString) str, (RubyRegexp) reg);
+    }
+
+    // /re/.match str (without $~)
+    @JRubyMethod(name = "match", meta = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject _match(ThreadContext context, IRubyObject self, IRubyObject reg, IRubyObject str) {
+        return ((RubyRegexp) reg).match_m(context, str, false);
+    }
+
     @JRubyMethod(name = "s3e", meta = true, required = 4, optional = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject _s3e(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         final IRubyObject nil = context.nil;
 
-        final RubyHash hash = (RubyHash) args[0];
         RubyString y = args[1] == nil ? null : (RubyString) args[1];
         RubyString m = args[2] == nil ? null : (RubyString) args[2];
         RubyString d = args[3] == nil ? null : (RubyString) args[3];
-        boolean bc = args.length > 4 ? args[4].isTrue() : false;
+
+        return s3e(context, (RubyHash) args[0], y, m, d, args.length > 4 ? args[4].isTrue() : false);
+    }
+
+    private static IRubyObject s3e(ThreadContext context, final RubyHash hash,
+                                   RubyString y, RubyString m, RubyString d, boolean bc) {
 
         Boolean comp = null; RubyString oy, om, od;
 
@@ -1768,6 +2382,10 @@ public class RubyDate extends RubyObject {
             case '5': case '6': case '7': case '8': case '9': return true;
             default: return false;
         }
+    }
+
+    private static boolean isAlpha(char c) {
+        return Character.isLetter(c);
     }
 
     private static int skipNonDigitsAndSign(RubyString str) {

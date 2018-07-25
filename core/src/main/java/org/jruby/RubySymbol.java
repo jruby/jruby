@@ -429,7 +429,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(context.runtime);
     }
 
-    private final RubyString to_s(Ruby runtime) {
+    final RubyString to_s(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
 
