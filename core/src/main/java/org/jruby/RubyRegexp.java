@@ -157,7 +157,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    static Regex getRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
+    public static Regex getRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options) {
         Regex regex = patternCache.get(bytes);
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
         regex = makeRegexp(runtime, bytes, options, enc);
@@ -300,6 +300,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getRegexp());
         this.options = new RegexpOptions();
+    }
+
+    public RubyRegexp(Ruby runtime, Regex pattern, ByteList str, RegexpOptions options) {
+        super(runtime, runtime.getRegexp());
+        this.pattern = pattern;
+        this.str = str;
+        this.options = options;
     }
 
     private RubyRegexp(Ruby runtime, ByteList str) {

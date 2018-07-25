@@ -2866,7 +2866,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
         frozenCheck();
 
-        if (block.isGiven()) return subBangIter(runtime, context, arg0, null, block);
+        if (block.isGiven()) return subBangIter(context, asRegexpArg(runtime, arg0), null, block);
         throw runtime.newArgumentError(1, 2);
     }
 
@@ -2879,7 +2879,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (hash == context.nil) {
             return subBangNoIter(context, asRegexpArg(runtime, arg0), arg1.convertToString());
         }
-        return subBangIter(runtime, context, arg0, (RubyHash) hash, block);
+        return subBangIter(context, asRegexpArg(runtime, arg0), (RubyHash) hash, block);
     }
 
     private static RubyRegexp asRegexpArg(final Ruby runtime, final IRubyObject arg0) {
@@ -2887,8 +2887,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             RubyRegexp.newRegexp(runtime, RubyRegexp.quote(getStringForPattern(runtime, arg0).getByteList(), false), new RegexpOptions());
     }
 
-    private IRubyObject subBangIter(Ruby runtime, ThreadContext context, IRubyObject arg0, RubyHash hash, Block block) {
-        RubyRegexp regexp = asRegexpArg(runtime, arg0);
+    private IRubyObject subBangIter(ThreadContext context, RubyRegexp regexp, RubyHash hash, Block block) {
         Regex pattern = regexp.getPattern();
         Regex prepared = regexp.preparePattern(this);
 
@@ -2907,7 +2906,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             final int mBeg = matcher.getBegin(), mEnd = matcher.getEnd();
 
             final RubyString repl; final int tuFlags;
-            IRubyObject subStr = makeShared(runtime, mBeg, mEnd - mBeg);
+            IRubyObject subStr = makeShared(context.runtime, mBeg, mEnd - mBeg);
             if (hash == null) {
                 tuFlags = 0;
                 repl = objAsString(context, block.yield(context, subStr));
@@ -3085,16 +3084,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return gsubCommon19(context, block, str, hash, arg0, bang, tuFlags);
     }
 
+    public RubyString gsubFast(ThreadContext context, RubyRegexp regexp, RubyString repl, Block block) {
+        return (RubyString) gsubCommon19(context, block, repl, null, regexp, false, repl.flags, false);
+    }
+
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
-        return gsubCommon19(context, block, repl, hash, arg0, bang, tuFlags, true);
+        return gsubCommon19(context, block, repl, hash, asRegexpArg(context.runtime, arg0), bang, tuFlags, true);
     }
 
     // MRI: str_gsub, roughly
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
-            RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags, boolean useBackref) {
+            RubyHash hash, RubyRegexp regexp, final boolean bang, int tuFlags, boolean useBackref) {
         final Ruby runtime = context.runtime;
-        RubyRegexp regexp = asRegexpArg(runtime, arg0);
         Regex pattern = regexp.getPattern();
         Regex prepared = regexp.preparePattern(this);
 
@@ -4806,7 +4808,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (arg instanceof RubyRegexp) {
             IRubyObject tmp = rindex(context, arg);
             if (tmp.isNil()) return rpartitionMismatch(runtime);
-            pos = (int)tmp.convertToInteger().getIntValue();
+            pos = tmp.convertToInteger().getIntValue();
             sep = (RubyString)RubyRegexp.nth_match(0, context.getBackRef());
         } else {
             IRubyObject tmp = arg.checkStringType();
