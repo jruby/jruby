@@ -1963,9 +1963,8 @@ brace_body      : {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param compstmt {
-                    // FIXME: probably need to correct location here
-                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
-                     support.popCurrentScope();
+                    $$ = new IterNode($<ISourcePositionHolder>-1.getPosition(), $2, $3, support.getCurrentScope());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
 
@@ -1974,9 +1973,8 @@ do_body 	: {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param bodystmt {
-                    // FIXME: probably need to correct location here
-                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
-                     support.popCurrentScope();
+                    $$ = new IterNode($<ISourcePositionHolder>-1.getPosition(), $2, $3, support.getCurrentScope());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset($<Long>1.longValue());
                 }
  

@@ -4469,9 +4469,8 @@ states[443] = new ParserState() {
 };
 states[444] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* FIXME: probably need to correct location here*/
-                    yyVal = new IterNode(lexer.getPosition(), ((ArgsNode)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), support.getCurrentScope());
-                     support.popCurrentScope();
+                    yyVal = new IterNode(((ISourcePositionHolder)yyVals[-4+yyTop]).getPosition(), ((ArgsNode)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), support.getCurrentScope());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset(((Long)yyVals[-2+yyTop]).longValue());
     return yyVal;
   }
@@ -4486,9 +4485,8 @@ states[445] = new ParserState() {
 };
 states[446] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* FIXME: probably need to correct location here*/
-                    yyVal = new IterNode(lexer.getPosition(), ((ArgsNode)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), support.getCurrentScope());
-                     support.popCurrentScope();
+                    yyVal = new IterNode(((ISourcePositionHolder)yyVals[-4+yyTop]).getPosition(), ((ArgsNode)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]), support.getCurrentScope());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset(((Long)yyVals[-2+yyTop]).longValue());
     return yyVal;
   }
@@ -5718,7 +5716,7 @@ states[647] = new ParserState() {
   }
 };
 }
-					// line 2764 "RubyParser.y"
+					// line 2762 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5733,4 +5731,4 @@ states[647] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10626 "-"
+					// line 10624 "-"
