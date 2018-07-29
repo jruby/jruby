@@ -636,7 +636,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final IRubyObject internalSetValue(final int index, final IRubyObject value) {
-        if (index == EMPTY_BIN) return null;
+        if (index < 0) return null;
         final IRubyObject result = entries[index + 1];
         entries[(index * NUMBER_OF_ENTRIES) + 1] = value;
         return result;
@@ -645,7 +645,7 @@ public class RubyHash extends RubyObject implements Map {
     // get implementation
 
     private final IRubyObject internalGetValue(final int index) {
-        if (index == EMPTY_BIN) return null;
+        if (index < 0) return null;
         return entries[(index * NUMBER_OF_ENTRIES) + 1];
     }
 
@@ -653,8 +653,12 @@ public class RubyHash extends RubyObject implements Map {
         int bin = bucketIndex(hash, bins.length);
         int index = bins[bin];
         IRubyObject otherKey;
+        int round = 0;
 
         while(index != EMPTY_BIN) {
+            if (round == bins.length) {
+              break;
+            }
             if(index != DELETED_BIN) {
                 otherKey = entries[index * NUMBER_OF_ENTRIES];
                 if (internalKeyExist(otherKey, key)) {
@@ -663,6 +667,7 @@ public class RubyHash extends RubyObject implements Map {
             }
             bin = secondaryBucketIndex(bin, bins.length);
             index = bins[bin];
+            round++;
         }
 
         return bin;
@@ -737,8 +742,11 @@ public class RubyHash extends RubyObject implements Map {
         int bin = bucketIndex(hash, bins.length);
         int index = bins[bin];
         IRubyObject otherKey, otherValue;
+        int round = 0;
 
         while (index != EMPTY_BIN) {
+            if (round == bins.length)
+              break;
             if (index != DELETED_BIN) {
                 otherKey = entries[index * NUMBER_OF_ENTRIES];
                 otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
@@ -758,6 +766,7 @@ public class RubyHash extends RubyObject implements Map {
             }
             bin = secondaryBucketIndex(bin, bins.length);
             index = bins[bin];
+            round++;
         }
 
         // no entry found
