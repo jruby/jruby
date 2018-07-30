@@ -757,10 +757,11 @@ public class RubyHash extends RubyObject implements Map {
                   size--;
 
                   // move pointers in case we deleted first or last element
-                  if (index == start)
+                  if (index == start){
                       start++;
-                  if (index == (end - 1))
+                  } else if (index == (end - 1)) {
                       end--;
+                  }
                   return otherValue;
                 }
             }
@@ -787,10 +788,11 @@ public class RubyHash extends RubyObject implements Map {
               size--;
 
               // move pointers in case we deleted first or last element
-              if (index == start)
+              if (index == start){
                   start++;
-              if (index == (end - 1))
-                end--;
+              } else if (index == (end - 1)) {
+                  end--;
+              }
               return otherValue;
             }
         }
