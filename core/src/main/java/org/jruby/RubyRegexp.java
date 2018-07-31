@@ -1270,7 +1270,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 //    matchData.infectBy(str);
                 //}
             }
-
+            matchData.regexp = this;
             matchData.infectBy(this);
             setBackRefInternal(context, holder, matchData);
             return result;
