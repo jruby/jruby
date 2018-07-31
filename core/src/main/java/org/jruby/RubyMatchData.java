@@ -488,9 +488,9 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    public final int backrefNumber(IRubyObject obj) {
+    public final int backrefNumber(Ruby runtime, IRubyObject obj) {
         check();
-        return backrefNumber(getRuntime(), getPattern(), regs, obj);
+        return backrefNumber(runtime, getPattern(), regs, obj);
     }
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
@@ -630,11 +630,10 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
-        Ruby runtime = context.runtime;
-
-        int i = backrefNumber(index);
-
         check();
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(runtime, index);
+
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
@@ -656,7 +655,7 @@ public class RubyMatchData extends RubyObject {
         check();
 
         final Ruby runtime = context.runtime;
-        final int i = backrefNumber(index);
+        final int i = backrefNumber(runtime, index);
 
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
@@ -686,11 +685,12 @@ public class RubyMatchData extends RubyObject {
         check();
 
         final Ruby runtime = context.runtime;
-        final int i = backrefNumber(index);
+        final int i = backrefNumber(runtime, index);
 
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
+
         int b, e;
         if (regs == null) {
             b = begin;

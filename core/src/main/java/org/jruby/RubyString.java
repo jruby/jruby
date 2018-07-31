@@ -3590,7 +3590,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         // this cast should be ok, since nil matchdata will be < 0 above
         RubyMatchData match = (RubyMatchData)context.getBackRef();
 
-        int nth = backref == null ? 0 : subpatSetCheck(runtime, match.backrefNumber(backref), match.regs);
+        int nth = backref == null ? 0 : subpatSetCheck(runtime, match.backrefNumber(context.runtime, backref), match.regs);
 
         final int start, end;
         if (match.regs == null) {
@@ -3613,7 +3613,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (result >= 0) {
             RubyMatchData match = (RubyMatchData)context.getBackRef();
-            return RubyRegexp.nth_match(match.backrefNumber(backref), match);
+            return RubyRegexp.nth_match(match.backrefNumber(context.runtime, backref), match);
         }
 
         return context.nil;

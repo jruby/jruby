@@ -781,7 +781,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
         IRubyObject match = context.getBackRef();
         if (match.isNil()) return match;
-        return nth_match(((RubyMatchData)match).backrefNumber(nth), match);
+        return nth_match(((RubyMatchData)match).backrefNumber(context.runtime, nth), match);
     }
 
     /** rb_reg_s_union
