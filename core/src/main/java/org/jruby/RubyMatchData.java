@@ -810,27 +810,25 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     public RubyHash named_captures(ThreadContext context) {
+        check();
         Ruby runtime = context.runtime;
-
         RubyHash hash = RubyHash.newHash(runtime);
+        if (regexp == context.nil) return hash;
 
-        if (regexp.getPattern().numberOfNames() > 0) {
-            Iterator<NameEntry> nameEntryIterator = regexp.getPattern().namedBackrefIterator();
-            while (nameEntryIterator.hasNext()) {
-                NameEntry entry = nameEntryIterator.next();
-                RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
-                boolean found = false;
+        for (Iterator<NameEntry> i = regexp.pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry entry = i.next();
+            RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            boolean found = false;
 
-                for (int i : entry.getBackRefs()) {
-                    IRubyObject value = RubyRegexp.nth_match(i, this);
-                    if (value.isTrue()) {
-                        hash.op_asetForString(runtime, key, value);
-                        found = true;
-                    }
+            for (int b : entry.getBackRefs()) {
+                IRubyObject value = RubyRegexp.nth_match(b, this);
+                if (value.isTrue()) {
+                    hash.op_asetForString(runtime, key, value);
+                    found = true;
                 }
-
-                if (!found) hash.op_asetForString(runtime, key, context.nil);
             }
+
+            if (!found) hash.op_asetForString(runtime, key, context.nil);
         }
 
         return hash;
