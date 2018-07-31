@@ -85,7 +85,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     Regex pattern;
     private ByteList str = ByteList.EMPTY_BYTELIST;
     private RegexpOptions options;
-    private int useCount;
 
     public static final int ARG_ENCODING_FIXED     =   ReOptions.RE_FIXED;
     public static final int ARG_ENCODING_NONE      =   ReOptions.RE_NONE;
@@ -1194,20 +1193,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         final Regex reg = preparePattern(str);
-
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
 
         Matcher matcher = reg.matcherNoRegion(strBL.unsafeBytes(), beg, beg + strBL.realSize());
 
-        int result;
         try {
-            result = matcherSearch(context, matcher, beg + pos, beg + strBL.realSize(), RE_OPTION_NONE);
+            final int result = matcherSearch(context, matcher, beg + pos, beg + strBL.realSize(), RE_OPTION_NONE);
+            return result == -1 ? context.fals : context.tru;
         } catch (JOniException je) {
             throw context.runtime.newRegexpError(je.getMessage());
         }
-
-        return result == -1 ? context.fals : context.tru;
     }
 
     /**
@@ -1235,9 +1231,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * Holder, if non-null, will receive the backref result rather than setting it into context.
      */
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
-        int result = -1;
-        IRubyObject match;
-//        Region regs = null;
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
         int range = beg;
@@ -1248,71 +1241,42 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         final Regex reg = preparePattern(str);
-        final boolean tmpreg = reg != this.pattern;
-        if (!tmpreg) this.useCount++;
-
-        match = getBackRefInternal(context, holder);
-        if ( match instanceof RubyMatchData ) { // ! match.isNil()
-            if ( ((RubyMatchData) match).used() ) {
+        IRubyObject match = getBackRefInternal(context, holder);
+        if (match instanceof RubyMatchData) { // ! match.isNil()
+            if (((RubyMatchData) match).used()) {
                 match = context.nil;
             }
-//            else {
-//                regs = ((RubyMatchData)match).regs;
-//            }
         }
-//        if (match.isNil()) {
-//            regs = null;
-//        }
-        if (!reverse) {
-            range += str.size();
-        }
-        Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
-        JOniException exception = null;
+
+        if (!reverse) range += str.size();
+
+        final Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
+
         try {
-            result = matcherSearch(context, matcher, beg + pos, range, RE_OPTION_NONE);
-        } catch (JOniException je) {
-            exception = je;
-        }
-
-        if (tmpreg) {
-            if (this.useCount > 0) {
-//                onig_free(reg);
-            }
-            else {
-//                onig_free(RREGEXP(re)->ptr);
-                this.pattern = reg;
-            }
-        }
-        else {
-            this.useCount--;
-        }
-
-        if (result < 0) {
+            int result = matcherSearch(context, matcher, beg + pos, range, RE_OPTION_NONE);
             if (result == -1) {
                 setBackRefInternal(context, holder, context.nil);
                 return -1;
             }
-            throw context.runtime.newRegexpError(exception == null ? "FIXME: missing message" : exception.getMessage());
-        }
 
-        final RubyMatchData matchData;
-        if (match == context.nil) {
-            matchData = createMatchData(context, str, matcher, reg);
-        }
-        else {
-            // FIXME: This could be reusing the MatchData object
-            matchData = createMatchData(context, str, matcher, reg);
-            //if (setBackrefStr) {
-            //    matchData.str = str.newFrozen();
-            //    matchData.infectBy(str);
-            //}
-        }
+            final RubyMatchData matchData;
+            if (match == context.nil) {
+                matchData = createMatchData(context, str, matcher, reg);
+            } else {
+                // FIXME: This could be reusing the MatchData object
+                matchData = createMatchData(context, str, matcher, reg);
+                //if (setBackrefStr) {
+                //    matchData.str = str.newFrozen();
+                //    matchData.infectBy(str);
+                //}
+            }
 
-        matchData.regexp = this;
-        matchData.infectBy(this);
-        setBackRefInternal(context, holder, matchData);
-
-        return result;
+            matchData.infectBy(this);
+            setBackRefInternal(context, holder, matchData);
+            return result;
+        } catch (JOniException je) {
+            throw context.runtime.newRegexpError(je.getMessage());
+        }
     }
 
     private static IRubyObject getBackRefInternal(ThreadContext context, IRubyObject[] holder) {
