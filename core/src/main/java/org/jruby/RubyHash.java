@@ -2434,9 +2434,9 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             IRubyObject key, value;
-            for (int i = start; i < size; i += NUMBER_OF_ENTRIES) {
-              key = entries[i];
-              value = entries[i + 1];
+            for (int i = start; i < end; i++) {
+              key = entries[i * NUMBER_OF_ENTRIES];
+              value = entries[(i * NUMBER_OF_ENTRIES) + 1];
               IRubyObject newAssoc = RubyArray.newArray(context.runtime, key, value);
               if (block.yield(context, newAssoc).isTrue())
                   return context.tru;
@@ -2451,9 +2451,9 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             IRubyObject key, value;
-            for (int i = 0; i < size; i += NUMBER_OF_ENTRIES) {
-                key = entries[i];
-                value = entries[i + 1];
+            for (int i = start; i < end; i++) {
+                key = entries[i * NUMBER_OF_ENTRIES];
+                value = entries[(i * NUMBER_OF_ENTRIES) + 1];
                 if (block.yieldArray(context, context.runtime.newArray(key, value), null).isTrue())
                     return context.tru;
             }
@@ -2467,9 +2467,9 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             IRubyObject key, value;
-            for (int i = 0; i < size; i += NUMBER_OF_ENTRIES) {
-                key = entries[i];
-                value = entries[i + 1];
+            for (int i = start; i < end; i++) {
+                key = entries[i * NUMBER_OF_ENTRIES];
+                value = entries[(i * NUMBER_OF_ENTRIES) + 1];
                 IRubyObject newAssoc = RubyArray.newArray(context.runtime, key, value);
                 if (pattern.callMethod(context, "===", newAssoc).isTrue())
                     return context.tru;
