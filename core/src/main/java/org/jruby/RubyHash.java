@@ -1361,25 +1361,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     protected void op_asetSmallForString(Ruby runtime, RubyString key, IRubyObject value) {
-      final int hash = hashValue(key);
-      if (shouldSearchLinear()) {
-          final int index = internalGetIndexLinearSearch(hash, key);
-          if (index != EMPTY_BIN) {
-              internalSetValue(index, value);
-              return;
-          }
-          if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
-          internalPutLinearSearch(hash, key, value);
-      } else {
-          final int bin = internalGetBinOpenAddressing(hash, key);
-          final int index = bins[bin];
-          if (index != EMPTY_BIN) {
-              internalSetValue(index, value);
-              return;
-          }
-          if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
-          internalPutOpenAdressing(hash, bin, key, value);
-      }
+        // There is no small hash anymore, not possible with this algorithm
+        op_asetForString(runtime, key, value);
     }
 
     public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
