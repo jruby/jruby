@@ -757,10 +757,14 @@ public class RubyHash extends RubyObject implements Map {
                   size--;
 
                   // move pointers in case we deleted first or last element
-                  if (index == start){
+                  if (index == start && size > 0) {
                       start++;
-                  } else if (index == (end - 1)) {
+                      while(entries[start * NUMBER_OF_ENTRIES] == null)
+                        start++;
+                  } else if (index == (end - 1) && (end - 1) > 0) {
                       end--;
+                      while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0)
+                        end--;
                   }
                   return otherValue;
                 }
@@ -788,10 +792,14 @@ public class RubyHash extends RubyObject implements Map {
               size--;
 
               // move pointers in case we deleted first or last element
-              if (index == start){
+              if (index == start && size > 0) {
                   start++;
-              } else if (index == (end - 1)) {
+                  while(entries[start * NUMBER_OF_ENTRIES] == null)
+                    start++;
+              } else if (index == (end - 1) && (end - 1) > 0) {
                   end--;
+                  while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0)
+                    end--;
               }
               return otherValue;
             }
@@ -2761,7 +2769,7 @@ public class RubyHash extends RubyObject implements Map {
         public BaseIterator(EntryView view) {
             this.view = view;
             this.startGeneration = RubyHash.this.generation;
-            this.index = 0;
+            this.index = RubyHash.this.start;
             this.end = RubyHash.this.end;
             this.hasNext = RubyHash.this.size > 0;
         }
@@ -2771,34 +2779,28 @@ public class RubyHash extends RubyObject implements Map {
                 do {
                     if (startGeneration != RubyHash.this.generation) {
                         startGeneration = RubyHash.this.generation;
-                        key = entries[0];
-                        value = entries[1];
-                        index = 1;
+                        index = RubyHash.this.start;
+                        key = entries[index * NUMBER_OF_ENTRIES];
+                        value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                        index++;
                         hasNext = RubyHash.this.size > 0;
-                        while((key == null || value == null) && index < end && hasNext) {
-                            key = entries[index * NUMBER_OF_ENTRIES];
-                            value = entries[(index * NUMBER_OF_ENTRIES) + 1];
-                            index++;
-                        }
                     } else {
                         if (index < end) {
                             key = entries[index * NUMBER_OF_ENTRIES];
                             value = entries[(index * NUMBER_OF_ENTRIES) + 1];
                             index++;
                             hasNext = true;
-                            while((key == null || value == null) && index < end) {
-                                key = entries[index * NUMBER_OF_ENTRIES];
-                                value = entries[(index * NUMBER_OF_ENTRIES) + 1];
-                                index++;
-                            };
                         } else {
                             hasNext = false;
                         }
                     }
+                    while((key == null || value == null) && index < end && hasNext) {
+                        key = entries[index * NUMBER_OF_ENTRIES];
+                        value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                        index++;
+                    }
                 } while ((key == null || value == null) && index < size);
             }
-            if(key == null || value == null)
-              hasNext = false;
             peeking = !consume;
         }
 
