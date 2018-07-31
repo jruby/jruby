@@ -46,7 +46,7 @@ $ rbenv install jruby
 
 Note: if you do not regularly git update rbenv this list of versions may be out of date.
 
-We recommend always selecting the latest version of JRuby from the list.  The you can install that particular version (9.1.10.0 is just for illustration):
+We recommend always selecting the latest version of JRuby from the list.  You can install that particular version (9.1.10.0 is just for illustration):
 
 
 ```
