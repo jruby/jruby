@@ -1136,14 +1136,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject str) {
-        IRubyObject[] dummy = new IRubyObject[1];
-        return context.runtime.newBoolean(matchPos(context, str, null, dummy, 0) >= 0);
+        return matchP(context, str, 0);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject str, IRubyObject pos) {
-        IRubyObject[] dummy = new IRubyObject[1];
-        return context.runtime.newBoolean(matchPos(context, str, null, dummy, RubyNumeric.num2int(pos)) >= 0);
+        return matchP(context, str, RubyNumeric.num2int(pos));
     }
 
     private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
@@ -1181,6 +1179,35 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             pos = str.rbStrOffset(pos);
         }
         return search(context, str, pos, false, holder);
+    }
+
+    private RubyBoolean matchP(ThreadContext context, IRubyObject arg, int pos) {
+        if (arg == context.nil) return context.fals;
+        RubyString str = arg instanceof RubySymbol ? ((RubySymbol) arg).to_s(context.runtime) : arg.convertToString();
+
+        if (pos != 0) {
+            if (pos < 0) {
+                pos += str.strLength();
+                if (pos < 0) return context.fals;
+            }
+            pos = str.rbStrOffset(pos);
+        }
+
+        final Regex reg = preparePattern(str);
+
+        final ByteList strBL = str.getByteList();
+        final int beg = strBL.begin();
+
+        Matcher matcher = reg.matcherNoRegion(strBL.unsafeBytes(), beg, beg + strBL.realSize());
+
+        int result;
+        try {
+            result = matcherSearch(context, matcher, beg + pos, beg + strBL.realSize(), RE_OPTION_NONE);
+        } catch (JOniException je) {
+            throw context.runtime.newRegexpError(je.getMessage());
+        }
+
+        return result == -1 ? context.fals : context.tru;
     }
 
     /**
