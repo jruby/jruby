@@ -797,7 +797,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public int hashCode() {
         check();
-        return getPattern().hashCode() ^ str.hashCode();
+        return regexp.pattern.hashCode() ^ str.hashCode();
     }
 
     @JRubyMethod
