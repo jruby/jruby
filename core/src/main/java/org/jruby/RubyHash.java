@@ -2771,14 +2771,14 @@ public class RubyHash extends RubyObject implements Map {
                 do {
                     if (startGeneration != RubyHash.this.generation) {
                         startGeneration = RubyHash.this.generation;
-                        index = 0;
                         key = entries[0];
                         value = entries[1];
+                        index = 1;
                         hasNext = RubyHash.this.size > 0;
-                        while(key == null && index < end && hasNext) {
-                            index++;
+                        while((key == null || value == null) && index < end && hasNext) {
                             key = entries[index * NUMBER_OF_ENTRIES];
                             value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                            index++;
                         }
                     } else {
                         if (index < end) {
@@ -2786,17 +2786,19 @@ public class RubyHash extends RubyObject implements Map {
                             value = entries[(index * NUMBER_OF_ENTRIES) + 1];
                             index++;
                             hasNext = true;
-                            while(key == null && index < end) {
+                            while((key == null || value == null) && index < end) {
                                 key = entries[index * NUMBER_OF_ENTRIES];
                                 value = entries[(index * NUMBER_OF_ENTRIES) + 1];
                                 index++;
-                            }
+                            };
                         } else {
                             hasNext = false;
                         }
                     }
-                } while (key == null && index < size);
+                } while ((key == null || value == null) && index < size);
             }
+            if(key == null || value == null)
+              hasNext = false;
             peeking = !consume;
         }
 
