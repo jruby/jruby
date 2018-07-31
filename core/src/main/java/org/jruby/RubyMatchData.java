@@ -378,24 +378,22 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyString inspect() {
-        if (str == null) return (RubyString) anyToString();
-
         Ruby runtime = getRuntime();
+        if (regexp == null) return (RubyString) anyToString();
+
         RubyString result = runtime.newString();
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
 
         NameEntry[] names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
-        final Regex pattern = getPattern();
-        if (pattern.numberOfNames() > 0) {
-            for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
-                NameEntry e = i.next();
-                for (int num : e.getBackRefs()) names[num] = e;
-            }
+        final Regex pattern = regexp.pattern;
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            for (int num : e.getBackRefs()) names[num] = e;
         }
 
-        for (int i=0; i<names.length; i++) {
+        for (int i = 0; i < names.length; i++) {
             result.cat((byte)' ');
             if (i > 0) {
                 NameEntry e = names[i];
@@ -410,7 +408,7 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat(RubyNil.nilBytes); // "nil"
             } else {
-                result.append(((RubyString) v).inspect(runtime));
+                result.append(((RubyString)v).inspect(runtime));
             }
         }
 
