@@ -312,8 +312,8 @@ public class RubyHash extends RubyObject implements Map {
         bins = other.internalCopyBins();
         hashes = other.internalCopyHashes();
         size = other.size;
-        start = 0;
-        end = size;
+        start = other.start;
+        end = other.end;
     }
 
     public RubyHash(Ruby runtime, RubyClass klass) {
