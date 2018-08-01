@@ -183,6 +183,17 @@ erb/test_erb_m17n.rb
 
 etc/test_etc.rb
 
+fiddle/test_c_struct_entry.rb
+fiddle/test_import.rb
+fiddle/test_closure.rb
+fiddle/test_handle.rb
+fiddle/test_pointer.rb
+fiddle/test_func.rb
+fiddle/test_c_union_entity.rb
+fiddle/test_cparser.rb
+fiddle/test_fiddle.rb
+fiddle/test_function.rb
+
 fileutils/test_dryrun.rb
 fileutils/test_fileutils.rb
 fileutils/test_nowrite.rb
