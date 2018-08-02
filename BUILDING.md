@@ -3,7 +3,7 @@ Building JRuby from Source
 
 Prerequisites:
 
-* A [Java 7-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
+* A [Java 7-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
   * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
 * [Maven](https://maven.apache.org/download.cgi) 3+
 * [Apache Ant](https://ant.apache.org/bindownload.cgi) 1.8+ (see https://github.com/jruby/jruby/issues/2236)
