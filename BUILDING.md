@@ -3,11 +3,11 @@ Building JRuby from Source
 
 Prerequisites:
 
-* A Java 7-compatible (or higher) Java development kit (JDK).
+* A [Java 7-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
   * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
-* Maven 3+
-* Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
-* make and a C++ compiler for installing the jruby-launcher gem
+* [Maven](https://maven.apache.org/download.cgi) 3+
+* [Apache Ant](https://ant.apache.org/bindownload.cgi) 1.8+ (see https://github.com/jruby/jruby/issues/2236)
+* [Make](https://www.gnu.org/software/make/) and a C++ compiler for installing the jruby-launcher gem
 
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
