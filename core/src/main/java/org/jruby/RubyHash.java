@@ -614,7 +614,7 @@ public class RubyHash extends RubyObject implements Map {
         if (shouldSearchLinear()) {
             if (checkForExisting) {
                 index = internalGetIndexLinearSearch(hash, key);
-                if (index != EMPTY_BIN) {
+                if (index >= 0) {
                     return internalSetValue(index, value);
                 }
             }
@@ -624,7 +624,7 @@ public class RubyHash extends RubyObject implements Map {
             if (checkForExisting) {
                 bin = internalGetBinOpenAddressing(hash, key);
                 index = bins[bin];
-                if (index != EMPTY_BIN) {
+                if (index >= 0) {
                     return internalSetValue(index, value);
                 }
             }
@@ -1327,7 +1327,7 @@ public class RubyHash extends RubyObject implements Map {
         final int hash = hashValue(key);
         if (shouldSearchLinear()) {
             final int index = internalGetIndexLinearSearch(hash, key);
-            if (index != EMPTY_BIN) {
+            if (index >= 0) {
                 internalSetValue(index, value);
                 return;
             }
@@ -1346,7 +1346,7 @@ public class RubyHash extends RubyObject implements Map {
             int bin = internalGetBinOpenAddressing(hash, key);
             final int oldBinsLength = bins.length;
             final int index = bins[bin];
-            if (index != EMPTY_BIN) {
+            if (index >= 0) {
                 internalSetValue(index, value);
                 return;
             }
