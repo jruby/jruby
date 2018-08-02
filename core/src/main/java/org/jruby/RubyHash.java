@@ -2804,7 +2804,7 @@ public class RubyHash extends RubyObject implements Map {
 
         @Override
         public void remove() {
-            if (index == size) {
+            if (index >= end) {
                 throw new IllegalStateException("Iterator out of range");
             }
             internalDeleteEntry(key, value);
