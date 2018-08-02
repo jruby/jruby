@@ -623,9 +623,11 @@ public class RubyHash extends RubyObject implements Map {
             bin = -1;
             if (checkForExisting) {
                 bin = internalGetBinOpenAddressing(hash, key);
-                index = bins[bin];
-                if (index >= 0) {
-                    return internalSetValue(index, value);
+                if (bin >= 0) {
+                    index = bins[bin];
+                    if (index >= 0) {
+                        return internalSetValue(index, value);
+                    }
                 }
             }
             internalPutOpenAdressing(hash, bin, key, value);
@@ -670,7 +672,7 @@ public class RubyHash extends RubyObject implements Map {
             round++;
         }
 
-        return bin;
+        return EMPTY_BIN;
     }
 
     private final int internalGetIndexLinearSearch(final int hash, final IRubyObject key) {
@@ -697,6 +699,7 @@ public class RubyHash extends RubyObject implements Map {
             index = internalGetIndexLinearSearch(hash, key);
         } else {
             final int bin = internalGetBinOpenAddressing(hash, key);
+            if (bin < 0) return null;
             index = bins[bin];
         }
         return internalGetValue(index);
@@ -1343,12 +1346,14 @@ public class RubyHash extends RubyObject implements Map {
             }
             return;
         } else {
-            int bin = internalGetBinOpenAddressing(hash, key);
             final int oldBinsLength = bins.length;
-            final int index = bins[bin];
-            if (index >= 0) {
-                internalSetValue(index, value);
-                return;
+            int bin = internalGetBinOpenAddressing(hash, key);
+            if (bin >= 0) {
+                final int index = bins[bin];
+                if (index >= 0) {
+                    internalSetValue(index, value);
+                    return;
+                }
             }
 
             if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
