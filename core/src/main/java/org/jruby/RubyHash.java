@@ -635,7 +635,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private final IRubyObject internalSetValue(final int index, final IRubyObject value) {
         if (index < 0) return null;
-        final IRubyObject result = entries[index + 1];
+        final IRubyObject result = entries[(index * NUMBER_OF_ENTRIES) + 1];
         entries[(index * NUMBER_OF_ENTRIES) + 1] = value;
         return result;
     }
