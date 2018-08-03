@@ -1,0 +1,1 @@
+fails:Addrinfo#ipv6_v4mapped? returns true for an IPv4 compatible address

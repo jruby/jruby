@@ -1,0 +1,2 @@
+fails:Socket#recvfrom_nonblock using IPv4 using a bound socket with data available the returned Addrinfo uses 0 as the protocol
+fails:Socket#recvfrom_nonblock using IPv6 using a bound socket with data available the returned Addrinfo uses 0 as the protocol

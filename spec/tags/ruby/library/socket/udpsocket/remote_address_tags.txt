@@ -1,0 +1,2 @@
+fails:UDPSocket#remote_address using IPv4 using an explicit hostname the returned Addrinfo uses 0 as the protocol
+fails:UDPSocket#remote_address using IPv6 using an explicit hostname the returned Addrinfo uses 0 as the protocol

@@ -1,0 +1,13 @@
+fails:Addrinfo#marshal_dump using an IP Addrinfo returns an Array
+fails:Addrinfo#marshal_dump using an IP Addrinfo the returned Array includes the address family as the 1st value
+fails:Addrinfo#marshal_dump using an IP Addrinfo the returned Array includes the IP address as the 2nd value
+fails:Addrinfo#marshal_dump using an IP Addrinfo the returned Array includes the protocol family as the 3rd value
+fails:Addrinfo#marshal_dump using an IP Addrinfo the returned Array includes the socket type as the 4th value
+fails:Addrinfo#marshal_dump using an IP Addrinfo the returned Array includes the protocol as the 5th value
+fails:Addrinfo#marshal_dump using an IP Addrinfo the returned Array includes the canonical name as the 6th value
+fails:Addrinfo#marshal_dump using a UNIX Addrinfo returns an Array
+fails:Addrinfo#marshal_dump using a UNIX Addrinfo the returned Array includes the address family as the 1st value
+fails:Addrinfo#marshal_dump using a UNIX Addrinfo the returned Array includes the UNIX path as the 2nd value
+fails:Addrinfo#marshal_dump using a UNIX Addrinfo the returned Array includes the protocol family as the 3rd value
+fails:Addrinfo#marshal_dump using a UNIX Addrinfo the returned Array includes the socket type as the 4th value
+fails:Addrinfo#marshal_dump using a UNIX Addrinfo the returned Array includes the protocol as the 5th value

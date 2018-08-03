@@ -1,0 +1,4 @@
+fails:Socket.accept_loop using an Array of Sockets without any available connections blocks the caller
+fails:Socket.accept_loop using an Array of Sockets with available connections yields a Socket and an Addrinfo
+fails:Socket.accept_loop using separate Socket arguments without any available connections blocks the caller
+fails:Socket.accept_loop using separate Socket arguments with available connections yields a Socket and an Addrinfo

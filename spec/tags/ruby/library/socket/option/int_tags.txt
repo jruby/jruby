@@ -1,0 +1,2 @@
+fails:Socket::Option.int returns a Socket::Option
+fails:Socket::Option#int returns int value
