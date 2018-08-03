@@ -20,6 +20,10 @@ public abstract class FieldMethodZero extends JavaMethod.JavaMethodZero {
         this(host, field, name);
     }
 
+    public Field getField() {
+        return field;
+    }
+
     protected FieldMethodZero(RubyModule host, Field field, String name) {
         super(host, Visibility.PUBLIC, name);
         if ( ! Ruby.isSecurityRestricted() ) field.setAccessible(true);

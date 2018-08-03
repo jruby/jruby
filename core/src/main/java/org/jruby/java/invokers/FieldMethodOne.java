@@ -19,6 +19,10 @@ public abstract class FieldMethodOne extends JavaMethod.JavaMethodOne {
         this(host, field, name);
     }
 
+    public Field getField() {
+        return field;
+    }
+
     protected FieldMethodOne(RubyModule host, Field field, String name) {
         super(host, Visibility.PUBLIC, name);
         if ( ! Ruby.isSecurityRestricted() ) field.setAccessible(true);

@@ -18,6 +18,9 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.ir.JIT;
+import org.jruby.java.invokers.InstanceFieldGetter;
+import org.jruby.java.invokers.InstanceFieldSetter;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
@@ -36,11 +39,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.invoke.MethodHandles.constant;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 
@@ -332,6 +337,7 @@ public abstract class InvokeSite extends MutableCallSite {
         MethodHandle mh = buildNewInstanceHandle(method, self);
         if (mh == null) mh = buildNotEqualHandle(method, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
+        if (mh == null) mh = buildJavaFieldHandle(this, method, self);
         if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
@@ -342,6 +348,80 @@ public abstract class InvokeSite extends MutableCallSite {
         assert mh != null : "we should have a method handle of some sort by now";
 
         return mh;
+    }
+
+    MethodHandle buildJavaFieldHandle(InvokeSite site, DynamicMethod method, IRubyObject self) throws Throwable {
+        if (method instanceof InstanceFieldGetter) {
+            // only matching arity
+            if (site.arity != 0 || site.signature.lastArgType() == Block.class) return null;
+
+            Field field = ((InstanceFieldGetter) method).getField();
+
+            // only IRubyObject subs for now
+            if (!IRubyObject.class.isAssignableFrom(field.getType())) return null;
+
+            MethodHandle fieldHandle = (MethodHandle) method.getHandle();
+
+            if (fieldHandle != null) {
+                return fieldHandle;
+            }
+
+            fieldHandle = LOOKUP.unreflectGetter(field);
+
+            MethodHandle filter = self.getRuntime().getNullToNilHandle();
+
+            MethodHandle receiverConverter = Binder
+                    .from(field.getDeclaringClass(), IRubyObject.class)
+                    .cast(Object.class, IRubyObject.class)
+                    .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
+
+            fieldHandle = Binder
+                    .from(site.type())
+                    .permute(2)
+                    .filter(0, receiverConverter)
+                    .filterReturn(filter)
+                    .cast(fieldHandle.type())
+                    .invoke(fieldHandle);
+
+            method.setHandle(fieldHandle);
+
+            return fieldHandle;
+        } else if (method instanceof InstanceFieldSetter) {
+            // only matching arity
+            if (site.arity != 1 || site.signature.lastArgType() == Block.class) return null;
+
+            Field field = ((InstanceFieldSetter) method).getField();
+
+            // only IRubyObject subs for now
+            if (!IRubyObject.class.isAssignableFrom(field.getType())) return null;
+
+            MethodHandle fieldHandle = (MethodHandle) method.getHandle();
+
+            if (fieldHandle != null) {
+                return fieldHandle;
+            }
+
+            fieldHandle = LOOKUP.unreflectSetter(field);
+
+            MethodHandle receiverConverter = Binder
+                    .from(field.getDeclaringClass(), IRubyObject.class)
+                    .cast(Object.class, IRubyObject.class)
+                    .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
+
+            fieldHandle = Binder
+                    .from(site.type())
+                    .permute(2, 3)
+                    .filter(0, receiverConverter)
+                    .filterReturn(constant(IRubyObject.class, self.getRuntime().getNil()))
+                    .cast(fieldHandle.type())
+                    .invoke(fieldHandle);
+
+            method.setHandle(fieldHandle);
+
+            return fieldHandle;
+        }
+
+        return null;
     }
 
     MethodHandle buildNewInstanceHandle(DynamicMethod method, IRubyObject self) {
