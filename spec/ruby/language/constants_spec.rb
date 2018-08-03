@@ -458,6 +458,19 @@ describe "Module#private_constant marked constants" do
     lambda {mod::Foo}.should raise_error(NameError)
   end
 
+  ruby_version_is "2.6" do
+    it "sends #const_missing to the original class or module" do
+      mod = Module.new
+      mod.const_set :Foo, true
+      mod.send :private_constant, :Foo
+      def mod.const_missing(name)
+        name == :Foo ? name : super
+      end
+
+      mod::Foo.should == :Foo
+    end
+  end
+
   describe "in a module" do
     it "cannot be accessed from outside the module" do
       lambda do
@@ -632,7 +645,6 @@ describe "Module#private_constant marked constants" do
     end
 
     it "has the defined class as the :name attribute" do
-      exception = nil
       lambda do
         ConstantVisibility::PrivConstClassChild::PRIVATE_CONSTANT_CLASS
       end.should raise_error(NameError) {|e|
