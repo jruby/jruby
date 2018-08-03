@@ -1,0 +1,6 @@
+fails(hangs):Socket#recvfrom using IPv4 using an unbound socket blocks the caller
+fails(hangs):Socket#recvfrom using IPv4 using a bound socket without any data available blocks the caller
+fails(hangs):Socket#recvfrom using IPv6 using an unbound socket blocks the caller
+fails(hangs):Socket#recvfrom using IPv6 using a bound socket without any data available blocks the caller
+fails:Socket#recvfrom using IPv4 using a bound socket with data available the returned Addrinfo uses 0 as the protocol
+fails:Socket#recvfrom using IPv6 using a bound socket with data available the returned Addrinfo uses 0 as the protocol
