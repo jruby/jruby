@@ -1,2 +1,24 @@
 fails:Socket#accept_nonblock raises IO::WaitReadable if the connection is not accepted yet
 fails:Socket#accept_nonblock returns :wait_readable in exceptionless mode
+fails:Socket#accept_nonblock using IPv4 using an unbound socket raises Errno::EINVAL
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's not listening raises Errno::EINVAL
+fails:Socket#accept_nonblock using IPv4 using a closed socket raises IOError
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening without a connected client raises IO::WaitReadable
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client returns an Array containing a Socket and an Addrinfo
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client the returned Addrinfo uses AF_INET as the address family
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client the returned Addrinfo uses PF_INET as the protocol family
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client the returned Addrinfo uses SOCK_STREAM as the socket type
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client the returned Addrinfo uses 0 as the protocol
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client the returned Addrinfo uses the same IP address as the client Socket
+fails:Socket#accept_nonblock using IPv4 using a bound socket that's listening with a connected client the returned Addrinfo uses the same port as the client Socket
+fails:Socket#accept_nonblock using IPv6 using an unbound socket raises Errno::EINVAL
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's not listening raises Errno::EINVAL
+fails:Socket#accept_nonblock using IPv6 using a closed socket raises IOError
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening without a connected client raises IO::WaitReadable
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client returns an Array containing a Socket and an Addrinfo
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client the returned Addrinfo uses AF_INET as the address family
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client the returned Addrinfo uses PF_INET as the protocol family
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client the returned Addrinfo uses SOCK_STREAM as the socket type
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client the returned Addrinfo uses 0 as the protocol
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client the returned Addrinfo uses the same IP address as the client Socket
+fails:Socket#accept_nonblock using IPv6 using a bound socket that's listening with a connected client the returned Addrinfo uses the same port as the client Socket
