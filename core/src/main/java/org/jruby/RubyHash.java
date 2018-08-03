@@ -761,16 +761,7 @@ public class RubyHash extends RubyObject implements Map {
                   entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
                   size--;
 
-                  // move pointers in case we deleted first or last element
-                  if (index == start && size > 0) {
-                      start++;
-                      while(entries[start * NUMBER_OF_ENTRIES] == null)
-                        start++;
-                  } else if (index == (end - 1) && (end - 1) > 0) {
-                      end--;
-                      while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0)
-                        end--;
-                  }
+                  updateStartAndEndPointer(index);
                   return otherValue;
                 }
             }
@@ -796,22 +787,28 @@ public class RubyHash extends RubyObject implements Map {
               entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
               size--;
 
-              // move pointers in case we deleted first or last element
-              if (index == start && size > 0) {
-                  start++;
-                  while(entries[start * NUMBER_OF_ENTRIES] == null)
-                    start++;
-              } else if (index == (end - 1) && (end - 1) > 0) {
-                  end--;
-                  while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0)
-                    end--;
-              }
+              updateStartAndEndPointer(index);
               return otherValue;
             }
         }
 
         // no entry
         return null;
+    }
+
+    private final void updateStartAndEndPointer(final int index) {
+      if (size == 0) {
+          start = 0;
+          end = 0;
+      } else if (index == start) {
+          start++;
+          while(entries[start * NUMBER_OF_ENTRIES] == null)
+            start++;
+      } else if (index == (end - 1) && (end - 1) > 0) {
+          end--;
+          while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0)
+            end--;
+      }
     }
 
     private final IRubyObject internalDelete(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
