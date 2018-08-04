@@ -1172,7 +1172,7 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject[] newEntries = new IRubyObject[entries.length];
         int[] newBins = new int[bins.length];
         Arrays.fill(newBins, EMPTY_BIN);
-        int bucketIndex, hashValue, index, newIndex;
+        int bin, hashValue, index, newIndex;
         boolean exists;
 
         newIndex = 0;
@@ -1182,8 +1182,8 @@ public class RubyHash extends RubyObject implements Map {
               continue;
 
             hashValue = hashValue(key);
-            bucketIndex = bucketIndex(hashValue, newBins.length);
-            index = newBins[bucketIndex];
+            bin = bucketIndex(hashValue, newBins.length);
+            index = newBins[bin];
 
             exists = false;
             while(index != EMPTY_BIN) {
@@ -1194,12 +1194,12 @@ public class RubyHash extends RubyObject implements Map {
                     break;
                 }
 
-                bucketIndex = secondaryBucketIndex(hashValue, newBins.length);
-                index = bins[bucketIndex];
+                bin = secondaryBucketIndex(bin, newBins.length);
+                index = bins[bin];
             }
 
             if (!exists) {
-                newBins[bucketIndex] = newIndex;
+                newBins[bin] = newIndex;
                 newEntries[newIndex * NUMBER_OF_ENTRIES] = key;
                 newEntries[(newIndex * NUMBER_OF_ENTRIES) + 1] = entries[(i * NUMBER_OF_ENTRIES) + 1];
                 newIndex++;
