@@ -880,17 +880,13 @@ public class RubyHash extends RubyObject implements Map {
         long count = size;
         int index = 0;
         IRubyObject key, value;
-        for (int i = start; i < end; i++) {
-            key = entries[i * NUMBER_OF_ENTRIES];
-            value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+        for (int i = start; i < end && count != 0; i++) {
             if (startGeneration != generation) {
                 startGeneration = generation;
-                key = entries[start * NUMBER_OF_ENTRIES];
-                value = entries[(start * NUMBER_OF_ENTRIES) + 1];
-                i = 0;
-                if (start == 0 || start == 1)
-                    break;
+                i = start;
             }
+            key = entries[i * NUMBER_OF_ENTRIES];
+            value = entries[(i * NUMBER_OF_ENTRIES) + 1];
 
             if(key == null || value == null)
               continue;
