@@ -271,13 +271,9 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
-    public static final RubyHash newSmallHash(Ruby runtime) {
-        return new RubyHash(runtime, MRI_INITIAL_CAPACITY << 1);
-    }
-
     public static RubyHash newKwargs(Ruby runtime, String key, IRubyObject value) {
-        RubyHash kwargs = newSmallHash(runtime);
-        kwargs.fastASetSmall(runtime.newSymbol(key), value);
+        RubyHash kwargs = new RubyHash(runtime);
+        kwargs.fastASet(runtime.newSymbol(key), value);
         return kwargs;
     }
 
@@ -547,26 +543,30 @@ public class RubyHash extends RubyObject implements Map {
 
     // put implementation
 
-    private final void internalPut(final IRubyObject key, final IRubyObject value) {
-        internalPut(key, value, true);
-    }
+    protected IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
+      checkResize();
+      int bin, index;
+      IRubyObject result;
+      final int hash = hashValue(key);
 
-    private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {
-        // we always need to resize now
-        checkResize();
-        internalPutNoResize(key, value, true);
-    }
+      if (shouldSearchLinear()) {
+          index = internalGetIndexLinearSearch(hash, key);
+          result = internalSetValue(index, value);
+          if (result != null) return result;
+          internalPutLinearSearch(hash, key, value);
+      } else {
+          bin = internalGetBinOpenAddressing(hash, key);
+          result = internalSetValueByBin(bin, value);
+          if (result != null) return result;
+          internalPutOpenAdressing(hash, bin, key, value);
+      }
 
-    protected IRubyObject internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-        checkResize();
-
-        return internalPutNoResize(key, value, checkForExisting);
+      // no existing entry
+      return null;
     }
 
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
-        checkResize();
-
-        return internalPutNoResize(key, value, true);
+        return internalPut(key, value);
     }
 
     private final int getLength() {
@@ -602,32 +602,6 @@ public class RubyHash extends RubyObject implements Map {
         hashes[end] = hash;
         size++;
         end++;
-
-        // no existing entry
-        return null;
-    }
-
-    protected IRubyObject internalPutNoResize(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-        int bin, index;
-        IRubyObject result;
-        final int hash = hashValue(key);
-
-        if (shouldSearchLinear()) {
-            if (checkForExisting) {
-                index = internalGetIndexLinearSearch(hash, key);
-                result = internalSetValue(index, value);
-                if (result != null) return result;
-            }
-            internalPutLinearSearch(hash, key, value);
-        } else {
-            bin = -1;
-            if (checkForExisting) {
-                bin = internalGetBinOpenAddressing(hash, key);
-                result = internalSetValueByBin(bin, value);
-                if (result != null) return result;
-            }
-            internalPutOpenAdressing(hash, bin, key, value);
-        }
 
         // no existing entry
         return null;
@@ -1274,10 +1248,6 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value);
     }
 
-    public final void fastASetSmall(IRubyObject key, IRubyObject value) {
-        internalPutSmall(key, value);
-    }
-
     public final void fastASetCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
       if (key instanceof RubyString && !isComparedByIdentity()) {
           op_asetForString(runtime, (RubyString) key, value);
@@ -1286,27 +1256,11 @@ public class RubyHash extends RubyObject implements Map {
       }
     }
 
-    public final void fastASetSmallCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
-        if (key instanceof RubyString) {
-            op_asetSmallForString(runtime, (RubyString) key, value);
-        } else {
-            internalPutSmall(key, value);
-        }
-    }
-
     public final void fastASet(Ruby runtime, IRubyObject key, IRubyObject value, boolean prepareString) {
         if (prepareString) {
             fastASetCheckString(runtime, key, value);
         } else {
             fastASet(key, value);
-        }
-    }
-
-    public final void fastASetSmall(Ruby runtime, IRubyObject key, IRubyObject value, boolean prepareString) {
-        if (prepareString) {
-            fastASetSmallCheckString(runtime, key, value);
-        } else {
-            fastASetSmall(key, value);
         }
     }
 
@@ -1348,11 +1302,6 @@ public class RubyHash extends RubyObject implements Map {
               bin = internalGetBinOpenAddressing(hash, key);
             internalPutOpenAdressing(hash, bin, key, value);
         }
-    }
-
-    protected void op_asetSmallForString(Ruby runtime, RubyString key, IRubyObject value) {
-        // There is no small hash anymore, not possible with this algorithm
-        op_asetForString(runtime, key, value);
     }
 
     public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
@@ -2945,7 +2894,7 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public Object setValue(Object o) {
             IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, o);
-            return hash.internalPut(key, value, true);
+            return hash.internalPut(key, value);
         }
 
         @Override
@@ -2998,11 +2947,6 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @Deprecated
-    public final void fastASetSmallCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
-        fastASetSmallCheckString(runtime, key, value);
-    }
-
-    @Deprecated
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         return op_aset(getRuntime().getCurrentContext(), key, value);
     }
@@ -3041,10 +2985,5 @@ public class RubyHash extends RubyObject implements Map {
             default:
                 throw context.runtime.newArgumentError(args.length, 1);
         }
-    }
-
-    @Deprecated
-    protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-        internalPutNoResize(key, value, checkForExisting);
     }
 }

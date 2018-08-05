@@ -176,12 +176,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public IRubyObject internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            return internalPutNoResize(key, value, checkForExisting);
-        }
-
-        @Override
-        protected final IRubyObject internalPutNoResize(IRubyObject key, IRubyObject value, boolean checkForExisting) {
+        public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
             @SuppressWarnings("unchecked")
             Ruby runtime = getRuntime();
             final Map<Object, Object> map = mapDelegate();
@@ -202,11 +197,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             final Map<Object, Object> map = mapDelegate();
             map.put(key.decodeString(), value.toJava(Object.class));
             setSize( map.size() );
-        }
-
-        @Override
-        protected final void op_asetSmallForString(Ruby runtime, RubyString key, IRubyObject value) {
-            op_asetForString(runtime, key, value);
         }
 
         @Override
