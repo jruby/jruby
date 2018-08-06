@@ -157,7 +157,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     
     @JRubyMethod
     public static RubyHash to_h(ThreadContext context, IRubyObject recv) {
-        return RubyHash.newSmallHash(context.runtime);
+        return new RubyHash(context.runtime);
     }
 
     /** nil_inspect
