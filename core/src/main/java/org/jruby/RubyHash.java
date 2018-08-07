@@ -370,8 +370,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final void allocFirst(int buckets) {
-        // TODO: We need to verify this is a power of two
-        if ((buckets / NUMBER_OF_ENTRIES) <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
+        if (buckets <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
             allocFirst();
         } else {
             entries = new IRubyObject[buckets];
