@@ -310,6 +310,10 @@ public class IRDumper extends IRVisitor {
             print("=>");
             visit(pair.getValue());
         }
+        if (hash.isKWArgsHash) {
+            if (comma) print(',');
+            print("kwargs=true");
+        }
     }
     public void IRException(IRException irexception) { print(irexception.getType()); }
     public void Label(Label label) { print(label.toString()); }
