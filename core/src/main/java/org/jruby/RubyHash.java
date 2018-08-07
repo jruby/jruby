@@ -1165,8 +1165,7 @@ public class RubyHash extends RubyObject implements Map {
         newIndex = 0;
         for(int i = start; i < end; i++) {
             key = entries[i * NUMBER_OF_ENTRIES];
-            if (key == null)
-              continue;
+            if (key == null) continue;
 
             hash = hashValue(key);
             bin = bucketIndex(hash, newBins.length);
@@ -1212,8 +1211,7 @@ public class RubyHash extends RubyObject implements Map {
         newIndex = 0;
         for(int i = start; i < end; i++) {
             key = entries[i * NUMBER_OF_ENTRIES];
-            if(key == null)
-              continue;
+            if (key == null) continue;
 
             newHash = hashValue(key);
             exists = false;
