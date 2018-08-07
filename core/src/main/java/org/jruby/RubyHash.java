@@ -1198,8 +1198,7 @@ public class RubyHash extends RubyObject implements Map {
         bins = newBins;
         entries = newEntries;
         hashes = newHashes;
-        size = newIndex;
-        end = newIndex;
+        end = size = newIndex;
         start = 0;
     }
 
@@ -1236,8 +1235,7 @@ public class RubyHash extends RubyObject implements Map {
 
         entries = newEntries;
         hashes = newHashes;
-        size = newIndex;
-        end = newIndex;
+        end = size = newIndex;
         start = 0;
     }
 
