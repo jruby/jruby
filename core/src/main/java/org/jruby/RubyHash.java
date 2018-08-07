@@ -684,7 +684,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     protected IRubyObject internalGet(IRubyObject key) { // specialized for value
-        if (size == 0) return null;
+        if (isEmpty()) return null;
         final int hash = hashValue(key);
         int index;
 
@@ -714,7 +714,7 @@ public class RubyHash extends RubyObject implements Map {
     // delete implementation
 
     protected IRubyObject internalDelete(final IRubyObject key) {
-        if (size == 0) return null;
+        if (isEmpty()) return null;
         return internalDelete(hashValue(key), MATCH_KEY, key, null);
     }
 
@@ -784,7 +784,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final void updateStartAndEndPointer(final int index) {
-      if (size == 0) {
+      if (isEmpty()) {
           start = 0;
           end = 0;
       } else if (index == start) {
@@ -803,7 +803,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final IRubyObject internalDelete(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
-        if (size == 0) return null;
+        if (isEmpty()) return null;
         if (shouldSearchLinear()) {
             return internalDeleteLinearSearch(hash, matchType, key, value);
         } else {
@@ -1059,7 +1059,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        if (size == 0) return RubyString.newUSASCIIString(context.runtime, "{}");
+        if (isEmpty()) return RubyString.newUSASCIIString(context.runtime, "{}");
         if (context.runtime.isInspecting(this)) return RubyString.newUSASCIIString(context.runtime, "{...}");
 
         try {
@@ -1098,7 +1098,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p() {
-        return size == 0 ? getRuntime().getTrue() : getRuntime().getFalse();
+        return isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     /** rb_hash_to_a
