@@ -80,30 +80,29 @@ module Enumerable
   end
 
   def __slicey_chunky(invert, enum, block)
-    if respond_to?(:size) && size == 1
-      each {|x| enum.yield [x]}
-    else
-      ary = nil
-      last_after = nil
-      each_cons(2) do |before, after|
-        last_after = after
-        match = block.call before, after
+    ary = nil
+    last_after = nil
+    element_present = false
+    each_cons(2) do |before, after|
+      element_present = true
+      last_after = after
+      match = block.call before, after
 
-        ary ||= []
-        if invert ? !match : match
-          ary << before
-          enum.yield ary
-          ary = []
-        else
-          ary << before
-        end
-      end
-
-      unless ary.nil?
-        ary << last_after
+      ary ||= []
+      if invert ? !match : match
+        ary << before
         enum.yield ary
+        ary = []
+      else
+        ary << before
       end
     end
+
+    unless ary.nil?
+      ary << last_after
+      enum.yield ary
+    end
+    each { |x| enum.yield [x] } unless element_present
   end
   private :__slicey_chunky
 
