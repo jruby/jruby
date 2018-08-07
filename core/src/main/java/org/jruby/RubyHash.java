@@ -2102,9 +2102,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (size > 0) {
             alloc();
-            size = 0;
-            start = 0;
-            end = 0;
+            start = end = size = 0;
         }
 
         return this;
