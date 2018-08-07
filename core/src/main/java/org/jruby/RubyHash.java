@@ -791,11 +791,15 @@ public class RubyHash extends RubyObject implements Map {
           start++;
           while(entries[start * NUMBER_OF_ENTRIES] == null)
             start++;
-      } else if (index == (end - 1) && (end - 1) > 0) {
+      } else if (index == lastElementsIndex() && lastElementsIndex() > 0) {
           end--;
-          while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0)
+          while(entries[lastElementsIndex() * NUMBER_OF_ENTRIES] == null && lastElementsIndex() > 0)
             end--;
       }
+    }
+
+    private int lastElementsIndex() {
+        return end - 1;
     }
 
     private final IRubyObject internalDelete(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
