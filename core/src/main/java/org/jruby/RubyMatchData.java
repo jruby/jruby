@@ -350,7 +350,7 @@ public class RubyMatchData extends RubyObject {
     public int getNameToBackrefNumber(String name) {
         try {
             byte[] bytes = name.getBytes();
-            return regexp.pattern.nameToBackrefNumber(bytes, 0, bytes.length, regs);
+            return getPattern().nameToBackrefNumber(bytes, 0, bytes.length, regs);
         } catch (JOniException je) {
             throw getRuntime().newIndexError(je.getMessage());
         }
@@ -359,7 +359,7 @@ public class RubyMatchData extends RubyObject {
     // This returns a list of values in the order the names are defined (named capture local var
     // feature uses this).
     public IRubyObject[] getNamedBackrefValues(Ruby runtime) {
-        final Regex pattern = regexp.pattern;
+        final Regex pattern = getPattern();
         if (pattern.numberOfNames() == 0) return NULL_ARRAY;
 
         IRubyObject[] values = new IRubyObject[pattern.numberOfNames()];
@@ -473,7 +473,7 @@ public class RubyMatchData extends RubyObject {
 
     private int nameToBackrefNumber(RubyString str) {
         check();
-        return nameToBackrefNumber(getRuntime(), regexp.pattern, regs, str);
+        return nameToBackrefNumber(getRuntime(), getPattern(), regs, str);
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
@@ -490,7 +490,7 @@ public class RubyMatchData extends RubyObject {
 
     public final int backrefNumber(Ruby runtime, IRubyObject obj) {
         check();
-        return backrefNumber(runtime, regexp.pattern, regs, obj);
+        return backrefNumber(runtime, getPattern(), regs, obj);
     }
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
