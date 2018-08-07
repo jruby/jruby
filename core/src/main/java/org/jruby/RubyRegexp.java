@@ -228,6 +228,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     };
 
     public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option) {
+        if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.search(start, range, option);
+
         try {
             RubyThread thread = context.getThread();
             SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);

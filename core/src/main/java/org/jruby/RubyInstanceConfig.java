@@ -1464,6 +1464,10 @@ public class RubyInstanceConfig {
         this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
     }
 
+    public boolean isInterruptibleRegexps() {
+        return interruptibleRegexps;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1567,6 +1571,7 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
     private boolean debuggingFrozenStringLiteral = false;
+    private boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
     private String jrubyHome;
 
     /**

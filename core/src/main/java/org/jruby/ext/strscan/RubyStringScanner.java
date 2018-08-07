@@ -265,27 +265,33 @@ public class RubyStringScanner extends RubyObject {
         if (rest < 0) return runtime.getNil();
 
         ByteList value = str.getByteList();
-        Matcher matcher = pattern.matcher(value.getUnsafeBytes(), value.getBegin() + pos, value.getBegin() + value.getRealSize());
-        currentMatcher.set(matcher);
+        int beg = value.getBegin() + pos;
+        int range = value.getBegin() + value.getRealSize();
 
+        Matcher matcher = pattern.matcher(value.getUnsafeBytes(), beg, range);
         final int ret;
         if (headonly) {
-            try {
-                ret = runtime.getCurrentContext().getThread().executeTask(context, this, task);
-            } catch (InterruptedException ie) {
-                throw runtime.newInterruptedRegexpError("Regexp Interrupted");
+            if (runtime.getInstanceConfig().isInterruptibleRegexps()) {
+                currentMatcher.set(matcher);
+                try {
+                    ret = runtime.getCurrentContext().getThread().executeTask(context, this, task);
+                } catch (InterruptedException ie) {
+                    throw runtime.newInterruptedRegexpError("Regexp Interrupted");
+                }
+            } else {
+                ret = matcher.match(beg, range, Option.NONE);
             }
         } else {
-            ret = RubyRegexp.matcherSearch(context, matcher, value.getBegin() + pos, value.getBegin() + value.getRealSize(), Option.NONE);
+            ret = RubyRegexp.matcherSearch(context, matcher, beg, range, Option.NONE);
         }
 
         regs = matcher.getRegion();
         if (regs == null) {
-            beg = matcher.getBegin();
-            end = matcher.getEnd();
+            this.beg = matcher.getBegin();
+            this.end = matcher.getEnd();
         } else {
-            beg = regs.beg[0];
-            end = regs.end[0];
+            this.beg = regs.beg[0];
+            this.end = regs.end[0];
         }
 
         if (ret < 0) return context.nil;
