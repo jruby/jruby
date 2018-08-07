@@ -379,7 +379,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public RubyString inspect() {
         Ruby runtime = getRuntime();
-        if (regexp == null) return (RubyString) anyToString();
+        if (str == null) return (RubyString) anyToString();
 
         RubyString result = runtime.newString();
         result.cat((byte)'#').cat((byte)'<');
@@ -387,7 +387,7 @@ public class RubyMatchData extends RubyObject {
 
         NameEntry[] names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
-        final Regex pattern = regexp.pattern;
+        final Regex pattern = getPattern();
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             for (int num : e.getBackRefs()) names[num] = e;
@@ -797,7 +797,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public int hashCode() {
         check();
-        return regexp.pattern.hashCode() ^ str.hashCode();
+        return getPattern().hashCode() ^ str.hashCode();
     }
 
     @JRubyMethod
@@ -813,7 +813,7 @@ public class RubyMatchData extends RubyObject {
         RubyHash hash = RubyHash.newHash(runtime);
         if (regexp == context.nil) return hash;
 
-        for (Iterator<NameEntry> i = regexp.pattern.namedBackrefIterator(); i.hasNext();) {
+        for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
             NameEntry entry = i.next();
             RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
             boolean found = false;
