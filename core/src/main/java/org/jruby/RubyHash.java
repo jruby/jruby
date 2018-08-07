@@ -369,15 +369,28 @@ public class RubyHash extends RubyObject implements Map {
         hashes = new int[MRI_INITIAL_CAPACITY];
     }
 
-    private final void allocFirst(int buckets) {
+    private final void allocFirst(final int buckets) {
         if (buckets <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
             allocFirst();
         } else {
-            entries = new IRubyObject[buckets];
-            bins = new int[buckets];
-            hashes = new int[buckets];
+            int nextPowOfTwo = nextPowOfTwo(buckets);
+            entries = new IRubyObject[nextPowOfTwo << 1];
+            bins = new int[nextPowOfTwo << 1];
+            hashes = new int[nextPowOfTwo];
             Arrays.fill(bins, EMPTY_BIN);
         }
+    }
+
+    private final int nextPowOfTwo(final int i) {
+        int result = i;
+        result--;
+        result |= result >> 1;
+        result |= result >> 2;
+        result |= result >> 4;
+        result |= result >> 8;
+        result |= result >> 16;
+        result++;
+        return result;
     }
 
     private final void alloc() {
