@@ -1,6 +1,7 @@
 windows:Socket#getaddrinfo accepts empty addresses for IPv6 passive sockets
 windows:Socket#getaddrinfo accepts empty addresses for IPv6 non-passive sockets
 fails:Socket#getaddrinfo accepts empty addresses for IPv6 non-passive sockets
+fails:Socket.getaddrinfo accepts empty addresses for IPv6 non-passive sockets
 fails:Socket.getaddrinfo without global reverse lookups accepts a Fixnum as the address family using IPv6
 fails:Socket.getaddrinfo without global reverse lookups accepts a Symbol as the address family using IPv6
 fails:Socket.getaddrinfo without global reverse lookups accepts a String as the address family using IPv6
