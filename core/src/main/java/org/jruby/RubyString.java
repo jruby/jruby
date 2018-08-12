@@ -4427,10 +4427,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
-      if (arg instanceof RubyRegexp) {
-          return rindexCommon(context, arg, 0) == context.nil ? context.fals : context.tru;
-      }
-      return startWith(arg) ? context.tru : context.fals;
+        if (arg instanceof RubyRegexp) return ((RubyRegexp)arg).startWithP(context, this);
+        return startWith(arg) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "start_with?", rest = true)

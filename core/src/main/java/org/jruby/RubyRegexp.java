@@ -239,6 +239,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
+    public static int matcherMatch(ThreadContext context, Matcher matcher, int start, int range, int option) {
+        if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.match(start, range, option);
+
+        try {
+            RubyThread thread = context.getThread();
+            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, true);
+            return thread.executeTask(context, matcher, task);
+        } catch (InterruptedException e) {
+            throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
+        }
+    }
+
+
     @Deprecated // not-used
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         return matcherSearch(runtime.getCurrentContext(), matcher, start, range, option);
@@ -1225,6 +1238,41 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Deprecated
     public final int search19(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
         return search(context, str, pos, reverse, holder);
+    }
+
+
+    public final RubyBoolean startWithP(ThreadContext context, RubyString str) {
+        final ByteList strBL = str.getByteList();
+        final int beg = strBL.begin();
+        final Regex reg = preparePattern(str);
+
+        IRubyObject match = getBackRefInternal(context, null);
+        if (match instanceof RubyMatchData) { // ! match.isNil()
+            if (((RubyMatchData) match).used()) match = context.nil;
+        }
+
+        final Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
+
+        try {
+            int result = matcherMatch(context, matcher, beg, beg + strBL.realSize(), RE_OPTION_NONE);
+            if (result == -1) {
+                setBackRefInternal(context, null, context.nil);
+                return context.fals;
+            }
+
+            final RubyMatchData matchData;
+            if (match == context.nil) {
+                matchData = createMatchData(context, str, matcher, reg);
+            } else {
+                matchData = createMatchData(context, str, matcher, reg);
+            }
+            matchData.regexp = this;
+            matchData.infectBy(this);
+            setBackRefInternal(context, null, matchData);
+            return context.tru;
+        } catch (JOniException je) {
+            throw context.runtime.newRegexpError(je.getMessage());
+        }
     }
 
     /**
