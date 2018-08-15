@@ -21,7 +21,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
         super(closure, Signature.decode(encodedSignature));
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
-        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);;
+        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);
+        // This is gross and should be done in IR rather than in the handles.
         this.callHandle = MethodHandles.foldArguments(callHandle, CHECK_ARITY);
         this.yieldDirectHandle = MethodHandles.insertArguments(
                 MethodHandles.insertArguments(handle, 2, closure.getStaticScope()),
