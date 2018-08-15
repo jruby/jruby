@@ -157,7 +157,7 @@ public class Hash extends Operand {
         KeyValuePair<Operand, Operand> pairs[] = new KeyValuePair[size];
 
         for (int i = 0; i < size; i++) {
-            pairs[0] = new KeyValuePair(d.decodeOperand(), d.decodeOperand());
+            pairs[i] = new KeyValuePair(d.decodeOperand(), d.decodeOperand());
         }
 
         return new Hash(pairs, d.decodeBoolean());
