@@ -106,7 +106,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin( :site, '3.3', 'skipDeploy' =>  'true' )
     plugin 'org.codehaus.mojo:build-helper-maven-plugin:1.8'
     plugin 'org.codehaus.mojo:exec-maven-plugin:1.2.1'
-    plugin :antrun, '1.7'
+    plugin :antrun, '1.8'
     plugin :source, '2.1.2'
     plugin :assembly, '2.4'
     plugin :install, '2.4'
