@@ -21,7 +21,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
         super(closure, Signature.decode(encodedSignature));
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
-        this.callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);
+        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);;
+        this.callHandle = MethodHandles.foldArguments(callHandle, CHECK_ARITY);
         this.yieldDirectHandle = MethodHandles.insertArguments(
                 MethodHandles.insertArguments(handle, 2, closure.getStaticScope()),
                 4,
@@ -34,6 +35,16 @@ public class CompiledIRBlockBody extends IRBlockBody {
     private static final MethodHandle VALUE_TO_ARRAY = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "singleBlockArgToArray");
 
     private static final MethodHandle WRAP_VALUE = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "wrapValue");
+
+    private static final MethodHandle CHECK_ARITY = Binder
+            .from(void.class, ThreadContext.class, Block.class, IRubyObject[].class, Block.class)
+            .invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "checkArity");
+
+    private static void checkArity(ThreadContext context, Block selfBlock, IRubyObject[] args, Block block) {
+        if (selfBlock.type == Block.Type.LAMBDA) {
+            selfBlock.getSignature().checkArity(context.runtime, args);
+        }
+    }
 
     private static IRubyObject[] wrapValue(IRubyObject value) { return new IRubyObject[] {value}; }
 
