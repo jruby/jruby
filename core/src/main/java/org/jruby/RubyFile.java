@@ -1263,6 +1263,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             } catch (NotImplementedError re) {
                 // fall back on utimes
                 result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimespec, mtimespec);
+                long[] atimeval = convertTimespecToTimeval(atimespec);
+                long[] mtimeval = convertTimespecToTimeval(mtimespec);
+                result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
             }
 
             if (result == -1) {
@@ -1682,6 +1685,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return timespec;
+    }
+
+    /**
+     * Converts a timespec (array of 2 longs: seconds and nanoseconds from epoch) into a
+     * timeval (array of 2 longs: seconds and microseconds from epoch). This is needed because
+     * calling methods like utimensat() allows nanosecond precision, while the older utimes()
+     * only supports microsecond precision.
+     */
+    private static long[] convertTimespecToTimeval(long[] timespec) {
+        if (timespec == null) {
+            return null;
+        }
+
+        long[] timeval = new long[2];
+        timeval[0] = timespec[0];
+        timeval[1] = timespec[1] / 1000;
+        return timeval;
     }
 
     private void checkClosed(ThreadContext context) {
