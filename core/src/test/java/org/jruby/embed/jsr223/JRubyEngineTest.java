@@ -606,7 +606,7 @@ public class JRubyEngineTest {
         ScriptEngine instance = newScriptEngine();
         instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
         try {
-            ((Invocable) instance).invokeMethod(Object.class,"trigger_npe");
+            ((Invocable) instance).invokeMethod(Object.class,"trigger_npe", null);
             fail("Expected javax.script.ScriptException");
         } catch (javax.script.ScriptException sex) {
             // javax.script.ScriptException is expected
@@ -647,7 +647,7 @@ public class JRubyEngineTest {
         ScriptEngine instance = newScriptEngine();
         instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
         try {
-            ((Invocable) instance).invokeFunction("trigger_npe");
+            ((Invocable) instance).invokeFunction("trigger_npe", null);
             fail("Expected javax.script.ScriptException");
         } catch (javax.script.ScriptException sex) {
             // javax.script.ScriptException is expected

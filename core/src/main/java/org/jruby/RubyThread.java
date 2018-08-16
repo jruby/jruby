@@ -464,7 +464,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public static class Location extends RubyObject {
-
         private final RubyStackTraceElement element;
 
         private transient RubyString baseLabel = null;
