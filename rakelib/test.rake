@@ -74,28 +74,29 @@ namespace :test do
   end
 
   namespace :mri do
+    jruby_opts = {
+        int: "-X-C",
+        fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
+        jit: "-Xjit.threshold=0 -Xjit.background=false",
+        aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
+    }
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
-    task :int do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+    mri_stdlib_test_files = File.readlines('test/mri.stdlib.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
+    jruby_opts.each do |task, opts|
+      task task do
+        ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+      end
+      namespace :stdlib do
+        task task do
+          ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+          ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_stdlib_test_files}"
+        end
+      end
     end
+    task stdlib: 'test:mri:stdlib:int'
 
-    task :fullint do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task :jit do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -Xjit.threshold=0 -Xjit.background=false #{get_meta_size.call()}"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task :aot do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X+C -Xjit.background=false #{get_meta_size.call()}"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task all: %s[int jit aot]
+    task all: jruby_opts.keys
   end
   task mri: 'test:mri:int'
 

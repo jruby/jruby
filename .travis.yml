@@ -40,9 +40,10 @@ env:
     - PHASE='-Prake -Dtask=test:jruby:jit'
     - PHASE='-Prake -Dtask=test:jruby:jit' JRUBY_OPTS=-Xcompile.invokedynamic
     - PHASE='-Prake -Dtask=test:jruby:aot'
-    - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:mri:int'
     - PHASE='-Prake -Dtask=test:mri:fullint'
     - PHASE='-Prake -Dtask=test:mri:jit'
+    - PHASE='-Prake -Dtask=test:mri:stdlib'
     - PHASE='-Prake -Dtask=test:slow_suites'
     - PHASE='-Prake -Dtask=spec:ji'
     - PHASE='-Prake -Dtask=spec:compiler'
