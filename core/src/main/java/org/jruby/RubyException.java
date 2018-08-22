@@ -355,8 +355,6 @@ public class RubyException extends RubyObject {
 
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>("mesg", exc.getMessage()));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
@@ -419,6 +417,20 @@ public class RubyException extends RubyObject {
     public String getMessageAsJavaString() {
         final IRubyObject msg = getMessage();
         return msg.isNil() ? null : msg.toString();
+    }
+
+
+    // Note: we override this because we do not use traditional internal variables (concurrency complications)
+    // for a few fields but MRI does.  Both marshal and oj (native extensions) expect to see these.
+    @Override
+    public List<Variable<Object>> getVariableList() {
+        List<Variable<Object>> attrs = super.getVariableList();
+
+        attrs.add(new VariableEntry<Object>("mesg", getMessage()));
+        IRubyObject backtrace = getBacktrace();
+        attrs.add(new VariableEntry<Object>("bt", backtrace));
+
+        return attrs;
     }
 
     private BacktraceData backtraceData;
