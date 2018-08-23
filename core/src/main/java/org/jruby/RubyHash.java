@@ -366,7 +366,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private final void allocFirst() {
         entries = new IRubyObject[MRI_INITIAL_CAPACITY << 1];
-        hashes = new int[MRI_INITIAL_CAPACITY << 1];
+        hashes = new int[MRI_INITIAL_CAPACITY];
     }
 
     private final void allocFirst(int buckets) {
@@ -374,7 +374,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((buckets / NUMBER_OF_ENTRIES) <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
             // linear search, we do not need the bins array
             entries = new IRubyObject[MRI_INITIAL_CAPACITY << 1];
-            hashes = new int[MRI_INITIAL_CAPACITY << 1];
+            hashes = new int[MRI_INITIAL_CAPACITY];
             Arrays.fill(hashes, EMPTY_BIN);
         } else {
             entries = new IRubyObject[buckets];
@@ -481,8 +481,8 @@ public class RubyHash extends RubyObject implements Map {
 
     private final synchronized void resize(int newCapacity) {
         final IRubyObject[] oldTable = entries;
-        final IRubyObject[] newTable = new IRubyObject[newCapacity];
-        final int[] newBins = new int[newCapacity];
+        final IRubyObject[] newTable = new IRubyObject[newCapacity << 1];
+        final int[] newBins = new int[newCapacity << 1];
         final int[] newHashes = new int[newCapacity];
         Arrays.fill(newBins, EMPTY_BIN);
         Arrays.fill(newHashes, EMPTY_BIN);
@@ -534,7 +534,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private void checkResize() {
         if (getLength() == end) {
-            resize(entries.length << 1);
+            resize(getLength() << 1);
             return;
         }
         return;
