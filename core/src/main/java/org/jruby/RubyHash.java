@@ -379,6 +379,7 @@ public class RubyHash extends RubyObject implements Map {
         } else {
             entries = new IRubyObject[buckets];
             bins = new int[buckets];
+            hashes = new int[buckets];
             Arrays.fill(bins, EMPTY_BIN);
         }
     }
@@ -482,7 +483,9 @@ public class RubyHash extends RubyObject implements Map {
         final IRubyObject[] oldTable = entries;
         final IRubyObject[] newTable = new IRubyObject[newCapacity];
         final int[] newBins = new int[newCapacity];
+        final int[] newHashes = new int[newCapacity];
         Arrays.fill(newBins, EMPTY_BIN);
+        Arrays.fill(newHashes, EMPTY_BIN);
         IRubyObject key, value;
         int index, bin, hash;
 
@@ -496,6 +499,7 @@ public class RubyHash extends RubyObject implements Map {
             newTable[i * NUMBER_OF_ENTRIES] = key;
             newTable[i * NUMBER_OF_ENTRIES + 1] = value;
             hash = hashValue(key);
+              newHashes[i] = hash;
             bin = bucketIndex(hash, newBins.length);
             index = newBins[bin];
             while(index != EMPTY_BIN) {
@@ -507,6 +511,7 @@ public class RubyHash extends RubyObject implements Map {
 
         hashes = null;
         bins = newBins;
+        hashes = newHashes;
         entries = newTable;
     }
 
@@ -588,6 +593,7 @@ public class RubyHash extends RubyObject implements Map {
             index = bins[localBin];
         }
         bins[localBin] = end;
+        hashes[end] = hash;
         size++;
         end++;
 
@@ -632,6 +638,7 @@ public class RubyHash extends RubyObject implements Map {
         int index = bins[bin];
         IRubyObject otherKey;
         int round = 0;
+        int otherHash;
 
         while(index != EMPTY_BIN) {
             if (round == bins.length) {
@@ -639,7 +646,8 @@ public class RubyHash extends RubyObject implements Map {
             }
             if(index != DELETED_BIN) {
                 otherKey = entries[index * NUMBER_OF_ENTRIES];
-                if (internalKeyExist(otherKey, key)) {
+                otherHash = hashes[index];
+                if (internalKeyExist(key, hash, otherKey, otherHash)) {
                     return bin;
                 }
             }
@@ -691,11 +699,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private boolean internalKeyExist(IRubyObject key, int hash, IRubyObject otherKey, int otherHash) {
-        return (hash == otherHash && internalKeyExist(key, otherKey));
-    }
-
-    private boolean internalKeyExist(IRubyObject key, IRubyObject otherKey) {
-        return (key == otherKey || (!isComparedByIdentity() && key.eql(otherKey)));
+        return (hash == otherHash && (key == otherKey || (!isComparedByIdentity() && key.eql(otherKey))));
     }
 
     // delete implementation
@@ -827,7 +831,6 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final int[] internalCopyHashes() {
-        if(!shouldSearchLinear()) return null;
         int[] newHashes = new int[hashes.length];
         System.arraycopy(hashes, 0, newHashes, 0, hashes.length);
         return newHashes;
@@ -1145,8 +1148,9 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject key, value, otherKey;
         IRubyObject[] newEntries = new IRubyObject[entries.length];
         int[] newBins = new int[bins.length];
+        int[] newHashes = new int[hashes.length];
         Arrays.fill(newBins, EMPTY_BIN);
-        int bin, hashValue, index, newIndex;
+        int bin, hash, index, newIndex, otherHash;
         boolean exists;
 
         newIndex = 0;
@@ -1155,14 +1159,15 @@ public class RubyHash extends RubyObject implements Map {
             if (key == null)
               continue;
 
-            hashValue = hashValue(key);
-            bin = bucketIndex(hashValue, newBins.length);
+            hash = hashValue(key);
+            bin = bucketIndex(hash, newBins.length);
             index = newBins[bin];
 
             exists = false;
             while(index != EMPTY_BIN) {
-                otherKey = newEntries[index];
-                if (internalKeyExist(otherKey, key)) {
+                otherKey = newEntries[index * NUMBER_OF_ENTRIES];
+                otherHash = newHashes[index];
+                if (internalKeyExist(key, hash, otherKey, otherHash)) {
                     // exists, we do not need to add this key
                     exists = true;
                     break;
@@ -1176,12 +1181,14 @@ public class RubyHash extends RubyObject implements Map {
                 newBins[bin] = newIndex;
                 newEntries[newIndex * NUMBER_OF_ENTRIES] = key;
                 newEntries[(newIndex * NUMBER_OF_ENTRIES) + 1] = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                newHashes[newIndex] = hash;
                 newIndex++;
             }
         }
 
         bins = newBins;
         entries = newEntries;
+        hashes = newHashes;
         size = newIndex;
         end = newIndex;
         start = 0;
