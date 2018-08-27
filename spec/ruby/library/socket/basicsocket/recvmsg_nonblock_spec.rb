@@ -144,6 +144,7 @@ describe 'BasicSocket#recvmsg_nonblock' do
             @client.write('hello')
 
             @socket, _ = @server.accept
+            IO.select([@socket])
           end
 
           after do

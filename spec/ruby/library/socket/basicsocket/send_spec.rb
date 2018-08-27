@@ -177,7 +177,7 @@ describe 'BasicSocket#send' do
       end
     end
 
-    platform_is_not :windows do
+    platform_is_not :darwin, :windows do
       describe 'using a connected TCP socket' do
         before do
           @client = Socket.new(family, :STREAM)
@@ -196,13 +196,11 @@ describe 'BasicSocket#send' do
 
         describe 'using the MSG_OOB flag' do
           it 'sends an out-of-band message' do
-            @server.setsockopt(:SOCKET, :OOBINLINE, true)
-
-            @client.send('a', Socket::MSG_OOB).should == 1
-
             socket, _ = @server.accept
+            socket.setsockopt(:SOCKET, :OOBINLINE, true)
+            @client.send('a', Socket::MSG_OOB).should == 1
             begin
-              socket.recv(1, Socket::MSG_OOB).should == 'a'
+              socket.recv(10).should == 'a'
             ensure
               socket.close
             end

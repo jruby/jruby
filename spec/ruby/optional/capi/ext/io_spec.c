@@ -21,6 +21,7 @@ static int set_non_blocking(int fd) {
   int flags = 1;
   return ioctl(fd, FIOBIO, &flags);
 #else
+# define SET_NON_BLOCKING_FAILS_ALWAYS 1
   errno = ENOSYS;
   return -1;
 #endif
@@ -137,14 +138,21 @@ VALUE io_spec_rb_io_taint_check(VALUE self, VALUE io) {
 #ifdef HAVE_RB_IO_WAIT_READABLE
 #define RB_IO_WAIT_READABLE_BUF 13
 
+#if SET_NON_BLOCKING_FAILS_ALWAYS
+NORETURN(VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p));
+#endif
+
 VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
   int fd = io_spec_get_fd(io);
+# if !SET_NON_BLOCKING_FAILS_ALWAYS
   char buf[RB_IO_WAIT_READABLE_BUF];
   int ret, saved_errno;
+# endif
 
   if (set_non_blocking(fd) == -1)
     rb_sys_fail("set_non_blocking failed");
 
+# if !SET_NON_BLOCKING_FAILS_ALWAYS
   if(RTEST(read_p)) {
     if (read(fd, buf, RB_IO_WAIT_READABLE_BUF) != -1) {
       return Qnil;
@@ -167,6 +175,9 @@ VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
   }
 
   return ret ? Qtrue : Qfalse;
+# else
+  UNREACHABLE;
+# endif
 }
 #endif
 
@@ -217,6 +228,17 @@ VALUE io_spec_rb_io_close(VALUE self, VALUE io) {
   return rb_io_close(io);
 }
 #endif
+
+/*
+ * this is needed to ensure rb_io_wait_*able functions behave
+ * predictably because errno may be set to unexpected values
+ * otherwise.
+ */
+static VALUE io_spec_errno_set(VALUE self, VALUE val) {
+  int e = NUM2INT(val);
+  errno = e;
+  return val;
+}
 
 void Init_io_spec(void) {
   VALUE cls = rb_define_class("CApiIOSpecs", rb_cObject);
@@ -296,6 +318,8 @@ void Init_io_spec(void) {
 #ifdef HAVE_RB_CLOEXEC_OPEN
   rb_define_method(cls, "rb_cloexec_open", io_spec_rb_cloexec_open, 3);
 #endif
+
+  rb_define_method(cls, "errno=", io_spec_errno_set, 1);
 }
 
 #ifdef __cplusplus
