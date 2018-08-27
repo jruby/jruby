@@ -1,0 +1,2 @@
+fails:Etc.confstr returns a String for Etc::CS_PATH
+fails:Etc.confstr raises Errno::EINVAL for unknown configuration variables
