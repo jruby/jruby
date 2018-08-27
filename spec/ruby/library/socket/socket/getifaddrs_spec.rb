@@ -1,5 +1,6 @@
 require_relative '../spec_helper'
 
+platform_is_not :aix, :"solaris2.10" do
 describe 'Socket.getifaddrs' do
   before do
     @ifaddrs = Socket.getifaddrs
@@ -60,7 +61,7 @@ describe 'Socket.getifaddrs' do
     end
   end
 
-    platform_is_not :windows do
+  platform_is_not :windows do
     describe 'the Socket::Ifaddr broadcast address' do
       before do
         @addrs = @ifaddrs.map(&:broadaddr).compact
@@ -82,7 +83,7 @@ describe 'Socket.getifaddrs' do
 
     describe 'the Socket::Ifaddr netmask address' do
       before do
-        @addrs = @ifaddrs.map(&:netmask).compact
+        @addrs = @ifaddrs.map(&:netmask).compact.select(&:ip?)
       end
 
       it 'is an Addrinfo' do
@@ -105,4 +106,5 @@ describe 'Socket.getifaddrs' do
       end
     end
   end
+end
 end
