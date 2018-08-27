@@ -14,5 +14,6 @@ fails:Signal.trap is possible to create a new Thread when the handler runs
 fails:Signal.trap returns SYSTEM_DEFAULT if passed DEFAULT and no handler was ever set
 fails:Signal.trap raises ArgumentError or Errno::EINVAL for SIGKILL
 fails:Signal.trap raises ArgumentError or Errno::EINVAL for SIGSTOP
-fails:Signal.trap raises ArgumentError for reserved signal SIGUSR1
-fails:Signal.trap raises ArgumentError for reserved signal SIGQUIT
+fails:Signal.trap raises ArgumentError for reserved signal: SIGUSR1
+fails:Signal.trap raises ArgumentError for reserved signal: SIGQUIT
+fails:Signal.trap accepts 'SYSTEM_DEFAULT' and uses the OS handler for SIGPIPE
