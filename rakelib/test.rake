@@ -14,7 +14,7 @@ if ENV['CI']
   ENV['TESTOPT'] = "-v --no-use-color"
 
   # extend timeouts in MRI tests
-  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '5'
+  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '10'
 else
   ADDITIONAL_TEST_OPTIONS = ""
 end
