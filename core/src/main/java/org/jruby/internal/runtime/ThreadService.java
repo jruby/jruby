@@ -276,26 +276,6 @@ public class ThreadService {
         localContext.set(null);
     }
 
-    public void setCritical(boolean critical) {
-        if (critical && !criticalLock.isHeldByCurrentThread()) {
-            acquireCritical();
-        } else if (!critical && criticalLock.isHeldByCurrentThread()) {
-            releaseCritical();
-        }
-    }
-
-    private void acquireCritical() {
-        criticalLock.lock();
-    }
-
-    private void releaseCritical() {
-        criticalLock.unlock();
-    }
-
-    public boolean getCritical() {
-        return criticalLock.isHeldByCurrentThread();
-    }
-
     public long incrementAndGetThreadCount() {
         return threadCount.incrementAndGet();
     }
@@ -374,5 +354,29 @@ public class ThreadService {
         public static Event wakeup(RubyThread sender, RubyThread target, Type type) {
             return new Event(sender.toString() + " sent KILL to " + target, type);
         }
+    }
+
+    @Deprecated
+    public void setCritical(boolean critical) {
+        if (critical && !criticalLock.isHeldByCurrentThread()) {
+            acquireCritical();
+        } else if (!critical && criticalLock.isHeldByCurrentThread()) {
+            releaseCritical();
+        }
+    }
+
+    @Deprecated
+    private void acquireCritical() {
+        criticalLock.lock();
+    }
+
+    @Deprecated
+    private void releaseCritical() {
+        criticalLock.unlock();
+    }
+
+    @Deprecated
+    public boolean getCritical() {
+        return criticalLock.isHeldByCurrentThread();
     }
 }

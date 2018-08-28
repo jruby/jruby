@@ -132,11 +132,6 @@ public class Timeout implements Library {
 
         final Ruby runtime = context.runtime;
 
-        // No timeout in critical section
-        if (runtime.getThreadService().getCritical()) {
-            return raiseBecauseCritical(context);
-        }
-
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
 

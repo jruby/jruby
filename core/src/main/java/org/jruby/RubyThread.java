@@ -858,20 +858,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject pass(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
-        ThreadService ts = runtime.getThreadService();
-        boolean critical = ts.getCritical();
+    public static IRubyObject pass(ThreadContext context, IRubyObject recv) {
+        Thread.yield();
 
-        ts.setCritical(false);
-
-        try {
-            Thread.yield();
-        } finally {
-            ts.setCritical(critical);
-        }
-
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(meta = true)
@@ -1070,21 +1060,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         try {
             currentThread.enterSleep();
 
-            if (runtime.getThreadService().getCritical()) {
-                // If the target thread is sleeping or stopped, wake it
-                synchronized (this) {
-                    notify();
-                }
-
-                // interrupt the target thread in case it's blocking or waiting
-                // WARNING: We no longer interrupt the target thread, since this usually means
-                // interrupting IO and with NIO that means the channel is no longer usable.
-                // We either need a new way to handle waking a target thread that's waiting
-                // on IO, or we need to accept that we can't wake such threads and must wait
-                // for them to complete their operation.
-                //threadImpl.interrupt();
-            }
-
             final long timeToWait = Math.min(timeoutMillis, 200);
 
             // We need this loop in order to be able to "unblock" the
@@ -1210,9 +1185,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             rubyThread.pollThreadEvents(context);
             Status oldStatus = rubyThread.status.get();
             try {
-                // attempt to decriticalize all if we're the critical thread
-                receiver.getRuntime().getThreadService().setCritical(false);
-
                 rubyThread.status.set(Status.SLEEP);
                 rubyThread.wait();
             } catch (InterruptedException ie) {
@@ -2238,5 +2210,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 Arity.checkArgumentCount(context.runtime, args, 0, 2);
                 return null; // not reached
         }
+    }
+
+    @Deprecated
+    public static IRubyObject pass(IRubyObject recv) {
+        Ruby runtime = recv.getRuntime();
+
+        return pass(runtime.getCurrentContext(), recv);
     }
 }

@@ -111,7 +111,6 @@ public class RubyRunnable implements ThreadedRunnable {
             } catch (Throwable t) {
                 rubyThread.exceptionRaised(t);
             } finally {
-                runtime.getThreadService().setCritical(false);
                 rubyThread.dispose();
 
                 // restore context classloader, in case we're using a thread pool
