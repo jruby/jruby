@@ -786,12 +786,9 @@ public class RubyHash extends RubyObject implements Map {
     private final void updateStartAndEndPointer(final int index) {
       if (isEmpty()) {
           start = end = 0;
-      } else if (index == start) {
-          start++;
+      } else {
           while(entries[start * NUMBER_OF_ENTRIES] == null)
             start++;
-      } else if (index == lastElementsIndex() && lastElementsIndex() > 0) {
-          end--;
           while(entries[lastElementsIndex() * NUMBER_OF_ENTRIES] == null && lastElementsIndex() > 0)
             end--;
       }
