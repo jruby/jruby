@@ -1558,8 +1558,7 @@ public class RubyEnumerable {
                 callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "none?");
-                        IRubyObject larg = packEnumValues(runtime, largs);
-                        if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                        if (block.yieldValues(ctx, largs).isTrue()) throw JumpException.SPECIAL_JUMP;
                         return runtime.getNil();
 
                     }
@@ -1638,8 +1637,7 @@ public class RubyEnumerable {
                 callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "one?");
-                        IRubyObject larg = packEnumValues(runtime, largs);
-                        if (block.yield(ctx, larg).isTrue()) {
+                        if (block.yieldValues(ctx, largs).isTrue()) {
                             if (result[0]) {
                                 throw JumpException.SPECIAL_JUMP;
                             } else {
@@ -1763,8 +1761,7 @@ public class RubyEnumerable {
                 callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
                     public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, context, "all?");
-                        IRubyObject larg = packEnumValues(runtime, largs);
-                        if (!block.yield(context, larg).isTrue()) {
+                        if (!block.yieldValues(context, largs).isTrue()) {
                             throw JumpException.SPECIAL_JUMP;
                         }
                         return context.nil;
@@ -1823,8 +1820,7 @@ public class RubyEnumerable {
                 callEach(runtime, context, self, block.getSignature(), new BlockCallback() {
                     public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, context, "any?");
-                        IRubyObject larg = packEnumValues(runtime, largs);
-                        if (block.yield(context, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
+                        if (block.yieldValues(context, largs).isTrue()) throw JumpException.SPECIAL_JUMP;
                         return context.nil;
                     }
                 });

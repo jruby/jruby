@@ -1,1 +1,0 @@
-fails:Enumerable#any? with block yields multiple arguments when each yields multiple
