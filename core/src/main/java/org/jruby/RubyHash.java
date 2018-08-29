@@ -488,28 +488,18 @@ public class RubyHash extends RubyObject implements Map {
         return ((h & HASH_SIGN_BIT_MASK) % length);
     }
 
-    private final synchronized void resize(int newCapacity) {
-        final IRubyObject[] oldTable = entries;
-        final IRubyObject[] newTable = new IRubyObject[newCapacity << 1];
+    private final synchronized void resize(final int newCapacity) {
+        final IRubyObject[] newEntries = new IRubyObject[newCapacity << 1];
         final int[] newBins = new int[newCapacity << 1];
         final int[] newHashes = new int[newCapacity];
         Arrays.fill(newBins, EMPTY_BIN);
-        Arrays.fill(newHashes, EMPTY_BIN);
-        IRubyObject key, value;
+        System.arraycopy(entries, 0, newEntries, 0, entries.length);
+        System.arraycopy(hashes, 0, newHashes, 0, hashes.length);
         int index, bin, hash;
 
         for (int i = start; i < end; i++) {
-            key = oldTable[i * NUMBER_OF_ENTRIES];
-            value = oldTable[i * NUMBER_OF_ENTRIES + 1];
-            if (key == null) {
-                continue;
-            }
-
-            newTable[i * NUMBER_OF_ENTRIES] = key;
-            newTable[i * NUMBER_OF_ENTRIES + 1] = value;
-            hash = hashValue(key);
-              newHashes[i] = hash;
-            bin = bucketIndex(hash, newBins.length);
+            if (entries[i * NUMBER_OF_ENTRIES] == null) continue;
+            bin = bucketIndex(hashes[i], newBins.length);
             index = newBins[bin];
             while(index != EMPTY_BIN) {
               bin = secondaryBucketIndex(bin, newBins.length);
@@ -518,10 +508,9 @@ public class RubyHash extends RubyObject implements Map {
             newBins[bin] = i;
         }
 
-        hashes = null;
         bins = newBins;
         hashes = newHashes;
-        entries = newTable;
+        entries = newEntries;
     }
 
     // ------------------------------
@@ -543,7 +532,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private void checkResize() {
         if (getLength() == end) {
-            resize(getLength() << 1);
+            resize(entries.length << 2);
             return;
         }
         return;
