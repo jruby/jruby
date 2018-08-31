@@ -1,2 +1,0 @@
-fails:Enumerable#find_index without block gathers whole arrays as elements when each yields multiple
-fails:Enumerable#find_index with block given a greedy yield parameter passes a gathered array to the parameter
