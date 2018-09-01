@@ -733,6 +733,7 @@ public class RubyHash extends RubyObject implements Map {
                 otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
                 if (matchType.matches(key, value, otherKey, otherValue)) {
                   bins[bin] = DELETED_BIN;
+                  hashes[index] = 0;
                   entries[index * NUMBER_OF_ENTRIES] = null;
                   entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
                   size--;
@@ -759,6 +760,7 @@ public class RubyHash extends RubyObject implements Map {
                 continue;
 
             if (matchType.matches(key, value, otherKey, otherValue)) {
+              hashes[index] = 0;
               entries[index * NUMBER_OF_ENTRIES] = null;
               entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
               size--;
