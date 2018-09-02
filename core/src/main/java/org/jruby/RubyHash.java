@@ -927,6 +927,7 @@ public class RubyHash extends RubyObject implements Map {
         } else {
             Arity.checkArgumentCount(getRuntime(), args, 0, 1);
             if (args.length == 1) ifNone = args[0];
+            if (args.length == 0) ifNone = UNDEF;
         }
         return this;
     }
