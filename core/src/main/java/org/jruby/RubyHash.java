@@ -1183,7 +1183,7 @@ public class RubyHash extends RubyObject implements Map {
                 }
 
                 bin = secondaryBucketIndex(bin, newBins.length);
-                index = bins[bin];
+                index = newBins[bin];
             }
 
             if (!exists) {
