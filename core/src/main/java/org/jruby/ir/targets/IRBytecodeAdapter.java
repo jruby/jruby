@@ -217,8 +217,14 @@ public abstract class IRBytecodeAdapter {
         adapter.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
     }
 
-    public void isNil() {
-        adapter.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
+    /**
+     * Branch to label if value at top of stack is nil
+     *
+     * stack: obj to check for nilness
+     */
+    public void isNil(Label label) {
+        pushNil();
+        adapter.if_acmpeq(label);
     }
 
     public void bfalse(org.objectweb.asm.Label label) {
