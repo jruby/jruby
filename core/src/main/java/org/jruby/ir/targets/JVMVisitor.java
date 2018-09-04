@@ -864,7 +864,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BNilInstr(BNilInstr bnilinstr) {
         visit(bnilinstr.getArg1());
-        jvmMethod().isNil(getJVMLabel(bnilinstr.getJumpTarget()));
+        jvmMethod().branchIfNil(getJVMLabel(bnilinstr.getJumpTarget()));
     }
 
     @Override

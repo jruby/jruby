@@ -222,7 +222,7 @@ public abstract class IRBytecodeAdapter {
      *
      * stack: obj to check for nilness
      */
-    public void isNil(Label label) {
+    public void branchIfNil(Label label) {
         pushNil();
         adapter.if_acmpeq(label);
     }

@@ -337,7 +337,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
-    public void isNil(Label label) {
+    public void branchIfNil(Label label) {
         adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), Bootstrap.isNilBoot());
         adapter.iftrue(label);
     }
