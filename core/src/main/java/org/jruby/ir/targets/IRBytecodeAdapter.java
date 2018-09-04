@@ -213,8 +213,9 @@ public abstract class IRBytecodeAdapter {
         adapter.go_to(label);
     }
 
-    public void isTrue() {
+    public void branchIfTruthy(Label target) {
         adapter.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+        btrue(target);
     }
 
     /**

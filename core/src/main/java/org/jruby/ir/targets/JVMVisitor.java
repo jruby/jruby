@@ -943,8 +943,7 @@ public class JVMVisitor extends IRVisitor {
         } else {
             // unbox and branch
             visit(arg1);
-            jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
-            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
+            jvmMethod().branchIfTruthy(getJVMLabel(btrueinstr.getJumpTarget()));
         }
     }
 

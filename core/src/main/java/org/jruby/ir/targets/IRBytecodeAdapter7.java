@@ -341,4 +341,10 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), Bootstrap.isNilBoot());
         adapter.iftrue(label);
     }
+
+    @Override
+    public void branchIfTruthy(Label label) {
+        adapter.invokedynamic("isTrue", sig(boolean.class, IRubyObject.class), Bootstrap.isTrueBoot());
+        adapter.iftrue(label);
+    }
 }

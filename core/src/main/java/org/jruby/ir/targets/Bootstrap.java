@@ -116,6 +116,47 @@ public class Bootstrap {
         }
     }
 
+    public static Handle isTrueBoot() {
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "isTrue",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
+    }
+
+    public static CallSite isTrue(Lookup lookup, String name, MethodType type) {
+        return new IsTrueSite();
+    }
+
+    public static class IsTrueSite extends MutableCallSite {
+
+        public static final MethodType TYPE = methodType(boolean.class, IRubyObject.class);
+
+        public IsTrueSite() {
+            super(TYPE);
+
+            setTarget(Binder.from(TYPE.insertParameterTypes(0, IsTrueSite.class)).invokeVirtualQuiet(LOOKUP, "init").bindTo(this));
+        }
+
+        public boolean init(IRubyObject obj) {
+            Ruby runtime = obj.getRuntime();
+            IRubyObject nil = runtime.getNil();
+            IRubyObject fals = runtime.getFalse();
+            setTarget(
+                    Binder.from(type())
+                            .insert(0, RubyBoolean.False.class, fals)
+                            .insert(0, RubyNil.class, nil)
+                            .invokeStaticQuiet(LOOKUP, IsTrueSite.class, "isTruthy")
+            );
+            return nil != obj && fals != obj;
+        }
+
+        public static boolean isTruthy(RubyNil nil, RubyBoolean.False fals, IRubyObject obj) {
+            return nil != obj && fals != obj;
+        }
+    }
+
     public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
         return new ConstantCallSite(constant(ByteList.class, bytelist(value, encodingName)));
     }
