@@ -415,7 +415,7 @@ public class IRBuilder {
             case BIGNUMNODE: return buildBignum((BignumNode) node);
             case BLOCKNODE: return buildBlock((BlockNode) node);
             case BREAKNODE: return buildBreak((BreakNode) node);
-            case CALLNODE: return buildCall(result, (CallNode) node);
+            case CALLNODE: return buildCall(result, (CallNode) node, null, null);
             case CASENODE: return buildCase((CaseNode) node);
             case CLASSNODE: return buildClass((ClassNode) node);
             case CLASSVARNODE: return buildClassVar((ClassVarNode) node);
@@ -586,6 +586,14 @@ public class IRBuilder {
 
     protected Operand buildWithOrder(Node node, boolean preserveOrder) {
         Operand value = build(node);
+
+        // We need to preserve order in cases (like in presence of assignments) except that immutable
+        // literals can never change value so we can still emit these out of order.
+        return preserveOrder && !(value instanceof ImmutableLiteral) ? copyAndReturnValue(value) : value;
+    }
+
+    protected Operand buildLazyWithOrder(CallNode node, Label lazyLabel, Label endLabel, boolean preserveOrder) {
+        Operand value = buildCall(null, node, lazyLabel, endLabel);
 
         // We need to preserve order in cases (like in presence of assignments) except that immutable
         // literals can never change value so we can still emit these out of order.
@@ -1041,7 +1049,7 @@ public class IRBuilder {
         receiveBreakException(block, new CodeBlock() { public Operand run() { addInstr(callInstr); return callInstr.getResult(); } });
     }
 
-    public Operand buildCall(Variable result, CallNode callNode) {
+    public Operand buildCall(Variable result, CallNode callNode, Label lazyLabel, Label endLabel) {
         Node receiverNode = callNode.getReceiverNode();
         RubySymbol name = callNode.getName();
 
@@ -1052,9 +1060,24 @@ public class IRBuilder {
             return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
         }
 
+        boolean compileLazyLabel = false;
+        if (callNode.isLazy()) {
+            if (lazyLabel == null) {
+                compileLazyLabel = true;
+                lazyLabel = getNewLabel();
+                endLabel = getNewLabel();
+            }
+        }
+
         // The receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
-        Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
+        Operand receiver;
+        if (receiverNode instanceof CallNode && ((CallNode) receiverNode).isLazy()) {
+            receiver = buildLazyWithOrder((CallNode) receiverNode, lazyLabel, endLabel, callNode.containsVariableAssignment());
+        } else {
+            receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
+        }
+
         if (result == null) result = createTemporaryVariable();
 
         // obj["string"] optimization for Hash
@@ -1071,12 +1094,7 @@ public class IRBuilder {
             return result;
         }
 
-        Label lazyLabel = null;
-        Label endLabel = null;
-
         if (callNode.isLazy()) {
-            lazyLabel = getNewLabel();
-            endLabel = getNewLabel();
             addInstr(new BNilInstr(lazyLabel, receiver));
         }
 
@@ -1099,7 +1117,7 @@ public class IRBuilder {
         determineIfProcNew(receiverNode, name, callInstr);
         receiveBreakException(block, callInstr);
 
-        if (callNode.isLazy()) {
+        if (compileLazyLabel) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
             addInstr(new CopyInstr(result, manager.getNil()));
