@@ -4414,7 +4414,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     // NOTE: not a @JRubyMethod(name = "all?") as there's no Array#all? on MRI
     public IRubyObject all_p(ThreadContext context, IRubyObject[] args, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, args, block);
-        if (!block.isGiven()) return all_pBlockless(context);
+        boolean patternGiven = args.length > 0;
+        if (!block.isGiven() || patternGiven) return all_pBlockless(context, args);
 
         for (int i = 0; i < realLength; i++) {
             if (!block.yield(context, eltOk(i)).isTrue()) return context.fals;
@@ -4423,9 +4424,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.tru;
     }
 
-    private IRubyObject all_pBlockless(ThreadContext context) {
-        for (int i = 0; i < realLength; i++) {
-            if (!eltOk(i).isTrue()) return context.fals;
+    private IRubyObject all_pBlockless(ThreadContext context, IRubyObject[] args) {
+        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        if (pattern == null) {
+            for (int i = 0; i < realLength; i++) {
+                if (!eltOk(i).isTrue()) return context.fals;
+            }
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                if (!(pattern.callMethod(context, "===", eltOk(i)).isTrue())) return context.fals;
+            }
         }
 
         return context.tru;
