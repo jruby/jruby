@@ -335,4 +335,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         long encodedSignature = signature.encode();
         adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
+
+    @Override
+    public void isNil() {
+        adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), Bootstrap.isNilBoot());
+    }
 }

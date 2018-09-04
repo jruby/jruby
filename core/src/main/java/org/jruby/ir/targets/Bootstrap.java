@@ -78,6 +78,44 @@ public class Bootstrap {
         return site;
     }
 
+    public static Handle isNilBoot() {
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(Bootstrap.class),
+                "isNil",
+                sig(CallSite.class, Lookup.class, String.class, MethodType.class),
+                false);
+    }
+
+    public static CallSite isNil(Lookup lookup, String name, MethodType type) {
+        return new IsNilSite();
+    }
+
+    public static class IsNilSite extends MutableCallSite {
+
+        public static final MethodType TYPE = methodType(boolean.class, IRubyObject.class);
+
+        public IsNilSite() {
+            super(TYPE);
+
+            setTarget(Binder.from(TYPE.insertParameterTypes(0, IsNilSite.class)).invokeVirtualQuiet(LOOKUP, "init").bindTo(this));
+        }
+
+        public boolean init(IRubyObject obj) {
+            IRubyObject nil = obj.getRuntime().getNil();
+            setTarget(
+                    Binder.from(type())
+                            .insert(0, RubyNil.class, nil)
+                            .invokeStaticQuiet(LOOKUP, IsNilSite.class, "isNil")
+            );
+            return nil == obj;
+        }
+
+        public static boolean isNil(RubyNil nil, IRubyObject obj) {
+            return nil == obj;
+        }
+    }
+
     public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
         return new ConstantCallSite(constant(ByteList.class, bytelist(value, encodingName)));
     }
