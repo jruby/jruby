@@ -1,2 +1,0 @@
-fails:Enumerable#all? when given a pattern argument ignores block
-fails:Enumerable#all? when given a pattern argument returns false if the pattern ever returns false or nil
