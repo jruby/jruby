@@ -232,6 +232,9 @@ project 'JRuby Core' do
                           'org/jruby/runtime/**/*Test*.java' ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
+  plugin(:jar,
+         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby'}})
+
   build do
     default_goal 'package'
 
@@ -412,5 +415,13 @@ project 'JRuby Core' do
                      :id => 'pack core sources',
                      :phase => 'prepare-package' ) # Needs to run before the shade plugin
     end
+  end
+
+  profile 'java9' do
+    activation do
+      jdk '[9,)'
+    end
+
+    jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
   end
 end
