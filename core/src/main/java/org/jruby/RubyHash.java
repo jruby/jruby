@@ -2600,7 +2600,9 @@ public class RubyHash extends RubyObject implements Map {
 
     private final RaiseException concurrentModification() {
         return getRuntime().newConcurrencyError(
-                "Detected invalid hash contents due to unsynchronized modifications with concurrent users");
+                "Detected invalid hash contents due to unsynchronized modifications with concurrent users." +
+                " inspect: " + inspectHash( getRuntime().getCurrentContext() ).asJavaString()
+        );
     }
 
     /**
