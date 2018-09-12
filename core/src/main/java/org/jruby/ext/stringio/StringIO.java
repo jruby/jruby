@@ -219,7 +219,15 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return this;
     }
 
-    @JRubyMethod(name = {"binmode", "flush"})
+    @JRubyMethod
+    public IRubyObject binmode(ThreadContext context) {
+        ptr.enc = EncodingUtils.ascii8bitEncoding(context.runtime);
+        if (writable()) ptr.string.setEncoding(ptr.enc);
+
+        return this;
+    }
+
+    @JRubyMethod(name = "flush")
     public IRubyObject strio_self() {
         return this;
     }
