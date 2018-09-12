@@ -72,7 +72,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return runtime.getNil();
+            throw runtime.newTypeError("allocator undefined for NilClass");
         }
     };
     
