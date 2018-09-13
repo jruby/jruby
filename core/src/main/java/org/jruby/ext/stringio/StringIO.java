@@ -587,7 +587,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         @Override
         public IRubyObject getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
             if (limit == 0) {
-                return RubyString.newEmptyString(context.runtime, self.ptr.enc);
+                return RubyString.newEmptyString(context.runtime, self.getEncoding());
             }
 
             IRubyObject result = self.getline(context, rs, limit, chomp);
@@ -648,7 +648,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
 
         StringIOData ptr = this.ptr;
-        Encoding enc = ptr.enc;
+        Encoding enc = getEncoding();
 
         synchronized (ptr) {
             final ByteList string = ptr.string.getByteList();
@@ -860,7 +860,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 case 0:
                     len = ptr.string.size();
                     if (len <= ptr.pos) {
-                        Encoding enc = binary ? ASCIIEncoding.INSTANCE : ptr.enc;
+                        Encoding enc = binary ? ASCIIEncoding.INSTANCE : getEncoding();
                         if (str.isNil()) {
                             str = runtime.newString();
                         } else {
@@ -877,7 +877,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             }
 
             if (str.isNil()) {
-                Encoding enc = binary ? ASCIIEncoding.INSTANCE : ptr.enc;
+                Encoding enc = binary ? ASCIIEncoding.INSTANCE : getEncoding();
                 string = strioSubstr(runtime, ptr.pos, len, enc);
             } else {
                 string = (RubyString) str;
