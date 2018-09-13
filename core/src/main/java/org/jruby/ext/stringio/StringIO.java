@@ -107,8 +107,9 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return stringIOClass;
     }
 
+    // mri: get_enc
     public Encoding getEncoding() {
-        return ptr.enc;
+        return ptr.enc != null ? ptr.enc : ptr.string.getEncoding();
     }
 
     public void setEncoding(Encoding enc) {
@@ -195,7 +196,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             }
 
             ptr.string = string;
-            ptr.enc = string.getEncoding();
+            ptr.enc = null;
             ptr.pos = 0;
             ptr.lineno = 0;
             // funky way of shifting readwrite flags into object flags
@@ -659,7 +660,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             int w = 0;
 
             if (limit > 0 && s + limit < e) {
-                e = ptr.enc.rightAdjustCharHead(stringBytes, s, s + limit, e);
+                e = getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e);
             }
             if (rs == context.nil) {
                 if (chomp) {
@@ -891,7 +892,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 if (binary) {
                     string.setEncoding(ASCIIEncoding.INSTANCE);
                 } else {
-                    string.setEncoding(ptr.enc);
+                    string.setEncoding(ptr.string.getEncoding());
                 }
             }
             ptr.pos += string.size();
@@ -1188,7 +1189,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
-            final Encoding enc = ptr.enc;
+            final Encoding enc = getEncoding();
             final Encoding encStr = str.getEncoding();
             if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
                     // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
@@ -1255,7 +1256,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject external_encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.enc);
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(getEncoding());
     }
 
     @JRubyMethod
@@ -1274,7 +1275,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
-            final Encoding enc = ptr.enc;
+            final Encoding enc = getEncoding();
             final ByteList string = ptr.string.getByteList();
             final byte[] stringBytes = string.getUnsafeBytes();
             int begin = string.getBegin();
