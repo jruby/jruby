@@ -61,9 +61,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     private int realSize;
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    private volatile int hash;
-    private volatile int charSize;
-    private String stringValue;
+    int hash;
+
+    String stringValue;
 
     private static final int DEFAULT_SIZE = 4;
 
@@ -270,7 +270,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList dup() {
         ByteList dup = dup(realSize);
         dup.hash = hash;
-        dup.charSize = charSize;
         dup.stringValue = stringValue;
         return dup;
     }
@@ -286,7 +285,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         dup.begin = begin;
         dup.encoding = safeEncoding(encoding);
         dup.hash = hash;
-        dup.charSize = charSize;
         dup.stringValue = stringValue;
         return dup;
     }
@@ -384,7 +382,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public void invalidate() {
         hash = 0;
-        charSize = 0;
         stringValue = null;
     }
 
@@ -546,9 +543,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return the number of bytes in this ByteList.
      */
     public int length() {
-        int charSize = this.charSize;
-        if (charSize != 0) return charSize;
-        return this.charSize = encoding.length(bytes, begin, realSize);
+        return realSize;
     }
 
     /**
@@ -1118,13 +1113,13 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     /**
      * Remembers toString value, which is expensive for StringBuffer.
      *
-     * @return a decoded representation of the byte list
+     * @return an ISO-8859-1 representation of the byte list
      */
     @Override
     public String toString() {
         String decoded = this.stringValue;
         if (decoded == null) {
-            this.stringValue = decoded = decode(bytes, begin, realSize, encoding.getCharsetName());
+            this.stringValue = decoded = decode(bytes, begin, realSize, "ISO-8859-1");
         }
         return decoded;
     }
@@ -1270,146 +1265,18 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return
      */
     public char charAt(int ix) {
-        if (charSize != 0 && charSize == realSize) {
-            return (char) (this.bytes[begin + ix] & 0xFF);
-        }
-        int code = nth(encoding, bytes, begin, begin + realSize, ix);
-
-        if (Character.isSupplementaryCodePoint(code)) return Character.highSurrogate(code);
-        return (char) code;
+        return (char)(this.bytes[begin + ix] & 0xFF);
     }
 
     /**
-     * Find the nth character in an encoded byte[].
-     *
-     * @param enc the encoding for the bytes
-     * @param bytes the bytes
-     * @param p start position
-     * @param end end position
-     * @param n character index requested
-     * @return the nth character as a 32-bit codepoint
-     */
-    private static int nth(Encoding enc, byte[] bytes, int p, int end, int n) {
-        return nth(enc, bytes, p, end, n, enc.isSingleByte());
-    }
-
-    private static int nth(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
-        if (p < 0 || end >= bytes.length) return -1;
-
-        if (singlebyte) {
-            p += n;
-            return p > end ? -1 : bytes[p] & 0xFF;
-        } else if (enc.isFixedWidth()) {
-            p += n * enc.maxLength();
-            return enc.mbcToCode(bytes, p, end);
-        } else if (enc.isAsciiCompatible()) {
-            return nthAsciiCompatible(enc, bytes, p, end, n);
-        } else {
-            return nthNonAsciiCompatible(enc, bytes, p, end, n);
-        }
-    }
-
-    private static int nthAsciiCompatible(Encoding enc, byte[]bytes, int p, int end, int n) {
-        while (p < end && n > 0) {
-            int end2 = p + n;
-            if (end < end2) return -1;
-            if (Encoding.isAscii(bytes[p])) {
-                int p2 = searchNonAscii(bytes, p, end2);
-                if (p2 == -1) return bytes[end2] & 0xFF;
-                n -= p2 - p;
-                p = p2;
-            }
-            int cl = length(enc, bytes, p, end);
-            p += cl;
-            n--;
-        }
-        return n != 0 ? -1 : enc.mbcToCode(bytes, p, end);
-    }
-
-    public static int searchNonAscii(byte[]bytes, int p, int end) {
-        while (p < end) {
-            if (!Encoding.isAscii(bytes[p])) return p;
-            p++;
-        }
-        return -1;
-    }
-
-    private static int nthNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end, int n) {
-        while (p < end && n-- != 0) {
-            p += length(enc, bytes, p, end);
-        }
-        if (p > end) return -1;
-        return enc.mbcToCode(bytes, p, end);
-    }
-
-    private static int length(Encoding enc, byte[]bytes, int p, int end) {
-        int n = enc.length(bytes, p, end);
-        if (charFound(n) && charFoundLength(n) <= end - p) return charFoundLength(n);
-        int min = enc.minLength();
-        return min <= end - p ? min : end - p;
-    }
-
-    private static int charFoundLength(int r) {
-        return r;
-    }
-
-    public static boolean charFound(int r) {
-        return 0 < r;
-    }
-
-    /**
-     * Create a new CharSequence encapsulating the specified range of characters.
+     * Create subSequence of this array between start and end offsets
      *
      * @param start index for beginning of subsequence
      * @param end index for end of subsequence
-     * @return a new CharSequence
+     * @return a new ByteList/CharSequence
      */
     public CharSequence subSequence(int start, int end) {
-        int before = nthOffset(encoding, bytes, begin, begin + realSize, start);
-        int after = nthOffset(encoding, bytes, begin + before, begin + realSize, end - start + 1 /* index of char after end */);
-        return new ByteList(this, before, after);
-    }
-
-    private static int nthOffset(Encoding enc, byte[]bytes, int p, int end, int n) {
-        return nthOffset(enc, bytes, p, end, n, enc.isSingleByte());
-    }
-
-    private static int nthOffset(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
-        if (singlebyte) {
-            p += n;
-        } else if (enc.isFixedWidth()) {
-            p += n * enc.maxLength();
-        } else if (enc.isAsciiCompatible()) {
-            p = nthOffsetAsciiCompatible(enc, bytes, p, end, n);
-        } else {
-            p = nthOffsetNonAsciiCompatible(enc, bytes, p, end, n);
-        }
-        if (p < 0) return -1;
-        return p > end ? end : p;
-    }
-
-    private static int nthOffsetAsciiCompatible(Encoding enc, byte[]bytes, int p, int end, int n) {
-        while (p < end && n > 0) {
-            int end2 = p + n;
-            if (end < end2) return end;
-            if (Encoding.isAscii(bytes[p])) {
-                int p2 = searchNonAscii(bytes, p, end2);
-                if (p2 == -1) return end2;
-                n -= p2 - p;
-                p = p2;
-            }
-            int cl = length(enc, bytes, p, end);
-            p += cl;
-            n--;
-        }
-        return n != 0 ? end : p;
-    }
-
-    private static int nthOffsetNonAsciiCompatible(Encoding enc, byte[]bytes, int p, int end, int n) {
-        while (p < end && n-- != 0) {
-            p += length(enc, bytes, p, end);
-        }
-        return p;
+        return new ByteList(this, start, end - start);
     }
 
     /**
@@ -1497,11 +1364,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * @see #byteLength()
+     * @return the realSize
      */
-    public int realSize() {
-        return byteLength();
-    }
+    public int realSize() { return realSize; }
 
     /**
      * @param realSize the realSize to set
@@ -1510,15 +1375,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         assert realSize >= 0;
         this.realSize = realSize;
         invalidate();
-    }
-
-    /**
-     * The size in bytes of this ByteList.
-     *
-     * @return size in bytes
-     */
-    public int byteLength() {
-        return realSize;
     }
 
     /**
