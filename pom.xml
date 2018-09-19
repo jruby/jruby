@@ -112,7 +112,7 @@ DO NOT MODIFIY - GENERATED CODE
     <ant.version>1.9.8</ant.version>
     <jffi.version>1.2.17</jffi.version>
     <rake.version>12.3.0</rake.version>
-    <jruby-launcher.version>1.1.1</jruby-launcher.version>
+    <jruby-launcher.version>1.1.6</jruby-launcher.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <asm.version>6.2</asm.version>
     <rspec-expectations.version>3.6.0</rspec-expectations.version>
