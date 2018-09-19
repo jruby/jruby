@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
-require File.expand_path('../shared/closed', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
+require_relative 'shared/closed'
 
 describe "Dir#each" do
   before :all do
@@ -37,7 +37,7 @@ describe "Dir#each" do
 
   describe "when no block is given" do
     it "returns an Enumerator" do
-      @dir.each.should be_an_instance_of(enumerator_class)
+      @dir.each.should be_an_instance_of(Enumerator)
       @dir.each.to_a.sort.should == DirSpecs.expected_paths
     end
 

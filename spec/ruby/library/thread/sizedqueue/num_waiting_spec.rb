@@ -1,9 +1,9 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'thread'
-require File.expand_path('../../shared/queue/num_waiting', __FILE__)
+require_relative '../shared/queue/num_waiting'
 
 describe "Thread::SizedQueue#num_waiting" do
-  it_behaves_like :queue_num_waiting, :num_waiting, SizedQueue.new(10)
+  it_behaves_like :queue_num_waiting, :num_waiting, -> { SizedQueue.new(10) }
 
   it "reports the number of threads waiting to push" do
     q = SizedQueue.new(1)

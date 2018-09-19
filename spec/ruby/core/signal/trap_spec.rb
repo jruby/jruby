@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 platform_is_not :windows do
   describe "Signal.trap" do
@@ -18,10 +18,34 @@ platform_is_not :windows do
     end
 
     it "accepts a block in place of a proc/command argument" do
-      Signal.trap(:HUP) { ScratchPad.record :block_trap }
+      done = false
+
+      Signal.trap(:HUP) do
+        ScratchPad.record :block_trap
+        done = true
+      end
+
       Process.kill :HUP, Process.pid
-      Thread.pass until ScratchPad.recorded
+      Thread.pass until done
+
       ScratchPad.recorded.should == :block_trap
+    end
+
+    it "is possible to create a new Thread when the handler runs" do
+      done = false
+
+      Signal.trap(:HUP) do
+        thr = Thread.new { }
+        thr.join
+        ScratchPad.record(thr.group == Thread.main.group)
+
+        done = true
+      end
+
+      Process.kill :HUP, Process.pid
+      Thread.pass until done
+
+      ScratchPad.recorded.should be_true
     end
 
     it "ignores the signal when passed nil" do
@@ -87,6 +111,74 @@ platform_is_not :windows do
     it "accepts 'IGNORE' in place of a proc" do
       Signal.trap :HUP, "IGNORE"
       Signal.trap(:HUP, "IGNORE").should == "IGNORE"
+    end
+  end
+
+  describe "Signal.trap" do
+    cannot_be_trapped = %w[KILL STOP] # See man 2 signal
+    reserved_signals = %w[VTALRM]
+
+    if PlatformGuard.implementation?(:ruby)
+      reserved_signals += %w[SEGV ILL FPE BUS]
+    end
+
+    if PlatformGuard.implementation?(:truffleruby)
+      if !TruffleRuby.native?
+        reserved_signals += %w[SEGV ILL FPE USR1 QUIT]
+      end
+    end
+
+    if PlatformGuard.implementation?(:jruby)
+      reserved_signals += %w[SEGV ILL FPE BUS USR1 QUIT]
+    end
+
+    cannot_be_trapped.each do |signal|
+      it "raises ArgumentError or Errno::EINVAL for SIG#{signal}" do
+        -> {
+          trap(signal, -> {})
+        }.should raise_error(StandardError) { |e|
+          [ArgumentError, Errno::EINVAL].should include(e.class)
+          e.message.should =~ /Invalid argument|Signal already used by VM or OS/
+        }
+      end
+    end
+
+    reserved_signals.each do |signal|
+      it "raises ArgumentError for reserved signal: SIG#{signal}" do
+        -> {
+          trap(signal, -> {})
+        }.should raise_error(ArgumentError, /can't trap reserved signal|Signal already used by VM or OS/)
+      end
+    end
+
+    it "allows to register a handler for all known signals, except reserved signals" do
+      excluded = cannot_be_trapped + reserved_signals
+      out = ruby_exe(fixture(__FILE__, "trap_all.rb"), args: [*excluded, "2>&1"])
+      out.should == "OK\n"
+      $?.exitstatus.should == 0
+    end
+
+    it "returns 'DEFAULT' for the initial SIGINT handler" do
+      ruby_exe('print trap(:INT) { abort }').should == 'DEFAULT'
+    end
+
+    it "returns SYSTEM_DEFAULT if passed DEFAULT and no handler was ever set" do
+      Signal.trap("PROF", "DEFAULT").should == "SYSTEM_DEFAULT"
+    end
+
+    it "accepts 'SYSTEM_DEFAULT' and uses the OS handler for SIGPIPE" do
+      code = <<-RUBY
+        p Signal.trap('PIPE', 'SYSTEM_DEFAULT')
+        r, w = IO.pipe
+        r.close
+        loop { w.write("a"*1024) }
+      RUBY
+      out = ruby_exe(code)
+      status = $?
+      out.should == "nil\n"
+      status.signaled?.should == true
+      status.termsig.should be_kind_of(Integer)
+      Signal.signame(status.termsig).should == "PIPE"
     end
   end
 end

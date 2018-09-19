@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -37,6 +37,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -60,7 +63,9 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private Runnable unloader;
 
-    private File tempDir;
+    private static volatile File tempDir;
+
+    private List<String> cachedJarPaths = Collections.synchronizedList(new ArrayList<String>());
 
     public JRubyClassLoader(ClassLoader parent) {
         super(parent);
@@ -76,7 +81,6 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             InputStream in = null; OutputStream out = null;
             try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
-                f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
                 in = new BufferedInputStream( url.openStream() );
                 int i = in.read();
@@ -87,6 +91,8 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
                 out.close();
                 in.close();
                 url = f.toURI().toURL();
+
+                cachedJarPaths.add(URLUtil.getPath(url));
             }
             catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
@@ -110,15 +116,29 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         super.addURL( url );
     }
 
-    private File getTempDir() {
-        File tempDir = this.tempDir;
+    private static synchronized File getTempDir() {
         if (tempDir != null) return tempDir;
 
         tempDir = new File(systemTmpDir(), tempDirName());
         if (tempDir.mkdirs()) {
-            tempDir.deleteOnExit();
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    for (File f : tempDir.listFiles()) {
+                        try {
+                            f.delete();
+                        } catch (Exception ex) {
+                            LOG.debug(ex);
+                        }
+                    }
+                    try {
+                        tempDir.delete();
+                    } catch (Exception ex) {
+                        LOG.info("failed to delete temp dir " + tempDir + " : " + ex);
+                    }
+                }
+            });
         }
-        return this.tempDir = tempDir;
+        return tempDir;
     }
 
     private static final String TEMP_DIR_PREFIX = "jruby-";
@@ -170,6 +190,23 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             getJDBCDriverUnloader().run();
         }
         catch (Exception ex) { LOG.debug(ex); }
+
+        terminateJarIndexCacheEntries();
+    }
+
+    protected void terminateJarIndexCacheEntries() {
+        for (String jarPath : cachedJarPaths){
+            try {
+                // Remove reference from jar cache
+                JarResource.removeJarResource(jarPath);
+
+                // Delete temp jar on disk
+                File jarFile = new File(jarPath);
+                jarFile.delete();
+            } catch (Exception e) {
+                // keep trying to clean up other temp jars
+            }
+        }
     }
 
     @Deprecated

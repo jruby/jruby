@@ -1,0 +1,3 @@
+fails:Enumerator::Lazy#to_enum sets #size to nil when not given a block
+fails:Enumerator::Lazy#to_enum sets given block to size when given a block
+fails:Enumerator::Lazy#to_enum used by some parent's methods though returning Lazy

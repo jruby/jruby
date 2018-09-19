@@ -1,2 +1,0 @@
-fails:UNIXSocket.open opens a unix socket on the specified file
-fails:UNIXSocket.open opens a unix socket on the specified file and yields it to the block

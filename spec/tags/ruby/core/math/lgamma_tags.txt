@@ -1,0 +1,1 @@
+fails:Math.lgamma returns [Infinity, 1] when passed 0

@@ -2,19 +2,18 @@ package org.jruby.ir.runtime;
 
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.util.cli.Options;
 
 public class IRReturnJump extends IRJump implements Unrescuable {
     public final DynamicScope methodToReturnFrom;
     public final Object returnValue;
 
-    private IRReturnJump(DynamicScope scope, Object rv) {
-        this.methodToReturnFrom = scope;
+    private IRReturnJump(DynamicScope scopeToReturnFrom, Object rv) {
+        this.methodToReturnFrom = scopeToReturnFrom;
         this.returnValue = rv;
     }
 
-    public static IRReturnJump create(DynamicScope scope, Object rv) {
-        return new IRReturnJump(scope, rv);
+    public static IRReturnJump create(DynamicScope scopeToReturnFrom, Object rv) {
+        return new IRReturnJump(scopeToReturnFrom, rv);
     }
 
     @Override

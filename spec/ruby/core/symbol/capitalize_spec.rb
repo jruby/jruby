@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Symbol#capitalize" do
   it "returns a Symbol" do
@@ -21,6 +21,13 @@ describe "Symbol#capitalize" do
     end
   end
 
+  ruby_version_is '2.4' do
+    it "capitalizes the first character if it is Unicode" do
+      :"äöü".capitalize.should == :"Äöü"
+      :"aou".capitalize.should == :"Aou"
+    end
+  end
+
   it "converts subsequent uppercase ASCII characters to their lowercase equivalents" do
     :lOWER.capitalize.should == :Lower
   end
@@ -36,7 +43,7 @@ describe "Symbol#capitalize" do
   ruby_version_is ''...'2.4' do
     it "leaves uppercase Unicode characters as they were" do
       "a\u{00DE}c".to_sym.capitalize.should == :"AÞc"
-    end  
+    end
   end
 
   it "leaves lowercase Unicode characters (except in first position) as they were" do

@@ -1,1 +1,1 @@
-exclude :test_to_time__from_datetime, "rational precision issue of some kind"
+exclude :test_to_time__from_datetime, "subsecond time is not preserved in rational as in MRI"

@@ -1,7 +1,0 @@
-exclude :"test_contains", "needs investigation"
-exclude :"test_floor_ceiling_round", "needs investigation"
-exclude :"test_normalize_space", "needs investigation"
-exclude :"test_starts_with", "needs investigation"
-exclude :"test_substring", "needs investigation"
-exclude :"test_substring2", "needs investigation"
-exclude :"test_translate", "needs investigation"

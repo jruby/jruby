@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#&" do
   it "creates an array with elements common to both arrays (intersection)" do
@@ -19,7 +19,7 @@ describe "Array#&" do
 
   it "does not modify the original Array" do
     a = [1, 1, 3, 5]
-    a & [1, 2, 3]
+    (a & [1, 2, 3]).should == [1, 3]
     a.should == [1, 1, 3, 5]
   end
 
@@ -49,17 +49,18 @@ describe "Array#&" do
 
     obj1 = mock('1')
     obj2 = mock('2')
-    obj1.should_receive(:hash).at_least(1).and_return(0)
-    obj2.should_receive(:hash).at_least(1).and_return(0)
+    obj1.stub!(:hash).and_return(0)
+    obj2.stub!(:hash).and_return(0)
     obj1.should_receive(:eql?).at_least(1).and_return(true)
+    obj2.stub!(:eql?).and_return(true)
 
     ([obj1] & [obj2]).should == [obj1]
     ([obj1, obj1, obj2, obj2] & [obj2]).should == [obj1]
 
     obj1 = mock('3')
     obj2 = mock('4')
-    obj1.should_receive(:hash).at_least(1).and_return(0)
-    obj2.should_receive(:hash).at_least(1).and_return(0)
+    obj1.stub!(:hash).and_return(0)
+    obj2.stub!(:hash).and_return(0)
     obj1.should_receive(:eql?).at_least(1).and_return(false)
 
     ([obj1] & [obj2]).should == []
@@ -78,7 +79,7 @@ describe "Array#&" do
 
   it "properly handles an identical item even when its #eql? isn't reflexive" do
     x = mock('x')
-    x.should_receive(:hash).at_least(1).and_return(42)
+    x.stub!(:hash).and_return(42)
     x.stub!(:eql?).and_return(false) # Stubbed for clarity and latitude in implementation; not actually sent by MRI.
 
     ([x] & [x]).should == [x]

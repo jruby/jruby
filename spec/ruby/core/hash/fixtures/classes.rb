@@ -17,6 +17,13 @@ module HashSpecs
     end
   end
 
+  class SubHashSettingInInitialize < Hash
+    def initialize(*args, &block)
+      self[:foo] = :bar
+      super(*args, &block)
+    end
+  end
+
   class DefaultHash < Hash
     def default(key)
       100
@@ -36,6 +43,21 @@ module HashSpecs
   class ByIdentityKey
     def hash
       fail("#hash should not be called on compare_by_identity Hash")
+    end
+  end
+
+  class ByValueKey
+    attr_reader :n
+    def initialize(n)
+      @n = n
+    end
+
+    def hash
+      n
+    end
+
+    def eql? other
+      ByValueKey === other and @n == other.n
     end
   end
 

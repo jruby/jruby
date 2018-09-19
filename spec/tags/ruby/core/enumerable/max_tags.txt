@@ -1,1 +1,0 @@
-fails:Enumerable#max that is nil returns the maximum element

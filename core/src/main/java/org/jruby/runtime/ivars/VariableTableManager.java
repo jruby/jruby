@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,14 +24,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.ivars;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.invoke.MethodHandle;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -188,7 +191,7 @@ public class VariableTableManager {
         return ivarAccessor;
     }
 
-    public VariableAccessor getVariableAccessorForVar(String name, int index) {
+    public VariableAccessor getVariableAccessorForVar(String name, MethodHandle getter, MethodHandle setter) {
         VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
 
@@ -198,7 +201,7 @@ public class VariableTableManager {
 
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
-                    ivarAccessor = allocateVariableAccessorForVar(name, index);
+                    ivarAccessor = allocateVariableAccessorForVar(name, getter, setter);
                     Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
 
                     newVariableAccessors.putAll(myVariableAccessors);
@@ -566,7 +569,7 @@ public class VariableTableManager {
         return newVariableAccessor;
     }
 
-    synchronized final VariableAccessor allocateVariableAccessorForVar(String name, int index) {
+    synchronized final VariableAccessor allocateVariableAccessorForVar(String name, MethodHandle getter, MethodHandle setter) {
         int id = realClass.id;
 
         final String[] myVariableNames = variableNames;
@@ -574,41 +577,7 @@ public class VariableTableManager {
 
         fieldVariables += 1;
 
-        VariableAccessor newVariableAccessor;
-        switch (index) {
-            case 0:
-                newVariableAccessor = new VariableAccessorVar0(realClass, name, newIndex, id);
-                break;
-            case 1:
-                newVariableAccessor = new VariableAccessorVar1(realClass, name, newIndex, id);
-                break;
-            case 2:
-                newVariableAccessor = new VariableAccessorVar2(realClass, name, newIndex, id);
-                break;
-            case 3:
-                newVariableAccessor = new VariableAccessorVar3(realClass, name, newIndex, id);
-                break;
-            case 4:
-                newVariableAccessor = new VariableAccessorVar4(realClass, name, newIndex, id);
-                break;
-            case 5:
-                newVariableAccessor = new VariableAccessorVar5(realClass, name, newIndex, id);
-                break;
-            case 6:
-                newVariableAccessor = new VariableAccessorVar6(realClass, name, newIndex, id);
-                break;
-            case 7:
-                newVariableAccessor = new VariableAccessorVar7(realClass, name, newIndex, id);
-                break;
-            case 8:
-                newVariableAccessor = new VariableAccessorVar8(realClass, name, newIndex, id);
-                break;
-            case 9:
-                newVariableAccessor = new VariableAccessorVar9(realClass, name, newIndex, id);
-                break;
-            default:
-                throw new RuntimeException("unsupported var index in " + realClass + ": " + index);
-        }
+        VariableAccessor newVariableAccessor = new FieldVariableAccessor(realClass, name, newIndex, id, getter, setter);
 
         final String[] newVariableNames = new String[newIndex + 1];
         ArraySupport.copy(myVariableNames, 0, newVariableNames, 0, newIndex);

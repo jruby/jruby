@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Binding#local_variable_set" do
   it "adds nonexistent variables to the binding's eval scope" do
@@ -56,4 +56,16 @@ describe "Binding#local_variable_set" do
     bind.local_variable_set(:number, 20)
     bind.local_variable_get(:number).should == 20
   end
+
+  it "raises a NameError on global access" do
+    bind = binding
+    lambda { bind.local_variable_set(:$0, "") }.should raise_error(NameError)
+  end
+
+  it "raises a NameError on special variable access" do
+    bind = binding
+    lambda { bind.local_variable_set(:$~, "") }.should raise_error(NameError)
+    lambda { bind.local_variable_set(:$_, "") }.should raise_error(NameError)
+  end
+
 end

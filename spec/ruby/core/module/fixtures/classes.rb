@@ -103,8 +103,6 @@ module ModuleSpecs
     end
     attr_accessor :accessor_method
 
-    def undefed_child() end
-
     def public_child() end
 
     undef_method :parent_method
@@ -514,13 +512,6 @@ module ModuleSpecs
 
     module N
       SHADOW = 456
-    end
-
-    class Foo
-      include M
-      def self.get
-        SHADOW
-      end
     end
   end
 

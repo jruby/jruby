@@ -26,9 +26,9 @@ progname=`basename "$0"`
 
 while [ -h "$PRG" ] ; do
   ls=`ls -ld "$PRG"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '.*/.*' > /dev/null; then
-    if expr "$link" : '/' > /dev/null; then
+  link=`expr -- "$ls" : '.*-> \(.*\)$'`
+  if expr -- "$link" : '.*/.*' > /dev/null; then
+    if expr -- "$link" : '/' > /dev/null; then
       PRG="$link"
     else
       PRG="`dirname ${PRG}`/${link}"
@@ -118,9 +118,6 @@ else
         if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
           continue
         fi
-        if [ "$j" == "$JRUBY_HOME"/lib/jruby-truffle.jar ]; then
-          continue
-        fi
         if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
           continue
         fi
@@ -205,7 +202,7 @@ do
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
      val=${1:2}
-     if expr "$val" : '.*[.]' > /dev/null; then
+     if expr -- "$val" : '.*[.]' > /dev/null; then
        java_args="${java_args} -Djruby.${val}"
      else
        ruby_args="${ruby_args} -X${val}"
@@ -243,6 +240,8 @@ do
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER
         VERIFY_JRUBY=true ;;
+     --no-bootclasspath)
+        NO_BOOTCLASSPATH=true ;;
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
@@ -280,7 +279,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$VERIFY_JRUBY" != "" ]; then
+if [ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

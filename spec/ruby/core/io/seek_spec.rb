@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/pos', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/pos'
 
 describe "IO#seek" do
   it_behaves_like :io_set_pos, :seek
@@ -60,5 +60,20 @@ describe "IO#seek" do
     @io.seek(-1, IO::SEEK_END)
     @io.eof?.should == false
     value[-1].should == @io.read[0]
+  end
+
+  platform_is :darwin do
+    it "supports seek offsets greater than 2^32" do
+      begin
+        zero = File.open('/dev/zero')
+        offset = 2**33
+        zero.seek(offset, File::SEEK_SET)
+        pos = zero.pos
+
+        pos.should == offset
+      ensure
+        zero.close rescue nil
+      end
+    end
   end
 end

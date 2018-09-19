@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#instance_methods" do
   it "does not return methods undefined in a superclass" do
@@ -22,7 +22,11 @@ describe "Module#instance_methods" do
   end
 
   it "does not return methods undefined in the current class" do
-    ModuleSpecs::Child.send(:undef_method, 'undefed_child')
+    class ModuleSpecs::Child
+      def undefed_child
+      end
+    end
+    ModuleSpecs::Child.send(:undef_method, :undefed_child)
     methods = ModuleSpecs::Child.instance_methods
     methods.should_not include(:undefed_method, :undefed_child)
   end

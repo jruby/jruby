@@ -1,14 +1,15 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Thread#priority" do
-  before do
+  before :each do
     @current_priority = Thread.current.priority
     ThreadSpecs.clear_state
     @thread = Thread.new { Thread.pass until ThreadSpecs.state == :exit }
+    Thread.pass until @thread.alive?
   end
 
-  after do
+  after :each do
     ThreadSpecs.state = :exit
     @thread.join
   end
@@ -31,12 +32,14 @@ describe "Thread#priority" do
 end
 
 describe "Thread#priority=" do
-  before do
+  before :each do
     ThreadSpecs.clear_state
-    @thread = Thread.new {}
+    @thread = Thread.new { Thread.pass until ThreadSpecs.state == :exit }
+    Thread.pass until @thread.alive?
   end
 
-  after do
+  after :each do
+    ThreadSpecs.state = :exit
     @thread.join
   end
 
@@ -44,6 +47,13 @@ describe "Thread#priority=" do
     it "returns an integer" do
       value = (@thread.priority = 3)
       value.should == 3
+    end
+
+    it "clamps the priority to -3..3" do
+      @thread.priority = 42
+      @thread.priority.should == 3
+      @thread.priority = -42
+      @thread.priority.should == -3
     end
   end
 
@@ -54,8 +64,9 @@ describe "Thread#priority=" do
   end
 
   it "sets priority even when the thread has died" do
-    @thread.join
-    @thread.priority = 3
-    @thread.priority.should == 3
+    thread = Thread.new {}
+    thread.join
+    thread.priority = 3
+    thread.priority.should == 3
   end
 end

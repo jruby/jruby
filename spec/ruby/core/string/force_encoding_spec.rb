@@ -1,9 +1,29 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 with_feature :encoding do
   describe "String#force_encoding" do
     it "accepts a String as the name of an Encoding" do
       "abc".force_encoding('shift_jis').encoding.should == Encoding::Shift_JIS
+    end
+
+    describe "with a special encoding name" do
+      before :each do
+        @original_encoding = Encoding.default_internal
+      end
+
+      after :each do
+        Encoding.default_internal = @original_encoding
+      end
+
+      it "accepts valid special encoding names" do
+        Encoding.default_internal = "US-ASCII"
+        "abc".force_encoding("internal").encoding.should == Encoding::US_ASCII
+      end
+
+      it "defaults to ASCII-8BIT if special encoding name is not set" do
+        Encoding.default_internal = nil
+        "abc".force_encoding("internal").encoding.should == Encoding::ASCII_8BIT
+      end
     end
 
     it "accepts an Encoding instance" do
@@ -45,9 +65,9 @@ with_feature :encoding do
       str.dup.force_encoding('utf-16le').should_not == str.encode('utf-16le')
     end
 
-    it "raises a RuntimeError if self is frozen" do
+    it "raises a #{frozen_error_class} if self is frozen" do
       str = "abcd".freeze
-      lambda { str.force_encoding(str.encoding) }.should raise_error(RuntimeError)
+      lambda { str.force_encoding(str.encoding) }.should raise_error(frozen_error_class)
     end
   end
 end

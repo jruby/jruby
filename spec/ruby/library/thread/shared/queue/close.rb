@@ -1,6 +1,6 @@
 describe :queue_close, shared: true do
   it "closes the queue and returns nil for further #pop" do
-    q = @object
+    q = @object.call
     q << 1
     q.close
     q.pop.should == 1
@@ -9,7 +9,7 @@ describe :queue_close, shared: true do
   end
 
   it "prevents further #push" do
-    q = @object
+    q = @object.call
     q.close
     lambda {
       q << 1
@@ -17,7 +17,7 @@ describe :queue_close, shared: true do
   end
 
   it "may be called multiple times" do
-    q = @object
+    q = @object.call
     q.close
     q.closed?.should be_true
     q.close # no effect

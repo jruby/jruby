@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/enumerable_enumeratorized'
 
 describe "Enumerable#each_entry" do
   before :each do
@@ -17,7 +17,7 @@ describe "Enumerable#each_entry" do
 
   it "returns an enumerator if no block" do
     e = @enum.each_entry
-    e.should be_an_instance_of(enumerator_class)
+    e.should be_an_instance_of(Enumerator)
     e.to_a.should == @entries
   end
 

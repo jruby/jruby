@@ -7,6 +7,19 @@ class IO
     include IO::WaitWritable
   end
 
+  if Errno::EAGAIN == Errno::EWOULDBLOCK
+    IO::EWOULDBLOCKWaitReadable = IO::EAGAINWaitReadable
+    IO::EWOULDBLOCKWaitWritable = IO::EAGAINWaitWritable
+  else
+    class EWOULDBLOCKWaitReadable < Errno::EWOULDBLOCK
+      include IO::WaitReadable
+    end
+
+    class EWOULDBLOCKWaitWritable < Errno::EWOULDBLOCK
+      include IO::WaitWritable
+    end
+  end
+
   class EINPROGRESSWaitWritable < Errno::EINPROGRESS
     include IO::WaitWritable
   end

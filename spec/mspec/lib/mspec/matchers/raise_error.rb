@@ -5,16 +5,18 @@ class RaiseErrorMatcher
     @exception = exception
     @message = message
     @block = block
+    @actual = nil
   end
 
   def matches?(proc)
     @result = proc.call
     return false
-  rescue Exception => @actual
-    if matching_exception?(@actual)
+  rescue Exception => actual
+    @actual = actual
+    if matching_exception?(actual)
       return true
     else
-      raise @actual
+      raise actual
     end
   end
 
@@ -51,13 +53,19 @@ class RaiseErrorMatcher
     exception_class_and_message(exception.class, exception.message)
   end
 
+  def format_result(result)
+    result.pretty_inspect.chomp
+  rescue => e
+    "#pretty_inspect raised #{e.class}; A #<#{result.class}>"
+  end
+
   def failure_message
     message = ["Expected #{format_expected_exception}"]
 
-    if @actual then
+    if @actual
       message << "but got #{format_exception(@actual)}"
     else
-      message << "but no exception was raised (#{@result.pretty_inspect.chomp} was returned)"
+      message << "but no exception was raised (#{format_result(@result)} was returned)"
     end
 
     message
@@ -72,18 +80,8 @@ class RaiseErrorMatcher
   end
 end
 
-class Object
-  def raise_error(exception=Exception, message=nil, &block)
+module MSpecMatchers
+  private def raise_error(exception=Exception, message=nil, &block)
     RaiseErrorMatcher.new(exception, message, &block)
-  end
-end
-
-# Legacy alias
-RaiseExceptionMatcher = RaiseErrorMatcher
-
-class Object
-  def raise_exception(exception=Exception, message=nil, &block)
-    MSpec.deprecate "raise_exception", "raise_error"
-    raise_error(exception, message, &block)
   end
 end

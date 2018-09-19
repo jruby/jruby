@@ -1,1 +1,0 @@
-fails:Enumerable#count when each yields multiple values accepts an argument for comparison using ==

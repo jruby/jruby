@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/read', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/read'
 
 platform_is_not :windows do
   describe 'ARGF.read_nonblock' do
@@ -70,11 +70,9 @@ platform_is_not :windows do
         end
       end
 
-      ruby_version_is "2.3" do
-        it 'returns :wait_readable when the :exception is set to false' do
-          argf ['-'] do
-            @argf.read_nonblock(4, nil, exception: false).should == :wait_readable
-          end
+      it 'returns :wait_readable when the :exception is set to false' do
+        argf ['-'] do
+          @argf.read_nonblock(4, nil, exception: false).should == :wait_readable
         end
       end
     end

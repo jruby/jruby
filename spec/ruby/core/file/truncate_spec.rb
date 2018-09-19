@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "File.truncate" do
   before :each do
@@ -102,7 +102,7 @@ describe "File#truncate" do
     @file.truncate(3)
     @file.write "abc"
     @file.close
-    @name.should have_data("123\x00\x00\x00\x00\x00\x00\x00abc")
+    File.read(@name).should == "123\x00\x00\x00\x00\x00\x00\x00abc"
   end
 
   it "does not move the file read pointer to the specified byte offset" do

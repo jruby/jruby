@@ -585,9 +585,7 @@ class VVT < Test::Unit::TestCase
              inzpect(valuev.end)
     when Exception then
       return valuev.class.name + ":" << valuev.to_s.inspect
-    when Bignum then
-      return valuev.inspect << "_big"
-    when Fixnum, Float, NilClass, TrueClass, FalseClass then
+    when Integer, Float, NilClass, TrueClass, FalseClass then
       return valuev.inspect
     else
       unless Rational_loaded? && valuev.class == Rational then

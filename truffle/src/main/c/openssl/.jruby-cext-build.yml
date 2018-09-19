@@ -1,4 +1,0 @@
-src: ./*.c
-cflags: -I$OPENSSL_INCLUDE -DRUBY_EXTCONF_H="extconf.h" -DHAVE_OPENSSL_110_THREADING_API -Werror=implicit-function-declaration
-libs: $OPENSSL_LIB
-out: ../../../../../lib/ruby/truffle/openssl/openssl.su

@@ -1,6 +1,6 @@
-# -*- encoding: us-ascii -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#count" do
   it "counts occurrences of chars from the intersection of the specified sets" do

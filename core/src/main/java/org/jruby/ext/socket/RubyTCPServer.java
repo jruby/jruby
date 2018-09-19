@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.socket;
 
 import java.io.IOException;
@@ -45,13 +46,13 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
 
@@ -189,12 +190,8 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     @JRubyMethod(name = "accept_nonblock")
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
-
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", _opts) != runtime.getFalse();
-
-        return accept_nonblock(context, runtime, exception);
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
+        return accept_nonblock(context, context.runtime, extractExceptionArg(context, opts));
     }
 
     public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {
@@ -213,7 +210,12 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 if (!ready) {
                     // no connection immediately accepted, let them try again
-                    throw runtime.newErrnoEAGAINError("Resource temporarily unavailable");
+
+                    if (ex) {
+                        throw runtime.newErrnoEAGAINReadableError("Resource temporarily unavailable");
+                    }
+
+                    return runtime.newSymbol("wait_readable");
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
@@ -233,6 +235,35 @@ public class RubyTCPServer extends RubyTCPSocket {
                 try {ssc.configureBlocking(oldBlocking);} catch (IOException ioe) {}
 
             }
+        }
+    }
+
+    @JRubyMethod(name = "sysaccept")
+    public IRubyObject sysaccept(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        try {
+            RubyThread thread = context.getThread();
+
+            while (true) {
+                boolean ready = thread.select(this, SelectionKey.OP_ACCEPT);
+
+                if (!ready) {
+                    // we were woken up without being selected...poll for thread events and go back to sleep
+                    context.pollThreadEvents();
+
+                } else {
+                    SocketChannel connected = getServerSocketChannel().accept();
+                    if (connected == null) continue;
+
+                    connected.finishConnect();
+
+                    return runtime.newFixnum(FilenoUtil.filenoFrom(connected));
+                }
+            }
+
+        } catch(IOException e) {
+            throw runtime.newIOErrorFromException(e);
         }
     }
 

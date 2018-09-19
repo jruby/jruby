@@ -1,6 +1,12 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Array#max" do
+  ruby_version_is "2.4" do
+    it "is defined on Array" do
+      [1].method(:max).owner.should equal Array
+    end
+  end
+
   it "returns nil with no values" do
     [].max.should == nil
   end
@@ -13,7 +19,7 @@ describe "Array#max" do
     [1,2].max.should == 2
     [2,1].max.should == 2
   end
-  
+
   describe "given a block with one argument" do
     it "yields in turn the last length-1 values from the array" do
       ary = []

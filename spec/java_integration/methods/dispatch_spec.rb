@@ -293,3 +293,15 @@ describe "A Java method dispatch downstream from a Kernel#catch block" do
     end.not_to raise_error
   end
 end
+
+if TestHelper::JAVA_9
+  describe "An overridden Java method" do
+    describe "with a non-public base implementation" do
+      it "is called using a public override" do
+        expect do
+          java.util.Properties.new.clone
+        end.not_to raise_error
+      end
+    end
+  end
+end

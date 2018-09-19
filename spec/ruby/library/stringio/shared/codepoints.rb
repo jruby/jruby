@@ -6,7 +6,7 @@ describe :stringio_codepoints, shared: true do
   end
 
   it "returns an Enumerator" do
-    @enum.should be_an_instance_of(enumerator_class)
+    @enum.should be_an_instance_of(Enumerator)
   end
 
   it "yields each codepoint code in turn" do

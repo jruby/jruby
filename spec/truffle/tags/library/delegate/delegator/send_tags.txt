@@ -1,1 +1,0 @@
-fails:SimpleDelegator.new forwards protected method calls

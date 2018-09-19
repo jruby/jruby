@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Symbol#inspect" do
   symbols = {
@@ -99,7 +99,7 @@ describe "Symbol#inspect" do
   symbols.each do |input, expected|
     expected = expected[1] if expected.is_a?(Array)
     it "returns self as a symbol literal for #{expected}" do
-      input.inspect.should   == expected
+      input.inspect.should == expected
     end
   end
 end

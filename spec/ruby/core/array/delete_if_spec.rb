@@ -1,8 +1,8 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/enumeratorize', __FILE__)
-require File.expand_path('../shared/delete_if', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/enumeratorize'
+require_relative 'shared/delete_if'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Array#delete_if" do
   before do
@@ -29,22 +29,22 @@ describe "Array#delete_if" do
 
   it "returns an Enumerator if no block given, and the enumerator can modify the original array" do
     enum = @a.delete_if
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     @a.should_not be_empty
     enum.each { true }
     @a.should be_empty
   end
 
   it "returns an Enumerator if no block given, and the array is frozen" do
-    @a.freeze.delete_if.should be_an_instance_of(enumerator_class)
+    @a.freeze.delete_if.should be_an_instance_of(Enumerator)
   end
 
-  it "raises a RuntimeError on a frozen array" do
-    lambda { ArraySpecs.frozen_array.delete_if {} }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen array" do
+    lambda { ArraySpecs.frozen_array.delete_if {} }.should raise_error(frozen_error_class)
   end
 
-  it "raises a RuntimeError on an empty frozen array" do
-    lambda { ArraySpecs.empty_frozen_array.delete_if {} }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on an empty frozen array" do
+    lambda { ArraySpecs.empty_frozen_array.delete_if {} }.should raise_error(frozen_error_class)
   end
 
   it "keeps tainted status" do

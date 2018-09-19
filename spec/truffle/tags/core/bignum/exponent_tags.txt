@@ -1,2 +1,0 @@
-fails:Bignum#** switch to a Float when the values is too big
-fails:Bignum#** returns a complex number when negative and raised to a fractional power

@@ -1,13 +1,20 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 
 describe "File::Stat#rdev_minor" do
   before :each do
-    @name = tmp("file.txt")
-    touch(@name)
+    platform_is :solaris do
+      @name = "/dev/zfs"
+    end
+    platform_is_not :solaris do
+      @name = tmp("file.txt")
+      touch(@name)
+    end
   end
 
   after :each do
-    rm_r @name
+    platform_is_not :solaris do
+      rm_r @name
+    end
   end
 
   platform_is_not :windows do

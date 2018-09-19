@@ -1,6 +1,5 @@
 package org.jruby.ir.operands;
 
-import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
@@ -13,8 +12,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KeyValuePair;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
@@ -23,13 +22,17 @@ import java.util.Map;
 // Further down the line, this hash could get converted to calls
 // that actually build the hash
 public class Hash extends Operand {
-    final public List<KeyValuePair<Operand, Operand>> pairs;
+    final public KeyValuePair<Operand, Operand>[] pairs;
 
     // Is this a hash used to represent a keyword hash to be setup for ZSuper?
     // SSS FIXME: Quick hack for now - this should probably be done with an overloaded operand.
     final public boolean isKWArgsHash;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean isKWArgsHash) {
+        this(pairs.toArray(new KeyValuePair[pairs.size()]), isKWArgsHash);
+    }
+
+    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean isKWArgsHash) {
         super();
 
         this.pairs = pairs;
@@ -46,7 +49,7 @@ public class Hash extends Operand {
     }
 
     public boolean isBlank() {
-        return pairs == null || pairs.isEmpty();
+        return pairs == null || pairs.length == 0;
     }
 
     @Override
@@ -61,13 +64,12 @@ public class Hash extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
-        for (KeyValuePair<Operand, Operand> pair : pairs) {
-            newPairs.add(new KeyValuePair(
-                pair.getKey().getSimplifiedOperand(valueMap, force),
-                pair.getValue().getSimplifiedOperand(valueMap, force)
-            ));
-        }
+        KeyValuePair<Operand, Operand>[] newPairs = Arrays.stream(pairs)
+                .map(pair ->
+                        new KeyValuePair<>(
+                                pair.getKey().getSimplifiedOperand(valueMap, force),
+                                pair.getValue().getSimplifiedOperand(valueMap, force)))
+                .toArray(n -> new KeyValuePair[n]);
 
         return new Hash(newPairs, isKWArgsHash);
     }
@@ -82,10 +84,13 @@ public class Hash extends Operand {
     }
 
     public Operand cloneForLVarDepth(int newDepth) {
-        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
-        for (KeyValuePair<Operand, Operand> pair : pairs) {
-            newPairs.add(new KeyValuePair(pair.getKey(), ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)));
-        }
+        KeyValuePair<Operand, Operand>[] newPairs = Arrays.stream(pairs)
+                .map(pair ->
+                        new KeyValuePair(
+                                pair.getKey(),
+                                ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)))
+                .toArray(n -> new KeyValuePair[n]);
+
         return new Hash(newPairs, isKWArgsHash);
     }
 
@@ -94,10 +99,13 @@ public class Hash extends Operand {
         if (hasKnownValue())
             return this;
 
-        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
-        for (KeyValuePair<Operand, Operand> pair : pairs) {
-            newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii), pair.getValue().cloneForInlining(ii)));
-        }
+        KeyValuePair<Operand, Operand>[] newPairs = Arrays.stream(pairs)
+                .map(pair ->
+                        new KeyValuePair(
+                                pair.getKey().cloneForInlining(ii),
+                                pair.getValue().cloneForInlining(ii)))
+                .toArray(n -> new KeyValuePair[n]);
+
         return new Hash(newPairs, isKWArgsHash);
     }
 
@@ -105,19 +113,20 @@ public class Hash extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         Ruby runtime = context.runtime;
         RubyHash hash;
-        Iterator<KeyValuePair<Operand, Operand>> it = pairs.iterator();
+        KeyValuePair<Operand, Operand>[] pairs = this.pairs;
+        int index = 0;
 
-        if (isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY) {
+        if (isKWArgsHash && pairs[0].getKey().equals(Symbol.KW_REST_ARG_DUMMY)) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
-            hash = ((RubyHash) pairs.get(0).getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
+            hash = ((RubyHash) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp)).dupFast(context);
             // Skip the first pair
-            it.next();
+            index++;
         } else {
             hash = RubyHash.newHash(runtime);
         }
 
-        while (it.hasNext()) {
-            KeyValuePair<Operand, Operand> pair = it.next();
+        for (int i = index; i < pairs.length; i++) {
+            KeyValuePair<Operand, Operand> pair = pairs[i];
             IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currScope, currDynScope, temp);
             IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope, temp);
 
@@ -135,7 +144,7 @@ public class Hash extends Operand {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(pairs.size());
+        e.encode(pairs.length);
         for (KeyValuePair<Operand, Operand> pair: pairs) {
             e.encode(pair.getKey());
             e.encode(pair.getValue());
@@ -145,10 +154,10 @@ public class Hash extends Operand {
 
     public static Hash decode(IRReaderDecoder d) {
         int size = d.decodeInt();
-        List<KeyValuePair<Operand, Operand>> pairs = new ArrayList<>(size);
+        KeyValuePair<Operand, Operand> pairs[] = new KeyValuePair[size];
 
         for (int i = 0; i < size; i++) {
-            pairs.add(new KeyValuePair(d.decodeOperand(), d.decodeOperand()));
+            pairs[i] = new KeyValuePair(d.decodeOperand(), d.decodeOperand());
         }
 
         return new Hash(pairs, d.decodeBoolean());
@@ -159,12 +168,12 @@ public class Hash extends Operand {
         StringBuilder builder = new StringBuilder();
         builder.append("{");
         if (!isBlank()) {
-            int pairCount = pairs.size();
+            int pairCount = pairs.length;
             for (int i = 0; i < pairCount; i++) {
                 if (i > 0) {
                     builder.append(", ");
                 }
-                builder.append(pairs.get(i));
+                builder.append(pairs[i]);
             }
         }
         builder.append("}");
@@ -172,6 +181,6 @@ public class Hash extends Operand {
     }
 
     public List<KeyValuePair<Operand, Operand>> getPairs() {
-        return pairs;
+        return Arrays.asList(pairs);
     }
 }

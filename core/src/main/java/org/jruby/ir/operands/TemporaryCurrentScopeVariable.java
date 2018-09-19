@@ -23,7 +23,7 @@ public class TemporaryCurrentScopeVariable extends TemporaryLocalVariable {
     }
 
     @Override
-    public String getName() {
+    public String getId() {
         return "%current_scope";
     }
 

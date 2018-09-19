@@ -1,3 +1,0 @@
-slow:IO#close on an IO.popen stream clears #pid
-slow:IO#close on an IO.popen stream sets $?
-slow:IO#close on an IO.popen stream waits for the child to exit

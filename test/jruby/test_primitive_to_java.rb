@@ -25,11 +25,10 @@ class TestPrimitiveToJava < Test::Unit::TestCase
     char = str.to_java(java.lang.Character)
     assert_equal 48.to_java(:char), char
 
-    assert_equal 228, 'ä'.to_java(:char).charValue unless RUBY_VERSION.index('1.8') == 0
+    assert_equal 228, 'ä'.to_java(:char).charValue
 
-    assert_raises(ArgumentError) { ''.to_java(:char) }
-    assert_raises(ArgumentError) { 'už'.to_java('java.lang.Character') }
-    'už'[1].to_java('java.lang.Character') unless RUBY_VERSION.index('1.8') == 0
+    assert_equal 'už'.ord, 'už'.to_java('java.lang.Character').charValue
+    assert_raises(ArgumentError) { ''.to_java(:char) } # like ''.ord
   end
 
 end

@@ -18,8 +18,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZSuperInstr extends UnresolvedSuperInstr {
-    public ZSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined) {
-        super(Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined);
+    public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined) {
+        super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
@@ -31,7 +31,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ZSuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
+        return new ZSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
@@ -59,7 +59,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new ZSuperInstr(result, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new ZSuperInstr(d.getCurrentScope(), result, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

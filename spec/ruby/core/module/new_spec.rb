@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module.new" do
   it "creates a new anonymous Module" do
@@ -26,6 +26,6 @@ describe "Module.new" do
 
     (o = mock('x')).extend(fred)
     o.hello.should == "hello"
-    o.bye.should   == "bye"
+    o.bye.should == "bye"
   end
 end

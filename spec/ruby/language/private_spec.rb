@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/private', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/private'
 
 describe "The private keyword" do
   it "marks following methods as being private" do
@@ -32,12 +32,15 @@ describe "The private keyword" do
   end
 
   it "changes visibility of previously called method" do
-    f = ::Private::F.new
-    f.foo
-    module ::Private
-      class F
-        private :foo
+    klass = Class.new do
+      def foo
+       "foo"
       end
+    end
+    f = klass.new
+    f.foo
+    klass.class_eval do
+      private :foo
     end
     lambda { f.foo }.should raise_error(NoMethodError)
   end

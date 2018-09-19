@@ -1,4 +1,0 @@
-fails:Method#curry returns a curried proc
-fails:Method#curry with optional arity argument returns a curried proc when given correct arity
-fails:Method#curry with optional arity argument raises ArgumentError when the method requires less arguments than the given arity
-fails:Method#curry with optional arity argument raises ArgumentError when the method requires more arguments than the given arity

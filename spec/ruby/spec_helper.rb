@@ -1,41 +1,32 @@
-unless ENV['MSPEC_RUNNER']
-  begin
-    require "pp"
-    require 'mspec/version'
-    require 'mspec/helpers'
-    require 'mspec/guards'
-    require 'mspec/runner/shared'
-    require 'mspec/matchers/be_ancestor_of'
-    require 'mspec/matchers/output'
-    require 'mspec/matchers/output_to_fd'
-    require 'mspec/matchers/complain'
-    require 'mspec/matchers/equal_element'
-    require 'mspec/matchers/equal_utf16'
-    require 'mspec/matchers/match_yaml'
-    require 'mspec/matchers/have_class_variable'
-    require 'mspec/matchers/have_constant'
-    require 'mspec/matchers/have_instance_method'
-    require 'mspec/matchers/have_instance_variable'
-    require 'mspec/matchers/have_method'
-    require 'mspec/matchers/have_private_instance_method'
-    require 'mspec/matchers/have_protected_instance_method'
-    require 'mspec/matchers/have_public_instance_method'
+use_realpath = File.respond_to?(:realpath)
+root = File.dirname(__FILE__)
+dir = "fixtures/code"
+CODE_LOADING_DIR = use_realpath ? File.realpath(dir, root) : File.expand_path(dir, root)
 
-    TOLERANCE = 0.00003 unless Object.const_defined?(:TOLERANCE)
-  rescue LoadError
-    puts "Please install the MSpec gem to run the specs."
-    exit 1
+# Enable Thread.report_on_exception by default to catch thread errors earlier
+if Thread.respond_to? :report_on_exception=
+  Thread.report_on_exception = true
+else
+  class Thread
+    def report_on_exception=(value)
+      raise "shim Thread#report_on_exception used with true" if value
+    end
   end
 end
 
-dir = "../fixtures/code"
-use_realpath = File.respond_to?(:realpath)
-CODE_LOADING_DIR = use_realpath ? File.realpath(dir, __FILE__) : File.expand_path(dir, __FILE__)
+# Running directly with ruby some_spec.rb
+unless ENV['MSPEC_RUNNER']
+  mspec_lib = File.expand_path("../../mspec/lib", __FILE__)
+  $LOAD_PATH << mspec_lib if File.directory?(mspec_lib)
 
-minimum_version = "1.5.17"
-unless MSpec::VERSION >= minimum_version
-  puts "Please install MSpec version >= #{minimum_version} to run the specs"
-  exit 1
+  begin
+    require 'mspec'
+    require 'mspec/commands/mspec-run'
+  rescue LoadError
+    puts "Please add -Ipath/to/mspec/lib or clone mspec as a sibling to run the specs."
+    exit 1
+  end
+
+  ARGV.unshift $0
+  MSpecRun.main
 end
-
-$VERBOSE = nil unless ENV['OUTPUT_WARNINGS']

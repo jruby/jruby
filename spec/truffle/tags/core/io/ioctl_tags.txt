@@ -1,1 +1,0 @@
-fails(linux):IO#ioctl raises an Errno error when ioctl fails

@@ -2,10 +2,10 @@ package org.jruby.javasupport.binding;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.java.invokers.MethodInvoker;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -13,14 +13,14 @@ import java.util.List;
 */
 public abstract class MethodInstaller extends NamedInstaller {
 
-    protected final List<Method> methods = new ArrayList<Method>(4);
-    protected List<String> aliases;
+    final ArrayList<Method> methods = new ArrayList<>(4);
+    private List<String> aliases;
     private boolean localMethod;
 
     public MethodInstaller(String name, int type) { super(name, type); }
 
     // called only by initializing thread; no synchronization required
-    void addMethod(final Method method, final Class<?> clazz) {
+    final void addMethod(final Method method, final Class<?> clazz) {
         this.methods.add(method);
         localMethod |=
             clazz == method.getDeclaringClass() ||
@@ -28,15 +28,25 @@ public abstract class MethodInstaller extends NamedInstaller {
     }
 
     // called only by initializing thread; no synchronization required
-    void addAlias(final String alias) {
-        List<String> aliases = this.aliases;
+    final void addAlias(final String alias) {
+        Collection<String> aliases = this.aliases;
         if (aliases == null) {
-            aliases = this.aliases = new ArrayList<String>(4);
+            aliases = this.aliases = new ArrayList<>(4);
         }
         if ( ! aliases.contains(alias) ) aliases.add(alias);
     }
 
-    protected void defineMethods(RubyModule target, DynamicMethod invoker, boolean checkDups) {
+    final void removeAlias(final String alias) {
+        Collection<String> aliases = this.aliases;
+        if (aliases == null) return;
+        aliases.remove(alias);
+    }
+
+    final void defineMethods(RubyModule target, DynamicMethod invoker) {
+        defineMethods(target, invoker, true);
+    }
+
+    protected final void defineMethods(RubyModule target, DynamicMethod invoker, boolean checkDups) {
         String oldName = this.name;
         target.addMethod(oldName, invoker);
 

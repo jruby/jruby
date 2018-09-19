@@ -1,5 +1,0 @@
-fails:IO#putc with a Fixnum argument writes one character as a String
-fails:IO#putc with a Fixnum argument writes the low byte as a String
-fails:IO#putc with a String argument writes one character
-fails:IO#putc with a String argument writes the first character
-fails:IO#putc calls #to_int to convert an object to an Integer

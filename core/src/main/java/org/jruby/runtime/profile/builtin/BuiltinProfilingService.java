@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.profile.builtin;
 
 import org.jruby.Ruby;
@@ -43,14 +44,21 @@ import org.jruby.runtime.profile.ProfilingService;
  */
 public class BuiltinProfilingService implements ProfilingService {
 
+    // The method objects for serial numbers
+    private final ProfiledMethods profiledMethods;
+
+    public BuiltinProfilingService(Ruby runtime) {
+        this.profiledMethods = new ProfiledMethods(runtime);
+    }
+
     @Override
     public ProfileData newProfileCollection(ThreadContext context) {
-        return new ProfileData( context );
+        return new ProfileData( context, profiledMethods );
     }
 
     @Override
     public DefaultMethodEnhancer newMethodEnhancer( final Ruby runtime ) {
-        return new DefaultMethodEnhancer( runtime );
+        return new DefaultMethodEnhancer( );
     }
 
     @Override
@@ -58,25 +66,20 @@ public class BuiltinProfilingService implements ProfilingService {
         return new DefaultProfileReporter( context );
     }
 
+    @Override
+    public void addProfiledMethod(String id, DynamicMethod method) {
+        profiledMethods.addProfiledMethod(id, method);
+    }
+
     /**
      * @author Andre Kullmann
      */
-    private static final class DefaultMethodEnhancer implements MethodEnhancer {
-
-        private final Ruby runtime;
-
-        public DefaultMethodEnhancer( Ruby runtime ) {
-            this.runtime = runtime;
-        }
-
-        private Ruby getRuntime() {
-            return runtime;
-        }
-
+    private final class DefaultMethodEnhancer implements MethodEnhancer {
         @Override
         @SuppressWarnings("deprecation")
-        public DynamicMethod enhance( String name, DynamicMethod delegate ) {
-            getRuntime().getProfiledMethods().addProfiledMethod( name, delegate );
+        public DynamicMethod enhance(String id, DynamicMethod delegate) {
+            profiledMethods.addProfiledMethod(id, delegate);
+
             return new ProfilingDynamicMethod(delegate);
         }
     }

@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#prepend" do
   it "is a public method" do
@@ -44,10 +44,11 @@ describe "Module#prepend" do
     lambda { ModuleSpecs::SubclassSpec.prepend(ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
   end
 
-  it "does not import constants" do
-    m1 = Module.new { A = 1 }
+  it "imports constants" do
+    m1 = Module.new
+    m1::MY_CONSTANT = 1
     m2 = Module.new { prepend(m1) }
-    m1.constants.should_not include(:A)
+    m2.constants.should include(:MY_CONSTANT)
   end
 
   it "imports instance methods" do
@@ -101,6 +102,18 @@ describe "Module#prepend" do
     m = Module.new { def meth; :m end }
     c = Class.new { def meth; :c end; prepend(m); alias_method :alias, :meth }
     c.new.alias.should == :m
+  end
+
+  it "reports the class for the owner of an aliased method on the class" do
+    m = Module.new
+    c = Class.new { prepend(m); def meth; :c end; alias_method :alias, :meth }
+    c.instance_method(:alias).owner.should == c
+  end
+
+  it "reports the class for the owner of a method aliased from the prepended module" do
+    m = Module.new { def meth; :m end }
+    c = Class.new { prepend(m); alias_method :alias, :meth }
+    c.instance_method(:alias).owner.should == c
   end
 
   it "sees an instance of a prepended class as kind of the prepended module" do
@@ -218,12 +231,24 @@ describe "Module#prepend" do
     }.should raise_error(ArgumentError)
   end
 
-  it "accepts no-arguments" do
-    lambda {
-      Module.new do
-        prepend
-      end
-    }.should_not raise_error
+  ruby_version_is ''...'2.4' do
+    it "accepts no-arguments" do
+      lambda {
+        Module.new do
+          prepend
+        end
+      }.should_not raise_error
+    end
+  end
+
+  ruby_version_is '2.4' do
+    it "doesn't accept no-arguments" do
+      lambda {
+        Module.new do
+          prepend
+        end
+      }.should raise_error(ArgumentError)
+    end
   end
 
   it "returns the class it's included into" do
@@ -247,7 +272,7 @@ describe "Module#prepend" do
         end
       end
 
-      class PC
+      klass = Class.new do
         prepend PM1
 
         def get
@@ -255,14 +280,14 @@ describe "Module#prepend" do
         end
       end
 
-      c = PC.new
-      c.get.should == :m1
+      o = klass.new
+      o.get.should == :m1
 
-      class PC
+      klass.class_eval do
         prepend PM2
       end
 
-      c.get.should == :m2
+      o.get.should == :m2
     end
   end
 
@@ -328,5 +353,21 @@ describe "Module#prepend" do
     ary = []
     child_class.new.foo(ary)
     ary.should == [3, 2, 1]
+  end
+
+  describe "called on a module" do
+    describe "included into a class"
+    it "does not obscure the module's methods from reflective access" do
+      mod = Module.new do
+        def foo; end
+      end
+      cls = Class.new do
+        include mod
+      end
+      pre = Module.new
+      mod.prepend pre
+
+      cls.instance_methods.should include(:foo)
+    end
   end
 end

@@ -1,5 +1,5 @@
-require File.expand_path('../../../shared/complex/numerator', __FILE__)
+require_relative '../../shared/complex/numerator'
 
 describe "Complex#numerator" do
-  it_behaves_like(:complex_numerator, :numerator)
+  it_behaves_like :complex_numerator, :numerator
 end

@@ -1,8 +1,8 @@
 # encoding: utf-8
 
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
-require File.expand_path('../shared/open', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
+require_relative 'shared/open'
 
 describe "File.open" do
   before :all do
@@ -132,7 +132,7 @@ describe "File.open" do
     # even though the file permissions are r-r-r.
 
     File.open(@file, "w", 0444) { |f| f.write("test") }
-    @file.should have_data("test")
+    File.read(@file).should == "test"
   end
 
   platform_is_not :windows do
@@ -142,16 +142,18 @@ describe "File.open" do
       File.open(@file, "w", 0444) { |f| f.write("test") }
 
       File.stat(@file).mode.to_s(8).should == orig_perms
-      @file.should have_data("test")
+      File.read(@file).should == "test"
     end
   end
 
   platform_is_not :windows do
-    it "creates a new write-only file when invoked with 'w' and '0222'" do
-      rm_r @file
-      File.open(@file, 'w', 0222) {}
-      File.readable?(@file).should == false
-      File.writable?(@file).should == true
+    as_user do
+      it "creates a new write-only file when invoked with 'w' and '0222'" do
+        rm_r @file
+        File.open(@file, 'w', 0222) {}
+        File.readable?(@file).should == false
+        File.writable?(@file).should == true
+      end
     end
   end
 
@@ -464,17 +466,21 @@ describe "File.open" do
   end
 
   platform_is_not :windows do
-    it "raises an Errno::EACCES when opening non-permitted file" do
-      @fh = File.open(@file, "w")
-      @fh.chmod(000)
-      lambda { fh1 = File.open(@file); fh1.close }.should raise_error(Errno::EACCES)
+    as_user do
+      it "raises an Errno::EACCES when opening non-permitted file" do
+        @fh = File.open(@file, "w")
+        @fh.chmod(000)
+        lambda { fh1 = File.open(@file); fh1.close }.should raise_error(Errno::EACCES)
+      end
     end
   end
 
-  it "raises an Errno::EACCES when opening read-only file" do
-    @fh = File.open(@file, "w")
-    @fh.chmod(0444)
-    lambda { File.open(@file, "w") }.should raise_error(Errno::EACCES)
+  as_user do
+    it "raises an Errno::EACCES when opening read-only file" do
+      @fh = File.open(@file, "w")
+      @fh.chmod(0444)
+      lambda { File.open(@file, "w") }.should raise_error(Errno::EACCES)
+    end
   end
 
   it "opens a file for binary read" do
@@ -518,6 +524,31 @@ describe "File.open" do
     File.size(@file).should == 0
   end
 
+  platform_is :linux do
+    guard -> { defined?(File::TMPFILE) } do
+      it "creates an unnamed temporary file with File::TMPFILE" do
+        dir = tmp("tmpfilespec")
+        mkdir_p dir
+        begin
+          Dir["#{dir}/*"].should == []
+          File.open(dir, "r+", flags: File::TMPFILE) do |io|
+            io.write("ruby")
+            io.flush
+            io.rewind
+            io.read.should == "ruby"
+            Dir["#{dir}/*"].should == []
+          end
+        rescue Errno::EOPNOTSUPP, Errno::EINVAL
+          # EOPNOTSUPP: no support from the filesystem
+          # EINVAL: presumably bug in glibc
+          1.should == 1
+        ensure
+          rm_r dir
+        end
+      end
+    end
+  end
+
   it "raises a TypeError if passed a filename that is not a String or Integer type" do
     lambda { File.open(true)  }.should raise_error(TypeError)
     lambda { File.open(false) }.should raise_error(TypeError)
@@ -553,11 +584,27 @@ describe "File.open" do
     @fh = File.open(@file, options)
   end
 
+  it "accepts extra flags as a keyword argument and combine with a string mode" do
+    lambda {
+      File.open(@file, "w", flags: File::EXCL) { }
+    }.should raise_error(Errno::EEXIST)
+
+    lambda {
+      File.open(@file, mode: "w", flags: File::EXCL) { }
+    }.should raise_error(Errno::EEXIST)
+  end
+
+  it "accepts extra flags as a keyword argument and combine with an integer mode" do
+    lambda {
+      File.open(@file, File::WRONLY | File::CREAT, flags: File::EXCL) { }
+    }.should raise_error(Errno::EEXIST)
+  end
+
   platform_is_not :windows do
     describe "on a FIFO" do
       before :each do
         @fifo = tmp("File_open_fifo")
-        system "mkfifo #{@fifo}"
+        File.mkfifo(@fifo)
       end
 
       after :each do
@@ -612,7 +659,7 @@ describe "File.open when passed a file descriptor" do
     @file.fileno.should equal(@fd)
     @file.write @content
     @file.flush
-    @name.should have_data(@content)
+    File.read(@name).should == @content
   end
 
   it "opens a file when passed a block" do
@@ -622,7 +669,7 @@ describe "File.open when passed a file descriptor" do
       f.write @content
       f
     end
-    @name.should have_data(@content)
+    File.read(@name).should == @content
   end
 end
 

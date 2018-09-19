@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Process.euid" do
   it "returns the effective user ID for this process" do
@@ -50,11 +50,10 @@ describe "Process.euid=" do
             write.close
             euid = read.gets
             euid.should == "1"
+            Process.wait pid
           end
         end
       end
     end
   end
-
-  it "needs to be reviewed for spec completeness"
 end

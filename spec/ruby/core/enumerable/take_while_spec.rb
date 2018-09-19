@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/enumerable_enumeratorized'
 
 describe "Enumerable#take_while" do
   before :each do
@@ -8,7 +8,7 @@ describe "Enumerable#take_while" do
   end
 
   it "returns an Enumerator if no block given" do
-    @enum.take_while.should be_an_instance_of(enumerator_class)
+    @enum.take_while.should be_an_instance_of(Enumerator)
   end
 
   it "returns no/all elements for {true/false} block" do

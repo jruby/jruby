@@ -1,1 +1,0 @@
-fails:Module#name is set with a conditional assignment to a nested constant

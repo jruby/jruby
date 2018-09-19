@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Mutex#lock" do
   before :each do
@@ -33,14 +33,9 @@ describe "Mutex#lock" do
   # related to this ML thread.
   it "raises a ThreadError when used recursively" do
     m = Mutex.new
-
-    th = Thread.new do
+    m.lock
+    -> {
       m.lock
-      m.lock
-    end
-
-    lambda do
-      th.join
-    end.should raise_error(ThreadError)
+    }.should raise_error(ThreadError)
   end
 end

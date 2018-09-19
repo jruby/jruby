@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,6 +28,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime;
 
 import org.jruby.FlagRegistry;
@@ -58,8 +59,9 @@ public final class Constants {
     
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
-    
-    public static final String DEFAULT_RUBY_VERSION = "2.1";
+
+    @Deprecated
+    public static final String DEFAULT_RUBY_VERSION = RUBY_MAJOR_VERSION;
     
     /**
      * Default size for chained compilation.
@@ -80,36 +82,6 @@ public final class Constants {
      * The JIT threshold to the specified method invocation count.
      */
     public static final int JIT_THRESHOLD = 50;
-
-    private static final FlagRegistry registry = new FlagRegistry();
-
-    // These flags must be registered from top of hierarchy down to maintain order.
-    // TODO: Replace these during the build with their calculated values.
-    public static final int FALSE_F = registry.newFlag(RubyBasicObject.class);
-    public static final int NIL_F = registry.newFlag(RubyBasicObject.class);
-    public static final int FROZEN_F = registry.newFlag(RubyBasicObject.class);
-    public static final int TAINTED_F = registry.newFlag(RubyBasicObject.class);
-
-    public static final int CACHEPROXY_F = registry.newFlag(RubyModule.class);
-    public static final int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
-    public static final int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
-    public static final int IS_OVERLAID_F = registry.newFlag(RubyModule.class);
-
-    public static final int CR_7BIT_F    = registry.newFlag(RubyString.class);
-    public static final int CR_VALID_F   = registry.newFlag(RubyString.class);
-
-    public static final int STRIO_READABLE = registry.newFlag(StringIO.class);
-    public static final int STRIO_WRITABLE = registry.newFlag(StringIO.class);
-
-    public static final int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
-
-    public static final int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
-    public static final int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
-
-    private static final boolean DEBUG = false;
-    static {
-        if (DEBUG) registry.printFlags();
-    }
     
     private static String jruby_revision = "@jruby.revision@";
 

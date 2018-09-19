@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "SignalException.new" do
   it "takes a signal number as the first argument" do
@@ -60,13 +60,15 @@ describe "SignalException.new" do
   end
 end
 
-describe "rescueing SignalException" do
+describe "rescuing SignalException" do
   it "raises a SignalException when sent a signal" do
     begin
       Process.kill :TERM, Process.pid
       sleep
     rescue SignalException => e
       e.signo.should == Signal.list["TERM"]
+      e.signm.should == "SIGTERM"
+      e.message.should == "SIGTERM"
     end
   end
 end

@@ -3,10 +3,10 @@
 # Run from your JRuby home directory....More smarts needed here.
 #
 # For 1.8 parser:
-# PATH=$PATH:<path to jay executable> bin/generate_parser DefaultRubyParser
+# PATH=$PATH:<path to jay executable> tool/generate_ripper DefaultRubyParser
 #
 # For 1.9 parser:
-# PATH=$PATH:<path to jay executable> bin/generate_parser Ruby19Parser Ruby19
+# PATH=$PATH:<path to jay executable> tool/generate_ripper Ruby19Parser Ruby19
 #
 # jay is available from https://github.com/jruby/jay
 

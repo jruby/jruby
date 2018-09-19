@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/dup_clone', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/dup_clone'
 
 describe "Kernel#dup" do
   it_behaves_like :kernel_dup_clone, :dup
@@ -14,6 +14,18 @@ describe "Kernel#dup" do
     dup = @obj.dup
     ScratchPad.recorded.should_not == @obj.object_id
     ScratchPad.recorded.should == dup.object_id
+  end
+
+  it "uses the internal allocator and does not call #allocate" do
+    klass = Class.new
+    instance = klass.new
+
+    def klass.allocate
+      raise "allocate should not be called"
+    end
+
+    dup = instance.dup
+    dup.class.should equal klass
   end
 
   it "does not copy frozen state from the original" do

@@ -1,11 +1,10 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-require 'socket'
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Addrinfo#bind" do
 
   before :each do
-    @addrinfo = Addrinfo.tcp("127.0.0.1", SocketSpecs.port)
+    @addrinfo = Addrinfo.tcp("127.0.0.1", 0)
   end
 
   after :each do

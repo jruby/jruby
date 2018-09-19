@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/ext'
 require 'rubygems/installer'
@@ -134,6 +134,11 @@ install:
   end
 
   def test_build_extensions_with_gemhome_with_space
+    # Details: https://github.com/rubygems/rubygems/issues/977#issuecomment-171544940
+    if win_platform? && RUBY_VERSION <= '2.0'
+      skip 'gemhome with spaces does not work with Ruby 1.9.x on Windows'
+    end
+
     new_gemhome = File.join @tempdir, 'gem home'
     File.rename(@gemhome, new_gemhome)
     @gemhome = new_gemhome
@@ -234,7 +239,7 @@ install:
 
     assert_match(/\AERROR: Failed to build gem native extension.$/, e.message)
 
-    assert_equal "Building native extensions.  This could take a while...\n",
+    assert_equal "Building native extensions. This could take a while...\n",
                  @ui.output
     assert_equal '', @ui.error
 
@@ -267,7 +272,7 @@ install:
 
     assert_match(/^\s*No builder for extension ''$/, e.message)
 
-    assert_equal "Building native extensions.  This could take a while...\n",
+    assert_equal "Building native extensions. This could take a while...\n",
                  @ui.output
     assert_equal '', @ui.error
 
@@ -334,4 +339,3 @@ install:
   end
 
 end
-

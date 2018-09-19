@@ -1,7 +1,7 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/iteration', __FILE__)
-require File.expand_path('../shared/update', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/iteration'
+require_relative 'shared/update'
 
 describe "Hash#merge" do
   it "returns a new hash by combining self with the contents of other" do
@@ -66,7 +66,7 @@ describe "Hash#merge" do
 end
 
 describe "Hash#merge!" do
-  it_behaves_like(:hash_update, :merge!)
+  it_behaves_like :hash_update, :merge!
 
   it "does not raise an exception if changing the value of an existing key during iteration" do
       hash = {1 => 2, 3 => 4, 5 => 6}

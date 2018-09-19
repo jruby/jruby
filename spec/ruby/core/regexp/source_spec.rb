@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Regexp#source" do
   it "returns the original string of the pattern" do
@@ -7,6 +7,10 @@ describe "Regexp#source" do
       /ab+c/ix.source.should == "ab+c"
     end
     /x(.)xz/.source.should == "x(.)xz"
+  end
+
+  it "will remove escape characters" do
+    /foo\/bar/.source.should == "foo/bar"
   end
 
   not_supported_on :opal do

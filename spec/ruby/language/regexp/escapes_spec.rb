@@ -1,6 +1,6 @@
-# -*- encoding: us-ascii -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Regexps with escape characters" do
   it "they're supported" do

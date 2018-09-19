@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,6 +24,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.ivars;
 
 import org.jruby.RubyBasicObject;
@@ -34,24 +35,24 @@ import org.jruby.RubyClass;
  * objects. Subclasses specialize this implementation appropriate to the
  * current JVM's capabilities and the mechanism for laying out variables.
  */
-public class VariableAccessor {
+public abstract class VariableAccessor {
     /** the name of the variable */
     protected final String name;
     /** the index allocated for it in the variable table */
     protected final int index;
-    /** the ID of the class associated with this variable */
+    /** the symbol of the class associated with this variable */
     protected final int classId;
     /** the "real" class associated with this variable */
     protected final RubyClass realClass;
 
     /**
      * Construct a new VariableAccessor for the given "real" class, name,
-     * variable index, and class ID.
+     * variable index, and class symbol.
      * 
      * @param realClass the "real" class
      * @param name the variable's name
      * @param index the variable's index
-     * @param classId the class's ID
+     * @param classId the class's symbol
      */
     public VariableAccessor(RubyClass realClass, String name, int index, int classId) {
         this.index = index;
@@ -61,7 +62,7 @@ public class VariableAccessor {
     }
 
     /**
-     * Get the ID of the class associated with this variable.
+     * Get the symbol of the class associated with this variable.
      * 
      * @return this variable's class's id
      */
@@ -146,6 +147,6 @@ public class VariableAccessor {
     }
 
     /** a dummy accessor that will always return null */
-    public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, null, -1, -1);
+    public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, null, -1, -1) {};
     
 }

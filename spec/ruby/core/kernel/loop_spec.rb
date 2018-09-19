@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel.loop" do
   it "is a private method" do
@@ -30,7 +30,7 @@ describe "Kernel.loop" do
 
   it "returns an enumerator if no block given" do
     enum = loop
-    enum.instance_of?(enumerator_class).should be_true
+    enum.instance_of?(Enumerator).should be_true
     cnt = 0
     enum.each do |*args|
       raise "Args should be empty #{args.inspect}" unless args.empty?
@@ -40,7 +40,6 @@ describe "Kernel.loop" do
   end
 
   it "rescues StopIteration" do
-    n = 42
     loop do
       raise StopIteration
     end
@@ -49,7 +48,6 @@ describe "Kernel.loop" do
 
   it "rescues StopIteration's subclasses" do
     finish = Class.new StopIteration
-    n = 42
     loop do
       raise finish
     end
@@ -60,15 +58,13 @@ describe "Kernel.loop" do
     lambda{ loop do raise StandardError end }.should raise_error( StandardError )
   end
 
-  ruby_version_is "2.3" do
-    it "returns StopIteration#result, the result value of a finished iterator" do
-      e = Enumerator.new { |y|
-        y << 1
-        y << 2
-        :stopped
-      }
-      loop { e.next }.should == :stopped
-    end
+  it "returns StopIteration#result, the result value of a finished iterator" do
+    e = Enumerator.new { |y|
+      y << 1
+      y << 2
+      :stopped
+    }
+    loop { e.next }.should == :stopped
   end
 
   describe "when no block is given" do

@@ -1,4 +1,4 @@
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../fixtures/classes'
 
 with_feature :encoding do
   describe "Encoding::InvalidByteSequenceError#source_encoding" do
@@ -28,7 +28,7 @@ with_feature :encoding do
 
     # FIXME: Derive example where the failure occurs at the UTF-8 ->
     # ISO-8859-1 case so as to better illustrate the issue
-    it "is equal to the source encoding at the stage of the conversion path where the error occured" do
+    it "is equal to the source encoding at the stage of the conversion path where the error occurred" do
       @exception2.source_encoding.should == Encoding::EUC_JP
     end
   end

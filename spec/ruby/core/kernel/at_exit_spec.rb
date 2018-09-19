@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel.at_exit" do
   it "is a private method" do
@@ -23,7 +23,7 @@ describe "Kernel.at_exit" do
   it "gives access to the last raised exception" do
     code = <<-EOC
       at_exit do
-        puts "The exception matches: #{$! == $exception}"
+        puts "The exception matches: \#{$! == $exception}"
       end
 
       begin

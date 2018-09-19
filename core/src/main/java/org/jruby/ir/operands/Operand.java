@@ -39,7 +39,7 @@ public abstract class Operand {
      *
      * Ex: v = [1,2,3];  x = v; y = v
      *
-     * In this case, we cannot replace the occurences of 'v' because we would then get
+     * In this case, we cannot replace the occurrences of 'v' because we would then get
      * x = [1,2,3]; y = [1,2,3] which would then result in two different array objects
      * being constructed instead of a single one.
      *

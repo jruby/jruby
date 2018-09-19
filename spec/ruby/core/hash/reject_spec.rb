@@ -1,7 +1,7 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/iteration', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/iteration'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Hash#reject" do
   it "returns a new hash removing keys for which the block yields true" do
@@ -26,17 +26,15 @@ describe "Hash#reject" do
     h.reject { false }.to_a.should == [[1, 2]]
   end
 
-  ruby_version_is "2.2" do
-    context "with extra state" do
-      it "returns Hash instance for subclasses" do
-        HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
-        HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
-      end
+  context "with extra state" do
+    it "returns Hash instance for subclasses" do
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
+    end
 
-      it "does not taint the resulting hash" do
-        h = { a: 1 }.taint
-        h.reject {false}.tainted?.should == false
-      end
+    it "does not taint the resulting hash" do
+      h = { a: 1 }.taint
+      h.reject {false}.tainted?.should == false
     end
   end
 
@@ -51,8 +49,8 @@ describe "Hash#reject" do
     reject_pairs.should == reject_bang_pairs
   end
 
-  it_behaves_like(:hash_iteration_no_block, :reject)
-  it_behaves_like(:enumeratorized_with_origin_size, :reject, { 1 => 2, 3 => 4, 5 => 6 })
+  it_behaves_like :hash_iteration_no_block, :reject
+  it_behaves_like :enumeratorized_with_origin_size, :reject, { 1 => 2, 3 => 4, 5 => 6 }
 end
 
 describe "Hash#reject!" do
@@ -61,6 +59,12 @@ describe "Hash#reject!" do
     (1 .. 10).each { |k| hsh[k] = (k % 2 == 0) }
     hsh.reject! { |k,v| v }
     hsh.keys.sort.should == [1,3,5,7,9]
+  end
+
+  it "removes all entries if the block is true" do
+    h = { a: 1, b: 2, c: 3 }
+    h.reject! { |k,v| true }.should equal(h)
+    h.should == {}
   end
 
   it "is equivalent to delete_if if changes are made" do
@@ -83,14 +87,14 @@ describe "Hash#reject!" do
     reject_bang_pairs.should == delete_if_pairs
   end
 
-  it "raises a RuntimeError if called on a frozen instance that is modified" do
-    lambda { HashSpecs.empty_frozen_hash.reject! { true } }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} if called on a frozen instance that is modified" do
+    lambda { HashSpecs.empty_frozen_hash.reject! { true } }.should raise_error(frozen_error_class)
   end
 
-  it "raises a RuntimeError if called on a frozen instance that would not be modified" do
-    lambda { HashSpecs.frozen_hash.reject! { false } }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} if called on a frozen instance that would not be modified" do
+    lambda { HashSpecs.frozen_hash.reject! { false } }.should raise_error(frozen_error_class)
   end
 
-  it_behaves_like(:hash_iteration_no_block, :reject!)
-  it_behaves_like(:enumeratorized_with_origin_size, :reject!, { 1 => 2, 3 => 4, 5 => 6 })
+  it_behaves_like :hash_iteration_no_block, :reject!
+  it_behaves_like :enumeratorized_with_origin_size, :reject!, { 1 => 2, 3 => 4, 5 => 6 }
 end

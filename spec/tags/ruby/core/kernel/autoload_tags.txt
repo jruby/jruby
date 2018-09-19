@@ -1,1 +1,9 @@
 fails:Kernel.autoload sets the autoload constant in Object's constant table
+fails:Kernel#autoload registers a file to load the first time the named constant is accessed
+fails:Kernel#autoload? returns the name of the file that will be autoloaded
+fails:Kernel#autoload when called from included module's method setups the autoload on the included module
+fails:Kernel#autoload when called from included module's method the autoload relative to the included module works
+fails:Kernel.autoload when called from included module's method setups the autoload on the included module
+fails:Kernel.autoload when called from included module's method the autoload is reacheable from the class too
+fails:Kernel.autoload when called from included module's method the autoload relative to the included module works
+fails:Kernel#autoload calls main.require(path) to load the file

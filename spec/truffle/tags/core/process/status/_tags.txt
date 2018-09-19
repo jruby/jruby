@@ -1,1 +1,0 @@
-fails:Process::Status#& needs to be reviewed for spec completeness

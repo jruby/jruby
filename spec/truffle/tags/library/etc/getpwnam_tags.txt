@@ -1,2 +1,0 @@
-fails:Etc.getpwnam returns a Etc::Passwd struct instance for the given user
-fails:Etc.getpwnam only accepts strings as argument

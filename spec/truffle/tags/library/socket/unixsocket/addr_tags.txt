@@ -1,4 +1,0 @@
-fails:UNIXSocket#addr returns the address family of this socket in an array
-fails:UNIXSocket#addr returns the path of the socket in an array if it's a server
-fails:UNIXSocket#addr returns an empty string for path if it's a client
-fails:UNIXSocket#addr returns an array

@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'strscan'
 
 describe "StringScanner#inspect" do
@@ -12,7 +12,7 @@ describe "StringScanner#inspect" do
 
   it "returns a string that represents the StringScanner object" do
     @s.inspect.should == "#<StringScanner 0/14 @ \"This ...\">"
-    @s.scan_until /is/
+    @s.scan_until(/is/)
     @s.inspect.should == "#<StringScanner 4/14 \"This\" @ \" is a...\">"
     @s.terminate
     @s.inspect.should == "#<StringScanner fin>"

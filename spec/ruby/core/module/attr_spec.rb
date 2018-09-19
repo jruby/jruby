@@ -1,7 +1,15 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#attr" do
+  before :each do
+    $VERBOSE, @verbose = false, $VERBOSE
+  end
+
+  after :each do
+    $VERBOSE = @verbose
+  end
+
   it "creates a getter for the given attribute name" do
     c = Class.new do
       attr :attr
@@ -19,7 +27,7 @@ describe "Module#attr" do
       o.respond_to?("#{a}=").should == false
     end
 
-    o.attr.should  == "test"
+    o.attr.should == "test"
     o.attr3.should == "test3"
     o.send(:attr).should == "test"
     o.send(:attr3).should == "test3"
@@ -101,7 +109,7 @@ describe "Module#attr" do
       o.respond_to?("#{a}=").should == false
     end
 
-    o.attr.should  == "test"
+    o.attr.should == "test"
     o.attr2.should == "test2"
     o.attr3.should == "test3"
   end
@@ -128,7 +136,21 @@ describe "Module#attr" do
     lambda { Class.new { attr o } }.should raise_error(TypeError)
   end
 
-  it "is a private method" do
-    lambda { Class.new.attr(:foo) }.should raise_error(NoMethodError)
+  it "with a boolean argument emits a warning when $VERBOSE is true" do
+    lambda {
+      $VERBOSE = true
+      Class.new { attr :foo, true }
+    }.should complain(/boolean argument is obsoleted/)
+  end
+
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:attr, false)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:attr, false)
+    end
   end
 end

@@ -1,10 +1,10 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../shared/constants', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../shared/constants'
 require 'openssl'
 
 describe "OpenSSL::HMAC.hexdigest" do
   it "returns an SHA1 hex digest" do
-    cur_digest = OpenSSL::Digest::Digest.new('SHA1')
+    cur_digest = OpenSSL::Digest::SHA1.new
     cur_digest.hexdigest.should == HMACConstants::BlankSHA1HexDigest
     hexdigest = OpenSSL::HMAC.hexdigest(cur_digest,
                                         HMACConstants::Key,

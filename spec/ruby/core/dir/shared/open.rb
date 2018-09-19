@@ -30,9 +30,9 @@ describe :dir_open, shared: true do
     lambda do
       Dir.send(@method, DirSpecs.mock_dir) do |dir|
         closed_dir = dir
-        raise
+        raise "dir specs"
       end
-    end.should raise_error
+    end.should raise_error(RuntimeError, "dir specs")
 
     lambda { closed_dir.read }.should raise_error(IOError)
   end
@@ -44,7 +44,7 @@ describe :dir_open, shared: true do
   end
 
   it "accepts an options Hash" do
-    dir = Dir.send(@method, DirSpecs.mock_dir, encoding: "utf-8") {|dir| dir }
+    dir = Dir.send(@method, DirSpecs.mock_dir, encoding: "utf-8") {|d| d }
     dir.should be_kind_of(Dir)
   end
 
@@ -52,12 +52,12 @@ describe :dir_open, shared: true do
     options = mock("dir_open")
     options.should_receive(:to_hash).and_return({ encoding: Encoding::UTF_8 })
 
-    dir = Dir.send(@method, DirSpecs.mock_dir, options) {|dir| dir }
+    dir = Dir.send(@method, DirSpecs.mock_dir, options) {|d| d }
     dir.should be_kind_of(Dir)
   end
 
   it "ignores the :encoding option if it is nil" do
-    dir = Dir.send(@method, DirSpecs.mock_dir, encoding: nil) {|dir| dir }
+    dir = Dir.send(@method, DirSpecs.mock_dir, encoding: nil) {|d| d }
     dir.should be_kind_of(Dir)
   end
 end

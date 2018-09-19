@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :string_match_escaped_literal, shared: true do
   not_supported_on :opal do
@@ -146,5 +146,30 @@ describe "String#match" do
     regexp = /./
     regexp.should_receive(:match).and_return(:foo)
     'hello'.match(regexp).should == :foo
+  end
+end
+
+ruby_version_is "2.4" do
+  describe "String#match?" do
+    before :each do
+      # Resetting Regexp.last_match
+      /DONTMATCH/.match ''
+    end
+
+    context "when matches the given regex" do
+      it "returns true but does not set Regexp.last_match" do
+        'string'.match?(/string/i).should be_true
+        Regexp.last_match.should be_nil
+      end
+    end
+
+    it "returns false when does not match the given regex" do
+      'string'.match?(/STRING/).should be_false
+    end
+
+    it "takes matching position as the 2nd argument" do
+      'string'.match?(/str/i, 0).should be_true
+      'string'.match?(/str/i, 1).should be_false
+    end
   end
 end

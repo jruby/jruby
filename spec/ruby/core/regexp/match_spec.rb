@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe :regexp_match, shared: true do
   it "returns nil if there is no match" do
@@ -12,7 +12,7 @@ describe :regexp_match, shared: true do
 end
 
 describe "Regexp#=~" do
-  it_behaves_like(:regexp_match, :=~)
+  it_behaves_like :regexp_match, :=~
 
   it "returns the index of the first character of the matching region" do
     (/(.)(.)(.)/ =~ "abc").should == 0
@@ -24,7 +24,7 @@ describe "Regexp#=~" do
 end
 
 describe "Regexp#match" do
-  it_behaves_like(:regexp_match, :match)
+  it_behaves_like :regexp_match, :match
 
   it "returns a MatchData object" do
     /(.)(.)(.)/.match("abc").should be_kind_of(MatchData)
@@ -50,7 +50,8 @@ describe "Regexp#match" do
         end
 
         it "raises an ArgumentError for an invalid encoding" do
-          lambda { /(.).(.)/.match("Hello, \x96 world!", 1) }.should raise_error(ArgumentError)
+          x96 = ([150].pack('C')).force_encoding('utf-8')
+          lambda { /(.).(.)/.match("Hello, #{x96} world!", 1) }.should raise_error(ArgumentError)
         end
       end
     end
@@ -66,7 +67,8 @@ describe "Regexp#match" do
         end
 
         it "raises an ArgumentError for an invalid encoding" do
-          lambda { /(.).(.)/.match("Hello, \x96 world!", -1) }.should raise_error(ArgumentError)
+          x96 = ([150].pack('C')).force_encoding('utf-8')
+          lambda { /(.).(.)/.match("Hello, #{x96} world!", -1) }.should raise_error(ArgumentError)
         end
       end
     end
@@ -106,6 +108,35 @@ describe "Regexp#match" do
   it "raises TypeError when the given argument is an Exception" do
     f = Exception.new("foo")
     lambda { /foo/.match(f)[0] }.should raise_error(TypeError)
+  end
+end
+
+ruby_version_is "2.4" do
+  describe "Regexp#match?" do
+    before :each do
+      # Resetting Regexp.last_match
+      /DONTMATCH/.match ''
+    end
+
+    context "when matches the given value" do
+      it "returns true but does not set Regexp.last_match" do
+        /string/i.match?('string').should be_true
+        Regexp.last_match.should be_nil
+      end
+    end
+
+    it "returns false when does not match the given value" do
+      /STRING/.match?('string').should be_false
+    end
+
+    it "takes matching position as the 2nd argument" do
+      /str/i.match?('string', 0).should be_true
+      /str/i.match?('string', 1).should be_false
+    end
+
+    it "returns false when given nil" do
+      /./.match?(nil).should be_false
+    end
   end
 end
 

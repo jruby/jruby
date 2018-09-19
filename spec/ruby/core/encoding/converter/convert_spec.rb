@@ -1,4 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../../../spec_helper'
 
 with_feature :encoding do
   describe "Encoding::Converter#convert" do

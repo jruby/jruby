@@ -1,1 +1,0 @@
-fails:File::Stat#pipe? returns true if the file is a pipe

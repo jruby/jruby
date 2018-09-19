@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO.read" do
   before :each do
@@ -25,6 +25,10 @@ describe "IO.read" do
 
   it "accepts an empty options Hash" do
     IO.read(@fname, {}).should == @contents
+  end
+
+  it "accepts a length, and empty options Hash" do
+    IO.read(@fname, 3, {}).should == @contents[0, 3]
   end
 
   it "accepts a length, offset, and empty options Hash" do
@@ -206,9 +210,8 @@ describe "IO#read" do
   end
 
   it "consumes zero bytes when reading zero bytes" do
-    pre_pos = @io.pos
-
     @io.read(0).should == ''
+    @io.pos.should == 0
 
     @io.getc.chr.should == '1'
   end
@@ -258,7 +261,7 @@ describe "IO#read" do
   it "returns the given buffer" do
     buf = ""
 
-    @io.read(nil, buf).object_id.should == buf.object_id
+    @io.read(nil, buf).should equal buf
   end
 
   it "coerces the second argument to string and uses it as a buffer" do
@@ -266,7 +269,7 @@ describe "IO#read" do
     obj = mock("buff")
     obj.should_receive(:to_str).any_number_of_times.and_return(buf)
 
-    @io.read(15, obj).object_id.should_not == obj.object_id
+    @io.read(15, obj).should_not equal obj
     buf.should == @contents
   end
 
@@ -303,21 +306,24 @@ describe "IO#read" do
     lambda { IOSpecs.closed_io.read }.should raise_error(IOError)
   end
 
-  it "raises IOError when stream is closed by another thread" do
-    r, w = IO.pipe
-    t = Thread.new do
-      begin
-        r.read(1)
-      rescue => e
-        e
-      end
-    end
 
-    Thread.pass until t.stop?
-    r.close
-    t.join
-    t.value.should be_kind_of(IOError)
-    w.close
+  platform_is_not :windows do
+    it "raises IOError when stream is closed by another thread" do
+      r, w = IO.pipe
+      t = Thread.new do
+        begin
+          r.read(1)
+        rescue => e
+          e
+        end
+      end
+
+      Thread.pass until t.stop?
+      r.close
+      t.join
+      t.value.should be_kind_of(IOError)
+      w.close
+    end
   end
 end
 
@@ -345,20 +351,19 @@ platform_is :windows do
   end
 end
 
-describe "IO#read with $KCODE set to UTF-8" do
+describe "IO#read" do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
-    @kcode, $KCODE = $KCODE, "utf-8"
   end
 
   after :each do
-    $KCODE = @kcode
     @io.close if @io
   end
 
   it "ignores unicode encoding" do
     @io.readline.should == "Voici la ligne une.\n"
-    @io.read(5).should == "Qui \303".force_encoding("binary")
+    # read "Qui è"
+    @io.read(5).should == "Qui " + [195].pack('C*')
   end
 end
 
@@ -378,13 +383,15 @@ describe "IO#read in binary mode" do
     result = File.open(@name, "rb") { |f| f.read }.chomp
 
     result.encoding.should == Encoding::ASCII_8BIT
-    result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
+    xE2 = [226].pack('C*')
+    result.should == ("abc" + xE2 + "def").force_encoding(Encoding::ASCII_8BIT)
   end
 
   it "does not transcode file contents when an internal encoding is specified" do
     result = File.open(@name, "r:binary:utf-8") { |f| f.read }.chomp
     result.encoding.should == Encoding::ASCII_8BIT
-    result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
+    xE2 = [226].pack('C*')
+    result.should == ("abc" + xE2 + "def").force_encoding(Encoding::ASCII_8BIT)
   end
 end
 
@@ -476,7 +483,7 @@ with_feature :encoding do
 
   describe :io_read_size_internal_encoding, shared: true do
     it "reads bytes when passed a size" do
-      @io.read(2).should == "\xa4\xa2".force_encoding(Encoding::ASCII_8BIT)
+      @io.read(2).should == [164, 162].pack('C*').force_encoding(Encoding::ASCII_8BIT)
     end
 
     it "returns a String in ASCII-8BIT when passed a size" do
@@ -486,7 +493,7 @@ with_feature :encoding do
     it "does not change the buffer's encoding when passed a limit" do
       buf = "".force_encoding Encoding::ISO_8859_1
       @io.read(4, buf)
-      buf.should == "\xa4\xa2\xa4\xea".force_encoding(Encoding::ISO_8859_1)
+      buf.should == [164, 162, 164, 234].pack('C*').force_encoding(Encoding::ISO_8859_1)
       buf.encoding.should equal(Encoding::ISO_8859_1)
     end
 

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Symbol#downcase" do
   it "returns a Symbol" do
@@ -17,6 +17,13 @@ describe "Symbol#downcase" do
   ruby_version_is ''...'2.4' do
     it "leaves uppercase Unicode characters as they were" do
       "\u{DE}Bc".to_sym.downcase.should == :"Þbc"
+    end
+  end
+
+  ruby_version_is '2.4' do
+    it "uncapitalizes all Unicode characters" do
+      "ÄÖÜ".to_sym.downcase.should == :"äöü"
+      "AOU".to_sym.downcase.should == :"aou"
     end
   end
 

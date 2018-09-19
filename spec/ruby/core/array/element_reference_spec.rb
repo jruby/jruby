@@ -1,9 +1,9 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/slice', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/slice'
 
 describe "Array#[]" do
-  it_behaves_like(:array_slice, :[])
+  it_behaves_like :array_slice, :[]
 end
 
 describe "Array.[]" do
@@ -26,13 +26,11 @@ describe "Array.[]" do
   it "can unpack 2 or more nested referenced array" do
     splatted_array = Array[3, 4, 5]
     splatted_array2 = Array[6, 7, 8]
-    eval("Array[1, 2, *splatted_array, *splatted_array2]").should == [1, 2, 3, 4, 5, 6, 7, 8]
+    Array[1, 2, *splatted_array, *splatted_array2].should == [1, 2, 3, 4, 5, 6, 7, 8]
   end
 
   it "constructs a nested Hash for tailing key-value pairs" do
-    eval(<<-EOS).should == [1, 2, { 3=> 4, 5 => 6 }]
-      Array[1, 2, 3 => 4, 5 => 6]
-    EOS
+    Array[1, 2, 3 => 4, 5 => 6].should == [1, 2, { 3 => 4, 5 => 6 }]
   end
 
   describe "with a subclass of Array" do

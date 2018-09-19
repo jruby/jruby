@@ -383,7 +383,7 @@ module Super
 
       def c
         block_ref = lambda { 16 }
-        super &block_ref
+        super(&block_ref)
       end
     end
   end
@@ -455,20 +455,184 @@ module Super
     end
   end
 
-  module KeywordArguments
+  module ZSuperWithRestReassigned
     class A
-      def foo(**args)
+      def a(*args)
         args
       end
     end
 
     class B < A
-      def foo(**)
+      def a(*args)
+        args = ["foo"]
+
+        super
+      end
+    end
+  end
+
+  module ZSuperWithRestReassignedWithScalar
+    class A
+      def a(*args)
+        args
+      end
+    end
+
+    class B < A
+      def a(*args)
+        args = "foo"
+
+        super
+      end
+    end
+  end
+
+  module ZSuperWithUnderscores
+    class A
+      def m(*args)
+        args
+      end
+
+      def m_modified(*args)
+        args
+      end
+    end
+
+    class B < A
+      def m(_, _)
+        super
+      end
+
+      def m_modified(_, _)
+        _ = 14
+        super
+      end
+    end
+  end
+
+  module Keywords
+    class Arguments
+      def foo(**args)
+        args
+      end
+    end
+
+    # ----
+
+    class RequiredArguments < Arguments
+      def foo(a:)
         super
       end
     end
 
-    class C < A
+    class OptionalArguments < Arguments
+      def foo(b: 'b')
+        super
+      end
+    end
+
+    class PlaceholderArguments < Arguments
+      def foo(**args)
+        super
+      end
+    end
+
+    # ----
+
+    class RequiredAndOptionalArguments < Arguments
+      def foo(a:, b: 'b')
+        super
+      end
+    end
+
+    class RequiredAndPlaceholderArguments < Arguments
+      def foo(a:, **args)
+        super
+      end
+    end
+
+    class OptionalAndPlaceholderArguments < Arguments
+      def foo(b: 'b', **args)
+        super
+      end
+    end
+
+    # ----
+
+    class RequiredAndOptionalAndPlaceholderArguments < Arguments
+      def foo(a:, b: 'b', **args)
+        super
+      end
+    end
+  end
+
+  module RegularAndKeywords
+    class Arguments
+      def foo(a, **options)
+        [a, options]
+      end
+    end
+
+    # -----
+
+    class RequiredArguments < Arguments
+      def foo(a, b:)
+        super
+      end
+    end
+
+    class OptionalArguments < Arguments
+      def foo(a, c: 'c')
+        super
+      end
+    end
+
+    class PlaceholderArguments < Arguments
+      def foo(a, **options)
+        super
+      end
+    end
+
+    # -----
+
+    class RequiredAndOptionalArguments < Arguments
+      def foo(a, b:, c: 'c')
+        super
+      end
+    end
+
+    class RequiredAndPlaceholderArguments < Arguments
+      def foo(a, b:, **options)
+        super
+      end
+    end
+
+    class OptionalAndPlaceholderArguments < Arguments
+      def foo(a, c: 'c', **options)
+        super
+      end
+    end
+
+    # -----
+
+    class RequiredAndOptionalAndPlaceholderArguments < Arguments
+      def foo(a, b:, c: 'c', **options)
+        super
+      end
+    end
+  end
+
+  module SplatAndKeywords
+    class Arguments
+      def foo(*args, **options)
+        [args, options]
+      end
+    end
+
+    class AllArguments < Arguments
+      def foo(*args, **options)
+        super
+      end
     end
   end
 
@@ -525,20 +689,6 @@ module Super
     class Foo < Base
       def foobar(array)
         array << :foo
-        super
-      end
-    end
-  end
-
-  module SplatAndKeyword
-    class A
-      def foo(*args, **options)
-        [args, options]
-      end
-    end
-
-    class B < A
-      def foo(*args, **options)
         super
       end
     end

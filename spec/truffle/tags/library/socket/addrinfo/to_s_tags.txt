@@ -1,3 +1,0 @@
-fails:Addrinfo#to_s for an ipv4 socket returns a sockaddr packed structure
-fails:Addrinfo#to_s for an ipv6 socket returns a sockaddr packed structure
-fails:Addrinfo#to_s for a unix socket returns a sockaddr packed structure

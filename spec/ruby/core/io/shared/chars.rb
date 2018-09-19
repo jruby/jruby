@@ -2,13 +2,11 @@
 describe :io_chars, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
-    @kcode, $KCODE = $KCODE, "utf-8"
     ScratchPad.record []
   end
 
   after :each do
     @io.close unless @io.closed?
-    $KCODE = @kcode
   end
 
   it "yields each character" do
@@ -26,7 +24,7 @@ describe :io_chars, shared: true do
   describe "when no block is given" do
     it "returns an Enumerator" do
       enum = @io.send(@method)
-      enum.should be_an_instance_of(enumerator_class)
+      enum.should be_an_instance_of(Enumerator)
       enum.first(5).should == ["V", "o", "i", "c", "i"]
     end
 
@@ -44,7 +42,7 @@ describe :io_chars, shared: true do
   end
 
   it "returns an enumerator for a closed stream" do
-    IOSpecs.closed_io.send(@method).should be_an_instance_of(enumerator_class)
+    IOSpecs.closed_io.send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "raises an IOError when an enumerator created on a closed stream is accessed" do
@@ -58,7 +56,6 @@ end
 
 describe :io_chars_empty, shared: true do
   before :each do
-    @kcode, $KCODE = $KCODE, "utf-8"
     @name = tmp("io_each_char")
     @io = new_io @name, "w+:utf-8"
     ScratchPad.record []
@@ -67,7 +64,6 @@ describe :io_chars_empty, shared: true do
   after :each do
     @io.close unless @io.closed?
     rm_r @name
-    $KCODE = @kcode
   end
 
   it "does not yield any characters on an empty stream" do

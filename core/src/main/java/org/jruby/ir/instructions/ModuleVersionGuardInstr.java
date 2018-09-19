@@ -36,7 +36,7 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
         return (Label) getOperand2();
     }
 
-    // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
+    // FIXME: We should remove this and only save what we care about..live Module cannot be necessary here?
     public RubyModule getModule() {
         return module;
     }

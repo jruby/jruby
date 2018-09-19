@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,11 +25,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ArraySupport;
 
 /**
  * A Block implemented using a Java-based BlockCallback implementation. For
@@ -57,14 +59,22 @@ public class CallBlock extends BlockBody {
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
 
+    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
+        Signature signature = block.getSignature();
+        int required = signature.required();
+        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+
+        return args;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return callback.call(context, args, Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        return callback.call(context, args, blockArg);
+        return callback.call(context, adjustArgs(block, args), blockArg);
     }
 
     @Override
@@ -84,7 +94,7 @@ public class CallBlock extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, args, Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
     }
 
     public StaticScope getStaticScope() {

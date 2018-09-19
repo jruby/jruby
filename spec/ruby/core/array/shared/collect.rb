@@ -1,11 +1,11 @@
-require File.expand_path('../../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../enumerable/shared/enumeratorized'
 
 describe :array_collect, shared: true do
   it "returns a copy of array with each element replaced by the value returned by block" do
     a = ['a', 'b', 'c', 'd']
     b = a.send(@method) { |i| i + '!' }
     b.should == ["a!", "b!", "c!", "d!"]
-    b.object_id.should_not == a.object_id
+    b.should_not equal a
   end
 
   it "does not return subclass instance" do
@@ -14,7 +14,7 @@ describe :array_collect, shared: true do
 
   it "does not change self" do
     a = ['a', 'b', 'c', 'd']
-    b = a.send(@method) { |i| i + '!' }
+    a.send(@method) { |i| i + '!' }
     a.should == ['a', 'b', 'c', 'd']
   end
 
@@ -32,7 +32,14 @@ describe :array_collect, shared: true do
 
   it "returns an Enumerator when no block given" do
     a = [1, 2, 3]
-    a.send(@method).should be_an_instance_of(enumerator_class)
+    a.send(@method).should be_an_instance_of(Enumerator)
+  end
+
+  it "raises an ArgumentError when no block and with arguments" do
+    a = [1, 2, 3]
+    lambda {
+      a.send(@method, :foo)
+    }.should raise_error(ArgumentError)
   end
 
   it "does not copy tainted status" do
@@ -63,7 +70,7 @@ describe :array_collect_b, shared: true do
   it "returns self" do
     a = [1, 2, 3, 4, 5]
     b = a.send(@method) {|i| i+1 }
-    a.object_id.should == b.object_id
+    a.should equal b
   end
 
   it "returns the evaluated value of block but its contents is partially modified, if it broke in the block" do
@@ -82,7 +89,7 @@ describe :array_collect_b, shared: true do
   it "returns an Enumerator when no block given, and the enumerator can modify the original array" do
     a = [1, 2, 3]
     enum = a.send(@method)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.each{|i| "#{i}!" }
     a.should == ["1!", "2!", "3!"]
   end
@@ -103,22 +110,22 @@ describe :array_collect_b, shared: true do
   end
 
   describe "when frozen" do
-    it "raises a RuntimeError" do
-      lambda { ArraySpecs.frozen_array.send(@method) {} }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class}" do
+      lambda { ArraySpecs.frozen_array.send(@method) {} }.should raise_error(frozen_error_class)
     end
 
-    it "raises a RuntimeError when empty" do
-      lambda { ArraySpecs.empty_frozen_array.send(@method) {} }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} when empty" do
+      lambda { ArraySpecs.empty_frozen_array.send(@method) {} }.should raise_error(frozen_error_class)
     end
 
-    it "raises a RuntimeError when calling #each on the returned Enumerator" do
+    it "raises a #{frozen_error_class} when calling #each on the returned Enumerator" do
       enumerator = ArraySpecs.frozen_array.send(@method)
-      lambda { enumerator.each {|x| x } }.should raise_error(RuntimeError)
+      lambda { enumerator.each {|x| x } }.should raise_error(frozen_error_class)
     end
 
-    it "raises a RuntimeError when calling #each on the returned Enumerator when empty" do
+    it "raises a #{frozen_error_class} when calling #each on the returned Enumerator when empty" do
       enumerator = ArraySpecs.empty_frozen_array.send(@method)
-      lambda { enumerator.each {|x| x } }.should raise_error(RuntimeError)
+      lambda { enumerator.each {|x| x } }.should raise_error(frozen_error_class)
     end
   end
 

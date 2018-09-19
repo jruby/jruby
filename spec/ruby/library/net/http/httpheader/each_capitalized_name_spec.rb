@@ -1,6 +1,6 @@
-require File.expand_path('../../../../../spec_helper', __FILE__)
+require_relative '../../../../spec_helper'
 require 'net/http'
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative 'fixtures/classes'
 
 describe "Net::HTTPHeader#each_capitalized_name" do
   before :each do
@@ -23,7 +23,7 @@ describe "Net::HTTPHeader#each_capitalized_name" do
   describe "when passed no block" do
     it "returns an Enumerator" do
       enumerator = @headers.each_capitalized_name
-      enumerator.should be_an_instance_of(enumerator_class)
+      enumerator.should be_an_instance_of(Enumerator)
 
       res = []
       enumerator.each do |key|

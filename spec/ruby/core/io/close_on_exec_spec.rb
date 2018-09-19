@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "IO#close_on_exec=" do
   before :each do
@@ -11,17 +11,7 @@ describe "IO#close_on_exec=" do
     rm_r @name
   end
 
-  platform_is :windows do
-    it "returns false from #respond_to?" do
-      @io.respond_to?(:close_on_exec=).should be_false
-    end
-
-    it "raises a NotImplementedError when called" do
-      lambda { @io.close_on_exec = true }.should raise_error(NotImplementedError)
-    end
-  end
-
-  platform_is_not :windows do
+  guard -> { platform_is_not :windows } do
     it "sets the close-on-exec flag if true" do
       @io.close_on_exec = true
       @io.close_on_exec?.should == true
@@ -63,7 +53,7 @@ end
 
 describe "IO#close_on_exec?" do
   before :each do
-    @name = tmp('io_close_on_exec.txt')
+    @name = tmp('io_is_close_on_exec.txt')
     @io = new_io @name
   end
 
@@ -72,17 +62,7 @@ describe "IO#close_on_exec?" do
     rm_r @name
   end
 
-  platform_is :windows do
-    it "returns false from #respond_to?" do
-      @io.respond_to?(:close_on_exec?).should be_false
-    end
-
-    it "raises a NotImplementedError when called" do
-      lambda { @io.close_on_exec? }.should raise_error(NotImplementedError)
-    end
-  end
-
-  platform_is_not :windows do
+  guard -> { platform_is_not :windows } do
     it "returns true by default" do
       @io.close_on_exec?.should == true
     end

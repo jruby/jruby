@@ -103,8 +103,7 @@ module EnumerableSpecs
 
     def initialize(string)
       self.value = string
-      all_vowels = ['a', 'e' , 'i' , 'o', 'u']
-      self.vowels = string.gsub(/[^aeiou]/,'').size
+      self.vowels = string.gsub(/[^aeiou]/, '').size
     end
 
     def <=>(other)
@@ -327,6 +326,20 @@ module EnumerableSpecs
 
     def map(&block)
       EnumerableMapping.new(self, block)
+    end
+  end
+
+  class Pattern
+    attr_reader :yielded
+
+    def initialize(&block)
+      @block = block
+      @yielded = []
+    end
+
+    def ===(*args)
+      @yielded << args
+      @block.call(*args)
     end
   end
 end # EnumerableSpecs utility classes

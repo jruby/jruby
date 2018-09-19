@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO.try_convert" do
   before :each do
@@ -29,6 +29,10 @@ describe "IO.try_convert" do
 
   it "returns nil when the passed object does not respond to #to_io" do
     IO.try_convert(mock("io")).should be_nil
+  end
+
+  it "return nil when BasicObject is passed" do
+    IO.try_convert(BasicObject.new).should be_nil
   end
 
   it "raises a TypeError if the object does not return an IO from #to_io" do

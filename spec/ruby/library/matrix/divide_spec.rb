@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'spec_helper'
+require_relative 'fixtures/classes'
 require 'matrix'
 
 describe "Matrix#/" do
@@ -35,7 +35,7 @@ describe "Matrix#/" do
   end
 
   it "returns an instance of Matrix" do
-    (@a /@b).should be_kind_of(Matrix)
+    (@a / @b).should be_kind_of(Matrix)
   end
 
   describe "for a subclass of Matrix" do

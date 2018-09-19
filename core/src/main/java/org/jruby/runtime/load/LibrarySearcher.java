@@ -167,6 +167,14 @@ class LibrarySearcher {
         DebugLog.Resource.logTry(pathWithSuffix);
         FileResource resource = JRubyFile.createResourceAsFile(runtime, pathWithSuffix);
         if (resource.exists()) {
+            if (resource.absolutePath() != resource.canonicalPath()) {
+                FileResource expandedResource = JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
+                if (expandedResource.exists()){
+                    String scriptName = resolveScriptName(expandedResource, expandedResource.canonicalPath());
+                    String loadName = resolveLoadName(expandedResource, searchName + suffix);
+                    return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
+                }
+            }
             DebugLog.Resource.logFound(pathWithSuffix);
             String scriptName = resolveScriptName(resource, pathWithSuffix);
             String loadName = resolveLoadName(resource, searchName + suffix);
@@ -194,8 +202,8 @@ class LibrarySearcher {
             // uri: are absolute
             return true;
         }
-        if (path.startsWith("classpath:/")) {
-            // classpath URLS are absolute if they start with a slash
+        if (path.startsWith("classpath:")) {
+            // classpath URLS are always absolute
             return true;
         }
         return new File(path).isAbsolute();

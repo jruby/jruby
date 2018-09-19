@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Range#each" do
   it "passes each element to the given block by using #succ" do
@@ -48,7 +48,7 @@ describe "Range#each" do
 
   it "returns an enumerator when no block given" do
     enum = (1..3).each
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should == [1, 2, 3]
   end
 

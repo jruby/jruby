@@ -1,2 +1,0 @@
-slow:ARGF.lineno aliases to $.
-fails:ARGF.lineno aliases to $.

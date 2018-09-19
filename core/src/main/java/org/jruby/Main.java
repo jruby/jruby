@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,18 +35,19 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SignalException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -60,6 +61,9 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -188,8 +192,6 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
-        printTruffleTimeMetric("before-main");
-
         doGCJCheck();
 
         Main main;
@@ -203,9 +205,6 @@ public class Main {
         try {
             Status status = main.run(args);
 
-            printTruffleTimeMetric("after-main");
-            printTruffleMemoryMetric();
-
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
@@ -217,19 +216,12 @@ public class Main {
             System.exit( handleUnexpectedJump(ex) );
         }
         catch (Throwable t) {
-            // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
-
-            if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
-                System.err.println("Truffle internal error: " + t);
-                t.printStackTrace(System.err);
-            } else {
-                // print out as a nice Ruby backtrace
-                System.err.println("Unhandled Java exception: " + t);
+            // print out as a nice Ruby backtrace
+            System.err.println("Unhandled Java exception: " + t);
+            System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
+            while ((t = t.getCause()) != null) {
+                System.err.println("Caused by:");
                 System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
-                while ((t = t.getCause()) != null) {
-                    System.err.println("Caused by:");
-                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
-                }
             }
 
             System.exit(1);
@@ -284,7 +276,7 @@ public class Main {
         final Ruby runtime = _runtime;
         final AtomicBoolean didTeardown = new AtomicBoolean();
 
-        if (config.isHardExit()) {
+        if (runtime != null && config.isHardExit()) {
             // we're the command-line JRuby, and should set a shutdown hook for
             // teardown.
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -297,7 +289,9 @@ public class Main {
         }
 
         try {
-            doSetContextClassLoader(runtime);
+            if (runtime != null) {
+                doSetContextClassLoader(runtime);
+            }
 
             if (in == null) {
                 // no script to run, return success
@@ -313,7 +307,7 @@ public class Main {
                 return doRunFromMain(runtime, in, filename);
             }
         } finally {
-            if (didTeardown.compareAndSet(false, true)) {
+            if (runtime != null && didTeardown.compareAndSet(false, true)) {
                 runtime.tearDown();
             }
         }
@@ -362,11 +356,7 @@ public class Main {
         boolean heapError = false;
 
         if (oomeMessage != null) {
-            if (oomeMessage.contains("PermGen")) {
-                // report permgen memory error
-                config.getError().println("Error: Your application exhausted PermGen area of the heap.");
-                config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
-            } else if (oomeMessage.contains("unable to create new native thread")) {
+            if (oomeMessage.contains("unable to create new native thread")) {
                 // report thread exhaustion error
                 config.getError().println("Error: Your application demanded too many live threads, perhaps for Fiber or Enumerator.");
                 config.getError().println("Ensure your old Fibers and Enumerators are being cleaned up.");
@@ -541,6 +531,12 @@ public class Main {
                 return RubyNumeric.fix2int(status);
             }
             return 0;
+        } else if ( runtime.getSignalException().isInstance(raisedException) ) {
+            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "signo");
+            if (status != null && ! status.isNil()) {
+                return RubyNumeric.fix2int(status) + 128;
+            }
+            return 0;
         }
         System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
         return 1;
@@ -575,28 +571,6 @@ public class Main {
         
         // TODO: should match MRI (>= 2.2.3) exit status - @see ruby/test_enum.rb#test_first
         return 2;
-    }
-    
-    public static void printTruffleTimeMetric(String id) {
-        if (Options.TRUFFLE_METRICS_TIME.load()) {
-            final long millis = System.currentTimeMillis();
-            System.err.printf("%s %d.%03d%n", id, millis / 1000, millis % 1000);
-        }
-    }
-
-    private static void printTruffleMemoryMetric() {
-        if (Options.TRUFFLE_METRICS_MEMORY_USED_ON_EXIT.load()) {
-            for (int n = 0; n < 10; n++) {
-                System.gc();
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-
-            System.err.printf("allocated %d%n", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
-        }
     }
 
     private final RubyInstanceConfig config;

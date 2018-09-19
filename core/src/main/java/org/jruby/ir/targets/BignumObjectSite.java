@@ -25,7 +25,12 @@ public class BignumObjectSite extends LazyObjectSite {
         this.value = value;
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(BignumObjectSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(BignumObjectSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value) {
         return new BignumObjectSite(type, value).bootstrap(lookup);

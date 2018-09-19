@@ -144,6 +144,10 @@ class Gem::ConfigFile
   attr_accessor :ssl_ca_cert
 
   ##
+  # sources to look for gems
+  attr_accessor :sources
+
+  ##
   # Path name of directory or file of openssl client certificate, used for remote https connection with client authentication
 
   attr_reader :ssl_client_cert
@@ -216,6 +220,7 @@ class Gem::ConfigFile
     @update_sources             = @hash[:update_sources]             if @hash.key? :update_sources
     @verbose                    = @hash[:verbose]                    if @hash.key? :verbose
     @disable_default_gem_server = @hash[:disable_default_gem_server] if @hash.key? :disable_default_gem_server
+    @sources                    = @hash[:sources]                    if @hash.key? :sources
 
     @ssl_verify_mode  = @hash[:ssl_verify_mode]  if @hash.key? :ssl_verify_mode
     @ssl_ca_cert      = @hash[:ssl_ca_cert]      if @hash.key? :ssl_ca_cert
@@ -224,7 +229,6 @@ class Gem::ConfigFile
     @api_keys         = nil
     @rubygems_api_key = nil
 
-    Gem.sources = @hash[:sources] if @hash.key? :sources
     handle_arguments arg_list
   end
 
@@ -332,6 +336,15 @@ if you believe they were disclosed to a third party.
     load_api_keys # reload
   end
 
+  ##
+  # Remove the +~/.gem/credentials+ file to clear all the current sessions.
+
+  def unset_api_key!
+    return false unless File.exist?(credentials_path)
+
+    File.delete(credentials_path)
+  end
+
   def load_file(filename)
     Gem.load_yaml
 
@@ -341,7 +354,7 @@ if you believe they were disclosed to a third party.
     return {} unless filename and File.exist? filename
 
     begin
-      content = YAML.load(File.read(filename))
+      content = Gem::SafeYAML.load(File.read(filename))
       unless content.kind_of? Hash
         warn "Failed to load #{filename} because it doesn't contain valid YAML hash"
         return {}
@@ -415,31 +428,11 @@ if you believe they were disclosed to a third party.
   # to_yaml only overwrites things you can't override on the command line.
   def to_yaml # :nodoc:
     yaml_hash = {}
-    yaml_hash[:backtrace] = if @hash.key?(:backtrace)
-                              @hash[:backtrace]
-                            else
-                              DEFAULT_BACKTRACE
-                            end
-
-    yaml_hash[:bulk_threshold] = if @hash.key?(:bulk_threshold)
-                                   @hash[:bulk_threshold]
-                                 else
-                                   DEFAULT_BULK_THRESHOLD
-                                 end
-
+    yaml_hash[:backtrace] = @hash.fetch(:backtrace, DEFAULT_BACKTRACE)
+    yaml_hash[:bulk_threshold] = @hash.fetch(:bulk_threshold, DEFAULT_BULK_THRESHOLD)
     yaml_hash[:sources] = Gem.sources.to_a
-
-    yaml_hash[:update_sources] = if @hash.key?(:update_sources)
-                                   @hash[:update_sources]
-                                 else
-                                   DEFAULT_UPDATE_SOURCES
-                                 end
-
-    yaml_hash[:verbose] = if @hash.key?(:verbose)
-                            @hash[:verbose]
-                          else
-                            DEFAULT_VERBOSITY
-                          end
+    yaml_hash[:update_sources] = @hash.fetch(:update_sources, DEFAULT_UPDATE_SOURCES)
+    yaml_hash[:verbose] = @hash.fetch(:verbose, DEFAULT_VERBOSITY)
 
     yaml_hash[:ssl_verify_mode] =
       @hash[:ssl_verify_mode] if @hash.key? :ssl_verify_mode
@@ -465,7 +458,7 @@ if you believe they were disclosed to a third party.
 
   # Writes out this config file, replacing its source.
   def write
-    open config_file_name, 'w' do |io|
+    File.open config_file_name, 'w' do |io|
       io.write to_yaml
     end
   end

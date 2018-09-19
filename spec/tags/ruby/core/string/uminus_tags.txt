@@ -1,0 +1,1 @@
+critical(only seems to fail in a full run):String#-@ returns the same object when it's called on the same String literal

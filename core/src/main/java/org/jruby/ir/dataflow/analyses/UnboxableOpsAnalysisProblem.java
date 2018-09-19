@@ -1,5 +1,6 @@
 package org.jruby.ir.dataflow.analyses;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;

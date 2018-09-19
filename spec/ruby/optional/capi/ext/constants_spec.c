@@ -131,6 +131,12 @@ static VALUE constants_spec_rb_cSymbol(VALUE self) {
 }
 #endif
 
+#ifdef HAVE_RB_CTIME
+static VALUE constants_spec_rb_cTime(VALUE self) {
+  return rb_cTime;
+}
+#endif
+
 #ifdef HAVE_RB_CTHREAD
 static VALUE constants_spec_rb_cThread(VALUE self) {
   return rb_cThread;
@@ -463,6 +469,10 @@ void Init_constants_spec(void) {
 
 #ifdef HAVE_RB_CSYMBOL
   rb_define_method(cls, "rb_cSymbol", constants_spec_rb_cSymbol, 0);
+#endif
+
+#ifdef HAVE_RB_CTIME
+  rb_define_method(cls, "rb_cTime", constants_spec_rb_cTime, 0);
 #endif
 
 #ifdef HAVE_RB_CTHREAD

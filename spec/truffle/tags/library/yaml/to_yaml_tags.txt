@@ -1,2 +1,0 @@
-fails:Object#to_yaml returns the YAML represenation of a RegExp object
-fails:Object#to_yaml returns the YAML representation of a Error object

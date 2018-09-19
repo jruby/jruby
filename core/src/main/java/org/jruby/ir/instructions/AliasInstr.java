@@ -45,9 +45,9 @@ public class AliasInstr extends TwoOperandInstr implements FixedArityInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        String newNameString = getNewName().retrieve(context, self, currScope, currDynScope, temp).toString();
-        String oldNameString = getOldName().retrieve(context, self, currScope, currDynScope, temp).toString();
-        IRRuntimeHelpers.defineAlias(context, self, currDynScope, newNameString, oldNameString);
+        IRubyObject newName = (IRubyObject) getNewName().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject oldName = (IRubyObject) getOldName().retrieve(context, self, currScope, currDynScope, temp);
+        IRRuntimeHelpers.defineAlias(context, self, currDynScope, newName, oldName);
         return null;
     }
 

@@ -2,3 +2,5 @@ fails:IO.for_fd raises an error if passed matching binary/text mode two ways
 fails:IO.for_fd raises an error if passed conflicting binary/text mode two ways
 windows:IO.for_fd raises an Errno::EBADF if the file descriptor is not valid
 windows:IO.for_fd raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode
+fails:IO.for_fd ignores the :encoding option when the :external_encoding option is present
+fails:IO.for_fd ignores the :encoding option when the :internal_encoding option is present

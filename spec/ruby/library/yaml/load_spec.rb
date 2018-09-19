@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
-require File.expand_path('../fixtures/strings', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
+require_relative 'fixtures/strings'
 
 describe "YAML.load" do
   after :each do
@@ -31,6 +31,27 @@ describe "YAML.load" do
               ]
     strings.each do |str|
       YAML.load(str).should == "str"
+    end
+  end
+
+  it "loads strings with chars from non-base Unicode plane" do
+    # We add these strings as bytes and force the encoding for safety
+    # as bugs in parsing unicode characters can obscure bugs in this
+    # area.
+
+    yaml_and_strings = {
+      # "--- 🌵" => "🌵"
+      [45, 45, 45, 32, 240, 159, 140, 181] =>
+      [240, 159, 140, 181],
+      # "--- 🌵 and some text" => "🌵 and some text"
+      [45, 45, 45, 32, 240, 159, 140, 181, 32, 97, 110, 100, 32, 115, 111, 109, 101, 32, 116, 101, 120, 116] =>
+      [240, 159, 140, 181, 32, 97, 110, 100, 32, 115, 111, 109, 101, 32, 116, 101, 120, 116],
+      # "--- Some text 🌵 and some text" => "Some text 🌵 and some text"
+      [45, 45, 45, 32, 83, 111, 109, 101, 32, 116, 101, 120, 116, 32, 240, 159, 140, 181, 32, 97, 110, 100, 32, 115, 111, 109, 101, 32, 116, 101, 120, 116] =>
+      [83, 111, 109, 101, 32, 116, 101, 120, 116, 32, 240, 159, 140, 181, 32, 97, 110, 100, 32, 115, 111, 109, 101, 32, 116, 101, 120, 116]
+    }
+    yaml_and_strings.each do |yaml, str|
+      YAML.load(yaml.pack("C*").force_encoding("UTF-8")).should == str.pack("C*").force_encoding("UTF-8")
     end
   end
 
@@ -71,6 +92,7 @@ describe "YAML.load" do
   end
 
   it "works on complex keys" do
+    require 'date'
     expected = {
       [ 'Detroit Tigers', 'Chicago Cubs' ] => [ Date.new( 2001, 7, 23 ) ],
       [ 'New York Yankees', 'Atlanta Braves' ] => [ Date.new( 2001, 7, 2 ),
@@ -97,5 +119,19 @@ describe "YAML.load" do
     it "rounds values smaller than 1 usec to 0 " do
       YAML.load("2011-03-22t23:32:11.000000342222+01:00").usec.should == 0
     end
+  end
+
+  it "loads an OpenStruct" do
+    require "ostruct"
+    os = OpenStruct.new("age" => 20, "name" => "John")
+    loaded = YAML.load("--- !ruby/object:OpenStruct\ntable:\n  :age: 20\n  :name: John\n")
+    loaded.should == os
+  end
+
+  it "loads a File but raise an error when used as it is uninitialized" do
+    loaded = YAML.load("--- !ruby/object:File {}\n")
+    lambda {
+      loaded.read(1)
+    }.should raise_error(IOError)
   end
 end

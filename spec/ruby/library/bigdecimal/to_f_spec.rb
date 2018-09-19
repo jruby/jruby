@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'bigdecimal'
 
 describe "BigDecimal#to_f" do
@@ -25,7 +25,7 @@ describe "BigDecimal#to_f" do
     @spec_vals.each { |val| val.to_f.should be_kind_of(Float) }
   end
 
-  it "Floating point rounding occurs" do
+  it "rounds correctly to Float precision" do
     bigdec = BigDecimal("3.141592653589793238462643383279502884197169399375")
     bigdec.to_f.should be_close(3.14159265358979, TOLERANCE)
     @one.to_f.should == 1.0
@@ -52,4 +52,3 @@ describe "BigDecimal#to_f" do
     @zero_neg.to_f.to_s.should == "-0.0"
   end
 end
-

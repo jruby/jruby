@@ -1,3 +1,0 @@
-fails:UNIXSocket#recvfrom receives len bytes from sock
-fails:UNIXSocket#recvfrom returns an array with data and information on the sender
-fails:UNIXSocket#recvfrom uses different message options

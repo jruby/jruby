@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :string_gsub_named_capture, shared: true do
   it "replaces \\k named backreferences with the regexp's corresponding capture" do
@@ -12,24 +12,14 @@ describe :string_gsub_named_capture, shared: true do
 end
 
 describe "String#gsub with pattern and replacement" do
-
-  before :each do
-    @kcode = $KCODE
-  end
-
-  after :each do
-    $KCODE = @kcode
-  end
-
   it "inserts the replacement around every character when the pattern collapses" do
     "hello".gsub(//, ".").should == ".h.e.l.l.o."
   end
 
-  it "respects $KCODE when the pattern collapses" do
+  it "respects unicode when the pattern collapses" do
     str = "こにちわ"
     reg = %r!!
 
-    $KCODE = "utf-8"
     str.gsub(reg, ".").should == ".こ.に.ち.わ."
   end
 
@@ -190,7 +180,7 @@ describe "String#gsub with pattern and replacement" do
     hello.gsub(//.taint, "foo").tainted?.should == false
   end
 
-  it "handles pattern collapse without $KCODE" do
+  it "handles pattern collapse" do
     str = "こにちわ"
     reg = %r!!
     str.gsub(reg, ".").should == ".こ.に.ち.わ."
@@ -558,7 +548,8 @@ describe "String#gsub with pattern and block" do
 
   not_supported_on :opal do
     it "raises an ArgumentError if encoding is not valid" do
-      lambda { "a\x92b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+      x92 = [0x92].pack('C').force_encoding('utf-8')
+      lambda { "a#{x92}b".gsub(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
     end
   end
 end
@@ -566,7 +557,7 @@ end
 describe "String#gsub with pattern and without replacement and block" do
   it "returns an enumerator" do
     enum = "abca".gsub(/a/)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should == ["a", "a"]
   end
 
@@ -612,13 +603,13 @@ describe "String#gsub! with pattern and replacement" do
   end
 
   # See [ruby-core:23666]
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     s = "hello"
     s.freeze
 
-    lambda { s.gsub!(/ROAR/, "x")    }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/e/, "e")       }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/[aeiou]/, '*') }.should raise_error(RuntimeError)
+    lambda { s.gsub!(/ROAR/, "x")    }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/e/, "e")       }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/[aeiou]/, '*') }.should raise_error(frozen_error_class)
   end
 end
 
@@ -649,13 +640,13 @@ describe "String#gsub! with pattern and block" do
   end
 
   # See [ruby-core:23663]
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     s = "hello"
     s.freeze
 
-    lambda { s.gsub!(/ROAR/)    { "x" } }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/e/)       { "e" } }.should raise_error(RuntimeError)
-    lambda { s.gsub!(/[aeiou]/) { '*' } }.should raise_error(RuntimeError)
+    lambda { s.gsub!(/ROAR/)    { "x" } }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/e/)       { "e" } }.should raise_error(frozen_error_class)
+    lambda { s.gsub!(/[aeiou]/) { '*' } }.should raise_error(frozen_error_class)
   end
 
   it "uses the compatible encoding if they are compatible" do
@@ -682,7 +673,8 @@ describe "String#gsub! with pattern and block" do
 
   not_supported_on :opal do
     it "raises an ArgumentError if encoding is not valid" do
-      lambda { "a\x92b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
+      x92 = [0x92].pack('C').force_encoding('utf-8')
+      lambda { "a#{x92}b".gsub!(/[^\x00-\x7f]/u, '') }.should raise_error(ArgumentError)
     end
   end
 end
@@ -690,7 +682,7 @@ end
 describe "String#gsub! with pattern and without replacement and block" do
   it "returns an enumerator" do
     enum = "abca".gsub!(/a/)
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
     enum.to_a.should == ["a", "a"]
   end
 

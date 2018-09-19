@@ -1,0 +1,1 @@
+fails:Symbol#swapcase swaps the case for Unicode characters

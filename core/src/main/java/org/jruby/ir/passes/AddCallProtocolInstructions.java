@@ -20,10 +20,17 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
     }
 
+    @Override
+    public String getShortLabel() {
+        return "Add Call Proto";
+    }
+
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod
-            || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
-            || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
+                || (scope instanceof IRClosure && !(scope instanceof IREvalScript))
+                || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody)
+                || (scope instanceof IRScriptBody)
+        );
     }
 
     /*
@@ -56,7 +63,13 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 instrs.add(new PopBlockFrameInstr(savedFrame));
             }
         } else {
-            if (requireFrame) instrs.add(new PopMethodFrameInstr());
+            if (requireFrame) {
+                if (scope.needsOnlyBackref()) {
+                    instrs.add(new PopBackrefFrameInstr());
+                } else {
+                    instrs.add(new PopMethodFrameInstr());
+                }
+            }
         }
     }
 
@@ -111,14 +124,20 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         if (arityValue == 1) {
                             prologueBB.addInstr(PrepareSingleBlockArgInstr.INSTANCE);
                         } else {
-                            prologueBB.addInstr(PrepareFixedBlockArgsInstr.INSTANCE);
+                            prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                         }
                     } else {
                         prologueBB.addInstr(PrepareBlockArgsInstr.INSTANCE);
                     }
                 }
             } else {
-                if (requireFrame) entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
+                if (requireFrame) {
+                    if (scope.needsOnlyBackref()) {
+                        entryBB.addInstr(new PushBackrefFrameInstr());
+                    } else {
+                        entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
+                    }
+                }
                 if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());
             }
 

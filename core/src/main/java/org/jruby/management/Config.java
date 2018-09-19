@@ -4,7 +4,6 @@ import java.lang.ref.SoftReference;
 
 import java.util.Arrays;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.util.cli.OutputStrings;
@@ -154,6 +153,6 @@ public class Config implements ConfigMBean {
 
     @Deprecated
     public String getCompatVersion() {
-        return CompatVersion.RUBY2_1.name();
+        return org.jruby.CompatVersion.RUBY2_1.name();
     }
 }

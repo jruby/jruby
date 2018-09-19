@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../shared/file/setgid', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../shared/file/setgid'
 
 describe "File.setgid?" do
   it_behaves_like :file_setgid, :setgid?, File
@@ -24,11 +24,13 @@ describe "File.setgid?" do
     File.setgid?(@name).should == false
   end
 
-  platform_is_not :windows do
-    it "returns true when the gid bit is set" do
-      system "chmod g+s #{@name}"
+  as_superuser do
+    platform_is_not :windows do
+      it "returns true when the gid bit is set" do
+        system "chmod g+s #{@name}"
 
-      File.setgid?(@name).should == true
+        File.setgid?(@name).should == true
+      end
     end
   end
 end

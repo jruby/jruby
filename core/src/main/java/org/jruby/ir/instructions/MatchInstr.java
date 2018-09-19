@@ -9,12 +9,15 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
+import org.jruby.util.ByteList;
 
-import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
+import static org.jruby.ir.IRFlags.REQUIRES_BACKREF;
 
 public class MatchInstr extends CallInstr implements FixedArityInstr {
-    public MatchInstr(Variable result, Operand receiver, Operand arg) {
-        super(Operation.MATCH, CallType.NORMAL, result, "=~", receiver, new Operand[]{arg}, null, false);
+    private static final ByteList MATCH = new ByteList(new byte[] {'=', '~'});
+
+    public MatchInstr(IRScope scope, Variable result, Operand receiver, Operand arg) {
+        super(Operation.MATCH, CallType.NORMAL, result, scope.getManager().getRuntime().newSymbol(MATCH), receiver, new Operand[]{arg}, null, false);
 
         assert result != null : "Match2Instr result is null";
     }
@@ -24,13 +27,13 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
         super.computeScopeFlags(scope);
         // $~ is implicitly used since Backref and NthRef operands
         // access it and $~ is not made explicit in those operands.
-        scope.getFlags().add(USES_BACKREF_OR_LASTLINE);
+        scope.getFlags().add(REQUIRES_BACKREF);
         return true;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new MatchInstr((Variable) result.cloneForInlining(ii),
+        return new MatchInstr(ii.getScope(), (Variable) result.cloneForInlining(ii),
                 getReceiver().cloneForInlining(ii), getArg1().cloneForInlining(ii));
     }
 
@@ -43,7 +46,7 @@ public class MatchInstr extends CallInstr implements FixedArityInstr {
     }
 
     public static MatchInstr decode(IRReaderDecoder d) {
-        return new MatchInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+        return new MatchInstr(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

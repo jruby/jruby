@@ -1,12 +1,12 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'thread'
-require File.expand_path('../../shared/queue/enque', __FILE__)
-require File.expand_path('../shared/enque', __FILE__)
+require_relative '../shared/queue/enque'
+require_relative 'shared/enque'
 
 describe "Thread::SizedQueue#<<" do
-  it_behaves_like :queue_enq, :<<, SizedQueue.new(10)
+  it_behaves_like :queue_enq, :<<, -> { SizedQueue.new(10) }
 end
 
 describe "Thread::SizedQueue#<<" do
-  it_behaves_like :sizedqueue_enq, :<<, SizedQueue
+  it_behaves_like :sizedqueue_enq, :<<
 end

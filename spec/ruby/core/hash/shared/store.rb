@@ -1,3 +1,5 @@
+require_relative '../fixtures/classes'
+
 describe :hash_store, shared: true do
   it "associates the key with the value and return the value" do
     h = { a: 1 }
@@ -34,6 +36,13 @@ describe :hash_store, shared: true do
     h[key].should == "foo"
   end
 
+  it " accepts keys with a Bignum hash" do
+    o = mock(hash: 1 << 100)
+    h = {}
+    h[o] = 1
+    h[o].should == 1
+  end
+
   it "duplicates and freezes string keys" do
     key = "foo"
     h = {}
@@ -51,8 +60,34 @@ describe :hash_store, shared: true do
     h.keys[0].should equal(key)
   end
 
-  it "raises a RuntimeError if called on a frozen instance" do
-    lambda { HashSpecs.frozen_hash.send(@method, 1, 2) }.should raise_error(RuntimeError)
+  it "keeps the existing key in the hash if there is a matching one" do
+    h = { "a" => 1, "b" => 2, "c" => 3, "d" => 4 }
+    key1 = HashSpecs::ByValueKey.new(13)
+    key2 = HashSpecs::ByValueKey.new(13)
+    h[key1] = 41
+    key_in_hash = h.keys.last
+    key_in_hash.should equal(key1)
+    h[key2] = 42
+    last_key = h.keys.last
+    last_key.should equal(key_in_hash)
+    last_key.should_not equal(key2)
+  end
+
+  it "keeps the existing String key in the hash if there is a matching one" do
+    h = { "a" => 1, "b" => 2, "c" => 3, "d" => 4 }
+    key1 = "foo"
+    key2 = "foo"
+    key1.should_not equal(key2)
+    h[key1] = 41
+    frozen_key = h.keys.last
+    frozen_key.should_not equal(key1)
+    h[key2] = 42
+    h.keys.last.should equal(frozen_key)
+    h.keys.last.should_not equal(key2)
+  end
+
+  it "raises a #{frozen_error_class} if called on a frozen instance" do
+    lambda { HashSpecs.frozen_hash.send(@method, 1, 2) }.should raise_error(frozen_error_class)
   end
 
   it "does not raise an exception if changing the value of an existing key during iteration" do

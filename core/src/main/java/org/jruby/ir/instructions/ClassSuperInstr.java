@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -14,7 +15,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
-    public ClassSuperInstr(Variable result, Operand definingModule, String name, Operand[] args, Operand closure,
+    public ClassSuperInstr(Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
                            boolean isPotentiallyRefined) {
         super(Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
     }
@@ -33,8 +34,8 @@ public class ClassSuperInstr extends CallInstr {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super");
         int callTypeOrdinal = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, calltype(ord):  "+ callTypeOrdinal);
-        String methAddr = d.decodeString();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ methAddr);
+        RubySymbol name = d.decodeSymbol();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ name);
         Operand receiver = d.decodeOperand();
         int argsCount = d.decodeInt();
         boolean hasClosureArg = argsCount < 0;
@@ -48,7 +49,7 @@ public class ClassSuperInstr extends CallInstr {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return new ClassSuperInstr(d.decodeVariable(), receiver, methAddr, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return new ClassSuperInstr(d.decodeVariable(), receiver, name, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
     // We cannot convert this into a NoCallResultInstr
     @Override
@@ -62,7 +63,7 @@ public class ClassSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.classSuper(context, self, getName(), definingModule, args, block);
+        return IRRuntimeHelpers.classSuper(context, self, getId(), definingModule, args, block);
     }
 
     @Override

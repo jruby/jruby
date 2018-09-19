@@ -37,8 +37,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
 
-        rootFiber.data = new FiberData(new FiberQueue(runtime), null, rootFiber);
-        rootFiber.thread = context.getThread();
+        RubyThread currentThread = context.getThread();
+        rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber);
+        rootFiber.thread = currentThread;
         context.setRootFiber(rootFiber);
     }
     
@@ -154,7 +155,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // Otherwise, we want to forward the exception to the target fiber
         // since it has the ball
         final ThreadFiber fiber = targetFiberData.fiber.get();
-        if ( fiber != null ) fiber.thread.raise(re.getException());
+        if ( fiber != null && fiber.alive() ) fiber.thread.raise(re.getException());
         else LOG.warn("no fiber thread to raise: {}", re.getException().inspect(context));
     }
 
@@ -215,7 +216,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         
         if (currentFiberData.parent == null) throw runtime.newFiberError("can't yield from root fiber");
 
-        if (currentFiberData.prev == null) throw runtime.newFiberError("BUG: yield occured with null previous fiber. Report this at http://bugs.jruby.org");
+        if (currentFiberData.prev == null) throw runtime.newFiberError("BUG: yield occurred with null previous fiber. Report this at http://bugs.jruby.org");
 
         if (currentFiberData.queue.isShutdown()) throw runtime.newFiberError("dead fiber yielded");
         
@@ -239,8 +240,13 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return thread.getContextVariables();
     }
     
-    boolean alive() {
-        return thread != null && thread.isAlive() && !data.queue.isShutdown();
+    final boolean alive() {
+        RubyThread thread = this.thread;
+        if (thread == null || !thread.isAlive() || data.queue.isShutdown()) {
+            return false;
+        }
+
+        return true;
     }
     
     static RubyThread createThread(final Ruby runtime, final FiberData data, final FiberQueue queue, final Block block) {
@@ -254,6 +260,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 public void run() {
                     ThreadContext context = runtime.getCurrentContext();
                     context.setFiber(data.fiber.get());
+                    context.useRecursionGuardsFrom(data.parent.getContext());
                     fiberThread.set(context.getThread());
                     context.getThread().setFiberCurrentThread(data.parent);
 
@@ -269,10 +276,19 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                                 result = block.yieldArray(context, init, null);
                             }
 
+                            // Clear ThreadFiber's thread since we're on the way out and need to appear non-alive?
+                            // Waiting thread can proceed immediately after push below but before we are truly dead.
+                            // See https://github.com/jruby/jruby/issues/4838
+                            ThreadFiber tf = data.fiber.get();
+                            if (tf != null) tf.thread = null;
+
                             data.prev.data.queue.push(context, new IRubyObject[]{result});
                         } finally {
+                            // Ensure we do everything for shutdown now
                             data.queue.shutdown();
                             runtime.getThreadService().disposeCurrentThread();
+                            ThreadFiber tf = data.fiber.get();
+                            if (tf != null) tf.thread = null;
                         }
                     } catch (JumpException.FlowControlException fce) {
                         if (data.prev != null) {
@@ -298,10 +314,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         if (data.prev != null) {
                             data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
                         }
-                    } finally {
-                        // clear reference to the fiber's thread
-                        ThreadFiber tf = data.fiber.get();
-                        if (tf != null) tf.thread = null;
                     }
                 }
             });

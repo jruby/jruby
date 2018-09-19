@@ -23,8 +23,8 @@ module Platform::Socket
   # AF_ISO not available
   AF_LAT = 14
   AF_LINK = 25
-  # AF_LOCAL not available
-  AF_MAX = 29
+  AF_LOCAL = 1
+  AF_MAX = 33
   # AF_NATM not available
   # AF_NDRV not available
   # AF_NETBIOS not available
@@ -82,8 +82,8 @@ module Platform::Socket
   PF_KEY = 27
   PF_LAT = 14
   PF_LINK = 25
-  # PF_LOCAL not available
-  PF_MAX = 29
+  PF_LOCAL = 1
+  PF_MAX = 33
   # PF_NATM not available
   # PF_NDRV not available
   # PF_NETBIOS not available
@@ -109,11 +109,11 @@ module Platform::Socket
   SOCK_STREAM = 2
   SO_ACCEPTCONN = 2
   # SO_ACCEPTFILTER not available
-  # SO_ATTACH_FILTER not available
+  SO_ATTACH_FILTER = 1073741825
   # SO_BINDTODEVICE not available
   SO_BROADCAST = 32
   SO_DEBUG = 1
-  # SO_DETACH_FILTER not available
+  SO_DETACH_FILTER = 1073741826
   SO_DONTROUTE = 16
   # SO_DONTTRUNC not available
   SO_ERROR = 4103
@@ -136,7 +136,7 @@ module Platform::Socket
   SO_RCVLOWAT = 4100
   SO_RCVTIMEO = 4102
   SO_REUSEADDR = 4
-  # SO_REUSEPORT not available
+  SO_REUSEPORT = 4110
   # SO_REUSESHAREUID not available
   # SO_SECURITY_AUTHENTICATION not available
   # SO_SECURITY_ENCRYPTION_NETWORK not available
@@ -144,7 +144,7 @@ module Platform::Socket
   SO_SNDBUF = 4097
   SO_SNDLOWAT = 4099
   SO_SNDTIMEO = 4101
-  # SO_TIMESTAMP not available
+  SO_TIMESTAMP = 4115
   SO_TYPE = 4104
   SO_USELOOPBACK = 64
   # SO_WANTMORE not available

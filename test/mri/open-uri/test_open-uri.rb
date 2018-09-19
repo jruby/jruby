@@ -43,6 +43,8 @@ class TestOpenURI < Test::Unit::TestCase
       }
       assert_join_threads([client_thread, server_thread2])
     }
+  ensure
+    WEBrick::Utils::TimeoutHandler.terminate
   end
 
   def with_env(h)
@@ -64,6 +66,16 @@ class TestOpenURI < Test::Unit::TestCase
 
   def teardown
     @proxies.each_with_index {|k, i| ENV[k] = @old_proxies[i] }
+  end
+
+  def test_200_uri_open
+    with_http {|srv, dr, url|
+      srv.mount_proc("/urifoo200", lambda { |req, res| res.body = "urifoo200" } )
+      URI.open("#{url}/urifoo200") {|f|
+        assert_equal("200", f.status[0])
+        assert_equal("urifoo200", f.read)
+      }
+    }
   end
 
   def test_200
@@ -370,6 +382,42 @@ class TestOpenURI < Test::Unit::TestCase
     }
   end
 
+  def test_authenticated_proxy_http_basic_authentication_success
+    with_http {|srv, dr, url|
+      proxy_log = StringIO.new(''.dup)
+      proxy_logger = WEBrick::Log.new(proxy_log, WEBrick::BasicLog::WARN)
+      proxy_auth_log = ''.dup
+      proxy = WEBrick::HTTPProxyServer.new({
+        :ServerType => Thread,
+        :Logger => proxy_logger,
+        :AccessLog => [[NullLog, ""]],
+        :ProxyAuthProc => lambda {|req, res|
+          proxy_auth_log << req.request_line
+          if req["Proxy-Authorization"] != "Basic #{['user:pass'].pack('m').chomp}"
+            raise WEBrick::HTTPStatus::ProxyAuthenticationRequired
+          end
+        },
+        :BindAddress => '127.0.0.1',
+        :Port => 0})
+      _, proxy_port, _, proxy_host = proxy.listeners[0].addr
+      proxy_url = "http://user:pass@#{proxy_host}:#{proxy_port}/"
+      begin
+        th = proxy.start
+        srv.mount_proc("/proxy", lambda { |req, res| res.body = "proxy" } )
+        open("#{url}/proxy", :proxy => proxy_url) {|f|
+          assert_equal("200", f.status[0])
+          assert_equal("proxy", f.read)
+        }
+        assert_match(/#{Regexp.quote url}/, proxy_auth_log); proxy_auth_log.clear
+        assert_equal("", proxy_auth_log); proxy_auth_log.clear
+      ensure
+        proxy.shutdown
+        th.join
+      end
+      assert_equal("", proxy_log.string)
+    }
+  end
+
   def test_redirect
     with_http {|srv, dr, url|
       srv.mount_proc("/r1/") {|req, res| res.status = 301; res["location"] = "#{url}/r2"; res.body = "r1" }
@@ -566,6 +614,24 @@ class TestOpenURI < Test::Unit::TestCase
         assert_equal(content_ej, f.read)
         assert_equal("text/plain", f.content_type)
         assert_equal("euc-jp", f.charset)
+        assert_equal(Encoding::EUC_JP, f.read.encoding)
+      }
+      open("#{url}/ej/", 'r:utf-8') {|f|
+        # override charset with encoding option
+        assert_equal(content_ej.dup.force_encoding('utf-8'), f.read)
+        assert_equal("text/plain", f.content_type)
+        assert_equal("euc-jp", f.charset)
+        assert_equal(Encoding::UTF_8, f.read.encoding)
+      }
+      open("#{url}/ej/", :encoding=>'utf-8') {|f|
+        # override charset with encoding option
+        assert_equal(content_ej.dup.force_encoding('utf-8'), f.read)
+        assert_equal("text/plain", f.content_type)
+        assert_equal("euc-jp", f.charset)
+        assert_equal(Encoding::UTF_8, f.read.encoding)
+      }
+      assert_raise(ArgumentError) {
+        open("#{url}/ej/", 'r:utf-8', :encoding=>'utf-8') {|f| }
       }
       open("#{url}/nc/") {|f|
         assert_equal("aa", f.read)

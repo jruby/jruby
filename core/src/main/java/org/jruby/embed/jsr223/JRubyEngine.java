@@ -1,11 +1,11 @@
 /**
  * **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -214,7 +214,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             }
             return container.callMethod(receiver, method, args, Object.class);
         } catch (Exception e) {
-            if (e.getCause().getMessage().contains("undefined method")) {
+            if (e.getCause() != null && e.getCause().getMessage() != null
+                    && e.getCause().getMessage().contains("undefined method")) {
                 throw wrapMethodException(e);
             }
             throw wrapException(e);
@@ -223,8 +224,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
     }
 
-    private NoSuchMethodException wrapMethodException(Exception e) {
-        return (NoSuchMethodException)new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
+    private static NoSuchMethodException wrapMethodException(Exception e) {
+        return (NoSuchMethodException) new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
     }
 
     public Object invokeFunction(String method, Object... args)
@@ -239,7 +240,8 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             }
             return container.callMethod(container.getProvider().getRuntime().getTopSelf(), method, args, Object.class);
         } catch (Exception e) {
-            if (e.getCause().getMessage().contains("undefined method")) {
+            if (e.getCause() != null && e.getCause().getMessage() != null
+                    && e.getCause().getMessage().contains("undefined method")) {
                 throw wrapMethodException(e);
             }
             throw wrapException(e);

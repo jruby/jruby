@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/caller', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/caller'
 
 describe 'Kernel#caller' do
   it 'is a private method' do
@@ -18,6 +18,12 @@ describe 'Kernel#caller' do
 
   it 'returns an Array of caller locations using a custom limit' do
     locations = KernelSpecs::CallerTest.locations(1, 1)
+
+    locations.length.should == 1
+  end
+
+  it 'returns an Array of caller locations using a range' do
+    locations = KernelSpecs::CallerTest.locations(1..1)
 
     locations.length.should == 1
   end

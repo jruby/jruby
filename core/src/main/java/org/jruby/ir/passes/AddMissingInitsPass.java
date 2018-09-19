@@ -14,7 +14,12 @@ import org.jruby.ir.dataflow.analyses.DefinedVariablesProblem;
 public class AddMissingInitsPass extends CompilerPass {
     @Override
     public String getLabel() {
-        return "AddMissingInitsPass";
+        return "Add Missing Initialization";
+    }
+
+    @Override
+    public String getShortLabel() {
+        return "Add Missing Init.";
     }
 
     @Override

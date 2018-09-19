@@ -36,7 +36,7 @@ class TestVariable < Test::Unit::TestCase
   end
 
   def test_variable
-    assert_instance_of(Fixnum, $$)
+    assert_instance_of(Integer, $$)
 
     # read-only variable
     assert_raise(NameError) do
@@ -90,21 +90,33 @@ class TestVariable < Test::Unit::TestCase
 
   def test_shadowing_local_variables
     bug9486 = '[ruby-core:60501] [Bug #9486]'
-    x = tap {|x| break local_variables}
-    assert_equal([:x, :bug9486], x)
+    assert_equal([:x, :bug9486], tap {|x| break local_variables}, bug9486)
   end
 
   def test_shadowing_block_local_variables
     bug9486 = '[ruby-core:60501] [Bug #9486]'
-    x = tap {|;x| break local_variables}
-    assert_equal([:x, :bug9486], x)
+    assert_equal([:x, :bug9486], tap {|;x| x = x; break local_variables}, bug9486)
+  end
+
+  def test_global_variables
+    gv = global_variables
+    assert_empty(gv.grep(/\A(?!\$)/))
+    assert_nil($~)
+    assert_not_include(gv, :$1)
+    /(\w)(\d)?(.)(.)(.)(.)(.)(.)(.)(.)(\d)?(.)/ =~ "globalglobalglobal"
+    assert_not_nil($~)
+    gv = global_variables - gv
+    assert_include(gv, :$1)
+    assert_not_include(gv, :$2)
+    assert_not_include(gv, :$11)
+    assert_include(gv, :$12)
   end
 
   def test_global_variable_0
     assert_in_out_err(["-e", "$0='t'*1000;print $0"], "", /\At+\z/, [])
   end
 
-  def test_global_variable_poped
+  def test_global_variable_popped
     assert_nothing_raised {
       EnvUtil.suppress_warning {
         eval("$foo; 1")
@@ -112,7 +124,7 @@ class TestVariable < Test::Unit::TestCase
     }
   end
 
-  def test_constant_poped
+  def test_constant_popped
     assert_nothing_raised {
       EnvUtil.suppress_warning {
         eval("TestVariable::Gods; 1")
@@ -125,14 +137,14 @@ class TestVariable < Test::Unit::TestCase
       assert_empty v.instance_variables
       msg = "can't modify frozen #{v.class}"
 
-      assert_raise_with_message(RuntimeError, msg) do
+      assert_raise_with_message(FrozenError, msg) do
         v.instance_variable_set(:@foo, :bar)
       end
 
-      assert_nil v.instance_variable_get(:@foo)
-      refute v.instance_variable_defined?(:@foo)
+      assert_nil EnvUtil.suppress_warning {v.instance_variable_get(:@foo)}
+      assert_not_send([v, :instance_variable_defined?, :@foo])
 
-      assert_raise_with_message(RuntimeError, msg) do
+      assert_raise_with_message(FrozenError, msg) do
         v.remove_instance_variable(:@foo)
       end
     end

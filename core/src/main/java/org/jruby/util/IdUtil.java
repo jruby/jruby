@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -27,6 +27,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 public final class IdUtil {
@@ -90,20 +91,11 @@ public final class IdUtil {
         return false;
     }
 
-    public static boolean isValidConstantName19(String id) {
-        char c;
-        int len;
-        if ((len = id.length()) > 0 && (c = id.charAt(0)) <= 'Z' && c >= 'A') {
-            return isNameString19(id, 1, len);
-        }
-        return false;
-    }
-    
     public static boolean isValidInstanceVariableName(String id) {
         int len;
         if ((len = id.length()) > 1 && '@' == id.charAt(0)) {
             if (isInitialCharacter(id.charAt(1))) {
-                return isNameString19(id, 2, len);
+                return isNameString(id, 2, len);
             }
         }
         return false;
@@ -113,7 +105,7 @@ public final class IdUtil {
         int len;
         if ((len = id.length()) > 2 && '@' == id.charAt(0) && '@' == id.charAt(1)) {
             if (isInitialCharacter(id.charAt(2))) {
-                return isNameString19(id, 3, len);
+                return isNameString(id, 3, len);
             }
         }
         return false;
@@ -122,30 +114,14 @@ public final class IdUtil {
     public static boolean isInitialCharacter(int c) {
         return Character.isAlphabetic(c) || c == '_';
     }
-    
-    public static boolean isNameCharacter(char c) {
-        int letter;
-        return ((letter = c & ~0x20) <= 'Z' && letter >= 'A') ||
-            c == '_' ||
-            (c <= '9' && c >= '0');
-    }
 
-    public static boolean isNameCharacter19(char c) {
+    public static boolean isNameCharacter(char c) {
         return Character.isLetterOrDigit(c) || c == '_';
     }
-    
+
     public static boolean isNameString(String id, int start, int limit) {
         for (int i = start; i < limit; i++) {
             if (!isNameCharacter(id.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static boolean isNameString19(String id, int start, int limit) {
-        for (int i = start; i < limit; i++) {
-            if (!isNameCharacter19(id.charAt(i))) {
                 return false;
             }
         }
@@ -157,9 +133,24 @@ public final class IdUtil {
      * than zero characters, and starts with either an @ or a capital
      * letter.
      */
-    // FIXME: this should go somewhere more generic -- maybe IdUtil
     public static final boolean isRubyVariable(String name) {
         char c;
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
     }
+
+    @Deprecated
+    public static boolean isValidConstantName19(String id) {
+        return isValidConstantName(id);
+    }
+
+    @Deprecated
+    public static boolean isNameCharacter19(char c) {
+        return isNameCharacter19(c);
+    }
+
+    @Deprecated
+    public static boolean isNameString19(String id, int start, int limit) {
+        return isNameString(id, start, limit);
+    }
+
 }

@@ -1,0 +1,2 @@
+fails:Addrinfo#listen returns a Socket when no block is given
+fails:Addrinfo#listen yields the Socket if a block is given

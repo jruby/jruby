@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#attr_reader" do
   it "creates a getter for each given attribute name" do
@@ -24,25 +24,12 @@ describe "Module#attr_reader" do
     o.send(:b).should == "test2"
   end
 
-  ruby_version_is ''...'2.2' do
-    it "allows for adding an attr_reader to an immediate" do
-      class TrueClass
-        attr_reader :spec_attr_reader
-      end
-
-      true.instance_variable_set("@spec_attr_reader", "a")
-      true.spec_attr_reader.should == "a"
+  it "not allows for adding an attr_reader to an immediate" do
+    class TrueClass
+      attr_reader :spec_attr_reader
     end
-  end
 
-  ruby_version_is '2.2' do
-    it "not allows for adding an attr_reader to an immediate" do
-      class TrueClass
-        attr_reader :spec_attr_reader
-      end
-
-      lambda { true.instance_variable_set("@spec_attr_reader", "a") }.should raise_error(RuntimeError)
-    end
+    lambda { true.instance_variable_set("@spec_attr_reader", "a") }.should raise_error(RuntimeError)
   end
 
   it "converts non string/symbol/fixnum names to strings using to_str" do
@@ -71,7 +58,14 @@ describe "Module#attr_reader" do
     lambda { c.new.foo }.should raise_error(NoMethodError)
   end
 
-  it "is a private method" do
-    lambda { Class.new.attr_reader(:foo) }.should raise_error(NoMethodError)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:attr_reader, false)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:attr_reader, false)
+    end
   end
 end

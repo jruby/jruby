@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe :rational_equal_value_rat, shared: true do
   it "returns true if self has the same numerator and denominator as the passed argument" do
@@ -34,6 +34,6 @@ describe :rational_equal_value, shared: true do
     obj = mock("Object")
     obj.should_receive(:==).and_return(:result)
 
-    (Rational(3, 4) == obj).should == :result
+    (Rational(3, 4) == obj).should_not be_false
   end
 end

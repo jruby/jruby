@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../enumerable/shared/enumeratorized'
 
 # Modifying a collection while the contents are being iterated
 # gives undefined behavior. See
@@ -55,7 +55,9 @@ describe "Array#rindex" do
   end
 
   it "ignores the block if there is an argument" do
-    [4, 2, 1, 5, 1, 3].rindex(5) { |x| x < 2 }.should == 3
+    -> {
+      [4, 2, 1, 5, 1, 3].rindex(5) { |x| x < 2 }.should == 3
+    }.should complain(/given block not used/)
   end
 
   it "rechecks the array size during iteration" do
@@ -69,7 +71,7 @@ describe "Array#rindex" do
   describe "given no argument and no block" do
     it "produces an Enumerator" do
       enum = [4, 2, 1, 5, 1, 3].rindex
-      enum.should be_an_instance_of(enumerator_class)
+      enum.should be_an_instance_of(Enumerator)
       enum.each { |x| x < 2 }.should == 4
     end
   end

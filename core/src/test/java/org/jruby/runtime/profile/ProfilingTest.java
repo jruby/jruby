@@ -29,6 +29,7 @@ public class ProfilingTest extends TestCase {
         Ruby ruby = Ruby.newInstance( configOne );
 
         assertNull(ruby.getProfilingService());
+
     }
     /**
      * Tests the {@link org.jruby.runtime.profile.ProfilingServiceLookup} too
@@ -43,12 +44,21 @@ public class ProfilingTest extends TestCase {
             configOne.setProfilingMode(RubyInstanceConfig.ProfilingMode.SERVICE);
             Ruby ruby = Ruby.newInstance( configOne );
 
-            assertNotNull( ruby.getProfiledMethods() );
             assertNotNull( ruby.getProfilingService() );
             assertTrue(ruby.getProfilingService() instanceof TestProfilingService);
         } catch( RaiseException e ) {
             //e.printStackTrace();
-            // TODO hwo to mock org.jruby.exceptions.RaiseException: (LoadError) no such file to load -- jruby/profiler/shutdown_hook
+            // TODO how to mock org.jruby.exceptions.RaiseException: (LoadError) no such file to load -- jruby/profiler/shutdown_hook
         }
+    }
+
+    /**
+     * Tests if the profiling service can be configured as java property
+     */
+    public void testProfilingServiceAsJavaProperty() {
+
+        // java -Djruby.cli.profiling.mode=SERVICE -Djruby.cli.profiling.service=org.jruby.runtime.profile.builtin.BuiltinProfilingService -cp jruby.jar org.jruby.Main 
+
+        // TODO how to test it ??
     }
 }

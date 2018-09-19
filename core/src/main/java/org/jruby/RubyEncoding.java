@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,10 +23,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -37,6 +39,8 @@ import java.nio.charset.CodingErrorAction;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
@@ -50,7 +54,6 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
-import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -113,14 +116,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public final Encoding getEncoding() {
-        // TODO: make threadsafe
         if (encoding == null) encoding = getRuntime().getEncodingService().loadEncoding(name);
         return encoding;
     }
 
     private static Encoding extractEncodingFromObject(IRubyObject obj) {
         if (obj instanceof RubyEncoding) return ((RubyEncoding) obj).getEncoding();
-        if (obj instanceof RubySymbol) return ((RubySymbol) obj).asString().getEncoding();
         if (obj instanceof EncodingCapable) return ((EncodingCapable) obj).getEncoding();
 
         return null;
@@ -178,56 +179,67 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return null;
     }
 
-    public static byte[] encodeUTF8(CharSequence cs) {
-        return getUTF8Coder().encode(cs);
-    }
-
     public static byte[] encodeUTF8(String str) {
-        return getUTF8Coder().encode(str);
+        return encodeUTF8((CharSequence) str);
     }
 
-    private static final int CHAR_ARRAY_BASE;
-    private static final int BYTE_ARRAY_BASE;
-    private static final Field VALUE_FIELD;
-    private static final long VALUE_FIELD_OFFSET;
-    static {
-        Field valueField = null;
-        try {
-            valueField = String.class.getDeclaredField("value");
-        } catch (Exception e) {
+    public static byte[] encodeUTF8(CharSequence str) {
+        if (str.length() > CHAR_THRESHOLD) {
+            return getBytes(UTF8.encode(toCharBuffer(str)));
         }
-        VALUE_FIELD = valueField;
-        long valueFieldOffset = -1;
-        try {
-            valueFieldOffset = UnsafeHolder.U.objectFieldOffset(VALUE_FIELD);
-        } catch (Exception e) {
-        }
-        VALUE_FIELD_OFFSET = valueFieldOffset;
-        int charArrayBase = -1;
-        try {
-            charArrayBase = UnsafeHolder.U.arrayBaseOffset(char[].class);
-        } catch (Exception e) {
-        }
-        CHAR_ARRAY_BASE = charArrayBase;
-        int byteArrayBase = -1;
-        try {
-            byteArrayBase = UnsafeHolder.U.arrayBaseOffset(byte[].class);
-        } catch (Exception e) {
-        }
-        BYTE_ARRAY_BASE = byteArrayBase;
+        return getBytes(getUTF8Coder().encode(str));
     }
 
-    public static byte[] encodeUTF16(String str) {
-        if (VALUE_FIELD_OFFSET == -1) return encode(str, UTF16);
-        char[] chars = (char[]) UnsafeHolder.U.getObject(str, VALUE_FIELD_OFFSET);
-        int length = chars.length * 2;
-        byte[] bytes = new byte[length];
-        UnsafeHolder.U.copyMemory(chars, CHAR_ARRAY_BASE, bytes, BYTE_ARRAY_BASE, length);
+    static ByteList doEncodeUTF8(String str) {
+        if (str.length() > CHAR_THRESHOLD) {
+            return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
+        }
+        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+    }
+
+    static ByteList doEncodeUTF8(CharSequence str) {
+        if (str.length() > CHAR_THRESHOLD) {
+            return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
+        }
+        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+    }
+
+    private static CharBuffer toCharBuffer(CharSequence str) {
+        return str instanceof CharBuffer ? (CharBuffer) str : CharBuffer.wrap(str);
+    }
+
+    private static byte[] getBytes(final ByteBuffer buffer) {
+        byte[] bytes = new byte[buffer.limit()];
+        buffer.get(bytes);
         return bytes;
     }
 
+    private static ByteList getByteList(final ByteBuffer buffer, final Encoding enc, final boolean shared) {
+        byte[] bytes; int off;
+        if (!shared && buffer.hasArray()) { // HeapByteBuffer
+            bytes = buffer.array();
+            off = buffer.arrayOffset();
+        } else {
+            bytes = getBytes(buffer);
+            off = 0;
+        }
+        return new ByteList(bytes, off, off + buffer.limit(), enc, false);
+    }
+
+    public static byte[] encodeUTF16(String str) {
+        return encode(str, UTF16);
+    }
+
     public static byte[] encodeUTF16(CharSequence str) {
-        return encodeUTF16(str.toString());
+        return encode(str, UTF16);
+    }
+
+    static ByteList doEncodeUTF16(String str) {
+        return doEncode(str, UTF16, UTF16BEEncoding.INSTANCE);
+    }
+
+    static ByteList doEncodeUTF16(CharSequence str) {
+        return doEncode(str, UTF16, UTF16BEEncoding.INSTANCE);
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {
@@ -235,6 +247,14 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         byte[] bytes = new byte[buffer.limit()];
         buffer.get(bytes);
         return bytes;
+    }
+
+    static ByteList doEncode(String cs, Charset charset, Encoding enc) {
+        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc, false);
+    }
+
+    static ByteList doEncode(CharSequence cs, Charset charset, Encoding enc) {
+        return getByteList(charset.encode(toCharBuffer(cs)), enc, false);
     }
 
     public static byte[] encode(String str, Charset charset) {
@@ -245,11 +265,14 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public static String decodeUTF8(byte[] bytes, int start, int length) {
-        return getUTF8Coder().decode(bytes, start, length);
+        if (length > CHAR_THRESHOLD) {
+            return UTF8.decode(ByteBuffer.wrap(bytes, start, length)).toString();
+        }
+        return getUTF8Coder().decode(bytes, start, length).toString();
     }
 
     public static String decodeUTF8(byte[] bytes) {
-        return getUTF8Coder().decode(bytes);
+        return decodeUTF8(bytes, 0, bytes.length);
     }
 
     public static String decode(byte[] bytes, int start, int length, Charset charset) {
@@ -260,11 +283,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
     }
 
+    /** The maximum number of characters we can encode/decode in our cached buffers */
+    private static final int CHAR_THRESHOLD = 1024;
+
     private static class UTF8Coder {
         private final CharsetEncoder encoder = UTF8.newEncoder();
         private final CharsetDecoder decoder = UTF8.newDecoder();
-        /** The maximum number of characters we can encode/decode in our cached buffers */
-        private static final int CHAR_THRESHOLD = 1024;
         /** The resulting encode/decode buffer sized by the max number of
          * characters (using 4 bytes per char possible for utf-8) */
         private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
@@ -276,63 +300,61 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
 
-        public final byte[] encode(CharSequence cs) {
-            ByteBuffer buffer;
-            if (cs.length() > CHAR_THRESHOLD) {
-                buffer = UTF8.encode(CharBuffer.wrap(cs));
-            } else {
-                buffer = byteBuffer;
-                CharBuffer cbuffer = charBuffer;
-                buffer.clear();
-                cbuffer.clear();
-                cbuffer.put(cs.toString());
-                cbuffer.flip();
-                encoder.encode(cbuffer, buffer, true);
-                buffer.flip();
-            }
+        public final ByteBuffer encode(String str) {
+            ByteBuffer buf = byteBuffer;
+            CharBuffer cbuf = charBuffer;
+            buf.clear();
+            cbuf.clear();
+            cbuf.put(str);
+            cbuf.flip();
+            encoder.encode(cbuf, buf, true);
+            buf.flip();
 
-            byte[] bytes = new byte[buffer.limit()];
-            buffer.get(bytes);
-            return bytes;
+            return buf;
         }
 
-        public final String decode(byte[] bytes, int start, int length) {
-            CharBuffer cbuffer;
-            if (length > CHAR_THRESHOLD) {
-                cbuffer = UTF8.decode(ByteBuffer.wrap(bytes, start, length));
-            } else {
-                cbuffer = charBuffer;
-                ByteBuffer buffer = byteBuffer;
-                cbuffer.clear();
-                buffer.clear();
-                buffer.put(bytes, start, length);
-                buffer.flip();
-                decoder.decode(buffer, cbuffer, true);
-                cbuffer.flip();
-            }
+        public final ByteBuffer encode(CharSequence str) {
+            ByteBuffer buf = byteBuffer;
+            CharBuffer cbuf = charBuffer;
+            buf.clear();
+            cbuf.clear();
+            // NOTE: doesn't matter is we toString here in terms of speed
+            // ... so we "safe" some space at least by not copy-ing char[]
+            for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
+            cbuf.flip();
+            encoder.encode(cbuf, buf, true);
+            buf.flip();
 
-            return cbuffer.toString();
+            return buf;
         }
 
-        public final String decode(byte[] bytes) {
-            return decode(bytes, 0, bytes.length);
+        public final CharBuffer decode(byte[] bytes, int start, int length) {
+            CharBuffer cbuf = charBuffer;
+            ByteBuffer buf = byteBuffer;
+            cbuf.clear();
+            buf.clear();
+            buf.put(bytes, start, length);
+            buf.flip();
+            decoder.decode(buf, cbuf, true);
+            cbuf.flip();
+
+            return cbuf;
         }
+
     }
 
     /**
      * UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
      * See JRUBY-6522
      */
-    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER =
-        new ThreadLocal<SoftReference<UTF8Coder>>();
+    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER = new ThreadLocal<>();
 
     private static UTF8Coder getUTF8Coder() {
         UTF8Coder coder;
         SoftReference<UTF8Coder> ref = UTF8_CODER.get();
         if (ref == null || (coder = ref.get()) == null) {
             coder = new UTF8Coder();
-            ref = new SoftReference<UTF8Coder>(coder);
-            UTF8_CODER.set(ref);
+            UTF8_CODER.set(new SoftReference<>(coder));
         }
 
         return coder;

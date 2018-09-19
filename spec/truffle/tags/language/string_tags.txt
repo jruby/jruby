@@ -1,5 +1,0 @@
-slow:Ruby String literals with a magic frozen comment produce the same object each time
-slow:Ruby String literals with a magic frozen comment produce the same object for literals with the same content
-slow:Ruby String literals with a magic frozen comment produce the same object for literals with the same content in different files
-slow:Ruby String literals with a magic frozen comment produce different objects for literals with the same content in different files if the other file doesn't have the comment
-slow:Ruby String literals with a magic frozen comment produce different objects for literals with the same content in different files if they have different encodings

@@ -1,5 +1,5 @@
 # Initialize $MSPEC_DEBUG
-$MSPEC_DEBUG = false unless defined?($MSPEC_DEBUG)
+$MSPEC_DEBUG ||= false
 
 class ExceptionState
   attr_reader :description, :describe, :it, :exception

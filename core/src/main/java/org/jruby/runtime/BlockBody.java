@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -60,7 +60,12 @@ public abstract class BlockBody {
         return signature;
     }
 
+    public EvalType getEvalType()  {
+        return null; // method should be abstract - isn't due compatibility
+    }
+
     public void setEvalType(EvalType evalType) {
+        // NOOP - but "real" block bodies should track their eval-type
     }
 
     public boolean canCallDirect() {
@@ -68,9 +73,10 @@ public abstract class BlockBody {
     }
 
     public MethodHandle getTestBlockBody() {
+        final MethodHandle testBlockBody = this.testBlockBody;
         if (testBlockBody != null) return testBlockBody;
 
-        return testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
+        return this.testBlockBody = Binder.from(boolean.class, ThreadContext.class, Block.class).drop(0).append(this).invoke(TEST_BLOCK_BODY);
     }
 
     private static final MethodHandle TEST_BLOCK_BODY = Binder.from(boolean.class, Block.class, BlockBody.class).invokeStaticQuiet(MethodHandles.lookup(), BlockBody.class, "testBlockBody");

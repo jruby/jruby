@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 # TODO: Add missing String#[]= specs:
 #   String#[re, idx] = obj
@@ -50,11 +50,11 @@ describe "String#[]= with Fixnum index" do
     str.should == "hello"
   end
 
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a[0] = "bam" }.should raise_error(RuntimeError)
+    lambda { a[0] = "bam" }.should raise_error(frozen_error_class)
   end
 
   it "calls to_int on index" do
@@ -135,7 +135,7 @@ describe "String#[]= with Fixnum index" do
 
     it "encodes the String in an encoding compatible with the replacement" do
       str = " ".force_encoding Encoding::US_ASCII
-      rep = "\xA0".force_encoding Encoding::ASCII_8BIT
+      rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
       str[0] = rep
       str.encoding.should equal(Encoding::ASCII_8BIT)
     end
@@ -193,7 +193,7 @@ describe "String#[]= with String index" do
 
     it "encodes the String in an encoding compatible with the replacement" do
       str = " ".force_encoding Encoding::US_ASCII
-      rep = "\xA0".force_encoding Encoding::ASCII_8BIT
+      rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
       str[" "] = rep
       str.encoding.should equal(Encoding::ASCII_8BIT)
     end
@@ -308,7 +308,7 @@ describe "String#[]= with a Regexp index" do
 
     it "encodes the String in an encoding compatible with the replacement" do
       str = " ".force_encoding Encoding::US_ASCII
-      rep = "\xA0".force_encoding Encoding::ASCII_8BIT
+      rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
       str[/ /] = rep
       str.encoding.should equal(Encoding::ASCII_8BIT)
     end
@@ -431,7 +431,7 @@ describe "String#[]= with a Range index" do
 
     it "encodes the String in an encoding compatible with the replacement" do
       str = " ".force_encoding Encoding::US_ASCII
-      rep = "\xA0".force_encoding Encoding::ASCII_8BIT
+      rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
       str[0..1] = rep
       str.encoding.should equal(Encoding::ASCII_8BIT)
     end
@@ -598,7 +598,7 @@ describe "String#[]= with Fixnum index, count" do
 
     it "encodes the String in an encoding compatible with the replacement" do
       str = " ".force_encoding Encoding::US_ASCII
-      rep = "\xA0".force_encoding Encoding::ASCII_8BIT
+      rep = [160].pack('C').force_encoding Encoding::ASCII_8BIT
       str[0, 1] = rep
       str.encoding.should equal(Encoding::ASCII_8BIT)
     end

@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension("data")
 
@@ -16,11 +16,6 @@ describe "CApiWrappedStruct" do
 
   it "wraps with Data_Wrap_Struct and Data_Get_Struct returns data" do
     a = @s.wrap_struct(1024)
-    @s.get_struct(a).should == 1024
-  end
-
-  it "allows for using NULL as the klass for Data_Wrap_Struct" do
-    a = @s.wrap_struct_null(1024)
     @s.get_struct(a).should == 1024
   end
 

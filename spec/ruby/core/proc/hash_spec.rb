@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Proc#hash" do
   it "is provided" do
@@ -12,11 +12,6 @@ describe "Proc#hash" do
 
   it "is stable" do
     body = proc { :foo }
-    (proc &body).hash.should == (proc &body).hash
-  end
-
-  it "does not depend on whether self is a proc or lambda" do
-    body = proc { :foo }
-    (proc &body).hash.should == (lambda &body).hash
+    proc(&body).hash.should == proc(&body).hash
   end
 end

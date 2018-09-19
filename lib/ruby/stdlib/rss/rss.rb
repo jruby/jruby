@@ -326,7 +326,6 @@ EOC
 
     def inherit_convert_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, *get_file_and_line_from_caller(2))
         def #{attr}_without_inherit
           convert(@#{attr})
@@ -347,7 +346,6 @@ EOC
 
     def uri_convert_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, *get_file_and_line_from_caller(2))
         def #{attr}_without_base
           convert(@#{attr})
@@ -368,7 +366,6 @@ EOC
 
     def convert_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, *get_file_and_line_from_caller(2))
         def #{attr}
           convert(@#{attr})
@@ -377,13 +374,12 @@ EOC
       end
     end
 
-    def yes_clean_other_attr_reader(*attrs)
+    def explicit_clean_other_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, __FILE__, __LINE__ + 1)
           attr_reader(:#{attr})
           def #{attr}?
-            YesCleanOther.parse(@#{attr})
+            ExplicitCleanOther.parse(@#{attr})
           end
         EOC
       end
@@ -391,7 +387,6 @@ EOC
 
     def yes_other_attr_reader(*attrs)
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, __FILE__, __LINE__ + 1)
           attr_reader(:#{attr})
           def #{attr}?
@@ -409,7 +404,6 @@ EOC
       end
       separator ||= ", "
       attrs.each do |attr|
-        attr = attr.id2name if attr.kind_of?(Integer)
         module_eval(<<-EOC, __FILE__, __LINE__ + 1)
           attr_reader(:#{attr})
           def #{attr}_content
@@ -550,7 +544,7 @@ EOC
 EOC
     end
 
-    def yes_clean_other_writer(name, disp_name=name)
+    def explicit_clean_other_writer(name, disp_name=name)
       module_eval(<<-EOC, __FILE__, __LINE__ + 1)
         def #{name}=(value)
           value = (value ? "yes" : "no") if [true, false].include?(value)
@@ -602,11 +596,10 @@ EOC
 
       def #{accessor_name}=(*args)
         receiver = self.class.name
-        warn("Warning:\#{caller.first.sub(/:in `.*'\z/, '')}: " \
-             "Don't use `\#{receiver}\##{accessor_name} = XXX'/" \
+        warn("Don't use `\#{receiver}\##{accessor_name} = XXX'/" \
              "`\#{receiver}\#set_#{accessor_name}(XXX)'. " \
              "Those APIs are not sense of Ruby. " \
-             "Use `\#{receiver}\##{plural_name} << XXX' instead of them.")
+             "Use `\#{receiver}\##{plural_name} << XXX' instead of them.", uplevel: 1)
         if args.size == 1
           @#{accessor_name}.push(args[0])
         else
@@ -769,8 +762,8 @@ EOC
           text_type_writer name, disp_name
         when :content
           content_writer name, disp_name
-        when :yes_clean_other
-          yes_clean_other_writer name, disp_name
+        when :explicit_clean_other
+          explicit_clean_other_writer name, disp_name
         when :yes_other
           yes_other_writer name, disp_name
         when :csv
@@ -788,8 +781,8 @@ EOC
           inherit_convert_attr_reader name
         when :uri
           uri_convert_attr_reader name
-        when :yes_clean_other
-          yes_clean_other_attr_reader name
+        when :explicit_clean_other
+          explicit_clean_other_attr_reader name
         when :yes_other
           yes_other_attr_reader name
         when :csv
@@ -963,7 +956,7 @@ EOC
             children = child
             children.any? {|c| c.have_required_elements?}
           else
-            !child.to_s.empty?
+            not child.nil?
           end
         else
           true
@@ -1241,7 +1234,7 @@ EOC
         __send__(self.class.xml_getter).to_s
       else
         _content = content
-        _content = [_content].pack("m").delete("\n") if need_base64_encode?
+        _content = [_content].pack("m0") if need_base64_encode?
         h(_content)
       end
     end

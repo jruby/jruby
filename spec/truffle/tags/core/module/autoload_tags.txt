@@ -1,3 +1,0 @@
-fails:Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
-fails:Module#autoload (concurrently) blocks others threads while doing an autoload
-fails:Module#autoload shares the autoload request across dup'ed copies of modules

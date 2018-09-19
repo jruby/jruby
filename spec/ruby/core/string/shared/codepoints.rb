@@ -1,4 +1,4 @@
-
+# -*- encoding: binary -*-
 describe :string_codepoints, shared: true do
   it "raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator" do
     s = "\xDF".force_encoding(Encoding::UTF_8)
@@ -48,7 +48,7 @@ describe :string_codepoints, shared: true do
     s.should == s2
   end
 
-  it "is synonomous with #bytes for Strings which are single-byte optimisable" do
+  it "is synonymous with #bytes for Strings which are single-byte optimisable" do
     s = "(){}".encode('ascii')
     s.ascii_only?.should be_true
     s.send(@method).to_a.should == s.bytes.to_a

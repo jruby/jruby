@@ -1,10 +1,11 @@
-/***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+/*
+ ***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
- * License Version 1.0 (the "License"); you may not use this file
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -15,7 +16,7 @@
  * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,6 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.test;
 
 import org.jruby.Ruby;
@@ -35,6 +37,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author chadfowler
@@ -192,5 +195,21 @@ public class TestRubyHash extends TestRubyBase {
     // https://github.com/jruby/jruby/issues/2591
     public void testDoubleQuotedUtf8HashKey() throws Exception {
         assertEquals("UTF-8", eval("# encoding: utf-8\n h = { \"Ãa1\": true }\n puts h.keys.first.encoding"));
+    }
+
+    public void testPutExisting() {
+        Ruby ruby = Ruby.newInstance();
+        IRubyObject hash = ruby.evalScriptlet("{ \"Jane Doe\" => 10, \"Jim Doe\" => 6 }");
+        assertTrue(RubyHash.class.isInstance(hash));
+        RubyHash rubyHash = (RubyHash) hash;
+        assertEquals(10L, rubyHash.put("Jane Doe", 42));
+    }
+
+    public void testPutNotExisting() {
+        Ruby ruby = Ruby.newInstance();
+        IRubyObject hash = ruby.evalScriptlet("{ \"Jim Doe\" => 6 }");
+        assertTrue(RubyHash.class.isInstance(hash));
+        RubyHash rubyHash = (RubyHash) hash;
+        assertEquals(null, rubyHash.put("Jane Doe", 42));
     }
 }

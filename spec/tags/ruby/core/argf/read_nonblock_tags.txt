@@ -1,2 +1,0 @@
-fails:ARGF.read_nonblock treats second nil argument as no output buffer
-fails:ARGF.read_nonblock with STDIN returns :wait_readable when the :exception is set to false

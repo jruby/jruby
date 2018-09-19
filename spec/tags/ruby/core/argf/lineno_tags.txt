@@ -1,2 +1,0 @@
-fails:ARGF.lineno returns the current line number on each file
-fails:ARGF.lineno aliases to $.

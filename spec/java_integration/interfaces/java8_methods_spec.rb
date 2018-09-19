@@ -134,8 +134,6 @@ describe "an interface (Java 8+)" do
       expect(i).to eql 10
     end ).to eql 2
 
-    pending "TODO: Predicate#test won't work as it collides with Ruby method"
-
     ret = Java::Java8Implemtor.withPredicateCall([ ]) { |obj| obj.empty? }
     expect( ret ).to be true
     ret = Java::Java8Implemtor.withPredicateCall('x') { |obj| obj.empty? }

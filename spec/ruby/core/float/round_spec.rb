@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Float#round" do
   it "returns the nearest Integer" do
@@ -8,8 +8,13 @@ describe "Float#round" do
     -1.4.round.should == -1
     -2.8.round.should == -3
     0.0.round.should == 0
-    0.49999999999999994.round.should == 0 # see http://jira.codehaus.org/browse/JRUBY-5048
-    -0.49999999999999994.round.should == 0
+  end
+
+  platform_is_not :mingw32 do
+    it "returns the nearest Integer for Float near the limit" do
+      0.49999999999999994.round.should == 0
+      -0.49999999999999994.round.should == 0
+    end
   end
 
   it "raises FloatDomainError for exceptional values" do
@@ -65,15 +70,32 @@ describe "Float#round" do
     0.42.round(2.0**30).should == 0.42
   end
 
+  it "returns big values rounded to nearest" do
+    +2.5e20.round(-20).should   eql( +3 * 10 ** 20  )
+    -2.5e20.round(-20).should   eql( -3 * 10 ** 20  )
+  end
+
   # redmine #5272
   it "returns rounded values for big values" do
-    +2.5e20.round(-20).should   eql( +3 * 10 ** 20  )
     +2.4e20.round(-20).should   eql( +2 * 10 ** 20  )
-    -2.5e20.round(-20).should   eql( -3 * 10 ** 20  )
     -2.4e20.round(-20).should   eql( -2 * 10 ** 20  )
     +2.5e200.round(-200).should eql( +3 * 10 ** 200 )
     +2.4e200.round(-200).should eql( +2 * 10 ** 200 )
     -2.5e200.round(-200).should eql( -3 * 10 ** 200 )
     -2.4e200.round(-200).should eql( -2 * 10 ** 200 )
+  end
+
+  ruby_version_is "2.4" do
+    it "returns different rounded values depending on the half option" do
+      2.5.round(half: :up).should      eql(3)
+      2.5.round(half: :down).should    eql(2)
+      2.5.round(half: :even).should    eql(2)
+      3.5.round(half: :up).should      eql(4)
+      3.5.round(half: :down).should    eql(3)
+      3.5.round(half: :even).should    eql(4)
+      (-2.5).round(half: :up).should   eql(-3)
+      (-2.5).round(half: :down).should eql(-2)
+      (-2.5).round(half: :even).should eql(-2)
+    end
   end
 end

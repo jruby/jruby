@@ -1,0 +1,1 @@
+fails:BigDecimal#> properly handles NaN values

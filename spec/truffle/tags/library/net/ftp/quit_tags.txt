@@ -1,3 +1,0 @@
-fails:Net::FTP#quit sends the QUIT command to the server
-fails:Net::FTP#quit does not close the socket automagically
-fails:Net::FTP#quit returns nil

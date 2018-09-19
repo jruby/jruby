@@ -1,1 +1,0 @@
-fails:Addrinfo#canonname returns the canonical name for a host

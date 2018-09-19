@@ -2,6 +2,7 @@
 require 'webrick'
 require 'zlib'
 require 'erb'
+require 'uri'
 
 require 'rubygems'
 require 'rubygems/rdoc'
@@ -68,7 +69,7 @@ class Gem::Server
         <h1>Summary</h1>
   <p>There are <%=values["gem_count"]%> gems installed:</p>
   <p>
-  <%= values["specs"].map { |v| "<a href\"##{u v["name"]}\">#{h v["name"]}</a>" }.join ', ' %>.
+  <%= values["specs"].map { |v| "<a href=\"##{u v["name"]}\">#{h v["name"]}</a>" }.join ', ' %>.
   <h1>Gems</h1>
 
   <dl>
@@ -81,20 +82,20 @@ class Gem::Server
     <b><%=h spec["name"]%> <%=h spec["version"]%></b>
 
     <% if spec["ri_installed"] || spec["rdoc_installed"] then %>
-      <a href="<%=u spec["doc_path"]%>">[rdoc]</a>
+      <a href="<%=spec["doc_path"]%>">[rdoc]</a>
     <% else %>
       <span title="rdoc not installed">[rdoc]</span>
     <% end %>
 
     <% if spec["homepage"] then %>
-      <a href="<%=u spec["homepage"]%>" title="<%=h spec["homepage"]%>">[www]</a>
+      <a href="<%=uri_encode spec["homepage"]%>" title="<%=h spec["homepage"]%>">[www]</a>
     <% else %>
       <span title="no homepage available">[www]</span>
     <% end %>
 
     <% if spec["has_deps"] then %>
      - depends on
-      <%= spec["dependencies"].map { |v| "<a href=\"##{u v["name"]}>#{h v["name"]}</a>" }.join ', ' %>.
+      <%= spec["dependencies"].map { |v| "<a href=\"##{u v["name"]}\">#{h v["name"]}</a>" }.join ', ' %>.
     <% end %>
     </dt>
     <dd>
@@ -455,6 +456,12 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     end.max
   end
 
+  def uri_encode(str)
+    str.gsub(URI::UNSAFE) do |match|
+      match.each_byte.map { |c| sprintf('%%%02X', c.ord) }.join
+    end
+  end
+
   def doc_root gem_name
     if have_rdoc_4_plus? then
       "/doc_root/#{u gem_name}/"
@@ -566,19 +573,11 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
     add_date res
 
     case req.request_uri.path
-    when %r|^/quick/(Marshal.#{Regexp.escape Gem.marshal_version}/)?(.*?)-([0-9.]+[^-]*?)(-.*?)?\.gemspec\.rz$| then
-      marshal_format, name, version, platform = $1, $2, $3, $4
-      specs = Gem::Specification.find_all_by_name name, version
+    when %r|^/quick/(Marshal.#{Regexp.escape Gem.marshal_version}/)?(.*?)\.gemspec\.rz$| then
+      marshal_format, full_name = $1, $2
+      specs = Gem::Specification.find_all_by_full_name(full_name)
 
-      selector = [name, version, platform].map(&:inspect).join ' '
-
-      platform = if platform then
-                   Gem::Platform.new platform.sub(/^-/, '')
-                 else
-                   Gem::Platform::RUBY
-                 end
-
-      specs = specs.select { |s| s.platform == platform }
+      selector = full_name.inspect
 
       if specs.empty? then
         res.status = 404
@@ -624,6 +623,18 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
       executables = nil if executables.empty?
       executables.last["is_last"] = true if executables
 
+      # Pre-process spec homepage for safety reasons
+      begin
+        homepage_uri = URI.parse(spec.homepage)
+        if [URI::HTTP, URI::HTTPS].member? homepage_uri.class
+          homepage_uri = spec.homepage
+        else
+          homepage_uri = "."
+        end
+      rescue URI::InvalidURIError
+        homepage_uri = "."
+      end
+
       specs << {
         "authors"             => spec.authors.sort.join(", "),
         "date"                => spec.date.to_s,
@@ -633,7 +644,7 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
         "only_one_executable" => (executables && executables.size == 1),
         "full_name"           => spec.full_name,
         "has_deps"            => !deps.empty?,
-        "homepage"            => spec.homepage,
+        "homepage"            => homepage_uri,
         "name"                => spec.name,
         "rdoc_installed"      => Gem::RDoc.new(spec).rdoc_installed?,
         "ri_installed"        => Gem::RDoc.new(spec).ri_installed?,
@@ -650,7 +661,7 @@ div.method-source-code pre { color: #ffdead; overflow: hidden; }
       "only_one_executable" => true,
       "full_name" => "rubygems-#{Gem::VERSION}",
       "has_deps" => false,
-      "homepage" => "http://docs.rubygems.org/",
+      "homepage" => "http://guides.rubygems.org/",
       "name" => 'rubygems',
       "ri_installed" => true,
       "summary" => "RubyGems itself",

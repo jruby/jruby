@@ -1,4 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../../../spec_helper'
 
 with_feature :encoding do
   describe "Encoding::Converter#primitive_convert" do
@@ -71,17 +72,16 @@ with_feature :encoding do
       result.should == "ab"
     end
 
-    it "uses destination bytesize as the maximumn bytesize of the destination buffer" do
-      source = "glark"
+    it "uses destination bytesize as the maximum bytesize of the destination buffer" do
       dest = ""
-      @ec.primitive_convert("glark",dest, nil, 1)
+      @ec.primitive_convert("glark", dest, nil, 1)
       dest.bytesize.should == 1
     end
 
     it "allows a destination buffer of unlimited size if destination bytesize is nil" do
       source = "glark".force_encoding('utf-8')
       dest = ""
-      @ec.primitive_convert("glark",dest, nil, nil)
+      @ec.primitive_convert("glark", dest, nil, nil)
       dest.bytesize.should == source.bytesize
     end
 
@@ -89,7 +89,7 @@ with_feature :encoding do
       @ec.primitive_convert("","",nil,nil, {after_output: true}).should == :finished
     end
 
-    it "sets the destination buffer's encoding to the destination encoding if the conversion suceeded" do
+    it "sets the destination buffer's encoding to the destination encoding if the conversion succeeded" do
       dest = "".force_encoding('utf-8')
       dest.encoding.should == Encoding::UTF_8
       @ec.primitive_convert("\u{98}",dest).should == :finished

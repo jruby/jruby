@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/enumerable_enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/enumerable_enumeratorized'
 
 describe "Enumerable#reject" do
   it "returns an array of the elements for which block is false" do
@@ -13,7 +13,7 @@ describe "Enumerable#reject" do
   end
 
   it "returns an Enumerator if called without a block" do
-    EnumerableSpecs::Numerous.new.reject.should be_an_instance_of(enumerator_class)
+    EnumerableSpecs::Numerous.new.reject.should be_an_instance_of(Enumerator)
   end
 
   it "gathers whole arrays as elements when each yields multiple" do

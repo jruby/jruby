@@ -13,7 +13,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 
 public class RegexpOptions implements Cloneable {
-    private static ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'});    
+
+    private static final ByteList WINDOWS31J = new ByteList(new byte[] {'W', 'i', 'n', 'd', 'o', 'w', 's', '-', '3', '1', 'J'}, false);
+
     public static final RegexpOptions NULL_OPTIONS = new RegexpOptions(KCode.NONE, true);
     
     public RegexpOptions() {
@@ -252,10 +254,10 @@ public class RegexpOptions implements Cloneable {
     }
 
     @Override
-    public Object clone() {
+    public RegexpOptions clone() {
         try {
-            return super.clone();
-        } catch (CloneNotSupportedException cnse) {throw new RuntimeException(cnse);}
+            return (RegexpOptions) super.clone();
+        } catch (CloneNotSupportedException ex) { throw new AssertionError(ex); }
     }
 
     @Override

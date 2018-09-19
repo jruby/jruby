@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems'
 
@@ -8,7 +8,7 @@ class TestConfig < Gem::TestCase
     util_make_gems
     spec = Gem::Specification.find_by_name("a")
     spec.activate
-    assert_equal "#{spec.full_gem_path}/data/a", Gem.datadir('a')
+    assert_equal "#{spec.full_gem_path}/data/a", spec.datadir
   end
 
   def test_good_rake_path_is_escaped

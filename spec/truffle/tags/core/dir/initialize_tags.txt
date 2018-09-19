@@ -1,1 +1,0 @@
-fails:Dir#initialize calls #to_path on non-String arguments

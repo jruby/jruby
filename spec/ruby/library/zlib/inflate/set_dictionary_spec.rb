@@ -1,4 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../../../spec_helper'
 require 'zlib'
 
 describe "Zlib::Inflate#set_dictionary" do
@@ -17,4 +18,3 @@ describe "Zlib::Inflate#set_dictionary" do
     i.finish.should == 'abcdefghij'
   end
 end
-

@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "IO#inspect" do
   after :each do
@@ -15,5 +15,9 @@ describe "IO#inspect" do
     @r, @w = IO.pipe
     @r.close
     @r.inspect.should include("(closed)")
+  end
+
+  it "reports IO as its Method object's owner" do
+    IO.instance_method(:inspect).owner.should == IO
   end
 end

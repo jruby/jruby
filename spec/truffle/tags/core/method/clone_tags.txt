@@ -1,1 +1,0 @@
-fails:Method#clone returns a copy of the method

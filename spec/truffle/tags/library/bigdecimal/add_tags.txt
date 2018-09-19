@@ -1,2 +1,0 @@
-fails:BigDecimal#add raises ArgumentError when precision parameter is negative
-fails:BigDecimal#add raises TypeError when adds nil

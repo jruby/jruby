@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 begin
   require_relative 'helper'
 rescue LoadError
@@ -9,8 +9,6 @@ module Fiddle
     def dlwrap arg
       Fiddle.dlwrap arg
     end
-
-    include Test::Unit::Assertions
 
     def test_cptr_to_int
       null = Fiddle::NULL
@@ -35,7 +33,7 @@ module Fiddle
     end
 
     def test_to_str
-      str = "hello world"
+      str = Marshal.load(Marshal.dump("hello world"))
       ptr = Pointer[str]
 
       assert_equal 3, ptr.to_str(3).length
@@ -46,7 +44,7 @@ module Fiddle
     end
 
     def test_to_s
-      str = "hello world"
+      str = Marshal.load(Marshal.dump("hello world"))
       ptr = Pointer[str]
 
       assert_equal 3, ptr.to_s(3).length
@@ -202,7 +200,7 @@ module Fiddle
         assert_equal(str[0].ord, ptr[0])
         assert_equal(str[1].ord, ptr[1])
       }
-      str = 'abc'
+      str = Marshal.load(Marshal.dump('abc'))
       ptr = Pointer[str]
       check.call(str, ptr)
 

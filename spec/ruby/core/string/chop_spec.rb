@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#chop" do
   it "removes the final character" do
@@ -115,14 +115,14 @@ describe "String#chop!" do
     "".chop!.should be_nil
   end
 
-  it "raises a RuntimeError on a frozen instance that is modified" do
-    lambda { "string\n\r".freeze.chop! }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen instance that is modified" do
+    lambda { "string\n\r".freeze.chop! }.should raise_error(frozen_error_class)
   end
 
   # see [ruby-core:23666]
-  it "raises a RuntimeError on a frozen instance that would not be modified" do
+  it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
     a = ""
     a.freeze
-    lambda { a.chop! }.should raise_error(RuntimeError)
+    lambda { a.chop! }.should raise_error(frozen_error_class)
   end
 end

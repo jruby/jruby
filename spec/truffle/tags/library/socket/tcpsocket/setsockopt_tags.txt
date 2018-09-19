@@ -1,5 +1,0 @@
-fails:TCPSocket#setsockopt using constants sets the TCP nodelay to 1
-fails:TCPSocket#setsockopt using symbols sets the TCP nodelay to 1
-fails:TCPSocket#setsockopt using symbols without prefix sets the TCP nodelay to 1
-fails:TCPSocket#setsockopt using strings sets the TCP nodelay to 1
-fails:TCPSocket#setsockopt using strings without prefix sets the TCP nodelay to 1

@@ -1,0 +1,4 @@
+fails:String#upcase works for all of Unicode
+fails:String#upcase! modifies self in place for all of Unicode
+fails:String#upcase full Unicode case mapping updates string metadata
+fails:String#upcase! full Unicode case mapping updates string metadata for self

@@ -1,2 +1,0 @@
-fails:OpenSSL::Config#freeze needs to be reviewed for completeness
-fails:OpenSSL::Config#freeze freezes

@@ -1,1 +1,0 @@
-fails:ARGF.binmode sets the file's encoding to ASCII-8BIT

@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension("object")
 
@@ -47,6 +47,15 @@ describe "CApiObject" do
   end
 
   class DescObjectTest < ObjectTest
+  end
+
+  class MethodArity
+    def one;    end
+    def two(a); end
+    def three(*a);  end
+    def four(a, b); end
+    def five(a, b, *c);    end
+    def six(a, b, *c, &d); end
   end
 
   describe "rb_obj_alloc" do
@@ -112,6 +121,36 @@ describe "CApiObject" do
     end
   end
 
+  describe "rb_obj_method_arity" do
+    before :each do
+      @obj = MethodArity.new
+    end
+
+    it "returns 0 when the method takes no arguments" do
+      @o.rb_obj_method_arity(@obj, :one).should == 0
+    end
+
+    it "returns 1 when the method takes a single, required argument" do
+      @o.rb_obj_method_arity(@obj, :two).should == 1
+    end
+
+    it "returns -1 when the method takes a variable number of arguments" do
+      @o.rb_obj_method_arity(@obj, :three).should == -1
+    end
+
+    it "returns 2 when the method takes two required arguments" do
+      @o.rb_obj_method_arity(@obj, :four).should == 2
+    end
+
+    it "returns -N-1 when the method takes N required and variable additional arguments" do
+      @o.rb_obj_method_arity(@obj, :five).should == -3
+    end
+
+    it "returns -N-1 when the method takes N required, variable additional, and a block argument" do
+      @o.rb_obj_method_arity(@obj, :six).should == -3
+    end
+  end
+
   describe "rb_method_boundp" do
     it "returns true when the given method is bound" do
       @o.rb_method_boundp(Object, :class, true).should == true
@@ -134,8 +173,17 @@ describe "CApiObject" do
   end
 
   describe "rb_require" do
+    before :each do
+      @saved_loaded_features = $LOADED_FEATURES.dup
+      $foo = nil
+    end
+
+    after :each do
+      $foo = nil
+      $LOADED_FEATURES.replace @saved_loaded_features
+    end
+
     it "requires a ruby file" do
-      $foo.should == nil
       $:.unshift File.dirname(__FILE__)
       @o.rb_require()
       $foo.should == 7
@@ -265,8 +313,8 @@ describe "CApiObject" do
 
     it "does not rescue exceptions raised by #to_ary" do
       obj = mock("to_ary")
-      obj.should_receive(:to_ary).and_raise(RuntimeError)
-      lambda { @o.rb_check_array_type obj }.should raise_error(RuntimeError)
+      obj.should_receive(:to_ary).and_raise(frozen_error_class)
+      lambda { @o.rb_check_array_type obj }.should raise_error(frozen_error_class)
     end
   end
 
@@ -356,6 +404,31 @@ describe "CApiObject" do
     end
   end
 
+  describe "FL_ABLE" do
+    it "returns correct boolean for type" do
+      @o.FL_ABLE(Object.new).should be_true
+      @o.FL_ABLE(true).should be_false
+      @o.FL_ABLE(nil).should be_false
+      @o.FL_ABLE(1).should be_false
+    end
+  end
+
+  describe "FL_TEST" do
+    it "returns correct status for FL_TAINT" do
+      obj = Object.new
+      @o.FL_TEST(obj, "FL_TAINT").should == 0
+      obj.taint
+      @o.FL_TEST(obj, "FL_TAINT").should_not == 0
+    end
+
+    it "returns correct status for FL_FREEZE" do
+      obj = Object.new
+      @o.FL_TEST(obj, "FL_FREEZE").should == 0
+      obj.freeze
+      @o.FL_TEST(obj, "FL_FREEZE").should_not == 0
+    end
+  end
+
   describe "rb_inspect" do
     it "returns a string with the inspect representation" do
       @o.rb_inspect(nil).should == "nil"
@@ -371,6 +444,13 @@ describe "CApiObject" do
       @o.rb_class_of(0).should == Fixnum
       @o.rb_class_of(0.1).should == Float
       @o.rb_class_of(ObjectTest.new).should == ObjectTest
+    end
+
+    it "returns the singleton class if it exists" do
+      o = ObjectTest.new
+      @o.rb_class_of(o).should equal ObjectTest
+      s = o.singleton_class
+      @o.rb_class_of(o).should equal s
     end
   end
 
@@ -586,14 +666,14 @@ describe "CApiObject" do
       obj.tainted?.should == true
     end
 
-    it "raises a RuntimeError if the object passed is frozen" do
-      lambda { @o.rb_obj_taint("".freeze) }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} if the object passed is frozen" do
+      lambda { @o.rb_obj_taint("".freeze) }.should raise_error(frozen_error_class)
     end
   end
 
   describe "rb_check_frozen" do
-    it "raises a RuntimeError if the obj is frozen" do
-      lambda { @o.rb_check_frozen("".freeze) }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} if the obj is frozen" do
+      lambda { @o.rb_check_frozen("".freeze) }.should raise_error(frozen_error_class)
     end
 
     it "does nothing when object isn't frozen" do
@@ -603,8 +683,14 @@ describe "CApiObject" do
   end
 
   describe "rb_any_to_s" do
-    it "converts obj to string" do
+    it "converts an Integer to string" do
       obj = 1
+      i = @o.rb_any_to_s(obj)
+      i.should be_kind_of(String)
+    end
+
+    it "converts an Object to string" do
+      obj = Object.new
       i = @o.rb_any_to_s(obj)
       i.should be_kind_of(String)
     end

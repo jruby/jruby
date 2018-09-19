@@ -24,12 +24,13 @@ require 'jruby/compiler/java_signature'
 #
 class Class
   JClass = java.lang.Class
+  private_constant :JClass
 
   ##
-  # Get an array of all known subclasses of this class. If recursive == true,
-  # include all descendants.
+  # @deprecated since JRuby 9.2, use `JRuby.subclasses_of(klass)`
   def subclasses(recursive = false)
-    JRuby.reference0(self).subclasses(recursive).to_a.freeze
+    warn("klass.subclasses is deprecated, use JRuby.subclasses(klass) instead", uplevel: 1)
+    JRuby.subclasses(self, all: recursive)
   end
 
   ##

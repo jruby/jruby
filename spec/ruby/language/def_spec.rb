@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/def', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/def'
 
 # Language-level method behaviour
 describe "Redefining a method" do
@@ -165,49 +165,32 @@ describe "An instance method with a default argument" do
     foo(2,3,3).should == [2,3,[3]]
   end
 
-  ruby_version_is ""..."2.2" do
-    it "calls a method with the same name as the local" do
-      def bar
-        1
-      end
-      def foo(bar = bar)
-        bar
-      end
-      foo.should == 1
-      foo(2).should == 2
+  it "shadows an existing method with the same name as the local" do
+    def bar
+      1
     end
+    -> {
+      eval "def foo(bar = bar)
+        bar
+      end"
+    }.should complain(/circular argument reference/)
+    foo.should == nil
+    foo(2).should == 2
   end
 
-  ruby_version_is "2.2" do
-    it "shadows an existing method with the same name as the local" do
-      def bar
-        1
-      end
-      def foo(bar = bar)
-        bar
-      end
-      foo.should == nil
-      foo(2).should == 2
+  it "calls a method with the same name as the local when explicitly using ()" do
+    def bar
+      1
     end
-
-    it "calls a method with the same name as the local when explicitly using ()" do
-      def bar
-        1
-      end
-      def foo(bar = bar())
-        bar
-      end
-      foo.should == 1
-      foo(2).should == 2
+    def foo(bar = bar())
+      bar
     end
+    foo.should == 1
+    foo(2).should == 2
   end
 end
 
 describe "A singleton method definition" do
-  after :all do
-    Object.__send__(:remove_class_variable, :@@a)
-  end
-
   it "can be declared for a local variable" do
     a = Object.new
     def a.foo
@@ -232,14 +215,6 @@ describe "A singleton method definition" do
     $__a__.foo.should == 7
   end
 
-  it "can be declared for a class variable" do
-    @@a = Object.new
-    def @@a.foo
-      8
-    end
-    @@a.foo.should == 8
-  end
-
   it "can be declared with an empty method body" do
     class DefSpec
       def self.foo;end
@@ -259,10 +234,10 @@ describe "A singleton method definition" do
     (obj==2).should == 2
   end
 
-  it "raises RuntimeError if frozen" do
+  it "raises #{frozen_error_class} if frozen" do
     obj = Object.new
     obj.freeze
-    lambda { def obj.foo; end }.should raise_error(RuntimeError)
+    lambda { def obj.foo; end }.should raise_error(frozen_error_class)
   end
 end
 
@@ -410,12 +385,12 @@ describe "A method definition inside a metaclass scope" do
     lambda { Object.new.a_singleton_method }.should raise_error(NoMethodError)
   end
 
-  it "raises RuntimeError if frozen" do
+  it "raises #{frozen_error_class} if frozen" do
     obj = Object.new
     obj.freeze
 
     class << obj
-      lambda { def foo; end }.should raise_error(RuntimeError)
+      lambda { def foo; end }.should raise_error(frozen_error_class)
     end
   end
 end
@@ -442,6 +417,8 @@ describe "A nested method definition" do
   it "creates a class method when evaluated in a class method" do
     class DefSpecNested
       class << self
+        # cleanup
+        remove_method :a_class_method if method_defined? :a_class_method
         def create_class_method
           def a_class_method;self;end
           a_class_method
@@ -511,7 +488,7 @@ describe "A nested method definition" do
     DefSpecNested.should_not have_instance_method :body_method
   end
 
-  it "defines methods as public by default" do
+  it "creates an instance method inside Class.new" do
     cls = Class.new do
       def do_def
         def new_def
@@ -523,6 +500,41 @@ describe "A nested method definition" do
     obj = cls.new
     obj.do_def
     obj.new_def.should == 1
+
+    cls.new.new_def.should == 1
+
+    -> { Object.new.new_def }.should raise_error(NoMethodError)
+  end
+end
+
+describe "A method definition always resets the visibility to public for nested definitions" do
+  it "in Class.new" do
+    cls = Class.new do
+      private
+      def do_def
+        def new_def
+          1
+        end
+      end
+    end
+
+    obj = cls.new
+    -> { obj.do_def }.should raise_error(NoMethodError, /private/)
+    obj.send :do_def
+    obj.new_def.should == 1
+
+    cls.new.new_def.should == 1
+
+    -> { Object.new.new_def }.should raise_error(NoMethodError)
+  end
+
+  it "at the toplevel" do
+    obj = Object.new
+    -> { obj.toplevel_define_other_method }.should raise_error(NoMethodError, /private/)
+    toplevel_define_other_method
+    nested_method_in_toplevel_method.should == 42
+
+    Object.new.nested_method_in_toplevel_method.should == 42
   end
 end
 
@@ -699,8 +711,8 @@ describe "a method definition that sets more than one default parameter all to t
   end
 
   it "assigns the parameters different objects across different default calls" do
-    a, b, c = foo
-    d, e, f = foo
+    a, _b, _c = foo
+    d, _e, _f = foo
     a.should_not equal(d)
   end
 

@@ -1,2 +1,0 @@
-src: ./*.c
-out: ../../../../../lib/ruby/truffle/cext/ruby.su

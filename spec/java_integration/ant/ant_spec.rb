@@ -22,8 +22,12 @@ describe Ant, '.load' do
   after :each do
     ENV['JAVA_HOME'] = @previous_java_home
     Ant.instance_eval do
-      remove_const(:JAVA_HOME)
-      const_set(:JAVA_HOME, @previous_java_home)
+      begin
+        remove_const(:JAVA_HOME)
+        const_set(:JAVA_HOME, @previous_java_home)
+      rescue NameError
+        # ignore, JAVA_HOME constant is not necessarily set now
+      end
     end
   end
 

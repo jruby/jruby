@@ -1,6 +1,6 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.IRClosure;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -18,7 +18,7 @@ public class ClosureLocalVariable extends LocalVariable {
     // Can only transition in one direction (from true to false)
     private boolean definedLocally;
 
-    public ClosureLocalVariable(String name, int scopeDepth, int location) {
+    public ClosureLocalVariable(RubySymbol name, int scopeDepth, int location) {
         super(name, scopeDepth, location);
         this.definedLocally = true;
     }

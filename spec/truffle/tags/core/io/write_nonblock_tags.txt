@@ -1,1 +1,0 @@
-fails:IO#write_nonblock when exception option is set to false returns :wait_writable when the operation would block

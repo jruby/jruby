@@ -1,11 +1,11 @@
 /**
  * **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -94,7 +94,7 @@ public class GlobalVariable extends AbstractVariable {
         for ( final String name : globalVars.getNames() ) {
             if ( isPredefined(name) ) continue;
             IRubyObject value = globalVars.get(name);
-            // reciever of gvar should to topSelf always
+            // receiver of gvar should to topSelf always
             updateGlobalVar(vars, getTopSelf(receiver), name, value);
         }
     }

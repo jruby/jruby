@@ -1,1 +1,0 @@
-fails:Float#to_s outputs the minimal, unique form necessary to recreate the value

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -112,7 +112,7 @@ public final class Enums extends RubyObject {
 
     @JRubyMethod(name = "find")
     public IRubyObject find(final ThreadContext context, IRubyObject query){
-        if (taggedEnums.has_key_p(query).isTrue()){
+        if (taggedEnums.has_key_p(context, query).isTrue()){
             return taggedEnums.fastARef(query);
         }
         for (int i = 0; i < allEnums.getLength(); i++){
@@ -121,7 +121,7 @@ public final class Enums extends RubyObject {
                 return item;
             }
         }
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "__map_symbol")

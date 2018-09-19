@@ -4,7 +4,7 @@ describe :enum_for, shared: true do
   end
 
   it "returns a new enumerator" do
-    "abc".send(@method).should be_an_instance_of(enumerator_class)
+    "abc".send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "defaults the first argument to :each" do

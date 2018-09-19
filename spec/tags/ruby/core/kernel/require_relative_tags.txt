@@ -1,2 +1,6 @@
 fails:Kernel#require_relative with a relative path stores the missing path in a LoadError object
 fails:Kernel#require_relative with an absolute path stores the missing path in a LoadError object
+fails:Kernel#require_relative with a relative path in an #instance_eval with a synthetic file base name loads a file base name relative to the working directory
+fails:Kernel#require_relative with a relative path in an #instance_eval with a synthetic file path loads a relative path relative to the working directory plus the directory of the synthetic path
+fails:Kernel#require_relative with a relative path in an #instance_eval with a synthetic relative file path with a Windows path separator specified loads a relative path relative to the working directory
+fails:Kernel#require_relative with a relative path ($LOADED_FEATURES) with symlinks does not canonicalize the path and stores a path with symlinks

@@ -13,10 +13,14 @@ import java.lang.invoke.MutableCallSite;
 public class GlobalSite extends MutableCallSite {
     private final String name;
     private volatile int failures;
+    private final String file;
+    private final int line;
 
-    public GlobalSite(MethodType type, String name) {
+    public GlobalSite(MethodType type, String name, String file, int line) {
         super(type);
         this.name = name;
+        this.file = file;
+        this.line = line;
     }
     
     public void setTarget(MethodHandle target) {
@@ -35,4 +39,8 @@ public class GlobalSite extends MutableCallSite {
     public String name() {
         return name;
     }
+
+    public String file() { return file; }
+
+    public int line() { return line; }
 }

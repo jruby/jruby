@@ -4,16 +4,12 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.EncodingUtils;
 
-import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
@@ -84,13 +80,6 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject collect(ThreadContext context, Block block) {
-        if (!packed()) return super.collect(context, block);
-
-        return new RubyArrayOneObject(getRuntime(), block.yield(context, value));
-    }
-
-    @Override
     public void copyInto(IRubyObject[] target, int start) {
         if (!packed()) {
             super.copyInto(target, start);
@@ -102,12 +91,12 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     @Override
     public void copyInto(IRubyObject[] target, int start, int len) {
         if (!packed()) {
-            super.copyInto(target, start);
+            super.copyInto(target, start, len);
             return;
         }
         if (len != 1) {
             unpack();
-            super.copyInto(target, start);
+            super.copyInto(target, start, len);
             return;
         }
         target[start] = value;
@@ -117,59 +106,6 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     public IRubyObject dup() {
         if (!packed()) return super.dup();
         return new RubyArrayOneObject(this);
-    }
-
-    @Override
-    public IRubyObject each(ThreadContext context, Block block) {
-        if (!packed()) return super.each(context, block);
-
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", enumLengthFn());
-
-        block.yield(context, value);
-
-        return this;
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, Block block) {
-        if (!packed()) return super.fillCommon(context, beg, len, block);
-
-        modifyCheck();
-
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
-
-        if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
-
-        if (len > 1) {
-            unpack();
-            return super.fillCommon(context, beg, len, block);
-        }
-
-        value = block.yield(context, RubyFixnum.zero(context.runtime));
-
-        return this;
-    }
-
-    @Override
-    protected IRubyObject fillCommon(ThreadContext context, int beg, long len, IRubyObject item) {
-        if (!packed()) return super.fillCommon(context, beg, len, item);
-
-        modifyCheck();
-
-        // See [ruby-core:17483]
-        if (len <= 0) return this;
-
-        if (len > Integer.MAX_VALUE - beg) throw context.runtime.newArgumentError("argument too big");
-
-        if (len > 1) {
-            unpack();
-            return super.fillCommon(context, beg, len, item);
-        }
-
-        value = item;
-
-        return this;
     }
 
     @Override
@@ -199,7 +135,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
-        EncodingUtils.strBufCat(runtime, str, OPEN_BRACKET);
+        str.cat((byte) '[');
         boolean tainted = isTaint();
 
         RubyString s = inspect(context, value);
@@ -207,7 +143,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         else str.setEncoding(s.getEncoding());
         str.cat19(s);
 
-        EncodingUtils.strBufCat(runtime, str, CLOSE_BRACKET);
+        str.cat((byte) ']');
 
         if (tainted) str.setTaint(true);
 
@@ -227,7 +163,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         modifyCheck();
 
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @Override

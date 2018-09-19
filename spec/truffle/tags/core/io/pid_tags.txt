@@ -1,2 +1,0 @@
-slow:IO#pid returns the ID of a process associated with stream
-slow:IO#pid raises an IOError on closed stream

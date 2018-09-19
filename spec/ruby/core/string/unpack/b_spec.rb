@@ -1,7 +1,7 @@
 # -*- encoding: ascii-8bit -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-require File.expand_path('../shared/basic', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
+require_relative 'shared/basic'
 
 describe "String#unpack with format 'B'" do
   it_behaves_like :string_unpack_basic, 'B'
@@ -181,4 +181,10 @@ describe "String#unpack with format 'b'" do
   it "ignores spaces between directives" do
     "\x01\x00".unpack("b b").should == ["1", "0"]
   end
+
+  it "decodes into US-ASCII string values" do
+    str = "s".force_encoding('UTF-8').unpack("b*")[0]
+    str.encoding.name.should == 'US-ASCII'
+  end
+
 end

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.math.BigInteger;
@@ -90,6 +91,7 @@ public class Sprintf {
     private static final String ERR_MALFORMED_DOT_NUM = "malformed format string - %.[0-9]";
     private static final String ERR_MALFORMED_STAR_NUM = "malformed format string - %*[0-9]";
     private static final String ERR_ILLEGAL_FORMAT_CHAR = "illegal format character - %";
+    private static final String ERR_INCOMPLETE_FORMAT_SPEC = "incomplete format specifier; use %% (double %) instead";
     private static final String ERR_MALFORMED_NAME = "malformed name - unmatched parenthesis";
 
     private static final ThreadLocal<Map<Locale, NumberFormat>> LOCALE_NUMBER_FORMATS = new ThreadLocal<Map<Locale, NumberFormat>>();
@@ -102,8 +104,9 @@ public class Sprintf {
         private final RubyArray rubyArray;
         private final RubyHash rubyHash;
         private final int length;
-        private int unnumbered; // last index (+1) accessed by next()
-        private int numbered;   // last index (+1) accessed by get()
+        private int positionIndex; // last index (+1) accessed by next()
+        private int nextIndex;
+        private IRubyObject nextObject;
 
         Args(Locale locale, IRubyObject rubyObject) {
             if (rubyObject == null) throw new IllegalArgumentException("null IRubyObject passed to sprintf");
@@ -111,18 +114,28 @@ public class Sprintf {
             this.rubyObject = rubyObject;
             if (rubyObject instanceof RubyArray) {
                 this.rubyArray = (RubyArray)rubyObject;
-                this.rubyHash = null;
+
+                if (rubyArray.last() instanceof RubyHash) {
+                    this.rubyHash = (RubyHash) rubyArray.pop(rubyArray.getRuntime().getCurrentContext());
+                } else {
+                    this.rubyHash = null;
+                }
+
                 this.length = rubyArray.size();
             } else if (rubyObject instanceof RubyHash) {
                 // allow a hash for args if in 1.9 mode
                 this.rubyHash = (RubyHash)rubyObject;
                 this.rubyArray = null;
-                this.length = -1;
+                this.length = 1;
             } else {
                 this.length = 1;
                 this.rubyArray = null;
                 this.rubyHash = null;
             }
+
+            positionIndex = 0;
+            nextIndex = 1;
+
             this.runtime = rubyObject.getRuntime();
         }
 
@@ -140,8 +153,8 @@ public class Sprintf {
             throw runtime.newArgumentError(message);
         }
 
-        void raiseKeyError(String message) {
-            throw runtime.newKeyError(message);
+        void raiseKeyError(String message, IRubyObject recv, IRubyObject key) {
+            throw runtime.newKeyError(message, recv, key);
         }
 
         void warn(ID id, String message) {
@@ -152,10 +165,100 @@ public class Sprintf {
             if (runtime.isVerbose()) runtime.getWarnings().warning(id, message);
         }
 
+        private IRubyObject getHashValue(ByteList name, char startDelim, char endDelim) {
+            // FIXME: get_hash does hash conversion of argv and arity check...this is a bit complicated with
+            // our version.  Implement it.
+            if (rubyHash == null) {
+                raiseArgumentError("one hash required");
+            }
+
+            checkNameArg(name, startDelim, endDelim);
+            RubySymbol nameSym = runtime.newSymbol(name);
+            IRubyObject object = rubyHash.fastARef(nameSym);
+
+            // if not found, try dispatching to pick up default hash value
+            // MRI: spliced together bits from rb_hash_default_value
+            if (object == null) {
+                object = rubyHash.getIfNone();
+                if (object == RubyBasicObject.UNDEF) {
+                    RubyString nameStr = RubyString.newString(runtime, name);
+                    raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameSym);
+                } else if (rubyHash.hasDefaultProc()) {
+                    object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
+                }
+
+                if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found", rubyHash, nameSym);
+            }
+
+            return object;
+        }
+
+        private IRubyObject getNthArg(int index) {
+            if (index > length) {
+                if (index == length + 1 && rubyHash != null) {
+                    return rubyHash;
+                }
+                raiseArgumentError("too few arguments");
+            }
+
+            return rubyArray == null ? rubyObject : rubyArray.eltInternal(index - 1);
+        }
+
+
+        // MRI: GETARG
+        private IRubyObject getArg() {
+            if (nextObject != null) {
+                // This is different in MRI.  The do a retry and avoid part of the for loop
+                // which resets nextvalue.  We do not do that so we null out here since we
+                // cannot get same value twice.
+                IRubyObject result = nextObject;
+                nextObject = null;
+                return result;
+            }
+
+            return getNextArg();
+        }
+
+        // MRI: GETNEXTARG
+        private IRubyObject getNextArg() {
+            checkNextArg();
+            positionIndex = nextIndex++;
+            return getNthArg(positionIndex);
+        }
+
+        // MRI: GETPOSARG
+        private IRubyObject getPositionArg(int index) {
+            checkPositionArg(index);
+            positionIndex = -1;
+            return getNthArg(index);
+        }
+
+        // MRI: check_next_arg
+        private void checkNextArg() {
+            if (positionIndex == -1) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with numbered");
+            if (positionIndex == -2) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with named");
+        }
+
+        // MRI: check_pos_arg
+        private void checkPositionArg(int nthArg) {
+            if (positionIndex > 0) raiseArgumentError("numbered(" + nthArg + ") after unnumbered(" + positionIndex + ")");
+            if (positionIndex == -2) raiseArgumentError("numbered(" + nthArg + ") after named");
+            if (nthArg < 1) raiseArgumentError("invalid index - " + nthArg + "$");
+        }
+
+        // MRI: check_name_arg, CHECKNAMEARG
+        private void checkNameArg(ByteList name, char startDelim, char endDelim) {
+            if (positionIndex > 0) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after unnumbered(" + positionIndex + ")");
+            if (positionIndex == -1) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after numbered");
+
+            positionIndex = -2;
+        }
+
+        @Deprecated
         IRubyObject next(ByteList name) {
             // for 1.9 hash args
             if (name != null) {
-                if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
+                if (rubyHash == null && positionIndex == -1) raiseArgumentError("positional args mixed with named args");
 
                 RubySymbol nameSym = runtime.newSymbol(name);
                 IRubyObject object = rubyHash.fastARef(nameSym);
@@ -165,13 +268,14 @@ public class Sprintf {
                 if (object == null) {
                     object = rubyHash.getIfNone();
                     if (object == RubyBasicObject.UNDEF) {
-                        raiseKeyError("key<" + name + "> not found");
+                        RubyString nameStr = RubyString.newString(runtime, name);
+                        raiseKeyError("key<" + name + "> not found", rubyHash, nameSym);
                     } else if (rubyHash.hasDefaultProc()) {
                         object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
                     }
 
                     if (object.isNil()) {
-                        throw runtime.newKeyError("key " + nameSym + " not found");
+                        throw runtime.newKeyError("key " + nameSym + " not found", rubyHash, nameSym);
                     }
                 }
 
@@ -181,32 +285,29 @@ public class Sprintf {
             }
 
             // this is the order in which MRI does these two tests
-            if (numbered > 0) raiseArgumentError("unnumbered" + (unnumbered + 1) + "mixed with numbered");
-            if (unnumbered >= length) raiseArgumentError("too few arguments");
-            IRubyObject object = rubyArray == null ? rubyObject : rubyArray.eltInternal(unnumbered);
-            unnumbered++;
+            if (positionIndex == -1) raiseArgumentError("unnumbered" + (positionIndex + 1) + "mixed with numbered");
+            if (positionIndex >= length) raiseArgumentError("too few arguments");
+            IRubyObject object = rubyArray == null ? rubyObject : rubyArray.eltInternal(positionIndex);
+            positionIndex++;
             return object;
         }
 
+        @Deprecated
         IRubyObject get(int index) {
-            // for 1.9 hash args
-            if (rubyHash != null) raiseArgumentError("positional args mixed with named args");
-            // this is the order in which MRI does these tests
-            if (unnumbered > 0) raiseArgumentError("numbered("+numbered+") after unnumbered("+unnumbered+")");
-            if (index < 0) raiseArgumentError("invalid index - " + (index + 1) + '$');
-            if (index >= length) raiseArgumentError("too few arguments");
-            numbered = index + 1;
-            return rubyArray == null ? rubyObject : rubyArray.eltInternal(index);
+            return getPositionArg(index);
         }
 
+        @Deprecated
         IRubyObject getNth(int formatIndex) {
-            return get(formatIndex - 1);
+            return getPositionArg(formatIndex);
         }
 
+        @Deprecated
         int nextInt() {
             return intValue(next(null));
         }
 
+        @Deprecated
         int getNthInt(int formatIndex) {
             return intValue(get(formatIndex - 1));
         }
@@ -272,8 +373,7 @@ public class Sprintf {
         int length;
         int start;
         int mark;
-        ByteList name = null;
-        Encoding encoding = null;
+        Encoding encoding;
 
         // used for RubyString functions to manage encoding, etc
         RubyString wrapper = RubyString.newString(runtime, buf);
@@ -293,6 +393,7 @@ public class Sprintf {
         }
 
         while (offset < length) {
+            ByteList name = null;
             start = offset;
             for ( ; offset < length && format[offset] != '%'; offset++) {}
 
@@ -302,12 +403,12 @@ public class Sprintf {
             }
             if (offset++ >= length) break;
 
-            IRubyObject arg = null;
+            IRubyObject arg;
             int flags = 0;
             int width = 0;
             int precision = 0;
-            int number = 0;
-            byte fchar = 0;
+            int number;
+            byte fchar;
             boolean incomplete = true;
             for ( ; incomplete && offset < length ; ) {
                 switch (fchar = format[offset]) {
@@ -342,11 +443,11 @@ public class Sprintf {
                     }
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
-
-                    ByteList oldName = name;
-                    name = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-
-                    if (oldName != null) raiseArgumentError(args, "name<" + name + "> after <" + oldName + ">");
+                    ByteList newName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
+                    if (name != null) raiseArgumentError(args, "named<" + RubyString.newString(runtime, newName) + "> after <" + RubyString.newString(runtime, name) + ">");
+                    name = newName;
+                    // we retrieve value from hash so we can generate argument error as side-effect.
+                    args.nextObject = args.getHashValue(name, '<', '>');
 
                     break;
                 }
@@ -367,7 +468,7 @@ public class Sprintf {
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
                     ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    buf.append(args.next(localName).asString().getByteList());
+                    buf.append(args.getHashValue(localName, '{', '}').asString().getByteList());
                     incomplete = false;
 
                     break;
@@ -405,10 +506,10 @@ public class Sprintf {
                         checkOffset(args, offset, length, ERR_MALFORMED_NUM);
                     }
                     if (fchar == '$') {
-                        if (arg != null) {
+                        if (args.nextObject != null) {
                             raiseArgumentError(args,"value given twice - " + number + "$");
                         }
-                        arg = args.getNth(number);
+                        args.nextObject = args.getPositionArg(number);
                         offset++;
                     } else {
                         width = number;
@@ -424,28 +525,29 @@ public class Sprintf {
                     // TODO: factor this chunk as in MRI/YARV GETASTER
                     checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
                     mark = offset;
+                    // GETASTER
                     number = 0;
                     for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
                         number = extendWidth(args,number,fchar);
                     }
                     checkOffset(args,offset,length,ERR_MALFORMED_STAR_NUM);
+
+                    IRubyObject tmp;
                     if (fchar == '$') {
-                        width = args.getNthInt(number);
-                        if (width < 0) {
-                            flags |= FLAG_MINUS;
-                            width = -width;
-                        }
+                        tmp = args.getPositionArg(number);
                         offset++;
                     } else {
-                        width = args.nextInt();
-                        if (width < 0) {
-                            flags |= FLAG_MINUS;
-                            width = -width;
-                        }
-                        // let the width (if any), get processed in the next loop,
-                        // so any leading 0 gets treated correctly
+                        tmp = args.getNextArg();
                         offset = mark;
                     }
+
+                    width = args.intValue(tmp);
+                    if (width < 0) {
+                        flags |= FLAG_MINUS;
+                        width = -width;
+                        if (width < 0) throw runtime.newArgumentError("width too big");
+                    }
+
                     break;
 
                 case '.':
@@ -456,30 +558,26 @@ public class Sprintf {
                     checkOffset(args,++offset,length,ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
-                        // TODO: factor this chunk as in MRI/YARV GETASTER
                         checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
                         mark = offset;
+                        // GETASTER
                         number = 0;
-                        { // MRI: GETNUM macro
-                            for (; offset < length && isDigit(fchar = format[offset]); offset++) {
-                                number = extendWidth(args, number, fchar);
-                            }
-                            checkOffset(args, offset, length, ERR_MALFORMED_STAR_NUM);
+                        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
+                            number = extendWidth(args, number, fchar);
                         }
+                        checkOffset(args, offset, length, ERR_MALFORMED_STAR_NUM);
+
                         if (fchar == '$') {
-                            precision = args.getNthInt(number);
-                            if (precision < 0) {
-                                flags &= ~FLAG_PRECISION;
-                            }
+                            tmp = args.getPositionArg(number);
                             offset++;
                         } else {
-                            precision = args.nextInt();
-                            if (precision < 0) {
-                                flags &= ~FLAG_PRECISION;
-                            }
-                            // let the width (if any), get processed in the next loop,
-                            // so any leading 0 gets treated correctly
+                            tmp = args.getNextArg();
                             offset = mark;
+                        }
+
+                        precision = args.intValue(tmp);
+                        if (precision < 0) {
+                            flags &= ~FLAG_PRECISION;
                         }
                     } else {
                         number = 0;
@@ -503,14 +601,10 @@ public class Sprintf {
                     break;
 
                 case 'c': {
-                    if (arg == null || name != null) {
-                        arg = args.next(name);
-                        name = null;
-                    }
+                    arg = args.getArg();
 
-                    int c = 0;
-                    int n = 0;
-                    IRubyObject tmp = arg.checkStringType19();
+                    int c; int n;
+                    tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
                         if (((RubyString)tmp).strLength() != 1) {
                             throw runtime.newArgumentError("%c requires a character");
@@ -554,13 +648,10 @@ public class Sprintf {
                 }
                 case 'p':
                 case 's': {
-                    if (arg == null || name != null) {
-                        arg = args.next(name);
-                        name = null;
-                    }
+                    arg = args.getArg();
 
                     if (fchar == 'p') {
-                        arg = arg.callMethod(arg.getRuntime().getCurrentContext(),"inspect");
+                        arg = arg.callMethod(runtime.getCurrentContext(), "inspect");
                     }
                     RubyString strArg = arg.asString();
                     ByteList bytes = strArg.getByteList();
@@ -611,31 +702,28 @@ public class Sprintf {
                 case 'b':
                 case 'B':
                 case 'u': {
-                    if (arg == null || name != null) {
-                        arg = args.next(name);
-                        name = null;
-                    }
+                    arg = args.getArg();
 
                     ClassIndex type = arg.getMetaClass().getClassIndex();
-                    if (type != ClassIndex.FIXNUM && type != ClassIndex.BIGNUM) {
+                    if (type != ClassIndex.INTEGER) {
                         switch(type) {
                         case FLOAT:
-                            arg = RubyNumeric.dbl2num(arg.getRuntime(),((RubyFloat)arg).getValue());
+                            arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
                             break;
                         case STRING:
-                            arg = ((RubyString)arg).stringToInum19(0, true);
+                            arg = ((RubyString) arg).stringToInum(0, true);
                             break;
                         default:
                             if (arg.respondsTo("to_int")) {
-                                arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_int", true);
+                                arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_int", true);
                             } else {
-                                arg = TypeConverter.convertToType(arg, arg.getRuntime().getInteger(), "to_i", true);
+                                arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_i", true);
                             }
                             break;
                         }
                         type = arg.getMetaClass().getClassIndex();
                     }
-                    byte[] bytes = null;
+                    byte[] bytes;
                     int first = 0;
                     byte[] prefix = null;
                     boolean sign;
@@ -671,22 +759,26 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (type == ClassIndex.FIXNUM) {
-                        negative = ((RubyFixnum)arg).getLongValue() < 0;
-                        zero = ((RubyFixnum)arg).getLongValue() == 0;
-                        if (negative && fchar == 'u') {
-                            bytes = getUnsignedNegativeBytes((RubyFixnum)arg);
+                    if (type == ClassIndex.INTEGER) {
+                        if (arg instanceof RubyFixnum) {
+                            negative = ((RubyFixnum) arg).getLongValue() < 0;
+                            zero = ((RubyFixnum) arg).getLongValue() == 0;
+                            if (negative && fchar == 'u') {
+                                bytes = getUnsignedNegativeBytes((RubyFixnum) arg);
+                            } else {
+                                bytes = getFixnumBytes((RubyFixnum) arg, base, sign, fchar == 'X');
+                            }
                         } else {
-                            bytes = getFixnumBytes((RubyFixnum)arg,base,sign,fchar=='X');
+                            negative = ((RubyBignum) arg).getValue().signum() < 0;
+                            zero = ((RubyBignum) arg).getValue().equals(BigInteger.ZERO);
+                            if (negative && fchar == 'u' && usePrefixForZero) {
+                                bytes = getUnsignedNegativeBytes((RubyBignum) arg);
+                            } else {
+                                bytes = getBignumBytes((RubyBignum) arg, base, sign, fchar == 'X');
+                            }
                         }
                     } else {
-                        negative = ((RubyBignum)arg).getValue().signum() < 0;
-                        zero = ((RubyBignum)arg).getValue().equals(BigInteger.ZERO);
-                        if (negative && fchar == 'u' && usePrefixForZero) {
-                            bytes = getUnsignedNegativeBytes((RubyBignum)arg);
-                        } else {
-                            bytes = getBignumBytes((RubyBignum)arg,base,sign,fchar=='X');
-                        }
+                        throw runtime.newTypeError(arg, runtime.getInteger());
                     }
                     if ((flags & FLAG_SHARP) != 0) {
                         if (!zero || usePrefixForZero) {
@@ -798,24 +890,12 @@ public class Sprintf {
                 case 'f':
                 case 'G':
                 case 'g': {
-                    if (arg == null || name != null) {
-                        arg = args.next(name);
-                        name = null;
-                    }
+                    arg = args.getArg();
 
-                    if (!(arg instanceof RubyFloat)) {
-                        // FIXME: what is correct 'recv' argument?
-                        // (this does produce the desired behavior)
-                        if (usePrefixForZero) {
-                            arg = RubyKernel.new_float(arg,arg);
-                        } else {
-                            arg = RubyKernel.new_float19(arg,arg);
-                        }
-                    }
-                    double dval = ((RubyFloat)arg).getDoubleValue();
+                    double dval = RubyKernel.new_float(runtime.getFloat(), arg).getDoubleValue();
                     boolean nan = dval != dval;
                     boolean inf = dval == Double.POSITIVE_INFINITY || dval == Double.NEGATIVE_INFINITY;
-                    boolean negative = dval < 0.0d || (dval == 0.0d && (new Float(dval)).equals(new Float(-0.0)));
+                    boolean negative = dval < 0.0d || (dval == 0.0d && Double.doubleToLongBits(dval) == Double.doubleToLongBits(-0.0));
 
                     byte[] digits;
                     int nDigits = 0;
@@ -846,16 +926,12 @@ public class Sprintf {
                         }
                         width -= len;
 
-                        if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
-                            buf.fill(' ',width);
+                        if (width > 0 && (flags & FLAG_MINUS) == 0) {
+                            buf.fill(' ', width);
                             width = 0;
                         }
                         if (signChar != 0) buf.append(signChar);
 
-                        if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                            buf.fill('0',width);
-                            width = 0;
-                        }
                         buf.append(digits);
                         if (width > 0) buf.fill(' ', width);
 
@@ -1340,6 +1416,7 @@ public class Sprintf {
             if (incomplete) {
                 if (flags == FLAG_NONE) {
                     // dangling '%' char
+                    if (format[length - 1] == '%') raiseArgumentError(args,ERR_INCOMPLETE_FORMAT_SPEC);
                     buf.append('%');
                 } else {
                     raiseArgumentError(args,ERR_ILLEGAL_FORMAT_CHAR);
@@ -1348,7 +1425,7 @@ public class Sprintf {
         } // main while loop (offset < length)
 
         // MRI behavior: validate only the unnumbered arguments
-        if ((args.numbered == 0) && args.unnumbered < args.length) {
+        if (args.positionIndex >= 0 && args.nextIndex < args.length) {
             if (args.runtime.getDebug().isTrue()) {
                 args.raiseArgumentError("too many arguments for format string");
             } else if (args.runtime.isVerbose()) {
@@ -1484,18 +1561,24 @@ public class Sprintf {
 
     private static int round(byte[] bytes, int nDigits, int roundPos, boolean roundDown) {
         int next = roundPos + 1;
-        if (next >= nDigits || bytes[next] < '5' ||
-                // MRI rounds up on nnn5nnn, but not nnn5 --
-                // except for when they do
-                (roundDown && bytes[next] == '5' && next == nDigits - 1)) {
-            return nDigits;
-        }
+        if (next >= nDigits) return nDigits;
+        if (bytes[next] < '5') return nDigits;
+        if (roundDown && bytes[next] == '5' && next == nDigits - 1) return nDigits;
+
         if (roundPos < 0) { // "%.0f" % 0.99
             System.arraycopy(bytes,0,bytes,1,nDigits);
             bytes[0] = '1';
             return nDigits + 1;
         }
+        // round half to even
+        if (roundPos + 1 < nDigits && bytes[roundPos + 1] == '5') {
+            if ((bytes[roundPos] - '0') % 2 == 0) {
+                // round down
+                return nDigits;
+            }
+        }
         bytes[roundPos] += 1;
+        
         while (bytes[roundPos] > '9') {
             bytes[roundPos] = '0';
             roundPos--;

@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'uri'
 
 #TODO: make this more BDD
@@ -43,5 +43,3 @@ describe "URI#select" do
     lambda { uri.query = 'bar' }.should raise_error(URI::InvalidURIError)
   end
 end
-
-

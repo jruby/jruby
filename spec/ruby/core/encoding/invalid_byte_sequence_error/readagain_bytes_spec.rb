@@ -1,4 +1,5 @@
-require File.expand_path('../../fixtures/classes', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../fixtures/classes'
 
 with_feature :encoding do
   describe "Encoding::InvalidByteSequenceError#readagain_bytes" do

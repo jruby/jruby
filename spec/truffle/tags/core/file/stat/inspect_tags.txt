@@ -1,1 +1,0 @@
-fails:File::Stat#inspect produces a nicely formatted description of a File::Stat object

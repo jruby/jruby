@@ -1,15 +1,15 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../shared/now', __FILE__)
-require File.expand_path('../shared/local', __FILE__)
-require File.expand_path('../shared/time_params', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/now'
+require_relative 'shared/local'
+require_relative 'shared/time_params'
 
 describe "Time.new" do
-  it_behaves_like(:time_now, :new)
+  it_behaves_like :time_now, :new
 end
 
 describe "Time.new" do
-  it_behaves_like(:time_local, :new)
-  it_behaves_like(:time_params, :new)
+  it_behaves_like :time_local, :new
+  it_behaves_like :time_params, :new
 end
 
 describe "Time.new with a utc_offset argument" do
@@ -65,23 +65,14 @@ describe "Time.new with a utc_offset argument" do
     end
   end
 
-  ruby_version_is ""..."2.2" do
-    it "adds one hour if the offset minute value is greater than 59" do
-      Time.new(2000, 1, 1, 0, 0, 0, "+01:60").should == Time.new(2000, 1, 1, 0, 0, 0, "+02:00")
-      Time.new(2000, 1, 1, 0, 0, 0, "+01:99").should == Time.new(2000, 1, 1, 0, 0, 0, "+02:39")
-    end
-  end
-
-  ruby_version_is "2.2" do
-    # [Bug #8679], r47676
-    it "disallows a value for minutes greater than 59" do
-      lambda {
-        Time.new(2000, 1, 1, 0, 0, 0, "+01:60")
-      }.should raise_error(ArgumentError)
-      lambda {
-        Time.new(2000, 1, 1, 0, 0, 0, "+01:99")
-      }.should raise_error(ArgumentError)
-    end
+  # [Bug #8679], r47676
+  it "disallows a value for minutes greater than 59" do
+    lambda {
+      Time.new(2000, 1, 1, 0, 0, 0, "+01:60")
+    }.should raise_error(ArgumentError)
+    lambda {
+      Time.new(2000, 1, 1, 0, 0, 0, "+01:99")
+    }.should raise_error(ArgumentError)
   end
 
   it "raises ArgumentError if the String argument is not of the form (+|-)HH:MM" do

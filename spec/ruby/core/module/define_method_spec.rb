@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 class DefineMethodSpecClass
 end
@@ -73,7 +73,7 @@ describe "Module#define_method when given an UnboundMethod" do
   it "sets the new method's visibility to the current frame's visibility" do
     foo = Class.new do
       def ziggy
-	'piggy'
+        'piggy'
       end
       private :ziggy
 
@@ -222,20 +222,33 @@ describe "Module#define_method" do
     }.should raise_error(ArgumentError)
   end
 
+  it "does not use the caller block when no block is given" do
+    o = Object.new
+    def o.define(name)
+      self.class.class_eval do
+        define_method(name)
+      end
+    end
+
+    lambda {
+      o.define(:foo) { raise "not used" }
+    }.should raise_error(ArgumentError)
+  end
+
   it "does not change the arity check style of the original proc" do
     class DefineMethodSpecClass
       prc = Proc.new { || true }
-      method = define_method("proc_style_test", &prc)
+      define_method("proc_style_test", &prc)
     end
 
     obj = DefineMethodSpecClass.new
     lambda { obj.proc_style_test :arg }.should raise_error(ArgumentError)
   end
 
-  it "raises a RuntimeError if frozen" do
+  it "raises a #{frozen_error_class} if frozen" do
     lambda {
       Class.new { freeze; define_method(:foo) {} }
-    }.should raise_error(RuntimeError)
+    }.should raise_error(frozen_error_class)
   end
 
   it "accepts a Method (still bound)" do
@@ -342,39 +355,45 @@ describe "Module#define_method" do
     klass.new.string_test.should == "string_test result"
   end
 
-  it "is private" do
-    Module.should have_private_instance_method(:define_method)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:define_method)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:define_method)
+    end
   end
 
   it "returns its symbol" do
     class DefineMethodSpecClass
-      method = define_method("return_test") { || true }
+      method = define_method("return_test") { true }
       method.should == :return_test
     end
   end
 
   it "allows an UnboundMethod from a module to be defined on a class" do
-    DestinationClass = Class.new {
+    klass = Class.new {
       define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
     }
-    DestinationClass.new.should respond_to(:bar)
+    klass.new.should respond_to(:bar)
   end
 
   it "allows an UnboundMethod from a parent class to be defined on a child class" do
-    Parent = Class.new { define_method(:foo) { :bar } }
-    ChildClass = Class.new(Parent) {
-      define_method :baz, Parent.instance_method(:foo)
+    parent = Class.new { define_method(:foo) { :bar } }
+    child = Class.new(parent) {
+      define_method :baz, parent.instance_method(:foo)
     }
-    ChildClass.new.should respond_to(:baz)
+    child.new.should respond_to(:baz)
   end
 
   it "allows an UnboundMethod from a module to be defined on another unrelated module" do
-    DestinationModule = Module.new {
+    mod = Module.new {
       define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
     }
-    DestinationClass = Class.new { include DestinationModule }
-
-    DestinationClass.new.should respond_to(:bar)
+    klass = Class.new { include mod }
+    klass.new.should respond_to(:bar)
   end
 
   it "raises a TypeError when an UnboundMethod from a child class is defined on a parent class" do
@@ -608,5 +627,30 @@ describe "Method#define_method when passed an UnboundMethod object" do
 
   it "defines a method with the same #parameters as the original" do
     @obj.method(:n).parameters.should == @obj.method(:m).parameters
+  end
+end
+
+describe "Method#define_method when passed a Proc object" do
+  describe "and a method is defined inside" do
+    it "defines the nested method in the default definee where the Proc was created" do
+      prc = nil
+      t = Class.new do
+        prc = -> {
+          def nested_method_in_proc_for_define_method
+            42
+          end
+        }
+      end
+
+      c = Class.new do
+        define_method(:test, prc)
+      end
+
+      o = c.new
+      o.test
+      o.should_not have_method :nested_method_in_proc_for_define_method
+
+      t.new.nested_method_in_proc_for_define_method.should == 42
+    end
   end
 end

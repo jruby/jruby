@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Enumerable#count" do
   before :each do
@@ -40,7 +40,9 @@ describe "Enumerable#count" do
   end
 
   it "ignores the block when given an argument" do
-    @numerous.count(4){|x| x%2==0 }.should == 1
+    -> {
+      @numerous.count(4){|x| x%2==0 }.should == 1
+    }.should complain(/given block not used/)
   end
 
   describe "when each yields multiple values" do

@@ -38,7 +38,7 @@ public class Label extends Operand {
 
     @Override
     public String toString() {
-        return prefix + "_" + id + ":" + targetPC;
+        return prefix + '_' + id + ':' + targetPC;
     }
 
     @Override
@@ -101,7 +101,7 @@ public class Label extends Operand {
         // Check if this label was already created
         // Important! Program would not be interpreted correctly
         // if new name will be created every time
-        String fullLabel = prefix + "_" + id;
+        String fullLabel = prefix + '_' + id;
         if (d.getVars().containsKey(fullLabel)) {
             return (Label) d.getVars().get(fullLabel);
         }

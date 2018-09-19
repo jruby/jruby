@@ -1,4 +1,4 @@
-require File.expand_path('../../../../../spec_helper', __FILE__)
+require_relative '../../../../spec_helper'
 require 'net/http'
 
 describe "Net::HTTPResponse#error!" do
@@ -16,7 +16,12 @@ describe "Net::HTTPResponse#error!" do
     lambda { res.error! }.should raise_error(Net::HTTPRetriableError)
 
     res = Net::HTTPClientError.new("1.0", "4xx", "test response")
-    lambda { res.error! }.should raise_error(Net::HTTPServerException)
+    ruby_version_is ""..."2.6" do
+      lambda { res.error! }.should raise_error(Net::HTTPServerException)
+    end
+    ruby_version_is "2.6" do
+      lambda { res.error! }.should raise_error(Net::HTTPClientException)
+    end
 
     res = Net::HTTPServerError.new("1.0", "5xx", "test response")
     lambda { res.error! }.should raise_error(Net::HTTPFatalError)

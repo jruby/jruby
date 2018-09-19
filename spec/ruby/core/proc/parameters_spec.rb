@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Proc#parameters" do
   it "returns an empty Array for a proc expecting no parameters" do
@@ -86,10 +86,10 @@ describe "Proc#parameters" do
 
   it "does not add locals as block options with a block and splat" do
     lambda do |*args, &blk|
-      options = {}
+      local_is_not_parameter = {}
     end.parameters.should == [[:rest, :args], [:block, :blk]]
     proc do |*args, &blk|
-      options = {}
+      local_is_not_parameter = {}
     end.parameters.should == [[:rest, :args], [:block, :blk]]
   end
 end

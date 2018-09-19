@@ -1,7 +1,8 @@
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../fixtures/module', __FILE__)
+require_relative 'spec_helper'
+require_relative 'fixtures/module'
 
 load_extension('module')
+compile_extension("module_under_autoload")
 
 describe "CApiModule" do
 
@@ -24,8 +25,45 @@ describe "CApiModule" do
     end
 
     it "sets an existing constant's value" do
-      @m.rb_const_set(CApiModuleSpecs::C, :Z, 8)
+      -> {
+        @m.rb_const_set(CApiModuleSpecs::C, :Z, 8)
+      }.should complain(/already initialized constant/)
       CApiModuleSpecs::C::Z.should == 8
+    end
+
+    it "allows arbitrary names, including constant names not valid in Ruby" do
+      -> {
+        CApiModuleSpecs::C.const_set(:_INVALID, 1)
+      }.should raise_error(NameError, /wrong constant name/)
+
+      @m.rb_const_set(CApiModuleSpecs::C, :_INVALID, 2)
+      @m.rb_const_get(CApiModuleSpecs::C, :_INVALID).should == 2
+
+      # Ruby-level should still not allow access
+      -> {
+        CApiModuleSpecs::C.const_get(:_INVALID)
+      }.should raise_error(NameError, /wrong constant name/)
+    end
+  end
+
+  describe "rb_define_module" do
+    it "returns the module if it is already defined" do
+      mod = @m.rb_define_module("CApiModuleSpecsModuleA")
+      mod.const_get(:X).should == 1
+    end
+
+    it "raises a TypeError if the constant is not a module" do
+      ::CApiModuleSpecsGlobalConst = 7
+      lambda { @m.rb_define_module("CApiModuleSpecsGlobalConst") }.should raise_error(TypeError)
+      Object.send :remove_const, :CApiModuleSpecsGlobalConst
+    end
+
+    it "defines a new module at toplevel" do
+      mod = @m.rb_define_module("CApiModuleSpecsModuleB")
+      mod.should be_kind_of(Module)
+      mod.name.should == "CApiModuleSpecsModuleB"
+      ::CApiModuleSpecsModuleB.should be_kind_of(Module)
+      Object.send :remove_const, :CApiModuleSpecsModuleB
     end
   end
 
@@ -39,16 +77,14 @@ describe "CApiModule" do
       mod = @m.rb_define_module_under(CApiModuleSpecs, "ModuleSpecsModuleUnder2")
       mod.name.should == "CApiModuleSpecs::ModuleSpecsModuleUnder2"
     end
+  end
 
+  describe "rb_define_module_under" do
     it "defines a module for an existing Autoload with an extension" do
-      compile_extension("module_under_autoload")
-
       CApiModuleSpecs::ModuleUnderAutoload.name.should == "CApiModuleSpecs::ModuleUnderAutoload"
     end
 
     it "defines a module for an existing Autoload with a ruby object" do
-      compile_extension("module_under_autoload")
-
       CApiModuleSpecs::RubyUnderAutoload.name.should == "CApiModuleSpecs::RubyUnderAutoload"
     end
   end
@@ -60,7 +96,9 @@ describe "CApiModule" do
     end
 
     it "sets an existing constant's value" do
-      @m.rb_define_const(CApiModuleSpecs::C, "Z", 9)
+      -> {
+        @m.rb_define_const(CApiModuleSpecs::C, "Z", 9)
+      }.should complain(/already initialized constant/)
       CApiModuleSpecs::C::Z.should == 9
     end
   end
@@ -115,6 +153,16 @@ describe "CApiModule" do
 
     it "resolves autoload constants in Object" do
       @m.rb_const_get(Object, :CApiModuleSpecsAutoload).should == 123
+    end
+
+    it "allows arbitrary names, including constant names not valid in Ruby" do
+      -> {
+        CApiModuleSpecs::A.const_get(:_INVALID)
+      }.should raise_error(NameError, /wrong constant name/)
+
+      -> {
+        @m.rb_const_get(CApiModuleSpecs::A, :_INVALID)
+      }.should raise_error(NameError, /uninitialized constant/)
     end
   end
 
@@ -283,12 +331,12 @@ describe "CApiModule" do
         @frozen = @class.dup.freeze
       end
 
-      it "raises a RuntimeError when passed a name" do
-        lambda { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class} when passed a name" do
+        lambda { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(frozen_error_class)
       end
 
-      it "raises a RuntimeError when passed a missing name" do
-        lambda { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class} when passed a missing name" do
+        lambda { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(frozen_error_class)
       end
     end
   end
@@ -310,6 +358,16 @@ describe "CApiModule" do
   describe "rb_class2name" do
     it "returns the module name" do
       @m.rb_class2name(CApiModuleSpecs::M).should == "CApiModuleSpecs::M"
+    end
+  end
+
+  describe "rb_mod_ancestors" do
+    it "returns an array of ancestors" do
+      one = Module.new
+      two = Module.new do
+        include one
+      end
+      @m.rb_mod_ancestors(two).should == [two, one]
     end
   end
 end

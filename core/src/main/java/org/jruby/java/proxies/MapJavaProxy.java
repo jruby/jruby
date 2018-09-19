@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.java.proxies;
 
 
@@ -103,12 +104,10 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     private static final class RubyHashMap extends RubyHash {
 
-        static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
-
         private final MapJavaProxy receiver;
 
         RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
-            super(runtime, runtime.getHash(), runtime.getNil(), EMPTY_TABLE, 0);
+            super(runtime, runtime.getHash(), runtime.getNil());
             this.receiver = receiver;
         }
 
@@ -147,15 +146,15 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyArray keys() {
+        public RubyArray keys(ThreadContext context) {
             syncSize();
-            return super.keys();
+            return super.keys(context);
         }
 
         @Override
-        public RubyArray rb_values() {
+        public RubyArray values(ThreadContext context) {
             syncSize();
-            return super.rb_values();
+            return super.values(context);
         }
 
         @Override
@@ -177,16 +176,19 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            internalPutSmall(key, value, checkForExisting);
-        }
-
-        @Override
-        protected final void internalPutSmall(IRubyObject key, IRubyObject value, boolean checkForExisting) {
+        public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
             @SuppressWarnings("unchecked")
+            Ruby runtime = getRuntime();
             final Map<Object, Object> map = mapDelegate();
-            map.put(key.toJava(Object.class), value.toJava(Object.class));
+            Object javaValue = value.toJava(Object.class);
+            Object existing = map.put(key.toJava(Object.class), javaValue);
             setSize( map.size() );
+            if (existing != null) {
+                if (existing == javaValue) return value;
+                return JavaUtil.convertJavaToUsableRubyObject(runtime, existing);
+            }
+            // none existing
+            return null;
         }
 
         @Override
@@ -195,11 +197,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             final Map<Object, Object> map = mapDelegate();
             map.put(key.decodeString(), value.toJava(Object.class));
             setSize( map.size() );
-        }
-
-        @Override
-        protected final void op_asetSmallForString(Ruby runtime, RubyString key, IRubyObject value) {
-            op_asetForString(runtime, key, value);
         }
 
         @Override
@@ -216,14 +213,14 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             Object value = map.get(convertedKey);
 
             if (value != null) {
-                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
+                return new RubyHashEntry(key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value));
             }
 
             return NO_ENTRY;
         }
 
         @Override
-        public RubyHashEntry internalDelete(final IRubyObject key) {
+        public IRubyObject internalDelete(final IRubyObject key) {
             final Map map = mapDelegate();
             Object convertedKey = key.toJava(Object.class);
             Object value = map.get(convertedKey);
@@ -231,9 +228,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             if (value != null) {
                 map.remove(convertedKey);
                 setSize( map.size() );
-                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
+                return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value);
             }
-            return NO_ENTRY;
+            return null;
         }
 
         @Override // NOTE: likely won't be called
@@ -293,16 +290,19 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyBoolean getCompareByIdentity_p(ThreadContext context) {
+        public RubyBoolean compare_by_identity_p(ThreadContext context) {
             // NOTE: obviously little we can do to detect - but at least report Java built-in one :
             return context.runtime.newBoolean( mapDelegate() instanceof java.util.IdentityHashMap );
         }
 
         @Override // re-invent @JRubyMethod(name = "any?")
-        public IRubyObject any_p(ThreadContext context, Block block) {
-            if (isEmpty()) return context.runtime.getFalse();
+        public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+            boolean patternGiven = args.length > 0;
 
-            if (!block.isGiven()) return context.runtime.getTrue();
+            if (isEmpty()) return context.fals;
+
+            if (!block.isGiven() && !patternGiven) return context.tru;
+            if (patternGiven) return any_p_p(context, args[0]);
 
             if (block.getSignature().arityValue() > 1) {
                 return any_p_i_fast(context, block);
@@ -328,6 +328,18 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
                 if ( block.yieldArray(context, runtime.newArray(key, val), null).isTrue() ) {
+                    return runtime.getTrue();
+                }
+            }
+            return runtime.getFalse();
+        }
+
+        private RubyBoolean any_p_p(ThreadContext context, IRubyObject pattern) {
+            final Ruby runtime = context.runtime;
+            for ( Map.Entry entry : entrySet() ) {
+                final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
+                final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+                if ( pattern.callMethod(context, "===", RubyArray.newArray(runtime, key, val)).isTrue() ) {
                     return runtime.getTrue();
                 }
             }
@@ -556,8 +568,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
-    public RubyBoolean has_key_p(IRubyObject key) {
-        return getOrCreateRubyHashMap().has_key_p(key);
+    public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+        return getOrCreateRubyHashMap().has_key_p(context, key);
     }
 
     /** rb_hash_has_value
@@ -608,14 +620,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().keep_if(context, block);
     }
 
-    /** rb_hash_sort
-     *
-     */
-    @JRubyMethod(name = "sort")
-    public IRubyObject sort(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().sort(context, block);
-    }
-
     /** rb_hash_index
      *
      */
@@ -636,8 +640,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      *
      */
     @JRubyMethod(name = "keys")
-    public RubyArray keys() {
-        return getOrCreateRubyHashMap().keys();
+    public RubyArray keys(ThreadContext context) {
+        return getOrCreateRubyHashMap().keys(context);
     }
 
     /** rb_hash_values
@@ -778,13 +782,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     }
 
     @JRubyMethod(name = "compare_by_identity")
-    public IRubyObject getCompareByIdentity(ThreadContext context) {
+    public IRubyObject compare_by_identity(ThreadContext context) {
         return this; // has no effect - mostly for compatibility
     }
 
     @JRubyMethod(name = "compare_by_identity?")
-    public IRubyObject getCompareByIdentity_p(ThreadContext context) {
-        return getOrCreateRubyHashMap().getCompareByIdentity_p(context);
+    public IRubyObject compare_by_identity_p(ThreadContext context) {
+        return getOrCreateRubyHashMap().compare_by_identity_p(context);
     }
 
     @Override
@@ -797,9 +801,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return dupImpl("clone");
     }
 
-    @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap().any_p(context, block);
+    @JRubyMethod(name = "any?", optional = 1)
+    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
+        return getOrCreateRubyHashMap().any_p(context, args, block);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)
@@ -835,6 +839,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @Deprecated
     public IRubyObject op_aset19(ThreadContext context, IRubyObject key, IRubyObject value) {
         return getOrCreateRubyHashMap().op_aset19(context, key, value);
+    }
+
+    @Deprecated
+    public IRubyObject sort(ThreadContext context, Block block) {
+        return getOrCreateRubyHashMap().sort(context, block);
     }
 
 }

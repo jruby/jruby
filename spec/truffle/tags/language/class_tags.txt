@@ -1,1 +1,0 @@
-fails:A class definition raises an error when reopening a class with Object as superclass

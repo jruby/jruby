@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/util'
 
@@ -26,6 +26,7 @@ class TestGemUtil < Gem::TestCase
     assert_equal File.join(@tempdir, 'a/b/c'), enum.next
     assert_equal File.join(@tempdir, 'a/b'),   enum.next
     assert_equal File.join(@tempdir, 'a'),     enum.next
+    loop { break if enum.next.nil? } # exhaust the enumerator
   end
 
   def test_linked_list_find

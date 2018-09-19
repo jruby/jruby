@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "SystemCallError" do
   before :each do
@@ -83,7 +83,7 @@ describe "SystemCallError#message" do
   end
 
   it "returns the message given as an argument to new" do
-    SystemCallError.new("message", 1).message.should  =~ /message/
+    SystemCallError.new("message", 1).message.should =~ /message/
     SystemCallError.new("XXX").message.should =~ /XXX/
   end
 end

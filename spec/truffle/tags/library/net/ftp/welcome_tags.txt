@@ -1,1 +1,0 @@
-fails:Net::FTP#welcome returns the server's welcome message

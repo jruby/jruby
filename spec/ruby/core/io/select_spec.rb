@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "IO.select" do
   before :each do
@@ -15,9 +15,11 @@ describe "IO.select" do
   end
 
   it "returns immediately all objects that are ready for I/O when timeout is 0" do
-    @wr.write("be ready")
-    result = IO.select [@rd], [@wr], nil, 0
-    result.should == [[@rd], [@wr], []]
+    @wr.syswrite("be ready")
+    IO.pipe do |_, wr|
+      result = IO.select [@rd], [wr], nil, 0
+      result.should == [[@rd], [wr], []]
+    end
   end
 
   it "returns nil after timeout if there are no objects ready for I/O" do
@@ -70,9 +72,11 @@ describe "IO.select" do
     obj.should_receive(:to_io).at_least(1).and_return(@rd)
     IO.select([obj]).should == [[obj], [], []]
 
-    obj = mock("write_io")
-    obj.should_receive(:to_io).at_least(1).and_return(@wr)
-    IO.select(nil, [obj]).should == [[], [obj], []]
+    IO.pipe do |_, wr|
+      obj = mock("write_io")
+      obj.should_receive(:to_io).at_least(1).and_return(wr)
+      IO.select(nil, [obj]).should == [[], [obj], []]
+    end
   end
 
   it "raises TypeError if supplied objects are not IO" do
@@ -108,6 +112,7 @@ describe "IO.select when passed nil for timeout" do
     end
 
     Thread.pass while t.status && t.status != "sleep"
+    t.join unless t.status
     t.status.should == "sleep"
     t.kill
     t.join

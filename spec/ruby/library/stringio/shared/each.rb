@@ -85,7 +85,7 @@ describe :stringio_each_no_arguments, shared: true do
 
   it "returns an Enumerator when passed no block" do
     enum = @io.send(@method)
-    enum.instance_of?(enumerator_class).should be_true
+    enum.instance_of?(Enumerator).should be_true
 
     seen = []
     enum.each { |b| seen << b }
@@ -101,5 +101,14 @@ describe :stringio_each_not_readable, shared: true do
     io = StringIO.new("a b c d e")
     io.close_read
     lambda { io.send(@method) { |b| b } }.should raise_error(IOError)
+  end
+end
+
+describe :stringio_each_chomp, shared: true do
+  it "yields each line with removed newline characters to the passed block" do
+    seen = []
+    io = StringIO.new("a b \rc d e\n1 2 3 4 5\r\nthe end")
+    io.send(@method, chomp: true) {|s| seen << s }
+    seen.should == ["a b \rc d e", "1 2 3 4 5", "the end"]
   end
 end

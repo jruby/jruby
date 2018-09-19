@@ -1,1 +1,0 @@
-fails:main#def sets the visibility of the given method to private when defined in a block

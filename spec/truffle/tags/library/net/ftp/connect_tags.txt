@@ -1,6 +1,0 @@
-fails:Net::FTP#connect tries to connect to the FTP Server on the given host and port
-fails:Net::FTP#connect returns nil
-fails:Net::FTP#connect prints a small debug line when in debug mode
-fails:Net::FTP#connect does not raise any error when the response code is 220
-fails:Net::FTP#connect raises a Net::FTPReplyError when the response code is 120
-fails:Net::FTP#connect raises a Net::FTPTempError when the response code is 421

@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -46,12 +47,14 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
 
     @Override
     public void encode(byte[] value) {
-
     }
 
     @Override
     public void encode(Encoding encoding) {
+    }
 
+    @Override
+    public void encode(RubySymbol value) {
     }
 
     @Override
@@ -166,7 +169,7 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
 
     private void increment(Operand operand) {
         Integer count = operandCounts.get(operand);
-        if (count == null) count = new Integer(0);
+        if (count == null) count = Integer.valueOf(0);
 
         operandCounts.put(operand, count + 1);
     }

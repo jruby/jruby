@@ -18,6 +18,12 @@ class Test_StringCStr < Test::Unit::TestCase
     assert_equal(0, s.cstr_term, Bug4319)
   end
 
+  def test_shared
+    s = Bug::String.new("abcdef")*5
+    s = s.unterminated_substring(0, 29)
+    assert_equal(0, s.cstr_term, Bug4319)
+  end
+
   def test_frozen
     s0 = Bug::String.new("abcdefgh"*8)
 
@@ -34,6 +40,12 @@ class Test_StringCStr < Test::Unit::TestCase
         assert_equal(0, s.cstr_term)
       end
     end
+  end
+
+  def test_rb_str_new_frozen_embed
+    str = Bug::String.cstr_noembed("rbconfig.rb")
+    str = Bug::String.rb_str_new_frozen(str)
+    assert_equal true, Bug::String.cstr_embedded?(str)
   end
 
   WCHARS = [Encoding::UTF_16BE, Encoding::UTF_16LE, Encoding::UTF_32BE, Encoding::UTF_32LE]

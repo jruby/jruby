@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -27,6 +27,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.constants.platform.RLIM;
@@ -36,6 +37,7 @@ import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
+import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -129,6 +131,7 @@ public class RubyProcess {
     public static final String CLOCK_UNIT_NANOSECOND = "nanosecond";
     public static final String CLOCK_UNIT_MICROSECOND = "microsecond";
     public static final String CLOCK_UNIT_MILLISECOND = "millisecond";
+    public static final String CLOCK_UNIT_SECOND = "second";
     public static final String CLOCK_UNIT_FLOAT_MICROSECOND = "float_microsecond";
     public static final String CLOCK_UNIT_FLOAT_MILLISECOND = "float_millisecond";
     public static final String CLOCK_UNIT_FLOAT_SECOND = "float_second";
@@ -601,6 +604,11 @@ public class RubyProcess {
         return ary;
     }
 
+    @JRubyMethod(name = "last_status", module = true, visibility = PRIVATE)
+    public static IRubyObject last_status(ThreadContext context, IRubyObject recv) {
+        return context.getLastExitStatus();
+    }
+
     @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
     public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur) {
         return setrlimit(context, recv, resource, rlimCur, context.nil);
@@ -645,8 +653,7 @@ public class RubyProcess {
                 }
         /* fall through */
 
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return rval.convertToInteger().getIntValue();
         }
 
@@ -687,8 +694,7 @@ public class RubyProcess {
                 }
         /* fall through */
 
-            case FIXNUM:
-            case BIGNUM:
+            case INTEGER:
                 return rtype.convertToInteger().getIntValue();
         }
 
@@ -702,7 +708,7 @@ public class RubyProcess {
     // MRI: rlimit_resource_name2int
     private static int rlimitResourceName2int(String name, int casetype) {
         RLIMIT resource;
-            
+
         OUTER: while (true) {
             switch (Character.toUpperCase(name.charAt(0))) {
                 case 'A':
@@ -1274,78 +1280,78 @@ public class RubyProcess {
         boolean processGroupKill = signal < 0;
 
         if (processGroupKill) {
-		    if (Platform.IS_WINDOWS) {
+            if (Platform.IS_WINDOWS) {
                 throw  runtime.newErrnoEINVALError("group signals not implemented in windows");
             }
-		    signal = -signal;
+            signal = -signal;
         }
 
-		if (Platform.IS_WINDOWS) {
-		    for (int i = 1; i < args.length; i++) {
-				int pid = RubyNumeric.num2int(args[i]);
-				if (signal == 0) {
-					jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
-					if(ptr != null && ptr.address() != -1) {
-					   try {
-                           IntByReference status = new IntByReference(0);
-					       if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
-					          throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
-					       } else {
-					           if(status.intValue() != STILL_ACTIVE) {
-							       throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
-                               }
-					       }
-					   } finally {
-					     kernel32().CloseHandle(ptr);
-					   }
-
-					} else {
-					    if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
-					        throw runtime.newErrnoESRCHError();
-					    } else {
-					        throw runtime.newErrnoEPERMError("Process does not exist " + pid);
-					    }
-					}
-			    } else if (signal == 9) { //SIGKILL
-				    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);
+        if (Platform.IS_WINDOWS) {
+            for (int i = 1; i < args.length; i++) {
+                int pid = RubyNumeric.num2int(args[i]);
+                if (signal == 0) {
+                    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
                     if(ptr != null && ptr.address() != -1) {
-					    try {
-                            IntByReference status = new IntByReference(0);
-					        if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
-					            throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
-					        } else {
-					            if (status.intValue() == STILL_ACTIVE) {
-						            if (kernel32().TerminateProcess(ptr, 0) == 0) {
-						               throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
-						             }
-                                     // success
-						        }
-					        }
-						} finally {
-					       kernel32().CloseHandle(ptr);
-					    }
-					} else {
-					    if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
-					        throw runtime.newErrnoESRCHError();
-					    } else {
-					        throw runtime.newErrnoEPERMError("Process does not exist " + pid);
-					    }
-					}
-				} else {
-		            throw runtime.newNotImplementedError("this signal not yet implemented in windows");
-		        }
-            }
-		} else {
-			POSIX posix = runtime.getPosix();
-			for (int i = 1; i < args.length; i++) {
-				int pid = RubyNumeric.num2int(args[i]);
+                       try {
+                           IntByReference status = new IntByReference(0);
+                           if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
+                              throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
+                           } else {
+                               if(status.intValue() != STILL_ACTIVE) {
+                                   throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
+                               }
+                           }
+                       } finally {
+                         kernel32().CloseHandle(ptr);
+                       }
 
-				// FIXME: It may be possible to killpg on systems which support it.  POSIX library
-				// needs to tell whether a particular method works or not
-				if (pid == 0) pid = runtime.getPosix().getpid();
-				checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
-			}
-		}
+                    } else {
+                        if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
+                            throw runtime.newErrnoESRCHError();
+                        } else {
+                            throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                        }
+                    }
+                } else if (signal == 9) { //SIGKILL
+                    jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);
+                    if(ptr != null && ptr.address() != -1) {
+                        try {
+                            IntByReference status = new IntByReference(0);
+                            if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
+                                throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
+                            } else {
+                                if (status.intValue() == STILL_ACTIVE) {
+                                    if (kernel32().TerminateProcess(ptr, 0) == 0) {
+                                       throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
+                                     }
+                                     // success
+                                }
+                            }
+                        } finally {
+                           kernel32().CloseHandle(ptr);
+                        }
+                    } else {
+                        if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
+                            throw runtime.newErrnoESRCHError();
+                        } else {
+                            throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                        }
+                    }
+                } else {
+                    throw runtime.newNotImplementedError("this signal not yet implemented in windows");
+                }
+            }
+        } else {
+            POSIX posix = runtime.getPosix();
+            for (int i = 1; i < args.length; i++) {
+                int pid = RubyNumeric.num2int(args[i]);
+
+                // FIXME: It may be possible to killpg on systems which support it.  POSIX library
+                // needs to tell whether a particular method works or not
+                if (pid == 0) pid = runtime.getPosix().getpid();
+                checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
+            }
+        }
 
         return runtime.newFixnum(args.length - 1);
 
@@ -1367,9 +1373,9 @@ public class RubyProcess {
             }
         };
 
-        return RubyThread.newInstance(
-                runtime.getThread(),
-                IRubyObject.NULL_ARRAY,
+        return RubyThread.startWaiterThread(
+                runtime,
+                pid,
                 CallBlock.newCallClosure(recv, (RubyModule)recv, Signature.NO_ARGUMENTS, callback, context));
     }
 
@@ -1413,7 +1419,6 @@ public class RubyProcess {
                 Block.NULL_BLOCK);
     }
 
-    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
         Ruby runtime = context.runtime;
@@ -1421,12 +1426,11 @@ public class RubyProcess {
         return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), CLOCK_UNIT_FLOAT_SECOND);
     }
 
-    // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
         Ruby runtime = context.runtime;
 
-        if (!(_unit instanceof RubySymbol)) {
+        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) {
             throw runtime.newArgumentError("unexpected unit: " + _unit);
         }
 
@@ -1445,10 +1449,18 @@ public class RubyProcess {
         long nanos;
 
         if (_clock_id instanceof RubySymbol) {
-            if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
+            RubySymbol clock_id = (RubySymbol) _clock_id;
+            if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
                 nanos = System.nanoTime();
-            } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
-                nanos = System.currentTimeMillis() * 1000000;
+            } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
+                POSIX posix = runtime.getPosix();
+                if (posix.isNative()) {
+                    Timeval tv = posix.allocateTimeval();
+                    posix.gettimeofday(tv);
+                    nanos = tv.sec() * 1_000_000_000 + tv.usec() * 1000;
+                } else {
+                    nanos = System.currentTimeMillis() * 1000000;
+                }
             } else {
                 throw runtime.newErrnoEINVALError("clock_gettime");
             }
@@ -1466,9 +1478,10 @@ public class RubyProcess {
         long nanos;
 
         if (_clock_id instanceof RubySymbol) {
-            if (_clock_id.toString().equals(CLOCK_MONOTONIC)) {
+            RubySymbol clock_id = (RubySymbol) _clock_id;
+            if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
                 nanos = 1;
-            } else if (_clock_id.toString().equals(CLOCK_REALTIME)) {
+            } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 nanos = 1000000;
             } else {
                 throw runtime.newErrnoEINVALError("clock_gettime");
@@ -1487,11 +1500,13 @@ public class RubyProcess {
             return runtime.newFixnum(nanos / 1000);
         } else if (unit.equals(CLOCK_UNIT_MILLISECOND)) {
             return runtime.newFixnum(nanos / 1000000);
+        } else if (unit.equals(CLOCK_UNIT_SECOND)) {
+            return runtime.newFixnum(nanos / 1000000000);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_MICROSECOND)) {
             return runtime.newFloat(nanos / 1000.0);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_MILLISECOND)) {
             return runtime.newFloat(nanos / 1000000.0);
-        } else if (unit.equals(CLOCK_UNIT_FLOAT_SECOND)) {
+        } else if (unit.equals(CLOCK_UNIT_FLOAT_SECOND) || unit.equals("")) {
             return runtime.newFloat(nanos / 1000000000.0);
         } else {
             throw runtime.newArgumentError("unexpected unit: " + unit);
@@ -1511,7 +1526,7 @@ public class RubyProcess {
     public static IRubyObject clock_getres(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
         Ruby runtime = context.runtime;
 
-        if (!(_unit instanceof RubySymbol)) {
+        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) {
             throw runtime.newArgumentError("unexpected unit: " + _unit);
         }
 

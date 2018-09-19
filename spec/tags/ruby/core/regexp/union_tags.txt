@@ -1,1 +1,1 @@
-fails:Regexp.union returns a Regexp with the encoding of multiple non-conflicting ASCII-incompatible String arguments
+critical(hangs):Regexp.union returns a Regexp with the encoding of multiple non-conflicting ASCII-incompatible String arguments

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -32,10 +32,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
@@ -43,15 +45,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
-import org.jruby.util.ArraySupport;
 
-import java.util.Arrays;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * @author  jpetersen
@@ -83,10 +83,8 @@ public class RubyProc extends RubyObject implements DataType {
 
 
     public RubyProc(Ruby runtime, RubyClass rubyClass, Block block, String file, int line) {
-        this(runtime, rubyClass, block.type);
+        this(runtime, rubyClass, block.type, file, line);
         this.block = block;
-        this.file = file;
-        this.line = line;
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
@@ -179,6 +177,9 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getLine());
             block = new Block(procBlock.getBody(), newBinding);
 
+            // Mark as escaped, so non-local flow errors immediately
+            block.escape();
+
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = oldScope.duplicate();
@@ -214,22 +215,19 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @Override
-    public IRubyObject to_s() {
-        return to_s19();
-    }
-
     @JRubyMethod(name = "to_s", alias = "inspect")
-    public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append("#<Proc:0x").append(Integer.toString(System.identityHashCode(block), 16));
+    public IRubyObject to_s() {
+        Ruby runtime = getRuntime();
+        RubyString string = runtime.newString("#<");
+
+        string.append(types(runtime, type()));
+        string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
-        if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
+        if (file != null) string.catString("@" + file + ":" + (block.getBody().getLine() + 1));
 
-        if (isLambda()) sb.append(" (lambda)");
-        sb.append('>');
-
-        IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
+        if (isLambda()) string.catString(" (lambda)");
+        string.catString(">");
 
         if (isTaint()) string.setTaint(true);
 
@@ -241,14 +239,6 @@ public class RubyProc extends RubyObject implements DataType {
         return getRuntime().newBinding(block.getBinding());
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return call19(context, args, block);
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, null, Block.NULL_BLOCK);
-    }
-
     /**
      * For Type.LAMBDA, ensures that the args have the correct arity.
      *
@@ -256,59 +246,31 @@ public class RubyProc extends RubyObject implements DataType {
      * arity of one, etc.)
      */
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        Signature signature = blockBody.getSignature();
-
-        if (args == null) return IRubyObject.NULL_ARRAY;
-
         if (type == Block.Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
+            blockBody.getSignature().checkArity(context.runtime, args);
             return args;
         }
 
-        boolean isFixed = signature.isFixed();
-        int required = signature.required();
-        int actual = args.length;
-        boolean restKwargs = blockBody instanceof IRBlockBody && ((IRBlockBody) blockBody).getSignature().hasKwargs();
-
-        // FIXME: This is a hot mess.  restkwargs factors into destructing a single element array as well.  I just weaved it into this logic.
+        // FIXME: weirdly nearly identical logic exists in prepareBlockArgsInternal but only for lambdas.
         // for procs and blocks, single array passed to multi-arg must be spread
-        if ((signature != Signature.ONE_ARGUMENT &&  required != 0 && (isFixed || signature != Signature.OPTIONAL) || restKwargs) &&
-                actual == 1 && args[0].respondsTo("to_ary")) {
-            IRubyObject newAry = Helpers.aryToAry(args[0]);
-
-            // This is very common to yield in *IRBlockBody.  When we tackle call protocol for blocks this will combine.
-            if (newAry.isNil()) {
-                args = new IRubyObject[] { args[0] };
-            } else if (newAry instanceof RubyArray){
-                args = ((RubyArray) newAry).toJavaArrayMaybeUnsafe();
-            } else {
-                throw context.runtime.newTypeError(args[0].getType().getName() + "#to_ary should return Array");
-            }
-            actual = args.length;
-        }
-
-        // fixed arity > 0 with mismatch needs a new args array
-        if (isFixed && required > 0 && required != actual) {
-            IRubyObject[] newArgs = ArraySupport.newCopy(args, required);
-
-            if (required > actual) { // Not enough required args pad.
-                Helpers.fillNil(newArgs, actual, required, context.runtime);
-            }
-
-            args = newArgs;
-        }
+        int arityValue = blockBody.getSignature().arityValue();
+        if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
 
         return args;
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
-    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return call(context, args, null, Block.NULL_BLOCK);
+    }
+
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
 
         Block newBlock;
@@ -350,7 +312,7 @@ public class RubyProc extends RubyObject implements DataType {
                     runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
@@ -376,6 +338,16 @@ public class RubyProc extends RubyObject implements DataType {
 
     private boolean isThread() {
         return type.equals(Block.Type.THREAD);
+    }
+
+    @Deprecated
+    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
+        return call(context, args, block);
+    }
+
+    @Deprecated
+    public IRubyObject to_s19() {
+        return to_s();
     }
 
 }

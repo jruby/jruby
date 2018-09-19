@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# frozen_string_literal: false
+# frozen_string_literal: true
 
 require_relative 'helper'
 
@@ -7,7 +7,7 @@ module Psych
   class TestEmitter < TestCase
     def setup
       super
-      @out = StringIO.new('')
+      @out = StringIO.new(''.dup)
       @emitter = Psych::Emitter.new @out
     end
 
@@ -94,7 +94,7 @@ module Psych
 
     def test_resizing_tags
       @emitter.start_stream Psych::Nodes::Stream::UTF8
-      
+
       tags = []
       version = [1,1]
       obj = Object.new

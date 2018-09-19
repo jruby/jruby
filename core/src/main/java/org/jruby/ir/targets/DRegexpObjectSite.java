@@ -31,7 +31,12 @@ public class DRegexpObjectSite extends ConstructObjectSite {
         options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(DRegexpObjectSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(DRegexpObjectSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int options) {
         return new DRegexpObjectSite(type, options).bootstrap(lookup);
@@ -71,7 +76,7 @@ public class DRegexpObjectSite extends ConstructObjectSite {
                 return cache;
             }
 
-            // we don't care if this suceeds, just that it ony gets set once
+            // we don't care if this succeeds, just that it only gets set once
             UPDATER.compareAndSet(this, null, cache);
 
             setTarget(Binder.from(type()).dropAll().constant(cache));

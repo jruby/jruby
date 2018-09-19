@@ -9,7 +9,7 @@ class Gem::Ext::RakeBuilder < Gem::Ext::Builder
 
   def self.build(extension, directory, dest_path, results, args=[], lib_dir=nil)
     if File.basename(extension) =~ /mkrf_conf/i then
-      cmd = "#{Gem.ruby} #{File.basename extension}"
+      cmd = "#{Gem.ruby} #{File.basename extension}".dup
       cmd << " #{args.join " "}" unless args.empty?
       run cmd, results
     end
@@ -20,7 +20,7 @@ class Gem::Ext::RakeBuilder < Gem::Ext::Builder
     rake = ENV['rake']
 
     rake ||= begin
-               "#{Gem.ruby} -rubygems #{Gem.bin_path('rake', 'rake')}"
+               "#{Gem.ruby} -rrubygems #{Gem.bin_path('rake', 'rake')}"
              rescue Gem::Exception
              end
 

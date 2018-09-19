@@ -1,18 +1,31 @@
 class Proc
   def curry(curried_arity = nil)
     if lambda? && curried_arity
-      if arity > 0 && curried_arity != arity
-        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
+      if arity >= 0 && curried_arity != arity
+        raise ArgumentError, "wrong number of arguments (given %i, expected %i)" % [
           curried_arity,
           arity
         ]
       end
 
-      if arity < 0 && curried_arity < (-arity - 1)
-        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
-          curried_arity,
-          -arity - 1
-        ]
+      if arity < -1
+        is_rest, opt = false, 0
+        parameters.each do |arr|
+          case arr[0]
+          when :rest then
+            is_rest = true
+          when :opt then
+            opt += 1
+          end
+        end
+        req = -arity - 1
+        if curried_arity < req || curried_arity > (req + opt) && !is_rest
+          expected = is_rest ?  "#{req}+" : "#{req}..#{req+opt}"
+          raise ArgumentError, "wrong number of arguments (given %i, expected %s)" % [
+                  curried_arity,
+                  expected
+                ]
+        end
       end
     end
 
@@ -23,7 +36,7 @@ class Proc
   # otherwise looks just like Proc in every way. This allows us to override
   # the methods with different behavior without constructing a singleton every
   # time a proc is curried by using some JRuby-specific tricks below.
-  curried_prototype = proc{}
+  curried_prototype = proc {}
   curried_prototype.instance_eval do
     def binding
       raise ArgumentError, "cannot create binding from f proc"
@@ -39,7 +52,8 @@ class Proc
   end
 
   # Yank the singleton class out of the curried prototype object.
-  Curried = JRuby.reference(curried_prototype).meta_class
+  Curried = curried_prototype
+  private_constant :Curried
 
   def self.__make_curry_proc__(proc, passed, arity)
     f = __send__((proc.lambda? ? :lambda : :proc)) do |*argv, &passed_proc|
@@ -51,12 +65,12 @@ class Proc
         end
         __make_curry_proc__(proc, my_passed, arity)
       else
-        proc.call(*my_passed)
+        proc.call(*my_passed, &passed_proc)
       end
     end
 
     # Replace the curried proc's class with our prototype singleton class
-    JRuby.reference(f).meta_class = Curried
+    JRuby.send(:set_meta_class, f, Curried)
 
     f
   end

@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "BasicObject#instance_eval" do
   before :each do
@@ -106,7 +106,7 @@ describe "BasicObject#instance_eval" do
 
   it "makes the receiver metaclass the scoped class when used with a string" do
     obj = Object.new
-    klass = obj.instance_eval %{
+    obj.instance_eval %{
       class B; end
       B
     }
@@ -167,5 +167,22 @@ end
       e
     end
     err.backtrace.first.split(":")[0..1].should == ["a_file", "10"]
+  end
+
+  it "evaluates string with given filename and negative linenumber" do
+    err = begin
+      Object.new.instance_eval("\n\nraise\n", "b_file", -100)
+    rescue => e
+      e
+    end
+    err.backtrace.first.split(":")[0..1].should == ["b_file", "-98"]
+  end
+
+  it "has access to the caller's local variables" do
+    x = nil
+
+    instance_eval "x = :value"
+
+    x.should == :value
   end
 end

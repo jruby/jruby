@@ -1,24 +1,26 @@
 package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.ByteList;
 
-public class Symbol extends ImmutableLiteral {
-    public static final Symbol KW_REST_ARG_DUMMY = new Symbol("", ASCIIEncoding.INSTANCE);
+public class Symbol extends ImmutableLiteral implements Stringable {
+    public static final Symbol KW_REST_ARG_DUMMY = new Symbol(null);
 
-    private final String name;
-    private final Encoding encoding;
+    private final RubySymbol symbol;
 
-    public Symbol(String name, Encoding encoding) {
-        super();
+    public Symbol(RubySymbol symbol) {
+        this.symbol = symbol;
+    }
 
-        this.name = name;
-        this.encoding = encoding;
+    public boolean equals(Object other) {
+        return other instanceof Symbol &&
+                (this == KW_REST_ARG_DUMMY && other == KW_REST_ARG_DUMMY || symbol.equals(((Symbol) other).symbol));
     }
 
     @Override
@@ -26,13 +28,19 @@ public class Symbol extends ImmutableLiteral {
         return OperandType.SYMBOL;
     }
 
-    public String getName() {
-        return name;
+    public ByteList getBytes() {
+        return symbol.getBytes();
     }
+
+    public RubySymbol getSymbol() {
+        return symbol;
+    }
+
+    public String getString() { return symbol.idString(); }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime, getName(), encoding);
+        return symbol;
     }
 
     @Override
@@ -41,23 +49,23 @@ public class Symbol extends ImmutableLiteral {
     }
 
     public Encoding getEncoding() {
-        return encoding;
+        return symbol.getEncoding();
     }
 
     @Override
     public String toString() {
-        return ":'" + getName() + "'";
+        return ":'" + getString() + "'";
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getName());
-        e.encode(getEncoding());
+
+        e.encode(getBytes());
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeString(), d.decodeEncoding());
+        return new Symbol(d.decodeSymbol());
     }
 
     @Override

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -232,9 +232,9 @@ public class ShellLauncher {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
             RubyHash hash = null;
             if (!clearEnv) {
-                hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
+                hash = (RubyHash) runtime.getObject().getConstant("ENV").dup();
             }
-            String[] ret, ary;
+            String[] ret;
 
             if (mergeEnv != null) {
                 ret = new String[hash.size() + mergeEnv.size()];
@@ -242,9 +242,9 @@ public class ShellLauncher {
                 ret = new String[hash.size()];
             }
 
-            int i=0;
+            int i = 0;
             if (hash != null) {
-                for(Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
+                for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
                     // if the key is nil, raise TypeError
                     if (e.getKey() == null) {
                         throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
@@ -253,7 +253,7 @@ public class ShellLauncher {
                     if (e.getValue() == null) {
                         continue;
                     }
-                    ret[i] = e.getKey() + "=" + e.getValue();
+                    ret[i] = e.getKey() + '=' + e.getValue();
                     i++;
                 }
             }
@@ -268,7 +268,7 @@ public class ShellLauncher {
                         if (e.getValue() == null) {
                             continue;
                         }
-                        ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+                        ret[i] = e.getKey() + '=' + e.getValue();
                         i++;
                     }
                 } else if (mergeEnv instanceof RubyArray) {
@@ -286,19 +286,21 @@ public class ShellLauncher {
                         if (e.eltOk(1) == null) {
                             continue;
                         }
-                        ret[i] = e.eltOk(0).toString() + "=" + e.eltOk(1).toString();
+                        ret[i] = e.eltOk(0).toString() + '=' + e.eltOk(1).toString();
                         i++;
                     }
                 }
             }
 
-            ary = new String[i];
-            System.arraycopy(ret, 0, ary, 0, i);
-            return ary;
+            return arrayOfLength(ret, i);
 
         } finally {
             context.setEventHooksEnabled(traceEnabled);
         }
+    }
+
+    private static String[] arrayOfLength(final String[] ary, final int len) {
+        return len == ary.length ? ary : Arrays.copyOf(ary, len);
     }
 
     private static boolean filenameIsPathSearchable(String fname, boolean forExec) {
@@ -411,14 +413,25 @@ public class ShellLauncher {
         return pathFile;
     }
 
-    // MRI: Hopefully close to dln_find_exe_r used by popen logic
     public static File findPathExecutable(Ruby runtime, String fname) {
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
         IRubyObject pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
-        String[] pathNodes = null;
+        return findPathExecutable(runtime, fname, pathObject);
+    }
+
+    // MRI: Hopefully close to dln_find_exe_r used by popen logic
+    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+        String[] pathNodes;
+
+        if (pathObject == null || pathObject.isNil()) {
+            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+            pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
+        }
+
         if (pathObject == null) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
         }
+
         else {
             String pathSeparator = System.getProperty("path.separator");
             String path = pathObject.toString();
@@ -1196,11 +1209,7 @@ public class ShellLauncher {
             } else {
                 verifyExecutable();
                 execArgs = args;
-                try {
-                    execArgs[0] = executableFile.getCanonicalPath();
-                } catch (IOException ioe) {
-                    // can't get the canonical path, will use as-is
-                }
+                execArgs[0] = executableFile.getAbsolutePath();
             }
         }
 
@@ -1464,7 +1473,7 @@ public class ShellLauncher {
             synchronized (waitLock) {
                 waitLock.notify();
             }
-            stop();
+            interrupt();
         }
     }
 
@@ -1514,9 +1523,8 @@ public class ShellLauncher {
             }
         }
         public void quit() {
-            interrupt();
             this.quit = true;
-            stop();
+            interrupt();
         }
     }
 
@@ -1548,15 +1556,20 @@ public class ShellLauncher {
         try { pOut.close(); } catch (IOException io) {}
         try { pErr.close(); } catch (IOException io) {}
 
-        // Force t3 to quit, just in case if it's stuck.
+        // Interrupt all three, just in case they're stuck.
         // Note: On some platforms, even interrupt might not
-        // have an effect if the thread is IO blocked.
-        try { t3.interrupt(); } catch (SecurityException se) {}
+        // have an effect if the thread is IO blocked. But we
+        // need to move away from Thread.stop so this is the
+        // best we can do.
+        try {
+            t1.quit();
+            t2.quit();
+            t3.quit();
+            t1.interrupt();
+            t2.interrupt();
+            t3.interrupt();
+        } catch (SecurityException se) {}
 
-        // finally, forcibly stop the threads. Yeah, I know.
-        t1.stop();
-        t2.stop();
-        t3.stop();
         try { t1.join(); } catch (InterruptedException ie) {}
         try { t2.join(); } catch (InterruptedException ie) {}
         try { t3.join(); } catch (InterruptedException ie) {}

@@ -1,16 +1,10 @@
 # frozen_string_literal: false
 require 'test/unit'
-require "-test-/symbol"
+require_relative 'noninterned_name'
 
 module Test_Symbol
   class TestInadvertent < Test::Unit::TestCase
-    def noninterned_name(prefix = "")
-      prefix += "_#{Thread.current.object_id.to_s(36).tr('-', '_')}"
-      begin
-        name = "#{prefix}_#{rand(0x1000).to_s(16)}_#{Time.now.usec}"
-      end while Bug::Symbol.find(name)
-      name
-    end
+    include NonInterned
 
     def setup
       @obj = Object.new
@@ -52,6 +46,14 @@ module Test_Symbol
       assert_not_interned_error(cl, :const_get, name, Feature5072)
 
       assert_not_interned_error(cl, :const_get, name.to_sym)
+    end
+
+    def test_module_const_get_toplevel
+      bug12089 = '[ruby-dev:49498] [Bug #12089]'
+      name = noninterned_name("A")
+      e = assert_not_interned_error(Object, :const_get, name)
+      assert_equal(name, e.name)
+      assert_not_match(/Object::/, e.message, bug12089)
     end
 
     def test_module_const_defined?
@@ -354,15 +356,9 @@ module Test_Symbol
     end
 
     def test_gc_attrset
-      assert_separately(['-r-test-/symbol', '-', '[ruby-core:62226] [Bug #9787]'], <<-'end;') #    begin
-      bug = ARGV.shift
-      def noninterned_name(prefix = "")
-        prefix += "_#{Thread.current.object_id.to_s(36).tr('-', '_')}"
-        begin
-          name = "#{prefix}_#{rand(0x1000).to_s(16)}_#{Time.now.usec}"
-        end while Bug::Symbol.find(name) or Bug::Symbol.find(name + "=")
-        name
-      end
+      assert_separately(['-r-test-/symbol', '-r-ext-/symbol/noninterned_name', '-'], "#{<<-'begin;'}\n#{<<-"end;"}")
+      bug = '[ruby-core:62226] [Bug #9787]'
+      include Test_Symbol::NonInterned
       names = Array.new(1000) {noninterned_name("gc")}
       names.each {|n| n.to_sym}
       GC.start(immediate_sweep: false)
@@ -370,6 +366,7 @@ module Test_Symbol
         eval(":#{n}=")
         assert_nothing_raised(TypeError, bug) {eval("proc{self.#{n} = nil}")}
       end
+      begin;
       end;
     end
 

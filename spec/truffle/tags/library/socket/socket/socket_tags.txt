@@ -1,5 +1,0 @@
-fails:Socket inherits from BasicSocket and IO
-fails:The socket class hierarchy has an IPSocket in parallel to Socket
-fails:The socket class hierarchy has TCPSocket and UDPSocket subclasses of IPSocket
-fails:The socket class hierarchy has a UNIXSocket in parallel to Socket
-fails:Server class hierarchy contains UNIXServer

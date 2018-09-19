@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Regexps with modifers" do
   it "supports /i (case-insensitive)" do
@@ -23,13 +23,13 @@ describe "Regexps with modifers" do
 
   it "invokes substitutions for /o only once" do
     ScratchPad.record []
-    to_s_callback = Proc.new do
-      ScratchPad << :to_s_callback
+    o = Object.new
+    def o.to_s
+      ScratchPad << :to_s
       "class_with_to_s"
     end
-    o = LanguageSpecs::ClassWith_to_s.new(to_s_callback)
-    2.times { /#{o}/o }
-    ScratchPad.recorded.should == [:to_s_callback]
+    eval "2.times { /#{o}/o }"
+    ScratchPad.recorded.should == [:to_s]
   end
 
   it "supports modifier combinations" do
@@ -37,6 +37,13 @@ describe "Regexps with modifers" do
     /foo/imoximox.match("foo").to_a.should == ["foo"]
 
     lambda { eval('/foo/a') }.should raise_error(SyntaxError)
+  end
+
+  ruby_version_is "2.4" do
+    it "supports (?~) (absent operator)" do
+      Regexp.new("(?~foo)").match("hello").to_a.should == ["hello"]
+      "foo".scan(Regexp.new("(?~foo)")).should == ["fo","o",""]
+    end
   end
 
   it "supports (?imx-imx) (inline modifiers)" do

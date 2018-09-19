@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel#warn" do
   before :each do
@@ -55,6 +55,13 @@ describe "Kernel#warn" do
     }.should output(nil, "line 1\nline 2\n")
   end
 
+  it "writes each array element on a line when passes an array" do
+    lambda {
+      $VERBOSE = true
+      warn(["line 1", "line 2"])
+    }.should output(nil, "line 1\nline 2\n")
+  end
+
   it "does not write strings when passed no arguments" do
     lambda {
       $VERBOSE = true
@@ -68,5 +75,61 @@ describe "Kernel#warn" do
       $/ = 'rs'
       warn("")
     }.should output(nil, /\n/)
+  end
+
+  ruby_version_is "2.5" do
+    describe ":uplevel keyword argument" do
+      before :each do
+        $VERBOSE = true
+      end
+
+      it "prepends a message with specified line from the backtrace" do
+        w = KernelSpecs::WarnInNestedCall.new
+
+        -> { w.f4("foo", 0) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.warn_call_lineno}: warning: foo|)
+        -> { w.f4("foo", 1) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f1_call_lineno}: warning: foo|)
+        -> { w.f4("foo", 2) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f2_call_lineno}: warning: foo|)
+        -> { w.f4("foo", 3) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f3_call_lineno}: warning: foo|)
+      end
+
+      ruby_bug "#14846", "2.5"..."2.6" do
+        it "does not prepend caller information if line number is too big" do
+          w = KernelSpecs::WarnInNestedCall.new
+          -> { w.f4("foo", 100) }.should output(nil, "warning: foo\n")
+        end
+      end
+
+      it "prepends even if a message is empty or nil" do
+        w = KernelSpecs::WarnInNestedCall.new
+
+        -> { w.f4("", 0) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.warn_call_lineno}: warning: \n$|)
+        -> { w.f4(nil, 0) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.warn_call_lineno}: warning: \n$|)
+      end
+
+      it "converts value to Integer" do
+        w = KernelSpecs::WarnInNestedCall.new
+
+        -> { w.f4(0.1) }.should output(nil, %r|classes.rb:#{w.warn_call_lineno}:|)
+        -> { w.f4(Rational(1, 2)) }.should output(nil, %r|classes.rb:#{w.warn_call_lineno}:|)
+      end
+
+      it "raises ArgumentError if passed negative value" do
+        -> { warn "", uplevel: -2 }.should raise_error(ArgumentError)
+        -> { warn "", uplevel: -100 }.should raise_error(ArgumentError)
+      end
+
+      ruby_bug "#14846", "2.5"..."2.6" do
+        it "raises ArgumentError if passed -1" do
+          -> { warn "", uplevel: -1 }.should raise_error(ArgumentError)
+        end
+      end
+
+      it "raises TypeError if passed not Integer" do
+        -> { warn "", uplevel: "" }.should raise_error(TypeError)
+        -> { warn "", uplevel: [] }.should raise_error(TypeError)
+        -> { warn "", uplevel: {} }.should raise_error(TypeError)
+        -> { warn "", uplevel: Object.new }.should raise_error(TypeError)
+      end
+    end
   end
 end

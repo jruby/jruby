@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -38,21 +38,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ASM;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
+import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -135,7 +134,7 @@ public class JavaProxyClassFactory {
 
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<>();
 
-    public final JavaProxyClass genProxyClass(final Ruby runtime, ClassLoader loader,
+    public final JavaProxyClass genProxyClass(final Ruby runtime, ClassDefiningClassLoader loader,
         String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
         throws InvocationTargetException {
         final Ruby prev = runtimeTLS.get();
@@ -146,11 +145,10 @@ public class JavaProxyClassFactory {
         finally { runtimeTLS.set(prev); }
     }
 
-    public JavaProxyClass newProxyClass(final Ruby runtime, ClassLoader loader,
+    public JavaProxyClass newProxyClass(final Ruby runtime, ClassDefiningClassLoader loader,
         String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
         throws InvocationTargetException {
 
-        if (loader == null) loader = JavaProxyClassFactory.class.getClassLoader();
         if (targetClassName == null) {
             targetClassName = targetClassName(superClass);
         }
@@ -158,13 +156,14 @@ public class JavaProxyClassFactory {
 
         Type selfType = Type.getType('L' + toInternalClassName(targetClassName) + ';');
         Map<MethodKey, MethodData> methods = collectMethods(superClass, interfaces, names);
+
         return generate(loader, targetClassName, superClass, interfaces, methods, selfType);
     }
 
-    private JavaProxyClass generate(ClassLoader loader, String targetClassName,
-            Class superClass, Class[] interfaces,
-            Map<MethodKey, MethodData> methods, Type selfType) {
-        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces);
+    private JavaProxyClass generate(ClassDefiningClassLoader loader, String targetClassName,
+                                    Class superClass, Class[] interfaces,
+                                    Map<MethodKey, MethodData> methods, Type selfType) {
+        ClassWriter cw = beginProxyClass(targetClassName, superClass, interfaces, loader);
 
         GeneratorAdapter clazzInit = createClassInitializer(selfType, cw);
 
@@ -180,7 +179,7 @@ public class JavaProxyClassFactory {
         // end class
         cw.visitEnd();
 
-        Class clazz = invokeDefineClass(loader, selfType.getClassName(), cw.toByteArray());
+        Class clazz = loader.defineClass(selfType.getClassName(), cw.toByteArray());
 
         // trigger class initialization for the class
         try {
@@ -206,48 +205,13 @@ public class JavaProxyClassFactory {
                 .append("$Proxy").append(nextId()).toString();
     }
 
-    private static final Method defineClassMethod;
-
-    static {
-        defineClassMethod = AccessController.doPrivileged(new PrivilegedAction<Method>() {
-            public Method run() {
-                try {
-                    final Class[] parameterTypes = { String.class,
-                        byte[].class, int.class, int.class, ProtectionDomain.class
-                    };
-                    final Method method = ClassLoader.class.getDeclaredMethod("defineClass", parameterTypes);
-                    method.setAccessible(true);
-                    return method;
-                }
-                catch (Exception e) {
-                    LOG.error("could not use ClassLoader.defineClass method", e);
-                    return null; // should not happen!
-                }
-            }
-        });
-    }
-
-    protected Class invokeDefineClass(ClassLoader loader, String className, final byte[] data) {
-        try {
-            final Object[] parameters = { className, data, 0, data.length, JavaProxyClassFactory.class.getProtectionDomain() };
-            return (Class) defineClassMethod.invoke(loader, parameters);
-        }
-        catch (IllegalArgumentException|IllegalAccessException e) {
-            LOG.warn("defining class with name " + className + " failed", e);
-            return null;
-        }
-        catch (InvocationTargetException e) {
-            LOG.warn("defining class with name " + className + " failed", e.getTargetException());
-            return null;
-        }
-    }
-
     private static ClassWriter beginProxyClass(final String className,
-            final Class superClass, final Class[] interfaces) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        final Class superClass, final Class[] interfaces, final ClassDefiningClassLoader loader) {
+
+        ClassWriter cw = ASM.newClassWriter(loader.asClassLoader());
 
         // start class
-        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+        cw.visit(JAVA_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                 toInternalClassName(className), /*signature*/ null,
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
@@ -359,7 +323,7 @@ public class JavaProxyClassFactory {
         String field_name = "__mth$" + md.getName() + md.scrambledSignature();
 
         // private static JavaProxyMethod __mth$sort$java_util_Comparator;
-        FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+        FieldVisitor fv = cw.visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 field_name, PROXY_METHOD_TYPE.getDescriptor(), null, null);
         fv.visitEnd();
 
@@ -370,6 +334,7 @@ public class JavaProxyClassFactory {
         clazzInit.push(md.isImplemented());
         // JavaProxyMethod initProxyMethod(JavaProxyClass proxyClass, String name, String desc, boolean hasSuper)
         clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyMethod);
+        // __mth$sort$java_util_Comparator = initProxyMethod(...)
         clazzInit.putStatic(selfType, field_name, PROXY_METHOD_TYPE);
 
         org.objectweb.asm.commons.Method sm = new org.objectweb.asm.commons.Method(
@@ -828,5 +793,27 @@ public class JavaProxyClassFactory {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
     public static @interface VarArgs {}
+
+    @Deprecated
+    public final JavaProxyClass genProxyClass(final Ruby runtime, ClassLoader loader,
+                                              String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
+            throws InvocationTargetException {
+        if (loader instanceof ClassDefiningClassLoader) {
+            return genProxyClass(runtime, (ClassDefiningClassLoader) loader, targetClassName, superClass, interfaces, names);
+        }
+
+        return genProxyClass(runtime, (ClassDefiningClassLoader) new OneShotClassLoader(loader), targetClassName, superClass, interfaces, names);
+    }
+
+    @Deprecated
+    public JavaProxyClass newProxyClass(final Ruby runtime, ClassLoader loader,
+                                        String targetClassName, Class superClass, Class[] interfaces, Set<String> names)
+            throws InvocationTargetException {
+        if (loader instanceof ClassDefiningClassLoader) {
+            return newProxyClass(runtime, (ClassDefiningClassLoader) loader, targetClassName, superClass, interfaces, names);
+        }
+
+        return newProxyClass(runtime, (ClassDefiningClassLoader) new OneShotClassLoader(loader), targetClassName, superClass, interfaces, names);
+    }
 
 }

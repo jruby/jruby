@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,12 +29,16 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 
 /**
  *
@@ -42,22 +46,23 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    private final String variableName;
-    private final String operatorName;
-    private final String variableNameAsgn;
+    private final RubySymbol variableName;
+    private final RubySymbol operatorName;
+    private final RubySymbol variableNameAsgn;
     private final boolean isLazy;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName, boolean isLazy) {
+    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, RubySymbol variableName,
+                      RubySymbol operatorName, boolean isLazy) {
         super(position, receiverNode.containsVariableAssignment());
-        
+
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
-        
+
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
         this.variableName = variableName;
         this.operatorName = operatorName;
-        this.variableNameAsgn = (variableName + "=").intern();
+        this.variableNameAsgn = variableName.asWriter();
         this.isLazy = isLazy;
     }
 
@@ -78,7 +83,23 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
+        return operatorName.asJavaString();
+    }
+
+    public ByteList getOperatorByteName() {
+        return operatorName.getBytes();
+    }
+
+    public RubySymbol getOperatorSymbolName() {
         return operatorName;
+    }
+
+    public boolean isOr() {
+        return CommonByteLists.OR_OR.equals(operatorName.getBytes());
+    }
+
+    public boolean isAnd() {
+        return CommonByteLists.AMPERSAND_AMPERSAND.equals(operatorName.getBytes());
     }
 
     /**
@@ -102,10 +123,26 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getVariableName() {
+        return variableName.asJavaString();
+    }
+
+    public ByteList getVariableByteName() {
+        return variableName.getBytes();
+    }
+
+    public RubySymbol getVariableSymbolName() {
         return variableName;
     }
     
     public String getVariableNameAsgn() {
+        return variableNameAsgn.asJavaString();
+    }
+
+    public ByteList getVariableByteNameAsgn() {
+        return variableNameAsgn.getBytes();
+    }
+
+    public RubySymbol getVariableSymbolNameAsgn() {
         return variableNameAsgn;
     }
     

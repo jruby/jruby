@@ -1,3 +1,0 @@
-fails:Socket::IPSocket#getaddress returns the IP address of hostname
-fails:Socket::IPSocket#getaddress returns the IP address when passed an IP
-fails:Socket::IPSocket#getaddress raises an error on unknown hostnames

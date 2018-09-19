@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "ENV.reject!" do
   it "rejects entries based on key" do
@@ -22,7 +22,7 @@ describe "ENV.reject!" do
   end
 
   it "returns an Enumerator if called without a block" do
-    ENV.reject!.should be_an_instance_of(enumerator_class)
+    ENV.reject!.should be_an_instance_of(Enumerator)
   end
 
   it "doesn't raise if empty" do
@@ -60,7 +60,7 @@ describe "ENV.reject" do
   end
 
   it "returns an Enumerator if called without a block" do
-    ENV.reject.should be_an_instance_of(enumerator_class)
+    ENV.reject.should be_an_instance_of(Enumerator)
   end
 
   it "doesn't raise if empty" do

@@ -1,11 +1,11 @@
 /**
  * **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.jsr223;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.util.Iterator;
@@ -48,7 +47,6 @@ import org.jruby.embed.io.WriterOutputStream;
 import org.jruby.embed.variable.TransientLocalVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.internal.runtime.GlobalVariable;
-import org.jruby.util.io.BadDescriptorException;
 
 /**
  * A collection of JSR223 specific utility methods.
@@ -65,7 +63,7 @@ public class Utils {
     static int getLineNumber(ScriptContext context) {
         Object obj = context.getAttribute(AttributeName.LINENUMBER.toString(), ScriptContext.ENGINE_SCOPE);
         if (obj instanceof Integer) {
-            return (Integer)obj;
+            return (Integer) obj;
         }
         return 0;
     }
@@ -106,25 +104,19 @@ public class Utils {
 
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         for (Map.Entry<String, Object> entry : bindings.entrySet()) {
-            Utils.put(container, receiver, entry.getKey(), entry.getValue(), context);
+            put(container, receiver, entry.getKey(), entry.getValue(), context);
         }
-        try {
-            //container.setReader(context.getReader());
-            Utils.setWriter(container, context.getWriter());
-            Utils.setErrorWriter(container, context.getErrorWriter());
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        } catch (BadDescriptorException ex) {
-            throw new RuntimeException(ex);
-        }
-        
+
+        //container.setReader(context.getReader());
+        setStdOut(container, context.getWriter());
+        setStdErr(container, context.getErrorWriter());
 
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
         bindings = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (bindings == null) return;
         for (Map.Entry<String, Object> entry : bindings.entrySet()) {
             if (container.getVarMap().containsKey(entry.getKey())) continue;
-            Utils.put(container, receiver, entry.getKey(), entry.getValue(), context);
+            put(container, receiver, entry.getKey(), entry.getValue(), context);
         }
     }
 
@@ -133,7 +125,7 @@ public class Utils {
         return context.getAttribute(AttributeName.RECEIVER.toString(), ScriptContext.ENGINE_SCOPE);
     }
     
-    private static void setWriter(ScriptingContainer container, Writer writer) throws IOException, BadDescriptorException {
+    private static void setStdOut(ScriptingContainer container, Writer writer) {
         if (writer == null) {
             return;
         }
@@ -154,7 +146,7 @@ public class Utils {
         runtime.getGlobalVariables().alias("$defout", "$stdout");
     }
     
-    private static void setErrorWriter(ScriptingContainer container, Writer writer) throws IOException, BadDescriptorException {
+    private static void setStdErr(ScriptingContainer container, Writer writer) {
         if (writer == null) {
             return;
         }
@@ -169,14 +161,14 @@ public class Utils {
         
         Ruby runtime = container.getProvider().getRuntime();
         RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope. GLOBAL);
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
         runtime.getObject().storeConstant("STDERR", io);
         runtime.getGlobalVariables().alias("$deferr", "$stderr");
     }
     
-    private static RubyIO getRubyIO(Ruby runtime, Writer writer) throws IOException, BadDescriptorException {
-        PrintStream pstream = new PrintStream(new WriterOutputStream(writer, runtime.getDefaultCharset().name()), true);
-        RubyIO io = new RubyIO(runtime, pstream, false);
+    private static RubyIO getRubyIO(Ruby runtime, Writer writer) {
+        PrintStream stream = new PrintStream(new WriterOutputStream(writer, runtime.getDefaultCharset().name()), true);
+        RubyIO io = new RubyIO(runtime, stream, false);
         boolean locked = io.getOpenFile().lock();
         try {
             io.getOpenFile().setSync(true);
@@ -192,8 +184,6 @@ public class Utils {
         Object receiver = Utils.getReceiverObject(context);
 
         Bindings engineMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
-        int size = engineMap.keySet().size();
-        String[] names = engineMap.keySet().toArray(new String[size]);
         Iterator<Map.Entry<String, Object>> iter = engineMap.entrySet().iterator();
         for (;iter.hasNext();) {
             Map.Entry<String, Object> entry = iter.next();
@@ -239,13 +229,6 @@ public class Utils {
             } else {
                 oldValue = container.setAttribute(adjustedKey, value);
             }
-            /* Maybe no need anymore?
-            if (container.getAttributeMap().containsKey(BACKED_BINDING)) {
-                Bindings b = (Bindings) container.getAttribute(BACKED_BINDING);
-                b.put(key, value);
-            }
-             *
-             */
         }
         return oldValue;
     }

@@ -1,1 +1,0 @@
-fails:Regexp#source has US-ASCII encoding when created from an ASCII-only \u{} literal

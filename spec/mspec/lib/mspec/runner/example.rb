@@ -29,6 +29,6 @@ class ExampleState
     excl = MSpec.retrieve(:exclude) || []
     included   = incl.empty? || incl.any? { |f| f === description }
     included &&= excl.empty? || !excl.any? { |f| f === description }
-    not included
+    !included
   end
 end

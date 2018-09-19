@@ -91,8 +91,7 @@ class JITCompiler {
                 return failedHandle;
             }
 
-            hasParameterConverter[i] = !(parameterType instanceof Type.Builtin)
-                    || DataConverters.isEnumConversionRequired(parameterType, signature.getEnums());
+            setParameterConverterWithTypeAndSignature(signature, hasParameterConverter, i, parameterType);
         }
         
         JITSignature jitSignature = new JITSignature(nativeResultType, nativeParameterTypes, 
@@ -113,6 +112,12 @@ class JITCompiler {
             
             return handle;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setParameterConverterWithTypeAndSignature(Signature signature, boolean[] hasParameterConverter, int i, Type parameterType) {
+        hasParameterConverter[i] = !(parameterType instanceof Type.Builtin)
+                || DataConverters.isEnumConversionRequired(parameterType, signature.getEnums());
     }
 
     void registerClass(JITHandle handle, Class<? extends NativeInvoker> klass) {

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.javasupport;
 
 import java.lang.reflect.Member;
@@ -47,6 +48,8 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.javasupport.ext.JavaExtensions;
+import org.jruby.runtime.Helpers;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
@@ -122,25 +125,23 @@ public class JavaSupportImpl extends JavaSupport {
              */
             @Override
             public synchronized RubyModule computeValue(Class<?> klass) {
-                return Java.createProxyClassForClass(runtime, klass);
+                RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
+                JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
+                return proxyKlass;
             }
         });
 
         this.staticAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) {
-                return new HashMap<String, AssignedName>();
-            }
+            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
         });
         this.instanceAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
             @Override
-            public Map<String, AssignedName> computeValue(Class<?> cls) {
-                return new HashMap<String, AssignedName>();
-            }
+            public Map<String, AssignedName> computeValue(Class<?> cls) { return new HashMap<>(); }
         });
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
-        this.unfinishedProxies = new ConcurrentHashMap<Class, UnfinishedProxy>(8, 0.75f, 1);
+        this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
@@ -216,11 +217,8 @@ public class JavaSupportImpl extends JavaSupport {
                 throw (RuntimeException) exception;
             }
         }
-        throw createRaiseException(exception, target);
-    }
-
-    private RaiseException createRaiseException(Throwable exception, Member target) {
-        return RaiseException.createNativeRaiseException(runtime, exception, target);
+        // rethrow original
+        Helpers.throwException(exception);
     }
 
     public ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache() {
@@ -362,17 +360,23 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
+    @Deprecated
+    @Override
     public final void beginProxy(Class cls, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
         up.lock();
         unfinishedProxies.put(cls, up);
     }
 
+    @Deprecated
+    @Override
     public final void endProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.remove(cls);
         up.unlock();
     }
 
+    @Deprecated
+    @Override
     public final RubyModule getUnfinishedProxy(Class cls) {
         UnfinishedProxy up = unfinishedProxies.get(cls);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;

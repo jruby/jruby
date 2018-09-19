@@ -1,5 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../core/kernel/shared/sprintf'
 
 describe "StringIO#printf" do
   before :each do
@@ -27,7 +28,15 @@ describe "StringIO#printf" do
 
     @io.printf("%d %04x", 123, 123)
     @io.pos.should eql(16)
-   end
+  end
+
+  describe "formatting" do
+    it_behaves_like :kernel_sprintf, -> (format, *args) {
+      io = StringIO.new
+      io.printf(format, *args)
+      io.string
+    }
+  end
 end
 
 describe "StringIO#printf when in append mode" do

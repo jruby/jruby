@@ -1,6 +1,6 @@
 # -*- encoding: ascii-8bit -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe :range_include, shared: true do
   describe "on string elements" do
@@ -74,6 +74,18 @@ describe :range_include, shared: true do
       it "returns false if other is greater than last element but matched by element.succ" do
         @range.send(@method, RangeSpecs::TenfoldSucc.new(100)).should be_false
       end
+    end
+  end
+
+  describe "with Time endpoints" do
+    it "uses cover? logic" do
+      now = Time.now
+      range = (now..(now + 60))
+
+      range.include?(now).should == true
+      range.include?(now - 1).should == false
+      range.include?(now + 60).should == true
+      range.include?(now + 61).should == false
     end
   end
 end

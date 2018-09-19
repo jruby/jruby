@@ -1,3 +1,4 @@
+# -*- encoding: binary -*-
 class UserDefined
   class Nested
     def ==(other)
@@ -295,7 +296,7 @@ module MarshalSpec
                 "\004\b[\000"],
     "Array subclass" => [UserArray.new,
                      "\004\bC:\016UserArray[\000"],
-    "Struct" => [Struct::Pyramid.new,
+    "Struct Pyramid" => [Struct::Pyramid.new,
                  "\004\bS:\024Struct::Pyramid\000"],
   }
   DATA_19 = {
@@ -393,7 +394,7 @@ module MarshalSpec
                 "\004\b[\000"],
     "Array subclass" => [UserArray.new,
                      "\004\bC:\016UserArray[\000"],
-    "Struct" => [Struct::Pyramid.new,
+    "Struct Pyramid" => [Struct::Pyramid.new,
                  "\004\bS:\024Struct::Pyramid\000"],
     "Random" => random_data,
   }

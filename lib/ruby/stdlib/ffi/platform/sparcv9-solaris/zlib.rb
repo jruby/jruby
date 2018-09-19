@@ -83,7 +83,7 @@
 
 module Zlib
 
-  ZLIB_VERSION = "1.2.3"
+  ZLIB_VERSION = "1.2.8-T4mods"
   BEST_COMPRESSION = 9
   BEST_SPEED = 1
   BLOCK = 5
@@ -232,21 +232,21 @@ module Zlib
 
   class ZStream < FFI::Struct
 
-    self.size = 56
     layout :next_in, :pointer, 0,
-           :avail_in, :uint, 4,
-           :total_in, :ulong, 8,
-           :next_out, :pointer, 12,
-           :avail_out, :uint, 16,
-           :total_out, :ulong, 20,
-           :msg, :string, 24,
-           :state, :pointer, 28,
-           :zalloc, :pointer, 32,
-           :zfree, :pointer, 36,
-           :opaque, :pointer, 40,
-           :data_type, :int, 44,
-           :adler, :ulong, 48,
-           :reserved, :ulong, 52
+           :avail_in, :uint, 8,
+           :total_in, :ulong, 16,
+           :next_out, :pointer, 24,
+           :avail_out, :uint, 32,
+           :total_out, :ulong, 40,
+           :msg, :string, 48,
+           :state, :pointer, 56,
+           :zalloc, :pointer, 64,
+           :zfree, :pointer, 72,
+           :opaque, :pointer, 80,
+           :data_type, :int, 88,
+           :adler, :ulong, 96,
+           :reserved, :ulong, 104
+
 
 
 

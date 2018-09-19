@@ -2,6 +2,7 @@
 #include "rubyspec.h"
 
 #include <string.h>
+#include <stdarg.h>
 
 #ifdef HAVE_RUBY_ENCODING_H
 #include "ruby/encoding.h"
@@ -10,6 +11,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Make sure the RSTRING_PTR and the bytes are in native memory.
+ * On TruffleRuby RSTRING_PTR and the bytes remain in managed memory
+ * until they must be written to native memory.
+ * In some specs we want to test using the native memory. */
+char* NATIVE_RSTRING_PTR(VALUE str) {
+  char* ptr = RSTRING_PTR(str);
+  char** native = malloc(sizeof(char*));
+  *native = ptr;
+  ptr = *native;
+  free(native);
+  return ptr;
+}
 
 #ifdef HAVE_RB_CSTR2INUM
 VALUE string_spec_rb_cstr2inum(VALUE self, VALUE str, VALUE inum) {
@@ -63,6 +77,10 @@ VALUE string_spec_rb_str_buf_new(VALUE self, VALUE len, VALUE str) {
   }
 
   return buf;
+}
+
+VALUE string_spec_rb_str_capacity(VALUE self, VALUE str) {
+  return SIZET2NUM(rb_str_capacity(str));
 }
 #endif
 
@@ -180,6 +198,14 @@ VALUE string_spec_rb_str_length(VALUE self, VALUE str) {
 VALUE string_spec_rb_str_new(VALUE self, VALUE str, VALUE len) {
   return rb_str_new(RSTRING_PTR(str), FIX2INT(len));
 }
+
+VALUE string_spec_rb_str_new_native(VALUE self, VALUE str, VALUE len) {
+  return rb_str_new(NATIVE_RSTRING_PTR(str), FIX2INT(len));
+}
+
+VALUE string_spec_rb_str_new_offset(VALUE self, VALUE str, VALUE offset, VALUE len) {
+  return rb_str_new(RSTRING_PTR(str) + FIX2INT(offset), FIX2INT(len));
+}
 #endif
 
 #ifdef HAVE_RB_STR_NEW2
@@ -256,9 +282,27 @@ VALUE string_spec_rb_str_new5(VALUE self, VALUE str, VALUE ptr, VALUE len) {
 }
 #endif
 
+#ifdef HAVE_RB_TAINTED_STR_NEW
+VALUE string_spec_rb_tainted_str_new(VALUE self, VALUE str, VALUE len) {
+  return rb_tainted_str_new(RSTRING_PTR(str), FIX2INT(len));
+}
+#endif
+
+#ifdef HAVE_RB_TAINTED_STR_NEW2
+VALUE string_spec_rb_tainted_str_new2(VALUE self, VALUE str) {
+  return rb_tainted_str_new2(RSTRING_PTR(str));
+}
+#endif
+
 #ifdef HAVE_RB_STR_PLUS
 VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
   return rb_str_plus(str1, str2);
+}
+#endif
+
+#ifdef HAVE_RB_STR_TIMES
+VALUE string_spec_rb_str_times(VALUE self, VALUE str, VALUE times) {
+  return rb_str_times(str, times);
 }
 #endif
 
@@ -335,6 +379,11 @@ VALUE string_spec_RSTRING_PTR_assign(VALUE self, VALUE str, VALUE chr) {
   return Qnil;
 }
 
+VALUE string_spec_RSTRING_PTR_set(VALUE self, VALUE str, VALUE i, VALUE chr) {
+  RSTRING_PTR(str)[FIX2INT(i)] = (char) FIX2INT(chr);
+  return str;
+}
+
 VALUE string_spec_RSTRING_PTR_after_funcall(VALUE self, VALUE str, VALUE cb) {
   /* Silence gcc 4.3.2 warning about computed value not used */
   if(RSTRING_PTR(str)) { /* force it out */
@@ -342,6 +391,19 @@ VALUE string_spec_RSTRING_PTR_after_funcall(VALUE self, VALUE str, VALUE cb) {
   }
 
   return rb_str_new2(RSTRING_PTR(str));
+}
+
+VALUE string_spec_RSTRING_PTR_after_yield(VALUE self, VALUE str) {
+  char* ptr = NATIVE_RSTRING_PTR(str);
+  long len = RSTRING_LEN(str);
+  VALUE from_rstring_ptr;
+
+  ptr[0] = '1';
+  rb_yield(str);
+  ptr[2] = '2';
+
+  from_rstring_ptr = rb_str_new(ptr, len);
+  return from_rstring_ptr;
 }
 #endif
 
@@ -351,9 +413,22 @@ VALUE string_spec_StringValue(VALUE self, VALUE str) {
 }
 #endif
 
+#ifdef HAVE_SAFE_STRING_VALUE
+static VALUE string_spec_SafeStringValue(VALUE self, VALUE str) {
+  SafeStringValue(str);
+  return str;
+}
+#endif
+
 #ifdef HAVE_RB_STR_HASH
 static VALUE string_spec_rb_str_hash(VALUE self, VALUE str) {
-  return INT2FIX(rb_str_hash(str));
+  st_index_t val = rb_str_hash(str);
+
+#if SIZEOF_LONG == SIZEOF_VOIDP || SIZEOF_LONG_LONG == SIZEOF_VOIDP
+  return LONG2FIX((long)val);
+#else
+# error unsupported platform
+#endif
 }
 #endif
 
@@ -416,6 +491,19 @@ static VALUE string_spec_rb_usascii_str_new_cstr(VALUE self, VALUE str) {
 }
 #endif
 
+#ifdef HAVE_RB_STRING
+static VALUE string_spec_rb_String(VALUE self, VALUE val) {
+  return rb_String(val);
+}
+#endif
+
+#ifdef HAVE_RB_STRING_VALUE_CSTR
+static VALUE string_spec_rb_string_value_cstr(VALUE self, VALUE str) {
+  char *c_str = rb_string_value_cstr(&str);
+  return c_str ? Qtrue : Qfalse;
+}
+#endif
+
 void Init_string_spec(void) {
   VALUE cls;
   cls = rb_define_class("CApiStringSpecs", rb_cObject);
@@ -438,6 +526,7 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_RB_STR_BUF_NEW
   rb_define_method(cls, "rb_str_buf_new", string_spec_rb_str_buf_new, 2);
+  rb_define_method(cls, "rb_str_capacity", string_spec_rb_str_capacity, 1);
 #endif
 
 #ifdef HAVE_RB_STR_BUF_NEW2
@@ -498,6 +587,8 @@ void Init_string_spec(void) {
 
 #ifdef HAVE_RB_STR_NEW
   rb_define_method(cls, "rb_str_new", string_spec_rb_str_new, 2);
+  rb_define_method(cls, "rb_str_new_native", string_spec_rb_str_new_native, 2);
+  rb_define_method(cls, "rb_str_new_offset", string_spec_rb_str_new_offset, 3);
 #endif
 
 #ifdef HAVE_RB_STR_NEW2
@@ -545,8 +636,20 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_new5", string_spec_rb_str_new5, 3);
 #endif
 
+#ifdef HAVE_RB_TAINTED_STR_NEW
+  rb_define_method(cls, "rb_tainted_str_new", string_spec_rb_tainted_str_new, 2);
+#endif
+
+#ifdef HAVE_RB_TAINTED_STR_NEW2
+  rb_define_method(cls, "rb_tainted_str_new2", string_spec_rb_tainted_str_new2, 1);
+#endif
+
 #ifdef HAVE_RB_STR_PLUS
   rb_define_method(cls, "rb_str_plus", string_spec_rb_str_plus, 2);
+#endif
+
+#ifdef HAVE_RB_STR_TIMES
+  rb_define_method(cls, "rb_str_times", string_spec_rb_str_times, 2);
 #endif
 
 #ifdef HAVE_RB_STR_RESIZE
@@ -588,12 +691,17 @@ void Init_string_spec(void) {
 #ifdef HAVE_RSTRING_PTR
   rb_define_method(cls, "RSTRING_PTR_iterate", string_spec_RSTRING_PTR_iterate, 1);
   rb_define_method(cls, "RSTRING_PTR_assign", string_spec_RSTRING_PTR_assign, 2);
-  rb_define_method(cls, "RSTRING_PTR_after_funcall",
-      string_spec_RSTRING_PTR_after_funcall, 2);
+  rb_define_method(cls, "RSTRING_PTR_set", string_spec_RSTRING_PTR_set, 3);
+  rb_define_method(cls, "RSTRING_PTR_after_funcall", string_spec_RSTRING_PTR_after_funcall, 2);
+  rb_define_method(cls, "RSTRING_PTR_after_yield", string_spec_RSTRING_PTR_after_yield, 1);
 #endif
 
 #ifdef HAVE_STRINGVALUE
   rb_define_method(cls, "StringValue", string_spec_StringValue, 1);
+#endif
+
+#ifdef HAVE_SAFE_STRING_VALUE
+  rb_define_method(cls, "SafeStringValue", string_spec_SafeStringValue, 1);
 #endif
 
 #ifdef HAVE_RB_STR_HASH
@@ -628,8 +736,15 @@ void Init_string_spec(void) {
 #ifdef HAVE_RB_USASCII_STR_NEW_CSTR
   rb_define_method(cls, "rb_usascii_str_new_cstr", string_spec_rb_usascii_str_new_cstr, 1);
 #endif
-}
 
+#ifdef HAVE_RB_STRING
+  rb_define_method(cls, "rb_String", string_spec_rb_String, 1);
+#endif
+
+#ifdef HAVE_RB_STRING_VALUE_CSTR
+  rb_define_method(cls, "rb_string_value_cstr", string_spec_rb_string_value_cstr, 1);
+#endif
+}
 #ifdef __cplusplus
 }
 #endif

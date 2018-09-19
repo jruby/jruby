@@ -1,4 +1,4 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'rexml/document'
 
 describe "REXML::Text#wrap" do
@@ -14,8 +14,7 @@ describe "REXML::Text#wrap" do
     @t.wrap("abc def", 10, false).should == "abc def"
   end
 
-  it "takes a newline at the beginning option as the third parameter"do
+  it "takes a newline at the beginning option as the third parameter" do
     @t.wrap("abc def", 3, true).should == "\nabc\ndef"
   end
 end
-

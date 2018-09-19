@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Class#to_s" do
   it 'regular class returns same name as Module#to_s' do
@@ -16,8 +16,6 @@ describe "Class#to_s" do
     end
 
     it 'for objects includes class name and object ID' do
-      from_class = CoreClassSpecs::Record.singleton_class.to_s
-
       obj = CoreClassSpecs::Record.new
       obj.singleton_class.to_s.should =~ /#<Class:#<CoreClassSpecs::Record:0x[0-9a-f]+>>/
     end

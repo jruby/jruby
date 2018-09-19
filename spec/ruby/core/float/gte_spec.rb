@@ -1,6 +1,9 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'shared/comparison_exception_in_coerce'
 
 describe "Float#>=" do
+  it_behaves_like :float_comparison_exception_in_coerce, :>=
+
   it "returns true if self is greater than or equal to other" do
     (5.2 >= 5.2).should == true
     (9.71 >= 1).should == true

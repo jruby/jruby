@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,16 +24,24 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.ivars;
 
+import com.headius.invokebinder.Binder;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.runtime.Helpers;
+import org.jruby.specialized.RubyObjectSpecializer;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 /**
  * A variable accessor that accesses a field directly;
  */
-public abstract class FieldVariableAccessor extends VariableAccessor {
-    /** The offset of the field for this accessor */
-    private final int offset;
+public class FieldVariableAccessor extends VariableAccessor {
+    private final MethodHandle getter;
+    private final MethodHandle setter;
     
     /**
      * Construct a new FieldVariableAccessor for the given "real" class,
@@ -43,18 +51,61 @@ public abstract class FieldVariableAccessor extends VariableAccessor {
      * @param name the variable's name
      * @param index the variable's index
      * @param classId the class's ID
+     * @param getter the getter handle for the field
+     * @param setter the setter handle for the field
      */
-    public FieldVariableAccessor(RubyClass realClass, String name, int index, int classId, int offset) {
+    public FieldVariableAccessor(RubyClass realClass, String name, int index, int classId, MethodHandle getter, MethodHandle setter) {
         super(realClass, name, index, classId);
-        this.offset = offset;
+
+        this.getter = getter;
+
+        // mix frozen check into setter
+        setter = MethodHandles.foldArguments(setter, ENSURE_SETTABLE.asType(setter.type()));
+        
+        this.setter = setter;
     }
-    
+
+    public MethodHandle getGetter() {
+        return getter;
+    }
+
+    public MethodHandle getSetter() {
+        return setter;
+    }
+
     /**
-     * Get the field offset for this accessor.
-     * 
-     * @return offset of the field
+     * Retrieve the variable's value from the given object.
+     *
+     * @param object the object from which to retrieve this variable
+     * @return the variable's value
      */
-    public int getOffset() {
-        return offset;
+    public Object get(Object object) {
+        try {
+            return getter.invoke(object);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null;
+        }
     }
+
+    /**
+     * Set this variable into the given object using Unsafe to ensure
+     * safe updating of the variable table.
+     *
+     * @param object the object into which to set this variable
+     * @param value the variable's value
+     */
+    public void set(Object object, Object value) {
+        try {
+            setter.invoke(object, value);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+        }
+    }
+
+    private static final MethodHandle ENSURE_SETTABLE = Binder
+            .from(Object.class, Object.class, Object.class)
+            .dropLast()
+            .cast(void.class, RubyBasicObject.class)
+            .invokeVirtualQuiet(RubyObjectSpecializer.LOOKUP, "ensureInstanceVariablesSettable");
 }

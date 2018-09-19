@@ -3,6 +3,7 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -16,6 +17,7 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
+import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
 import java.util.*;
@@ -23,6 +25,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -60,15 +63,15 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class IRScope implements ParseResult {
     public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
-    private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
+    private static final Collection<IRClosure> NO_CLOSURES = Collections.EMPTY_LIST;
 
-    private static AtomicInteger globalScopeCount = new AtomicInteger();
+    private static final AtomicInteger globalScopeCount = new AtomicInteger();
 
     /** Unique global scope id */
     private int scopeId;
 
     /** Name */
-    private String name;
+    private RubySymbol name;
 
     /** Starting line for this scope's definition */
     private final int lineNumber;
@@ -112,7 +115,7 @@ public abstract class IRScope implements ParseResult {
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
-    Map<String, LocalVariable> localVars;
+    Map<RubySymbol, LocalVariable> localVars;
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
 
@@ -148,7 +151,7 @@ public abstract class IRScope implements ParseResult {
         setupLexicalContainment();
     }
 
-    public IRScope(IRManager manager, IRScope lexicalParent, String name,
+    public IRScope(IRManager manager, IRScope lexicalParent, RubySymbol name,
             int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
@@ -175,7 +178,8 @@ public abstract class IRScope implements ParseResult {
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
         flags.add(USES_EVAL);
-        flags.add(USES_BACKREF_OR_LASTLINE);
+        flags.add(REQUIRES_BACKREF);
+        flags.add(REQUIRES_LASTLINE);
         flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
@@ -233,8 +237,14 @@ public abstract class IRScope implements ParseResult {
         if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
+    private static final ByteList FLIP = new ByteList(new byte[] {'%', 'f', 'l', 'i', 'p', '_'});
+
     public LocalVariable getNewFlipStateVariable() {
-        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
+        ByteList flip = FLIP.dup();
+
+        flip.append(allocateNextPrefixedName("%flip"));
+
+        return getLocalVariable(getManager().getRuntime().newSymbol(flip) , 0);
     }
 
     public Label getNewLabel(String prefix) {
@@ -328,26 +338,30 @@ public abstract class IRScope implements ParseResult {
             if (current == null || current instanceof IREvalScript) return -1;
 
             current = current.getLexicalParent();
-            n++;
+            if (!(current instanceof IRFor)) n++;
         }
 
         return n;
     }
 
-    public String getName() {
+    public String getId() {
+        return name.idString();
+    }
+
+    public RubySymbol getName() {
         return name;
     }
 
-    public void setName(String name) { // This is for IRClosure and IRMethod ;(
+    public void setName(RubySymbol name) {
         this.name = name;
     }
 
     public void setFileName(String filename) {
-        getTopLevelScope().setFileName(filename);
+        getRootLexicalScope().setFileName(filename);
     }
 
     public String getFileName() {
-        return getTopLevelScope().getFileName();
+        return getRootLexicalScope().getFileName();
     }
 
     public int getLineNumber() {
@@ -357,7 +371,7 @@ public abstract class IRScope implements ParseResult {
     /**
      * Returns the top level scope
      */
-    public IRScope getTopLevelScope() {
+    public IRScope getRootLexicalScope() {
         IRScope current = this;
 
         for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
@@ -395,10 +409,6 @@ public abstract class IRScope implements ParseResult {
 
     public boolean bindingHasEscaped() {
         return flags.contains(BINDING_HAS_ESCAPED);
-    }
-
-    public boolean usesBackrefOrLastline() {
-        return flags.contains(USES_BACKREF_OR_LASTLINE);
     }
 
     public boolean usesEval() {
@@ -488,7 +498,7 @@ public abstract class IRScope implements ParseResult {
     // SSS FIXME: We should configure different optimization levels
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-    private void runCompilerPasses(List<CompilerPass> passes) {
+    private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
         // worth the effort. It is simpler to just go fully safe in scopes
@@ -497,14 +507,22 @@ public abstract class IRScope implements ParseResult {
             passes = getManager().getSafePasses(this);
         }
 
+        if (dumper != null) dumper.dump(getCFG(), "Start");
+
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
         for (CompilerPass pass : scheduler) {
             pass.run(this);
+            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
 
         if (RubyInstanceConfig.IR_UNBOXING) {
-            (new UnboxingPass()).run(this);
+            CompilerPass pass = new UnboxingPass();
+            pass.run(this);
+            if (dumper != null) dumper.dump(getCFG(), pass.getShortLabel());
         }
+
+        if (dumper != null) dumper.close();
+
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
@@ -562,16 +580,40 @@ public abstract class IRScope implements ParseResult {
         // or generated instructions.
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
 
+        for (IRScope scope: getClosures()) {
+            scope.prepareFullBuild();
+        }
+
         prepareFullBuildCommon();
-        runCompilerPasses(getManager().getCompilerPasses(this));
+        runCompilerPasses(getManager().getCompilerPasses(this), dumpToIGV());
         getManager().optimizeIfSimpleScope(this);
 
         // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
         if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
 
-        fullInterpreterContext.generateInstructionsForIntepretation();
+        fullInterpreterContext.generateInstructionsForInterpretation();
 
         return fullInterpreterContext;
+    }
+
+    // FIXME: bytelist_love - we should consider RubyString here if we care for proper printing (used for debugging).
+    public String getFullyQualifiedName() {
+        if (getLexicalParent() == null) return getId();
+
+        return getLexicalParent().getFullyQualifiedName() + "::" + getId();
+    }
+
+    public IGVDumper dumpToIGV() {
+        if (RubyInstanceConfig.IR_DEBUG_IGV != null) {
+            String spec = RubyInstanceConfig.IR_DEBUG_IGV;
+
+            if (spec.contains(":") && spec.equals(getFileName() + ":" + getLineNumber()) ||
+                    spec.equals(getFileName())) {
+                return new IGVDumper(getFullyQualifiedName() + "; line " + getLineNumber());
+            }
+        }
+
+        return null;
     }
 
     /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
@@ -581,9 +623,13 @@ public abstract class IRScope implements ParseResult {
         // or generated instructions.
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext.getLinearizedBBList();
 
+        for (IRScope scope: getClosures()) {
+            scope.prepareForCompilation();
+        }
+
         prepareFullBuildCommon();
 
-        runCompilerPasses(getManager().getJITPasses(this));
+        runCompilerPasses(getManager().getJITPasses(this), dumpToIGV());
 
         BasicBlock[] bbs = fullInterpreterContext.linearizeBasicBlocks();
 
@@ -614,6 +660,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void initScopeFlags() {
+        // CON: why isn't this just clear?
         flags.remove(CAN_CAPTURE_CALLERS_BINDING);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
@@ -621,8 +668,18 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_NONLOCAL_RETURNS);
         flags.remove(USES_ZSUPER);
         flags.remove(USES_EVAL);
-        flags.remove(USES_BACKREF_OR_LASTLINE);
         flags.remove(REQUIRES_DYNSCOPE);
+
+        flags.remove(REQUIRES_LASTLINE);
+        flags.remove(REQUIRES_BACKREF);
+        flags.remove(REQUIRES_VISIBILITY);
+        flags.remove(REQUIRES_BLOCK);
+        flags.remove(REQUIRES_SELF);
+        flags.remove(REQUIRES_METHODNAME);
+        flags.remove(REQUIRES_LINE);
+        flags.remove(REQUIRES_CLASS);
+        flags.remove(REQUIRES_FILENAME);
+        flags.remove(REQUIRES_SCOPE);
     }
 
     private void bindingEscapedScopeFlagsCheck() {
@@ -725,7 +782,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return String.valueOf(getScopeType()) + ' ' + getName() + '[' + getFileName() + ':' + getLineNumber() + ']';
+        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFileName() + ':' + getLineNumber() + ']';
     }
 
     public String debugOutput() {
@@ -770,7 +827,7 @@ public abstract class IRScope implements ParseResult {
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
      */
-    public Map<String, LocalVariable> getLocalVariables() {
+    public Map<RubySymbol, LocalVariable> getLocalVariables() {
         return localVars;
     }
 
@@ -785,7 +842,7 @@ public abstract class IRScope implements ParseResult {
      * Set the local variables for this scope. This should only be used by persistence layer.
      */
     // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<String, LocalVariable> variables) {
+    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
         this.localVars = variables;
     }
 
@@ -793,11 +850,11 @@ public abstract class IRScope implements ParseResult {
         nextVarIndex = indices;
     }
 
-    public LocalVariable lookupExistingLVar(String name) {
+    public LocalVariable lookupExistingLVar(RubySymbol name) {
         return localVars.get(name);
     }
 
-    protected LocalVariable findExistingLocalVariable(String name, int depth) {
+    protected LocalVariable findExistingLocalVariable(RubySymbol name, int depth) {
         return localVars.get(name);
     }
 
@@ -806,7 +863,7 @@ public abstract class IRScope implements ParseResult {
      * only check current depth.  Blocks/Closures override this because they
      * have special nesting rules.
      */
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getLocalVariable(RubySymbol name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = getNewLocalVariable(name, scopeDepth);
@@ -817,9 +874,9 @@ public abstract class IRScope implements ParseResult {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(RubySymbol name, int scopeDepth) {
         assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
-        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name.idString()));
         localVars.put(name, lvar);
         return lvar;
     }
@@ -830,7 +887,7 @@ public abstract class IRScope implements ParseResult {
 
     public TemporaryLocalVariable getNewTemporaryVariableFor(LocalVariable var) {
         temporaryVariableIndex++;
-        return new TemporaryLocalReplacementVariable(var.getName(), temporaryVariableIndex);
+        return new TemporaryLocalReplacementVariable(var.getId(), temporaryVariableIndex);
     }
 
     public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
@@ -909,10 +966,14 @@ public abstract class IRScope implements ParseResult {
     }
 
     // Generate a new variable for inlined code
-    public Variable getNewInlineVariable(String inlinePrefix, Variable v) {
+    public Variable getNewInlineVariable(ByteList inlinePrefix, Variable v) {
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
-            return getLocalVariable(inlinePrefix + lv.getName(), lv.getScopeDepth());
+            ByteList newName = inlinePrefix.dup();
+
+            newName.append(lv.getName().getBytes());
+
+            return getLocalVariable(getManager().getRuntime().newSymbol(newName), lv.getScopeDepth());
         } else {
             return createTemporaryVariable();
         }
@@ -986,6 +1047,10 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean hasBeenBuilt() {
         return true;
+    }
+
+    public FullInterpreterContext getExecutionContext() {
+        return fullInterpreterContext;
     }
 
     public InterpreterContext getInterpreterContext() {
@@ -1131,9 +1196,13 @@ public abstract class IRScope implements ParseResult {
             switch (flag) {
                 case BINDING_HAS_ESCAPED:
                 case CAN_CAPTURE_CALLERS_BINDING:
-                case REQUIRES_FRAME:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_BACKREF:
                 case REQUIRES_VISIBILITY:
-                case USES_BACKREF_OR_LASTLINE:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
                 case USES_EVAL:
                 case USES_ZSUPER:
                     requireFrame = true;
@@ -1141,6 +1210,30 @@ public abstract class IRScope implements ParseResult {
         }
 
         return requireFrame;
+    }
+
+    public boolean needsOnlyBackref() {
+        boolean backrefSeen = false;
+        for (IRFlags flag : getFlags()) {
+            switch (flag) {
+                case BINDING_HAS_ESCAPED:
+                case CAN_CAPTURE_CALLERS_BINDING:
+                case REQUIRES_LASTLINE:
+                case REQUIRES_VISIBILITY:
+                case REQUIRES_BLOCK:
+                case REQUIRES_SELF:
+                case REQUIRES_METHODNAME:
+                case REQUIRES_CLASS:
+                case USES_EVAL:
+                case USES_ZSUPER:
+                    return false;
+                case REQUIRES_BACKREF:
+                    backrefSeen = true;
+                    break;
+            }
+        }
+
+        return backrefSeen;
     }
 
     public boolean reuseParentScope() {

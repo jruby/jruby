@@ -8,6 +8,7 @@ class Object
     warn "#{__method__} is deprecated. Use java_import."
     java_import(include_class, &block)
   end
+  private :include_class
 
   # @deprecated
   def java_kind_of?(other) # TODO: this can go away now, but people may be using it
@@ -36,16 +37,10 @@ class Object
     import_classes.map do |import_class|
       case import_class
       when String
-        cc = java.lang.Character
-        valid_name = import_class.split(".").all? do |frag|
-          cc.java_identifier_start? frag[0].ord and
-          frag.each_char.all? {|c| cc.java_identifier_part? c.ord }
-        end
-        unless valid_name
+        unless JavaUtilities.valid_java_identifier?(import_class)
           raise ArgumentError.new "not a valid Java identifier: #{import_class}"
         end
-        # pull in the class
-        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include? "::"
+        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include?('::')
         import_class = JavaUtilities.get_proxy_class(import_class)
       when Module
         if import_class.respond_to? "java_class"
@@ -100,16 +95,6 @@ class Object
   end
   private :java_import
 
-  # @private
-  def handle_different_imports(*args, &block)
-    if args.first.respond_to?(:java_class)
-      java_import(*args, &block)
-    else
-      other_import(*args, &block)
-    end
-  end
-  
-  unless respond_to?(:import)
-    alias :import :java_import
-  end
+  alias :import :java_import unless respond_to?(:import)
+
 end

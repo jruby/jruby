@@ -1,1 +1,0 @@
-fails:Hash#each_pair properly expands (or not) child class's 'each'-yielded args

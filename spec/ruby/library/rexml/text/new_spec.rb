@@ -1,4 +1,4 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'rexml/document'
 
 describe "REXML::Text.new" do
@@ -46,4 +46,3 @@ describe "REXML::Text.new" do
     t.should == "&lt;&amp;&gt;"
   end
 end
-

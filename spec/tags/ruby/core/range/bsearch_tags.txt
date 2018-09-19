@@ -1,4 +1,0 @@
-fails:Range#bsearch with Float values with a block returning true or false returns minimum element if the block returns true for every element
-fails:Range#bsearch with Float values with a block returning true or false returns the smallest element for which block returns true
-fails:Range#bsearch with Float values with a block returning negative, zero, positive numbers returns an element at an index for which block returns 0.0
-fails:Range#bsearch with Float values with a block returning negative, zero, positive numbers returns an element at an index for which block returns 0

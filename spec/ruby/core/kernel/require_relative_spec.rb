@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/code_loading', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../fixtures/code_loading'
 
 describe "Kernel#require_relative with a relative path" do
   it "needs to be reviewed for spec completeness"
@@ -38,6 +38,48 @@ describe "Kernel#require_relative with a relative path" do
   it "loads a path relative to the current file" do
     require_relative(@path).should be_true
     ScratchPad.recorded.should == [:loaded]
+  end
+
+  describe "in an #instance_eval with a" do
+
+    it "synthetic file base name loads a file base name relative to the working directory" do
+      Dir.chdir @abs_dir do
+        Object.new.instance_eval("require_relative(#{File.basename(@path).inspect})", "foo.rb").should be_true
+      end
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "synthetic file path loads a relative path relative to the working directory plus the directory of the synthetic path" do
+      Dir.chdir @abs_dir do
+        Object.new.instance_eval("require_relative(File.join('..', #{File.basename(@path).inspect}))", "bar/foo.rb").should be_true
+      end
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    platform_is_not :windows do
+      it "synthetic relative file path with a Windows path separator specified loads a relative path relative to the working directory" do
+        Dir.chdir @abs_dir do
+          Object.new.instance_eval("require_relative(#{File.basename(@path).inspect})", "bar\\foo.rb").should be_true
+        end
+        ScratchPad.recorded.should == [:loaded]
+      end
+    end
+
+    it "absolute file path loads a path relative to the absolute path" do
+      Object.new.instance_eval("require_relative(#{@path.inspect})", __FILE__).should be_true
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "absolute file path loads a path relative to the root directory" do
+      root = @abs_path
+      until File.dirname(root) == root
+        root = File.dirname(root)
+      end
+      root_relative = @abs_path[root.size..-1]
+      Object.new.instance_eval("require_relative(#{root_relative.inspect})", "/").should be_true
+      ScratchPad.recorded.should == [:loaded]
+    end
+
   end
 
   it "loads a file defining many methods" do
@@ -155,6 +197,46 @@ describe "Kernel#require_relative with a relative path" do
     it "stores an absolute path" do
       require_relative(@path).should be_true
       $LOADED_FEATURES.should include(@abs_path)
+    end
+
+    platform_is_not :windows do
+      describe "with symlinks" do
+        before :each do
+          @symlink_to_code_dir = tmp("codesymlink")
+          File.symlink(CODE_LOADING_DIR, @symlink_to_code_dir)
+          @symlink_basename = File.basename(@symlink_to_code_dir)
+          @requiring_file = tmp("requiring")
+        end
+
+        after :each do
+          rm_r @symlink_to_code_dir, @requiring_file
+        end
+
+        it "does not canonicalize the path and stores a path with symlinks" do
+          symlink_path = "#{@symlink_basename}/load_fixture.rb"
+          absolute_path = "#{tmp("")}#{symlink_path}"
+          canonical_path = "#{CODE_LOADING_DIR}/load_fixture.rb"
+          touch(@requiring_file) { |f|
+            f.puts "require_relative #{symlink_path.inspect}"
+          }
+          load(@requiring_file)
+          ScratchPad.recorded.should == [:loaded]
+
+          features = $LOADED_FEATURES.select { |path| path.end_with?('load_fixture.rb') }
+          features.should include(absolute_path)
+          features.should_not include(canonical_path)
+        end
+
+        it "stores the same path that __FILE__ returns in the required file" do
+          symlink_path = "#{@symlink_basename}/load_fixture_and__FILE__.rb"
+          touch(@requiring_file) { |f|
+            f.puts "require_relative #{symlink_path.inspect}"
+          }
+          load(@requiring_file)
+          loaded_feature = $LOADED_FEATURES.last
+          ScratchPad.recorded.should == [loaded_feature]
+        end
+      end
     end
 
     it "does not store the path if the load fails" do

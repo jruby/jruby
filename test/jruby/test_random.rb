@@ -16,20 +16,46 @@ class TestRand < Test::Unit::TestCase
     assert(r >= 0.0)
   end
 
+  def test_Random_return_float_for_no_arg
+    r = Random.rand
+    assert(r.kind_of?(Float))
+    assert(r < 1.0)
+    assert(r >= 0.0)
+  end
+
   def test_return_float_for_zero_arg
     r = rand(0)
     assert(r.kind_of?(Float)) 
     assert(r < 1.0)
     assert(r >= 0.0)
   end
-  
-  def test_one_arg
-    100.times {
-      r = rand(1)
-      assert_equal(0, r)
-    }
+
+  def test_Random_fail_for_zero_arg
+    assert_raise(ArgumentError) { Random.rand(0) }
   end
-  
+
+  def test_one_arg
+    100.times { assert_equal(0, Kernel.rand(1)) }
+  end
+
+  def test_Random_one_arg
+    100.times { assert_equal(0, Random.rand(1)) }
+  end
+
+  def test_rand_range
+    r = Kernel.rand 10...20
+    assert(r.kind_of?(Integer))
+    assert(r < 20)
+    assert(r >= 10)
+  end
+
+  def test_Random_rand_range
+    r = Random.rand 10...20
+    assert(r.kind_of?(Integer))
+    assert(r < 20)
+    assert(r >= 10)
+  end
+
   def test_rand_int_in_range
     do_range_test(2**31 - 1)
   end
@@ -69,4 +95,18 @@ class TestRand < Test::Unit::TestCase
     r2 = rand(-max)
     assert(r1 == r2)
   end
+
+  def test_rand_nil
+    10.times do
+      r = rand(nil)
+      assert(r.kind_of?(Float))
+      assert(r < 1.0)
+      assert(r >= 0.0)
+    end
+  end
+
+  def test_Random_nil
+    assert_raise(ArgumentError) { Random.rand(nil) }
+  end
+
 end

@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util.io;
 
 import java.io.FileDescriptor;
@@ -36,8 +37,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Collections;
 import java.util.HashMap;
@@ -57,7 +58,8 @@ import org.jruby.util.log.LoggerFactory;
  * ChannelDescriptor provides an abstraction similar to the concept of a
  * "file descriptor" on any POSIX system. In our case, it's a numbered object
  * (fileno) enclosing a Channel (@see java.nio.channels.Channel), FileDescriptor
- * (@see java.io.FileDescriptor), and flags under which the original open occured
+ * (@see java.io.FileDescriptor), and flags under which the original open
+ * occurred
  * (@see org.jruby.util.io.ModeFlags). Several operations you would normally
  * expect to use with a POSIX file descriptor are implemented here and used by
  * higher-level classes to implement higher-level IO behavior.
@@ -164,7 +166,7 @@ public class ChannelDescriptor {
         
         this.readableChannel = channel instanceof ReadableByteChannel;
         this.writableChannel = channel instanceof WritableByteChannel;
-        this.seekableChannel = channel instanceof FileChannel;
+        this.seekableChannel = channel instanceof SeekableByteChannel;
 
         registerDescriptor(this);
     }
@@ -328,7 +330,7 @@ public class ChannelDescriptor {
 
     /**
      * Whether the channel associated with this descriptor is seekable (i.e.
-     * whether it is instanceof FileChannel).
+     * whether it is instanceof SeekableByteChannel).
      * 
      * @return true if the associated channel is seekable, false otherwise
      */
@@ -338,7 +340,7 @@ public class ChannelDescriptor {
     
     /**
      * Set the channel to be explicitly seekable or not, for streams that appear
-     * to be seekable with the instanceof FileChannel check.
+     * to be seekable with the instanceof SeekableByteChannel check.
      * 
      * @param canBeSeekable Whether the channel is seekable or not.
      */
@@ -490,7 +492,7 @@ public class ChannelDescriptor {
     
     /**
      * Perform a low-level seek operation on the associated channel if it is
-     * instanceof FileChannel, or raise PipeException if it is not a FileChannel.
+     * instanceof SeekableByteChannel, or raise PipeException if it is not a SeekableByteChannel.
      * Calls checkOpen to confirm the target channel is open. This is equivalent
      * to the lseek(2) POSIX function, and like that function it bypasses any
      * buffer flushing or invalidation as in ChannelStream.fseek.
@@ -503,27 +505,27 @@ public class ChannelDescriptor {
      * @throws org.jruby.util.io.PipeException If the target channel is not seekable
      * @throws org.jruby.util.io.BadDescriptorException If the target channel is
      * already closed.
-     * @return the new offset into the FileChannel.
+     * @return the new offset into the SeekableByteChannel.
      */
     public long lseek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (seekableChannel) {
             checkOpen();
             
-            FileChannel fileChannel = (FileChannel)channel;
+            SeekableByteChannel channel = (SeekableByteChannel) this.channel;
             try {
                 long pos;
                 switch (whence) {
                 case PosixShim.SEEK_SET:
                     pos = offset;
-                    fileChannel.position(pos);
+                    channel.position(pos);
                     break;
                 case PosixShim.SEEK_CUR:
-                    pos = fileChannel.position() + offset;
-                    fileChannel.position(pos);
+                    pos = channel.position() + offset;
+                    channel.position(pos);
                     break;
                 case PosixShim.SEEK_END:
-                    pos = fileChannel.size() + offset;
-                    fileChannel.position(pos);
+                    pos = channel.size() + offset;
+                    channel.position(pos);
                     break;
                 default:
                     throw new InvalidValueException();
@@ -619,7 +621,7 @@ public class ChannelDescriptor {
         if (isSeekable() && originalModes.isAppendable()) {
             // if already in append mode, we don't do our own seeking
             if (!isInAppendMode) {
-                FileChannel fileChannel = (FileChannel)channel;
+                SeekableByteChannel fileChannel = (SeekableByteChannel) channel;
                 fileChannel.position(fileChannel.size());
             }
         }

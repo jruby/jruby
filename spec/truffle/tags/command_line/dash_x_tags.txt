@@ -1,1 +1,0 @@
-fails:The -x command line option runs code after the first /#!.*ruby.*/-ish line in target file

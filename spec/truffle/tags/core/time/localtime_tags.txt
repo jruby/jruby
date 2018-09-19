@@ -1,2 +1,0 @@
-fails:Time#localtime returns a Time with a UTC offset of the specified number of Rational seconds
-fails:Time#localtime with an argument that responds to #to_r coerces using #to_r

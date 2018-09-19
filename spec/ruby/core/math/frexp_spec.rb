@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Math.frexp" do
   it "returns the normalized fraction and exponent" do
@@ -13,7 +13,7 @@ describe "Math.frexp" do
   end
 
   it "returns NaN given NaN" do
-    frac, exp = Math.frexp(nan_value)
+    frac, _exp = Math.frexp(nan_value)
     frac.nan?.should be_true
   end
 

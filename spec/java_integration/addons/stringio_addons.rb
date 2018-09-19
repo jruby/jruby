@@ -1,11 +1,10 @@
 require File.dirname(__FILE__) + "/../spec_helper"
-require 'tempfile'
 require 'stringio'
 
 describe "Ruby StringIO" do
-  it "should be coercible to java.io.InputStream with StringIO#to_inputstream" do
+  it "should be coercible to java.io.InputStream with StringIO#to_input_stream" do
     file = StringIO.new("\xC3\x80abcdefghij")
-    stream = file.to_inputstream
+    stream = file.to_input_stream
     expect(java.io.InputStream).to be === stream
 
     expect(stream.read).to eq(0xc3)
@@ -14,11 +13,14 @@ describe "Ruby StringIO" do
     bytes = "0000000000".to_java_bytes
     expect(stream.read(bytes)).to eq(10)
     expect(String.from_java_bytes(bytes)).to eq('abcdefghij')
+
+    # compatiblity with old-naming
+    expect(java.io.InputStream).to be === file.to_inputstream
   end
 
-  it "should be coercible to java.io.OutputStream with StringIO#to_outputstream" do
+  it "should be coercible to java.io.OutputStream with StringIO#to_output_stream" do
     file = StringIO.new
-    stream = file.to_outputstream
+    stream = file.to_output_stream
     expect(java.io.OutputStream).to be === stream 
     
     bytes = "1234567890".to_java_bytes
@@ -27,6 +29,9 @@ describe "Ruby StringIO" do
     file.seek(0)
     str = file.read(10)
     expect(str).to eq(String.from_java_bytes(bytes))
+
+    # compatiblity with old-naming
+    expect(java.io.OutputStream).to be === file.to_outputstream
   end
 
   it "should be coercible to java.nio.channels.Channel with StringIO#to_channel" do

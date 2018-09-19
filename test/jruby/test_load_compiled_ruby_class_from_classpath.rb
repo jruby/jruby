@@ -13,21 +13,19 @@ class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
   StarterClass = "#{StarterName}.class"
   Manifest = "manifest.txt"
 
-  def self.startup
-    require 'rbconfig'
-    require 'fileutils'
-    # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579
-    require 'jruby'
-    require 'jruby/compiler'
-  end
+  require 'rbconfig'; require 'fileutils'
+  require 'jruby'; require 'jruby/compiler'
 
   if java.lang.System.getProperty("basedir") # FIXME: disabling this test under maven
-    def test_truth; end
+    def test_truth
+      warn "FIXME: disabled test #{__FILE__} under maven"
+    end
   else
+
+  @@ENV_CLASSPATH = ENV["CLASSPATH"]
 
   def setup
     remove_test_artifacts
-    @original_classpath = ENV["CLASSPATH"]
 
     # This line means we assume the test is running from the jruby root directory
     @jruby_home = Dir.pwd
@@ -37,7 +35,7 @@ class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
 
   def teardown
     remove_test_artifacts
-    ENV["CLASSPATH"] = @original_classpath
+    ENV["CLASSPATH"] = @@ENV_CLASSPATH
     JRuby.runtime.instance_config.run_ruby_in_process = @in_process
   end
 
@@ -92,6 +90,7 @@ public class #{StarterName} {
   end
 
   private
+
   def remove_ruby_source_files
     FileUtils.rm_rf [RubySource, RubyClass]
   end

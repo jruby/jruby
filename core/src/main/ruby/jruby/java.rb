@@ -1,5 +1,5 @@
 ###### BEGIN LICENSE BLOCK ######
-# Version: EPL 1.0/GPL 2.0/LGPL 2.1
+# Version: EPL 2.0/GPL 2.0/LGPL 2.1
 #
 # The contents of this file are subject to the Common Public
 # License Version 1.0 (the "License"); you may not use this file
@@ -34,8 +34,5 @@
 ###### END LICENSE BLOCK ######
 
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/java/java_utilities.rb'
-
 load 'jruby/java/core_ext.rb'
 load 'jruby/java/java_ext.rb'
-load 'jruby/java/java_8.rb' if java.util.Spliterator rescue nil

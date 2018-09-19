@@ -1,1 +1,0 @@
-fails:Regexp.union raises ArgumentError if the arguments include conflicting fixed encoding Regexps

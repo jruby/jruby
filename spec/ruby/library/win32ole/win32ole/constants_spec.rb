@@ -1,3 +1,5 @@
+require_relative '../fixtures/classes'
+
 platform_is :windows do
   require 'win32ole'
 

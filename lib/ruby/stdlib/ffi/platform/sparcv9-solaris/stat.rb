@@ -3,18 +3,18 @@
 module Platform
   module Stat
     class Stat < FFI::Struct
-      self.size = 152
       layout :st_dev, :dev_t, 0,
-             :st_ino, :ino_t, 16,
-             :st_nlink, :nlink_t, 28,
-             :st_mode, :mode_t, 24,
-             :st_uid, :uid_t, 32,
-             :st_gid, :gid_t, 36,
-             :st_size, :off_t, 56,
-             :st_blocks, :blkcnt_t, 96,
-             :st_atime, :time_t, 64,
-             :st_mtime, :time_t, 72,
+             :st_ino, :ino_t, 8,
+             :st_nlink, :nlink_t, 20,
+             :st_mode, :mode_t, 16,
+             :st_uid, :uid_t, 24,
+             :st_gid, :gid_t, 28,
+             :st_size, :off_t, 40,
+             :st_blocks, :blkcnt_t, 104,
+             :st_atime, :time_t, 48,
+             :st_mtime, :time_t, 64,
              :st_ctime, :time_t, 80
+
 
 
 

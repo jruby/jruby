@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/class', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/class'
 
 ClassSpecsNumber = 12
 
@@ -13,11 +13,9 @@ describe "The class keyword" do
     ClassSpecsKeywordWithSemicolon.should be_an_instance_of(Class)
   end
 
-  ruby_version_is "2.3" do
-    it "does not raise a SyntaxError when opening a class without a semicolon" do
-      eval "class ClassSpecsKeywordWithoutSemicolon end"
-      ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
-    end
+  it "does not raise a SyntaxError when opening a class without a semicolon" do
+    eval "class ClassSpecsKeywordWithoutSemicolon end"
+    ClassSpecsKeywordWithoutSemicolon.should be_an_instance_of(Class)
   end
 end
 
@@ -88,19 +86,17 @@ describe "A class definition" do
   end
 
   # [Bug #12367] [ruby-core:75446]
-  ruby_version_is "2.4" do # Until backported
-    it "raises an error when reopening a class with Object as superclass" do
-      module ClassSpecs
-        class SuperclassReopenedObject < A
-        end
-        SuperclassReopenedObject.superclass.should == A
-
-        lambda {
-          class SuperclassReopenedObject < Object
-          end
-        }.should raise_error(TypeError, /superclass mismatch/)
-        SuperclassReopenedObject.superclass.should == A
+  it "raises an error when reopening a class with Object as superclass" do
+    module ClassSpecs
+      class SuperclassReopenedObject < A
       end
+      SuperclassReopenedObject.superclass.should == A
+
+      lambda {
+        class SuperclassReopenedObject < Object
+        end
+      }.should raise_error(TypeError, /superclass mismatch/)
+      SuperclassReopenedObject.superclass.should == A
     end
   end
 
@@ -169,18 +165,21 @@ describe "A class definition" do
     ClassSpecs::C.class_variables.should == []
     ClassSpecs::C.make_class_variable
     ClassSpecs.string_class_variables(ClassSpecs::C).should == ["@@cvar"]
+    ClassSpecs::C.remove_class_variable :@@cvar
   end
 
   it "allows the definition of class-level instance variables in a class method" do
     ClassSpecs.string_instance_variables(ClassSpecs::C).should_not include("@civ")
     ClassSpecs::C.make_class_instance_variable
     ClassSpecs.string_instance_variables(ClassSpecs::C).should include("@civ")
+    ClassSpecs::C.remove_instance_variable :@civ
   end
 
   it "allows the declaration of class variables in an instance method" do
     ClassSpecs::D.class_variables.should == []
     ClassSpecs::D.new.make_class_variable
     ClassSpecs.string_class_variables(ClassSpecs::D).should == ["@@cvar"]
+    ClassSpecs::D.remove_class_variable :@@cvar
   end
 
   it "allows the definition of instance methods" do
@@ -290,10 +289,8 @@ describe "A class definition extending an object (sclass)" do
     ClassSpecs.sclass_with_block { 123 }.should == 123
   end
 
-  not_compliant_on :rubinius do
-    it "can use return to cause the enclosing method to return" do
-      ClassSpecs.sclass_with_return.should == :inner
-    end
+  it "can use return to cause the enclosing method to return" do
+    ClassSpecs.sclass_with_return.should == :inner
   end
 end
 
@@ -320,6 +317,7 @@ describe "Reopening a class" do
       end
     end
     ClassSpecs::M.m.should == 1
+    ClassSpecs::L.singleton_class.send(:remove_method, :m)
   end
 end
 

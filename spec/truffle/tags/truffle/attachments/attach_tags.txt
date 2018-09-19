@@ -1,2 +1,0 @@
-fails:Truffle::Attachments.attach only runs the block once each time the line is executed
-fails:Truffle::Attachments.attach allows multiple blocks to be installed on the same line and runs both of them

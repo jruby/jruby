@@ -80,7 +80,7 @@ class Gem::Package::Old < Gem::Package
 
         FileUtils.mkdir_p File.dirname destination
 
-        open destination, 'wb', entry['mode'] do |out|
+        File.open destination, 'wb', entry['mode'] do |out|
           out.write file_data
         end
 
@@ -101,7 +101,7 @@ class Gem::Package::Old < Gem::Package
       header << line
     end
 
-    YAML.load header
+    Gem::SafeYAML.safe_load header
   end
 
   ##
@@ -124,7 +124,7 @@ class Gem::Package::Old < Gem::Package
       break unless line
     end
 
-    raise Gem::Exception, "Failed to find end of ruby script while reading gem"
+    raise Gem::Exception, "Failed to find end of Ruby script while reading gem"
   end
 
   ##

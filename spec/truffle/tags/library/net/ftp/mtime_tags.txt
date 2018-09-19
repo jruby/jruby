@@ -1,6 +1,0 @@
-fails:Net::FTP#mtime sends the MDTM with the passed filename command to the server
-fails:Net::FTP#mtime raises a Net::FTPPermError when the response code is 550
-fails:Net::FTP#mtime raises a Net::FTPTempError when the response code is 421
-fails:Net::FTP#mtime when passed filename returns the last modification time of the passed file as a Time object in the local time
-fails:Net::FTP#mtime when passed filename, local_time returns the last modification time as a Time object in UTC when local_time is true
-fails:Net::FTP#mtime when passed filename, local_time returns the last modification time as a Time object in the local time when local_time is false

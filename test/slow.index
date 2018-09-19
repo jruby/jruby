@@ -1,2 +1,5 @@
 jruby/test_command_line_switches
 jruby/test_launching_by_shell_script
+jruby/test_ffi_pointer_leak
+# only run when executed with jruby-complete.jar (jruby_complete_jar_extended profile)
+jruby/test_jar_complete

@@ -1,8 +1,8 @@
 package org.jruby.javasupport.binding;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -25,7 +25,7 @@ public class ConstructorInvokerInstaller extends MethodInstaller {
 
     // called only by initializing thread; no synchronization required
     void addConstructor(final Constructor ctor, final Class<?> clazz) {
-        if ( ! Ruby.isSecurityRestricted() ) {
+        if (JavaUtil.CAN_SET_ACCESSIBLE) {
             try {
                 ctor.setAccessible(true);
             } catch(SecurityException e) {}
@@ -36,10 +36,10 @@ public class ConstructorInvokerInstaller extends MethodInstaller {
 
     @Override void install(final RubyModule proxy) {
         if ( localConstructor ) {
-            proxy.addMethod(name, new ConstructorInvoker(proxy, constructors));
+            proxy.addMethod(name, new ConstructorInvoker(proxy, constructors, name));
         }
         else { // if there's no constructor, we must prevent construction
-            proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
+            proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, name) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw context.runtime.newTypeError("no public constructors for " + clazz);

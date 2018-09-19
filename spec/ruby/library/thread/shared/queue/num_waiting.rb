@@ -1,6 +1,6 @@
 describe :queue_num_waiting, shared: true do
   it "reports the number of threads waiting on the queue" do
-    q = @object
+    q = @object.call
     threads = []
 
     5.times do |i|

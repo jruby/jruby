@@ -1,16 +1,16 @@
-# -*- encoding: us-ascii -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "BasicSocket#recv" do
 
   before :each do
-    @server = TCPServer.new('127.0.0.1', SocketSpecs.port)
+    @server = TCPServer.new('127.0.0.1', 0)
+    @port = @server.addr[1]
   end
 
   after :each do
-    @server.closed?.should be_false
-    @server.close
+    @server.close unless @server.closed?
     ScratchPad.clear
   end
 
@@ -24,7 +24,7 @@ describe "BasicSocket#recv" do
     Thread.pass while t.status and t.status != "sleep"
     t.status.should_not be_nil
 
-    socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+    socket = TCPSocket.new('127.0.0.1', @port)
     socket.send('hello', 0)
     socket.close
 
@@ -47,7 +47,7 @@ describe "BasicSocket#recv" do
       Thread.pass while t.status and t.status != "sleep"
       t.status.should_not be_nil
 
-      socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+      socket = TCPSocket.new('127.0.0.1', @port)
       socket.send('helloU', Socket::MSG_OOB)
       socket.shutdown(1)
       t.join
@@ -68,7 +68,7 @@ describe "BasicSocket#recv" do
     Thread.pass while t.status and t.status != "sleep"
     t.status.should_not be_nil
 
-    socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+    socket = TCPSocket.new('127.0.0.1', @port)
     socket.write("firstline\377secondline\377")
     socket.close
 
@@ -76,4 +76,84 @@ describe "BasicSocket#recv" do
     ScratchPad.recorded.should == "firstline\377"
   end
 
+  it "allows an output buffer as third argument" do
+    socket = TCPSocket.new('127.0.0.1', @port)
+    socket.write("data")
+
+    client = @server.accept
+    buf = "foo"
+    begin
+      client.recv(4, 0, buf)
+    ensure
+      client.close
+    end
+    buf.should == "data"
+
+    socket.close
+  end
+end
+
+describe 'BasicSocket#recv' do
+  SocketSpecs.each_ip_protocol do |family, ip_address|
+    before do
+      @server = Socket.new(family, :DGRAM)
+      @client = Socket.new(family, :DGRAM)
+    end
+
+    after do
+      @client.close
+      @server.close
+    end
+
+    describe 'using an unbound socket' do
+      it 'blocks the caller' do
+        lambda { @server.recv(4) }.should block_caller
+      end
+    end
+
+    describe 'using a bound socket' do
+      before do
+        @server.bind(Socket.sockaddr_in(0, ip_address))
+      end
+
+      describe 'without any data available' do
+        it 'blocks the caller' do
+          lambda { @server.recv(4) }.should block_caller
+        end
+      end
+
+      describe 'with data available' do
+        before do
+          @client.connect(@server.getsockname)
+        end
+
+        it 'reads the given amount of bytes' do
+          @client.write('hello')
+
+          @server.recv(2).should == 'he'
+        end
+
+        it 'reads the given amount of bytes when it exceeds the data size' do
+          @client.write('he')
+
+          @server.recv(6).should == 'he'
+        end
+
+        it 'blocks the caller when called twice without new data being available' do
+          @client.write('hello')
+
+          @server.recv(2).should == 'he'
+
+          lambda { @server.recv(4) }.should block_caller
+        end
+
+        it 'takes a peek at the data when using the MSG_PEEK flag' do
+          @client.write('hello')
+
+          @server.recv(2, Socket::MSG_PEEK).should == 'he'
+          @server.recv(2).should == 'he'
+        end
+      end
+    end
+  end
 end

@@ -1,9 +1,9 @@
 package org.jruby.util;
 
-import static org.jruby.RubyFile.canonicalize;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -14,6 +14,7 @@ import java.util.WeakHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import static org.jruby.RubyFile.canonicalize;
 
 /**
   * Instances of JarCache provides jar index information.
@@ -46,10 +47,10 @@ class JarCache {
             this.jar = new JarFile(jarPath);
             this.snapshotCalculated = new File(jarPath).lastModified();
 
-            Map<String, Set<String>> mutableCache = new HashMap<String, Set<String>>();
+            Map<String, HashSet<String>> mutableCache = new HashMap<>();
 
             // Always have a root directory
-            mutableCache.put(ROOT_KEY, new HashSet<String>());
+            mutableCache.put(ROOT_KEY, new HashSet<>());
 
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
@@ -60,16 +61,15 @@ class JarCache {
                 while ((lastPathSep = path.lastIndexOf('/')) != -1) {
                     String dirPath = path.substring(0, lastPathSep);
 
-                    if (!mutableCache.containsKey(dirPath)) {
-                        mutableCache.put(dirPath, new HashSet<String>());
+                    HashSet<String> paths = mutableCache.get(dirPath);
+                    if (paths == null) {
+                        mutableCache.put(dirPath, paths = new HashSet<>());
                     }
 
                     String entryPath = path.substring(lastPathSep + 1);
 
                     // "" is not really a child path, even if we see foo/ entry
-                    if (entryPath.length() > 0) {
-                        mutableCache.get(dirPath).add(entryPath);
-                    }
+                    if (entryPath.length() > 0) paths.add(entryPath);
 
                     path = dirPath;
                 }
@@ -77,8 +77,8 @@ class JarCache {
                 mutableCache.get(ROOT_KEY).add(path);
             }
 
-            Map<String, String[]> cachedDirEntries = new HashMap<String, String[]>(mutableCache.size() + 8, 1);
-            for (Map.Entry<String, Set<String>> entry : mutableCache.entrySet()) {
+            Map<String, String[]> cachedDirEntries = new HashMap<>(mutableCache.size() + 8, 1);
+            for (Map.Entry<String, HashSet<String>> entry : mutableCache.entrySet()) {
                 Set<String> value = entry.getValue();
                 cachedDirEntries.put(entry.getKey(), value.toArray(new String[value.size()]));
             }
@@ -91,15 +91,11 @@ class JarCache {
         }
 
         public String[] getDirEntries(String entryPath) {
-          return cachedDirEntries.get(canonicalJarPath(entryPath));
+            return cachedDirEntries.get(canonicalJarPath(entryPath));
         }
 
-        public InputStream getInputStream(JarEntry entry) {
-          try {
-              return jar.getInputStream(entry);
-          } catch (IOException ioError) {
-              return null;
-          }
+        public InputStream getInputStream(JarEntry entry) throws IOException, IllegalStateException {
+            return jar.getInputStream(entry);
         }
 
         public void release() {
@@ -126,7 +122,7 @@ class JarCache {
         }
     }
 
-    private final Map<String, JarIndex> indexCache = new WeakHashMap<String, JarIndex>();
+    private final Map<String, JarIndex> indexCache = new WeakHashMap<>();
 
     public JarIndex getIndex(String jarPath) {
         String cacheKey = jarPath;
@@ -147,10 +143,29 @@ class JarCache {
                     indexCache.put(cacheKey, index);
                 } catch (IOException ioe) {
                     return null;
+                } catch (AccessControlException ace) {
+                    // No permissions to index the given path, bail out
+                    return null;
                 }
             }
 
             return index;
+        }
+    }
+
+    public boolean remove(String jarPath){
+        String cacheKey = jarPath;
+
+        synchronized (indexCache) {
+            JarIndex index = indexCache.get(cacheKey);
+            if (index == null){
+                return false;
+            }
+            else{
+                index.release();
+                indexCache.remove(cacheKey);
+                return true;
+            }
         }
     }
 }

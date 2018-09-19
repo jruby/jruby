@@ -1,23 +1,17 @@
-require 'java'
-
-import org.jruby.compiler.impl.SkinnyMethodAdapter
-
-begin
-  import org.objectweb.asm.MethodVisitor
-  import org.objectweb.asm.Opcodes
-rescue # jarjar renames things, so we try the renamed version
-  import "org.jruby.org.objectweb.asm.MethodVisitor"
-  import "org.jruby.org.objectweb.asm.Opcodes"
-end
-
 describe "SkinnyMethodAdapter" do
-  let(:instance_methods) { SkinnyMethodAdapter.instance_methods.map(&:to_s) }
+
+  before(:all) do
+    require 'java'; require 'jruby'
+  end
+
+  let(:instance_methods) { org.jruby.compiler.impl.SkinnyMethodAdapter.instance_methods.map(&:to_s) }
   let(:insn_opcodes) do
-    Opcodes.constants.map(&:to_s).select do |c|
+    JRuby::ASM::Opcodes.constants.map(&:to_s).select do |c|
       case c
 
       when /ACC_/, # access modifiers
            /V1_/, # version identifiers
+           /V[0-9]+/, # version identifiers
            /T_/, # type identifiers
            /F_/, # framing hints
            /H_/, # method handles
@@ -31,6 +25,9 @@ describe "SkinnyMethodAdapter" do
         false
 
       when "INVOKEDYNAMIC_OWNER"
+        false
+
+      when "V_PREVIEW_EXPERIMENTAL"
         false
 
       else

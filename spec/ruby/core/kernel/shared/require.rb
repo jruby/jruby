@@ -7,8 +7,7 @@ describe :kernel_require_basic, shared: true do
     end
 
     it "loads a non-canonical absolute path" do
-      dir, file = File.split(File.expand_path("load_fixture.rb", CODE_LOADING_DIR))
-      path = File.join dir, ["..", "code"], file
+      path = File.join CODE_LOADING_DIR, "..", "code", "load_fixture.rb"
       @object.send(@method, path).should be_true
       ScratchPad.recorded.should == [:loaded]
     end
@@ -27,22 +26,24 @@ describe :kernel_require_basic, shared: true do
     end
 
     # Can't make a file unreadable on these platforms
-    platform_is_not os: [:windows, :cygwin] do
-      describe "with an unreadable file" do
-        before :each do
-          @path = tmp("unreadable_file.rb")
-          touch @path
-          File.chmod 0000, @path
-        end
+    platform_is_not :windows, :cygwin do
+      as_user do
+        describe "with an unreadable file" do
+          before :each do
+            @path = tmp("unreadable_file.rb")
+            touch @path
+            File.chmod 0000, @path
+          end
 
-        after :each do
-          File.chmod 0666, @path
-          rm_r @path
-        end
+          after :each do
+            File.chmod 0666, @path
+            rm_r @path
+          end
 
-        it "raises a LoadError" do
-          File.exist?(@path).should be_true
-          lambda { @object.send(@method, @path) }.should raise_error(LoadError)
+          it "raises a LoadError" do
+            File.exist?(@path).should be_true
+            lambda { @object.send(@method, @path) }.should raise_error(LoadError)
+          end
         end
       end
     end
@@ -223,7 +224,10 @@ describe :kernel_require, shared: true do
 
     it "loads a file that recursively requires itself" do
       path = File.expand_path "recursive_require_fixture.rb", CODE_LOADING_DIR
-      @object.require(path).should be_true
+      -> {
+        $VERBOSE = true
+        @object.require(path).should be_true
+      }.should complain(/circular require considered harmful/)
       ScratchPad.recorded.should == [:loaded]
     end
   end
@@ -291,7 +295,7 @@ describe :kernel_require, shared: true do
     end
   end
 
-  describe "($LOAD_FEATURES)" do
+  describe "($LOADED_FEATURES)" do
     before :each do
       @path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
     end
@@ -299,6 +303,80 @@ describe :kernel_require, shared: true do
     it "stores an absolute path" do
       @object.require(@path).should be_true
       $LOADED_FEATURES.should include(@path)
+    end
+
+    platform_is_not :windows do
+      describe "with symlinks" do
+        before :each do
+          @symlink_to_code_dir = tmp("codesymlink")
+          File.symlink(CODE_LOADING_DIR, @symlink_to_code_dir)
+
+          $LOAD_PATH.delete(CODE_LOADING_DIR)
+          $LOAD_PATH.unshift(@symlink_to_code_dir)
+        end
+
+        after :each do
+          rm_r @symlink_to_code_dir
+        end
+
+        it "does not canonicalize the path and stores a path with symlinks" do
+          symlink_path = "#{@symlink_to_code_dir}/load_fixture.rb"
+          canonical_path = "#{CODE_LOADING_DIR}/load_fixture.rb"
+          @object.require(symlink_path).should be_true
+          ScratchPad.recorded.should == [:loaded]
+
+          features = $LOADED_FEATURES.select { |path| path.end_with?('load_fixture.rb') }
+          features.should include(symlink_path)
+          features.should_not include(canonical_path)
+        end
+
+        it "stores the same path that __FILE__ returns in the required file" do
+          symlink_path = "#{@symlink_to_code_dir}/load_fixture_and__FILE__.rb"
+          @object.require(symlink_path).should be_true
+          loaded_feature = $LOADED_FEATURES.last
+          ScratchPad.recorded.should == [loaded_feature]
+        end
+      end
+
+      describe "with symlinks in the required feature and $LOAD_PATH" do
+        before :each do
+          @dir = tmp("realdir")
+          mkdir_p @dir
+          @file = "#{@dir}/realfile.rb"
+          touch(@file) { |f| f.puts 'ScratchPad << __FILE__' }
+
+          @symlink_to_dir = tmp("symdir").freeze
+          File.symlink(@dir, @symlink_to_dir)
+          @symlink_to_file = "#{@dir}/symfile.rb"
+          File.symlink("realfile.rb", @symlink_to_file)
+        end
+
+        after :each do
+          rm_r @dir, @symlink_to_dir
+        end
+
+        ruby_version_is ""..."2.4.4" do
+          it "canonicalizes neither the entry in $LOAD_PATH nor the filename passed to #require" do
+            $LOAD_PATH.unshift(@symlink_to_dir)
+            @object.require("symfile").should be_true
+            loaded_feature = "#{@symlink_to_dir}/symfile.rb"
+            ScratchPad.recorded.should == [loaded_feature]
+            $".last.should == loaded_feature
+            $LOAD_PATH[0].should == @symlink_to_dir
+          end
+        end
+
+        ruby_version_is "2.4.4" do
+          it "canonicalizes the entry in $LOAD_PATH but not the filename passed to #require" do
+            $LOAD_PATH.unshift(@symlink_to_dir)
+            @object.require("symfile").should be_true
+            loaded_feature = "#{@dir}/symfile.rb"
+            ScratchPad.recorded.should == [loaded_feature]
+            $".last.should == loaded_feature
+            $LOAD_PATH[0].should == @symlink_to_dir
+          end
+        end
+      end
     end
 
     it "does not store the path if the load fails" do
@@ -413,9 +491,8 @@ describe :kernel_require, shared: true do
       $LOADED_FEATURES.should include(@path)
     end
 
-    it "canonicalizes non-unique absolute paths" do
-      dir, file = File.split(File.expand_path("load_fixture.rb", CODE_LOADING_DIR))
-      path = File.join dir, ["..", "code"], file
+    it "expands absolute paths containing .." do
+      path = File.join CODE_LOADING_DIR, "..", "code", "load_fixture.rb"
       @object.require(path).should be_true
       $LOADED_FEATURES.should include(@path)
     end
@@ -450,10 +527,39 @@ describe :kernel_require, shared: true do
       end
       ScratchPad.recorded.should == []
     end
+
+    ruby_version_is ""..."2.5" do
+      it "complex, enumerator, rational, thread and unicode_normalize are already required" do
+        provided = %w[complex enumerator rational thread unicode_normalize]
+        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
+        provided.each { |feature|
+          features.should =~ /\b#{feature}\.(rb|so|jar)$/
+        }
+
+        code = provided.map { |f| "puts require #{f.inspect}\n" }.join
+        required = ruby_exe(code, options: '--disable-gems')
+        required.should == "false\n" * provided.size
+      end
+    end
+
+    ruby_version_is "2.5" do
+      it "complex, enumerator, rational and thread are already required" do
+        provided = %w[complex enumerator rational thread]
+        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
+        provided.each { |feature|
+          features.should =~ /\b#{feature}\.(rb|so|jar)$/
+        }
+
+        code = provided.map { |f| "puts require #{f.inspect}\n" }.join
+        required = ruby_exe(code, options: '--disable-gems')
+        required.should == "false\n" * provided.size
+      end
+    end
   end
 
   describe "(shell expansion)" do
     before :each do
+      @path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
       @env_home = ENV["HOME"]
       ENV["HOME"] = CODE_LOADING_DIR
     end
@@ -464,13 +570,11 @@ describe :kernel_require, shared: true do
 
     # "#3171"
     it "performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES" do
-      path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
       @object.require("~/load_fixture.rb").should be_true
       $LOADED_FEATURES.should include(@path)
     end
 
     it "performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES" do
-      path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
       @object.require("~/load_fixture").should be_true
       $LOADED_FEATURES.should include(@path)
     end
@@ -516,10 +620,12 @@ describe :kernel_require, shared: true do
 
       t2 = Thread.new do
         Thread.pass until t1[:in_concurrent_rb]
+        $VERBOSE, @verbose = nil, $VERBOSE
         begin
           t2_res = @object.require(@path)
           ScratchPad.recorded << :t2_post
         ensure
+          $VERBOSE = @verbose
           fin = true
         end
       end
@@ -579,10 +685,12 @@ describe :kernel_require, shared: true do
 
       t2 = Thread.new do
         Thread.pass until t1[:in_concurrent_rb]
+        $VERBOSE, @verbose = nil, $VERBOSE
         begin
           t2_res = @object.require(@path)
           ScratchPad.recorded << :t2_post
         ensure
+          $VERBOSE = @verbose
           fin = true
         end
       end
@@ -607,7 +715,6 @@ describe :kernel_require, shared: true do
       t2 = nil
       t1 = Thread.new do
         Thread.current[:con_raise] = true
-        t1_running = true
 
         lambda {
           @object.require(@path)

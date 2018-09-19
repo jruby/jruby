@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO.pipe" do
   after :each do
@@ -41,8 +41,8 @@ describe "IO.pipe" do
     end
 
     it "closes both IO objects" do
-      r, w = IO.pipe do |r, w|
-        [r, w]
+      r, w = IO.pipe do |_r, _w|
+        [_r, _w]
       end
       r.closed?.should == true
       w.closed?.should == true
@@ -62,10 +62,10 @@ describe "IO.pipe" do
     end
 
     it "allows IO objects to be closed within the block" do
-      r, w = IO.pipe do |r, w|
-        r.close
-        w.close
-        [r, w]
+      r, w = IO.pipe do |_r, _w|
+        _r.close
+        _w.close
+        [_r, _w]
       end
       r.closed?.should == true
       w.closed?.should == true

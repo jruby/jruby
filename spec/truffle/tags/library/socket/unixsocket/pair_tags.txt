@@ -1,6 +1,0 @@
-fails:UNIXSocket#pair if the write end is closed then the other side can read past EOF without blocking
-fails:UNIXSocket#pair closing the write end ensures that the other side can read until EOF
-fails:UNIXSocket#pair returns a pair of connected sockets
-fails:UNIXSocket#pair returns sockets with no name
-fails:UNIXSocket#pair returns sockets with no address
-fails:UNIXSocket#pair returns sockets with no peeraddr

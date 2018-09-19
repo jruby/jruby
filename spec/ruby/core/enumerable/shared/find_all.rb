@@ -1,4 +1,4 @@
-require File.expand_path('../enumerable_enumeratorized', __FILE__)
+require_relative 'enumerable_enumeratorized'
 
 describe :enumerable_find_all, shared: true do
   before :each do
@@ -14,7 +14,7 @@ describe :enumerable_find_all, shared: true do
   end
 
   it "returns an enumerator when no block given" do
-    @numerous.send(@method).should be_an_instance_of(enumerator_class)
+    @numerous.send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "passes through the values yielded by #each_with_index" do

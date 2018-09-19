@@ -1,9 +1,10 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Socket::TCPServer.accept_nonblock" do
   before :each do
-    @server = TCPServer.new("127.0.0.1", SocketSpecs.port)
+    @server = TCPServer.new("127.0.0.1", 0)
+    @port = @server.addr[1]
   end
 
   after :each do
@@ -16,13 +17,13 @@ describe "Socket::TCPServer.accept_nonblock" do
       @server.accept_nonblock
     }.should raise_error(IO::WaitReadable)
 
-    c = TCPSocket.new("127.0.0.1", SocketSpecs.port)
+    c = TCPSocket.new("127.0.0.1", @port)
     sleep 0.1
     s = @server.accept_nonblock
 
     port, address = Socket.unpack_sockaddr_in(s.getsockname)
 
-    port.should == SocketSpecs.port
+    port.should == @port
     address.should == "127.0.0.1"
     s.should be_kind_of(TCPSocket)
 
@@ -40,9 +41,43 @@ describe "Socket::TCPServer.accept_nonblock" do
       lambda { @server.accept_nonblock }.should raise_error(IO::WaitReadable)
     end
 
-    ruby_version_is '2.3' do
-      it 'returns :wait_readable in exceptionless mode' do
-        @server.accept_nonblock(exception: false).should == :wait_readable
+    it 'returns :wait_readable in exceptionless mode' do
+      @server.accept_nonblock(exception: false).should == :wait_readable
+    end
+  end
+end
+
+describe 'TCPServer#accept_nonblock' do
+  SocketSpecs.each_ip_protocol do |family, ip_address|
+    before do
+      @server = TCPServer.new(ip_address, 0)
+    end
+
+    after do
+      @server.close
+    end
+
+    describe 'without a connected client' do
+      it 'raises IO::WaitReadable' do
+        lambda { @server.accept_nonblock }.should raise_error(IO::WaitReadable)
+      end
+    end
+
+    platform_is_not :windows do # spurious
+      describe 'with a connected client' do
+        before do
+          @client = TCPSocket.new(ip_address, @server.connect_address.ip_port)
+        end
+
+        after do
+          @socket.close if @socket
+          @client.close
+        end
+
+        it 'returns a TCPSocket' do
+          @socket = @server.accept_nonblock
+          @socket.should be_an_instance_of(TCPSocket)
+        end
       end
     end
   end

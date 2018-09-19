@@ -1,6 +1,7 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
-require File.expand_path('../shared/slice.rb', __FILE__)
+# -*- encoding: binary -*-
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/slice'
 
 describe "String#byteslice" do
   it "needs to reviewed for spec completeness"

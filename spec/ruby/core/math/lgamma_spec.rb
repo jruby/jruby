@@ -1,8 +1,8 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Math.lgamma" do
   it "returns [Infinity, 1] when passed 0" do
-    Math.lgamma(0).should  == [infinity_value, 1]
+    Math.lgamma(0).should == [infinity_value, 1]
   end
 
   platform_is_not :windows do
@@ -13,7 +13,7 @@ describe "Math.lgamma" do
 
   ruby_version_is "2.4" do
     it "returns [Infinity, -1] when passed -0.0" do
-      Math.lgamma(-0.0).should  == [infinity_value, -1]
+      Math.lgamma(-0.0).should == [infinity_value, -1]
     end
   end
 

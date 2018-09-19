@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -13,18 +14,18 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    public final String argName;
+    public final RubySymbol key;
     public final int required;
 
-    public ReceiveKeywordArgInstr(Variable result, String argName, int required) {
+    public ReceiveKeywordArgInstr(Variable result, RubySymbol key, int required) {
         super(Operation.RECV_KW_ARG, result, -1);
-        this.argName = argName;
+        this.key = key;
         this.required = required;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + argName, "req: " + required};
+        return new String[] { "name: " + getKey(), "req: " + required};
     }
 
     @Override
@@ -33,25 +34,33 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
         return true;
     }
 
+    public String getId() {
+        return key.idString();
+    }
+
+    public RubySymbol getKey() {
+        return key;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), argName, required);
+        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), getKey(), required);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(argName);
+        e.encode(getKey());
         e.encode(required);
     }
 
     public static ReceiveKeywordArgInstr decode(IRReaderDecoder d) {
-        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
+        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeSymbol(), d.decodeInt());
     }
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receiveKeywordArg(context, args, required, argName, acceptsKeywordArgument);
+        return IRRuntimeHelpers.receiveKeywordArg(context, args, required, getKey(), acceptsKeywordArgument);
     }
 
     @Override

@@ -1,7 +1,13 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel#!~" do
+  class KernelSpecs::NotMatch
+    def !~(obj)
+      :foo
+    end
+  end
+
   it 'calls =~ internally and negates the result' do
     obj = Object.new
     obj.should_receive(:=~).and_return(true)

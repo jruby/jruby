@@ -1,21 +1,19 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 require 'find'
 
 describe "Find.find" do
-  it "needs to be reviewed for spec completeness"
-
-  before :all do
+  before :each do
     FindDirSpecs.create_mock_dirs
   end
 
-  after :all do
+  after :each do
     FindDirSpecs.delete_mock_dirs
   end
 
   describe "when called without a block" do
     it "returns an Enumerator" do
-      Find.find(FindDirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
+      Find.find(FindDirSpecs.mock_dir).should be_an_instance_of(Enumerator)
       Find.find(FindDirSpecs.mock_dir).to_a.sort.should == FindDirSpecs.expected_paths
     end
   end

@@ -67,30 +67,7 @@ module Enumerable
     raise ArgumentError.new("missing block") unless block
 
     Enumerator.new do |enum|
-      ary = nil
-      last_after = nil
-      if size == 1
-        each {|x| enum.yield [x]}
-      else
-        each_cons(2) do |before, after|
-          last_after = after
-          match = block.call before, after
-
-          ary ||= []
-          if match
-            ary << before
-            enum.yield ary
-            ary = []
-          else
-            ary << before
-          end
-        end
-
-        unless ary.nil?
-          ary << last_after
-          enum.yield ary
-        end
-      end
+      __slicey_chunky(false, enum, block)
     end
   end
   
@@ -98,31 +75,59 @@ module Enumerable
     raise ArgumentError.new("missing block") unless block
 
     Enumerator.new do |enum|
-      ary = nil
-      last_after = nil
-      each_cons(2) do |before, after|
-        last_after = after
-        match = block.call before, after
-
-        ary ||= []
-        if match
-          ary << before
-        else
-          ary << before
-          enum.yield ary
-          ary = []
-        end
-      end
-
-      unless ary.nil?
-        ary << last_after
-        enum.yield ary
-      end
+      __slicey_chunky(true, enum, block)
     end
   end
+
+  def __slicey_chunky(invert, enum, block)
+    ary = nil
+    last_after = nil
+    element_present = false
+    each_cons(2) do |before, after|
+      element_present = true
+      last_after = after
+      match = block.call before, after
+
+      ary ||= []
+      if invert ? !match : match
+        ary << before
+        enum.yield ary
+        ary = []
+      else
+        ary << before
+      end
+    end
+
+    unless ary.nil?
+      ary << last_after
+      enum.yield ary
+    end
+    each { |x| enum.yield [x] } unless element_present
+  end
+  private :__slicey_chunky
 
   def lazy
     klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
     Enumerator::Lazy.new(klass.new(self, :each, []))
+  end
+
+  def uniq
+    values = []
+    hash = {}
+    if block_given?
+      each_entry do |obj|
+        ret = yield(*obj)
+        next if hash.key? ret
+        hash[ret] = obj
+        values << obj
+      end
+    else
+      each_entry do |obj|
+        next if hash.key? obj
+        hash[obj] = obj unless hash.key? obj
+        values << obj
+      end
+    end
+    values
   end
 end

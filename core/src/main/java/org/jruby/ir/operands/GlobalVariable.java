@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -9,7 +10,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable extends Reference {
-    public GlobalVariable(String name) {
+    public GlobalVariable(RubySymbol name) {
         super(name);
     }
 
@@ -28,11 +29,11 @@ public class GlobalVariable extends Reference {
     @Interp
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return context.runtime.getGlobalVariables().get(getName());
+        return context.runtime.getGlobalVariables().get(getId());
     }
 
     public static GlobalVariable decode(IRReaderDecoder d) {
-        return new GlobalVariable(d.decodeString());
+        return new GlobalVariable(d.decodeSymbol());
     }
 
     @Override

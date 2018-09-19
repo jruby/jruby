@@ -733,7 +733,7 @@ public final class ArrayJavaProxy extends JavaProxy {
             last = last >= 0 ? last : arrayLength + last;
 
             int newLength = last - first;
-            if ( range.exclude_end_p().isFalse() ) newLength += 1;
+            if ( range.isExcludeEnd() ) newLength += 1;
 
             if ( newLength <= 0 ) {
                 return ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType());
@@ -741,7 +741,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
             return ArrayUtils.javaArraySubarrayDirect(context, array, first, newLength);
         }
-        throw context.runtime.newTypeError("only Fixnum ranges supported");
+        throw context.runtime.newTypeError("only Integer ranges supported");
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject first, IRubyObject length) {
@@ -779,7 +779,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         }
 
         public ArrayNewMethod(RubyModule implClass, Visibility visibility, DynamicMethod oldNew) {
-            super(implClass, visibility);
+            super(implClass, visibility, "new");
             this.newMethod = oldNew;
         }
 

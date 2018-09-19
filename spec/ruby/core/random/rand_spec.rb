@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Random.rand" do
   it "returns a Float if no max argument is passed" do
@@ -98,7 +98,7 @@ end
 describe "Random#rand with Bignum" do
   it "typically returns a Bignum" do
     rnd = Random.new(1)
-    10.times.map{ rnd.rand(bignum_value) }.max.should be_an_instance_of(Bignum)
+    10.times.map{ rnd.rand(bignum_value*2) }.max.should be_an_instance_of(Bignum)
   end
 
   it "returns a Bignum greater than or equal to 0" do
@@ -172,13 +172,13 @@ describe "Random#rand with Range" do
   end
 
   it "works with inclusive ranges" do
-    prng = Random.new
+    prng = Random.new 33
     r = 3..5
     40.times.map { prng.rand(r) }.uniq.sort.should == [3,4,5]
   end
 
   it "works with exclusive ranges" do
-    prng = Random.new
+    prng = Random.new 33
     r = 3...5
     20.times.map { prng.rand(r) }.uniq.sort.should == [3,4]
   end

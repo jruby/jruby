@@ -36,7 +36,7 @@ public class MethodData {
     }
 
     public int local(Variable variable, Type type) {
-        String newName = variable.getName().replace('%', '$');
+        String newName = variable.getId().replace('%', '$');
         return local(newName, type);
     }
 

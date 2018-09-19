@@ -39,7 +39,12 @@ class Gem::StubSpecification < Gem::BasicSpecification
     def initialize data, extensions
       parts          = data[PREFIX.length..-1].split(" ".freeze, 4)
       @name          = parts[0].freeze
-      @version       = Gem::Version.new parts[1]
+      @version       = if Gem::Version.correct?(parts[1])
+                         Gem::Version.new(parts[1])
+                       else
+                         Gem::Version.new(0)
+                       end
+
       @platform      = Gem::Platform.new parts[2]
       @extensions    = extensions
       @full_name     = if platform == Gem::Platform::RUBY
@@ -108,6 +113,8 @@ class Gem::StubSpecification < Gem::BasicSpecification
     unless @data
       begin
         saved_lineno = $.
+
+        # TODO It should be use `File.open`, but bundler-1.16.1 example expects Kernel#open.
         open loaded_from, OPEN_MODE do |file|
           begin
             file.readline # discard encoding line
@@ -183,9 +190,8 @@ class Gem::StubSpecification < Gem::BasicSpecification
 
   def to_spec
     @spec ||= if @data then
-                Gem.loaded_specs.values.find { |spec|
-                  spec.name == name and spec.version == version
-                }
+                loaded = Gem.loaded_specs[name]
+                loaded if loaded && loaded.version == version
               end
 
     @spec ||= Gem::Specification.load(loaded_from)

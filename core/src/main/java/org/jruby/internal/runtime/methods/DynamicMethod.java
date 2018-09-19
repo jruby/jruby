@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,9 +30,14 @@
 
 package org.jruby.internal.runtime.methods;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import org.jruby.MetaClass;
+import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -51,10 +56,12 @@ import org.jruby.util.CodegenUtils;
  * delegation or callback mechanisms.
  */
 public abstract class DynamicMethod {
-    /** The Ruby module or class in which this method is immediately defined. */
+    /** The Ruby module or class from which this method should `super`. Referred to as the `owner` in C Ruby. */
     protected RubyModule implementationClass;
     /** The "protected class" used for calculating protected access. */
     protected RubyModule protectedClass;
+    /** The module or class that originally defined this method. Referred to as the `defined_class` in C Ruby. */
+    protected RubyModule definedClass;
     /** The visibility of this method. This is the ordinal of the Visibility enum value. */
     private byte visibility;
     /** The serial number for this method object, to globally identify it */
@@ -62,24 +69,16 @@ public abstract class DynamicMethod {
     /** Flags for builtin, notimpl, etc */
     protected byte flags;
     /** The simple, base name this method was defined under. May be null.*/
-    protected String name;
+    protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
 
     private static final int BUILTIN_FLAG = 0x1;
     private static final int NOTIMPL_FLAG = 0x2;
 
-    /**
-     * Base constructor for dynamic method handles.
-     *
-     * @param implementationClass The class to which this method will be
-     * immediately bound
-     * @param visibility The visibility assigned to this method
-     * pre/post invocation logic.
-     */
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
-        assert implementationClass != null;
-        init(implementationClass, visibility);
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Version {
+        int version = 0;
     }
 
     /**
@@ -91,18 +90,24 @@ public abstract class DynamicMethod {
      * @param name The simple name of this method
      */
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, String name) {
-        this(implementationClass, visibility);
+        assert implementationClass != null;
+        if (name == null) {
+            name = "null";
+        }
         this.name = name;
+        init(implementationClass, visibility);
     }
 
     /**
      * A no-arg constructor used only by the UndefinedMethod subclass and
      * CompiledMethod handles. instanceof assertions make sure this is so.
      */
-    protected DynamicMethod() {
-//        assert (this instanceof UndefinedMethod ||
-//                this instanceof CompiledMethod ||
-//                this instanceof );
+    protected DynamicMethod(String name) {
+        this.visibility = (byte) Visibility.PUBLIC.ordinal();
+        if (name == null) {
+            name = "null";
+        }
+        this.name = name;
     }
 
     protected void init(RubyModule implementationClass, Visibility visibility) {
@@ -279,6 +284,8 @@ public abstract class DynamicMethod {
         // For visibility we need real meta class and not anonymous one from class << self
         if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
 
+        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getNonIncludedClass();
+
         return cls;
     }
 
@@ -314,6 +321,24 @@ public abstract class DynamicMethod {
     public void setImplementationClass(RubyModule implClass) {
         implementationClass = implClass;
         protectedClass = calculateProtectedClass(implClass);
+    }
+
+    /**
+     * Get the original owner of this method/
+     */
+    public RubyModule getDefinedClass() {
+        RubyModule definedClass = this.definedClass;
+
+        if (definedClass != null) return definedClass;
+
+        return implementationClass;
+    }
+
+    /**
+     * Set the defining class for this method, as when restructuring hierarchy for prepend.
+     */
+    public void setDefinedClass(RubyModule definedClass) {
+        this.definedClass = definedClass;
     }
 
     /**
@@ -370,7 +395,7 @@ public abstract class DynamicMethod {
     /**
      * Get the "real" method contained within this method. This simply returns
      * self except in cases where a method is wrapped to give it a new
-     * name or new implementation class (AliasMethod, WrapperMethod, ...).
+     * name or new implementation class (AliasMethod, PartialDelegatingMethod, ...).
      *
      * @return The "real" method associated with this one
      */
@@ -385,6 +410,7 @@ public abstract class DynamicMethod {
         private final Class[] nativeSignature;
         private final boolean statik;
         private final boolean java;
+        private Method reflected;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -437,8 +463,10 @@ public abstract class DynamicMethod {
          * @return the reflected method corresponding to this NativeCall
          */
         public Method getMethod() {
+            Method reflected = this.reflected;
+            if (reflected != null) return reflected;
             try {
-                return nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -466,15 +494,6 @@ public abstract class DynamicMethod {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Set the base name for this method.
-     *
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 
     /**
@@ -544,5 +563,13 @@ public abstract class DynamicMethod {
 
     @Deprecated
     public void setCallConfig(CallConfiguration callConfig) {
+    }
+
+    /**
+     * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
+     */
+    @Deprecated
+    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
+        this(implementationClass, visibility, "(anonymous)");
     }
 }

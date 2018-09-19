@@ -1,4 +1,5 @@
-require File.expand_path('../shared/setproperty', __FILE__)
+require_relative '../fixtures/classes'
+require_relative 'shared/setproperty'
 
 platform_is :windows do
   require 'win32ole'

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,13 +25,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.socket;
 
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ConnectException;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
 import java.net.ProtocolFamily;
 import java.net.SocketAddress;
@@ -41,10 +45,11 @@ import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.UnsupportedAddressTypeException;
 
 import jnr.constants.platform.AddressFamily;
 import jnr.netdb.Service;
@@ -65,6 +70,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.Sockaddr;
+
 
 /**
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
@@ -101,25 +108,35 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _family) {
-        int family = _family.convertToInteger().getIntValue();
-        if (family == AddressFamily.AF_INET.intValue()) {
+        AddressFamily family = SocketUtils.addressFamilyFromArg(_family);
+
+        if (family == AddressFamily.AF_INET) {
+            explicitFamily = Inet4Address.class;
             return initialize(context, StandardProtocolFamily.INET);
-        } else if (family == AddressFamily.AF_INET6.intValue()) {
+        } else if (family == AddressFamily.AF_INET6) {
+            explicitFamily = Inet6Address.class;
             return initialize(context, StandardProtocolFamily.INET6);
         }
-        throw SocketUtils.sockerr(context.runtime, "invalid family for UDPSocket: " + _family);
+
+        throw context.runtime.newErrnoEAFNOSUPPORTError("invalid family for UDPSocket: " + _family);
     }
 
     public IRubyObject initialize(ThreadContext context, ProtocolFamily family) {
         Ruby runtime = context.runtime;
 
         try {
+            this.family = family;
             DatagramChannel channel = DatagramChannel.open(family);
             initSocket(newChannelFD(runtime, channel));
         } catch (ConnectException e) {
             throw runtime.newErrnoECONNREFUSEDError();
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+        } catch (UnsupportedOperationException uoe) {
+            if (uoe.getMessage().contains("IPv6 not available")) {
+                throw runtime.newErrnoEAFNOSUPPORTError("socket(2) - udp");
+            }
+            throw sockerr(runtime, "UnsupportedOperationException: " + uoe.getLocalizedMessage(), uoe);
         } catch (IOException e) {
             throw sockerr(runtime, "initialize: name or service not known", e);
         }
@@ -174,11 +191,19 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             return RubyFixnum.zero(runtime);
         }
+        catch (UnsupportedAddressTypeException e) {
+            // This may not be the appropriate message for all such exceptions
+            ProtocolFamily family = this.family == null ? StandardProtocolFamily.INET : this.family;
+            throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect() + " for protocol family " + family);
+        }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         }
         catch (BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e);
+        }
+        catch (AlreadyBoundException e) {
+            throw runtime.newErrnoEINVALError("bind(2) for " + host.inspect() + " port " + port);
         }
         catch (SocketException e) {
             final String message = e.getMessage();
@@ -196,15 +221,30 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     @JRubyMethod
-    public IRubyObject connect(ThreadContext context, IRubyObject host, IRubyObject port) {
+    public IRubyObject connect(ThreadContext context, IRubyObject _host, IRubyObject port) {
         Ruby runtime = context.runtime;
 
         try {
-            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), SocketUtils.portToInt(port));
+            String host = _host.isNil() ? "localhost" : _host.convertToString().toString();
+            InetAddress[] addrs = InetAddress.getAllByName(host);
 
-            ((DatagramChannel) this.getChannel()).connect(addr);
+            for (int i = 0; i < addrs.length; i++) {
+                InetAddress a = addrs[i];
 
-            return RubyFixnum.zero(runtime);
+                // If an explicit family is specified, don't try all addresses
+                if (explicitFamily != null && !explicitFamily.isInstance(a)) continue;
+
+                try {
+                    InetSocketAddress addr = new InetSocketAddress(addrs[i], SocketUtils.portToInt(port));
+
+                    ((DatagramChannel) this.getChannel()).connect(addr);
+
+                    return RubyFixnum.zero(runtime);
+                } catch (NoRouteToHostException nrthe) {
+                    if (i+1 < addrs.length) continue;
+                    throw nrthe;
+                }
+            }
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect: name or service not known");
@@ -215,6 +255,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (IllegalArgumentException e) {
             throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
+
+        // should not get here
+        return context.nil;
     }
 
     private DatagramChannel getDatagramChannel() {
@@ -227,10 +270,9 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     public static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         int argc = args.length;
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (!opts.isNil()) argc--;
+        if (opts != context.nil) argc--;
 
         IRubyObject length, flags, str;
         length = flags = str = context.nil;
@@ -241,9 +283,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             case 1: length = args[0];
         }
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
-
-        return recvfrom_nonblock(socket, context, length, flags, str, exception);
+        return recvfrom_nonblock(socket, context, length, flags, str, extractExceptionArg(context, opts));
     }
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
@@ -317,11 +357,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod
-    public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
-        return send(context, _mesg, _flags);
-    }
-
     @JRubyMethod(required = 2, optional = 2)
     public IRubyObject send(ThreadContext context, IRubyObject[] args) {
         // TODO: implement flags
@@ -332,64 +367,99 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             int written;
 
-            if (args.length == 2 || args.length == 3) {
+            if (args.length == 2) {
                 return send(context, _mesg, _flags);
             }
 
-            IRubyObject _host = args[2];
-            IRubyObject _port = args[3];
+            InetAddress[] addrs;
+            int port;
+            if (args.length == 3) {
+                InetSocketAddress sockAddress;
+                IRubyObject sockaddr = args[2];
+                if (sockaddr instanceof Addrinfo) {
+                    sockAddress = ((Addrinfo) sockaddr).getInetSocketAddress();
+                    if (sockAddress == null) {
+                        throw SocketUtils.sockerr(runtime, "need AF_INET or AF_INET6 address");
+                    }
+                } else {
+                    sockAddress = Sockaddr.addressFromSockaddr_in(context, sockaddr);
+                }
+                addrs = new InetAddress[] {sockAddress.getAddress()};
+                port = sockAddress.getPort();
+            } else { // args.length >= 4
+                IRubyObject _host = args[2];
+                IRubyObject _port = args[3];
 
-            RubyString nameStr = _host.convertToString();
+                RubyString nameStr = _host.convertToString();
+
+                if (_port instanceof RubyString) {
+
+                    Service service = Service.getServiceByName(_port.asJavaString(), "udp");
+
+                    if (service != null) {
+                        port = service.getPort();
+                    } else {
+                        port = (int) _port.convertToInteger("to_i").getLongValue();
+                    }
+
+                } else {
+                    port = (int) _port.convertToInteger().getLongValue();
+                }
+
+                addrs = SocketUtils.getRubyInetAddresses(nameStr.getByteList());
+            }
+
             RubyString data = _mesg.convertToString();
-            ByteList dataBL = data.getByteList();
-            ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
+            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
 
             byte[] buf2 = data.getBytes();
             DatagramPacket sendDP;
 
-            int port;
-            if (_port instanceof RubyString) {
+            for (int i = 0; i < addrs.length; i++) {
+                InetAddress inetAddress = addrs[i];
+                InetSocketAddress addr = new InetSocketAddress(inetAddress, port);
 
-                Service service = Service.getServiceByName(_port.asJavaString(), "udp");
+                try {
+                    if (this.multicastStateManager == null) {
+                        written = ((DatagramChannel) this.getChannel()).send(buf, addr);
 
-                if (service != null) {
-                    port = service.getPort();
-                } else {
-                    port = (int)_port.convertToInteger("to_i").getLongValue();
+                    } else {
+                        sendDP = new DatagramPacket(buf2, buf2.length, addr);
+                        multicastStateManager.rebindToPort(addr.getPort());
+                        MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
+
+                        ms.send(sendDP);
+                        written = sendDP.getLength();
+                    }
+
+                    return runtime.newFixnum(written);
+                } catch (NoRouteToHostException nrthe) {
+                    if (i+1 < addrs.length) {
+                        continue;
+                    }
+                    throw nrthe;
                 }
-
-            } else {
-                port = (int)_port.convertToInteger().getLongValue();
             }
-
-            InetAddress address = SocketUtils.getRubyInetAddress(nameStr.getByteList());
-            InetSocketAddress addr = new InetSocketAddress(address, port);
-
-            if (this.multicastStateManager == null) {
-                written = ((DatagramChannel) this.getChannel()).send(buf, addr);
-
-            } else {
-                sendDP = new DatagramPacket(buf2, buf2.length, address, port);
-                multicastStateManager.rebindToPort(port);
-                MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
-
-                ms.send(sendDP);
-                written = sendDP.getLength();
-            }
-
-            return runtime.newFixnum(written);
-
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
-        }
-        catch (IOException e) { // SocketException
+        } catch (IOException e) { // SocketException
+            final String message = e.getMessage();
+            if (message != null) {
+                switch(message) {
+                case "Message too large": // Alpine Linux
+                case "Message too long":
+                    throw runtime.newErrnoEMSGSIZEError();
+                }
+            }
             throw runtime.newIOErrorFromException(e);
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
             throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
+
+        // should not get here
+        return context.nil;
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -462,6 +532,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         try {
             return doReceive(this, runtime, false, RubyNumeric.fix2int(length), null);
         }
+        catch (PortUnreachableException e) {
+            throw runtime.newErrnoECONNREFUSEDError();
+        }
         catch (IOException e) { // SocketException
             throw runtime.newIOErrorFromException(e);
         }
@@ -469,15 +542,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (Exception e) {
             throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
-    }
-
-    /**
-     * Overrides BasicSocket#recv
-     */
-    @Override
-    public IRubyObject recv(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
-        // TODO: implement flags
-        return recv(context, _length);
     }
 
     private static ReceiveTuple doReceiveTuple(RubyBasicSocket socket, final Ruby runtime, final boolean non_block, int length) throws IOException {
@@ -572,6 +636,9 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         return result;
     }
+
+    private volatile Class<? extends InetAddress> explicitFamily;
+    private volatile ProtocolFamily family;
 
     @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {

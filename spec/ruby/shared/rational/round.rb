@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe :rational_round, shared: true do
   before do
@@ -14,10 +14,17 @@ describe :rational_round, shared: true do
 
     it "returns the truncated value toward the nearest integer" do
       @rational.round.should == 314
-      Rational(1, 2).round.should == 1
-      Rational(-1, 2).round.should == -1
       Rational(0, 1).round(0).should == 0
       Rational(2, 1).round(0).should == 2
+    end
+
+    it "returns the rounded value toward the nearest integer" do
+      Rational(1, 2).round.should == 1
+      Rational(-1, 2).round.should == -1
+      Rational(3, 2).round.should == 2
+      Rational(-3, 2).round.should == -2
+      Rational(5, 2).round.should == 3
+      Rational(-5, 2).round.should == -3
     end
   end
 
@@ -59,6 +66,31 @@ describe :rational_round, shared: true do
     # #6605
     it "doesn't fail when rounding to an absurdly large positive precision" do
       Rational(3, 2).round(2_097_171).should == Rational(3, 2)
+    end
+  end
+
+  ruby_version_is "2.4" do
+    describe "with half option" do
+      it "returns an Integer when precision is not passed" do
+        Rational(10, 4).round(half: :up).should == 3
+        Rational(10, 4).round(half: :down).should == 2
+        Rational(10, 4).round(half: :even).should == 2
+        Rational(-10, 4).round(half: :up).should == -3
+        Rational(-10, 4).round(half: :down).should == -2
+        Rational(-10, 4).round(half: :even).should == -2
+      end
+
+      it "returns a Rational when the precision is greater than 0" do
+        Rational(25, 100).round(1, half: :up).should == Rational(3, 10)
+        Rational(25, 100).round(1, half: :down).should == Rational(1, 5)
+        Rational(25, 100).round(1, half: :even).should == Rational(1, 5)
+        Rational(35, 100).round(1, half: :up).should == Rational(2, 5)
+        Rational(35, 100).round(1, half: :down).should == Rational(3, 10)
+        Rational(35, 100).round(1, half: :even).should == Rational(2, 5)
+        Rational(-25, 100).round(1, half: :up).should == Rational(-3, 10)
+        Rational(-25, 100).round(1, half: :down).should == Rational(-1, 5)
+        Rational(-25, 100).round(1, half: :even).should == Rational(-1, 5)
+      end
     end
   end
 end

@@ -30,6 +30,8 @@ project 'JRuby Main Maven Artifact' do
     end
   end
 
+  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+
   profile :apps do
     activation do
       property :name => 'invoker.test'

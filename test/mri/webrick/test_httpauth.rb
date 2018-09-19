@@ -7,6 +7,11 @@ require "webrick/httpauth/basicauth"
 require_relative "utils"
 
 class TestWEBrickHTTPAuth < Test::Unit::TestCase
+  def teardown
+    WEBrick::Utils::TimeoutHandler.terminate
+    super
+  end
+
   def test_basic_auth
     log_tester = lambda {|log, access_log|
       assert_equal(1, log.length)
@@ -94,6 +99,42 @@ class TestWEBrickHTTPAuth < Test::Unit::TestCase
       tmpfile.flush
       assert_raise(NotImplementedError){
         WEBrick::HTTPAuth::Htpasswd.new(tmpfile.path)
+      }
+    }
+  end
+
+  def test_bad_username_with_control_characters
+    log_tester = lambda {|log, access_log|
+      assert_equal(2, log.length)
+      assert_match(/ERROR Basic WEBrick's realm: foo\\ebar: the user is not allowed./, log[0])
+      assert_match(/ERROR WEBrick::HTTPStatus::Unauthorized/, log[1])
+    }
+    TestWEBrick.start_httpserver({}, log_tester) {|server, addr, port, log|
+      realm = "WEBrick's realm"
+      path = "/basic_auth"
+
+      Tempfile.create("test_webrick_auth") {|tmpfile|
+        tmpfile.close
+        tmp_pass = WEBrick::HTTPAuth::Htpasswd.new(tmpfile.path)
+        tmp_pass.set_passwd(realm, "webrick", "supersecretpassword")
+        tmp_pass.set_passwd(realm, "foo", "supersecretpassword")
+        tmp_pass.flush
+
+        htpasswd = WEBrick::HTTPAuth::Htpasswd.new(tmpfile.path)
+        users = []
+        htpasswd.each{|user, pass| users << user }
+        server.mount_proc(path){|req, res|
+          auth = WEBrick::HTTPAuth::BasicAuth.new(
+            :Realm => realm, :UserDB => htpasswd,
+            :Logger => server.logger
+          )
+          auth.authenticate(req, res)
+          res.body = "hoge"
+        }
+        http = Net::HTTP.new(addr, port)
+        g = Net::HTTP::Get.new(path)
+        g.basic_auth("foo\ebar", "passwd")
+        http.request(g){|res| assert_not_equal("hoge", res.body, log.call) }
       }
     }
   end

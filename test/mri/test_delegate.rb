@@ -1,8 +1,16 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'test/unit'
 require 'delegate'
 
 class TestDelegateClass < Test::Unit::TestCase
+  module PP
+    def mu_pp(obj)
+      str = super
+      str = "#<#{obj.class}: #{str}>" if Delegator === obj
+      str
+    end
+  end
+
   module M
     attr_reader :m
   end
@@ -92,7 +100,7 @@ class TestDelegateClass < Test::Unit::TestCase
     a = [42, :hello].freeze
     d = SimpleDelegator.new(a)
     assert_nothing_raised(bug2679) {d.dup[0] += 1}
-    assert_raise(RuntimeError) {d.clone[0] += 1}
+    assert_raise(FrozenError) {d.clone[0] += 1}
     d.freeze
     assert(d.clone.frozen?)
     assert(!d.dup.frozen?)
@@ -101,7 +109,7 @@ class TestDelegateClass < Test::Unit::TestCase
   def test_frozen
     d = SimpleDelegator.new([1, :foo])
     d.freeze
-    assert_raise(RuntimeError, '[ruby-dev:40314]#1') {d.__setobj__("foo")}
+    assert_raise(FrozenError, '[ruby-dev:40314]#1') {d.__setobj__("foo")}
     assert_equal([1, :foo], d)
   end
 
@@ -117,6 +125,18 @@ class TestDelegateClass < Test::Unit::TestCase
     assert_equal([], s.methods(false))
     def s.bar; end
     assert_equal([:bar], s.methods(false))
+  end
+
+  def test_eql?
+    extend PP
+    s0 = SimpleDelegator.new("foo")
+    s1 = SimpleDelegator.new("bar")
+    s2 = SimpleDelegator.new("foo")
+    assert_operator(s0, :eql?, s0)
+    assert_operator(s0, :eql?, "foo")
+    assert_operator(s0, :eql?, s2)
+    assert_not_operator(s0, :eql?, s1)
+    assert_not_operator(s0, :eql?, "bar")
   end
 
   class Foo

@@ -44,4 +44,11 @@ describe :object_equal, shared: true do
     true.__send__(@method, false).should == false
     false.__send__(@method, true).should == false
   end
+
+  it "returns true for integers of initially different ranges" do
+    big42 = (bignum_value * 42 / bignum_value)
+    42.__send__(@method, big42).should == true
+    long42 = (1 << 35) * 42 / (1 << 35)
+    42.__send__(@method, long42).should == true
+  end
 end

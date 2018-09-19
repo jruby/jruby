@@ -2,16 +2,6 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 require 'mspec/runner/mspec'
 require 'mspec/runner/filters/match'
 
-describe MatchFilter, "#to_regexp" do
-  before :each do
-    @filter = MatchFilter.new nil
-  end
-
-  it "converts its arguments to Regexp instances" do
-    @filter.to_regexp('a', 'b', 'c').should == [/a/, /b/, /c/]
-  end
-end
-
 describe MatchFilter, "#===" do
   before :each do
     @filter = MatchFilter.new nil, 'a', 'b', 'c'

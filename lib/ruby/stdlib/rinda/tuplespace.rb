@@ -1,6 +1,5 @@
 # frozen_string_literal: false
 require 'monitor'
-require 'thread'
 require 'drb/drb'
 require 'rinda/rinda'
 require 'forwardable'
@@ -246,7 +245,7 @@ module Rinda
     def initialize(place, event, tuple, expires=nil)
       ary = [event, Rinda::Template.new(tuple)]
       super(ary, expires)
-      @queue = Queue.new
+      @queue = Thread::Queue.new
       @done = false
     end
 

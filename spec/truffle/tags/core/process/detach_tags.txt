@@ -1,5 +1,0 @@
-fails:Process.detach returns a thread
-fails:Process.detach produces the exit Process::Status as the thread value
-fails:Process.detach reaps the child process's status automatically
-fails:Process.detach sets the :pid thread-local to the PID
-fails:Process.detach provides a #pid method on the returned thread which returns the PID

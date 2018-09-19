@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/constants', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../fixtures/constants'
 
 describe "Module#const_set" do
   it "sets the constant specified by a String or Symbol to the given value" do
@@ -78,8 +78,8 @@ describe "Module#const_set" do
       @name = :Foo
     end
 
-    it "raises a RuntimeError before setting the name" do
-      lambda { @frozen.const_set @name, nil }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} before setting the name" do
+      lambda { @frozen.const_set @name, nil }.should raise_error(frozen_error_class)
       @frozen.should_not have_constant(@name)
     end
   end

@@ -1,15 +1,14 @@
+# frozen_string_literal: true
 require 'rbconfig'
 require 'jruby/util'
 
 module Gem
 
   class << self
-    alias_method :original_ruby, :ruby
+    alias_method :__ruby__, :ruby
     def ruby
-      ruby_path = original_ruby
-      if jarred_path?(ruby_path)
-        ruby_path = "#{org.jruby.util.ClasspathLauncher.jrubyCommand(JRuby.runtime)}"
-      end
+      ruby_path = __ruby__
+      ruby_path = JRuby::Util.classpath_launcher if jarred_path?(ruby_path)
       ruby_path
     end
 
@@ -59,7 +58,7 @@ module Gem
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
-    /#{org.jruby.util.cli.ArgumentProcessor::SEPARATOR}/
+    /#{JRuby::Util::SEPARATOR}/
   end
 end
 
@@ -95,12 +94,12 @@ class Gem::Specification
 
     def spec_directories_from_classpath
       stuff = [ 'uri:classloader://specifications' ]
-      JRuby.runtime.instance_config.extra_gem_paths.each do |path|
+      JRuby::Util.extra_gem_paths.each do |path|
         stuff << File.join(path, 'specifications')
       end
-      stuff += JRuby::Util.classloader_resources('specifications')
-      # some classloader return directory info. use only the "protocols"
-      # which jruby understands
+      stuff += JRuby::Util.class_loader_resources('specifications', path: true)
+      # some classloader return directory info.
+      # use only the "protocols" which jruby understands
       stuff.select { |s| File.directory?( s ) }
     end
   end
@@ -119,7 +118,9 @@ end
 # indicates the native launcher is installed and will override
 # env-shebang and possibly other options.
 begin
-  require 'rubygems/defaults/jruby_native'
+  if File.exist?(File.join(File.dirname(__FILE__), "jruby_native.rb"))
+    require 'rubygems/defaults/jruby_native'
+  end
 rescue LoadError
 end
 

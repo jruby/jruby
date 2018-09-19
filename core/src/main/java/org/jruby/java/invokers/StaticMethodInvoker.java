@@ -14,16 +14,12 @@ import org.jruby.util.ArraySupport;
 
 public final class StaticMethodInvoker extends MethodInvoker {
 
-    public StaticMethodInvoker(RubyClass host, List<Method> methods) {
-        super(host, methods);
+    public StaticMethodInvoker(RubyClass host, List<Method> methods, String name) {
+        super(host, methods, name);
     }
 
-    public StaticMethodInvoker(RubyClass host, Method method) {
-        super(host, method);
-    }
-
-    public StaticMethodInvoker(RubyModule host, Method method) {
-        super(host, method);
+    public StaticMethodInvoker(RubyModule host, Method method, String name) {
+        super(host, method, name);
     }
 
     @Override

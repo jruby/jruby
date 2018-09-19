@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,22 +26,24 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.jruby;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.ClasspathLauncher;
 
 import static org.jruby.util.URLUtil.getPath;
 
@@ -54,62 +56,208 @@ import static org.jruby.util.URLUtil.getPath;
 public class JRubyUtilLibrary implements Library {
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyModule mJRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
-        mJRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
-
-        // core class utils
-        runtime.getString().defineAnnotatedMethods(StringUtils.class);
+        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
+        RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
+        JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
+        JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
+        JRubyUtil.setConstant("ON_WINDOWS", runtime.newBoolean(org.jruby.platform.Platform.IS_WINDOWS));
+        JRubyUtil.setConstant("ON_SOLARIS", runtime.newBoolean(org.jruby.platform.Platform.IS_SOLARIS));
     }
 
     @JRubyMethod(module = true)
-    public static IRubyObject gc(IRubyObject recv) {
+    public static IRubyObject gc(ThreadContext context, IRubyObject recv) {
         System.gc();
-        return recv.getRuntime().getNil();
+        return context.nil;
     }
 
-    @JRubyMethod(name = "objectspace", module = true)
+    @JRubyMethod(name = { "objectspace", "object_space?" }, alias = { "objectspace?" }, module = true)
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
         return RubyBoolean.newBoolean(runtime, runtime.isObjectSpaceEnabled());
     }
 
-    @JRubyMethod(name = "objectspace=", module = true)
+    @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = recv.getRuntime();
-        if (arg.isTrue()) {
+        final Ruby runtime = recv.getRuntime();
+        boolean enabled = arg.isTrue();
+        if (enabled) {
             runtime.getWarnings().warn("ObjectSpace impacts performance. See http://wiki.jruby.org/PerformanceTuning#dont-enable-objectspace");
         }
-        runtime.setObjectSpaceEnabled(arg.isTrue());
-        return runtime.getNil();
+        runtime.setObjectSpaceEnabled(enabled);
+        return runtime.newBoolean(enabled);
     }
 
-    @JRubyMethod(name = "classloader_resources", module = true)
-    public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = recv.getRuntime();
-        String resource = arg.convertToString().toString();
-        final List<RubyString> urlStrings = new ArrayList<RubyString>();
+    @JRubyMethod(meta = true, name = "native_posix?")
+    public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
+        return context.runtime.newBoolean(context.runtime.getPosix().isNative());
+    }
+
+    @Deprecated
+    public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
+        return class_loader_resources(recv.getRuntime().getCurrentContext(), recv, name);
+    }
+
+    /**
+     * @note class_loader_resources alias exists since 9.2
+     * @param context
+     * @param recv
+     * @param args (name, raw: false, path: false)
+     * @return an enumerable of class-loader resources
+     */ // used from RGs' JRuby defaults (as well as jar_dependencies)
+    @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1)
+    public static IRubyObject class_loader_resources(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        final Ruby runtime = context.runtime;
+
+        final ClassLoader loader = runtime.getJRubyClassLoader();
+        final String name = args[0].convertToString().asJavaString();
+        final RubyArray resources = RubyArray.newArray(runtime);
+
+        boolean raw = false, path = false;
+        if (args.length > 1 && args[1] instanceof RubyHash) {
+            IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "raw", "path");
+            raw  = values[0] != null && values[0] != RubyBasicObject.UNDEF && values[0].isTrue();
+            path = values[1] != null && values[1] != RubyBasicObject.UNDEF && values[1].isTrue();
+        }
+        
         try {
-            Enumeration<URL> urls = runtime.getJRubyClassLoader().getResources(resource);
-            while (urls.hasMoreElements()) {
-                URL url = urls.nextElement();
-                String urlString = getPath(url);
-                urlStrings.add(runtime.newString(urlString));
+            Enumeration<URL> e = loader.getResources(name);
+            while (e.hasMoreElements()) {
+                final URL entry = e.nextElement();
+                if (path) {
+                    resources.append( RubyString.newString(runtime, getPath(entry)) );
+                } else if (raw) {
+                    resources.append( Java.getInstance(runtime, entry) );
+                } else {
+                    resources.append( RubyString.newString(runtime, entry.toString()) ); // toExternalForm
+                }
             }
-            return RubyArray.newArray(runtime, urlStrings);
-        } catch (IOException ignore) {
+        } catch (IOException ex) {
+            throw context.runtime.newIOErrorFromException(ex);
         }
-        return runtime.newEmptyArray();
+        return resources;
     }
 
-    public static class StringUtils {
-        @JRubyMethod
-        public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
-            Ruby runtime = context.runtime;
-            if (!(recv instanceof RubyString)) {
-                throw runtime.newTypeError(recv, runtime.getString());
-            }
+    @JRubyMethod(meta = true) // for RubyGems' JRuby defaults
+    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
+        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
+        return runtime.newString(launcher);
+    }
 
-            return runtime.newFixnum(((RubyString)recv).unseededStrHashCode(runtime));
+    @JRubyMethod(name = "extra_gem_paths", meta = true) // used from RGs' JRuby defaults
+    public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        final List<String> extraGemPaths = runtime.getInstanceConfig().getExtraGemPaths();
+        IRubyObject[] extra_gem_paths = new IRubyObject[extraGemPaths.size()];
+        int i = 0; for (String gemPath : extraGemPaths) {
+            extra_gem_paths[i++] = runtime.newString(gemPath);
         }
+        return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
+    }
+
+    // used from jruby/kernel/proc.rb
+    @JRubyMethod(meta = true, name = "set_meta_class")
+    public static IRubyObject set_meta_class(ThreadContext context, IRubyObject recv, IRubyObject obj, IRubyObject klass) {
+        if (!(klass instanceof RubyClass)) {
+            klass = klass.getMetaClass();
+        }
+        ((RubyObject) obj).setMetaClass((RubyClass) klass);
+        return context.nil;
+    }
+
+    /**
+     * Preffered way to boot-up JRuby extensions (available as <code>>JRuby.load_ext</code>).
+     * @param context
+     * @param recv
+     * @param klass
+     * @return loading outcome
+     */
+    @JRubyMethod(module = true, name = { "load_ext" })
+    public static IRubyObject load_ext(ThreadContext context, IRubyObject recv, IRubyObject klass) {
+        if (klass instanceof RubySymbol) {
+            switch(((RubySymbol) klass).asJavaString()) {
+                case "string" : CoreExt.loadStringExtensions(context.runtime); return context.tru;
+                default : throw context.runtime.newArgumentError(':' + ((RubySymbol) klass).asJavaString());
+            }
+        }
+        return loadExtension(context.runtime, klass.convertToString().toString()) ? context.tru : context.fals;
+    }
+
+    private static boolean loadExtension(final Ruby runtime, final String className) {
+        Class<?> clazz = runtime.getJavaSupport().loadJavaClassQuiet(className);
+        // 1. BasicLibraryService interface
+        if (BasicLibraryService.class.isAssignableFrom(clazz)) {
+            try {
+                return ((BasicLibraryService) clazz.newInstance()).basicLoad(runtime);
+            } catch (ReflectiveOperationException e) {
+                final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
+                ex.initCause(e); throw ex;
+            } catch (Exception e) {
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                ex.initCause(e); throw ex;
+            }
+        }
+        // 2 org.jruby.runtime.load.Library
+        if (Library.class.isAssignableFrom(clazz)) {
+            try {
+                ((Library) clazz.newInstance()).load(runtime, false);
+                return true;
+            } catch (ReflectiveOperationException e) {
+                final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
+                ex.initCause(e); throw ex;
+            } catch (Exception e) {
+                final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+                ex.initCause(e); throw ex;
+            }
+        }
+        // 3. public static void/boolean load(Ruby runtime) convention
+        try {
+            Object result = clazz.getMethod("load", Ruby.class).invoke(null, runtime);
+            return (result instanceof Boolean) && ! ((Boolean) result).booleanValue() ? false : true;
+        }
+        catch (Exception e) {
+            final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
+            ex.initCause(e); throw ex;
+        }
+    }
+
+    @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
+    public static class StringUtils {
+        public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
+            return CoreExt.String.unseeded_hash(context, recv);
+        }
+    }
+
+    /**
+     * Provide stats on how many method and constant invalidations have occurred globally.
+     *
+     * This was added for Pry in https://github.com/jruby/jruby/issues/4384
+     */
+    @JRubyMethod(name = "cache_stats", module = true)
+    public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+
+        RubyHash stat = RubyHash.newHash(runtime);
+        stat.op_aset(context, runtime.newSymbol("method_invalidation_count"), runtime.newFixnum(runtime.getCaches().getMethodInvalidationCount()));
+        stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), runtime.newFixnum(runtime.getCaches().getConstantInvalidationCount()));
+
+        return stat;
+    }
+
+    /**
+     * Return a list of files and extensions that JRuby treats as internal (or "built-in"),
+     * skipping load path and filesystem search.
+     *
+     * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
+     */
+    @JRubyMethod(module = true)
+    public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
+
+        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+
+        return runtime.newArrayNoCopy(names);
     }
 }

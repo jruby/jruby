@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 with_feature :encoding do
   describe "String#valid_encoding?" do
@@ -109,20 +109,20 @@ with_feature :encoding do
     end
 
     it "returns false if self contains a character invalid in the associated encoding" do
-      "abc\x80".force_encoding('ascii').valid_encoding?.should be_false
+      "abc#{[0x80].pack('C')}".force_encoding('ascii').valid_encoding?.should be_false
     end
 
     it "returns false if a valid String had an invalid character appended to it" do
       str = "a"
       str.valid_encoding?.should be_true
-      str << "\xDD".force_encoding('utf-8')
+      str << [0xDD].pack('C').force_encoding('utf-8')
       str.valid_encoding?.should be_false
     end
 
     it "returns true if an invalid string is appended another invalid one but both make a valid string" do
-      str = "\xD0"
+      str = [0xD0].pack('C').force_encoding('utf-8')
       str.valid_encoding?.should be_false
-      str << "\xBF"
+      str << [0xBF].pack('C').force_encoding('utf-8')
       str.valid_encoding?.should be_true
     end
   end

@@ -2,7 +2,7 @@ require 'test/unit'
 require 'test/jruby/test_helper'
 require 'jruby/path_helper'
 
-class TestLoad < Test::Unit::TestCase
+class TestLoadGemExtensions < Test::Unit::TestCase
   include TestHelper
 
   def setup
@@ -11,8 +11,7 @@ class TestLoad < Test::Unit::TestCase
   end
 
   def teardown
-    $LOADED_FEATURES.clear
-    $LOADED_FEATURES.concat(@prev_loaded_features)
+    $LOADED_FEATURES.replace(@prev_loaded_features)
     $LOAD_PATH.clear
     $LOAD_PATH.concat(@prev_load_path)
   end

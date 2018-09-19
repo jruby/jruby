@@ -1,3 +1,0 @@
-fails:CApiMarshalSpecs rb_marshal_dump marshals an object
-fails:CApiMarshalSpecs rb_marshal_dump marshals an object and write to an IO when passed
-fails:CApiMarshalSpecs rb_marshal_load unmarshals an object

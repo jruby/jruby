@@ -9,6 +9,9 @@ public class IncludedModule extends RubyClass {
         super(runtime, superClass, false);
         this.origin = origin;
         this.metaClass = origin.metaClass;
+        if (superClass != null) {
+            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+        }
     }
 
     @Override
@@ -28,10 +31,6 @@ public class IncludedModule extends RubyClass {
 
     @Override
     public void setMetaClass(RubyClass newRubyClass) {
-        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
-    }
-
-    public void setMethods(Map newMethods) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 

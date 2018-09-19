@@ -1,0 +1,2 @@
+fails:Set#compare_by_identity is not equal to set what does not compare by identity
+fails:Set#compare_by_identity rehashes internally so that old members can be looked up

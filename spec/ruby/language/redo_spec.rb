@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 describe "The redo statement" do
   it "restarts block execution if used within block" do
@@ -19,10 +19,10 @@ describe "The redo statement" do
       order << x
       begin
         processed << x
-        if(exist.include?(x))
+        if exist.include?(x)
           raise StandardError, "included"
         end
-      rescue StandardError => e
+      rescue StandardError
         exist.delete(x)
         redo
       end

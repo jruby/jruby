@@ -13,12 +13,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
 public final class InstanceMethodInvoker extends MethodInvoker {
-    public InstanceMethodInvoker(RubyModule host, List<Method> methods) {
-        super(host, methods);
+    public InstanceMethodInvoker(RubyModule host, List<Method> methods, String name) {
+        super(host, methods, name);
     }
 
-    public InstanceMethodInvoker(RubyModule host, Method method) {
-        super(host, method);
+    public InstanceMethodInvoker(RubyModule host, Method method, String name) {
+        super(host, method, name);
     }
 
     @Override

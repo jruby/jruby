@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 # TODO: put these in the right files.
 describe "Process.setpgrp and Process.getpgrp" do
@@ -31,15 +31,6 @@ describe "Process.setpgrp and Process.getpgrp" do
         write2 << "!"
         write2.close
         Process.wait pid
-      end
-    end
-
-  end
-
-  describe "Process.setpgrp" do
-    platform_is_not :windows do
-      it "returns zero" do
-        Process.setpgrp.should == 0
       end
     end
   end

@@ -1,1 +1,0 @@
-fails:Net::Telnet#sock needs to be reviewed for spec completeness

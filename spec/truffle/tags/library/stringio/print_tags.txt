@@ -1,1 +1,0 @@
-fails:StringIO#print prints $_ when passed no arguments

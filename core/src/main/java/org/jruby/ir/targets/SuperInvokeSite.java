@@ -35,7 +35,12 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
         this.splatMap = IRRuntimeHelpers.decodeSplatmap(splatmapString);
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SuperInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(SuperInvokeSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String splatmapString, String file, int line) {
         List<String> targetAndMethod = StringSupport.split(name, ':');

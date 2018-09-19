@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -38,10 +38,8 @@ import java.lang.invoke.SwitchPoint;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
-import org.jruby.ast.executable.AbstractScript;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -129,6 +127,16 @@ public class InvokeDynamicSupport {
     public static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
             return lookup().findStatic(target, name, type);
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        } catch (IllegalAccessException nae) {
+            throw new RuntimeException(nae);
+        }
+    }
+
+    public static MethodHandle findVirtual(Class target, String name, MethodType type) {
+        try {
+            return lookup().findVirtual(target, name, type);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         } catch (IllegalAccessException nae) {

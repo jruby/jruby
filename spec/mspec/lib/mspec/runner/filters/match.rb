@@ -1,15 +1,11 @@
 class MatchFilter
   def initialize(what, *strings)
     @what = what
-    @descriptions = to_regexp(*strings)
-  end
-
-  def to_regexp(*strings)
-    strings.map { |str| Regexp.new Regexp.escape(str) }
+    @strings = strings
   end
 
   def ===(string)
-    @descriptions.any? { |d| d === string }
+    @strings.any? { |s| string.include?(s) }
   end
 
   def register

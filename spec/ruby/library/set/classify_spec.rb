@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'set'
 
 describe "Set#classify" do
@@ -14,7 +14,7 @@ describe "Set#classify" do
 
   it "returns an Enumerator when passed no block" do
     enum = @set.classify
-    enum.should be_an_instance_of(enumerator_class)
+    enum.should be_an_instance_of(Enumerator)
 
     classified = enum.each { |x| x.length }
     classified.should == { 3 => Set["one", "two"], 4 => Set["four"], 5 => Set["three"] }

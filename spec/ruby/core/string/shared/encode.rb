@@ -3,7 +3,7 @@ describe :string_encode, shared: true do
   describe "when passed no options" do
     it "transcodes to Encoding.default_internal when set" do
       Encoding.default_internal = Encoding::UTF_8
-      str = "\xA4\xA2".force_encoding Encoding::EUC_JP
+      str = [0xA4, 0xA2].pack('CC').force_encoding Encoding::EUC_JP
       str.send(@method).should == "あ"
     end
 
@@ -20,14 +20,14 @@ describe :string_encode, shared: true do
 
     it "raises an Encoding::ConverterNotFoundError when no conversion is possible" do
       Encoding.default_internal = Encoding::Emacs_Mule
-      str = "\x80".force_encoding Encoding::ASCII_8BIT
+      str = [0x80].pack('C').force_encoding Encoding::ASCII_8BIT
       lambda { str.send(@method) }.should raise_error(Encoding::ConverterNotFoundError)
     end
   end
 
   describe "when passed to encoding" do
     it "accepts a String argument" do
-      str = "\xA4\xA2".force_encoding Encoding::EUC_JP
+      str = [0xA4, 0xA2].pack('CC').force_encoding Encoding::EUC_JP
       str.send(@method, "utf-8").should == "あ"
     end
 
@@ -35,12 +35,12 @@ describe :string_encode, shared: true do
       enc = mock("string encode encoding")
       enc.should_receive(:to_str).and_return("utf-8")
 
-      str = "\xA4\xA2".force_encoding Encoding::EUC_JP
+      str = [0xA4, 0xA2].pack('CC').force_encoding Encoding::EUC_JP
       str.send(@method, enc).should == "あ"
     end
 
     it "transcodes to the passed encoding" do
-      str = "\xA4\xA2".force_encoding Encoding::EUC_JP
+      str = [0xA4, 0xA2].pack('CC').force_encoding Encoding::EUC_JP
       str.send(@method, Encoding::UTF_8).should == "あ"
     end
 
@@ -60,7 +60,7 @@ describe :string_encode, shared: true do
     end
 
     it "raises an Encoding::ConverterNotFoundError when no conversion is possible" do
-      str = "\x80".force_encoding Encoding::ASCII_8BIT
+      str = [0x80].pack('C').force_encoding Encoding::ASCII_8BIT
       lambda do
         str.send(@method, Encoding::Emacs_Mule)
       end.should raise_error(Encoding::ConverterNotFoundError)
@@ -89,20 +89,20 @@ describe :string_encode, shared: true do
 
     it "transcodes to Encoding.default_internal when set" do
       Encoding.default_internal = Encoding::UTF_8
-      str = "\xA4\xA2".force_encoding Encoding::EUC_JP
+      str = [0xA4, 0xA2].pack('CC').force_encoding Encoding::EUC_JP
       str.send(@method, invalid: :replace).should == "あ"
     end
 
     it "raises an Encoding::ConverterNotFoundError when no conversion is possible despite 'invalid: :replace, undef: :replace'" do
       Encoding.default_internal = Encoding::Emacs_Mule
-      str = "\x80".force_encoding Encoding::ASCII_8BIT
+      str = [0x80].pack('C').force_encoding Encoding::ASCII_8BIT
       lambda do
         str.send(@method, invalid: :replace, undef: :replace)
       end.should raise_error(Encoding::ConverterNotFoundError)
     end
 
     it "replaces invalid characters when replacing Emacs-Mule encoded strings" do
-      got = "\x80".force_encoding('Emacs-Mule').send(@method, invalid: :replace)
+      got = [0x80].pack('C').force_encoding('Emacs-Mule').send(@method, invalid: :replace)
 
       got.should == "?".encode('Emacs-Mule')
     end
@@ -111,7 +111,7 @@ describe :string_encode, shared: true do
   describe "when passed to, from" do
     it "transcodes between the encodings ignoring the String encoding" do
       str = "あ"
-      result = "\xA6\xD0\x8F\xAB\xE4\x8F\xAB\xB1"
+      result = [0xA6, 0xD0, 0x8F, 0xAB, 0xE4, 0x8F, 0xAB, 0xB1].pack('C8')
       result.force_encoding Encoding::EUC_JP
       str.send(@method, "euc-jp", "ibm437").should == result
     end
@@ -121,7 +121,7 @@ describe :string_encode, shared: true do
       enc.should_receive(:to_str).and_return("ibm437")
 
       str = "あ"
-      result = "\xA6\xD0\x8F\xAB\xE4\x8F\xAB\xB1"
+      result = [0xA6, 0xD0, 0x8F, 0xAB, 0xE4, 0x8F, 0xAB, 0xB1].pack('C8')
       result.force_encoding Encoding::EUC_JP
 
       str.send(@method, "euc-jp", enc).should == result
@@ -131,11 +131,14 @@ describe :string_encode, shared: true do
   describe "when passed to, options" do
     it "replaces undefined characters in the destination encoding" do
       result = "あ?あ".send(@method, Encoding::EUC_JP, undef: :replace)
-      result.should == "\xA4\xA2?\xA4\xA2".force_encoding("euc-jp")
+      # testing for: "\xA4\xA2?\xA4\xA2"
+      xA4xA2 = [0xA4, 0xA2].pack('CC')
+      result.should == "#{xA4xA2}?#{xA4xA2}".force_encoding("euc-jp")
     end
 
     it "replaces invalid characters in the destination encoding" do
-      "ab\xffc".send(@method, Encoding::ISO_8859_1, invalid: :replace).should == "ab?c"
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      "ab#{xFF}c".send(@method, Encoding::ISO_8859_1, invalid: :replace).should == "ab?c"
     end
 
     it "calls #to_hash to convert the options object" do
@@ -143,7 +146,8 @@ describe :string_encode, shared: true do
       options.should_receive(:to_hash).and_return({ undef: :replace })
 
       result = "あ?あ".send(@method, Encoding::EUC_JP, options)
-      result.should == "\xA4\xA2?\xA4\xA2".force_encoding("euc-jp")
+      xA4xA2 = [0xA4, 0xA2].pack('CC').force_encoding('utf-8')
+      result.should == "#{xA4xA2}?#{xA4xA2}".force_encoding("euc-jp")
     end
   end
 
@@ -151,11 +155,13 @@ describe :string_encode, shared: true do
     it "replaces undefined characters in the destination encoding" do
       str = "あ?あ".force_encoding Encoding::ASCII_8BIT
       result = str.send(@method, "euc-jp", "utf-8", undef: :replace)
-      result.should == "\xA4\xA2?\xA4\xA2".force_encoding("euc-jp")
+      xA4xA2 = [0xA4, 0xA2].pack('CC').force_encoding('utf-8')
+      result.should == "#{xA4xA2}?#{xA4xA2}".force_encoding("euc-jp")
     end
 
     it "replaces invalid characters in the destination encoding" do
-      str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      str = "ab#{xFF}c".force_encoding Encoding::ASCII_8BIT
       str.send(@method, "iso-8859-1", "utf-8", invalid: :replace).should == "ab?c"
     end
 
@@ -163,7 +169,8 @@ describe :string_encode, shared: true do
       to = mock("string encode to encoding")
       to.should_receive(:to_str).and_return("iso-8859-1")
 
-      str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      str = "ab#{xFF}c".force_encoding Encoding::ASCII_8BIT
       str.send(@method, to, "utf-8", invalid: :replace).should == "ab?c"
     end
 
@@ -171,7 +178,8 @@ describe :string_encode, shared: true do
       from = mock("string encode to encoding")
       from.should_receive(:to_str).and_return("utf-8")
 
-      str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      str = "ab#{xFF}c".force_encoding Encoding::ASCII_8BIT
       str.send(@method, "iso-8859-1", from, invalid: :replace).should == "ab?c"
     end
 
@@ -179,7 +187,8 @@ describe :string_encode, shared: true do
       options = mock("string encode options")
       options.should_receive(:to_hash).and_return({ invalid: :replace })
 
-      str = "ab\xffc".force_encoding Encoding::ASCII_8BIT
+      xFF = [0xFF].pack('C').force_encoding('utf-8')
+      str = "ab#{xFF}c".force_encoding Encoding::ASCII_8BIT
       str.send(@method, "iso-8859-1", "utf-8", options).should == "ab?c"
     end
   end

@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.CurrentScope;
@@ -13,13 +14,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
-    public PutClassVariableInstr(Operand scope, String varName, Operand value) {
-        super(Operation.PUT_CVAR, scope, varName, value);
+    public PutClassVariableInstr(Operand scope, RubySymbol variableName, Operand value) {
+        super(Operation.PUT_CVAR, scope, variableName, value);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new PutClassVariableInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
+        return new PutClassVariableInstr(getTarget().cloneForInlining(ii), getName(), getValue().cloneForInlining(ii));
     }
 
     @Override
@@ -31,12 +32,12 @@ public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
 
 		// SSS FIXME: What is this check again???
         // Modules and classes set this constant as a side-effect
-        if (!(getValue() instanceof CurrentScope)) module.setClassVar(getRef(), value);
+        if (!(getValue() instanceof CurrentScope)) module.setClassVar(getId(), value);
         return null;
     }
 
     public static PutClassVariableInstr decode(IRReaderDecoder d) {
-        return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
+        return new PutClassVariableInstr(d.decodeOperand(), d.decodeSymbol(), d.decodeOperand());
     }
 
     @Override

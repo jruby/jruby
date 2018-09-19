@@ -27,14 +27,19 @@ public abstract class CompilerPass {
 
     static final Logger LOG = LoggerFactory.getLogger(CompilerPass.class);
 
-    protected static final List<Class<? extends CompilerPass>> NO_DEPENDENCIES = Collections.emptyList();
-
-    private List<CompilerPassListener> listeners = new ArrayList<CompilerPassListener>();
+    private static final List<Class<? extends CompilerPass>> NO_DEPENDENCIES = Collections.emptyList();
 
     /**
      * What is the user-friendly name of this compiler pass
      */
     public abstract String getLabel();
+
+    /**
+     * Shorter label
+     */
+    public String getShortLabel() {
+        return getLabel();
+    }
 
     @Override
     public int hashCode() {

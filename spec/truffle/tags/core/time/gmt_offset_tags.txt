@@ -1,1 +1,0 @@
-fails:Time#gmt_offset returns offset as Rational

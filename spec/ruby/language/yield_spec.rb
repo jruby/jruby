@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/yield', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/yield'
 
 # Note that these specs use blocks defined as { |*a| ... } to capture the
 # arguments with which the block is invoked. This is slightly confusing
@@ -62,6 +62,20 @@ describe "The yield call" do
       it "passes a single, multi-value Array" do
         @y.s([1, 2, 3], &lambda { |*a| a }).should == [[1, 2, 3]]
       end
+
+      it "raises an ArgumentError if too few arguments are passed" do
+        lambda {
+          @y.s(1, &lambda { |a,b| [a,b] })
+        }.should raise_error(ArgumentError)
+      end
+
+      ruby_bug "#12705", ""..."2.5" do
+        it "should not destructure an Array into multiple arguments" do
+          lambda {
+            @y.s([1, 2], &lambda { |a,b| [a,b] })
+          }.should raise_error(ArgumentError)
+        end
+      end
     end
   end
 
@@ -72,6 +86,22 @@ describe "The yield call" do
 
     it "passes the arguments to the block" do
       @y.m(1, 2, 3) { |*a| a }.should == [1, 2, 3]
+    end
+
+    it "passes only the first argument if the block takes one parameter" do
+      @y.m(1, 2, 3) { |a| a }.should == 1
+    end
+
+    it "raises an ArgumentError if too many arguments are passed to a lambda" do
+      lambda {
+        @y.m(1, 2, 3, &lambda { |a| })
+      }.should raise_error(ArgumentError)
+    end
+
+    it "raises an ArgumentError if too few arguments are passed to a lambda" do
+      lambda {
+        @y.m(1, 2, 3, &lambda { |a,b,c,d| })
+      }.should raise_error(ArgumentError)
     end
   end
 

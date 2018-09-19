@@ -1,13 +1,12 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-require File.expand_path('../../shared/partially_closable_sockets', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
+require_relative '../shared/partially_closable_sockets'
 
 describe "TCPSocket partial closability" do
 
   before :each do
-    port = SocketSpecs.find_available_port
-    @server = TCPServer.new("127.0.0.1", port)
-    @s1 = TCPSocket.new("127.0.0.1", port)
+    @server = TCPServer.new("127.0.0.1", 0)
+    @s1 = TCPSocket.new("127.0.0.1", @server.addr[1])
     @s2 = @server.accept
   end
 

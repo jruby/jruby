@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/break', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/break'
 
 describe "The break statement in a block" do
   before :each do
@@ -24,6 +24,24 @@ describe "The break statement in a block" do
       value.should == :value
     end
   end
+
+  describe "captured and delegated to another method repeatedly" do
+    it "breaks out of the block" do
+      @program.looped_break_in_captured_block
+      ScratchPad.recorded.should ==  [:begin,
+                                      :preloop,
+                                      :predele,
+                                      :preyield,
+                                      :prebreak,
+                                      :postbreak,
+                                      :postyield,
+                                      :postdele,
+                                      :predele,
+                                      :preyield,
+                                      :prebreak,
+                                      :end]
+    end
+  end
 end
 
 describe "The break statement in a captured block" do
@@ -33,38 +51,19 @@ describe "The break statement in a captured block" do
   end
 
   describe "when the invocation of the scope creating the block is still active" do
-    deviates_on :rubinius do
-      it "returns a value to the invoking scope when invoking the block from the scope creating the block" do
-        @program.break_in_method
-        ScratchPad.recorded.should == [:a, :xa, :d, :b, :break, :e]
-      end
-
-      it "returns a value to the scope invoking the method when invoking the block from a method" do
-        @program.break_in_nested_method
-        ScratchPad.recorded.should == [:a, :xa, :c, :aa, :b, :break, :d]
-      end
-
-      it "returns a value to the scope calling the yielding scope when yielding to the block" do
-        @program.break_in_yielding_method
-        ScratchPad.recorded.should == [:a, :xa, :c, :aa, :b, :break, :d]
-      end
+    it "raises a LocalJumpError when invoking the block from the scope creating the block" do
+      lambda { @program.break_in_method }.should raise_error(LocalJumpError)
+      ScratchPad.recorded.should == [:a, :xa, :d, :b]
     end
 
-    not_compliant_on :rubinius do
-      it "raises a LocalJumpError when invoking the block from the scope creating the block" do
-        lambda { @program.break_in_method }.should raise_error(LocalJumpError)
-        ScratchPad.recorded.should == [:a, :xa, :d, :b]
-      end
+    it "raises a LocalJumpError when invoking the block from a method" do
+      lambda { @program.break_in_nested_method }.should raise_error(LocalJumpError)
+      ScratchPad.recorded.should == [:a, :xa, :cc, :aa, :b]
+    end
 
-      it "raises a LocalJumpError when invoking the block from a method" do
-        lambda { @program.break_in_nested_method }.should raise_error(LocalJumpError)
-        ScratchPad.recorded.should == [:a, :xa, :c, :aa, :b]
-      end
-
-      it "raises a LocalJumpError when yielding to the block" do
-        lambda { @program.break_in_yielding_method }.should raise_error(LocalJumpError)
-        ScratchPad.recorded.should == [:a, :xa, :c, :aa, :b]
-      end
+    it "raises a LocalJumpError when yielding to the block" do
+      lambda { @program.break_in_yielding_method }.should raise_error(LocalJumpError)
+      ScratchPad.recorded.should == [:a, :xa, :cc, :aa, :b]
     end
   end
 
@@ -79,12 +78,56 @@ describe "The break statement in a captured block" do
       ScratchPad.recorded.should == [:a, :za, :xa, :zd, :aa, :zb]
     end
   end
+
+  describe "from another thread" do
+    it "raises a LocalJumpError when getting the value from another thread" do
+      thread_with_break = Thread.new do
+        begin
+          break :break
+        rescue LocalJumpError => e
+          e
+        end
+      end
+      thread_with_break.value.should be_an_instance_of(LocalJumpError)
+    end
+  end
 end
 
 describe "The break statement in a lambda" do
   before :each do
     ScratchPad.record []
     @program = BreakSpecs::Lambda.new
+  end
+
+  it "returns from the lambda" do
+    l = lambda {
+      ScratchPad << :before
+      break :foo
+      ScratchPad << :after
+    }
+    l.call.should == :foo
+    ScratchPad.recorded.should == [:before]
+  end
+
+  it "returns from the call site if the lambda is passed as a block" do
+    def mid(&b)
+      lambda {
+        ScratchPad << :before
+        b.call
+        ScratchPad << :unreachable1
+      }.call
+      ScratchPad << :unreachable2
+    end
+
+    result = [1].each do |e|
+      mid {
+        break # This breaks from mid
+        ScratchPad << :unreachable3
+      }
+      ScratchPad << :after
+    end
+    result.should == [1]
+    ScratchPad.recorded.should == [:before, :after]
   end
 
   describe "when the invocation of the scope creating the lambda is still active" do
@@ -108,19 +151,9 @@ describe "The break statement in a lambda" do
       ScratchPad.recorded.should == [:a, :d, :aa, :aaa, :bb, :b, :break, :cc, :bbb, :dd, :e]
     end
 
-    deviates_on :rubinius do
-      it "returns a value when yielding to a lambda passed as a block argument" do
-        @program.break_in_nested_scope_yield
-        ScratchPad.recorded.should == [:a, :d, :aaa, :b, :break, :e]
-      end
-    end
-
-    not_compliant_on :rubinius do
-      it "raises a LocalJumpError when yielding to a lambda passed as a block argument" do
-        @program.break_in_nested_scope_yield
-        expected = [:a, :d, :aaa, :b, :bbb]
-        ScratchPad.recorded.should == [:a, :d, :aaa, :b, :bbb, :e]
-      end
+    it "returns from the lambda" do
+      @program.break_in_nested_scope_yield
+      ScratchPad.recorded.should == [:a, :d, :aaa, :b, :bbb, :e]
     end
   end
 

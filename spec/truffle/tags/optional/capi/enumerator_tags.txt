@@ -1,4 +1,0 @@
-fails:C-API Enumerator function rb_enumeratorize constructs a new Enumerator for the given object, method and arguments
-fails:C-API Enumerator function rb_enumeratorize enumerates the given object
-fails:C-API Enumerator function rb_enumeratorize uses the given method for enumeration
-fails:C-API Enumerator function rb_enumeratorize passes the given arguments to the enumeration method

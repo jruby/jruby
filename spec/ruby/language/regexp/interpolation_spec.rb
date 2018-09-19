@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Regexps with interpolation" do
 
@@ -13,9 +13,12 @@ describe "Regexps with interpolation" do
     /#{re}/.should == /(?-mix:foo|bar)/
   end
 
-  it "allows interpolation of any class that responds to to_s" do
-    o = LanguageSpecs::ClassWith_to_s.new
-    /#{o}/.should == /class_with_to_s/
+  it "allows interpolation of any object that responds to to_s" do
+    o = Object.new
+    def o.to_s
+      "object_with_to_s"
+    end
+    /#{o}/.should == /object_with_to_s/
   end
 
   it "allows interpolation which mixes modifiers" do

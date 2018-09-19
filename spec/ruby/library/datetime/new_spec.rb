@@ -1,18 +1,17 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require 'mspec/helpers/hash'
+require_relative '../../spec_helper'
 require 'date'
 
 describe "DateTime.new" do
   it "sets all values to default if passed no arguments" do
     d = DateTime.new
-    d.year.should         == -4712
-    d.month.should        == 1
-    d.day.should          == 1
-    d.hour.should         == 0
-    d.min.should          == 0
-    d.sec.should          == 0
+    d.year.should == -4712
+    d.month.should == 1
+    d.day.should == 1
+    d.hour.should == 0
+    d.min.should == 0
+    d.sec.should == 0
     d.sec_fraction.should == 0
-    d.offset.should       == 0
+    d.offset.should == 0
   end
 
   it "takes the first argument as year" do
@@ -43,7 +42,7 @@ describe "DateTime.new" do
     DateTime.new(1, 2, 3, 4, 5, 6, 0.7).offset.should == 0.7
   end
 
-  it "takes the eigth argument as the date of calendar reform" do
+  it "takes the eighth argument as the date of calendar reform" do
     DateTime.new(1, 2, 3, 4, 5, 6, 0.7, Date::ITALY).start().should == Date::ITALY
   end
 

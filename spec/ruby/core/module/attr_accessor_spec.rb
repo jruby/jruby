@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#attr_accessor" do
   it "creates a getter and setter for each given attribute name" do
@@ -28,25 +28,12 @@ describe "Module#attr_accessor" do
     o.send(:b).should == "b"
   end
 
-  ruby_version_is ''...'2.2' do
-    it "allows creating an attr_accessor on an immediate class" do
-      class TrueClass
-        attr_accessor :spec_attr_accessor
-      end
-
-      true.spec_attr_accessor = "a"
-      true.spec_attr_accessor.should == "a"
+  it "not allows creating an attr_accessor on an immediate class" do
+    class TrueClass
+      attr_accessor :spec_attr_accessor
     end
-  end
 
-  ruby_version_is '2.2' do
-    it "not allows creating an attr_accessor on an immediate class" do
-      class TrueClass
-        attr_accessor :spec_attr_accessor
-      end
-
-      lambda { true.spec_attr_accessor = "a" }.should raise_error(RuntimeError)
-    end
+    lambda { true.spec_attr_accessor = "a" }.should raise_error(RuntimeError)
   end
 
   it "converts non string/symbol/fixnum names to strings using to_str" do
@@ -76,8 +63,15 @@ describe "Module#attr_accessor" do
     lambda { c.new.foo=1 }.should raise_error(NoMethodError)
   end
 
-  it "is a private method" do
-    lambda { Class.new.attr_accessor(:foo) }.should raise_error(NoMethodError)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:attr_accessor, false)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:attr_accessor, false)
+    end
   end
 
   describe "on immediates" do

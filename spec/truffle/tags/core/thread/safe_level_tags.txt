@@ -1,1 +1,0 @@
-fails:Thread#safe_level needs to be reviewed for spec completeness

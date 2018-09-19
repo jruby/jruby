@@ -52,14 +52,6 @@ describe :object_id, shared: true do
     o1.send(@method).should_not == o2.send(@method)
   end
 
-  not_compliant_on :macruby do
-    it "returns a different value for two Float literals" do
-      o1 = -0.0 # -0.0 is not flonum
-      o2 = -0.0
-      o1.send(@method).should_not == o2.send(@method)
-    end
-  end
-
   it "returns a different value for two String literals" do
     o1 = "hello"
     o2 = "hello"

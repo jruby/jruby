@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#shuffle" do
   it "returns the same values, in a usually different order" do
@@ -40,12 +40,10 @@ describe "Array#shuffle" do
     result.should include(1, 2)
   end
 
-  it "ignores an Object passed for the RNG if it does not define #rand" do
-    obj = mock("array_shuffle_random")
+  it "raises a NoMethodError if an object passed for the RNG does not define #rand" do
+    obj = BasicObject.new
 
-    result = [1, 2].shuffle(random: obj)
-    result.size.should == 2
-    result.should include(1, 2)
+    lambda { [1, 2].shuffle(random: obj) }.should raise_error(NoMethodError)
   end
 
   it "accepts a Float for the value returned by #rand" do
@@ -97,8 +95,8 @@ describe "Array#shuffle!" do
     a.should equal(original)
   end
 
-  it "raises a RuntimeError on a frozen array" do
-    lambda { ArraySpecs.frozen_array.shuffle! }.should raise_error(RuntimeError)
-    lambda { ArraySpecs.empty_frozen_array.shuffle! }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen array" do
+    lambda { ArraySpecs.frozen_array.shuffle! }.should raise_error(frozen_error_class)
+    lambda { ArraySpecs.empty_frozen_array.shuffle! }.should raise_error(frozen_error_class)
   end
 end

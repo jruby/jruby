@@ -1,18 +1,18 @@
-/**
- * **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+/*
+ **** BEGIN LICENSE BLOCK *****
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
- * License Version 1.0 (the "License"); you may not use this file
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2013 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,8 +25,8 @@
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
- * **** END LICENSE BLOCK *****
- */
+ ***** END LICENSE BLOCK *****/
+
 package org.jruby.embed.jsr223;
 
 import java.io.FileNotFoundException;
@@ -44,7 +44,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
-import javax.script.ScriptEngineManager;
 import org.jruby.embed.AttributeName;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -112,7 +111,7 @@ public class JRubyCompiledScriptTest {
     /**
      * Test of eval method, of class Jsr223JRubyCompiledScript.
      */
-    //@Test
+    @Test
     public void testEval_context() throws Exception {
         logger1.info("eval with context");
         System.setProperty("org.jruby.embed.localvariable.behavior", "transient");

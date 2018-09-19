@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,16 +26,21 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.parser;
 
 import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.IScopedNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
@@ -44,10 +49,12 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.DummyDynamicScope;
+import org.jruby.runtime.scope.DynamicScopeGenerator;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -61,7 +68,9 @@ import org.jruby.runtime.scope.DummyDynamicScope;
  * 
  */
 public class StaticScope implements Serializable {
+    private static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
@@ -73,8 +82,11 @@ public class StaticScope implements Serializable {
     // Next CRef down the lexical structure
     private StaticScope previousCRefScope = null;
 
-    // Our name holder (offsets are assigned as variables are added)
+    // Our name holder (offsets are assigned as variables are added) [these are symbol strings.  Use
+    // as key to Symbol table for actual encoded versions].
     private String[] variableNames;
+
+    private int variableNamesLength;
 
     // A list of booleans indicating which variables are named captures from regexp
     private boolean[] namedCaptures;
@@ -97,11 +109,15 @@ public class StaticScope implements Serializable {
 
     private long commandArgumentStack;
 
+    private int firstKeywordIndex = -1;
+
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
     // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
     private IRScope irScope;
 
     private RubyModule overlayModule;
+
+    private volatile MethodHandle constructor;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -139,16 +155,57 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      * @param names          The list of interned String variable names.
      */
-    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
-        assert namesAreInterned(names);
 
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
+        this.variableNamesLength = names.length;
         this.type = type;
-        this.irScope = null;
+        this.irScope = enclosingScope == null ? null : enclosingScope.irScope;
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
+        this.firstKeywordIndex = firstKeywordIndex;
+    }
+
+    protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
+        this(type, enclosingScope, names, -1);
+    }
+
+    public int getFirstKeywordIndex() {
+        return firstKeywordIndex;
+    }
+
+    public DynamicScope construct(DynamicScope parent) {
+        MethodHandle constructor = this.constructor;
+
+        if (constructor == null) constructor = acquireConstructor();
+
+        try {
+            return (DynamicScope) constructor.invokeExact(this, parent);
+        } catch (Throwable e) {
+            Helpers.throwException(e);
+            return null; // not reached
+        }
+    }
+
+    private synchronized MethodHandle acquireConstructor() {
+        // check again
+        MethodHandle constructor = this.constructor;
+
+        if (constructor != null) return constructor;
+
+        int numberOfVariables = getNumberOfVariables();
+
+        if (numberOfVariables > MAX_SPECIALIZED_SIZE) {
+            constructor = ManyVarsDynamicScope.CONSTRUCTOR;
+        } else {
+            constructor = DynamicScopeGenerator.generate(numberOfVariables);
+        }
+
+        this.constructor = constructor;
+
+        return constructor;
     }
 
     public IRScope getIRScope() {
@@ -169,21 +226,6 @@ public class StaticScope implements Serializable {
     }
 
     /**
-     * Check that all strings in the given array are the interned versions.
-     *
-     * @param names The array of strings
-     * @return true if they are all interned, false otherwise
-     */
-    private static boolean namesAreInterned(String[] names) {
-        for (String name : names) {
-            // Note that this object equality check is intentional, to ensure
-            // the string and its interned version are the same object.
-            if (name != name.intern()) return false;
-        }
-        return true;
-    }
-
-    /**
      * Add a new variable to this (current) scope unless it is already defined in the
      * current scope.
      *
@@ -191,16 +233,12 @@ public class StaticScope implements Serializable {
      * @return index of variable
      */
     public int addVariableThisScope(String name) {
-        // Ignore duplicate "_" args in blocks
-        // (duplicate _ args are named "_$0")
-        // Dont allocate slots for them.
-        if (name.equals("_$0")) {
-            return -1;
-        }
-
         int slot = exists(name);
 
         if (slot >= 0) return slot;
+
+        // Clear constructor since we are adding a name
+        constructor = null;
 
         // This is perhaps innefficient timewise?  Optimal spacewise
         growVariableNames(name);
@@ -235,6 +273,9 @@ public class StaticScope implements Serializable {
 
         if (slot >= 0) return slot;
 
+        // Clear constructor since we are adding a name
+        constructor = null;
+
         // This is perhaps innefficient timewise?  Optimal spacewise
         growVariableNames(name);
 
@@ -243,18 +284,25 @@ public class StaticScope implements Serializable {
     }
 
     public String[] getVariables() {
-        return variableNames;
+        String[] newVars = new String[variableNames.length];
+        for (int i = 0; i < variableNames.length; i++) {
+            newVars[i] = variableNames[i];
+        }
+        return newVars;
     }
 
     public int getNumberOfVariables() {
-        return variableNames.length;
+        return variableNamesLength;
     }
 
     public void setVariables(String[] names) {
         assert names != null : "names is not null";
-        assert namesAreInterned(names);
+
+        // Clear constructor since we are changing names
+        constructor = null;
 
         variableNames = new String[names.length];
+        variableNamesLength = names.length;
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
@@ -325,7 +373,7 @@ public class StaticScope implements Serializable {
 
     private int findVariableName(String name) {
         for (int i = 0; i < variableNames.length; i++) {
-            if (name == variableNames[i]) return i;
+            if (name.equals(variableNames[i])) return i;
         }
         return -1;
     }
@@ -348,9 +396,35 @@ public class StaticScope implements Serializable {
      * @param name
      * @param value
      * @return
+     *
+     * Note: This is private code made public only for parser.
      */
-    public AssignableNode assign(ISourcePosition position, String name, Node value) {
+    public AssignableNode assign(ISourcePosition position, RubySymbol name, Node value) {
         return assign(position, name, value, this, 0);
+    }
+
+    /**
+     * Register a keyword argument with this staticScope.  It additionally will track
+     * where the first keyword argument started so we can test and tell whether we have
+     * a kwarg or an ordinary variable during live execution (See keywordExists).
+     * @param position
+     * @param symbolID
+     * @param value
+     * @return
+     */
+    public AssignableNode assignKeyword(ISourcePosition position, RubySymbol symbolID, Node value) {
+        AssignableNode assignment = assign(position, symbolID, value, this, 0);
+
+        // register first keyword index encountered
+        if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
+
+        return assignment;
+    }
+
+    public boolean keywordExists(String name) {
+        int slot = exists(name);
+
+        return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
     }
 
     /**
@@ -386,53 +460,60 @@ public class StaticScope implements Serializable {
         }
     }
 
-    public AssignableNode addAssign(ISourcePosition position, String name, Node value) {
-        int slot = addVariable(name);
+    public AssignableNode addAssign(ISourcePosition position, RubySymbol symbolID, Node value) {
+        int slot = addVariable(symbolID.idString());
         // No bit math to store level since we know level is zero for this case
-        return new DAsgnNode(position, name, slot, value);
+        return new DAsgnNode(position, symbolID, slot, value);
     }
 
-    public AssignableNode assign(ISourcePosition position, String name, Node value,
+    public AssignableNode assign(ISourcePosition position, RubySymbol symbolID, Node value,
                                  StaticScope topScope, int depth) {
-        int slot = exists(name);
+        String id = symbolID.idString();
+        int slot = exists(id);
 
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            return isBlockOrEval ? new DAsgnNode(position, name, ((depth << 16) | slot), value)
-                    : new LocalAsgnNode(position, name, ((depth << 16) | slot), value);
+            return isBlockOrEval ? new DAsgnNode(position, symbolID, ((depth << 16) | slot), value)
+                    : new LocalAsgnNode(position, symbolID, ((depth << 16) | slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
-            slot = addVariable(name);
+            slot = addVariable(id);
 
-            return new LocalAsgnNode(position, name, slot, value);
+            return new LocalAsgnNode(position, symbolID, slot, value);
         }
 
         // If we are not a block-scope and we go there, we know that 'topScope' is a block scope
         // because a local scope cannot be within a local scope
         // If topScope was itself it would have created a LocalAsgnNode above.
-        return isBlockOrEval ? enclosingScope.assign(position, name, value, topScope, depth + 1)
-                : topScope.addAssign(position, name, value);
+        return isBlockOrEval ?
+                enclosingScope.assign(position, symbolID, value, topScope, depth + 1) :
+                topScope.addAssign(position, symbolID, value);
     }
 
-    public Node declare(ISourcePosition position, String name, int depth) {
-        int slot = exists(name);
+    // Note: This is private code made public only for parser.
+    public Node declare(ISourcePosition position, RubySymbol symbolID, int depth) {
+        int slot = exists(symbolID.idString());
 
         if (slot >= 0) {
-            return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
+            return isBlockOrEval ?
+                    new DVarNode(position, ((depth << 16) | slot), symbolID) :
+                    new LocalVarNode(position, ((depth << 16) | slot), symbolID);
         }
 
-        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
+        return isBlockOrEval ? enclosingScope.declare(position, symbolID, depth + 1) : new VCallNode(position, symbolID);
     }
 
     /**
      * Make a DVar or LocalVar node based on scoping logic
      *
      * @param position the location that in the source that the new node will come from
-     * @param name     of the variable to be created is named
+     * @param symbolID of the variable to be created is named
      * @return a DVarNode or LocalVarNode
+     *
+     * Note: This is private code made public only for parser.
      */
-    public Node declare(ISourcePosition position, String name) {
-        return declare(position, name, 0);
+    public Node declare(ISourcePosition position, RubySymbol symbolID) {
+        return declare(position, symbolID, 0);
     }
 
     /**
@@ -526,7 +607,7 @@ public class StaticScope implements Serializable {
     }
 
     public DynamicScope getDummyScope() {
-        return dummyScope == null ? dummyScope = new DummyDynamicScope(this) : dummyScope;
+        return dummyScope == null ? dummyScope = DynamicScope.newDynamicScope(this) : dummyScope;
     }
 
     public void setCommandArgumentStack(long commandArgumentStack) {
@@ -538,10 +619,10 @@ public class StaticScope implements Serializable {
     }
 
     private void growVariableNames(String name) {
-        assert name == name.intern();
         String[] newVariableNames = new String[variableNames.length + 1];
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
+        variableNamesLength = newVariableNames.length;
         variableNames[variableNames.length - 1] = name;
     }
 

@@ -1,4 +1,4 @@
-require File.expand_path('../../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../enumerable/shared/enumeratorized'
 
 describe :keep_if, shared: true do
   it "deletes elements for which the block returns a false value" do
@@ -8,7 +8,7 @@ describe :keep_if, shared: true do
   end
 
   it "returns an enumerator if no block is given" do
-    [1, 2, 3].send(@method).should be_an_instance_of(enumerator_class)
+    [1, 2, 3].send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "updates the receiver after all blocks" do
@@ -32,7 +32,7 @@ describe :keep_if, shared: true do
     end
 
     it "returns an Enumerator if no block is given" do
-      @frozen.send(@method).should be_an_instance_of(enumerator_class)
+      @frozen.send(@method).should be_an_instance_of(Enumerator)
     end
 
     describe "with truthy block" do
@@ -41,8 +41,8 @@ describe :keep_if, shared: true do
         @frozen.should == @origin
       end
 
-      it "raises a RuntimeError" do
-        lambda { @frozen.send(@method) { true } }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class}" do
+        lambda { @frozen.send(@method) { true } }.should raise_error(frozen_error_class)
       end
     end
 
@@ -52,8 +52,8 @@ describe :keep_if, shared: true do
         @frozen.should == @origin
       end
 
-      it "raises a RuntimeError" do
-        lambda { @frozen.send(@method) { false } }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class}" do
+        lambda { @frozen.send(@method) { false } }.should raise_error(frozen_error_class)
       end
     end
   end

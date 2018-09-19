@@ -82,7 +82,7 @@ class Net::HTTPGenericRequest
   end
 
   def body_exist?
-    warn "Net::HTTPRequest#body_exist? is obsolete; use response_body_permitted?" if $VERBOSE
+    warn "Net::HTTPRequest#body_exist? is obsolete; use response_body_permitted?", uplevel: 1 if $VERBOSE
     response_body_permitted?
   end
 
@@ -299,7 +299,7 @@ class Net::HTTPGenericRequest
 
   def supply_default_content_type
     return if content_type()
-    warn 'net/http: warning: Content-Type did not set; using application/x-www-form-urlencoded' if $VERBOSE
+    warn 'net/http: Content-Type did not set; using application/x-www-form-urlencoded', uplevel: 1 if $VERBOSE
     set_content_type 'application/x-www-form-urlencoded'
   end
 
@@ -321,7 +321,12 @@ class Net::HTTPGenericRequest
   end
 
   def write_header(sock, ver, path)
-    buf = "#{@method} #{path} HTTP/#{ver}\r\n"
+    reqline = "#{@method} #{path} HTTP/#{ver}"
+    if /[\r\n]/ =~ reqline
+      raise ArgumentError, "A Request-Line must not contain CR or LF"
+    end
+    buf = ""
+    buf << reqline << "\r\n"
     each_capitalized do |k,v|
       buf << "#{k}: #{v}\r\n"
     end

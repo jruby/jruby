@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 #
 # find.rb: the Find module for processing all files under a given directory.
 #
@@ -40,7 +40,7 @@ module Find
 
     fs_encoding = Encoding.find("filesystem")
 
-    paths.collect!{|d| raise Errno::ENOENT unless File.exist?(d); d.dup}.each do |path|
+    paths.collect!{|d| raise Errno::ENOENT, d unless File.exist?(d); d.dup}.each do |path|
       path = path.to_path if path.respond_to? :to_path
       enc = path.encoding == Encoding::US_ASCII ? fs_encoding : path.encoding
       ps = [path]
@@ -55,14 +55,13 @@ module Find
           end
           if s.directory? then
             begin
-              fs = Dir.entries(file, encoding: enc)
+              fs = Dir.children(file, encoding: enc)
             rescue Errno::ENOENT, Errno::EACCES, Errno::ENOTDIR, Errno::ELOOP, Errno::ENAMETOOLONG
               raise unless ignore_error
               next
             end
             fs.sort!
             fs.reverse_each {|f|
-              next if f == "." or f == ".."
               f = File.join(file, f)
               ps.unshift f.untaint
             }

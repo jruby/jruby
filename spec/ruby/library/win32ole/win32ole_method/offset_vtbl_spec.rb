@@ -12,7 +12,8 @@ platform_is :windows do
     end
 
     it "returns expected value for Scripting Runtime's 'name' method" do
-      @m_file_name.offset_vtbl.should == 32
+      pointer_size = PlatformGuard::POINTER_SIZE
+      @m_file_name.offset_vtbl.should == pointer_size
     end
 
   end

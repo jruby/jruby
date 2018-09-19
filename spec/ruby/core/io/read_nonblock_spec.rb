@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#read_nonblock" do
   before :each do
@@ -22,24 +22,32 @@ describe "IO#read_nonblock" do
     }
   end
 
-  ruby_version_is "2.3" do
-    context "when exception option is set to false" do
-      context "when there is no data" do
-        it "returns :wait_readable" do
-          @read.read_nonblock(5, exception: false).should == :wait_readable
-        end
+  context "when exception option is set to false" do
+    context "when there is no data" do
+      it "returns :wait_readable" do
+        @read.read_nonblock(5, exception: false).should == :wait_readable
       end
+    end
 
-      context "when the end is reached" do
-        it "returns nil" do
-          @write << "hello"
-          @write.close
+    context "when the end is reached" do
+      it "returns nil" do
+        @write << "hello"
+        @write.close
 
-          @read.read_nonblock(5)
+        @read.read_nonblock(5)
 
-          @read.read_nonblock(5, exception: false).should be_nil
-        end
+        @read.read_nonblock(5, exception: false).should be_nil
       end
+    end
+  end
+
+  platform_is_not :windows do
+    it 'sets the IO in nonblock mode' do
+      require 'io/nonblock'
+      @read.nonblock?.should == false
+      @write.write "abc"
+      @read.read_nonblock(1).should == "a"
+      @read.nonblock?.should == true
     end
   end
 

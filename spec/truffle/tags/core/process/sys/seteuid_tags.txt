@@ -1,1 +1,0 @@
-fails:Process::Sys.seteuid needs to be reviewed for spec completeness

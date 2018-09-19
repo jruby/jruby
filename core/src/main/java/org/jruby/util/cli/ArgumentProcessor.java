@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util.cli;
 
 import org.jruby.RubyInstanceConfig;
@@ -36,7 +37,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.StringSupport;
-import org.jruby.util.func.Function2;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
 /**
@@ -284,7 +285,7 @@ public class ArgumentProcessor {
                 case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
-                    config.setKCode(KCode.create(null, eArg));
+                    config.setKCode(KCode.create(eArg));
 
                     // source encoding
                     config.setSourceEncoding(config.getKCode().getEncoding().toString());
@@ -399,14 +400,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
-                    } else if (extendedOption.equals("classic")) {
-                        throw new MainExitException(0, "jruby: the -Xclassic option should have been handled in the launcher");
-                    } else if (extendedOption.equals("+T")) {
-                        Options.PARSER_WARN_GROUPED_EXPRESSIONS.force(Boolean.FALSE.toString());
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
-                        // Make the static option consistent with the compile mode.
-                        Options.COMPILE_MODE.force("TRUFFLE");
-                        config.setDisableGems(true);
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);
@@ -608,7 +601,7 @@ public class ArgumentProcessor {
     }
 
     private void enableDisableFeature(String name, boolean enable) {
-        Function2<Boolean, ArgumentProcessor, Boolean> feature = FEATURES.get(name);
+        BiFunction<ArgumentProcessor, Boolean, Void> feature = FEATURES.get(name);
 
         if (feature == null) {
             config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
@@ -801,48 +794,39 @@ public class ArgumentProcessor {
         return false;
     }
 
-    private static final Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> FEATURES;
+    private static final Map<String, BiFunction<ArgumentProcessor, Boolean, Void>> FEATURES;
 
     static {
-        Map<String, Function2<Boolean, ArgumentProcessor, Boolean>> features = new HashMap<>(12, 1);
-        Function2<Boolean, ArgumentProcessor, Boolean> function2;
+        Map<String, BiFunction<ArgumentProcessor, Boolean, Void>> features = new HashMap<>(12, 1);
+        BiFunction<ArgumentProcessor, Boolean, Void> function;
 
-        features.put("all", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
+        features.put("all", new BiFunction<ArgumentProcessor, Boolean, Void>() {
+            public Void apply(ArgumentProcessor processor, Boolean enable) {
                 // disable all features
-                for (Map.Entry<String, Function2<Boolean, ArgumentProcessor, Boolean>> entry : FEATURES.entrySet()) {
+                for (Map.Entry<String, BiFunction<ArgumentProcessor, Boolean, Void>> entry : FEATURES.entrySet()) {
                     if (entry.getKey().equals("all")) continue; // skip self
                     entry.getValue().apply(processor, enable);
                 }
-                return true;
+                return null;
             }
         });
-        features.put("gems", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableGems(!enable);
-                return true;
-            }
+        features.put("gem", (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableGems(!enable); return null;
         });
-        features.put("did-you-mean", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableDidYouMean(!enable);
-                return true;
-            }
+        features.put("gems", (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableGems(!enable); return null;
         });
-        features.put("did_you_mean", function2); // alias
-        features.put("rubyopt", new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setDisableRUBYOPT(!enable);
-                return true;
-            }
+        features.put("did-you-mean", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableDidYouMean(!enable); return null;
         });
-        features.put("frozen-string-literal", function2 = new Function2<Boolean, ArgumentProcessor, Boolean>() {
-            public Boolean apply(ArgumentProcessor processor, Boolean enable) {
-                processor.config.setFrozenStringLiteral(enable);
-                return true;
-            }
+        features.put("did_you_mean", function); // alias
+        features.put("rubyopt", (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setDisableRUBYOPT(!enable); return null;
         });
-        features.put("frozen_string_literal", function2); // alias
+        features.put("frozen-string-literal", function = (ArgumentProcessor processor, Boolean enable) -> {
+            processor.config.setFrozenStringLiteral(enable); return null;
+        });
+        features.put("frozen_string_literal", function); // alias
 
         FEATURES = features;
     }

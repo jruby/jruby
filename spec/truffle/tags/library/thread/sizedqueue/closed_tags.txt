@@ -1,2 +1,0 @@
-fails:SizedQueue#closed? returns false initially
-fails:SizedQueue#closed? returns true when the queue is closed

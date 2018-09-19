@@ -1,5 +1,6 @@
 require 'mspec/guards/guard'
-require 'mspec/runner/formatters/dotted'
+require 'mspec/guards/version'
+require 'mspec/utils/warnings'
 
 # MSpecScript provides a skeleton for all the MSpec runner scripts.
 
@@ -38,6 +39,10 @@ class MSpecScript
   end
 
   def initialize
+    ruby_version_is ""..."2.3" do
+      abort "MSpec needs Ruby 2.3 or more recent"
+    end
+
     config[:formatter] = nil
     config[:includes]  = []
     config[:excludes]  = []
@@ -51,6 +56,7 @@ class MSpecScript
     config[:astrings]  = []
     config[:ltags]     = []
     config[:abort]     = true
+    @loaded = []
   end
 
   # Returns the config object maintained by the instance's class.
@@ -69,11 +75,15 @@ class MSpecScript
     end
 
     names.each do |name|
-      return Kernel.load(name) if File.exist?(File.expand_path(name))
-
       config[:path].each do |dir|
-        file = File.join dir, name
-        return Kernel.load(file) if File.exist? file
+        file = File.expand_path name, dir
+        if @loaded.include?(file)
+          return true
+        elsif File.exist? file
+          value = Kernel.load(file)
+          @loaded << file
+          return value
+        end
       end
     end
 
@@ -98,6 +108,7 @@ class MSpecScript
       engine = 'ruby'
     end
     try_load "#{engine}.#{SpecGuard.ruby_version}.mspec"
+    try_load "#{engine}.mspec"
   end
 
   # Callback for enabling custom options. This version is a no-op.
@@ -109,6 +120,11 @@ class MSpecScript
 
   # Registers all filters and actions.
   def register
+    require 'mspec/runner/formatters/dotted'
+    require 'mspec/runner/formatters/spinner'
+    require 'mspec/runner/formatters/file'
+    require 'mspec/runner/filters'
+
     if config[:formatter].nil?
       config[:formatter] = STDOUT.tty? ? SpinnerFormatter : @files.size < 50 ? DottedFormatter : FileFormatter
     end
@@ -174,49 +190,85 @@ class MSpecScript
 
     patterns.each do |pattern|
       expanded = File.expand_path(pattern)
-      if File.file?(expanded)
+      if File.file?(expanded) && expanded.end_with?('.rb')
         return [expanded]
       elsif File.directory?(expanded)
-        return Dir["#{expanded}/**/*_spec.rb"].sort
+        specs = Dir["#{expanded}/**/*_spec.rb"].sort
+        return specs unless specs.empty?
       end
     end
 
     abort "Could not find spec file #{partial}"
   end
 
-  # Resolves each entry in +list+ to a set of files.
+  # Resolves each entry in +patterns+ to a set of files.
   #
-  # If the entry has a leading '^' character, the list of files
+  # If the pattern has a leading '^' character, the list of files
   # is subtracted from the list of files accumulated to that point.
   #
   # If the entry has a leading ':' character, the corresponding
   # key is looked up in the config object and the entries in the
   # value retrieved are processed through #entries.
-  def files(list)
-    list.inject([]) do |files, item|
-      case item[0]
+  def files(patterns)
+    list = []
+    patterns.each do |pattern|
+      case pattern[0]
       when ?^
-        files -= entries(item[1..-1])
+        list -= entries(pattern[1..-1])
       when ?:
-        key = item[1..-1].to_sym
-        files += files(Array(config[key]))
+        key = pattern[1..-1].to_sym
+        value = config[key]
+        abort "Key #{pattern} not found in mspec config." unless value
+        list += files(Array(value))
       else
-        files += entries(item)
+        list += entries(pattern)
       end
-      files
+    end
+    list
+  end
+
+  def files_from_patterns(patterns)
+    unless $0.end_with?("_spec.rb")
+      if patterns.empty?
+        patterns = config[:files]
+      end
+      if patterns.empty? and File.directory? "./spec"
+        patterns = ["spec/"]
+      end
+    end
+    list = files(patterns)
+    abort "No files specified." if list.empty?
+    list
+  end
+
+  def cores(max)
+    require 'etc'
+    [Etc.nprocessors, max].min
+  end
+
+  def setup_env
+    ENV['MSPEC_RUNNER'] = '1'
+
+    unless ENV['RUBY_EXE']
+      ENV['RUBY_EXE'] = config[:target] if config[:target]
+    end
+
+    unless ENV['RUBY_FLAGS']
+      ENV['RUBY_FLAGS'] = config[:flags].join(" ") if config[:flags]
     end
   end
 
   # Instantiates an instance and calls the series of methods to
   # invoke the script.
   def self.main
-    $VERBOSE = nil unless ENV['OUTPUT_WARNINGS']
     script = new
     script.load_default
     script.try_load '~/.mspecrc'
     script.options
     script.signals
     script.register
+    script.setup_env
+    require 'mspec'
     script.run
   end
 end

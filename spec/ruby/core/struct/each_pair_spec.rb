@@ -1,7 +1,7 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/accessor', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/accessor'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Struct#each_pair" do
   before :each do
@@ -25,7 +25,7 @@ describe "Struct#each_pair" do
   end
 
   it "returns an Enumerator if not passed a block" do
-    @car.each_pair.should be_an_instance_of(enumerator_class)
+    @car.each_pair.should be_an_instance_of(Enumerator)
   end
 
   it_behaves_like :struct_accessor, :each_pair

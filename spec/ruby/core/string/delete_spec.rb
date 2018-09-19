@@ -1,6 +1,6 @@
-# -*- encoding: UTF-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+# -*- encoding: utf-8 -*-
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#delete" do
   it "returns a new string with the chars from the intersection of sets removed" do
@@ -49,7 +49,7 @@ describe "String#delete" do
   end
 
   it "deletes multibyte characters" do
-    "四月".delete("月").should     == "四"
+    "四月".delete("月").should == "四"
     '哥哥我倒'.delete('哥').should == "我倒"
   end
 
@@ -60,7 +60,9 @@ describe "String#delete" do
 
   it "raises if the given ranges are invalid" do
     not_supported_on :opal do
-      lambda { "hello".delete("\x00-\xFF").should == "" }.should raise_error(ArgumentError)
+      xFF = [0xFF].pack('C')
+      range = "\x00 - #{xFF}".force_encoding('utf-8')
+      lambda { "hello".delete(range).should == "" }.should raise_error(ArgumentError)
     end
     lambda { "hello".delete("h-e") }.should raise_error(ArgumentError)
     lambda { "hello".delete("^h-e") }.should raise_error(ArgumentError)
@@ -107,11 +109,11 @@ describe "String#delete!" do
     a.should == "hello"
   end
 
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a.delete!("")            }.should raise_error(RuntimeError)
-    lambda { a.delete!("aeiou", "^e") }.should raise_error(RuntimeError)
+    lambda { a.delete!("")            }.should raise_error(frozen_error_class)
+    lambda { a.delete!("aeiou", "^e") }.should raise_error(frozen_error_class)
   end
 end

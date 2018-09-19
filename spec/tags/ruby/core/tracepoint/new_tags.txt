@@ -1,0 +1,2 @@
+fails:TracePoint.new converts given event name as string into symbol using to_sym
+fails:TracePoint.new includes multiple events when multiple event names are passed as params

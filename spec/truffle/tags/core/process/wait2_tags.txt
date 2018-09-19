@@ -1,1 +1,0 @@
-fails:Process.wait2 returns the pid and status of child process

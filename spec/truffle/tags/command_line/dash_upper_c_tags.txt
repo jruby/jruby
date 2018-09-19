@@ -1,2 +1,0 @@
-fails:The -C command line option changes the PWD when using a file
-fails:The -C command line option changes the PWD when using -e

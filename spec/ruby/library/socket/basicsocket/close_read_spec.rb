@@ -1,9 +1,9 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Socket::BasicSocket#close_read" do
   before :each do
-    @server = TCPServer.new(SocketSpecs.port)
+    @server = TCPServer.new(0)
   end
 
   after :each do
@@ -15,13 +15,13 @@ describe "Socket::BasicSocket#close_read" do
     lambda { @server.read }.should raise_error(IOError)
   end
 
-  it "it works on sockets with closed ends" do
+  it 'does not raise when called on a socket already closed for reading' do
     @server.close_read
-    lambda { @server.close_read }.should_not raise_error(Exception)
+    @server.close_read
     lambda { @server.read }.should raise_error(IOError)
   end
 
-  it "does not close the socket" do
+  it 'does not fully close the socket' do
     @server.close_read
     @server.closed?.should be_false
   end
@@ -32,7 +32,7 @@ describe "Socket::BasicSocket#close_read" do
     @server.closed?.should be_true
   end
 
-  it "raises IOError on closed socket" do
+  it 'raises IOError when called on a fully closed socket' do
     @server.close
     lambda { @server.close_read }.should raise_error(IOError)
   end

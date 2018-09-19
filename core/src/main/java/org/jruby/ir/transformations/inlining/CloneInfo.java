@@ -78,7 +78,7 @@ public abstract class CloneInfo {
 
     /**
      * Return a new instance of a variable for the newly cloned scope.  Maps are maintained
-     * because Variables typically share the same instance accross a CFG (of the same lexical depth).
+     * because Variables typically share the same instance across a CFG (of the same lexical depth).
      *
      * @param variable to be renamed
      * @return the new Variable

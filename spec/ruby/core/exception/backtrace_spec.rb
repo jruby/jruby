@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "Exception#backtrace" do
   before :each do
@@ -44,6 +44,25 @@ describe "Exception#backtrace" do
       # the paths of the included mspec files and the desire to avoid specifying in any
       # detail what the in `...' portion looks like.
       line.should =~ /^[^ ]+\:\d+(:in `[^`]+')?$/
+    end
+  end
+
+  it "produces a backtrace for an exception captured using $!" do
+    exception = begin
+      raise
+    rescue RuntimeError
+      $!
+    end
+
+    exception.backtrace.first.should =~ /backtrace_spec/
+  end
+
+  it "returns an Array that can be updated" do
+    begin
+      raise
+    rescue RuntimeError => e
+      e.backtrace.unshift "backtrace first"
+      e.backtrace[0].should == "backtrace first"
     end
   end
 end

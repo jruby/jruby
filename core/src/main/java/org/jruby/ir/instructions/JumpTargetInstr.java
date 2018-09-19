@@ -7,4 +7,5 @@ import org.jruby.ir.operands.Label;
  */
 public interface JumpTargetInstr {
     Label getJumpTarget();
+    void setJumpTarget(Label target);
 }

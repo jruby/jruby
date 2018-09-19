@@ -1,8 +1,8 @@
 # -*- encoding: ascii-8bit -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-require File.expand_path('../shared/basic', __FILE__)
-require File.expand_path('../shared/unicode', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
+require_relative 'shared/basic'
+require_relative 'shared/unicode'
 
 describe "String#unpack with format 'U'" do
   it_behaves_like :string_unpack_basic, 'U'
@@ -24,6 +24,14 @@ describe "String#unpack with format 'u'" do
 
   it "decodes an empty string as an empty string" do
     "".unpack("u").should == [""]
+  end
+
+  it "decodes into raw (ascii) string values" do
+    str = "".unpack("u")[0]
+    str.encoding.name.should == 'ASCII-8BIT'
+
+    str = "1".force_encoding('UTF-8').unpack("u")[0]
+    str.encoding.name.should == 'ASCII-8BIT'
   end
 
   it "decodes the complete string ignoring newlines when given a single directive" do

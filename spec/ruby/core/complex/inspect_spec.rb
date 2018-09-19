@@ -1,5 +1,5 @@
-require File.expand_path('../../../shared/complex/inspect', __FILE__)
+require_relative '../../shared/complex/inspect'
 
 describe "Complex#inspect" do
-  it_behaves_like(:complex_inspect, :inspect)
+  it_behaves_like :complex_inspect, :inspect
 end

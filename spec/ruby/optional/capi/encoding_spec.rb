@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../fixtures/encoding', __FILE__)
+require_relative 'spec_helper'
+require_relative 'fixtures/encoding'
 
 load_extension('encoding')
 
@@ -11,24 +11,6 @@ describe :rb_enc_get_index, shared: true do
 
   it "returns the index of the encoding of a Regexp" do
     @s.send(@method, /regexp/).should >= 0
-  end
-
-  it "returns the index of the encoding of an Object" do
-    obj = mock("rb_enc_get_index string")
-    @s.rb_enc_set_index(obj, 1)
-    @s.send(@method, obj).should == 1
-  end
-
-  it "returns the index of the dummy encoding of an Object" do
-    obj = mock("rb_enc_get_index string")
-    index = Encoding.list.index(Encoding::UTF_16)
-    @s.rb_enc_set_index(obj, index)
-    @s.send(@method, obj).should == index
-  end
-
-  it "returns 0 for an object without an encoding" do
-    obj = mock("rb_enc_get_index string")
-    @s.send(@method, obj).should == 0
   end
 end
 
@@ -49,10 +31,13 @@ describe :rb_enc_set_index, shared: true do
     result.first.should == result.last
   end
 
-  it "associates an encoding with an object" do
-    obj = mock("rb_enc_set_index string")
-    result = @s.send(@method, obj, 1)
-    result.first.should == result.last
+  ruby_version_is "2.6" do
+    it "raises an ArgumentError for a non-encoding capable object" do
+      obj = Object.new
+      -> {
+        result = @s.send(@method, obj, 1)
+      }.should raise_error(ArgumentError, "cannot set encoding on non-encoding capable object")
+    end
   end
 end
 
@@ -61,10 +46,12 @@ describe "C-API Encoding function" do
     @s = CApiEncodingSpecs.new
   end
 
-  describe "rb_encdb_alias" do
-    it "creates an alias for an existing Encoding" do
-      @s.rb_encdb_alias("ZOMGWTFBBQ", "UTF-8").should >= 0
-      Encoding.find("ZOMGWTFBBQ").name.should == "UTF-8"
+  ruby_version_is "2.6" do
+    describe "rb_enc_alias" do
+      it "creates an alias for an existing Encoding" do
+        @s.rb_enc_alias("ZOMGWTFBBQ", "UTF-8").should >= 0
+        Encoding.find("ZOMGWTFBBQ").name.should == "UTF-8"
+      end
     end
   end
 
@@ -88,7 +75,7 @@ describe "C-API Encoding function" do
     end
 
     it "returns -1 for an non existing encoding" do
-      @s.rb_enc_find_index("non-existant-encoding").should == -1
+      @s.rb_enc_find_index("non-existent-encoding").should == -1
     end
   end
 
@@ -162,6 +149,13 @@ describe "C-API Encoding function" do
     it "returns -1 as the index for immediates" do
       @s.send(@method, 1).should == -1
     end
+
+    ruby_version_is "2.6" do
+      it "returns -1 for an object without an encoding" do
+        obj = Object.new
+        @s.send(@method, obj).should == -1
+      end
+    end
   end
 
   describe "rb_enc_set_index" do
@@ -170,7 +164,8 @@ describe "C-API Encoding function" do
 
   describe "rb_enc_str_new" do
     it "returns a String in US-ASCII encoding when high bits are set" do
-      result = @s.rb_enc_str_new("\xEE", 1, Encoding::US_ASCII)
+      xEE = [0xEE].pack('C').force_encoding('utf-8')
+      result = @s.rb_enc_str_new(xEE, 1, Encoding::US_ASCII)
       result.encoding.should equal(Encoding::US_ASCII)
     end
   end
@@ -183,7 +178,8 @@ describe "C-API Encoding function" do
       end
 
       it "returns ENC_CODERANGE_VALID if there are high bits set" do
-        result = @s.rb_enc_str_coderange("\xEE".force_encoding("ascii-8bit"))
+        xEE = [0xEE].pack('C').force_encoding('utf-8')
+        result = @s.rb_enc_str_coderange(xEE.force_encoding("ascii-8bit"))
         result.should == :coderange_valid
       end
     end
@@ -200,7 +196,7 @@ describe "C-API Encoding function" do
       end
 
       it "returns ENC_CODERANGE_BROKEN if there are high bits set in an invalid string" do
-        result = @s.rb_enc_str_coderange("\xEE".force_encoding("utf-8"))
+        result = @s.rb_enc_str_coderange([0xEE].pack('C').force_encoding("utf-8"))
         result.should == :coderange_broken
       end
     end
@@ -212,7 +208,7 @@ describe "C-API Encoding function" do
       end
 
       it "returns ENC_CODERANGE_BROKEN if there are high bits set" do
-        result = @s.rb_enc_str_coderange("\xEE".force_encoding("us-ascii"))
+        result = @s.rb_enc_str_coderange([0xEE].pack('C').force_encoding("us-ascii"))
         result.should == :coderange_broken
       end
     end
@@ -284,7 +280,7 @@ describe "C-API Encoding function" do
 
   describe "rb_enc_compatible" do
     it "returns 0 if the encodings of the Strings are not compatible" do
-      a = "\xff".force_encoding "ascii-8bit"
+      a = [0xff].pack('C').force_encoding "ascii-8bit"
       b = "\u3042".encode("utf-8")
       @s.rb_enc_compatible(a, b).should == 0
     end
@@ -448,7 +444,7 @@ describe "C-API Encoding function" do
 
     it "raises ArgumentError if an invalid byte sequence is given" do
       lambda do
-        @s.rb_enc_codepoint_len("\xa0\xa1") # Invalid sequence identifier
+        @s.rb_enc_codepoint_len([0xa0, 0xa1].pack('CC').force_encoding('utf-8')) # Invalid sequence identifier
       end.should raise_error(ArgumentError)
     end
 
@@ -479,30 +475,5 @@ describe "C-API Encoding function" do
       codepoint.should == 0x24B62
       length.should == 4
     end
-  end
-end
-
-describe "rb_intern3" do
-  load_extension('symbol')
-
-  before :each do
-    @s = CApiSymbolSpecs.new
-  end
-
-  it "converts a multibyte symbol with the encoding" do
-    sym = @s.rb_intern3("Ω", 2, Encoding::UTF_8)
-    sym.encoding.should == Encoding::UTF_8
-    sym.should == :Ω
-    @s.rb_intern3_c_compare("Ω", 2, Encoding::UTF_8, :Ω).should == true
-  end
-
-  it "converts an ascii compatible symbol with the ascii encoding" do
-    sym = @s.rb_intern3("foo", 3, Encoding::UTF_8)
-    sym.encoding.should == Encoding::US_ASCII
-    sym.should == :foo
-  end
-
-  it "should respect the symbol encoding via rb_intern3" do
-    :Ω.to_s.encoding.should == Encoding::UTF_8
   end
 end

@@ -4,9 +4,6 @@ require 'rubygems/exceptions'
 require 'rubygems/util'
 require 'rubygems/util/list'
 
-require 'uri'
-require 'net/http'
-
 ##
 # Given a set of Gem::Dependency objects as +needed+ and a way to query the
 # set of available specs via +set+, calculates a set of ActivationRequest
@@ -233,8 +230,28 @@ class Gem::Resolver
       exc.errors = @set.errors
       raise exc
     end
-    possibles.sort_by { |s| [s.source, s.version, Gem::Platform.local =~ s.platform ? 1 : 0] }.
-      map { |s| ActivationRequest.new s, dependency, [] }
+
+    sources = []
+
+    groups = Hash.new { |hash, key| hash[key] = [] }
+
+    # create groups & sources in the same loop
+    sources = possibles.map { |spec|
+      source = spec.source
+      groups[source] << spec
+      source
+    }.uniq.reverse
+
+    activation_requests = []
+
+    sources.each do |source|
+      groups[source].
+        sort_by { |spec| [spec.version, Gem::Platform.local =~ spec.platform ? 1 : 0] }.
+        map { |spec| ActivationRequest.new spec, dependency, [] }.
+        each { |activation_request| activation_requests << activation_request }
+    end
+
+    activation_requests
   end
 
   def dependencies_for(specification)
@@ -255,6 +272,45 @@ class Gem::Resolver
     @missing << dependency
     @soft_missing
   end
+
+  def sort_dependencies(dependencies, activated, conflicts)
+    dependencies.sort_by.with_index do |dependency, i|
+      name = name_for(dependency)
+      [
+        activated.vertex_named(name).payload ? 0 : 1,
+        amount_constrained(dependency),
+        conflicts[name] ? 0 : 1,
+        activated.vertex_named(name).payload ? 0 : search_for(dependency).count,
+        i # for stable sort
+      ]
+    end
+  end
+
+  SINGLE_POSSIBILITY_CONSTRAINT_PENALTY = 1_000_000
+  private_constant :SINGLE_POSSIBILITY_CONSTRAINT_PENALTY if defined?(private_constant)
+
+  # returns an integer \in (-\infty, 0]
+  # a number closer to 0 means the dependency is less constraining
+  #
+  # dependencies w/ 0 or 1 possibilities (ignoring version requirements)
+  # are given very negative values, so they _always_ sort first,
+  # before dependencies that are unconstrained
+  def amount_constrained(dependency)
+    @amount_constrained ||= {}
+    @amount_constrained[dependency.name] ||= begin
+      name_dependency = Gem::Dependency.new(dependency.name)
+      dependency_request_for_name = Gem::Resolver::DependencyRequest.new(name_dependency, dependency.requester)
+      all = @set.find_all(dependency_request_for_name).size
+
+      if all <= 1
+        all - SINGLE_POSSIBILITY_CONSTRAINT_PENALTY
+      else
+        search = search_for(dependency).size
+        search - all
+      end
+    end
+  end
+  private :amount_constrained
 
 end
 

@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/gets_ascii', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/gets_ascii'
 
 describe "IO#gets" do
   it_behaves_like :io_gets_ascii, :gets
@@ -45,13 +45,13 @@ describe "IO#gets" do
     end
 
     it "updates lineno with each invocation" do
-      while line = @io.gets
+      while @io.gets
         @io.lineno.should == @count += 1
       end
     end
 
     it "updates $. with each invocation" do
-      while line = @io.gets
+      while @io.gets
         $..should == @count += 1
       end
     end
@@ -69,13 +69,13 @@ describe "IO#gets" do
     end
 
     it "updates lineno with each invocation" do
-      while line = @io.gets(nil)
+      while @io.gets(nil)
         @io.lineno.should == @count += 1
       end
     end
 
     it "updates $. with each invocation" do
-      while line = @io.gets(nil)
+      while @io.gets(nil)
         $..should == @count += 1
       end
     end
@@ -103,13 +103,13 @@ describe "IO#gets" do
     end
 
     it "updates lineno with each invocation" do
-      while line = @io.gets("")
+      while @io.gets("")
         @io.lineno.should == @count += 1
       end
     end
 
     it "updates $. with each invocation" do
-      while line = @io.gets("")
+      while @io.gets("")
         $..should == @count += 1
       end
     end
@@ -127,14 +127,22 @@ describe "IO#gets" do
     end
 
     it "updates lineno with each invocation" do
-      while (line = @io.gets("la"))
+      while (@io.gets("la"))
         @io.lineno.should == @count += 1
       end
     end
 
     it "updates $. with each invocation" do
-      while line = @io.gets("la")
+      while @io.gets("la")
         $..should == @count += 1
+      end
+    end
+  end
+
+  ruby_version_is "2.4" do
+    describe "when passed chomp" do
+      it "returns the first line without a trailing newline character" do
+        @io.gets(chomp: true).should == IOSpecs.lines_without_newline_characters[0]
       end
     end
   end
@@ -191,7 +199,7 @@ describe "IO#gets" do
     @io.gets(obj, 5).should == "one\n"
   end
 
-  it "reads to the default seperator when passed a single argument greater than the number of bytes to the separator" do
+  it "reads to the default separator when passed a single argument greater than the number of bytes to the separator" do
     @io.gets(6).should == "one\n"
   end
 
@@ -223,7 +231,9 @@ end
 describe "IO#gets" do
   before :each do
     @name = tmp("io_gets")
-    touch(@name) { |f| f.write "朝日" + "\xE3\x81" * 100 }
+    # create data "朝日" + "\xE3\x81" * 100 to avoid utf-8 conflicts
+    data = "朝日" + ([227,129].pack('C*') * 100).force_encoding('utf-8')
+    touch(@name) { |f| f.write data }
     @io = new_io @name, fmode("r:utf-8")
   end
 
@@ -237,7 +247,9 @@ describe "IO#gets" do
   end
 
   it "read limit bytes and extra bytes with maximum of 16" do
-    @io.gets(7).should == "朝日\xE3" + "\x81\xE3" * 8
+    # create str "朝日\xE3" + "\x81\xE3" * 8 to avoid utf-8 conflicts
+    str = "朝日" + ([227] + [129,227] * 8).pack('C*').force_encoding('utf-8')
+    @io.gets(7).should == str
   end
 end
 

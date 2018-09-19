@@ -25,6 +25,9 @@ unless Gem::Dependency.new('rdoc', '>= 3.10').matching_specs.empty?
   gem 'json'
 end
 
+if Gem::USE_BUNDLER_FOR_GEMDEPS
+  require 'bundler'
+end
 require 'minitest/autorun'
 
 require 'rubygems/deprecate'
@@ -222,6 +225,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     @orig_gem_vendor = ENV['GEM_VENDOR']
     @orig_gem_spec_cache = ENV['GEM_SPEC_CACHE']
     @orig_rubygems_gemdeps = ENV['RUBYGEMS_GEMDEPS']
+    @orig_bundle_gemfile   = ENV['BUNDLE_GEMFILE']
     @orig_rubygems_host = ENV['RUBYGEMS_HOST']
     ENV.keys.find_all { |k| k.start_with?('GEM_REQUIREMENT_') }.each do |k|
       ENV.delete k
@@ -232,7 +236,15 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     @current_dir = Dir.pwd
     @fetcher     = nil
-    @ui          = Gem::MockGemUi.new
+
+    if Gem::USE_BUNDLER_FOR_GEMDEPS
+      Bundler.ui                     = Bundler::UI::Silent.new
+    end
+    @back_ui                       = Gem::DefaultUserInteraction.ui
+    @ui                            = Gem::MockGemUi.new
+    # This needs to be a new instance since we call use_ui(@ui) when we want to
+    # capture output
+    Gem::DefaultUserInteraction.ui = Gem::MockGemUi.new
 
     tmpdir = File.expand_path Dir.tmpdir
     tmpdir.untaint
@@ -323,6 +335,9 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     Gem.loaded_specs.clear
     Gem.clear_default_specs
     Gem::Specification.unresolved_deps.clear
+    if Gem::USE_BUNDLER_FOR_GEMDEPS
+      Bundler.reset!
+    end
 
     Gem.configuration.verbose = true
     Gem.configuration.update_sources = true
@@ -394,6 +409,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     ENV['GEM_VENDOR'] = @orig_gem_vendor
     ENV['GEM_SPEC_CACHE'] = @orig_gem_spec_cache
     ENV['RUBYGEMS_GEMDEPS'] = @orig_rubygems_gemdeps
+    ENV['BUNDLE_GEMFILE']   = @orig_bundle_gemfile
     ENV['RUBYGEMS_HOST'] = @orig_rubygems_host
 
     Gem.ruby = @orig_ruby if @orig_ruby
@@ -410,6 +426,9 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     Gem::Specification._clear_load_cache
     Gem::Specification.unresolved_deps.clear
+    Gem::refresh
+
+    @back_ui.close
   end
 
   def common_installer_setup
@@ -469,7 +488,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
     gemspec = "#{name}.gemspec"
 
-    open File.join(directory, gemspec), 'w' do |io|
+    File.open File.join(directory, gemspec), 'w' do |io|
       io.write git_spec.to_ruby
     end
 
@@ -484,7 +503,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
       system @git, 'add', gemspec
       system @git, 'commit', '-a', '-m', 'a non-empty commit message', '--quiet'
-      head = Gem::Util.popen('git', 'rev-parse', 'master').strip
+      head = Gem::Util.popen(@git, 'rev-parse', 'master').strip
     end
 
     return name, git_spec.version, directory, head
@@ -573,7 +592,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   # Reads a Marshal file at +path+
 
   def read_cache(path)
-    open path.dup.untaint, 'rb' do |io|
+    File.open path.dup.untaint, 'rb' do |io|
       Marshal.load io.read
     end
   end
@@ -593,7 +612,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     dir = File.dirname path
     FileUtils.mkdir_p dir unless File.directory? dir
 
-    open path, 'wb' do |io|
+    File.open path, 'wb' do |io|
       yield io if block_given?
     end
 
@@ -708,7 +727,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     install_default_specs(*specs)
 
     specs.each do |spec|
-      open spec.loaded_from, 'w' do |io|
+      File.open spec.loaded_from, 'w' do |io|
         io.write spec.to_ruby_for_cache
       end
     end
@@ -1334,7 +1353,7 @@ Also, a list:
   end
 
   ##
-  # create_gemspec creates gem specification in given +direcotry+ or '.'
+  # create_gemspec creates gem specification in given +directory+ or '.'
   # for the given +name+ and +version+.
   #
   # Yields the +specification+ to the block, if given
@@ -1344,7 +1363,7 @@ Also, a list:
       yield specification if block_given?
     end
 
-    open File.join(directory, "#{name}.gemspec"), 'w' do |io|
+    File.open File.join(directory, "#{name}.gemspec"), 'w' do |io|
       io.write vendor_spec.to_ruby
     end
 
@@ -1498,6 +1517,8 @@ end
 begin
   gem 'rdoc'
   require 'rdoc'
+
+  require 'rubygems/rdoc'
 rescue LoadError, Gem::LoadError
 end
 
@@ -1514,3 +1535,4 @@ tmpdirs << (ENV['GEM_PATH'] = Dir.mktmpdir("path"))
 pid = $$
 END {tmpdirs.each {|dir| Dir.rmdir(dir)} if $$ == pid}
 Gem.clear_paths
+Gem.loaded_specs.clear

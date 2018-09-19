@@ -27,7 +27,7 @@ public abstract class IRTranslator<R, S> {
             // FIXME: In terms of writing and reading we should emit enough to rebuild IC + minimal IRScope state
             InterpreterContext ic = IRBuilder.buildRoot(runtime.getIRManager(), (RootNode) result);
             scope = (IRScriptBody) ic.getScope();
-            scope.setTopLevelBindingScope(((RootNode) result).getScope());
+            scope.setScriptDynamicScope(((RootNode) result).getScope());
 
             if (RubyInstanceConfig.IR_WRITING) {
                 try {

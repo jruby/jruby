@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "ENV.delete_if" do
   it "deletes pairs if the block returns true" do
@@ -13,7 +13,7 @@ describe "ENV.delete_if" do
   end
 
   it "returns an Enumerator if no block given" do
-    ENV.delete_if.should be_an_instance_of(enumerator_class)
+    ENV.delete_if.should be_an_instance_of(Enumerator)
   end
 
   it "deletes pairs through enumerator" do

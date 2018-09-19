@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/precedence', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/precedence'
 
 # Specifying the behavior of operators in combination could
 # lead to combinatorial explosion. A better way seems to be
@@ -132,7 +132,7 @@ describe "Operators" do
   end
 
   it "* / % are left-associative" do
-    (2*1/2).should     == (2*1)/2
+    (2*1/2).should == (2*1)/2
     # Guard against the Mathn library
     # TODO: Make these specs not rely on specific behaviour / result values
     # by using mocks.
@@ -140,13 +140,13 @@ describe "Operators" do
       (2*1/2).should_not == 2*(1/2)
     end
 
-    (10/7/5).should     == (10/7)/5
+    (10/7/5).should == (10/7)/5
     (10/7/5).should_not == 10/(7/5)
 
-    (101 % 55 % 7).should     == (101 % 55) % 7
+    (101 % 55 % 7).should == (101 % 55) % 7
     (101 % 55 % 7).should_not == 101 % (55 % 7)
 
-    (50*20/7%42).should     == ((50*20)/7)%42
+    (50*20/7%42).should == ((50*20)/7)%42
     (50*20/7%42).should_not == 50*(20/(7%42))
   end
 
@@ -164,8 +164,13 @@ describe "Operators" do
     (2-3-4).should == -5
     (4-3+2).should == 3
 
-    class BinaryPlusTest < String; alias_method :plus, :+; def +(a); plus(a) + "!"; end; end
-    s = BinaryPlusTest.new("a")
+    binary_plus = Class.new(String) do
+      alias_method :plus, :+
+      def +(a)
+        plus(a) + "!"
+      end
+    end
+    s = binary_plus.new("a")
 
     (s+s+s).should == (s+s)+s
     (s+s+s).should_not == s+(s+s)
@@ -193,7 +198,7 @@ describe "Operators" do
     class BitwiseAndTest; def &(a); a+1; end; end
     c = BitwiseAndTest.new
 
-    (c & 5 & 2).should     == (c & 5) & 2
+    (c & 5 & 2).should == (c & 5) & 2
     (c & 5 & 2).should_not == c & (5 & 2)
   end
 
@@ -206,10 +211,10 @@ describe "Operators" do
     class OrAndXorTest; def ^(a); a+10; end; def |(a); a-10; end; end
     d = OrAndXorTest.new
 
-    (d ^ 13 ^ 16).should     == (d ^ 13) ^ 16
+    (d ^ 13 ^ 16).should == (d ^ 13) ^ 16
     (d ^ 13 ^ 16).should_not == d ^ (13 ^ 16)
 
-    (d | 13 | 4).should     == (d | 13) | 4
+    (d | 13 | 4).should == (d | 13) | 4
     (d | 13 | 4).should_not == d | (13 | 4)
   end
 
@@ -234,16 +239,16 @@ describe "Operators" do
 
     e = ComparisonTest.new
 
-    (e <= 0 <= 1).should     == (e <= 0) <= 1
+    (e <= 0 <= 1).should == (e <= 0) <= 1
     (e <= 0 <= 1).should_not == e <= (0 <= 1)
 
-    (e < 0 < 1).should     == (e < 0) < 1
+    (e < 0 < 1).should == (e < 0) < 1
     (e < 0 < 1).should_not == e < (0 < 1)
 
-    (e >= 0 >= 1).should     == (e >= 0) >= 1
+    (e >= 0 >= 1).should == (e >= 0) >= 1
     (e >= 0 >= 1).should_not == e >= (0 >= 1)
 
-    (e > 0 > 1).should     == (e > 0) > 1
+    (e > 0 > 1).should == (e > 0) > 1
     (e > 0 > 1).should_not == e > (0 > 1)
   end
 
@@ -263,7 +268,7 @@ describe "Operators" do
     (false && 3 != true).should == false
 
     class FalseClass; def =~(o); o == false; end; end
-    (false && true =~ false).should     == (false && (true =~ false))
+    (false && true =~ false).should == (false && (true =~ false))
     (false && true =~ false).should_not == ((false && true) =~ false)
     class FalseClass; undef_method :=~; end
 
@@ -291,15 +296,16 @@ describe "Operators" do
     lambda { eval("1...2...3")  }.should raise_error(SyntaxError)
   end
 
-# XXX: this is commented now due to a bug in compiler, which cannot
-# distinguish between range and flip-flop operator so far. zenspider is
-# currently working on a new lexer, which will be able to do that.
-# As soon as it's done, these piece should be reenabled.
-#
-#  it ".. ... have higher precedence than ? :" do
-#    (1..2 ? 3 : 4).should == 3
-#    (1...2 ? 3 : 4).should == 3
-#  end
+ it ".. ... have higher precedence than ? :" do
+   # Use variables to avoid warnings
+   from = 1
+   to = 2
+   # These are Range instances, not flip-flop
+   suppress_warning do
+     (eval("from..to") ? 3 : 4).should == 3
+     (eval("from...to") ? 3 : 4).should == 3
+   end
+ end
 
   it "? : is right-associative" do
     (true ? 2 : 3 ? 4 : 5).should == 2
@@ -308,7 +314,6 @@ describe "Operators" do
   def oops; raise end
 
   it "? : has higher precedence than rescue" do
-
     (true ? oops : 0 rescue 10).should == 10
   end
 

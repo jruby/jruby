@@ -1,6 +1,0 @@
-Switch to inspect mode.
-14
-14
-14 + 2
-16
-exit

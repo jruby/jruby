@@ -117,10 +117,10 @@ public final class MappedType extends Type {
     }
 
     public final IRubyObject fromNative(ThreadContext context, IRubyObject value) {
-        return fromNativeCallSite.call(context, this, converter, value, context.runtime.getNil());
+        return fromNativeCallSite.call(context, this, converter, value, context.nil);
     }
 
     public final IRubyObject toNative(ThreadContext context, IRubyObject value) {
-        return toNativeCallSite.call(context, this, converter, value, context.runtime.getNil());
+        return toNativeCallSite.call(context, this, converter, value, context.nil);
     }
 }

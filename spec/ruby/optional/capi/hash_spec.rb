@@ -1,4 +1,5 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
+require_relative '../../shared/hash/key_error'
 
 load_extension("hash")
 
@@ -115,7 +116,32 @@ describe "C-API Hash function" do
     end
 
     it "returns an Enumerator when no block is passed" do
-      @s.rb_hash_delete_if({a: 1}).should be_an_instance_of(enumerator_class)
+      @s.rb_hash_delete_if({a: 1}).should be_an_instance_of(Enumerator)
+    end
+  end
+
+  describe "rb_hash_fetch" do
+    before :each do
+      @hsh = {:a => 1, :b => 2}
+    end
+
+    it "returns the value associated with the key" do
+      @s.rb_hash_fetch(@hsh, :b).should == 2
+    end
+
+    it "raises a KeyError if the key is not found and default is set" do
+      @hsh.default = :d
+      lambda { @s.rb_hash_fetch(@hsh, :c) }.should raise_error(KeyError)
+    end
+
+    it "raises a KeyError if the key is not found and no default is set" do
+      lambda { @s.rb_hash_fetch(@hsh, :c) }.should raise_error(KeyError)
+    end
+
+    context "when key is not found" do
+      it_behaves_like :key_error, -> (obj, key) {
+        @s.rb_hash_fetch(obj, key)
+      }, { a: 1 }
     end
   end
 
@@ -144,16 +170,14 @@ describe "C-API Hash function" do
     end
   end
 
-  ruby_version_is "2.2" do
-    describe "rb_hash_size" do
-      it "returns the size of the hash" do
-        hsh = {fast: 'car', good: 'music'}
-        @s.rb_hash_size(hsh).should == 2
-      end
+  describe "rb_hash_size" do
+    it "returns the size of the hash" do
+      hsh = {fast: 'car', good: 'music'}
+      @s.rb_hash_size(hsh).should == 2
+    end
 
-      it "returns zero for an empty hash" do
-        @s.rb_hash_size({}).should == 0
-      end
+    it "returns zero for an empty hash" do
+      @s.rb_hash_size({}).should == 0
     end
   end
 
@@ -190,15 +214,39 @@ describe "C-API Hash function" do
     end
   end
 
-  ruby_version_is "2.2" do
-    describe "rb_hash_set_ifnone" do
-      it "sets the default value of non existing keys" do
-        hash = {}
+  describe "rb_hash_set_ifnone" do
+    it "sets the default value of non existing keys" do
+      hash = {}
 
-        @s.rb_hash_set_ifnone(hash, 10)
+      @s.rb_hash_set_ifnone(hash, 10)
 
-        hash[:chunky].should == 10
-      end
+      hash[:chunky].should == 10
+    end
+  end
+
+  describe "rb_Hash" do
+    it "returns an empty hash when the argument is nil" do
+      @s.rb_Hash(nil).should == {}
+    end
+
+    it "returns an empty hash when the argument is []" do
+      @s.rb_Hash([]).should == {}
+    end
+
+    it "tries to convert the passed argument to a hash by calling #to_hash" do
+      h = BasicObject.new
+      def h.to_hash; {"bar" => "foo"}; end
+      @s.rb_Hash(h).should == {"bar" => "foo"}
+    end
+
+    it "raises a TypeError if the argument does not respond to #to_hash" do
+      lambda { @s.rb_Hash(42) }.should raise_error(TypeError)
+    end
+
+    it "raises a TypeError if #to_hash does not return a hash" do
+      h = BasicObject.new
+      def h.to_hash; 42; end
+      lambda { @s.rb_Hash(h) }.should raise_error(TypeError)
     end
   end
 end

@@ -1,8 +1,8 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe :complex_numerator, shared: true do
   it "returns self's numerator" do
-    Complex(2).numerator.should    == Complex(2)
+    Complex(2).numerator.should == Complex(2)
     Complex(3, 4).numerator.should == Complex(3, 4)
 
     Complex(Rational(3, 4), Rational(3, 4)).numerator.should == Complex(3, 3)

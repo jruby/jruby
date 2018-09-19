@@ -26,6 +26,15 @@ describe "Java::JavaClass.for_name" do
     expect(Java::JavaClass.for_name("float")).to eq(Java::float.java_class)
     expect(Java::JavaClass.for_name("double")).to eq(Java::double.java_class)
   end
+
+  it "should return Java class from JRuby class-path" do
+    expect(Java::JavaClass.for_name('java_integration.fixtures.Reflector')).to_not be nil
+  end
+
+  it "should also accept Java string argument" do
+    str = 'java.util.Base64'.to_java
+    expect(Java::JavaClass.for_name(str)).to_not be nil
+  end
 end
 
 describe "Java classes with nested enums" do

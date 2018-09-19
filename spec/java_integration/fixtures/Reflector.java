@@ -1,5 +1,6 @@
 package java_integration.fixtures;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -88,5 +89,14 @@ public abstract class Reflector {
         return matchedMethods;
     }
 
+    public static <A extends Annotation> A getDeclaredAnnotation(Class<?> clazz,
+        Class<A> annotationType) {
+        for (Annotation a : clazz.getDeclaredAnnotations()) {
+            if (annotationType.isAssignableFrom(a.annotationType())) {
+                return (A) a;
+            }
+        }
+        return null;
+    }
 }
 

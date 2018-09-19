@@ -1,2 +1,0 @@
-fails(windows):File.umask returns the current umask value for this process (basic)
-fails(windows):File.umask returns the current umask value for this process

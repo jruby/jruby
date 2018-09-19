@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#private_class_method" do
   before :each do
@@ -64,7 +64,7 @@ describe "Module#private_class_method" do
 
   it "raises a NameError when the given name is not a method" do
     lambda do
-      c = Class.new do
+      Class.new do
         private_class_method :foo
       end
     end.should raise_error(NameError)
@@ -72,7 +72,7 @@ describe "Module#private_class_method" do
 
   it "raises a NameError when the given name is an instance method" do
     lambda do
-      c = Class.new do
+      Class.new do
         def foo() "foo" end
         private_class_method :foo
       end

@@ -1,21 +1,9 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 module ModuleSpecs
-  class NoInheritance
-    def method_to_remove; 1; end
-
-    remove_method :method_to_remove
-  end
-
   class Parent
     def method_to_remove; 1; end
-  end
-
-  class Child < Parent
-    def method_to_remove; 2; end
-
-    remove_method :method_to_remove
   end
 
   class First
@@ -25,13 +13,6 @@ module ModuleSpecs
   class Second < First
     def method_to_remove; 2; end
   end
-
-  class Multiple
-    def method_to_remove_1; 1; end
-    def method_to_remove_2; 2; end
-
-    remove_method :method_to_remove_1, :method_to_remove_2
-  end
 end
 
 describe "Module#remove_method" do
@@ -39,23 +20,43 @@ describe "Module#remove_method" do
     @module = Module.new { def method_to_remove; end }
   end
 
-  it "is a private method" do
-    Module.should have_private_instance_method(:remove_method, false)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:remove_method, false)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:remove_method, false)
+    end
   end
 
   it "removes the method from a class" do
-    x = ModuleSpecs::NoInheritance.new
+    klass = Class.new do
+      def method_to_remove; 1; end
+    end
+    x = klass.new
+    klass.send(:remove_method, :method_to_remove)
     x.respond_to?(:method_to_remove).should == false
   end
 
   it "removes method from subclass, but not parent" do
-    x = ModuleSpecs::Child.new
+    child = Class.new(ModuleSpecs::Parent) do
+      def method_to_remove; 2; end
+      remove_method :method_to_remove
+    end
+    x = child.new
     x.respond_to?(:method_to_remove).should == true
     x.method_to_remove.should == 1
   end
 
   it "removes multiple methods with 1 call" do
-    x = ModuleSpecs::Multiple.new
+    klass = Class.new do
+      def method_to_remove_1; 1; end
+      def method_to_remove_2; 2; end
+      remove_method :method_to_remove_1, :method_to_remove_2
+    end
+    x = klass.new
     x.respond_to?(:method_to_remove_1).should == false
     x.respond_to?(:method_to_remove_2).should == false
   end
@@ -96,12 +97,12 @@ describe "Module#remove_method" do
       @frozen = @module.dup.freeze
     end
 
-    it "raises a RuntimeError when passed a name" do
-      lambda { @frozen.send :remove_method, :method_to_remove }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} when passed a name" do
+      lambda { @frozen.send :remove_method, :method_to_remove }.should raise_error(frozen_error_class)
     end
 
-    it "raises a RuntimeError when passed a missing name" do
-      lambda { @frozen.send :remove_method, :not_exist }.should raise_error(RuntimeError)
+    it "raises a #{frozen_error_class} when passed a missing name" do
+      lambda { @frozen.send :remove_method, :not_exist }.should raise_error(frozen_error_class)
     end
 
     it "raises a TypeError when passed a not name" do

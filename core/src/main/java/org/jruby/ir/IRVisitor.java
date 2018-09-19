@@ -34,7 +34,6 @@ public abstract class IRVisitor {
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) { error(arrayderefinstr); }
     public void BacktickInstr(BacktickInstr instr) { error(instr); }
-    public void BEQInstr(BEQInstr beqinstr) { error(beqinstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
@@ -91,6 +90,7 @@ public abstract class IRVisitor {
     public void PopBindingInstr(PopBindingInstr popbindinginstr) { error(popbindinginstr); }
     public void PopBlockFrameInstr(PopBlockFrameInstr instr) { error(instr); }
     public void PopMethodFrameInstr(PopMethodFrameInstr instr) { error(instr); }
+    public void PopBackrefFrameInstr(PopBackrefFrameInstr instr) { error(instr); }
     public void PrepareBlockArgsInstr(PrepareBlockArgsInstr instr) { error(instr); }
     public void PrepareFixedBlockArgsInstr(PrepareFixedBlockArgsInstr instr) { error(instr); }
     public void PrepareSingleBlockArgInstr(PrepareSingleBlockArgInstr instr) { error(instr); }
@@ -104,6 +104,7 @@ public abstract class IRVisitor {
     public void PushBlockFrameInstr(PushBlockFrameInstr instr) { error(instr); }
     public void PushMethodBindingInstr(PushMethodBindingInstr instr) { error(instr); }
     public void PushMethodFrameInstr(PushMethodFrameInstr instr) { error(instr); }
+    public void PushBackrefFrameInstr(PushBackrefFrameInstr instr) { error(instr); }
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) { error(raiseargumenterrorinstr); }
     public void RaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) { error(instr); }
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) { error(reifyclosureinstr); }
@@ -132,6 +133,7 @@ public abstract class IRVisitor {
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) { error(throwexceptioninstr); }
     public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) { error(instr); }
     public void ToAryInstr(ToAryInstr toaryinstr) { error(toaryinstr); }
+    public void TraceInstr(TraceInstr toaryinstr) { error(toaryinstr); }
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) { error(undefmethodinstr); }
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) { error(unresolvedsuperinstr); }
     public void UpdateBlockExecutionStateInstr (UpdateBlockExecutionStateInstr instr) { error(instr); }

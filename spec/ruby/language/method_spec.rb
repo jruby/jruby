@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 describe "A method send" do
   evaluate <<-ruby do
@@ -109,6 +109,17 @@ describe "A method send" do
       x.should_receive(:to_a).and_return(1)
 
       lambda { m(1, *x, 2, 3) }.should raise_error(TypeError)
+    end
+
+    it "copies the splatted array" do
+      args = [3, 4]
+      m(1, 2, *args, 4, 5).should == [1, 2, [3, 4], 4, 5]
+      m(1, 2, *args, 4, 5)[2].should_not equal(args)
+    end
+
+    it "allows an array being splatted to be modified by another argument" do
+      args = [3, 4]
+      m(1, args.shift, *args, 4, 5).should == [1, 3, [4], 4, 5]
     end
   end
 
@@ -501,6 +512,15 @@ describe "A method" do
     end
 
     evaluate <<-ruby do
+        def m() end
+      ruby
+
+      m().should be_nil
+      m(*[]).should be_nil
+      m(**{}).should be_nil
+    end
+
+    evaluate <<-ruby do
         def m(*) end
       ruby
 
@@ -516,6 +536,8 @@ describe "A method" do
       m().should == []
       m(1).should == [1]
       m(1, 2, 3).should == [1, 2, 3]
+      m(*[]).should == []
+      m(**{}).should == []
     end
 
     evaluate <<-ruby do
@@ -550,6 +572,8 @@ describe "A method" do
 
       m().should == {}
       m(a: 1, b: 2).should == { a: 1, b: 2 }
+      m(*[]).should == {}
+      m(**{}).should == {}
       lambda { m(2) }.should raise_error(ArgumentError)
     end
 
@@ -825,7 +849,12 @@ describe "A method" do
 
       m(b: 2).should == [1, 2]
       m(2, b: 1).should == [2, 1]
-      m("a" => 1, b: 2).should == [{"a" => 1}, 2]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, b: 2).should == [{"a" => 1}, 2]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, b: 2)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -835,7 +864,12 @@ describe "A method" do
       m().should == [1, 2]
       m(2).should == [2, 2]
       m(b: 3).should == [1, 3]
-      m("a" => 1, b: 2).should == [{"a" => 1}, 2]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, b: 2).should == [{"a" => 1}, 2]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, b: 2)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -844,7 +878,12 @@ describe "A method" do
 
       m().should == 1
       m(2, a: 1, b: 0).should == 2
-      m("a" => 1, a: 2).should == {"a" => 1}
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 2).should == {"a" => 1}
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 2)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -890,7 +929,12 @@ describe "A method" do
 
       m(a: 1).should == 1
       m(1, 2, a: 3).should == 3
-      m("a" => 1, a: 2).should == 2
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 2).should == 2
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 2)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -899,7 +943,12 @@ describe "A method" do
 
       m(b: 1).should == [[], 1]
       m(1, 2, b: 3).should == [[1, 2], 3]
-      m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, b: 2)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -910,7 +959,12 @@ describe "A method" do
       m(1, 2).should == 1
       m(a: 2).should == 2
       m(1, a: 2).should == 2
-      m("a" => 1, a: 2).should == 2
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 2).should == 2
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 2)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -919,7 +973,12 @@ describe "A method" do
 
       m().should == [[], 1]
       m(1, 2, 3, b: 4).should == [[1, 2, 3], 4]
-      m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, b: 2).should == [[{"a" => 1}], 2]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, b: 2)}.should raise_error(ArgumentError)
+      end
 
       a = mock("splat")
       a.should_not_receive(:to_ary)
@@ -950,12 +1009,17 @@ describe "A method" do
 
       m().should == []
       m(1, 2, 3, a: 4, b: 5).should == [1, 2, 3]
-      m("a" => 1, a: 1).should == [{"a" => 1}]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 1).should == [{"a" => 1}]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 1)}.should raise_error(ArgumentError)
+      end
       m(1, **{a: 2}).should == [1]
 
       h = mock("keyword splat")
       h.should_receive(:to_hash)
-      lambda { m **h }.should raise_error(TypeError)
+      lambda { m(**h) }.should raise_error(TypeError)
     end
 
     evaluate <<-ruby do
@@ -964,7 +1028,12 @@ describe "A method" do
 
       m().should == {}
       m(1, 2, 3, a: 4, b: 5).should == {a: 4, b: 5}
-      m("a" => 1, a: 1).should == {a: 1}
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 1).should == {a: 1}
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 1)}.should raise_error(ArgumentError)
+      end
 
       h = mock("keyword splat")
       h.should_receive(:to_hash).and_return({a: 1})
@@ -978,12 +1047,22 @@ describe "A method" do
       m().should == [nil, {}]
       m("a" => 1).should == [{"a" => 1}, {}]
       m(a: 1).should == [nil, {a: 1}]
-      m("a" => 1, a: 1).should == [{"a" => 1}, {a: 1}]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 1).should == [{"a" => 1}, {a: 1}]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 1)}.should raise_error(ArgumentError)
+      end
       m({ "a" => 1 }, a: 1).should == [{"a" => 1}, {a: 1}]
       m({a: 1}, {}).should == [{a: 1}, {}]
 
       h = {"a" => 1, b: 2}
-      m(h).should == [{"a" => 1}, {b: 2}]
+      ruby_version_is ""..."2.6" do
+        m(h).should == [{"a" => 1}, {b: 2}]
+      end
+      ruby_version_is "2.6" do
+        lambda {m(h)}.should raise_error(ArgumentError)
+      end
       h.should == {"a" => 1, b: 2}
 
       h = {"a" => 1}
@@ -1003,7 +1082,12 @@ describe "A method" do
 
       h = mock("keyword splat")
       h.should_receive(:to_hash).and_return({"a" => 1, a: 2})
-      m(h).should == [{"a" => 1}, {a: 2}]
+      ruby_version_is ""..."2.6" do
+        m(h).should == [{"a" => 1}, {a: 2}]
+      end
+      ruby_version_is "2.6" do
+        lambda {m(h)}.should raise_error(ArgumentError)
+      end
     end
 
     evaluate <<-ruby do
@@ -1017,10 +1101,21 @@ describe "A method" do
 
       m("a" => 1).should == [[{"a" => 1}], {}]
       m(a: 1).should == [[], {a: 1}]
-      m("a" => 1, a: 1).should == [[{"a" => 1}], {a: 1}]
+      ruby_version_is ""..."2.6" do
+        m("a" => 1, a: 1).should == [[{"a" => 1}], {a: 1}]
+      end
+      ruby_version_is "2.6" do
+        lambda {m("a" => 1, a: 1)}.should raise_error(ArgumentError)
+      end
       m({ "a" => 1 }, a: 1).should == [[{"a" => 1}], {a: 1}]
       m({a: 1}, {}).should == [[{a: 1}], {}]
       m({a: 1}, {"a" => 1}).should == [[{a: 1}, {"a" => 1}], {}]
+
+      bo = BasicObject.new
+      def bo.to_a; [1, 2, 3]; end
+      def bo.to_hash; {:b => 2, :c => 3}; end
+
+      m(*bo, **bo).should == [[1, 2, 3], {:b => 2, :c => 3}]
     end
 
     evaluate <<-ruby do
@@ -1161,13 +1256,29 @@ describe "A method" do
     end
 
     evaluate <<-ruby do
-        def m a, b=1, *c, d, e:, f: 2, g:, **k, &l
+        def m(a, b=1, *c, d, e:, f: 2, g:, **k, &l)
           [a, b, c, d, e, f, g, k, l]
         end
       ruby
 
       result = m(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
       result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+    end
+
+    evaluate <<-ruby do
+        def m(a, b = nil, c = nil, d, e: nil, **f)
+          [a, b, c, d, e, f]
+        end
+    ruby
+
+      result = m(1, 2)
+      result.should == [1, nil, nil, 2, nil, {}]
+
+      result = m(1, 2, {foo: :bar})
+      result.should == [1, nil, nil, 2, nil, {foo: :bar}]
+
+      result = m(1, {foo: :bar})
+      result.should == [1, nil, nil, {foo: :bar}, nil, {}]
     end
   end
 end
@@ -1227,5 +1338,37 @@ describe "A method call with a space between method name and parentheses" do
       :block_value
     end
     args.should == [1, :block_value]
+  end
+end
+
+describe "An array-dereference method ([])" do
+  SpecEvaluate.desc = "for definition"
+
+  context "received the passed-in block" do
+    evaluate <<-ruby do
+        def [](*, &b)
+          b.call
+        end
+    ruby
+      pr = proc {:ok}
+
+      self[&pr].should == :ok
+      self['foo', &pr].should == :ok
+      self.[](&pr).should == :ok
+      self.[]('foo', &pr).should == :ok
+    end
+
+    evaluate <<-ruby do
+        def [](*)
+          yield
+        end
+    ruby
+      pr = proc {:ok}
+
+      self[&pr].should == :ok
+      self['foo', &pr].should == :ok
+      self.[](&pr).should == :ok
+      self.[]('foo', &pr).should == :ok
+    end
   end
 end

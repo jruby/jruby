@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -63,9 +63,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ClassDefiningClassLoader;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.javasupport.proxy.JavaProxyClassFactory.runtimeTLS;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -85,8 +87,6 @@ import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
  */
 public class JavaProxyClass extends JavaProxyReflectionObject {
 
-    @Deprecated // moved to JavaProxyClassFactory
-    static ThreadLocal<Ruby> runtimeTLS = JavaProxyClassFactory.runtimeTLS;
 
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
@@ -155,7 +155,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         if ( proxyClass != null ) return proxyClass;
 
         final ClassLoader loader = runtime.getJRubyClassLoader();
-        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, loader, null, superClass, interfaces, names);
+        proxyClass = runtime.getJavaProxyClassFactory().genProxyClass(runtime, (ClassDefiningClassLoader) loader, null, superClass, interfaces, names);
         return JavaSupportImpl.saveJavaProxyClass(runtime, classKey, proxyClass);
     }
 
@@ -337,6 +337,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.toString();
         }
 
+        @Deprecated
         public Object defaultResult() {
             final Class returnType = method.getReturnType();
 
@@ -663,26 +664,22 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                     Map<String, DynamicMethod> methods;
                     synchronized(methods = ancestor.getMethods()) {
                         methodNames = new ArrayList<>(methods.size());
-                        for (String methodName: methods.keySet()) {
-                            if ( ! isExcludedMethod(methodName) ) {
-                                names.add(methodName);
-                                methodNames.add(methodName);
+                        for (String id: methods.keySet()) {
+                            if (! isExcludedMethod(id)) {
+                                names.add(id);
+                                methodNames.add(id);
                             }
                         }
                     }
                     ancestor.setInternalVariable("__java_ovrd_methods", methodNames);
-                }
-                else {
+                } else {
                     names.addAll(methodNames);
                 }
-            }
-            else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
+            } else if (!EXCLUDE_MODULES.contains(ancestor.getName())) {
                 Map<String, DynamicMethod> methods;
                 synchronized(methods = ancestor.getMethods()) {
-                    for (String methodName: methods.keySet()) {
-                        if ( ! isExcludedMethod(methodName) ) {
-                            names.add(methodName);
-                        }
+                    for (String id: methods.keySet()) {
+                        if (! isExcludedMethod(id)) names.add(id);
                     }
                 }
             }

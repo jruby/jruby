@@ -1,2 +1,0 @@
-fails:File::Stat#birthtime raises an NotImplementedError
-fails:File::Stat#birthtime returns the birthtime of a File::Stat object

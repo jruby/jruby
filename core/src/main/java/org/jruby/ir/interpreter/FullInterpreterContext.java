@@ -1,9 +1,11 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
@@ -26,11 +28,6 @@ public class FullInterpreterContext extends InterpreterContext {
     // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
     private BasicBlock[] linearizedBBList = null;
 
-    // Contains pairs of values.  The first value is number of instrs in this range + number of instrs before
-    // this range.  The second number is the rescuePC.  getRescuePC(ipc) will walk this list and first odd value
-    // less than this value will be the rpc.
-    private int[] rescueIPCs = null;
-
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dataFlowProblems;
 
@@ -46,7 +43,7 @@ public class FullInterpreterContext extends InterpreterContext {
 
     /**
      * have this interpretercontext fully built?  This is slightly more complicated than this simple check, but it
-     * should work.  In -X-C full builds we linearize at the beginning of our generateInstructionsForIntepretation
+     * should work.  In -X-C full builds we linearize at the beginning of our generateInstructionsForInterpretation
      * method.  Last thing we do essentially is set instructions to be something.  For JIT builds last thing we
      * need to check is whether we have linearized the BB list.
      */
@@ -89,7 +86,7 @@ public class FullInterpreterContext extends InterpreterContext {
     }
 
     /** We plan on running this in full interpreted mode.  This will fixup ipc, rpc, and generate instr list */
-    public void generateInstructionsForIntepretation() {
+    public void generateInstructionsForInterpretation() {
         linearizeBasicBlocks();
 
         // Pass 1. Set up IPCs for labels and instructions and build linear instr list
@@ -143,7 +140,7 @@ public class FullInterpreterContext extends InterpreterContext {
         instructions = linearizedInstrArray;
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
 
-        // System.out.println("SCOPE: " + getScope().getName());
+        // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
 
@@ -186,6 +183,6 @@ public class FullInterpreterContext extends InterpreterContext {
             if (ipc <= rescueIPCs[i]) return rescueIPCs[i + 1];
         }
 
-        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc + getInstructions());
+        throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc);
     }
 }

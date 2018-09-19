@@ -1,8 +1,14 @@
 package org.jruby.ir.passes;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -11,15 +17,16 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
 
 public class LiveVariableAnalysis extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(OptimizeDynScopesPass.class);
+
+    private static final List<Class<? extends CompilerPass>> DEPENDENCIES =
+        Collections.<Class<? extends CompilerPass>>singletonList(OptimizeDynScopesPass.class);
+
+    @Override
+    public List<Class<? extends CompilerPass>> getDependencies() {
+        return DEPENDENCIES;
+    }
 
     @Override
     public String getLabel() {
@@ -65,7 +72,9 @@ public class LiveVariableAnalysis extends CompilerPass {
             // We have to conservatively assume that any dirtied variables
             // that belong to an outer scope are live on exit.
             Set<LocalVariable> nlVars = new HashSet<LocalVariable>();
-            collectNonLocalDirtyVars((IRClosure)scope, nlVars, scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
+            EnumSet<IRFlags> flags = scope.getExecutionContext().getFlags();
+
+            collectNonLocalDirtyVars((IRClosure)scope, nlVars, flags.contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
 
             // Init DF vars from this set
             for (Variable v: nlVars) {

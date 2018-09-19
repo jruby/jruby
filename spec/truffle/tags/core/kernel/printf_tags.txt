@@ -1,1 +1,0 @@
-fails:Kernel.printf calls write on the first argument when it is not a string

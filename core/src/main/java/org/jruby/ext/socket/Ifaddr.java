@@ -39,7 +39,7 @@ public class Ifaddr extends RubyObject {
     public static void createIfaddr(Ruby runtime) {
         RubyClass ifaddr = runtime.getClass("Socket").defineClassUnder(
                 "Ifaddr",
-                runtime.getClass("Data"),
+                runtime.getData(),
                 new ObjectAllocator() {
                     public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                         return new Ifaddr(runtime, klazz);
@@ -154,7 +154,7 @@ public class Ifaddr extends RubyObject {
         SubnetUtils utils = new SubnetUtils(subnet);
         netmask = utils.getInfo().getNetmask();
       } else if ( (it.getNetworkPrefixLength() != 0 ) && ( address instanceof Inet6Address) ) {
-        netmask = new SocketUtilsIPV6().getIPV6NetMask(ipAddress() + "/" + it.getNetworkPrefixLength());
+        netmask = SocketUtilsIPV6.getIPV6NetMask(ipAddress() + "/" + it.getNetworkPrefixLength());
       }
     }
 

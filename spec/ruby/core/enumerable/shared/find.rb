@@ -1,4 +1,4 @@
-require File.expand_path('../enumerable_enumeratorized', __FILE__)
+require_relative 'enumerable_enumeratorized'
 
 describe :enumerable_find, shared: true do
   # #detect and #find are aliases, so we only need one function
@@ -55,7 +55,7 @@ describe :enumerable_find, shared: true do
   end
 
   it "returns an enumerator when no block given" do
-    @numerous.send(@method).should be_an_instance_of(enumerator_class)
+    @numerous.send(@method).should be_an_instance_of(Enumerator)
   end
 
   it "passes the ifnone proc to the enumerator" do

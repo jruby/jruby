@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#index" do
   it "raises a TypeError if passed nil" do
@@ -34,18 +34,16 @@ end
 
 describe "String#index with String" do
   it "behaves the same as String#index(char) for one-character strings" do
-    ["blablabla", "hello cruel world...!"].each do |str|
-      str.split("").uniq.each do |str|
-        chr = str[0]
-        str.index(str).should == str.index(chr)
+    "blablabla hello cruel world...!".split("").uniq.each do |str|
+      chr = str[0]
+      str.index(str).should == str.index(chr)
 
-        0.upto(str.size + 1) do |start|
-          str.index(str, start).should == str.index(chr, start)
-        end
+      0.upto(str.size + 1) do |start|
+        str.index(str, start).should == str.index(chr, start)
+      end
 
-        (-str.size - 1).upto(-1) do |start|
-          str.index(str, start).should == str.index(chr, start)
-        end
+      (-str.size - 1).upto(-1) do |start|
+        str.index(str, start).should == str.index(chr, start)
       end
     end
   end
@@ -139,6 +137,7 @@ describe "String#index with String" do
 
     "hello".index("he", 1).should == nil
     "hello".index("he", 2).should == nil
+    "I’ve got a multibyte character.\n".index("\n\n").should == nil
   end
 
   with_feature :encoding do

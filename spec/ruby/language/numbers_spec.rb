@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 describe "A number literal" do
 
@@ -43,6 +43,11 @@ describe "A number literal" do
   it "can be an integer literal with trailing 'r' to represent a Rational" do
     eval('3r').should == Rational(3, 1)
     eval('-3r').should == Rational(-3, 1)
+  end
+
+  it "can be an bignum literal with trailing 'r' to represent a Rational" do
+    eval('1111111111111111111111111111111111111111111111r').should == Rational(1111111111111111111111111111111111111111111111, 1)
+    eval('-1111111111111111111111111111111111111111111111r').should == Rational(-1111111111111111111111111111111111111111111111, 1)
   end
 
   it "can be a decimal literal with trailing 'r' to represent a Rational" do

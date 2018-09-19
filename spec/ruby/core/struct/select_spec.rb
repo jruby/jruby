@@ -1,7 +1,7 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/accessor', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/accessor'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Struct#select" do
   it "raises an ArgumentError if given any non-block arguments" do
@@ -21,7 +21,7 @@ describe "Struct#select" do
   describe "without block" do
     it "returns an instance of Enumerator" do
       struct = Struct.new(:foo).new
-      struct.select.should be_an_instance_of(enumerator_class)
+      struct.select.should be_an_instance_of(Enumerator)
     end
   end
 

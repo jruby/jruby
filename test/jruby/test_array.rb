@@ -14,7 +14,7 @@ class TestArray < Test::Unit::TestCase
   end
 
   def test_initialize_on_frozen_array
-    assert_raises(RuntimeError) {
+    assert_raises(FrozenError) {
       [1, 2, 3].freeze.instance_eval { initialize }
     }
   end
@@ -43,6 +43,37 @@ class TestArray < Test::Unit::TestCase
     str = '12345678900000'; assert (str..str).include?(str)
     str = '2202702806'; assert_equal true, (str..str).member?(str)
     str = '2202702806'; assert_equal false, (str..str).member?(str.to_i)
+  end
+
+  def test_collect_concurrency
+    arr = []
+
+    Thread.new do ; times = 0
+      loop { arr << Time.now.to_f; break if (times += 1) == 1000 }
+    end
+
+    1000.times do
+      begin
+        arr.collect { |f| f.to_i }.size
+        # expected not to raise a Java AIOoBE
+      rescue ConcurrencyError => e
+        puts "#{__method__} : #{e}" if $VERBOSE
+      end
+    end
+  end
+
+  # GH-5141
+  def test_concat_self
+    arr = [1]
+    arr.concat(arr)
+    arr.concat(arr)
+    arr.concat(arr)
+    assert_equal [1, 1, 1, 1, 1, 1, 1, 1], arr
+
+    arr = [1, 2]
+    arr.concat(arr)
+    arr.concat(arr)
+    assert_equal [1, 2, 1, 2, 1, 2, 1, 2], arr
   end
 
 end

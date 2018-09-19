@@ -1,1 +1,2 @@
 fails:The super keyword raises a RuntimeError when called with implicit arguments from a method defined with define_method
+fails:The super keyword wraps into array and passes along reassigned rest args with non-array scalar value

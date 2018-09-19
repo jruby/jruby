@@ -1,5 +1,5 @@
-require File.expand_path('../../../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../fixtures/classes'
 
 describe :unixsocket_new, shared: true do
   platform_is_not :windows do
@@ -11,7 +11,7 @@ describe :unixsocket_new, shared: true do
     after :each do
       @client.close if @client
       @server.close
-      rm_r @path
+      SocketSpecs.rm_socket @path
     end
 
     it "opens a unix socket on the specified file" do

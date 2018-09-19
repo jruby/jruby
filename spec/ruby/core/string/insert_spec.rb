@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#insert with index, other" do
   it "inserts other before the character at the given index" do
@@ -57,10 +57,10 @@ describe "String#insert with index, other" do
     lambda { "abcd".insert(-6, mock('x')) }.should raise_error(TypeError)
   end
 
-  it "raises a RuntimeError if self is frozen" do
+  it "raises a #{frozen_error_class} if self is frozen" do
     str = "abcd".freeze
-    lambda { str.insert(4, '')  }.should raise_error(RuntimeError)
-    lambda { str.insert(4, 'X') }.should raise_error(RuntimeError)
+    lambda { str.insert(4, '')  }.should raise_error(frozen_error_class)
+    lambda { str.insert(4, 'X') }.should raise_error(frozen_error_class)
   end
 
   with_feature :encoding do

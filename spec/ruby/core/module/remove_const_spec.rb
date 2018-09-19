@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/constants', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../fixtures/constants'
 
 describe "Module#remove_const" do
   it "removes the constant specified by a String or Symbol from the receiver's constant table" do
@@ -78,6 +78,7 @@ describe "Module#remove_const" do
   end
 
   it "returns nil when removing autoloaded constant" do
+    ConstantSpecs.autoload :AutoloadedConstant, 'a_file'
     ConstantSpecs.send(:remove_const, :AutoloadedConstant).should be_nil
   end
 end

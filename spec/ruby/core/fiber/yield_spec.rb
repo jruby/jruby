@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 with_feature :fiber do
   describe "Fiber.yield" do
@@ -27,6 +27,21 @@ with_feature :fiber do
       fiber = Fiber.new { Fiber.yield.should == :caller }
       fiber.resume
       fiber.resume :caller
+    end
+
+    it "does not propagate or reraise a rescued exception" do
+      fiber = Fiber.new do
+        begin
+          raise "an error in a Fiber"
+        rescue
+          Fiber.yield :first
+        end
+
+        :second
+      end
+
+      fiber.resume.should == :first
+      fiber.resume.should == :second
     end
 
     it "raises a FiberError if called from the root Fiber" do

@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'cgi'
 
 describe "CGI.unescapeHTML" do
@@ -30,5 +30,10 @@ describe "CGI.unescapeHTML" do
     input = '&&lt;&amp&gt;&quot&abcdefghijklmn'
     expected = '&<&amp>&quot&abcdefghijklmn'
     CGI.unescapeHTML(input).should == expected
+  end
+
+  it "leaves partial invalid &# at end of string" do
+    input = "fooooooo&#"
+    CGI.unescapeHTML(input).should == input
   end
 end

@@ -1,1 +1,0 @@
-fails:IO#sysread on a file reads normally even when called immediately after a buffered IO#read

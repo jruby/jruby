@@ -1,2 +1,0 @@
-fails:IPAddr#ipv4_compat should ipv4_compat?
-fails:IPAddr#ipv4_mapped should ipv4_mapped

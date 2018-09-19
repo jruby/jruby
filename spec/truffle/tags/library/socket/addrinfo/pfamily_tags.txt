@@ -1,3 +1,0 @@
-fails:Addrinfo#pfamily for an ipv4 socket returns Socket::PF_INET
-fails:Addrinfo#pfamily for an ipv6 socket returns Socket::PF_INET6
-fails:Addrinfo#pfamily for a unix socket returns Socket::PF_UNIX

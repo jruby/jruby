@@ -1,0 +1,1 @@
+fails(Travis):Etc.getlogin returns the name associated with the current login activity

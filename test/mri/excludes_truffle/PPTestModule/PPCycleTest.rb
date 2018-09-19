@@ -1,5 +1,0 @@
-exclude :test_object, "needs investigation"
-exclude :test_struct, "needs investigation"
-exclude :test_withinspect, "needs investigation"
-exclude :test_anonymous, "needs investigation"
-exclude :test_array, "needs investigation"

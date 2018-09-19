@@ -86,7 +86,7 @@ is too hard to use.
       name = Array(options[:name])
     else
       args = options[:args].to_a
-      name = options[:exact] ? args : args.map{|arg| /#{arg}/i }
+      name = options[:exact] ? args.map{|arg| /\A#{Regexp.escape(arg)}\Z/ } : args.map{|arg| /#{arg}/i }
     end
 
     prerelease = options[:prerelease]
@@ -226,7 +226,7 @@ is too hard to use.
         end
       end
 
-      output << make_entry(matching_tuples, platforms)
+      output << clean_text(make_entry(matching_tuples, platforms))
     end
   end
 
@@ -255,22 +255,21 @@ is too hard to use.
         name_tuples.map { |n| n.version }.uniq
       else
         platforms.sort.reverse.map do |version, pls|
-          if pls == [Gem::Platform::RUBY] then
-            if options[:domain] == :remote || specs.all? { |spec| spec.is_a? Gem::Source }
-              version
-            else
-              spec = specs.select { |s| s.version == version }
-              if spec.first.default_gem?
-                "default: #{version}"
-              else
-                version
-              end
+          out = version.to_s
+
+          if options[:domain] == :local
+            default = specs.any? do |s|
+              !s.is_a?(Gem::Source) && s.version == version && s.default_gem?
             end
-          else
-            ruby = pls.delete Gem::Platform::RUBY
-            platform_list = [ruby, *pls.sort].compact
-            "#{version} #{platform_list.join ' '}"
+            out = "default: #{out}" if default
           end
+
+          if pls != [Gem::Platform::RUBY] then
+            platform_list = [pls.delete(Gem::Platform::RUBY), *pls.sort].compact
+            out = platform_list.unshift(out).join(' ')
+          end
+
+          out
         end
       end
 
@@ -353,7 +352,8 @@ is too hard to use.
   end
 
   def spec_summary entry, spec
-    entry << "\n\n" << format_text(spec.summary, 68, 4)
+    summary = truncate_text(spec.summary, "the summary for #{spec.full_name}")
+    entry << "\n\n" << format_text(summary, 68, 4)
   end
 
 end

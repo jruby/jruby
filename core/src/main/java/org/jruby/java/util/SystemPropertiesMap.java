@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,12 +35,14 @@ import java.util.Set;
 /**
  * A java.lang.Map that defers all methods to System properties.
  */
-public class SystemPropertiesMap  implements Map {
+public class SystemPropertiesMap implements Map {
+
     protected String stringFromObject(Object o) {
         if (o instanceof String) {
-            return (String)o;
-        } else if (o instanceof IRubyObject) {
-            return (String)((IRubyObject)o).toJava(String.class);
+            return (String) o;
+        }
+        if (o instanceof IRubyObject) {
+            return ((IRubyObject) o).toJava(String.class);
         }
         return null;
     }
@@ -66,7 +68,7 @@ public class SystemPropertiesMap  implements Map {
         if (value != null) {
             return System.getProperties().containsValue(value);
         }
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public Object get(Object o) {
@@ -74,7 +76,7 @@ public class SystemPropertiesMap  implements Map {
         if (key != null) {
             return System.getProperty(key);
         }
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public Object put(Object s, Object s1) {
@@ -94,14 +96,14 @@ public class SystemPropertiesMap  implements Map {
         if (key != null) {
             return System.clearProperty(key);
         }
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public void putAll(Map map) {
-        for (Map.Entry entry : (Set<Entry>)map.entrySet()) {
+        for (Map.Entry entry : (Set<Entry>) map.entrySet()) {
             String key = stringFromObject(entry.getKey());
-            String value = stringFromObject(entry.getValue());
             if (key != null) {
+                String value = stringFromObject(entry.getValue());
                 if (value == null) {
                     System.clearProperty(key);
                 } else {
@@ -126,4 +128,5 @@ public class SystemPropertiesMap  implements Map {
     public Set<Entry<Object, Object>> entrySet() {
         return System.getProperties().entrySet();
     }
+
 }

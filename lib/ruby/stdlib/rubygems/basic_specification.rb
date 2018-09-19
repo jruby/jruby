@@ -71,7 +71,7 @@ class Gem::BasicSpecification
     elsif missing_extensions? then
       @ignored = true
 
-      warn "Ignoring #{full_name} because its extensions are not built.  " +
+      warn "Ignoring #{full_name} because its extensions are not built. " +
         "Try: gem pristine #{name} --version #{version}"
       return false
     end
@@ -275,10 +275,14 @@ class Gem::BasicSpecification
   # for this spec.
 
   def lib_dirs_glob
-    dirs = if self.require_paths.size > 1 then
-             "{#{self.require_paths.join(',')}}"
+    dirs = if self.raw_require_paths
+             if self.raw_require_paths.size > 1 then
+               "{#{self.raw_require_paths.join(',')}}"
+             else
+               self.raw_require_paths.first
+             end
            else
-             self.require_paths.first
+            "lib" # default value for require_paths for bundler/inline
            end
 
     "#{self.full_gem_path}/#{dirs}".dup.untaint

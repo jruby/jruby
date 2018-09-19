@@ -6,8 +6,15 @@ package org.jruby.javasupport.binding;
  * an alias (ALIAS) in a superclass, but not a method (METHOD).
  */
 public enum Priority {
-    RESERVED(0), METHOD(1), FIELD(2), PROTECTED_METHOD(3),
-    WEAKLY_RESERVED(4), ALIAS(5), PROTECTED_FIELD(6);
+    RESERVED(0),
+    METHOD(1),
+    FIELD(2),
+    PROTECTED_METHOD(3),
+    WEAKLY_RESERVED(4),
+    ALIAS(5),
+    GET_ALIAS(6),
+    IS_ALIAS(7),
+    PROTECTED_FIELD(8);
 
     private final int value;
 

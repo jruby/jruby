@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#each_byte" do
   before :each do
@@ -28,7 +28,7 @@ describe "IO#each_byte" do
   describe "when no block is given" do
     it "returns an Enumerator" do
       enum = @io.each_byte
-      enum.should be_an_instance_of(enumerator_class)
+      enum.should be_an_instance_of(Enumerator)
       enum.first(5).should == [86, 111, 105, 99, 105]
     end
 

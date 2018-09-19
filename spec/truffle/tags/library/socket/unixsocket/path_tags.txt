@@ -1,2 +1,0 @@
-fails:UNIXSocket#path returns the path of the socket if it's a server
-fails:UNIXSocket#path returns an empty string for path if it's a client

@@ -1,3 +1,0 @@
-fails:Socket::TCPServer.accept_nonblock accepts non blocking connections
-fails:Socket::TCPServer.accept_nonblock without a connected client raises error
-fails:Socket::TCPServer.accept_nonblock without a connected client returns :wait_readable in exceptionless mode

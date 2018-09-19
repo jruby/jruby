@@ -1,9 +1,9 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe :enum_rewind, shared: true do
 
   before :each do
-    @enum = enumerator_class.new(1, :upto, 3)
+    @enum = 1.upto(3)
   end
 
   it "resets the enumerator to its initial state" do

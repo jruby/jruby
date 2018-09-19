@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**

@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension('util')
 
@@ -103,6 +103,16 @@ describe "C-API Util function" do
       h = {a: 1, b: 2}
       @o.rb_scan_args([1, h], "1:", 2, @acc).should == 1
       ScratchPad.recorded.should == [1, h]
+    end
+
+    it "assigns required and Hash arguments with optional Hash" do
+      @o.rb_scan_args([1], "1:", 2, @acc).should == 1
+      ScratchPad.recorded.should == [1, nil]
+    end
+
+    it "assigns required and Hash arguments with nil Hash" do
+      @o.rb_scan_args([1, nil], "1:", 2, @acc).should == 1
+      ScratchPad.recorded.should == [1, nil]
     end
 
     it "assigns required, optional, splat, post-splat, Hash and block arguments" do

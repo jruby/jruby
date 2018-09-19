@@ -1,0 +1,1 @@
+fails:NilClass .allocate raises a TypeError

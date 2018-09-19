@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Process.uid" do
   platform_is_not :windows do
@@ -53,6 +53,7 @@ describe "Process.uid=" do
             write.close
             uid = read.gets
             uid.should == "1"
+            Process.wait pid
           end
 
           it "sets the real user id if preceded by Process.euid=id" do
@@ -72,6 +73,7 @@ describe "Process.uid=" do
             write.close
             uid = read.gets
             uid.should == "1"
+            Process.wait pid
           end
         end
       end

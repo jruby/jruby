@@ -36,8 +36,8 @@ end
 
 describe Object, "#little_endian" do
   before :each do
-    @guard = LittleEndianGuard.new
-    LittleEndianGuard.stub(:new).and_return(@guard)
+    @guard = BigEndianGuard.new
+    BigEndianGuard.stub(:new).and_return(@guard)
     ScratchPad.clear
   end
 
@@ -51,18 +51,5 @@ describe Object, "#little_endian" do
     @guard.stub(:pattern).and_return([?\001])
     little_endian { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
-  end
-
-  it "sets the name of the guard to :little_endian" do
-    little_endian { }
-    @guard.name.should == :little_endian
-  end
-
-  it "calls #unregister even when an exception is raised in the guard block" do
-    @guard.stub(:pattern).and_return([?\000])
-    @guard.should_receive(:unregister)
-    lambda do
-      little_endian { raise Exception }
-    end.should raise_error(Exception)
   end
 end

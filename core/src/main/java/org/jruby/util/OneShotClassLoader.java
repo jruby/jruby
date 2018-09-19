@@ -9,6 +9,10 @@ public class OneShotClassLoader extends ClassLoader implements ClassDefiningClas
         super(parent);
     }
 
+    public OneShotClassLoader(ClassLoader parent) {
+        super(parent);
+    }
+
     public Class<?> defineClass(String name, byte[] bytes) {
         return super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
     }

@@ -1,13 +1,13 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../shared/enumerator/rewind', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../shared/enumerator/rewind'
+require_relative 'fixtures/common'
 
 describe "Enumerator#rewind" do
-  it_behaves_like(:enum_rewind, :rewind)
+  it_behaves_like :enum_rewind, :rewind
 
   it "calls the enclosed object's rewind method if one exists" do
     obj = mock('rewinder')
-    enum = enumerator_class.new(obj)
+    enum = obj.to_enum
     obj.should_receive(:each).at_most(1)
     obj.should_receive(:rewind)
     enum.rewind
@@ -15,7 +15,7 @@ describe "Enumerator#rewind" do
 
   it "does nothing if the object doesn't have a #rewind method" do
     obj = mock('rewinder')
-    enum = enumerator_class.new(obj)
+    enum = obj.to_enum
     obj.should_receive(:each).at_most(1)
     lambda { enum.rewind.should == enum }.should_not raise_error
   end

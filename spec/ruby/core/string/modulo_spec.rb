@@ -1,7 +1,12 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../shared/hash/key_error'
 
 describe "String#%" do
+  context "when key is missing from passed-in hash" do
+    it_behaves_like :key_error, -> (obj, key) { "%{#{key}}" % obj }, { a: 5 }
+  end
+
   it "formats multiple expressions" do
     ("%b %x %d %s" % [10, 10, 10, 10]).should == "1010 a 10 10"
   end
@@ -14,14 +19,29 @@ describe "String#%" do
     ("%d%% %s" % [10, "of chickens!"]).should == "10% of chickens!"
   end
 
-  it "formats single % characters before a newline or NULL as literal %s" do
-    ("%" % []).should == "%"
-    ("foo%" % []).should == "foo%"
+  ruby_version_is ""..."2.5" do
+    it "formats single % character at the end as literal %" do
+      ("%" % []).should == "%"
+      ("foo%" % []).should == "foo%"
+    end
+  end
+
+  ruby_version_is "2.5" do
+    it "raises an error if single % appears at the end" do
+      lambda { ("%" % []) }.should raise_error(ArgumentError)
+      lambda { ("foo%" % [])}.should raise_error(ArgumentError)
+    end
+  end
+
+  it "formats single % character before a newline as literal %" do
     ("%\n" % []).should == "%\n"
     ("foo%\n" % []).should == "foo%\n"
+    ("%\n.3f" % 1.2).should == "%\n.3f"
+  end
+
+  it "formats single % character before a NUL as literal %" do
     ("%\0" % []).should == "%\0"
     ("foo%\0" % []).should == "foo%\0"
-    ("%\n.3f" % 1.2).should == "%\n.3f"
     ("%\0.3f" % 1.2).should == "%\0.3f"
   end
 
@@ -292,6 +312,7 @@ describe "String#%" do
     ("%*b" % [10, 6]).should == "       110"
     ("%*b" % [-10, 6]).should == "110       "
     ("%.4b" % 2).should == "0010"
+    ("%.32b" % 2147483648).should == "10000000000000000000000000000000"
   end
 
   it "supports binary formats using %b for negative numbers" do
@@ -411,29 +432,22 @@ describe "String#%" do
     ("%*e" % [10, 9]).should == "9.000000e+00"
   end
 
-  # Inf, -Inf, and NaN are identifiers for results of floating point operations
-  # that cannot be expressed with any value in the set of real numbers. Upcasing
-  # or downcasing these identifiers for %e or %E, which refers to the case of the
-  # of the exponent identifier, is silly.
+  it "supports float formats using %e, but Inf, -Inf, and NaN are not floats" do
+    ("%e" % 1e1020).should == "Inf"
+    ("%e" % -1e1020).should == "-Inf"
+    ("%e" % -Float::NAN).should == "NaN"
+    ("%e" % Float::NAN).should == "NaN"
+  end
 
-  deviates_on :rubinius, :jruby do
-    it "supports float formats using %e, but Inf, -Inf, and NaN are not floats" do
-      ("%e" % 1e1020).should == "Inf"
-      ("%e" % -1e1020).should == "-Inf"
-      ("%e" % -Float::NAN).should == "NaN"
-      ("%e" % Float::NAN).should == "NaN"
-    end
-
-    it "supports float formats using %E, but Inf, -Inf, and NaN are not floats" do
-      ("%E" % 1e1020).should == "Inf"
-      ("%E" % -1e1020).should == "-Inf"
-      ("%-10E" % 1e1020).should == "Inf       "
-      ("%10E" % 1e1020).should == "       Inf"
-      ("%+E" % 1e1020).should == "+Inf"
-      ("% E" % 1e1020).should == " Inf"
-      ("%E" % Float::NAN).should == "NaN"
-      ("%E" % -Float::NAN).should == "NaN"
-    end
+  it "supports float formats using %E, but Inf, -Inf, and NaN are not floats" do
+    ("%E" % 1e1020).should == "Inf"
+    ("%E" % -1e1020).should == "-Inf"
+    ("%-10E" % 1e1020).should == "Inf       "
+    ("%10E" % 1e1020).should == "       Inf"
+    ("%+E" % 1e1020).should == "+Inf"
+    ("% E" % 1e1020).should == " Inf"
+    ("%E" % Float::NAN).should == "NaN"
+    ("%E" % -Float::NAN).should == "NaN"
   end
 
   it "supports float formats using %E" do
@@ -447,12 +461,10 @@ describe "String#%" do
     ("%*E" % [10, 9]).should == "9.000000E+00"
   end
 
-  not_compliant_on :rubinius, :jruby do
-    it "pads with spaces for %E with Inf, -Inf, and NaN" do
-      ("%010E" % -1e1020).should == "      -Inf"
-      ("%010E" % 1e1020).should == "       Inf"
-      ("%010E" % Float::NAN).should == "       NaN"
-    end
+  it "pads with spaces for %E with Inf, -Inf, and NaN" do
+    ("%010E" % -1e1020).should == "      -Inf"
+    ("%010E" % 1e1020).should == "       Inf"
+    ("%010E" % Float::NAN).should == "       NaN"
   end
 
   it "supports float formats using %f" do
@@ -526,6 +538,8 @@ describe "String#%" do
     ("%1$p" % [10, 5]).should == "10"
     ("%-22p" % 10).should == "10                    "
     ("%*p" % [10, 10]).should == "        10"
+    ("%p" % {capture: 1}).should == "{:capture=>1}"
+    ("%p" % "str").should == "\"str\""
   end
 
   it "calls inspect on arguments for %p format" do
@@ -753,10 +767,6 @@ describe "String#%" do
   describe "when format string contains %{} sections" do
     it "replaces %{} sections with values from passed-in hash" do
       ("%{foo}bar" % {foo: 'oof'}).should == "oofbar"
-    end
-
-    it "raises KeyError if key is missing from passed-in hash" do
-      lambda {"%{foo}" % {}}.should raise_error(KeyError)
     end
 
     it "should raise ArgumentError if no hash given" do

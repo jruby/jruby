@@ -1,8 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
-require File.expand_path('../fixtures/strings', __FILE__)
-require File.expand_path('../shared/each_document', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
+require_relative 'fixtures/strings'
+require_relative 'shared/each_document'
 
-describe "YAML.load_documents" do
-  it_behaves_like :yaml_each_document, :load_documents
+ruby_version_is ''...'2.5' do
+  describe "YAML.load_documents" do
+    it_behaves_like :yaml_each_document, :load_documents
+  end
 end

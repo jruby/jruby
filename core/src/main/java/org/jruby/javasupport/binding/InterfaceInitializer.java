@@ -45,10 +45,11 @@ final class InterfaceInitializer extends Initializer {
         handleScalaSingletons(javaClass, state);
 
         // Now add all aliases for the static methods (fields) as appropriate
-        for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
+        final Map<String, NamedInstaller> installers = state.staticInstallers;
+        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             final NamedInstaller installer = entry.getValue();
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller) installer, state.staticNames);
+                assignAliases((MethodInstaller) installer, state.staticNames, installers);
             }
         }
 

@@ -13,10 +13,16 @@ namespace :spec do
   desc "Run rubyspecs expected to pass in precompiled mode"
   task :'ruby:aot' => :ci_precompiled
 
+  if ENV['CI']
+    MSPEC_FORMAT = "s"
+  else
+    MSPEC_FORMAT = "d"
+  end
+
   desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast' do
     mspec :compile_mode => "OFF",
-          :format => $stdout.tty? ? 'd' : 's',
+          :format => MSPEC_FORMAT,
           :spec_target => ":fast",
           :jruby_opts => "-I. --dev"
   end

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,17 +23,18 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Random {
-    public static int N = 624;
-    private static int M = 397;
-    private static int MATRIX_A = 0x9908b0df; /* constant vector a */
-    private static int UMASK = 0x80000000; /* most significant w-r bits */
-    private static int LMASK = 0x7fffffff; /* least significant r bits */
+    public static final int N = 624;
+    private static final int M = 397;
+    private static final int MATRIX_A = 0x9908b0df; /* constant vector a */
+    private static final int UMASK = 0x80000000; /* most significant w-r bits */
+    private static final int LMASK = 0x7fffffff; /* least significant r bits */
 
     private static int MIXBITS(int u, int v) {
         return (u & UMASK) | (v & LMASK);
@@ -72,11 +73,8 @@ public class Random {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        } else if (!(obj instanceof Random)) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (!(obj instanceof Random)) return false;
         Random rhs = (Random) obj;
         return (left == rhs.left) && Arrays.equals(state, rhs.state);
     }

@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Thread#key?" do
   before :each do
@@ -9,7 +9,7 @@ describe "Thread#key?" do
     @th.join
   end
 
-  it "tests for existance of thread local variables using symbols or strings" do
+  it "tests for existence of thread local variables using symbols or strings" do
     @th.key?(:oliver).should == true
     @th.key?("oliver").should == true
     @th.key?(:stanley).should == false

@@ -1,17 +1,17 @@
-/***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+/*
+ ***** BEGIN LICENSE BLOCK *****
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
- * License Version 1.0 (the "License"); you may not use this file
+ * The contents of this file are subject to the Eclipse Public
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -102,6 +102,7 @@ public class TestMethodFactories extends TestRubyBase {
         assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
     }
 
+    @SuppressWarnings("deprecation")
     public static class VersionedMethods {
         @JRubyMethod(name = "method", compat = CompatVersion.RUBY1_8)
         public static IRubyObject method18(IRubyObject self) {
@@ -121,4 +122,5 @@ public class TestMethodFactories extends TestRubyBase {
 
         assertNotNull(mod.searchMethod("method"));
     }
+
 }

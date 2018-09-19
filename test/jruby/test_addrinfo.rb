@@ -110,16 +110,19 @@ class AddrinfoTest < Test::Unit::TestCase
     end
   end
 
-  def test_ipv6_loopback?
-    loopbacks = getaddrs.select do |addr|
-      if addr.afamily == Socket::AF_INET6
-        addr.ipv6_loopback? 
-      else
-        assert_equal(false, addr.ipv6_loopback?)
-        nil
+  # Travis CI's 'trusty' environment no longer has IP6 (travis-ci/travis-ci#4964)
+  unless ENV['TRAVIS']
+    def test_ipv6_loopback?
+      loopbacks = getaddrs.select do |addr|
+        if addr.afamily == Socket::AF_INET6
+          addr.ipv6_loopback?
+        else
+          assert_equal(false, addr.ipv6_loopback?)
+          nil
+        end
       end
+      assert_equal(1, loopbacks.count)  # only one ipv6 loopback
     end
-    assert_equal(1, loopbacks.count)  # only one ipv6 loopback
   end
   
   def test_pfamily

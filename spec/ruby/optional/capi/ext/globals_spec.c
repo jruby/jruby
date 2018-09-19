@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #ifdef HAVE_RB_DEFINE_HOOKED_VARIABLE
-VALUE g_hooked_var = Qnil;
+VALUE g_hooked_var;
 
 void var_2x_setter(VALUE val, ID id, VALUE *var) {
     *var = INT2NUM(NUM2INT(val) * 2);
@@ -19,7 +19,7 @@ static VALUE sb_define_hooked_variable(VALUE self, VALUE var_name) {
 #endif
 
 #ifdef HAVE_RB_DEFINE_READONLY_VARIABLE
-VALUE g_ro_var = Qnil;
+VALUE g_ro_var;
 
 static VALUE sb_define_readonly_variable(VALUE self, VALUE var_name, VALUE val) {
   g_ro_var = val;
@@ -29,7 +29,7 @@ static VALUE sb_define_readonly_variable(VALUE self, VALUE var_name, VALUE val) 
 #endif
 
 #ifdef HAVE_RB_DEFINE_VARIABLE
-VALUE g_var = Qnil;
+VALUE g_var;
 
 static VALUE sb_get_global_value(VALUE self) {
   return g_var;
@@ -126,14 +126,17 @@ void Init_globals_spec(void) {
   cls = rb_define_class("CApiGlobalSpecs", rb_cObject);
 
 #ifdef HAVE_RB_DEFINE_HOOKED_VARIABLE
+  g_hooked_var = Qnil;
   rb_define_method(cls, "rb_define_hooked_variable_2x", sb_define_hooked_variable, 1);
 #endif
 
 #ifdef HAVE_RB_DEFINE_READONLY_VARIABLE
+  g_ro_var = Qnil;
   rb_define_method(cls, "rb_define_readonly_variable", sb_define_readonly_variable, 2);
 #endif
 
 #ifdef HAVE_RB_DEFINE_VARIABLE
+  g_var = Qnil;
   rb_define_method(cls, "rb_define_variable", sb_define_variable, 2);
   rb_define_method(cls, "sb_get_global_value", sb_get_global_value, 0);
 #endif
