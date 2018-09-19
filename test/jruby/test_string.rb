@@ -1,5 +1,6 @@
 # encoding: UTF-8
 require 'test/unit'
+require 'stringio'
 
 class TestString < Test::Unit::TestCase
 
@@ -97,7 +98,7 @@ class TestString < Test::Unit::TestCase
   end
 
   # GH-5203
-  def test_string_buffer_sharing_in_stringio; require 'stringio'
+  def test_string_buffer_sharing_in_stringio
     zero = 0
     strio = StringIO.new "123\nabcdefghijklmnopqrstuvxyz\n#{zero}\n"
     ary = []; strio.each_line { |line| ary << line }
@@ -105,6 +106,23 @@ class TestString < Test::Unit::TestCase
     strio.write('456')
     assert_equal ["123\n", "abcdefghijklmnopqrstuvxyz\n", "0\n"], ary
     assert_equal "456\nabcdefghijklmnopqrstuvxyz\n0\n", strio.string
+  end
+
+  # GH-5203
+  def test_string_buffer_sharing_in_stringio_from_regex
+    strio = StringIO.new
+    strio << "<Region>hello</Region>"
+    strio.rewind
+
+    str = strio.read
+    match = str.match("<Region>([a-zA-Z]+)</Region>")[1]
+
+    strio.seek 0
+    strio.truncate 0
+    strio << '1234567890'
+
+    assert_equal str, "<Region>hello</Region>"
+    assert_equal match, "hello"
   end
 
   private
