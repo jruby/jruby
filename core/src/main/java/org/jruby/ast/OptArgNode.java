@@ -56,7 +56,7 @@ public class OptArgNode extends Node implements INameNode {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitOptArgNode(this);
     }
 
