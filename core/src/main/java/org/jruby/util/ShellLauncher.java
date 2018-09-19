@@ -1473,7 +1473,7 @@ public class ShellLauncher {
             synchronized (waitLock) {
                 waitLock.notify();
             }
-            stop();
+            interrupt();
         }
     }
 
@@ -1523,9 +1523,8 @@ public class ShellLauncher {
             }
         }
         public void quit() {
-            interrupt();
             this.quit = true;
-            stop();
+            interrupt();
         }
     }
 
@@ -1557,15 +1556,20 @@ public class ShellLauncher {
         try { pOut.close(); } catch (IOException io) {}
         try { pErr.close(); } catch (IOException io) {}
 
-        // Force t3 to quit, just in case if it's stuck.
+        // Interrupt all three, just in case they're stuck.
         // Note: On some platforms, even interrupt might not
-        // have an effect if the thread is IO blocked.
-        try { t3.interrupt(); } catch (SecurityException se) {}
+        // have an effect if the thread is IO blocked. But we
+        // need to move away from Thread.stop so this is the
+        // best we can do.
+        try {
+            t1.quit();
+            t2.quit();
+            t3.quit();
+            t1.interrupt();
+            t2.interrupt();
+            t3.interrupt();
+        } catch (SecurityException se) {}
 
-        // finally, forcibly stop the threads. Yeah, I know.
-        t1.stop();
-        t2.stop();
-        t3.stop();
         try { t1.join(); } catch (InterruptedException ie) {}
         try { t2.join(); } catch (InterruptedException ie) {}
         try { t3.join(); } catch (InterruptedException ie) {}
