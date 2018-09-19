@@ -38,9 +38,6 @@ public final class UnsafeHolder {
      * Holds a reference to Unsafe if available, null otherwise.    
      */
     public static final sun.misc.Unsafe U = loadUnsafe();
-
-    public static final long    ARRAY_OBJECT_BASE_OFFSET = arrayObjectBaseOffset();
-    public static final long    ARRAY_OBJECT_INDEX_SCALE = arrayObjectIndexScale();
     
     private static sun.misc.Unsafe loadUnsafe() {
         try {
@@ -54,30 +51,6 @@ public final class UnsafeHolder {
             // Google AppEngine raises NCDFE for Unsafe rather than CNFE
             return null;
         }
-    }
-    
-    private static long arrayObjectBaseOffset() {
-        if(U == null)
-            return 0;
-        return U.arrayBaseOffset(Object[].class);
-    }
-    
-    private static long arrayObjectIndexScale() {
-        if(U == null)
-            return 0;
-        return U.arrayIndexScale(Object[].class);
-    }
-    
-    private static boolean supportsFences() {
-        if(U == null)
-            return false;
-        try {
-            Method m = U.getClass().getDeclaredMethod("fullFence");
-            if(m != null)
-                return true;
-        } catch (Exception e) {
-        }
-        return false;
     }
     
     public static long fieldOffset(Class clazz, String name) {

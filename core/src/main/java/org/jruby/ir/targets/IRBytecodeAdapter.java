@@ -13,6 +13,8 @@ import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -133,7 +135,12 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadSelfBlock() {
-        adapter.aload(signature.argOffset(JVMVisitor.SELF_BLOCK_NAME));
+        int selfBlockOffset = signature.argOffset(JVMVisitor.SELF_BLOCK_NAME);
+        if (selfBlockOffset == -1) {
+            adapter.aconst_null();
+        } else {
+            adapter.aload(selfBlockOffset);
+        }
     }
 
     public void loadStaticScope() {
@@ -158,19 +165,15 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadFrameName() {
-        // when present, should be second-to-last element in signature
-        adapter.aload(signature.argCount() - 1);
-    }
+        int superNameOffset = signature.argOffset(JVMVisitor.SUPER_NAME_NAME);
 
-    public void loadSuperName() {
-        adapter.aload(5);
-    }
-
-    public void loadBlockType() {
-        if (signature.argOffset("type") == -1) {
-            adapter.aconst_null();
+        if (superNameOffset == -1) {
+            // load from self block
+            loadSelfBlock();
+            adapter.invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
+            adapter.invokevirtual(p(Binding.class), "getMethod", sig(String.class));
         } else {
-            adapter.aload(signature.argOffset("type"));
+            adapter.aload(superNameOffset);
         }
     }
 
@@ -210,12 +213,19 @@ public abstract class IRBytecodeAdapter {
         adapter.go_to(label);
     }
 
-    public void isTrue() {
+    public void branchIfTruthy(Label target) {
         adapter.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+        btrue(target);
     }
 
-    public void isNil() {
-        adapter.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
+    /**
+     * Branch to label if value at top of stack is nil
+     *
+     * stack: obj to check for nilness
+     */
+    public void branchIfNil(Label label) {
+        pushNil();
+        adapter.if_acmpeq(label);
     }
 
     public void bfalse(org.objectweb.asm.Label label) {

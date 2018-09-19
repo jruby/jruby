@@ -64,7 +64,7 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
 
     private Object cache(Ruby runtime, RubyModule module) {
         String id = getId();
-        Object constant = module.getConstantNoConstMissingSKipAutoload(id);
+        Object constant = module.getConstantNoConstMissingSkipAutoload(id);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {

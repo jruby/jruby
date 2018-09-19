@@ -114,7 +114,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             hostAddress = sender.getAddress().getHostAddress();
         }
 
-        IRubyObject addressArray = context.runtime.newArray(
+        IRubyObject addressArray = context.runtime.newArrayNoCopy(
                 runtime.newString("AF_INET"),
                 runtime.newFixnum(port),
                 runtime.newString(hostName),

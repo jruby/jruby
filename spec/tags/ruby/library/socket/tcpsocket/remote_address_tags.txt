@@ -1,0 +1,3 @@
+fails:TCPSocket#remote_address using IPv4 using an explicit hostname the returned Addrinfo uses 0 as the protocol
+fails:TCPSocket#remote_address using IPv6 using an explicit hostname the returned Addrinfo uses 0 as the protocol
+fails:TCPSocket#remote_address using IPv6 using an implicit hostname the returned Addrinfo uses the correct IP address

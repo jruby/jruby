@@ -1759,11 +1759,9 @@ public class EncodingUtils {
             }
         } else {
             if (!EncodingUtils.encAsciicompat(strEnc) || !EncodingUtils.encAsciicompat(ptrEnc)) {
-                if (len == 0) {
-                    return ptr_cr;
-                }
+                if (len == 0) return ptr_cr;
                 if (str.getByteList().getRealSize() == 0) {
-                    rbStrBufCat(runtime, str, ptrBytes, ptr, len);
+                    strBufCat(runtime, str, ptrBytes, ptr, len);
                     str.getByteList().setEncoding(ptrEnc);
                     str.setCodeRange(ptr_cr);
                     return ptr_cr;

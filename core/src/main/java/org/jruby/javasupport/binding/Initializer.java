@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.util.StringSupport.startsWith;
 
 /**
 * Created by headius on 2/26/15.
@@ -201,12 +202,9 @@ public abstract class Initializer {
             // Add scala aliases for apply/update to roughly equivalent Ruby names
             if (name.equals("apply")) {
                 addUnassignedAlias("[]", assignedNames, installer, Priority.ALIAS);
-            }
-            if (name.equals("update") && argCount == 2) {
+            } else if (argCount == 2 && name.equals("update")) {
                 addUnassignedAlias("[]=", assignedNames, installer, Priority.ALIAS);
-            }
-            // Scala aliases for $ method names
-            if (name.startsWith("$")) {
+            } else if (startsWith(name, '$')) { // Scala aliases for $ method names
                 addUnassignedAlias(ClassInitializer.fixScalaNames(name), assignedNames, installer, Priority.ALIAS);
             }
 

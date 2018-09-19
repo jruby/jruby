@@ -569,7 +569,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     protected final void modifyCheck() {
         if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("array");
+            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(this.getMetaClass());
             if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         }
     }
@@ -1149,30 +1149,31 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "transpose")
     public RubyArray transpose() {
-        RubyArray tmp, result = null;
 
         int alen = realLength;
         if (alen == 0) return aryDup();
 
         Ruby runtime = getRuntime();
+
         int elen = -1;
+        RubyArray[] result = null;
         for (int i = 0; i < alen; i++) {
-            tmp = elt(i).convertToArray();
+            RubyArray tmp = elt(i).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
-                result = newBlankArray(runtime, elen);
+                result = new RubyArray[elen];
                 for (int j = 0; j < elen; j++) {
-                    result.store(j, newBlankArray(runtime, alen));
+                    result[j] = newBlankArray(runtime, alen);
                 }
             } else if (elen != tmp.realLength) {
                 throw runtime.newIndexError("element size differs (" + tmp.realLength
                         + " should be " + elen + ")");
             }
             for (int j = 0; j < elen; j++) {
-                ((RubyArray) result.elt(j)).store(i, tmp.elt(j));
+                result[j].store(i, tmp.elt(j));
             }
         }
-        return result;
+        return new RubyArray(runtime, result);
     }
 
     /** rb_values_at (internal)
@@ -3861,10 +3862,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
         }
 
-        RubyArray result = useBlock ? null : newBlankArray(runtime, resultLen);
+        RubyArray result = useBlock ? null : newBlankArrayInternal(runtime, resultLen);
 
         for (int i = 0; i < resultLen; i++) {
-            RubyArray sub = newBlankArray(runtime, n);
+            RubyArray sub = newBlankArrayInternal(runtime, n);
             for (int j = 0; j < n; j++) sub.store(j, arrays[j].entry(counters[j]));
 
             if (useBlock) {
@@ -4052,7 +4053,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private static void yieldValues(ThreadContext context, int r, int[] p, int pStart, RubyArray values, Block block) {
-        RubyArray result = newBlankArray(context.runtime, r);
+        RubyArray result = newBlankArrayInternal(context.runtime, r);
 
         for (int j = 0; j < r; j++) {
             result.store(j, values.eltInternal(p[j + pStart]));
@@ -4413,7 +4414,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     // NOTE: not a @JRubyMethod(name = "all?") as there's no Array#all? on MRI
     public IRubyObject all_p(ThreadContext context, IRubyObject[] args, Block block) {
         if (!isBuiltin("each")) return RubyEnumerable.all_pCommon(context, this, args, block);
-        if (!block.isGiven()) return all_pBlockless(context);
+        boolean patternGiven = args.length > 0;
+        if (!block.isGiven() || patternGiven) return all_pBlockless(context, args);
 
         for (int i = 0; i < realLength; i++) {
             if (!block.yield(context, eltOk(i)).isTrue()) return context.fals;
@@ -4422,9 +4424,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.tru;
     }
 
-    private IRubyObject all_pBlockless(ThreadContext context) {
-        for (int i = 0; i < realLength; i++) {
-            if (!eltOk(i).isTrue()) return context.fals;
+    private IRubyObject all_pBlockless(ThreadContext context, IRubyObject[] args) {
+        IRubyObject pattern = args.length > 0 ? args[0] : null;
+        if (pattern == null) {
+            for (int i = 0; i < realLength; i++) {
+                if (!eltOk(i).isTrue()) return context.fals;
+            }
+        } else {
+            for (int i = 0; i < realLength; i++) {
+                if (!(pattern.callMethod(context, "===", eltOk(i)).isTrue())) return context.fals;
+            }
         }
 
         return context.tru;
@@ -4520,13 +4529,11 @@ fixnum_loop:
 
                 if (value instanceof RubyFixnum) {
                     /* should not overflow long type */
-                    long other = ((RubyFixnum) value).getLongValue();
-                    long sum2 = sum + other;
-                    if (Helpers.additionOverflowed(sum, other, sum2)) {
+                    try {
+                        sum = Math.addExact(sum, ((RubyFixnum) value).getLongValue());
+                    } catch (ArithmeticException ae) {
                         is_bignum = true;
                         break fixnum_loop;
-                    } else {
-                        sum = sum2;
                     }
                 } else if (value instanceof RubyBignum) {
                     is_bignum = true;
@@ -4601,7 +4608,7 @@ rational_loop:
                     if (result instanceof RubyInteger) {
                         result = ((RubyInteger) result).op_plus(context, value);
                     } else if (result instanceof RubyRational) {
-                        result = ((RubyRational) result).op_add(context, value);
+                        result = ((RubyRational) result).op_plus(context, value);
                     } else {
                         throw runtime.newTypeError("BUG: unexpected type in rational part of Array#sum");
                     }
@@ -4763,6 +4770,22 @@ float_loop:
         return newArray(runtime, size);
     }
 
+    // when caller is sure to set all elements (avoids nil elements initialization)
+    static RubyArray newBlankArrayInternal(Ruby runtime, int size) {
+        switch (size) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, null);
+                break;
+            case 2:
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, null, null);
+                break;
+        }
+
+        return new RubyArray(runtime, size);
+    }
+
     @JRubyMethod(name = "try_convert", meta = true)
     public static IRubyObject try_convert(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return arg.checkArrayType();
@@ -4780,29 +4803,27 @@ float_loop:
 
     @JRubyMethod(name = "pack")
     public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
-        RubyString str;
         IRubyObject buffer = context.nil;
 
-        if (!opts.isNil()) {
-            buffer = ArgsUtil.extractKeywordArg(context, "buffer", opts);
+        if (opts != context.nil) {
+            buffer = ArgsUtil.extractKeywordArg(context, "buffer", (RubyHash) opts);
             if (!buffer.isNil() && !(buffer instanceof RubyString)) {
                 throw runtime.newTypeError(str(runtime, "buffer must be String, not ", types(runtime, buffer.getType())));
             }
         }
 
-        if (!buffer.isNil()) {
-            str = (RubyString) buffer;
-        } else {
-            str = RubyString.newString(runtime, "");
-        }
+        final RubyString pack = pack(context, obj);
 
-        try {
-            return str.append(pack(context, obj));
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw concurrentModification(context.runtime, e);
+        if (buffer != context.nil) {
+            try {
+                return ((RubyString) buffer).append(pack);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                throw concurrentModification(context.runtime, e);
+            }
         }
+        return pack;
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)

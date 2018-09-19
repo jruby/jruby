@@ -19,6 +19,7 @@ public interface ObjectFlags {
     int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
     int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
     int IS_OVERLAID_F = registry.newFlag(RubyModule.class);
+    int OMOD_SHARED = registry.newFlag(RubyModule.class);
 
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
     int CR_VALID_F   = registry.newFlag(RubyString.class);

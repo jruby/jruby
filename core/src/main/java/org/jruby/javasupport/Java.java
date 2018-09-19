@@ -367,12 +367,15 @@ public class Java implements Library {
     }
 
     public static RubyModule get_interface_module(final Ruby runtime, IRubyObject javaClassObject) {
-        JavaClass javaClass;
+        JavaClass javaClass; String javaName;
         if ( javaClassObject instanceof RubyString ) {
             javaClass = JavaClass.forNameVerbose(runtime, javaClassObject.asJavaString());
         }
         else if ( javaClassObject instanceof JavaClass ) {
             javaClass = (JavaClass) javaClassObject;
+        }
+        else if ( (javaName = unwrapJavaString(javaClassObject)) != null ) {
+            javaClass = JavaClass.forNameVerbose(runtime, javaName);
         }
         else {
             throw runtime.newArgumentError("expected JavaClass, got " + javaClassObject);
@@ -382,17 +385,28 @@ public class Java implements Library {
 
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         final Ruby runtime = self.getRuntime();
-        final JavaClass javaClass;
+        final JavaClass javaClass; String javaName;
         if ( java_class instanceof RubyString ) {
             javaClass = JavaClass.for_name(self, java_class);
         }
         else if ( java_class instanceof JavaClass ) {
             javaClass = (JavaClass) java_class;
         }
+        else if ( (javaName = unwrapJavaString(java_class)) != null ) {
+            javaClass = JavaClass.for_name(self, javaName);
+        }
         else {
             throw runtime.newTypeError(java_class, runtime.getJavaSupport().getJavaClassClass());
         }
         return getProxyClass(runtime, javaClass);
+    }
+
+    private static String unwrapJavaString(IRubyObject arg) {
+        if (arg instanceof JavaProxy) {
+            Object str = ((JavaProxy) arg).getObject();
+            return str instanceof String ? (String) str : null;
+        }
+        return null;
     }
 
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {

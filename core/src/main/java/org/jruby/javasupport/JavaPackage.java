@@ -35,6 +35,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -207,9 +208,9 @@ public class JavaPackage extends RubyModule {
     }
 
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        String name = mname.asJavaString();
+        RubySymbol name = TypeConverter.checkID(mname);
 
-        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.tru;
+        if (getMetaClass().respondsToMethod(name.idString(), !includePrivate)) return context.tru;
         /*
         if ( ( name = BlankSlateWrapper.handlesMethod(name) ) != null ) {
             RubyBoolean bound = checkMetaClassBoundMethod(context, name, includePrivate);

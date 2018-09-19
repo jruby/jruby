@@ -34,6 +34,7 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.backtrace.FrameType;
 
 import java.io.IOException;
 import java.util.List;
@@ -315,12 +316,9 @@ public class JavaNameMangler {
 
     public static final String VARARGS_MARKER = "$__VARARGS__";
 
+    @Deprecated
     public static String decodeMethodForBacktrace(String methodName) {
-        if (!methodName.startsWith("RUBY$")) return null;
-
-        if (methodName.contains(VARARGS_MARKER)) return null;
-
-        final List<String> name = StringSupport.split(methodName, '$');
+        final List<String> name = decodeMethodTuple(methodName);
         final String type = name.get(1); // e.g. RUBY $ class $ methodName
         // root body gets named (root)
         switch (type) {
@@ -333,5 +331,38 @@ public class JavaNameMangler {
             case "module":    return '<' + type + ':' + demangleMethodNameInternal(name.get(2)) + '>';
         }
         throw new IllegalStateException("unknown encoded method type '" + type + "' from " + methodName);
+    }
+
+    // returns location $ type $ methodName as 3 elements or null if this is an invalid mangled name
+    public static List<String> decodeMethodTuple(String methodName) {
+        if (!methodName.startsWith("RUBY$") || methodName.contains(VARARGS_MARKER)) return null;
+
+        return StringSupport.split(methodName, '$');
+    }
+
+    public static String decodeMethodName(FrameType type, List<String> mangledTuple) {
+        switch (type) {
+            case ROOT:    return "<main>";
+            case METACLASS: return "singleton class";
+            case METHOD:    return demangleMethodName(mangledTuple.get(2));
+            case BLOCK:     return ""+demangleMethodNameInternal(mangledTuple.get(2));
+            case CLASS:     return "<class:" + demangleMethodNameInternal(mangledTuple.get(2)) + '>';
+            case MODULE:    return "<module:" + demangleMethodNameInternal(mangledTuple.get(2)) + '>';
+        }
+
+        return null; // not-reached
+    }
+
+    public static FrameType decodeFrameTypeFromMangledName(String type) {
+        switch (type) {
+            case "script":    return FrameType.ROOT;
+            case "metaclass": return FrameType.METACLASS;
+            case "method":    return FrameType.METHOD;
+            case "block":     return FrameType.BLOCK;
+            case "class":     return FrameType.MODULE;
+            case "module":    return FrameType.CLASS;
+        }
+        throw new IllegalStateException("unknown encoded method type '" + type);
+
     }
 }

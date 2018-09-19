@@ -24,23 +24,31 @@ class ImportedGem
   end
 end
 
-default_gems =
-  [
-   ImportedGem.new( 'jruby-openssl', '0.9.21' ),
-   ImportedGem.new( 'jruby-readline', '1.2.2' ),
-   ImportedGem.new( 'rake', '${rake.version}' ),
-   ImportedGem.new( 'rdoc', '${rdoc.version}' ),
-   ImportedGem.new( 'minitest', '${minitest.version}' ),
-   ImportedGem.new( 'test-unit', '${test-unit.version}' ),
-   ImportedGem.new( 'power_assert', '${power_assert.version}' ),
-   ImportedGem.new( 'psych', '3.0.3.pre1' ),
-   ImportedGem.new( 'json', '${json.version}' ),
-   ImportedGem.new( 'jar-dependencies', '${jar-dependencies.version}' ),
-   ImportedGem.new( 'net-telnet', '0.1.1'),
-   ImportedGem.new( 'did_you_mean', '1.0.1'),
-   ImportedGem.new( 'rake-ant', '1.0.4'),
-   ImportedGem.new( 'ipaddr', '1.2.0'),
-  ]
+default_gems = [
+    ImportedGem.new('cmath', '1.0.0'),
+    ImportedGem.new('csv', '1.0.0'),
+    ImportedGem.new('fileutils', '1.1.0'),
+    ImportedGem.new('ipaddr', '1.2.0'),
+    ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
+    ImportedGem.new('jruby-readline', '1.3.5'),
+    ImportedGem.new('jruby-openssl', '0.10.1'),
+    ImportedGem.new('json', '${json.version}'),
+    ImportedGem.new('psych', '3.0.2'),
+    ImportedGem.new('rake-ant', '1.0.4'),
+    ImportedGem.new('rdoc', '${rdoc.version}'),
+    ImportedGem.new('scanf', '1.0.0'),
+    ImportedGem.new('webrick', '1.4.2'),
+]
+
+bundled_gems = [
+    ['did_you_mean', '1.2.0'],
+    ['minitest', '${minitest.version}'],
+    ['net-telnet', '0.1.1'],
+    ['power_assert', '${power_assert.version}'],
+    ['rake', '${rake.version}'],
+    ['test-unit', '${test-unit.version}'],
+    ['xmlrpc', '0.3.0'],
+]
 
 project 'JRuby Lib Setup' do
 
@@ -83,6 +91,13 @@ project 'JRuby Lib Setup' do
   default_gems.each do |g|
     # use provided scope so it is not a real dependency for runtime
     dependency 'rubygems', g.name, g.version, :type => 'gem', :scope => :provided do
+      exclusion 'rubygems:jar-dependencies'
+    end
+  end
+
+  bundled_gems.each do |name, version|
+    # use provided scope so it is not a real dependency for runtime
+    dependency 'rubygems', name, version, :type => 'gem', :scope => :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
@@ -283,8 +298,23 @@ project 'JRuby Lib Setup' do
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
   build do
-
-    # both resources are includes for the $jruby_home/lib directory
+    resource do
+      directory '${gem.home}'
+      # assume all dependencies are met with this gems + the default gems
+      incl = bundled_gems.collect do |bgem|
+        [
+          "cache/#{bgem[0]}*#{bgem[1]}.gem",
+          "gems/#{bgem[0]}*#{bgem[1]}/*",
+          "specifications/#{bgem[0]}*#{bgem[1]}.gemspec"
+        ]
+      end.flatten
+      excl = default_gems.collect do |bgem|
+        "gems/#{bgem.name}*#{bgem.version}/*"
+      end
+      includes incl
+      excludes excl
+      target_path '${jruby.complete.gems}'
+    end
 
     resource do
       directory '${gem.home}'

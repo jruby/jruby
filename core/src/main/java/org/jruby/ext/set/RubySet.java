@@ -239,6 +239,18 @@ public class RubySet extends RubyObject implements Set {
         throw context.runtime.newArgumentError("value must be enumerable");
     }
 
+    // YAML doesn't have proper treatment for Set serialization, it dumps it just like
+    // any Ruby object, meaning on YAML.load will allocate an "initialize" all i-vars!
+    @Override
+    public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
+        if (getRuntime().newSymbol("@hash").equals(name)) {
+            if (value instanceof RubyHash) {
+                setHash((RubyHash) value); return value;
+            }
+        }
+        return super.instance_variable_set(name, value);
+    }
+
     IRubyObject invokeAdd(final ThreadContext context, final IRubyObject val) {
         return this.callMethod(context,"add", val); // TODO site-cache
     }

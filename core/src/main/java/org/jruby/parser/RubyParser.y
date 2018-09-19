@@ -1857,10 +1857,15 @@ lambda          : /* none */  {
                     support.pushBlockScope();
                     $$ = lexer.getLeftParenBegin();
                     lexer.setLeftParenBegin(lexer.incrementParenNest());
-                } f_larglist lambda_body {
-                    $$ = new LambdaNode($2.getPosition(), $2, $3, support.getCurrentScope());
-                    support.popCurrentScope();
+                } f_larglist {
+                    $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
+                    lexer.getCmdArgumentState().reset();
+                } lambda_body {
+                    lexer.getCmdArgumentState().reset($<Long>3.longValue());
+                    lexer.getCmdArgumentState().restart();
+                    $$ = new LambdaNode($2.getPosition(), $2, $4, support.getCurrentScope());
                     lexer.setLeftParenBegin($<Integer>1);
+                    support.popCurrentScope();
                 }
 
 f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
@@ -1954,25 +1959,27 @@ brace_block     : tLCURLY brace_body tRCURLY {
                 }
 
 brace_body      : {
+                    $$ = lexer.getPosition();
+                } {
                     support.pushBlockScope();
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param compstmt {
-                    // FIXME: probably need to correct location here
-                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
+                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope());
                      support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
 do_body 	: {
+                    $$ = lexer.getPosition();
+                } {
                     support.pushBlockScope();
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param bodystmt {
-                    // FIXME: probably need to correct location here
-                    $$ = new IterNode(lexer.getPosition(), $2, $3, support.getCurrentScope());
+                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope());
                      support.popCurrentScope();
-                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
+                    lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
  
 case_body       : keyword_when args then compstmt cases {

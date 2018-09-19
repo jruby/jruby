@@ -32,15 +32,12 @@
 package org.jruby.ext.jruby;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScriptBody;
@@ -48,21 +45,19 @@ import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
-import org.jruby.util.ClasspathLauncher;
 
 import java.io.ByteArrayInputStream;
 
 /**
- * Native part of require 'jruby'. Provides methods for swapping between the
- * normal Ruby reference to an object and the Java-integration-wrapped
- * reference.
+ * Native part of require 'jruby', e.g. provides methods for swapping between the normal Ruby reference to an
+ * object and the Java-integration-wrapped reference.
+ *
+ * Parts of JRuby name-space are loaded even without <code>require 'jruby'<code/>, those live under JRuby::Util.
+ * @see JRubyUtilLibrary
  */
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
@@ -83,21 +78,22 @@ public class JRubyLibrary implements Library {
         JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR)
              .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
 
-        /**
-         * JRuby::CONFIG ~ shortcut for JRuby.runtime.instance_config
-         * @since 9.2
-         */
-        IRubyObject config = Java.getInstance(runtime, runtime.getInstanceConfig());
-        config.getMetaClass().defineAlias("rubygems_disabled?", "isDisableGems");
-        config.getMetaClass().defineAlias("did_you_mean_disabled?", "isDisableDidYouMean");
-        JRuby.setConstant("CONFIG", config);
+        RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
+        CONFIG.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
     }
 
-    @Deprecated // old JRuby.defineModuleUnder("CONFIG")
+    /**
+     * JRuby::CONFIG
+     */
     public static class JRubyConfig {
-        // @JRubyMethod(name = "rubygems_disabled?")
+        @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
             return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+        }
+
+        @JRubyMethod(name = "did_you_mean_disabled?")
+        public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
@@ -200,14 +196,16 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(module = true) // for RubyGems' JRuby defaults
-    public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
-        return runtime.newString(launcher);
+    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
+    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
+                                                   IRubyObject status, IRubyObject pid) {
+        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
+                status.convertToInteger().getLongValue(),
+                pid.convertToInteger().getLongValue()
+        );
+        context.setLastExitStatus(processStatus);
+        return processStatus;
     }
-
 
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -302,10 +300,58 @@ public class JRubyLibrary implements Library {
         }, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
         CoreExt.loadStringExtensions(context.runtime);
         return context.nil;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), false);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        boolean recurseAll = false;
+        opts = ArgsUtil.getOptionsArg(context.runtime, opts);
+        if (opts != context.nil) {
+            IRubyObject all = ((RubyHash) opts).fastARef(context.runtime.newSymbol("all"));
+            if (all != null) recurseAll = all.isTrue();
+        }
+        return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), recurseAll);
+    }
+
+    private static RubyArray subclasses(ThreadContext context, final IRubyObject recv,
+                                          final RubyClass klass, final boolean recurseAll) {
+
+        final RubyArray subclasses = RubyArray.newArray(context.runtime);
+
+        RubyClass singletonClass = ((RubyClass) klass).getSingletonClass();
+        RubyObjectSpace.each_objectInternal(context, recv, new IRubyObject[] { singletonClass },
+                new Block(new JavaInternalBlockBody(context.runtime, Signature.ONE_ARGUMENT) {
+
+                    @Override
+                    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                        return doYield(context, null, args[0]);
+                    }
+
+                    @Override
+                    protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
+                        if (klass != value) {
+                            if (recurseAll) {
+                                return subclasses.append(value);
+                            }
+                            if (((RubyClass) value).superclass(context) == klass) {
+                                return subclasses.append(value);
+                            }
+                        }
+                        return context.nil;
+                    }
+
+                })
+        );
+        return subclasses;
     }
 
 }

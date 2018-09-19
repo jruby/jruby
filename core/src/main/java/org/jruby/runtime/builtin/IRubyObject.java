@@ -228,14 +228,6 @@ public interface IRubyObject {
     RubyInteger convertToInteger();
 
     /**
-     * @param convertMethod
-     * @param convertMethodIndex
-     * @see #convertToInteger(String)
-     */
-    @Deprecated
-    RubyInteger convertToInteger(int convertMethodIndex, String convertMethod);
-
-    /**
      * Converts this Ruby object to an Integer.
      * @param convertMethod method to use e.g. to_i
      * @return an integer value
@@ -259,11 +251,6 @@ public interface IRubyObject {
      * @return nil if type check failed
      */
     IRubyObject checkStringType();
-
-    /**
-     * @deprecated Use {@link #checkStringType()} instead.
-     */
-    IRubyObject checkStringType19();
     
     /**
      *
@@ -409,4 +396,21 @@ public interface IRubyObject {
 
     public Object getVariable(int index);
     public void setVariable(int index, Object value);
+
+    /**
+     * @deprecated Use {@link #checkStringType()} instead.
+     */
+    default IRubyObject checkStringType19() {
+        return checkStringType();
+    }
+
+    /**
+     * @param convertMethod
+     * @param convertMethodIndex
+     * @see #convertToInteger(String)
+     */
+    @Deprecated
+    default RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
+        return convertToInteger(convertMethod);
+    }
 }

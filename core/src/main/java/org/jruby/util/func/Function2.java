@@ -29,6 +29,5 @@
 
 package org.jruby.util.func;
 
-public interface Function2<R,A0,A1> {
-    public R apply(A0 a0, A1 a1);
-}
+@Deprecated
+public interface Function2<R, A0, A1> extends java.util.function.BiFunction<A0, A1, R> {}

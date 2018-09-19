@@ -232,9 +232,9 @@ public class ShellLauncher {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
             RubyHash hash = null;
             if (!clearEnv) {
-                hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
+                hash = (RubyHash) runtime.getObject().getConstant("ENV").dup();
             }
-            String[] ret, ary;
+            String[] ret;
 
             if (mergeEnv != null) {
                 ret = new String[hash.size() + mergeEnv.size()];
@@ -242,9 +242,9 @@ public class ShellLauncher {
                 ret = new String[hash.size()];
             }
 
-            int i=0;
+            int i = 0;
             if (hash != null) {
-                for(Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
+                for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
                     // if the key is nil, raise TypeError
                     if (e.getKey() == null) {
                         throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
@@ -253,7 +253,7 @@ public class ShellLauncher {
                     if (e.getValue() == null) {
                         continue;
                     }
-                    ret[i] = e.getKey() + "=" + e.getValue();
+                    ret[i] = e.getKey() + '=' + e.getValue();
                     i++;
                 }
             }
@@ -268,7 +268,7 @@ public class ShellLauncher {
                         if (e.getValue() == null) {
                             continue;
                         }
-                        ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+                        ret[i] = e.getKey() + '=' + e.getValue();
                         i++;
                     }
                 } else if (mergeEnv instanceof RubyArray) {
@@ -286,19 +286,21 @@ public class ShellLauncher {
                         if (e.eltOk(1) == null) {
                             continue;
                         }
-                        ret[i] = e.eltOk(0).toString() + "=" + e.eltOk(1).toString();
+                        ret[i] = e.eltOk(0).toString() + '=' + e.eltOk(1).toString();
                         i++;
                     }
                 }
             }
 
-            ary = new String[i];
-            System.arraycopy(ret, 0, ary, 0, i);
-            return ary;
+            return arrayOfLength(ret, i);
 
         } finally {
             context.setEventHooksEnabled(traceEnabled);
         }
+    }
+
+    private static String[] arrayOfLength(final String[] ary, final int len) {
+        return len == ary.length ? ary : Arrays.copyOf(ary, len);
     }
 
     private static boolean filenameIsPathSearchable(String fname, boolean forExec) {

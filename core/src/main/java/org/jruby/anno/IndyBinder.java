@@ -130,7 +130,7 @@ public class IndyBinder extends AbstractProcessor {
 
             cw.visitAnnotation(p(Generated.class), true);
 
-            cw.visit(Opcodes.V1_7, ACC_PUBLIC, ("org.jruby.gen." + qualifiedName + POPULATOR_SUFFIX).replace('.', '/'), null, "org/jruby/anno/TypePopulator", null);
+            cw.visit(Opcodes.V1_8, ACC_PUBLIC, ("org.jruby.gen." + qualifiedName + POPULATOR_SUFFIX).replace('.', '/'), null, "org/jruby/anno/TypePopulator", null);
 
             mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", "()V", null, null);
             mv.start();

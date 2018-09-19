@@ -130,8 +130,7 @@ class MethodJITTask implements Runnable {
                                     variable,
                                     method.getIRScope(),
                                     method.getVisibility(),
-                                    method.getImplementationClass(),
-                                    method.getIRScope().receivesKeywordArgs()));
+                                    method.getImplementationClass()));
 
                 } else {
                     // also specific-arity
@@ -143,8 +142,7 @@ class MethodJITTask implements Runnable {
                                         entry.getKey(),
                                         method.getIRScope(),
                                         method.getVisibility(),
-                                        method.getImplementationClass(),
-                                        method.getIRScope().receivesKeywordArgs()));
+                                        method.getImplementationClass()));
                         break; // FIXME: only supports one arity
                     }
                 }

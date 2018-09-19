@@ -404,24 +404,22 @@ describe "Constant resolution within a singleton class (class << obj)" do
     ConstantSpecs::CS_SINGLETON1.foo.should == 1
   end
 
-  ruby_version_is "2.3" do
-    it "uses its own namespace for each object" do
-      a = ConstantSpecs::CS_SINGLETON2[0].foo
-      b = ConstantSpecs::CS_SINGLETON2[1].foo
-      [a, b].should == [1, 2]
-    end
+  it "uses its own namespace for each object" do
+    a = ConstantSpecs::CS_SINGLETON2[0].foo
+    b = ConstantSpecs::CS_SINGLETON2[1].foo
+    [a, b].should == [1, 2]
+  end
 
-    it "uses its own namespace for nested modules" do
-      a = ConstantSpecs::CS_SINGLETON3[0].x
-      b = ConstantSpecs::CS_SINGLETON3[1].x
-      a.should_not equal(b)
-    end
+  it "uses its own namespace for nested modules" do
+    a = ConstantSpecs::CS_SINGLETON3[0].x
+    b = ConstantSpecs::CS_SINGLETON3[1].x
+    a.should_not equal(b)
+  end
 
-    it "allows nested modules to have proper resolution" do
-      a = ConstantSpecs::CS_SINGLETON4_CLASSES[0].new
-      b = ConstantSpecs::CS_SINGLETON4_CLASSES[1].new
-      [a.foo, b.foo].should == [1, 2]
-    end
+  it "allows nested modules to have proper resolution" do
+    a = ConstantSpecs::CS_SINGLETON4_CLASSES[0].new
+    b = ConstantSpecs::CS_SINGLETON4_CLASSES[1].new
+    [a.foo, b.foo].should == [1, 2]
   end
 end
 
@@ -458,6 +456,19 @@ describe "Module#private_constant marked constants" do
     }.should complain(/already initialized constant/)
 
     lambda {mod::Foo}.should raise_error(NameError)
+  end
+
+  ruby_version_is "2.6" do
+    it "sends #const_missing to the original class or module" do
+      mod = Module.new
+      mod.const_set :Foo, true
+      mod.send :private_constant, :Foo
+      def mod.const_missing(name)
+        name == :Foo ? name : super
+      end
+
+      mod::Foo.should == :Foo
+    end
   end
 
   describe "in a module" do
@@ -613,6 +624,42 @@ describe "Module#private_constant marked constants" do
 
     it "is defined? through the normal search" do
       defined?(PRIVATE_CONSTANT_IN_OBJECT).should == "constant"
+    end
+  end
+
+  describe "NameError by #private_constant" do
+    it "has :receiver and :name attributes" do
+      lambda do
+        ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS
+      end.should raise_error(NameError) {|e|
+        e.receiver.should == ConstantVisibility::PrivConstClass
+        e.name.should == :PRIVATE_CONSTANT_CLASS
+      }
+
+      lambda do
+        ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE
+      end.should raise_error(NameError) {|e|
+        e.receiver.should == ConstantVisibility::PrivConstModule
+        e.name.should == :PRIVATE_CONSTANT_MODULE
+      }
+    end
+
+    it "has the defined class as the :name attribute" do
+      lambda do
+        ConstantVisibility::PrivConstClassChild::PRIVATE_CONSTANT_CLASS
+      end.should raise_error(NameError) {|e|
+        e.receiver.should == ConstantVisibility::PrivConstClass
+        e.name.should == :PRIVATE_CONSTANT_CLASS
+      }
+
+      lambda do
+        ConstantVisibility::PrivConstModuleChild::PRIVATE_CONSTANT_MODULE
+      end.should raise_error(NameError) {|e|
+        ruby_bug "#14853", ""..."2.5.2" do
+          e.receiver.should == ConstantVisibility::PrivConstModule
+        end
+        e.name.should == :PRIVATE_CONSTANT_MODULE
+      }
     end
   end
 end

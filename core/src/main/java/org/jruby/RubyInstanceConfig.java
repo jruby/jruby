@@ -53,15 +53,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.objectweb.asm.Opcodes;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -414,9 +406,9 @@ public class RubyInstanceConfig {
                         if (isXFlag()) {
                             // search for a shebang line and
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                            return findScript(resource.inputStream());
+                            return findScript(resource.openInputStream());
                         }
-                        return resource.inputStream();
+                        return resource.openInputStream();
                     }
                     else {
                         throw new FileNotFoundException(script + " (Not a file)");
@@ -432,21 +424,19 @@ public class RubyInstanceConfig {
     }
 
     private static InputStream findScript(InputStream is) throws IOException {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(64);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String currentLine = br.readLine();
         while (currentLine != null && !isRubyShebangLine(currentLine)) {
             currentLine = br.readLine();
         }
 
-        buf.append(currentLine);
-        buf.append("\n");
+        buf.append(currentLine).append('\n');
 
         do {
             currentLine = br.readLine();
             if (currentLine != null) {
-                buf.append(currentLine);
-                buf.append("\n");
+                buf.append(currentLine).append('\n');
             }
         } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
         return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
@@ -1474,6 +1464,10 @@ public class RubyInstanceConfig {
         this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
     }
 
+    public boolean isInterruptibleRegexps() {
+        return interruptibleRegexps;
+    }
+
     public static ClassLoader defaultClassLoader() {
         ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
 
@@ -1577,6 +1571,7 @@ public class RubyInstanceConfig {
     private boolean hasScriptArgv = false;
     private boolean frozenStringLiteral = false;
     private boolean debuggingFrozenStringLiteral = false;
+    private boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
     private String jrubyHome;
 
     /**
@@ -1886,10 +1881,15 @@ public class RubyInstanceConfig {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
             case "1.6" :
-            case "1.7" : throw new UnsupportedClassVersionError("JRuby requires Java 8 or higher");
-            case "1.8" : case "8" : return Opcodes.V1_8; // 52
-            default :
+                return Opcodes.V1_6;
+            case "1.7" :
+                return Opcodes.V1_7;
+            case "1.8" : case "8" : default :
+                return Opcodes.V1_8; // 52
+            case "9" :
                 return Opcodes.V9;
+            case "10" :
+                return Opcodes.V9; // TODO: switch when `V10 = 54` added
         }
     }
 

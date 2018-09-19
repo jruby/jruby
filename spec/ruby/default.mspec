@@ -44,9 +44,15 @@ class MSpecScript
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 
+  set :toplevel_constants_excludes, [
+    /\wSpecs?$/,
+    /^CS_CONST\d/,
+  ]
+
   # Enable features
   MSpec.enable_feature :fiber
   MSpec.enable_feature :fiber_library
   MSpec.enable_feature :fork if respond_to?(:fork, true)
   MSpec.enable_feature :encoding
+  MSpec.enable_feature :mjit if defined?(RubyVM::MJIT) && RubyVM::MJIT.enabled?
 end

@@ -81,6 +81,7 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
 public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable {
+    @Deprecated
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
@@ -251,6 +252,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return valid && getBytes().length() >= 2; // FIXME: good enough on length check?  Trying to avoid counter.
     }
 
+    /**
+     * Is the string this constant represents a valid constant identifier name.
+     */
+    public boolean validClassVariableName() {
+        boolean valid = ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
+                index == 0 && codepoint == '@' ||
+                        index == 1 && codepoint == '@' ||
+                        index == 2 && (!encoding.isDigit(codepoint)) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_') ||
+                        index > 2 && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_'));
+
+        return valid && getBytes().length() >= 3; // FIXME: good enough on length check?  Trying to avoid counter.
+    }
+
+
     public boolean validLocalVariableName() {
         boolean valid =  ByteListHelper.eachCodePoint(getBytes(), (int index, int codepoint, Encoding encoding) ->
                 index == 0 && (!encoding.isDigit(codepoint) && (encoding.isAlnum(codepoint) || !Encoding.isAscii(codepoint) || codepoint == '_')) ||
@@ -414,7 +429,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(context.runtime);
     }
 
-    private final IRubyObject to_s(Ruby runtime) {
+    final RubyString to_s(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
 
@@ -425,6 +440,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod
     public IRubyObject id2name(ThreadContext context) {
         return to_s(context);
+    }
+
+    @Override
+    public RubyString asString() {
+        return to_s(getRuntime());
     }
 
     @JRubyMethod(name = "===", required = 1)
@@ -476,15 +496,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return 0; // our <=> contract is to return 0 on non-comparables
     }
 
-    @JRubyMethod(name = "to_sym")
-    public IRubyObject to_sym() {
-        return this;
-    }
+    @JRubyMethod(name = { "to_sym", "intern" })
+    public IRubyObject to_sym() { return this; }
 
-    @JRubyMethod(name = "intern")
-    public IRubyObject to_sym19() {
-        return this;
-    }
+    @Deprecated
+    public IRubyObject to_sym19() { return this; }
 
     @Override
     public IRubyObject taint(ThreadContext context) {
@@ -493,10 +509,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     private RubyString newShared(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
-    }
-
-    private RubyString rubyStringFromString(Ruby runtime) {
-        return RubyString.newString(runtime, symbol);
     }
 
     @JRubyMethod(name = {"succ", "next"})
@@ -563,17 +575,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        return newShared(context.runtime).op_aref19(context, arg);
+        return newShared(context.runtime).op_aref(context, arg);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return newShared(context.runtime).op_aref19(context, arg1, arg2);
+        return newShared(context.runtime).op_aref(context, arg1, arg2);
     }
 
     @JRubyMethod(name = {"length", "size"})
     public IRubyObject length() {
-        return newShared(getRuntime()).length19();
+        final Ruby runtime = getRuntime();
+        return RubyFixnum.newFixnum(runtime, newShared(runtime).strLength());
     }
 
     @JRubyMethod(name = "empty?")
@@ -655,7 +668,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().getEncoding(symbolBytes.getEncoding());
+        return context.runtime.getEncodingService().getEncoding(getEncoding());
     }
 
     @JRubyMethod

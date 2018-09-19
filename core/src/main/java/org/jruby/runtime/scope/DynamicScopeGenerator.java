@@ -76,7 +76,7 @@ public class DynamicScopeGenerator {
         if (h != null) return h;
 
         final String clsPath = "org/jruby/runtime/scopes/DynamicScope" + size;
-        final String clsName = clsPath.replaceAll("/", ".");
+        final String clsName = clsPath.replace('/', '.');
 
         // try to load the class, in case we have parallel generation happening
         Class p;
@@ -341,7 +341,7 @@ public class DynamicScopeGenerator {
     }
 
     private static String classNameFromJiteClass(JiteClass jiteClass) {
-        return jiteClass.getClassName().replaceAll("/", ".");
+        return jiteClass.getClassName().replace('/', '.');
     }
 
     private static String[] varList(int size) {

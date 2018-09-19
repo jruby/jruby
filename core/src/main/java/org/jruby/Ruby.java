@@ -936,6 +936,16 @@ public final class Ruby implements Constantizable {
             allModules.add(module);
         }
     }
+
+    public void eachModule(Consumer<RubyModule> func) {
+        synchronized (allModules) {
+            for (RubyModule module : allModules) {
+                func.accept(module);
+            }
+        }
+    }
+
+    @Deprecated
     public void eachModule(Function1<Object, IRubyObject> func) {
         synchronized (allModules) {
             for (RubyModule module : allModules) {
@@ -951,7 +961,7 @@ public final class Ruby implements Constantizable {
      * @return The module or null if not found
      */
     public RubyModule getModule(String name) {
-        return (RubyModule) objectClass.getConstantAt(name);
+        return objectClass.getModule(name);
     }
 
     @Deprecated
@@ -998,7 +1008,7 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * A variation of defineClass that allows passing in an array of subplementary
+     * A variation of defineClass that allows passing in an array of supplementary
      * call sites for improving dynamic invocation performance.
      *
      * @param name The name for the new class
@@ -1645,15 +1655,6 @@ public final class Ruby implements Constantizable {
         new ThreadFiberLibrary().load(this, false);
     }
 
-    private RubyClass defineClassIfAllowed(String name, RubyClass superClass) {
-	// TODO: should probably apply the null object pattern for a
-	// non-allowed class, rather than null
-        if (superClass != null && profile.allowClass(name)) {
-            return defineClass(name, superClass, superClass.getAllocator());
-        }
-        return null;
-    }
-
     private Map<Integer, RubyClass> errnos = new HashMap<Integer, RubyClass>();
 
     public RubyClass getErrno(int n) {
@@ -1716,7 +1717,6 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
         addLazyBuiltin("jruby.rb", "jruby", "org.jruby.ext.jruby.JRubyLibrary");
         addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.ext.jruby.JRubyUtilLibrary");
-        addLazyBuiltin("jruby/type.rb", "jruby/type", "org.jruby.ext.jruby.JRubyTypeLibrary");
         addLazyBuiltin("nkf.jar", "nkf", "org.jruby.ext.nkf.NKFLibrary");
         addLazyBuiltin("stringio.jar", "stringio", "org.jruby.ext.stringio.StringIOLibrary");
         addLazyBuiltin("strscan.jar", "strscan", "org.jruby.ext.strscan.StringScannerLibrary");
@@ -1740,7 +1740,7 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("pathname.jar", "pathname", "org.jruby.ext.pathname.PathnameLibrary");
         addLazyBuiltin("set.rb", "set", "org.jruby.ext.set.SetLibrary");
         addLazyBuiltin("date.jar", "date", "org.jruby.ext.date.DateLibrary");
-
+        addLazyBuiltin("securerandom.jar", "securerandom", "org.jruby.ext.securerandom.SecureRandomLibrary");
         addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
         addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
         addLazyBuiltin("ripper.jar", "ripper", "org.jruby.ext.ripper.RipperLibrary");
@@ -1791,8 +1791,8 @@ public final class Ruby implements Constantizable {
     }
 
     private void addBuiltinIfAllowed(String name, Library lib) {
-        if(profile.allowBuiltin(name)) {
-            loadService.addBuiltinLibrary(name,lib);
+        if (profile.allowBuiltin(name)) {
+            loadService.addBuiltinLibrary(name, lib);
         }
     }
 
@@ -3814,6 +3814,10 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getErrno().getClass("EMSGSIZE"), null);
     }
 
+    public RaiseException newErrnoEXDEVError(String message) {
+        return newRaiseException(getErrno().getClass("EXDEV"), message);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }
@@ -4264,13 +4268,16 @@ public final class Ruby implements Constantizable {
      */
     public RaiseException newStopIteration(IRubyObject result, String message) {
         final ThreadContext context = getCurrentContext();
-        if (RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            RubyException ex = RubyStopIteration.newInstance(context, result, message);
-            return ex.toThrowable();
-        }
-        if ( message == null ) message = STOPIERATION_BACKTRACE_MESSAGE;
+
+        if (message == null) message = STOPIERATION_BACKTRACE_MESSAGE;
+
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
-        return RaiseException.from(ex, disabledBacktrace());
+
+        if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
+            ex.forceBacktrace(disabledBacktrace());
+        }
+
+        return ex.toThrowable();
     }
 
     @Deprecated
@@ -4819,6 +4826,12 @@ public final class Ruby implements Constantizable {
         return dataClass;
     }
 
+    /**
+     * @return Class -> extension initializer map
+     * @note Internal API, subject to change!
+     */
+    public Map<Class, Consumer<RubyModule>> getJavaExtensionDefinitions() { return javaExtensionDefinitions; }
+
     @Deprecated
     private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
         @Override
@@ -5288,6 +5301,8 @@ public final class Ruby implements Constantizable {
     public final JavaSites sites = new JavaSites();
 
     private volatile MRIRecursionGuard mriRecursionGuard;
+
+    private final Map<Class, Consumer<RubyModule>> javaExtensionDefinitions = new WeakHashMap<>(); // caller-syncs
 
     // For strptime processing we cache the parsed format strings since most applications
     // reuse the same formats over and over.  This is also unbounded (for now) since all applications

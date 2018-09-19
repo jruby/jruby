@@ -1,0 +1,5 @@
+fails:Addrinfo#ipv6_to_ipv4 returns an Addrinfo for ::192.168.1.1
+fails:Addrinfo#ipv6_to_ipv4 returns an Addrinfo for ::0.0.1.1
+fails:Addrinfo#ipv6_to_ipv4 returns an Addrinfo for ::0.0.1.0
+fails:Addrinfo#ipv6_to_ipv4 returns an Addrinfo for ::0.1.0.0
+fails:Addrinfo#ipv6_to_ipv4 returns an Addrinfo for ::ffff:192.168.1.1

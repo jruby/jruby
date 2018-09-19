@@ -73,8 +73,7 @@ module JITSpecUtils
         handle,
         method,
         org.jruby.runtime.Visibility::PUBLIC,
-        currModule,
-        false)
+        currModule)
   end
 
   def compile_run(src, filename, line)

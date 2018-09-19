@@ -62,4 +62,13 @@ class TestPathname < Test::Unit::TestCase
     assert_equal "⸀䐀攀氀攀琀攀䴀攀/fred", p.to_s
   end
 
+  def test_pathname_windows
+    assert_equal(Pathname('foo.bar.rb').expand_path.relative_path_from(Pathname(Dir.pwd)), Pathname('foo.bar.rb'))
+  end if WINDOWS
+
+  # GH-3150
+  def test_expand_path_with_pathname_and_uri_path
+    assert_equal 'uri:classloader://foo', File.expand_path('foo', Pathname.new('uri:classloader:/'))
+  end if defined?(JRUBY_VERSION)
+
 end

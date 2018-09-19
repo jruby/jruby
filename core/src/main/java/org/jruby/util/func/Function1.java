@@ -29,6 +29,5 @@
 
 package org.jruby.util.func;
 
-public interface Function1<R,A0> {
-    public R apply(A0 a0);
-}
+@Deprecated
+public interface Function1<R, A0> extends java.util.function.Function<A0, R> {}

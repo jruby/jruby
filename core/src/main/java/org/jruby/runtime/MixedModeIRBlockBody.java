@@ -113,7 +113,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         // We should never get here if jittedBody is null
         assert jittedBody != null : "direct call in MixedModeIRBlockBody without jitted body";
 
-        context.setCurrentBlockType(Block.Type.PROC);
         return jittedBody.callDirect(context, block, args, blockArg);
     }
 
@@ -122,7 +121,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         // We should never get here if jittedBody is null
         assert jittedBody != null : "direct yield in MixedModeIRBlockBody without jitted body";
 
-        context.setCurrentBlockType(Block.Type.NORMAL);
         return jittedBody.yieldDirect(context, block, args, self);
     }
 

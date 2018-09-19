@@ -37,9 +37,81 @@ module Win32
   end
 end
 
-begin
-  require 'win32/resolv.so'
-rescue LoadError
+
+# JRuby specific use FFI instead of loading native .so
+module Win32
+  module Internal
+    NO_ERROR, ERROR_BUFFER_OVERFLOW = 0, 111
+
+    require 'ffi'
+
+    class IP_ADDRESS_STRING < FFI::Struct
+      layout :string, [:uint8, 16]
+    end
+
+    class IP_ADDR_STRING < FFI::Struct
+      layout :next, IP_ADDR_STRING.ptr,
+             :ip_address, IP_ADDRESS_STRING,
+             :ip_mask_string, IP_ADDRESS_STRING,
+             :context, :int
+    end
+
+    class FIXED_INFO < FFI::Struct
+      layout :host_name, [:uint8, 128 + 4],
+             :domain_name, [:uint8, 128 + 4],
+             :current_dns_server, IP_ADDR_STRING.ptr,
+             :dns_server_list, IP_ADDR_STRING,
+             :node_type, :uint,
+             :scope_id, [:uint8, 256 + 4],
+             :enable_routine, :uint,
+             :enable_proxy, :uint,
+             :enable_dns, :uint
+    end
+
+    class IntPtr < FFI::Struct
+      layout :value, :int
+    end
+
+    module Iphlpapi
+      extend FFI::Library
+      ffi_lib 'Iphlpapi'
+      ffi_convention :stdcall
+
+      attach_function :get_network_params, :GetNetworkParams, [:pointer, IntPtr], :int
+    end
+  end
+end
+
+module Win32
+  module Resolv
+    def self.get_dns_server_list
+      size = Win32::Internal::IntPtr.new
+      ret = Win32::Internal::Iphlpapi.get_network_params nil, size
+
+      # We get buffer overflow because first arg to get_network_params is nil.
+      if ret != Win32::Internal::NO_ERROR && ret != Win32::Internal::ERROR_BUFFER_OVERFLOW
+        raise Win32::Resolv::Error
+      end
+
+      fixed_info = FFI::MemoryPointer.new size[:value] 
+      ret = Win32::Internal::Iphlpapi.get_network_params fixed_info, size
+
+      raise Win32::Resolv::Error if ret != Win32::Internal::NO_ERROR 
+
+      fixed_info = Win32::Internal::FIXED_INFO.new fixed_info 
+
+      addr = fixed_info[:dns_server_list]
+      addresses = []
+
+      while !addr.null? do # test condition on machines with no DNS entries at all.
+        addresses << addr[:ip_address][:string].to_s
+        break if addr[:next].null?
+        addr = addr[:next]
+      end
+
+      addresses
+    end
+  end
 end
 
 nt = Module.new do

@@ -239,7 +239,7 @@ do
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
-                JAVA_ENCODING=$val${val:16}
+                JAVA_ENCODING=${val:16}
             elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
                 JAVA_SECURITY_EGD=${val:20}
             else

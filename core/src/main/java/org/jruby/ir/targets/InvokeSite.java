@@ -12,9 +12,15 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
+import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.ir.JIT;
+import org.jruby.java.invokers.InstanceFieldGetter;
+import org.jruby.java.invokers.InstanceFieldSetter;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
@@ -33,11 +39,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.invoke.MethodHandles.constant;
+import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 
 /**
@@ -174,7 +183,8 @@ public abstract class InvokeSite extends MutableCallSite {
         return method.call(context, self, selfClass, methodName, args, block);
     }
 
-    private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(lookup(), "escape");
+    private static final MethodHandles.Lookup LOOKUP = lookup();
+    private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(LOOKUP, "escape");
     private static final Map<Signature, MethodHandle> BLOCK_ESCAPES = Collections.synchronizedMap(new HashMap<Signature, MethodHandle>());
 
     private static MethodHandle getBlockEscape(Signature signature) {
@@ -325,15 +335,93 @@ public abstract class InvokeSite extends MutableCallSite {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
         MethodHandle mh = buildNewInstanceHandle(method, self);
+        if (mh == null) mh = buildNotEqualHandle(method, self);
         if (mh == null) mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
+        if (mh == null) mh = buildJavaFieldHandle(this, method, self);
         if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
         if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
         if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
+        if (mh == null) mh = buildAliasHandle(method, self, dispatchClass);
+        if (mh == null) mh = buildStructHandle(method, self, dispatchClass);
         if (mh == null) mh = Bootstrap.buildGenericHandle(this, method, dispatchClass);
 
         assert mh != null : "we should have a method handle of some sort by now";
 
         return mh;
+    }
+
+    MethodHandle buildJavaFieldHandle(InvokeSite site, DynamicMethod method, IRubyObject self) throws Throwable {
+        if (method instanceof InstanceFieldGetter) {
+            // only matching arity
+            if (site.arity != 0 || site.signature.lastArgType() == Block.class) return null;
+
+            Field field = ((InstanceFieldGetter) method).getField();
+
+            // only IRubyObject subs for now
+            if (!IRubyObject.class.isAssignableFrom(field.getType())) return null;
+
+            MethodHandle fieldHandle = (MethodHandle) method.getHandle();
+
+            if (fieldHandle != null) {
+                return fieldHandle;
+            }
+
+            fieldHandle = LOOKUP.unreflectGetter(field);
+
+            MethodHandle filter = self.getRuntime().getNullToNilHandle();
+
+            MethodHandle receiverConverter = Binder
+                    .from(field.getDeclaringClass(), IRubyObject.class)
+                    .cast(Object.class, IRubyObject.class)
+                    .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
+
+            fieldHandle = Binder
+                    .from(site.type())
+                    .permute(2)
+                    .filter(0, receiverConverter)
+                    .filterReturn(filter)
+                    .cast(fieldHandle.type())
+                    .invoke(fieldHandle);
+
+            method.setHandle(fieldHandle);
+
+            return fieldHandle;
+        } else if (method instanceof InstanceFieldSetter) {
+            // only matching arity
+            if (site.arity != 1 || site.signature.lastArgType() == Block.class) return null;
+
+            Field field = ((InstanceFieldSetter) method).getField();
+
+            // only IRubyObject subs for now
+            if (!IRubyObject.class.isAssignableFrom(field.getType())) return null;
+
+            MethodHandle fieldHandle = (MethodHandle) method.getHandle();
+
+            if (fieldHandle != null) {
+                return fieldHandle;
+            }
+
+            fieldHandle = LOOKUP.unreflectSetter(field);
+
+            MethodHandle receiverConverter = Binder
+                    .from(field.getDeclaringClass(), IRubyObject.class)
+                    .cast(Object.class, IRubyObject.class)
+                    .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
+
+            fieldHandle = Binder
+                    .from(site.type())
+                    .permute(2, 3)
+                    .filter(0, receiverConverter)
+                    .filterReturn(constant(IRubyObject.class, self.getRuntime().getNil()))
+                    .cast(fieldHandle.type())
+                    .invoke(fieldHandle);
+
+            method.setHandle(fieldHandle);
+
+            return fieldHandle;
+        }
+
+        return null;
     }
 
     MethodHandle buildNewInstanceHandle(DynamicMethod method, IRubyObject self) {
@@ -343,20 +431,135 @@ public abstract class InvokeSite extends MutableCallSite {
             RubyClass recvClass = (RubyClass) self;
 
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
-            CallSite initSite = SelfInvokeSite.bootstrap(lookup(), "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
+            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
             MethodHandle initHandle = initSite.dynamicInvoker();
 
             MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
                     .cast(IRubyObject.class, RubyClass.class)
                     .insert(0, new Class[] {ObjectAllocator.class, Ruby.class}, recvClass.getAllocator(), self.getRuntime())
-                    .invokeVirtualQuiet(lookup(), "allocate");
+                    .invokeVirtualQuiet(LOOKUP, "allocate");
 
-            mh = SmartBinder.from(lookup(), signature)
+            mh = SmartBinder.from(LOOKUP, signature)
                     .filter("self", allocFilter)
                     .fold("dummy", initHandle)
                     .permute("self")
                     .identity()
                     .handle();
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildNotEqualHandle(DynamicMethod method, IRubyObject self) {
+        MethodHandle mh = null;
+
+        Ruby runtime = self.getRuntime();
+
+        if (method.isBuiltin()) {
+
+            CallSite equalSite = null;
+
+            if (method.getImplementationClass() == runtime.getBasicObject() && name().equals("!=")) {
+                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:==", type(), literalClosure ? 1 : 0, file, line);
+            } else if (method.getImplementationClass() == runtime.getKernel() && name().equals("!~")) {
+                equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:=~", type(), literalClosure ? 1 : 0, file, line);
+            }
+
+            if (equalSite != null) {
+                // Bind a second site as a dynamic invoker to guard against changes in new object's type
+                MethodHandle equalHandle = equalSite.dynamicInvoker();
+
+                MethodHandle filter = insertArguments(NEGATE, 1, runtime.getNil(), runtime.getTrue(), runtime.getFalse());
+                mh = MethodHandles.filterReturnValue(equalHandle, filter);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound as specialized " + name() + ":" + Bootstrap.logMethod(method));
+                }
+            }
+        }
+
+        return mh;
+    }
+
+    public static final MethodHandle NEGATE = Binder.from(IRubyObject.class, IRubyObject.class, RubyNil.class, RubyBoolean.True.class, RubyBoolean.False.class).invokeStaticQuiet(LOOKUP, InvokeSite.class, "negate");
+
+    public static IRubyObject negate(IRubyObject object, RubyNil nil, RubyBoolean.True tru, RubyBoolean.False fals) {
+        return object == nil || object == fals ? tru : fals;
+    }
+
+    MethodHandle buildAliasHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
+        MethodHandle mh = null;
+
+        if (method instanceof PartialDelegatingMethod) {
+            mh = getHandle(self, dispatchClass, ((PartialDelegatingMethod) method).getDelegate());
+        } else if (method instanceof AliasMethod) {
+            AliasMethod alias = (AliasMethod) method;
+            DynamicMethod innerMethod = alias.getRealMethod();
+            String name = alias.getName();
+
+            // Use a second site to mimic invocation from AliasMethod
+            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type(), literalClosure ? 1 : 0, file, line);
+            mh = innerSite.getHandle(self, dispatchClass, innerMethod);
+
+            alias.setHandle(mh);
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
+    MethodHandle buildStructHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
+        MethodHandle mh = null;
+
+        if (method instanceof RubyStruct.Accessor) {
+            if (arity == 0) {
+                RubyStruct.Accessor accessor = (RubyStruct.Accessor) method;
+                int index = accessor.getIndex();
+
+                mh = Binder.from(type())
+                        .cast(type().changeParameterType(2, RubyStruct.class))
+                        .permute(2)
+                        .append(index)
+                        .invokeVirtual(LOOKUP, "get");
+
+                method.setHandle(mh);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound directly as Struct accessor " + Bootstrap.logMethod(method));
+                }
+            } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tcalled struct accessor with arity > 0 " + Bootstrap.logMethod(method));
+                }
+            }
+        } else if (method instanceof RubyStruct.Mutator) {
+            if (arity == 1) {
+                RubyStruct.Mutator mutator = (RubyStruct.Mutator) method;
+                int index = mutator.getIndex();
+
+                mh = Binder.from(type())
+                        .cast(type().changeParameterType(2, RubyStruct.class))
+                        .permute(2, 3)
+                        .append(index)
+                        .invokeVirtual(LOOKUP, "set");
+
+                method.setHandle(mh);
+
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tbound directly as Struct mutator " + Bootstrap.logMethod(method));
+                }
+            } else {
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                    LOG.info(name() + "\tcalled struct mutator with arity > 1 " + Bootstrap.logMethod(method));
+                }
+            }
         }
 
         return mh;
@@ -460,7 +663,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private MethodHandle bindToFail() {
         MethodHandle target;
-        setTarget(target = prepareBinder(false).invokeVirtualQuiet(lookup(), "fail"));
+        setTarget(target = prepareBinder(false).invokeVirtualQuiet(LOOKUP, "fail"));
         return target;
     }
 
@@ -487,7 +690,7 @@ public abstract class InvokeSite extends MutableCallSite {
         }
     }
 
-    public RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
+    public static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
         return ((RubyBasicObject) self).getMetaClass();
     }
@@ -554,5 +757,5 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private static final MethodHandle TEST_CLASS = Binder
             .from(boolean.class, Object.class, Class.class)
-            .invokeStaticQuiet(lookup(), InvokeSite.class, "testClass");
+            .invokeStaticQuiet(LOOKUP, InvokeSite.class, "testClass");
 }

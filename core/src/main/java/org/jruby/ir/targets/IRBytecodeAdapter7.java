@@ -23,6 +23,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
@@ -284,11 +285,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     public void putField(String name) {
-        adapter.invokedynamic("ivarSet:" + JavaNameMangler.mangleMethodName(name), sig(void.class, IRubyObject.class, IRubyObject.class), Bootstrap.ivar());
+        adapter.invokedynamic("ivarSet:" + JavaNameMangler.mangleMethodName(name), sig(void.class, IRubyObject.class, IRubyObject.class), VariableSite.IVAR_ASM_HANDLE);
     }
 
     public void getField(String name) {
-        adapter.invokedynamic("ivarGet:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, IRubyObject.class), Bootstrap.ivar());
+        adapter.invokedynamic("ivarGet:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, IRubyObject.class), VariableSite.IVAR_ASM_HANDLE);
     }
 
     public void array(int length) {
@@ -333,5 +334,17 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 false);
         long encodedSignature = signature.encode();
         adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
+    }
+
+    @Override
+    public void branchIfNil(Label label) {
+        adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), Bootstrap.isNilBoot());
+        adapter.iftrue(label);
+    }
+
+    @Override
+    public void branchIfTruthy(Label label) {
+        adapter.invokedynamic("isTrue", sig(boolean.class, IRubyObject.class), Bootstrap.isTrueBoot());
+        adapter.iftrue(label);
     }
 }

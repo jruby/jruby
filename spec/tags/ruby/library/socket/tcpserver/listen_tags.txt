@@ -1,0 +1,2 @@
+fails:TCPServer#listen using IPv4 raises when the given argument can't be coerced to a Fixnum
+fails:TCPServer#listen using IPv6 raises when the given argument can't be coerced to a Fixnum

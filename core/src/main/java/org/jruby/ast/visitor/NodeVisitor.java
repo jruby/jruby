@@ -59,7 +59,6 @@ public interface NodeVisitor<T> {
     T visitBreakNode(BreakNode iVisited);
     T visitConstDeclNode(ConstDeclNode iVisited);
     T visitClassVarAsgnNode(ClassVarAsgnNode iVisited);
-    T visitClassVarDeclNode(ClassVarDeclNode iVisited);
     T visitClassVarNode(ClassVarNode iVisited);
     T visitCallNode(CallNode iVisited);
     T visitCaseNode(CaseNode iVisited);
@@ -149,4 +148,7 @@ public interface NodeVisitor<T> {
     T visitZArrayNode(ZArrayNode iVisited);
     T visitZSuperNode(ZSuperNode iVisited);
     T visitOther(Node iVisited);
+
+    @Deprecated
+    default T visitClassVarDeclNode(ClassVarDeclNode iVisited) { return null; }
 }

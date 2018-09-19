@@ -1,0 +1,4 @@
+fails:Socket::IPSocket#addr using IPv6 without reverse lookups returns an Array containing address information
+fails:Socket::IPSocket#addr using IPv6 with reverse lookups using true as the argument returns an Array containing address information
+fails:Socket::IPSocket#addr using IPv6 with reverse lookups using :hostname as the argument returns an Array containing address information
+fails:Socket::IPSocket#addr using IPv6 with do_not_reverse_lookup disabled on socket level returns an Array containing address information

@@ -191,6 +191,16 @@ describe "The super keyword" do
     Super::RestArgsWithSuper::B.new.a.should == ["foo"]
   end
 
+  # https://bugs.ruby-lang.org/issues/14279
+  it "passes along reassigned rest args" do
+    Super::ZSuperWithRestReassigned::B.new.a("bar").should == ["foo"]
+  end
+
+  # https://bugs.ruby-lang.org/issues/14279
+  it "wraps into array and passes along reassigned rest args with non-array scalar value" do
+    Super::ZSuperWithRestReassignedWithScalar::B.new.a("bar").should == ["foo"]
+  end
+
   it "invokes methods from a chain of anonymous modules" do
     Super::AnonymousModuleIncludedTwice.new.a([]).should == ["anon", "anon", "non-anon"]
   end

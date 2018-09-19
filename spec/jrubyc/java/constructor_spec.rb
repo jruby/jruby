@@ -19,8 +19,7 @@ describe "A Ruby class generating a Java stub" do
       cls = generate("class Foo; end").classes[0]
       expect( cls.has_constructor? ).to be false
 
-      java = cls.to_s
-      java.should match EMPTY_INITIALIZE_PATTERN
+      expect( cls.to_s ).to match EMPTY_INITIALIZE_PATTERN
     end
   end
 
@@ -37,7 +36,7 @@ describe "A Ruby class generating a Java stub" do
         expect( init.args.length ).to eql 1
 
         java = init.to_s
-        java.should match OBJECT_INITIALIZE_PATTERN
+        expect( java ).to match OBJECT_INITIALIZE_PATTERN
 
         expect( def_cnstr = cls.methods[1] ).to_not be nil
         expect( def_cnstr.constructor? ).to be true
@@ -45,7 +44,7 @@ describe "A Ruby class generating a Java stub" do
         expect( def_cnstr.args.length ).to eql 0
 
         java = def_cnstr.to_s
-        java.should match EMPTY_INITIALIZE_PATTERN
+        expect( java ).to match EMPTY_INITIALIZE_PATTERN
       end
     end
 
@@ -110,9 +109,37 @@ describe "A Ruby class generating a Java stub" do
         cls = generate("class Foo; java_signature 'Foo() throws FooBarException,QuxBazException'; def initialize(); end; end").classes[0]
 
         method = cls.methods[0]
-        method.java_signature.to_s.should == 'Foo() throws FooBarException, QuxBazException'
+        expect( method.java_signature.to_s ).to eql 'Foo() throws FooBarException, QuxBazException'
       end
     end
 
+  end
+
+  describe "with an initialize() Java method override" do
+    it "generates correct method despite initialize name" do
+      # java.beans.beancontext.BeanContextSupport
+      cls = generate("class BeanContext < RubyObject; def initialize(); end;" +
+                     " java_signature 'void initialize()'; def init(); end; end").classes[0]
+
+      init = cls.methods[0]
+
+      expect( init.name ).to eql 'initialize'
+      expect( init.constructor? ).to be true
+      expect( init.args.length ).to eql 0
+
+      init = cls.methods[1]
+
+      expect( init.name ).to eql 'init'
+      expect( init.constructor? ).to be false
+      expect( init.args.length ).to eql 0
+
+      java = init.to_s
+      expect( java.index('public void initialize()') ).to_not be nil
+
+      puts cls.to_s if $VERBOSE
+
+      javac_status = javac_compile_contents(cls.to_s, 'BeanContext.java')
+      raise 'javac failed (see above output)' unless javac_status
+    end
   end
 end

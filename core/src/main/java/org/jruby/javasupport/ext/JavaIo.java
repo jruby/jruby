@@ -32,7 +32,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -47,16 +46,17 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 public abstract class JavaIo {
 
     public static void define(final Ruby runtime) {
-        RubyModule proxyClass;
+        JavaExtensions.put(runtime, java.io.InputStream.class, (proxyClass) -> {
+            proxyClass.addMethodInternal("to_io", new InputStreamToIO(proxyClass));
+        });
 
-        proxyClass = Java.getProxyClass(runtime, java.io.InputStream.class);
-        proxyClass.addMethodInternal("to_io", new InputStreamToIO(proxyClass));
+        JavaExtensions.put(runtime, java.io.OutputStream.class, (proxyClass) -> {
+            proxyClass.addMethodInternal("to_io", new OutputStreamToIO(proxyClass));
+        });
 
-        proxyClass = Java.getProxyClass(runtime, java.io.OutputStream.class);
-        proxyClass.addMethodInternal("to_io", new OutputStreamToIO(proxyClass));
-
-        proxyClass = Java.getProxyClass(runtime, java.nio.channels.Channel.class);
-        proxyClass.addMethodInternal("to_io", new ChannelToIO(proxyClass));
+        JavaExtensions.put(runtime, java.nio.channels.Channel.class, (proxyClass) -> {
+            proxyClass.addMethodInternal("to_io", new ChannelToIO(proxyClass));
+        });
     }
 
     private static final class InputStreamToIO extends JavaMethod.JavaMethodZeroOrOne {

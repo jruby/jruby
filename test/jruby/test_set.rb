@@ -63,6 +63,17 @@ class TestSet < Test::Unit::TestCase
     assert_equal Set.new([1, 2]), set
   end
 
+  def test_yaml_dump; require 'yaml'
+    str = YAML.dump(Set.new)
+    assert_equal "--- !ruby/object:Set\nhash: {}\n", str
+    set = YAML.load(str)
+    assert_equal Set.new([]), set
+
+    str = YAML.dump(SortedSet.new([2, 3, 1]))
+    set = YAML.load(str)
+    assert_equal SortedSet.new([1, 2, 3]), set
+  end
+
   def test_sorted_marshal_dump
     dump = Marshal.dump(SortedSet.new)
     assert_equal SortedSet.new, Marshal.load(dump)
@@ -116,13 +127,13 @@ class TestSet < Test::Unit::TestCase
 
   def test_to_java
     assert set = Set.new.to_java
-    assert set.toString.start_with?('#<Set:0x')
+    assert_equal "#<Set: {}>", set.toString
     assert_equal org.jruby.ext.set.RubySet, set.class
     assert set.is_a?(java.util.Set)
     assert_equal java.util.HashSet.new, set
 
     assert set = SortedSet.new([2, 1]).to_java
-    assert set.toString.start_with?('#<SortedSet:0x')
+    assert set.toString.start_with?('#<SortedSet: {')
     assert_equal org.jruby.ext.set.RubySortedSet, set.class
     assert set.is_a?(java.util.Set)
     assert set.is_a?(java.util.SortedSet)

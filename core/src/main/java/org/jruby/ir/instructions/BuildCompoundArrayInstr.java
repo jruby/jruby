@@ -58,7 +58,7 @@ public class BuildCompoundArrayInstr extends TwoOperandResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject v1 = (IRubyObject)getAppendingArg().retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject v2 = (IRubyObject)getAppendedArg().retrieve(context, self, currScope, currDynScope, temp);
-        return isArgsPush ? Helpers.argsPush(context, (RubyArray) v1, v2) : Helpers.argsCat(context, v1, v2);
+        return isArgsPush ? Helpers.argsPush(v1, v2) : Helpers.argsCat(context, v1, v2);
     }
 
     @Override

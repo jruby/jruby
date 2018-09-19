@@ -652,7 +652,7 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyBignum state = random.getState();
-        RubyInteger left = RubyNumeric.int2fix(context.runtime, random.getLeft());
+        RubyInteger left = RubyFixnum.newFixnum(context.runtime, (long) random.getLeft());
         RubyArray dump = RubyArray.newArray(context.runtime, state, left, random.getSeed());
         if (hasVariables()) {
             dump.syncVariables(this);
@@ -731,7 +731,7 @@ public class RubyRandom extends RubyObject {
 
         if (random != null) return random.genrandReal();
 
-        double d = RubyNumeric.num2dbl(Helpers.invoke(context, obj, "rand"));
+        double d = RubyNumeric.num2dbl(context, Helpers.invoke(context, obj, "rand"));
 
         if (d < 0.0 || d >= 1.0) throw context.runtime.newRangeError("random number too big: " + d);
 

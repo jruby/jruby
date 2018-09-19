@@ -1268,17 +1268,17 @@ public class Helpers {
 
     public static RubyHash constructSmallHash(Ruby runtime,
                                               IRubyObject key1, IRubyObject value1, boolean prepareString1) {
-        RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
+        RubyHash hash = new RubyHash(runtime);
+        hash.fastASet(runtime, key1, value1, prepareString1);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
                                               IRubyObject key1, IRubyObject value1, boolean prepareString1,
                                               IRubyObject key2, IRubyObject value2, boolean prepareString2) {
-        RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
+        RubyHash hash = new RubyHash(runtime);
+        hash.fastASet(runtime, key1, value1, prepareString1);
+        hash.fastASet(runtime, key2, value2, prepareString2);
         return hash;
     }
 
@@ -1286,10 +1286,10 @@ public class Helpers {
                                               IRubyObject key1, IRubyObject value1, boolean prepareString1,
                                               IRubyObject key2, IRubyObject value2, boolean prepareString2,
                                               IRubyObject key3, IRubyObject value3, boolean prepareString3) {
-        RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
+        RubyHash hash = new RubyHash(runtime);
+        hash.fastASet(runtime, key1, value1, prepareString1);
+        hash.fastASet(runtime, key2, value2, prepareString2);
+        hash.fastASet(runtime, key3, value3, prepareString3);
         return hash;
     }
 
@@ -1298,11 +1298,11 @@ public class Helpers {
                                               IRubyObject key2, IRubyObject value2, boolean prepareString2,
                                               IRubyObject key3, IRubyObject value3, boolean prepareString3,
                                               IRubyObject key4, IRubyObject value4, boolean prepareString4) {
-        RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
+        RubyHash hash = new RubyHash(runtime);
+        hash.fastASet(runtime, key1, value1, prepareString1);
+        hash.fastASet(runtime, key2, value2, prepareString2);
+        hash.fastASet(runtime, key3, value3, prepareString3);
+        hash.fastASet(runtime, key4, value4, prepareString4);
         return hash;
     }
 
@@ -1312,12 +1312,12 @@ public class Helpers {
                                               IRubyObject key3, IRubyObject value3, boolean prepareString3,
                                               IRubyObject key4, IRubyObject value4, boolean prepareString4,
                                               IRubyObject key5, IRubyObject value5, boolean prepareString5) {
-        RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
-        hash.fastASetSmall(runtime, key5, value5, prepareString5);
+        RubyHash hash = new RubyHash(runtime);
+        hash.fastASet(runtime, key1, value1, prepareString1);
+        hash.fastASet(runtime, key2, value2, prepareString2);
+        hash.fastASet(runtime, key3, value3, prepareString3);
+        hash.fastASet(runtime, key4, value4, prepareString4);
+        hash.fastASet(runtime, key5, value5, prepareString5);
         return hash;
     }
 

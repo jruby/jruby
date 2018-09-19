@@ -378,9 +378,9 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyString inspect() {
+        Ruby runtime = getRuntime();
         if (str == null) return (RubyString) anyToString();
 
-        Ruby runtime = getRuntime();
         RubyString result = runtime.newString();
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
@@ -388,14 +388,12 @@ public class RubyMatchData extends RubyObject {
         NameEntry[] names = new NameEntry[regs == null ? 1 : regs.numRegs];
 
         final Regex pattern = getPattern();
-        if (pattern.numberOfNames() > 0) {
-            for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
-                NameEntry e = i.next();
-                for (int num : e.getBackRefs()) names[num] = e;
-            }
+        for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
+            NameEntry e = i.next();
+            for (int num : e.getBackRefs()) names[num] = e;
         }
 
-        for (int i=0; i<names.length; i++) {
+        for (int i = 0; i < names.length; i++) {
             result.cat((byte)' ');
             if (i > 0) {
                 NameEntry e = names[i];
@@ -410,7 +408,7 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat(RubyNil.nilBytes); // "nil"
             } else {
-                result.append(((RubyString) v).inspect(runtime));
+                result.append(((RubyString)v).inspect(runtime));
             }
         }
 
@@ -490,9 +488,9 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    public final int backrefNumber(IRubyObject obj) {
+    public final int backrefNumber(Ruby runtime, IRubyObject obj) {
         check();
-        return backrefNumber(getRuntime(), getPattern(), regs, obj);
+        return backrefNumber(runtime, getPattern(), regs, obj);
     }
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
@@ -632,11 +630,10 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
-        Ruby runtime = context.runtime;
-
-        int i = backrefNumber(index);
-
         check();
+        final Ruby runtime = context.runtime;
+        final int i = backrefNumber(runtime, index);
+
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
@@ -658,7 +655,7 @@ public class RubyMatchData extends RubyObject {
         check();
 
         final Ruby runtime = context.runtime;
-        final int i = backrefNumber(index);
+        final int i = backrefNumber(runtime, index);
 
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
@@ -688,11 +685,12 @@ public class RubyMatchData extends RubyObject {
         check();
 
         final Ruby runtime = context.runtime;
-        final int i = backrefNumber(index);
+        final int i = backrefNumber(runtime, index);
 
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
             throw runtime.newIndexError("index " + i + " out of matches");
         }
+
         int b, e;
         if (regs == null) {
             b = begin;
@@ -810,27 +808,25 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     public RubyHash named_captures(ThreadContext context) {
+        check();
         Ruby runtime = context.runtime;
-
         RubyHash hash = RubyHash.newHash(runtime);
+        if (regexp == context.nil) return hash;
 
-        if (regexp.getPattern().numberOfNames() > 0) {
-            Iterator<NameEntry> nameEntryIterator = regexp.getPattern().namedBackrefIterator();
-            while (nameEntryIterator.hasNext()) {
-                NameEntry entry = nameEntryIterator.next();
-                RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
-                boolean found = false;
+        for (Iterator<NameEntry> i = getPattern().namedBackrefIterator(); i.hasNext();) {
+            NameEntry entry = i.next();
+            RubyString key = RubyString.newStringShared(runtime, new ByteList(entry.name, entry.nameP, entry.nameEnd - entry.nameP, regexp.getEncoding(), false));
+            boolean found = false;
 
-                for (int i : entry.getBackRefs()) {
-                    IRubyObject value = RubyRegexp.nth_match(i, this);
-                    if (value.isTrue()) {
-                        hash.op_asetForString(runtime, key, value);
-                        found = true;
-                    }
+            for (int b : entry.getBackRefs()) {
+                IRubyObject value = RubyRegexp.nth_match(b, this);
+                if (value.isTrue()) {
+                    hash.op_asetForString(runtime, key, value);
+                    found = true;
                 }
-
-                if (!found) hash.op_asetForString(runtime, key, context.nil);
             }
+
+            if (!found) hash.op_asetForString(runtime, key, context.nil);
         }
 
         return hash;

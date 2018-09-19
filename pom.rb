@@ -65,30 +65,29 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '1.8.3',
-              'rspec.version' => '3.4.0',
-              'rspec-core.version' => '3.4.4',
-              'rspec-expectations.version' => '3.4.0',
-              'rspec-mocks.version' => '3.4.1',
-              'rspec-support.version' => '3.4.1',
-              'minitest.version' => '5.4.1',
-              'test-unit.version' => '3.1.1',
-              'power_assert.version' => '0.2.3',
-              'diff-lcs.version' => '1.1.3',
+              'json.version' => '2.1.0',
+              'rspec.version' => '3.6.0',
+              'rspec-core.version' => '3.6.0',
+              'rspec-expectations.version' => '3.6.0',
+              'rspec-mocks.version' => '3.6.0',
+              'rspec-support.version' => '3.6.0',
+              'minitest.version' => '5.10.3',
+              'test-unit.version' => '3.2.7',
+              'power_assert.version' => '1.1.1',
+
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-              'rdoc.version' => '5.0.0',
-              'rake.version' => '10.4.2',
+              'rdoc.version' => '6.0.1',
+              'rake.version' => '12.3.0',
               'jar-dependencies.version' => '0.3.12',
-
               'jruby-launcher.version' => '1.1.1',
-              'ant.version' => '1.9.2',
-              'asm.version' => '6.0',
-              'jffi.version' => '1.2.16',
+              'ant.version' => '1.9.8',
+              'asm.version' => '6.2',
+              'jffi.version' => '1.2.17',
               'joda.time.version' => '2.9.9' )
 
   plugin_management do
-    jar( 'junit:junit:4.11',
+    jar( 'junit:junit:4.12',
          :scope => 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:2.4.0',
@@ -107,7 +106,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin( :site, '3.3', 'skipDeploy' =>  'true' )
     plugin 'org.codehaus.mojo:build-helper-maven-plugin:1.8'
     plugin 'org.codehaus.mojo:exec-maven-plugin:1.2.1'
-    plugin :antrun, '1.7'
+    plugin :antrun, '1.8'
     plugin :source, '2.1.2'
     plugin :assembly, '2.4'
     plugin :install, '2.4'

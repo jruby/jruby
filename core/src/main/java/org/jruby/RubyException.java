@@ -477,7 +477,7 @@ public class RubyException extends RubyObject {
         return true;
     }
 
-    /**
+     /**
      * @return error message if provided or nil
      */
     public IRubyObject getMessage() {
@@ -495,5 +495,18 @@ public class RubyException extends RubyObject {
     public String getMessageAsJavaString() {
         final IRubyObject msg = getMessage();
         return msg.isNil() ? null : msg.toString();
+    }
+
+    // Note: we override this because we do not use traditional internal variables (concurrency complications)
+    // for a few fields but MRI does.  Both marshal and oj (native extensions) expect to see these.
+    @Override
+    public List<Variable<Object>> getVariableList() {
+        List<Variable<Object>> attrs = super.getVariableList();
+
+        attrs.add(new VariableEntry<Object>("mesg", getMessage()));
+        IRubyObject backtrace = getBacktrace();
+        attrs.add(new VariableEntry<Object>("bt", backtrace));
+
+        return attrs;
     }
 }

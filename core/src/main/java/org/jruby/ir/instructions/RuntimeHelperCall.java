@@ -88,7 +88,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         return new String[] { "method: " + helperMethod};
     }
 
-    public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
+    public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Operand[] operands = getOperands();
 
         if (helperMethod == Methods.IS_DEFINED_BACKREF) {
@@ -114,11 +114,11 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
 
         switch (helperMethod) {
             case HANDLE_PROPAGATED_BREAK:
-                return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope, arg1, blockType);
+                return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope, arg1);
             case HANDLE_NONLOCAL_RETURN:
-                return IRRuntimeHelpers.handleNonlocalReturn(currScope, currDynScope, arg1, blockType);
+                return IRRuntimeHelpers.handleNonlocalReturn(currDynScope, arg1);
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
-                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, currScope, currDynScope, arg1, blockType);
+                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, currDynScope, arg1, block);
             case IS_DEFINED_CALL:
                 return IRRuntimeHelpers.isDefinedCall(
                         context,

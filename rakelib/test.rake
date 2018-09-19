@@ -12,6 +12,9 @@ if ENV['CI']
 
   # for normal test/unit tests
   ENV['TESTOPT'] = "-v --no-use-color"
+
+  # extend timeouts in MRI tests
+  ENV['RUBY_TEST_SUBPROCESS_TIMEOUT_SCALE'] = '10'
 else
   ADDITIONAL_TEST_OPTIONS = ""
 end
@@ -48,18 +51,7 @@ namespace :test do
   task :rake_targets => long_tests
   task :extended => long_tests
 
-  desc "Run tracing tests"
-  task :tracing do
-    Rake::TestTask.new('test:tracing') do |t|
-      t.pattern = 'test/tracing/test_*.rb'
-      t.verbose = true
-      t.ruby_opts << '-J-ea'
-      t.ruby_opts << '--debug'
-      t.ruby_opts << '--disable-gems'
-    end
-  end
-
-  max_meta_size = ENV_JAVA['java.specification.version'] > '1.7' ? '-XX:MaxMetaspaceSize' : '-XX:MaxPermSize'
+  max_meta_size = "-XX:MaxMetaspaceSize"
   get_meta_size = proc do |default_size = 452|
     (ENV['JAVA_OPTS'] || '').index(max_meta_size) || (ENV['JRUBY_OPTS'] || '').index(max_meta_size) ?
         '' : "-J#{max_meta_size}=#{default_size}M"
@@ -85,28 +77,29 @@ namespace :test do
   end
 
   namespace :mri do
+    jruby_opts = {
+        int: "-X-C",
+        fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
+        jit: "-Xjit.threshold=0 -Xjit.background=false",
+        aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
+    }
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
-    task :int do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X-C"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+    mri_stdlib_test_files = File.readlines('test/mri.stdlib.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
+    jruby_opts.each do |task, opts|
+      task task do
+        ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+      end
+      namespace :stdlib do
+        task task do
+          ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+          ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_stdlib_test_files}"
+        end
+      end
     end
+    task stdlib: 'test:mri:stdlib:int'
 
-    task :fullint do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X-C -Xjit.threshold=0 -Xjit.background=false"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task :jit do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -Xjit.threshold=0 -Xjit.background=false #{get_meta_size.call()}"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task :aot do
-      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace -X+C -Xjit.background=false #{get_meta_size.call()}"
-      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-    end
-
-    task all: %s[int jit aot]
+    task all: jruby_opts.keys
   end
   task mri: 'test:mri:int'
 

@@ -35,7 +35,7 @@ import org.jruby.RubyClass;
  * objects. Subclasses specialize this implementation appropriate to the
  * current JVM's capabilities and the mechanism for laying out variables.
  */
-public class VariableAccessor {
+public abstract class VariableAccessor {
     /** the name of the variable */
     protected final String name;
     /** the index allocated for it in the variable table */
@@ -147,6 +147,6 @@ public class VariableAccessor {
     }
 
     /** a dummy accessor that will always return null */
-    public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, null, -1, -1);
+    public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, null, -1, -1) {};
     
 }

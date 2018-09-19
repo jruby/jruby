@@ -63,11 +63,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.javasupport.proxy.JavaProxyClassFactory.runtimeTLS;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -87,8 +87,6 @@ import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
  */
 public class JavaProxyClass extends JavaProxyReflectionObject {
 
-    @Deprecated // moved to JavaProxyClassFactory
-    static ThreadLocal<Ruby> runtimeTLS = JavaProxyClassFactory.runtimeTLS;
 
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();

@@ -953,6 +953,10 @@ public abstract class LexingCommon {
         return '0' <= c && c <= '7';
     }
 
+    public static boolean isSpace(int c) {
+        return c == ' ' || ('\t' <= c && c <= '\r');
+    }
+
     protected boolean isSpaceArg(int c, boolean spaceSeen) {
         return isARG() && spaceSeen && !Character.isWhitespace(c);
     }

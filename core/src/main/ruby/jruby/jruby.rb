@@ -38,9 +38,10 @@ module JRuby
     # @note implemented in *org.jruby.ext.jruby.JRubyLibrary*
     def compile(content, filename = '', extra_position_info = false); end if false
 
-    # The current runtime's config (a `org.jruby.RubyInstanceConfig` instance).
-    # Changes to the configuration won't be reflected in the runtime, meant to be read-only.
-    CONFIG = runtime.instance_config if false
+    # Get all known subclasses of passed class.
+    # If recurse: true, include all (non-direct) descendants recursively.
+    # @return Enumerable[Class]
+    def subclasses_of(klass, recurse: false) end if false
 
   end
 

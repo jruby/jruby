@@ -32,10 +32,9 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
+    public static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
+    public static final String ROOT = "<main>";
 
-    static final Logger LOG = LoggerFactory.getLogger(Interpreter.class);
-
-    public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
 
     public static void dumpStats() {
@@ -210,6 +209,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // Top-level script!
         IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+
+        // enable refinements if incoming scope already has an overlay active
+        if (staticScope.getOverlayModuleForRead() != null) {
+            script.setIsMaybeUsingRefinements();
+        }
 
         // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
         // we end up growing dynamicscope potentially based on any changes made.

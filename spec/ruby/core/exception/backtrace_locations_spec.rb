@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "Exception#backtrace_locations" do
   before :each do
@@ -14,7 +14,7 @@ describe "Exception#backtrace_locations" do
     @backtrace.should be_an_instance_of(Array)
   end
 
-  it "sets each element to a String" do
+  it "sets each element to a Thread::Backtrace::Location" do
     @backtrace.each {|l| l.should be_an_instance_of(Thread::Backtrace::Location)}
   end
 

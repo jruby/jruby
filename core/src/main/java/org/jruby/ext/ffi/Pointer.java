@@ -9,6 +9,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.runtime.Visibility.*;
 
@@ -23,7 +24,7 @@ public class Pointer extends AbstractMemory {
     public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
         RubyClass pointerClass = module.defineClassUnder("Pointer",
                 module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(Pointer.class) : PointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : PointerAllocator.INSTANCE);
 
         pointerClass.defineAnnotatedMethods(Pointer.class);
         pointerClass.defineAnnotatedConstants(Pointer.class);

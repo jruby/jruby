@@ -37,21 +37,15 @@ import static org.jruby.RubyFile.fileResource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 
 import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.FileResource;
-import org.jruby.util.NullDeviceResource;
 import org.jruby.util.TypeConverter;
 
 @JRubyModule(name = "FileTest")
@@ -80,6 +74,7 @@ public class RubyFileTest {
         return recv.getRuntime().newBoolean(stat != null && stat.isCharDev());
     }
 
+    @Deprecated
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
         return directory_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -118,6 +113,7 @@ public class RubyFileTest {
         }
     }
 
+    @Deprecated
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
         return exist_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -125,12 +121,18 @@ public class RubyFileTest {
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         // We get_path here to prevent doing it both existsOnClasspath and fileResource (Only call to_path once).
-        RubyString path = get_path(context, filename);
-
-        return context.runtime.newBoolean(existsOnClasspath(path) ||
-                !Ruby.isSecurityRestricted() && fileResource(context, path).exists());
+        return context.runtime.newBoolean(exist(context, get_path(context, filename)));
     }
 
+    static boolean exist(ThreadContext context, RubyString path) {
+        final String pathStr = path.decodeString();
+        if (!Ruby.isSecurityRestricted()) {
+            if (JRubyFile.createResource(context.runtime, pathStr).exists()) return true;
+        }
+        return existsOnClasspath(context, pathStr);
+    }
+
+    @Deprecated
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
         return file_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -194,6 +196,7 @@ public class RubyFileTest {
         return recv.getRuntime().newBoolean(stat != null && stat.isNamedPipe());
     }
 
+    @Deprecated
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
         return readable_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -247,6 +250,7 @@ public class RubyFileTest {
         return context.runtime.newFixnum(stat.st_size());
     }
 
+    @Deprecated
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
         return size_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -292,6 +296,7 @@ public class RubyFileTest {
         return filename.getRuntime().newBoolean(fileResource(filename).canWrite());
     }
 
+    @Deprecated
     public static RubyBoolean zero_p(IRubyObject recv, IRubyObject filename) {
         return zero_p(recv.getRuntime().getCurrentContext(), recv, filename);
     }
@@ -304,7 +309,7 @@ public class RubyFileTest {
 
         // FIXME: Ultimately we should return a valid stat() from this but without massive NUL coverage
         // this is less risky.
-        if (resource instanceof NullDeviceResource) return runtime.newBoolean(true);
+        if (resource.isNull()) return runtime.newBoolean(true);
 
         FileStat stat = resource.stat();
 
@@ -472,24 +477,17 @@ public class RubyFileTest {
         return stat;
     }
 
-    private static boolean existsOnClasspath(IRubyObject path) {
-        if (path instanceof RubyFile) {
-            return false;
-        }
+    private static boolean existsOnClasspath(ThreadContext context, String path) {
+        if (path.startsWith("classpath:/")) {
+            path = path.substring("classpath:/".length());
 
-        Ruby runtime = path.getRuntime();
-        RubyString pathStr = get_path(runtime.getCurrentContext(), path);
-        String pathJStr = pathStr.getUnicodeValue();
-        if (pathJStr.startsWith("classpath:/")) {
-            pathJStr = pathJStr.substring("classpath:/".length());
-
-            ClassLoader classLoader = runtime.getJRubyClassLoader();
+            ClassLoader classLoader = context.runtime.getJRubyClassLoader();
             // handle security-sensitive case
-            if (Ruby.isSecurityRestricted() && classLoader == null) {
-                classLoader = runtime.getInstanceConfig().getLoader();
+            if (classLoader == null && Ruby.isSecurityRestricted()) {
+                classLoader = context.runtime.getInstanceConfig().getLoader();
             }
 
-            InputStream is = classLoader.getResourceAsStream(pathJStr);
+            InputStream is = classLoader.getResourceAsStream(path);
             if (is != null) {
                 try {
                     is.close();

@@ -83,7 +83,7 @@ public class HandleFactory {
         Class returnType = method.getReturnType();
         Class[] paramTypes = method.getParameterTypes();
         ClassVisitor cv = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cv.visit(ACC_PUBLIC | ACC_FINAL | ACC_SUPER, V1_5, name, null, p(Handle.class), null);
+        cv.visit(V1_8, ACC_PUBLIC | ACC_FINAL | ACC_SUPER, name, null, p(Handle.class), null);
 
         SkinnyMethodAdapter m;
         String signature;

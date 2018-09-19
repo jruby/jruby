@@ -32,7 +32,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -52,10 +51,9 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 public abstract class JavaNet {
 
     public static void define(final Ruby runtime) {
-        RubyModule proxyClass;
-
-        proxyClass = Java.getProxyClass(runtime, java.net.URL.class);
-        proxyClass.addMethodInternal("open", new URLOpenMethod(proxyClass));
+        JavaExtensions.put(runtime, java.net.URL.class, (proxyClass) -> {
+            proxyClass.addMethodInternal("open", new URLOpenMethod(proxyClass));
+        });
     }
 
     private static final class URLOpenMethod extends JavaMethod.JavaMethodZeroOrNBlock {

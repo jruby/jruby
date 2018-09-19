@@ -8,6 +8,8 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 
+import java.lang.invoke.MutableCallSite;
+
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /**
@@ -18,6 +20,7 @@ public class JavaSites {
     public final KernelSites Kernel = new KernelSites();
     public final ObjectSites Object = new ObjectSites();
     public final ArraySites Array = new ArraySites();
+    public final Array2Sites Array2 = new Array2Sites();
     public final StringSites String = new StringSites();
     public final HashSites Hash = new HashSites();
     public final NumericSites Numeric = new NumericSites();
@@ -63,6 +66,7 @@ public class JavaSites {
         public final CallSite inspect = new FunctionalCachingCallSite("inspect");
         public final CallSite match = new FunctionalCachingCallSite("=~");
         public final CallSite call = new FunctionalCachingCallSite("call");
+        public final CallSite op_equal = new FunctionalCachingCallSite("==");
     }
 
     public static class ObjectSites {
@@ -120,6 +124,11 @@ public class JavaSites {
         public final CallSite op_cmp_sort = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt_sort = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_sort = new FunctionalCachingCallSite("<");
+    }
+
+    public static class Array2Sites {
+        public final CachingCallSite op_cmp_fixnum = new FunctionalCachingCallSite("<=>");
+        public final CachingCallSite op_cmp_string = new FunctionalCachingCallSite("<=>");
     }
 
     public static class StringSites {
@@ -248,6 +257,7 @@ public class JavaSites {
         public final CheckedSites checked_op_and = new CheckedSites("&");
         public final CheckedSites checked_op_or = new CheckedSites("|");
         public final CheckedSites checked_op_xor = new CheckedSites("^");
+        public final CachingCallSite to_f = new FunctionalCachingCallSite("to_f");
     }
 
     public static class BignumSites {
@@ -268,6 +278,7 @@ public class JavaSites {
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
         public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite to_f = new FunctionalCachingCallSite("to_f");
     }
 
     public static class FloatSites {
@@ -329,6 +340,7 @@ public class JavaSites {
         public final RespondToCallSite respond_to_write = new RespondToCallSite("write");
         public final CachingCallSite write = new FunctionalCachingCallSite("write");
         public final RespondToCallSite respond_to_read = new RespondToCallSite("read");
+        public final RespondToCallSite respond_to_readpartial = new RespondToCallSite("readpartial");
         public final CallSite read = new FunctionalCachingCallSite("read");
         public final CallSite to_f = new FunctionalCachingCallSite("to_f");
         public final CallSite new_ = new FunctionalCachingCallSite("new");
@@ -408,6 +420,7 @@ public class JavaSites {
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CheckedSites to_r_checked = new CheckedSites("to_r");
         public final RespondToCallSite respond_to_to_r = new RespondToCallSite("to_r");
+        public final CachingCallSite to_f = new FunctionalCachingCallSite("to_f");
     }
 
     public static class RangeSites {

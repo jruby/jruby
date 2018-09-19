@@ -112,6 +112,10 @@ public class PartialDelegatingMethod extends DynamicMethod {
         return method.getRealMethod();
     }
 
+    public DynamicMethod getDelegate() {
+        return method;
+    }
+
     @Override
     public Arity getArity() {
         return method.getArity();

@@ -829,6 +829,13 @@ public class RubyLexer extends LexingCommon {
             case RubyParser.tRPAREN: System.err.print("tRPAREN,"); break;
             case RubyParser.tLABEL: System.err.print("tLABEL("+ value() +":),"); break;
             case RubyParser.tLABEL_END: System.err.print("tLABEL_END"); break;
+            case RubyParser.keyword_def: System.err.print("keyword_def,"); break;
+            case RubyParser.keyword_do: System.err.print("keyword_do,"); break;
+            case RubyParser.keyword_do_block: System.err.print("keyword_do_block,"); break;
+            case RubyParser.keyword_do_cond: System.err.print("keyword_do_cond,"); break;
+            case RubyParser.keyword_do_lambda: System.err.print("keyword_do_lambda,"); break;
+            case RubyParser.keyword_end: System.err.print("keyword_end,"); break;
+            case RubyParser.keyword_yield: System.err.print("keyword_yield,"); break;
             case '\n': System.err.println("NL"); break;
             case EOF: System.out.println("EOF"); break;
             case RubyParser.tDSTAR: System.err.print("tDSTAR"); break;
@@ -1141,7 +1148,7 @@ public class RubyLexer extends LexingCommon {
             result = RubyParser.tIVAR;
         }
 
-        if (c == EOF || Character.isSpaceChar(c)) {
+        if (c == EOF || isSpace(c)) {
             if (result == RubyParser.tIVAR) {
                 compile_error("`@' without identifiers is not allowed as an instance variable name");
             }
@@ -1302,7 +1309,6 @@ public class RubyLexer extends LexingCommon {
                 if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
-                setState(EXPR_END);
                 yaccValue = createTokenByteList();
                 return RubyParser.tGVAR;
 
@@ -1380,12 +1386,10 @@ public class RubyLexer extends LexingCommon {
             yaccValue = new NthRefNode(getPosition(), ref);
             return RubyParser.tNTH_REF;
         case '0':
-            setState(EXPR_END);
-
             return identifierToken(RubyParser.tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
-                if (c == EOF || Character.isSpaceChar(c)) {
+                if (c == EOF || isSpace(c)) {
                     compile_error(PID.CVAR_BAD_NAME, "`$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
@@ -2338,7 +2342,7 @@ public class RubyLexer extends LexingCommon {
                 pushback(c);
                 return scanOct(3);
             case 'x' : // hex constant
-                return scanHex(2, false, "Invalid escape character syntax");
+                return scanHex(2, false, "Invalid hex escape");
             case 'b' : // backspace
                 return '\010';
             case 's' : // space

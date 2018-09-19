@@ -107,12 +107,12 @@ public abstract class IOChannel implements Channel {
         return (int)written.convertToInteger().getLongValue();
     }
 
-    protected CallSite initReadSite() {
+    protected CallSite initReadSite(String readMethod) {
         // no call site use here since this will only be called once
-        if(io.respondsTo("read")) {
-            return MethodIndex.getFunctionalCallSite("read");
+        if(io.respondsTo(readMethod)) {
+            return MethodIndex.getFunctionalCallSite(readMethod);
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `read' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `" + readMethod + "' method");
         }
     }
 
@@ -134,8 +134,12 @@ public abstract class IOChannel implements Channel {
         private final CallSite read;
 
         public IOReadableByteChannel(final IRubyObject io) {
+            this(io, "read");
+        }
+
+        public IOReadableByteChannel(final IRubyObject io, final String readMethod) {
             super(io);
-            read = initReadSite();
+            read = initReadSite(readMethod);
         }
         
         public int read(ByteBuffer dst) throws IOException {
@@ -168,7 +172,7 @@ public abstract class IOChannel implements Channel {
         private final CallSite read;
         public IOReadableWritableByteChannel(final IRubyObject io) {
             super(io);
-            read = initReadSite();
+            read = initReadSite("read");
             write = initWriteSite();
         }
 

@@ -153,7 +153,7 @@ public class RubyBinding extends RubyObject {
 
         if (slot == -1) throw context.runtime.newNameError("local variable `" + name +  "' not defined for " + inspect(), name);
 
-        return evalScope.getValue(slot & 0xffff, slot >> 16);
+        return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
     }
 
     @JRubyMethod

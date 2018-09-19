@@ -377,24 +377,26 @@ public class RubyArgsFile extends RubyObject {
 
         RubyArray ary = runtime.newArray();
         IRubyObject line;
-        while(!(line = argf_getline(context, recv, args)).isNil()) {
+        while ((line = argf_getline(context, recv, args)) != context.nil) {
             ary.append(line);
         }
         return ary;
     }
 
-    public static IRubyObject each_byte(ThreadContext context, IRubyObject recv, Block block) {
-        IRubyObject bt;
+    @JRubyMethod
+    public static IRubyObject each_byte(final ThreadContext context, IRubyObject recv, final Block block) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_byte");
 
-        while(!(bt = getc(context, recv)).isNil()) {
+        IRubyObject bt;
+        while ((bt = getc(context, recv)) != context.nil) {
             block.yield(context, bt);
         }
 
         return recv;
     }
 
-    @JRubyMethod(optional = 1)
-    public static IRubyObject each_byte(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+    @JRubyMethod
+    public static IRubyObject each_byte(final ThreadContext context, IRubyObject recv, IRubyObject arg, final Block block) {
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.runtime, recv, "each_byte");
     }
 
@@ -414,14 +416,16 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static IRubyObject each_charCommon(ThreadContext context, IRubyObject recv, Block block) {
-        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
+
+        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
+
         IRubyObject ch;
-        while(!(ch = getc(context, recv)).isNil()) {
+        while ((ch = getc(context, recv)) != context.nil) {
             boolean cont = true;
-            while(cont) {
+            while (cont) {
                 cont = false;
-                byte c = (byte)RubyNumeric.fix2int(ch);
+                byte c = (byte) RubyNumeric.fix2int(ch);
                 int n = runtime.getKCode().getEncoding().length(c);
                 IRubyObject file = data.currentFile;
                 RubyString str = runtime.newString();
@@ -429,7 +433,7 @@ public class RubyArgsFile extends RubyObject {
                 str.cat(c);
 
                 while(--n > 0) {
-                    if((ch = getc(context, recv)).isNil()) {
+                    if ((ch = getc(context, recv)) == context.nil) {
                         block.yield(context, str);
                         return recv;
                     }
@@ -438,7 +442,7 @@ public class RubyArgsFile extends RubyObject {
                         cont = true;
                         continue;
                     }
-                    c = (byte)RubyNumeric.fix2int(ch);
+                    c = (byte) RubyNumeric.fix2int(ch);
                     str.cat(c);
                 }
                 block.yield(context, str);
@@ -472,8 +476,10 @@ public class RubyArgsFile extends RubyObject {
     /** Invoke a block for each line.
      *
      */
+    @JRubyMethod(name = "each_line", optional = 1)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_line", args);
+
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (!data.next_argv(context)) return context.nil;
@@ -484,27 +490,35 @@ public class RubyArgsFile extends RubyObject {
             data.currentFile.callMethod(context, "each", NULL_ARRAY, block);
             data.next_p = 1;
         }
+
         IRubyObject str;
-        while(!(str = argf_getline(context, recv, args)).isNil()) {
+        while ((str = argf_getline(context, recv, args)) != context.nil) {
         	block.yield(context, str);
         }
 
         return recv;
     }
 
+    @Deprecated // TODO "warning: ARGF#lines is deprecated; use #each_line instead"
     @JRubyMethod(optional = 1)
     public static IRubyObject lines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         return each_line(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "each_line", optional = 1)
+    @Deprecated
     public static IRubyObject each_line19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_line", args);
+        return each_line(context, recv, args, block);
     }
 
     @JRubyMethod(name = "each", optional = 1)
-    public static IRubyObject each19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+    public static IRubyObject each(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);
+    }
+
+    @Deprecated
+    public static IRubyObject each19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return each(context, recv, args, block);
     }
 
     @JRubyMethod(name = "file")
@@ -530,7 +544,7 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static void argf_close(ThreadContext context, IRubyObject file) {
-        if(file instanceof RubyIO) {
+        if (file instanceof RubyIO) {
             ((RubyIO) file).rbIoClose(context);
         } else {
             file.callMethod(context, "close");
@@ -574,7 +588,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         data.binmode = true;
-        if (!data.currentFile.isNil()) ((RubyIO) data.currentFile).binmode();
+        if (data.currentFile != context.nil) ((RubyIO) data.currentFile).binmode();
 
         return recv;
     }
@@ -593,7 +607,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject lineno_set(ThreadContext context, IRubyObject recv, IRubyObject line) {
         context.runtime.setCurrentLine(RubyNumeric.fix2int(line));
 
-        return recv.getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "tell", alias = {"pos"})
@@ -651,7 +665,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject readchar(ThreadContext context, IRubyObject recv) {
         IRubyObject c = getc(context, recv);
 
-        if (c.isNil()) throw context.runtime.newEOFError();
+        if (c == context.nil) throw context.runtime.newEOFError();
 
         return c;
     }
@@ -660,17 +674,17 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject getbyte(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        while(true) {
+        while (true) {
             if (!data.next_argv(context)) return context.nil;
 
             IRubyObject bt;
-            if (!(data.currentFile instanceof RubyFile)) {
-                bt = data.currentFile.callMethod(context, "getbyte");
+            if (data.currentFile instanceof RubyFile) {
+                bt = ((RubyIO) data.currentFile).getbyte(context);
             } else {
-                bt = ((RubyIO)data.currentFile).getbyte(context);
+                bt = data.currentFile.callMethod(context, "getbyte");
             }
 
-            if (!bt.isNil()) return bt;
+            if (bt != context.nil) return bt;
 
             argf_close(context, data.currentFile);
             data.next_p = 1;
@@ -693,12 +707,12 @@ public class RubyArgsFile extends RubyObject {
         RubyString str = null;
         if ( args.length > 1 ) {
             IRubyObject opts = TypeConverter.checkHashType(runtime, args[args.length - 1]);
-            if ( ! opts.isNil() &&
-                runtime.getFalse() == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
+            if ( opts != context.nil &&
+                context.fals == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
                 noException = true;
             }
-            if (args.length > 2 || opts.isNil()) {
-                if (!args[1].isNil()) {
+            if (args.length > 2 || opts == context.nil) {
+                if (args[1] != context.nil) {
                     args[1] = args[1].convertToString();
                     str = (RubyString) args[1];
                 }
@@ -714,7 +728,7 @@ public class RubyArgsFile extends RubyObject {
         }
 
         IRubyObject res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
-        if (res.isNil()) {
+        if (res == context.nil) {
             if (data.next_p == -1) return RubyIO.nonblockEOF(runtime, noException);
 
             argf_close(context, data.currentFile);
@@ -722,7 +736,7 @@ public class RubyArgsFile extends RubyObject {
 
             if (data.argv.isEmpty()) return RubyIO.nonblockEOF(runtime, noException);
 
-            if (args.length > 1 && args[1] instanceof RubyString )return args[1];
+            if (args.length > 1 && args[1] instanceof RubyString ) return args[1];
             return RubyString.newEmptyString(runtime);
         }
 
@@ -742,17 +756,17 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        while(true) {
+        while (true) {
             if (!data.next_argv(context)) return context.nil;
 
             IRubyObject bt;
-            if (!(data.currentFile instanceof RubyFile)) {
-                bt = data.currentFile.callMethod(context,"getc");
+            if (data.currentFile instanceof RubyFile) {
+                bt = ((RubyIO) data.currentFile).getbyte(context);
             } else {
-                bt = ((RubyIO)data.currentFile).getc();
+                bt = data.currentFile.callMethod(context,"getc");
             }
 
-            if (!bt.isNil()) return bt;
+            if (bt != context.nil) return bt;
 
             argf_close(context, data.currentFile);
             data.next_p = 1;
@@ -768,45 +782,45 @@ public class RubyArgsFile extends RubyObject {
 
         if (args.length > 0) {
             length = args[0];
-            str = args.length > 1 ? args[1] : runtime.getNil();
+            str = args.length > 1 ? args[1] : context.nil;
         } else {
-            length = runtime.getNil();
-            str = runtime.getNil();
+            str = length = context.nil;
         }
 
-        if (!length.isNil()) len = RubyNumeric.num2long(length);
+        if (length != context.nil) len = RubyNumeric.num2long(length);
 
-        if (!str.isNil()) {
+        if (str != context.nil) {
             str = str.convertToString();
-            ((RubyString)str).modify();
-            ((RubyString)str).getByteList().length(0);
-            args[1] = runtime.getNil();
+            ((RubyString) str).modify();
+            ((RubyString) str).getByteList().length(0);
+            args[1] = context.nil;
         }
 
-        while(true) {
+        while (true) {
             if (!data.next_argv(context)) return str;
 
-            if (!(data.currentFile instanceof RubyIO)) {
-                tmp = data.currentFile.callMethod(context, "read", args);
+            if (data.currentFile instanceof RubyIO) {
+                tmp = ((RubyIO) data.currentFile).read(args);
             } else {
-                tmp = ((RubyIO)data.currentFile).read(args);
+                tmp = data.currentFile.callMethod(context, "read", args);
             }
 
-            if (str.isNil()) {
+            if (str == context.nil) {
                 str = tmp;
-            } else if (!tmp.isNil()) {
-                ((RubyString)str).append(tmp);
+            } else if (tmp != context.nil) {
+                ((RubyString) str).append(tmp);
             }
 
-            if (tmp.isNil() || length.isNil()) {
+            if (tmp == context.nil || length == context.nil) {
                 if(data.next_p != -1) {
                     argf_close(context, data.currentFile);
                     data.next_p = 1;
                     continue;
                 }
             } else if(args.length >= 1) {
-                if (((RubyString)str).getByteList().length() < len) {
-                    len -= ((RubyString)str).getByteList().length();
+                final int strLen = ((RubyString) str).getByteList().length();
+                if (strLen < len) {
+                    len -= strLen;
                     args[0] = runtime.newFixnum(len);
                     continue;
                 }

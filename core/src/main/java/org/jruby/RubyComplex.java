@@ -628,11 +628,11 @@ public class RubyComplex extends RubyNumeric {
             IRubyObject theta = a.eltInternal(1);
             RubyComplex otherComplex = (RubyComplex)other;
             IRubyObject nr = RubyMath.exp(context, this, f_sub(context, 
-                    f_mul(context, otherComplex.real, RubyMath.log_19(context, this, new IRubyObject[] {r})),
+                    f_mul(context, otherComplex.real, RubyMath.log(context, this, r)),
                     f_mul(context, otherComplex.image, theta)));
             IRubyObject ntheta = f_add(context,
                     f_mul(context, theta, otherComplex.real),
-                    f_mul(context, otherComplex.image, RubyMath.log_19(context, this, new IRubyObject[] {r})));
+                    f_mul(context, otherComplex.image, RubyMath.log(context, this, r)));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyInteger) {
             final RubyFixnum one = RubyFixnum.one(context.runtime);

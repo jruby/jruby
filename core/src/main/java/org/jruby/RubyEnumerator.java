@@ -46,8 +46,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
+import java.util.Spliterator;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
+import java.util.stream.Stream;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -607,6 +609,28 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
+    }
+
+    // Java 8 stream support :
+
+    public Stream<Object> stream() {
+        return stream(false);
+    }
+
+    public Stream<Object> stream(final boolean parallel) {
+        return java.util.stream.StreamSupport.stream(spliterator(), parallel);
+    }
+
+    public Spliterator<Object> spliterator() {
+        final long size = size();
+        // we do not have ArrayNexter detection - assume immutable
+        int mod = java.util.Spliterator.IMMUTABLE;
+        if (size >= 0) mod |= java.util.Spliterator.SIZED;
+        return java.util.Spliterators.spliterator(this, size, mod);
+    }
+
+    public Spliterator<Object> spliterator(final int mod) {
+        return java.util.Spliterators.spliterator(this, size(), mod);
     }
 
     /**

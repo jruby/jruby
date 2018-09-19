@@ -7,7 +7,7 @@ class TestDate < Test::Unit::TestCase
     require 'date'
   end
 
-  def test_years_around_0 # Joda Time vs (Ruby) Date
+  def test_year_around_0 # Joda Time vs (Ruby) Date
     (-2..2).each do |year|
       assert_equal year, Date.new(year).year
       assert_equal year, DateTime.new(year).year
@@ -16,6 +16,28 @@ class TestDate < Test::Unit::TestCase
         assert_equal year, DateTime.new(year, 1, 1, 0, 0, 0, 0, sg).year
       end
     end
+  end
+
+  def test_year_around_0_to_time
+    (-5..5).each do |year|
+      assert_equal year, Date.new(year).to_time.year
+      assert_equal year, DateTime.new(year).to_time.year
+      [Date::GREGORIAN, Date::ITALY, Date::ENGLAND, Date::JULIAN].each do |sg|
+        date = Date.new(year, 1, 1, sg)
+        assert_equal year, date.to_time.year, "#{date.inspect}'s to_time: #{date.to_time.inspect} differs in year"
+        date = DateTime.new(year, 1, 1, 0, 0, 0, 0, sg)
+        assert_equal year, date.to_time.year, "#{date.inspect}'s to_time: #{date.to_time.inspect} differs in year"
+      end
+    end
+  end
+
+  def test_year_negative_to_time
+    assert_equal -10, Date.new(-10).to_time.year
+    assert_equal -100, Date.new(-100).to_time.year
+    assert_equal -10000, Date.new(-10000).to_time.year
+    assert_equal -20000, DateTime.new(-20000).to_time.year
+    assert_equal -10000, Date.new(-10000, 1, 1).to_time.year
+    assert_equal -20000, DateTime.new(-20000, 1, 1, 0, 0, 0).to_time.year
   end
 
   def test_new_civil
@@ -265,7 +287,7 @@ class TestDate < Test::Unit::TestCase
   def test_sec_fraction
     d = DateTime.new(2018, 2, 20, 12, 58, Rational(10, 3))
     if defined? JRUBY_VERSION # confirm its set the same as before 9.2
-      assert_equal 1519131483333, d.to_java.getDateTime.millis
+      assert_equal 1519131483333, d.to_java('org.jruby.ext.date.RubyDateTime').getDateTime.millis
     end
     assert_equal Rational(1, 3), d.sec_fraction
   end
@@ -744,6 +766,67 @@ class TestDate < Test::Unit::TestCase
     end
   end
 
+  class SubStr < String; end
+
+  def test_parse_string_sub
+    d = Date.iso8601(:'2018-07-17')
+    assert d.is_a?(Date)
+
+    str = SubStr.new('2018-07-17')
+    d = Date.iso8601(str)
+    assert_equal Date.new(2018, 7, 17), d
+
+    d = DateTime.iso8601(str)
+    assert_equal Date.new(2018, 7, 17).to_datetime, d
+
+    assert_equal({:year=>2018, :mon=>7, :mday=>17}, Date._parse(str))
+  end
+
+  def test_parse_active_support_safe_buffer
+    str = ActiveSupport::SafeBuffer.new('2018-07-17')
+    d = Date.iso8601(str)
+    assert d.is_a?(Date)
+
+    #d = Date.parse(str)
+    #assert_equal Date.new(2018, 7, 17), d
+
+    #d = DateTime.parse(str)
+    #assert_equal Date.new(2018, 7, 17).to_datetime, d
+
+    assert_equal({:year=>2018, :mon=>7, :mday=>17}, Date._parse(str))
+  end
+
+  class StrLike
+    def initialize(str) @str = str end
+    attr_reader :str
+    alias to_str str
+  end
+
+  def test_parse_string_like
+    str = StrLike.new '2018-07-17'
+    d = Date.iso8601(str)
+    assert d.is_a?(Date)
+
+    d = Date.parse(str)
+    assert_equal Date.new(2018, 7, 17), d
+
+    d = DateTime.parse(str)
+    assert_equal Date.new(2018, 7, 17).to_datetime, d
+
+    assert_equal({:year=>2018, :mon=>7, :mday=>17}, Date._parse(str))
+  end
+
+  def test_parse_invalid
+    assert_raise(TypeError) { Date.iso8601(111) }
+    assert_raise(TypeError) { DateTime.iso8601(111) }
+    assert_raise(TypeError) { DateTime.httpdate(11.1) }
+    assert_raise(TypeError) { DateTime.xmlschema(0.1) }
+
+    assert_raise(TypeError) { Date.parse(Object.new) }
+    assert_raise(TypeError) { Date._parse(111) }
+    assert_raise(TypeError) { DateTime.parse(111) }
+  end
+
   def test_jd_day_fraction
     t = 86400 * DateTime.new(1970, 1, 1).jd + Time.utc(2018, 3, 18, 23).to_i
     dt = DateTime.jd((t + 0)/86400r)
@@ -779,6 +862,179 @@ class TestDate < Test::Unit::TestCase
     dt = Date.civil 2018, 11, 22r/3 + 3/(864_000 * 10_000r)
     assert_equal '2018-11-07', dt.to_s
     assert_equal 3r/100_000, dt.send(:sec_fraction)
+  end
+
+  def test_parse_bc_date_time # GH-5191
+    dt = DateTime.parse('1200-02-15 14:13:20-00:00:00 BC')
+    assert_equal '#<DateTime: -1199-02-15T14:13:20+00:00 ((1283169j,51200s,0n),+0s,2299161j)>', dt.inspect
+    assert_equal -1199, dt.year
+  end
+
+  def test_marshaling_with_active_support_like_calculation # GH-5188
+    time = ActiveSupport.time_advance(Time.now, days: 1)
+    date = time.to_date
+
+    dump = Marshal.dump(date)
+    assert_equal time.to_date, Marshal.load(dump)
+  end
+
+  module ActiveSupport
+
+    module_function
+
+    def time_advance(time, options)
+      unless options[:weeks].nil?
+        options[:weeks], partial_weeks = options[:weeks].divmod(1)
+        options[:days] = options.fetch(:days, 0) + 7 * partial_weeks
+      end
+
+      unless options[:days].nil?
+        options[:days], partial_days = options[:days].divmod(1)
+        options[:hours] = options.fetch(:hours, 0) + 24 * partial_days
+      end
+
+      d = date_advance(time.to_date, options)
+      d = d.gregorian if d.julian?
+      time_advanced_by_date = time_change(time, year: d.year, month: d.month, day: d.day)
+      seconds_to_advance = \
+        options.fetch(:seconds, 0) + options.fetch(:minutes, 0) * 60 + options.fetch(:hours, 0) * 3600
+
+      #if seconds_to_advance.zero?
+        time_advanced_by_date
+      #else
+      #  time_advanced_by_date.since(seconds_to_advance)
+      #end
+    end
+
+    def time_change(time, options)
+      new_year  = options.fetch(:year, time.year)
+      new_month = options.fetch(:month, time.month)
+      new_day   = options.fetch(:day, time.day)
+      new_hour  = options.fetch(:hour, time.hour)
+      new_min   = options.fetch(:min, options[:hour] ? 0 : time.min)
+      new_sec   = options.fetch(:sec, (options[:hour] || options[:min]) ? 0 : time.sec)
+
+      if new_nsec = options[:nsec]
+        raise ArgumentError, "Can't change both :nsec and :usec at the same time: #{options.inspect}" if options[:usec]
+        new_usec = Rational(new_nsec, 1000)
+      else
+        new_usec = options.fetch(:usec, (options[:hour] || options[:min] || options[:sec]) ? 0 : Rational(time.nsec, 1000))
+      end
+
+      if time.utc?
+        ::Time.utc(new_year, new_month, new_day, new_hour, new_min, new_sec, new_usec)
+      elsif time.zone
+        ::Time.local(new_year, new_month, new_day, new_hour, new_min, new_sec, new_usec)
+      else
+        raise ArgumentError, "argument out of range" if new_usec >= 1000000
+        ::Time.new(new_year, new_month, new_day, new_hour, new_min, new_sec + (new_usec.to_r / 1000000), time.utc_offset)
+      end
+    end
+
+    def date_advance(date, options)
+      options = options.dup
+      d = date
+      d = d >> options.delete(:years) * 12 if options[:years]
+      d = d >> options.delete(:months)     if options[:months]
+      d = d +  options.delete(:weeks) * 7  if options[:weeks]
+      d = d +  options.delete(:days)       if options[:days]
+      d
+    end
+
+    ## SafeBuffer
+
+    class SafeBuffer < String
+      UNSAFE_STRING_METHODS = %w(
+        capitalize chomp chop delete downcase gsub lstrip next reverse rstrip
+        slice squeeze strip sub succ swapcase tr tr_s upcase
+      )
+
+      alias_method :original_concat, :concat
+      private :original_concat
+
+      def [](*args)
+        if args.size < 2
+          super
+        elsif html_safe?
+          new_safe_buffer = super
+
+          if new_safe_buffer
+            new_safe_buffer.instance_variable_set :@html_safe, true
+          end
+
+          new_safe_buffer
+        else
+          to_str[*args]
+        end
+      end
+
+      def initialize(str = "")
+        @html_safe = true
+        super
+      end
+
+      def initialize_copy(other)
+        super
+        @html_safe = other.html_safe?
+      end
+
+      def concat(value)
+        super(html_escape_interpolated_argument(value))
+      end
+      alias << concat
+
+      def prepend(value)
+        super(html_escape_interpolated_argument(value))
+      end
+
+      def +(other)
+        dup.concat(other)
+      end
+
+      def %(args)
+        case args
+        when Hash
+          escaped_args = Hash[args.map { |k, arg| [k, html_escape_interpolated_argument(arg)] }]
+        else
+          escaped_args = Array(args).map { |arg| html_escape_interpolated_argument(arg) }
+        end
+
+        self.class.new(super(escaped_args))
+      end
+
+      def html_safe?
+        defined?(@html_safe) && @html_safe
+      end
+
+      def to_s
+        self
+      end
+
+      def encode_with(coder)
+        coder.represent_object nil, to_str
+      end
+
+      UNSAFE_STRING_METHODS.each do |unsafe_method|
+        if unsafe_method.respond_to?(unsafe_method)
+          class_eval <<-EOT, __FILE__, __LINE__ + 1
+            def #{unsafe_method}(*args, &block)       # def capitalize(*args, &block)
+              to_str.#{unsafe_method}(*args, &block)  #   to_str.capitalize(*args, &block)
+            end                                       # end
+            def #{unsafe_method}!(*args)              # def capitalize!(*args)
+              @html_safe = false                      #   @html_safe = false
+              super                                   #   super
+            end                                       # end
+          EOT
+        end
+      end
+
+      private
+
+      def html_escape_interpolated_argument(arg)
+        (!html_safe? || arg.html_safe?) ? arg : CGI.escapeHTML(arg.to_s)
+      end
+    end
+
   end
 
 end

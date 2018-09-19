@@ -39,7 +39,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
@@ -59,8 +58,8 @@ public class SunSignalFacade implements SignalFacade {
      * to emulate {@code Signal.trap(...,"DEFAULT")} that's supposed to restore the platform
      * default handler.
      */
-    private final Map<Signal, SignalHandler> original = new HashMap<Signal, SignalHandler>();
-    private final Map<String, SignalHandler> fakeOriginal = new HashMap<String, SignalHandler>();
+    private final Map<Signal, SignalHandler> original = new HashMap<>(4);
+    private final Map<String, SignalHandler> fakeOriginal = new HashMap<>(4);
     
     private final static class JRubySignalHandler implements SignalHandler {
         private final Ruby runtime;
@@ -116,7 +115,7 @@ public class SunSignalFacade implements SignalFacade {
     }
 
     private IRubyObject trap(final Ruby runtime, final JRubySignalHandler handler) {
-        return trap(runtime,handler.signal,handler);
+        return trap(runtime,handler.signal, handler);
     }
 
     public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
@@ -138,7 +137,7 @@ public class SunSignalFacade implements SignalFacade {
             synchronized (fakeOriginal) {
                 handler = fakeOriginal.remove(sig.toString());
             }
-            return getSignalResult(runtime, handler, null, true);
+            return getSignalResult(runtime, handler, true);
         }
     }
 
@@ -173,11 +172,11 @@ public class SunSignalFacade implements SignalFacade {
             handled = signalName.equals("EXIT");
         }
 
-        return getSignalResult(runtime, oldHandler, signal, handled);
+        return getSignalResult(runtime, oldHandler, handled);
     }
 
-    private IRubyObject getSignalResult(final Ruby runtime, final SignalHandler oldHandler, final Signal signal, boolean handled) {
-        IRubyObject[] retVals = new IRubyObject[] {null, runtime.newBoolean(handled)};
+    private static IRubyObject getSignalResult(final Ruby runtime, final SignalHandler oldHandler, boolean handled) {
+        IRubyObject[] retVals = new IRubyObject[] { null, runtime.newBoolean(handled) };
         BlockCallback callback = null;
 
         if (oldHandler instanceof JRubySignalHandler) {
