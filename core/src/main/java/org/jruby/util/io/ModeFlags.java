@@ -406,15 +406,15 @@ public class ModeFlags implements Cloneable {
         if ((flags & CREAT) != 0) {
             fmodeFlags |= OpenFile.CREATE;
         }
-        if ((flags & BINARY) == BINARY) {
+        if ((flags & BINARY) != 0) {
             fmodeFlags |= OpenFile.BINMODE;
         }
-        if ((flags & TMPFILE) == TMPFILE) {
+        if ((flags & TMPFILE) != 0) {
             fmodeFlags |= OpenFile.TMPFILE;
         }
 
         // This is unique to us to keep bridge betweeen mode_flags and oflags
-        if ((flags & TEXT) == TEXT) {
+        if ((flags & TEXT) != 0) {
             fmodeFlags |= OpenFile.TEXTMODE;
         }
         
