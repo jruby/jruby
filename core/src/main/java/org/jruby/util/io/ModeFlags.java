@@ -72,9 +72,10 @@ public class ModeFlags implements Cloneable {
     public static final int APPEND = OpenFlags.O_APPEND.intValue();
     /** nonblock flag, to perform all operations non-blocking. Unused currently */
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
-    /** binary flag, to ensure no encoding changes are made while writing */
-    public static final int BINARY = OpenFlags.O_BINARY.intValue();
-    public static final int TMPFILE = OpenFlags.O_TMPFILE.intValue();
+    /** binary flag, to ensure no encoding changes are made while writing (Windows only) */
+    public static final int BINARY = OpenFlags.O_BINARY.defined() ? OpenFlags.O_BINARY.intValue() : 0;
+    /** tmpfile flag (Linux only) **/
+    public static final int TMPFILE = OpenFlags.O_TMPFILE.defined() ? OpenFlags.O_TMPFILE.intValue() : 0;
     /** textmode flag, MRI has no equivalent but we use ModeFlags currently
      * to also capture what are oflags.
      */
