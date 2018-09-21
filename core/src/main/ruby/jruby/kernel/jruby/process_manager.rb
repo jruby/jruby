@@ -25,7 +25,7 @@ module JRuby
       pb = ProcessBuilder.new(config.exec_args)
       pb.redirect_input(Redirect::INHERIT)
       pb.redirect_error(Redirect::INHERIT)
-      pb.environment(ShellLauncher.get_current_env(JRuby.runtime))
+      pb.environment
       cwd = JRuby.runtime.current_directory
       cwd = cwd.start_with?('uri:classloader:/') ? ENV_JAVA['user.dir'] : cwd
       pb.directory(JFile.new(cwd))
