@@ -1256,12 +1256,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // rb_cloexec_open
     public static ChannelFD cloexecOpen(Ruby runtime, Sysopen data) {
         Channel ret = null;
-//        #ifdef O_CLOEXEC
-//            /* O_CLOEXEC is available since Linux 2.6.23.  Linux 2.6.18 silently ignore it. */
-//            flags |= O_CLOEXEC;
-//        #elif defined O_NOINHERIT
+        if (OpenFlags.O_CLOEXEC.defined()) {
+            data.oflags |= OpenFlags.O_CLOEXEC.intValue();
+        } else { // #elif defined O_NOINHERIT
 //            flags |= O_NOINHERIT;
-//        #endif
+        }
         PosixShim shim = new PosixShim(runtime);
         ret = shim.open(runtime.getCurrentDirectory(), data.fname, data.oflags, data.perm);
         if (ret == null) {
