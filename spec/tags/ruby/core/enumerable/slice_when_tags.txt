@@ -1,1 +1,0 @@
-fails:Enumerable#slice_when when an iterator method yields more than one value processes all yielded values
