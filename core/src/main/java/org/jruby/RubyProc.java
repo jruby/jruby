@@ -304,12 +304,19 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (file != null) return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+        if (file != null) {
+            return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+        }
 
         if (block != null) {
             Binding binding = block.getBinding();
-            return runtime.newArray(runtime.newString(binding.getFile()),
-                    runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
+
+            // block+binding may exist for a core method, which will have a null filename
+            if (binding.getFile() != null) {
+                return runtime.newArray(
+                        runtime.newString(binding.getFile()),
+                        runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
+            }
         }
 
         return context.nil;
