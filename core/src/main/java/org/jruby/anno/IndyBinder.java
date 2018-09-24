@@ -29,9 +29,10 @@
 
 package org.jruby.anno;
 
-import jnr.ffi.provider.jffi.SkinnyMethodAdapter;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DescriptorInfo;
 import org.jruby.runtime.Visibility;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -391,6 +392,7 @@ public class IndyBinder extends AbstractProcessor {
 
         mv.aload(implClass);
         mv.getstatic(p(Visibility.class), anno.visibility().name(), ci(Visibility.class));
+        mv.ldc(AnnotationBinder.getBaseName(anno.name(), methods.get(0)));
         mv.ldc(encodeSignature(0, 0, 0, 0, 0, true, false));
         mv.ldc(true);
         mv.ldc(anno.notImplemented());
@@ -412,7 +414,7 @@ public class IndyBinder extends AbstractProcessor {
             }
         }
 
-        Method handleInit = Method.getMethod("void foo(org.jruby.RubyModule, org.jruby.runtime.Visibility, long, boolean, boolean, java.lang.String, int, int, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable)");
+        Method handleInit = Method.getMethod("void foo(org.jruby.RubyModule, org.jruby.runtime.Visibility, java.lang.String, long, boolean, boolean, java.lang.String, int, int, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable)");
         mv.invokespecial("org/jruby/internal/runtime/methods/HandleMethod", "<init>", handleInit.getDescriptor());
 
         mv.astore(BASEMETHOD);
@@ -474,7 +476,7 @@ public class IndyBinder extends AbstractProcessor {
 
         mv.aload(RUNTIME);
         mv.ldc(cls.getSimpleName().toString());
-        mv.ldc(encoded);
+        mv.ldc(encoded.toString());
         mv.invokevirtual("org/jruby/Ruby", "addSimpleBoundMethodsPacked", "(Ljava/lang/String;Ljava/lang/String;)V");
     }
 

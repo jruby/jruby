@@ -30,9 +30,9 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import org.jruby.util.cli.Options;
 import static org.jruby.util.CodegenUtils.*;
 
+import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
@@ -52,7 +52,22 @@ import static org.objectweb.asm.Opcodes.*;
  * @author headius
  */
 public final class SkinnyMethodAdapter extends MethodVisitor {
-    private final static boolean DEBUG = Options.COMPILE_DUMP.load();
+    private final static boolean DEBUG;
+
+    // We do this manually to avoid this class pulling in JRuby runtime classes.
+    static {
+        String value = SafePropertyAccessor.getProperty("jruby.compile.dump");
+
+        if (value == null) {
+            DEBUG = false;
+        } else if (value.length() == 0) {
+            DEBUG = true;
+        } else if (value.equals("true")) {
+            DEBUG = true;
+        } else {
+            DEBUG = false;
+        }
+    }
 
     private final String name;
     private final ClassVisitor cv;
