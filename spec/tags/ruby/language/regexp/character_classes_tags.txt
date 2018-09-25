@@ -1,1 +1,0 @@
-fails:Regexp with character classes supports \X (unicode 9.0 with UTR #51 workarounds)
