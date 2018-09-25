@@ -102,7 +102,7 @@ module Enumerable
       ary << last_after
       enum.yield ary
     end
-    each { |x| enum.yield [x] } unless element_present
+    each_entry { |x| enum.yield [x] } unless element_present
   end
   private :__slicey_chunky
 
