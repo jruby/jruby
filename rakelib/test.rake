@@ -88,7 +88,7 @@ namespace :test do
     jruby_opts.each do |task, opts|
       task task do
         ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -j 4 -- #{mri_test_files}"
       end
       namespace :stdlib do
         task task do
