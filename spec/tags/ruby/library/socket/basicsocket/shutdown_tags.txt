@@ -36,3 +36,11 @@ fails:Socket::BasicSocket#shutdown using IPv6 using an object that responds to #
 fails:Socket::BasicSocket#shutdown using IPv6 using an object that responds to #to_str shuts down a socket for reading using "SHUT_RD"
 fails:Socket::BasicSocket#shutdown using IPv6 using an object that responds to #to_str shuts down a socket for reading and writing
 fails:Socket::BasicSocket#shutdown using IPv6 using an object that does not respond to #to_str raises TypeError
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer shuts down a socket for reading
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer shuts down a socket for writing
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer shuts down a socket for reading
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer shuts down a socket for writing
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer raises ArgumentError when using an invalid option

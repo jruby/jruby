@@ -23,3 +23,4 @@ fails(travis):Marshal.dump with a String dumps a String with instance variables
 fails(travis):Marshal.dump with an Exception dumps the message for the exception
 fails:Marshal.dump when passed a StringIO should raise an error
 fails:Marshal.dump with an Exception dumps an empty Exception
+fails:Marshal.dump raises a TypeError if dumping a Mutex instance
