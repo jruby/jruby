@@ -13,3 +13,6 @@ fails:Module#autoload during the autoload before the constant is assigned return
 fails:Module#autoload after autoloading searches for the constant like the original lookup in the included modules
 fails:Module#autoload after autoloading searches for the constant like the original lookup in the included modules of the superclass
 fails:Module#autoload after autoloading searches for the constant like the original lookup in the prepended modules
+fails:Module#autoload the autoload is removed when the same file is required directly without autoload with a full path
+fails:Module#autoload the autoload is removed when the same file is required directly without autoload with a relative path
+fails(hangs):Module#autoload the autoload is removed when the same file is required directly without autoload in a nested require
