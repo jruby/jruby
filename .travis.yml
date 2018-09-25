@@ -24,7 +24,7 @@ before_script:
   - echo $MAVEN_OPTS
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 os:
   - linux
@@ -33,72 +33,58 @@ env:
   global:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
-  matrix:
-    - PHASE='-Ptest'
-    - PHASE='-Prake -Dtask=test:jruby'
-    #- PHASE='-Prake -Dtask=test:jruby:fullint' # included with OpenJDK bellow
-    - PHASE='-Prake -Dtask=test:jruby:jit'
-    - PHASE='-Prake -Dtask=test:jruby:jit' JRUBY_OPTS=-Xcompile.invokedynamic
-    - PHASE='-Prake -Dtask=test:jruby:aot'
-    - PHASE='-Prake -Dtask=test:mri:int'
-    - PHASE='-Prake -Dtask=test:mri:fullint'
-    - PHASE='-Prake -Dtask=test:mri:jit'
-    - PHASE='-Prake -Dtask=test:mri:stdlib'
-    - PHASE='-Prake -Dtask=test:slow_suites'
-    - PHASE='-Prake -Dtask=spec:ji'
-    - PHASE='-Prake -Dtask=spec:compiler'
-    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
-    - PHASE='-Prake -Dtask=spec:ffi'
-    - PHASE='-Prake -Dtask=spec:regression'
-    - PHASE='-Prake -Dtask=spec:ruby:fast'
-    - PHASE='-Prake -Dtask=spec:jruby'
-    - PHASE='-Prake -Dtask=spec:jrubyc'
-    - PHASE='-Prake -Dtask=spec:profiler'
 
 matrix:
   include:
     - env: PHASE='-Ptest'
-      jdk: openjdk8
-    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
-      jdk: openjdk8
-    # these profile do no need to run for all JDKs
-    - env: PHASE='-Pdist'
-      jdk: openjdk8
-    - env: PHASE='-Pjruby-jars'
-      jdk: openjdk8
-    - env: PHASE='-Pmain'
-      jdk: oraclejdk8
-    - env: PHASE='-Pcomplete'
-      jdk: oraclejdk8
-    - env: PHASE='-Posgi'
-      jdk: oraclejdk8
-    - env: PHASE='-Pj2ee'
-      jdk: oraclejdk8
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-      jdk: oraclejdk8
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-      jdk: oraclejdk8
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
-      jdk: oraclejdk8
-    - env: COMMAND=test/check_versions.sh
-      jdk: oraclejdk8
-    - env: PHASE='-Prake -Dtask=test:jruby:jit'
-      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:mri:int'
+    - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: PHASE='-Prake -Dtask=test:mri:jit'
-      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:jruby'
+    - env:
+      - PHASE='-Prake -Dtask=test:jruby'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=test:jruby:aot'
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+    - env: PHASE='-Prake -Dtask=test:slow_suites'
+    - env: PHASE='-Prake -Dtask=spec:ji'
+    - env: PHASE='-Prake -Dtask=spec:compiler'
+    - env:
+      - PHASE='-Prake -Dtask=spec:compiler'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=spec:ffi'
+    - env: PHASE='-Prake -Dtask=spec:regression'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-      jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=spec:jruby'
+    - env: PHASE='-Prake -Dtask=spec:jrubyc'
+    - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pdist'
+    - env: PHASE='-Pjruby-jars'
     - env: PHASE='-Pmain'
-      jdk: oraclejdk9
     - env: PHASE='-Pcomplete'
-      jdk: oraclejdk9
+    - env: PHASE='-Posgi'
+    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - env: COMMAND=test/check_versions.sh
+    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+      jdk: openjdk9
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
+      jdk: openjdk9
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+      jdk: openjdk9
+    - env: PHASE='-Pmain'
+      jdk: openjdk9
+    - env: PHASE='-Pcomplete'
+      jdk: openjdk9
   allow_failures:
     - env: PHASE='-Prake -Dtask=test:jruby:jit'
-      jdk: oraclejdk9
+      jdk: openjdk9
     - env: PHASE='-Prake -Dtask=test:mri:jit'
-      jdk: oraclejdk9
+      jdk: openjdk9
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-      jdk: oraclejdk9
+      jdk: openjdk9
 
 install:
   - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
