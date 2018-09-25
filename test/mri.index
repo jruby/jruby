@@ -1,5 +1,11 @@
 # MRI tests.rb
 
+# next few files are at front so -jn will finish with them and not drag out
+# at end of the run.  This removes over 40s with -j2 for me locally.
+ruby/test_syntax.rb
+ruby/test_parse.rb
+ruby/test_optimization.rb
+ruby/test_rubyoptions.rb
 ruby/test_alias.rb
 # Everything in here seems to fail or hang.rb
 #ruby/test_argf.rb
@@ -61,9 +67,7 @@ ruby/test_notimp.rb
 ruby/test_numeric.rb
 ruby/test_object.rb
 ruby/test_objectspace.rb
-ruby/test_optimization.rb
 ruby/test_pack.rb
-ruby/test_parse.rb
 ruby/test_path.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
@@ -78,7 +82,6 @@ ruby/test_readpartial.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_refinement.rb
-ruby/test_rubyoptions.rb
 # Removed until we can implement the remaining features (#2143)
 #ruby/test_settracefunc.rb
 ruby/test_signal.rb
@@ -91,7 +94,6 @@ ruby/test_stringchar.rb
 ruby/test_struct.rb
 ruby/test_super.rb
 ruby/test_symbol.rb
-ruby/test_syntax.rb
 ruby/test_system.rb
 ruby/test_thread.rb
 ruby/test_time.rb
