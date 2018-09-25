@@ -30,11 +30,13 @@ os:
   - linux
 
 env:
-#  global:
-#    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
-#    - MALLOC_ARENA_MAX=2
+  global:
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
+    - MALLOC_ARENA_MAX=2
 
 jobs:
+  fast_finish: true
+
   include:
     - stage: test
       env: PHASE='-Ptest'
@@ -90,6 +92,7 @@ jobs:
   allow_failures:
   - env: PHASE='-Prake -Dtask=test:jruby:jit'
     jdk: openjdk9
+    stage: test
   - env: PHASE='-Prake -Dtask=test:mri:jit'
     jdk: openjdk9
   - env: PHASE='-Prake -Dtask=spec:ruby:fast'
