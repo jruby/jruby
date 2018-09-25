@@ -133,8 +133,10 @@ deploy:
     on:
       branch: master
       repo: jruby/jruby # do not attempt deploying from forks
+      condition: $PHASE='-Prake -Dtask=spec:jrubyc'
   - provider: script
     script: ./mvnw deploy -Pdist --settings .travis-maven-settings.xml -DskipTests=true -B
     on:
       branch: jruby-9.1
       repo: jruby/jruby # do not attempt deploying from forks
+      condition: $PHASE='-Prake -Dtask=spec:jrubyc'
