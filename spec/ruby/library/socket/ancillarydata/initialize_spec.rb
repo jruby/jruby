@@ -2,7 +2,7 @@ require_relative '../spec_helper'
 
 with_feature :ancillary_data do
   describe 'Socket::AncillaryData#initialize' do
-    describe 'using Fixnums for the family, level, and type' do
+    describe 'using Integers for the family, level, and type' do
       before do
         @data = Socket::AncillaryData
           .new(Socket::AF_INET, Socket::IPPROTO_IP, Socket::IP_RECVTTL, 'ugh')
@@ -106,7 +106,7 @@ with_feature :ancillary_data do
         Socket::AncillaryData.new(:INET, :SOCKET, :RIGHTS, '').type.should == Socket::SCM_RIGHTS
       end
 
-      platform_is_not :"solaris2.10" do
+      platform_is_not :"solaris2.10", :aix do
         it 'sets the type to SCM_TIMESTAMP when using :TIMESTAMP as the type argument' do
           Socket::AncillaryData.new(:INET, :SOCKET, :TIMESTAMP, '').type.should == Socket::SCM_TIMESTAMP
         end
