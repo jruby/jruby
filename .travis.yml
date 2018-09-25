@@ -33,7 +33,6 @@ env:
   global:
     - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
-    - PHASE='' # default to allow_failures below
 
 jobs:
   fast_finish: true
@@ -41,43 +40,43 @@ jobs:
   include:
     - stage: test
       env: PHASE='-Ptest'
-#    - env: PHASE='-Prake -Dtask=test:mri:int'
-#    - env: PHASE='-Prake -Dtask=test:mri:fullint'
-#    - env: PHASE='-Prake -Dtask=test:mri:jit'
-#    - env: PHASE='-Prake -Dtask=test:jruby'
-#    - env:
-#      - PHASE='-Prake -Dtask=test:jruby'
-#        JRUBY_OPTS=-Xcompile.invokedynamic
-#    - env: PHASE='-Prake -Dtask=test:jruby:aot'
-#    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
-#    - env: PHASE='-Prake -Dtask=test:slow_suites'
-#    - env: PHASE='-Prake -Dtask=spec:ji'
-#    - env: PHASE='-Prake -Dtask=spec:compiler'
-#    - env:
-#      - PHASE='-Prake -Dtask=spec:compiler'
-#        JRUBY_OPTS=-Xcompile.invokedynamic
-#    - env: PHASE='-Prake -Dtask=spec:ffi'
-#    - env: PHASE='-Prake -Dtask=spec:regression'
-#    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-#    - env: PHASE='-Prake -Dtask=spec:jruby'
-#    - env: PHASE='-Prake -Dtask=spec:jrubyc'
-#    - env: PHASE='-Prake -Dtask=spec:profiler'
-#    - env: PHASE='-Pdist'
-#    - env: PHASE='-Pjruby-jars'
-#    - env: PHASE='-Pmain'
-#    - env: PHASE='-Pcomplete'
-#    - env: PHASE='-Posgi'
-#    - env: PHASE='-Pj2ee'
-#    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-#    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-#    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
-#    - env: COMMAND=test/check_versions.sh
-    - env: PHASE='-Prake -Dtask=test:jruby:jit'
-      jdk: openjdk9
+    - env: PHASE='-Prake -Dtask=test:mri:int'
+    - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: PHASE='-Prake -Dtask=test:mri:jit'
-      jdk: openjdk9
+    - env: PHASE='-Prake -Dtask=test:jruby'
+    - env:
+      - PHASE='-Prake -Dtask=test:jruby'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=test:jruby:aot'
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+    - env: PHASE='-Prake -Dtask=test:slow_suites'
+    - env: PHASE='-Prake -Dtask=spec:ji'
+    - env: PHASE='-Prake -Dtask=spec:compiler'
+    - env:
+      - PHASE='-Prake -Dtask=spec:compiler'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=spec:ffi'
+    - env: PHASE='-Prake -Dtask=spec:regression'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-      jdk: openjdk9
+    - env: PHASE='-Prake -Dtask=spec:jruby'
+    - env: PHASE='-Prake -Dtask=spec:jrubyc'
+    - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pdist'
+    - env: PHASE='-Pjruby-jars'
+    - env: PHASE='-Pmain'
+    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Posgi'
+    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - env: COMMAND=test/check_versions.sh
+#    - env: PHASE='-Prake -Dtask=test:jruby:jit'
+#      jdk: openjdk9
+#    - env: PHASE='-Prake -Dtask=test:mri:jit'
+#      jdk: openjdk9
+#    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+#      jdk: openjdk9
     - env: PHASE='-Pmain'
       jdk: openjdk9
     - env: PHASE='-Pcomplete'
@@ -90,14 +89,13 @@ jobs:
         - master
         - jruby-9.1
 
-  allow_failures:
-  - env: PHASE='-Prake -Dtask=test:jruby:jit'
-    jdk: openjdk9
-    stage: test
-  - env: PHASE='-Prake -Dtask=test:mri:jit'
-    jdk: openjdk9
-  - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-    jdk: openjdk9
+#  allow_failures:
+#  - env: PHASE='-Prake -Dtask=test:jruby:jit'
+#    jdk: openjdk9
+#  - env: PHASE='-Prake -Dtask=test:mri:jit'
+#    jdk: openjdk9
+#  - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+#    jdk: openjdk9
 
 install:
   - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
