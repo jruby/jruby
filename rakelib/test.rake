@@ -78,7 +78,7 @@ namespace :test do
 
   namespace :mri do
     jruby_opts = {
-        int: "-X-C",
+        int: "--dev",
         fullint: "-X-C -Xjit.threshold=0 -Xjit.background=false",
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
@@ -88,7 +88,7 @@ namespace :test do
     jruby_opts.each do |task, opts|
       task task do
         ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+        ruby "test/mri/runner.rb -j2 #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
       end
       namespace :stdlib do
         task task do
