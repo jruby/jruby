@@ -1,2 +1,0 @@
-fails:Regexps with anchors supports $ (line end anchor)
-fails:Regexps with anchors supports \Z (string end anchor, including before trailing \n)
