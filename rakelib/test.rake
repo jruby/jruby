@@ -83,25 +83,30 @@ namespace :test do
         jit: "-Xjit.threshold=0 -Xjit.background=false",
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
     }
-    mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
-    mri_stdlib_test_files = File.readlines('test/mri.stdlib.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
-    jruby_opts.each do |task, opts|
-      task task do
-        ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-        ruby "test/mri/runner.rb -j2 #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
-      end
-      namespace :stdlib do
-        task task do
-          ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
-          ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_stdlib_test_files}"
+
+    mri_suites = [:core, :extra, :stdlib]
+
+    mri_suites.each do |suite|
+      files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
+
+      namespace suite do
+
+        jruby_opts.each do |task, opts|
+
+          task task do
+            ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+            ruby "test/mri/runner.rb -j2 #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
+          end
         end
       end
+
+      # add int shortcut names
+      task suite => "test:mri:#{suite}:int"
     end
-    task stdlib: 'test:mri:stdlib:int'
 
     task all: jruby_opts.keys
   end
-  task mri: 'test:mri:int'
+  task mri: ['test:mri:core:int', 'test:mri:extra:int', 'test:mri:stdlib:int']
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
