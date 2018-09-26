@@ -51,6 +51,8 @@ jobs:
     - env: PHASE='-Prake -Dtask=test:mri:extra'
     - env: PHASE='-Prake -Dtask=test:mri:stdlib'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+    - env: COMMAND=test/check_versions.sh
+    - env: PHASE='-Ptest'
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - env: PHASE='-Prake -Dtask=test:jruby'
     - env:
@@ -69,7 +71,6 @@ jobs:
     - env: PHASE='-Prake -Dtask=spec:jruby'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
-    - env: PHASE='-Ptest'
     - env: PHASE='-Pdist'
     - env: PHASE='-Pjruby-jars'
     - env: PHASE='-Pmain'
@@ -78,7 +79,6 @@ jobs:
     - env: PHASE='-Pj2ee'
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-    - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Pmain'
       jdk: oraclejdk9
     - env: PHASE='-Pcomplete'
