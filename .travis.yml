@@ -4,6 +4,10 @@ sudo: false
 
 dist: trusty
 
+# don't need more than one level for our builds
+git:
+  depth: 1
+
 cache:
  directories:
    - $HOME/.m2
@@ -41,11 +45,11 @@ jobs:
 
   include:
     - stage: test
-      env: PHASE='-Ptest'
-    - env: PHASE='-Prake -Dtask=test:mri:int'
+      env: PHASE='-Prake -Dtask=test:mri:int'
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: PHASE='-Prake -Dtask=test:mri:jit'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - env: PHASE='-Prake -Dtask=test:jruby'
     - env:
       - PHASE='-Prake -Dtask=test:jruby'
@@ -63,6 +67,7 @@ jobs:
     - env: PHASE='-Prake -Dtask=spec:jruby'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Ptest'
     - env: PHASE='-Pdist'
     - env: PHASE='-Pjruby-jars'
     - env: PHASE='-Pmain'
@@ -71,7 +76,6 @@ jobs:
     - env: PHASE='-Pj2ee'
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - env: COMMAND=test/check_versions.sh
 #    - env: PHASE='-Prake -Dtask=test:jruby:jit'
 #      jdk: openjdk9
