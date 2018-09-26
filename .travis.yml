@@ -97,8 +97,6 @@ jobs:
 #  - env: PHASE='-Prake -Dtask=spec:ruby:fast'
 #    jdk: openjdk9
 
-install:
-  - ./mvnw $MAVEN_CLI_OPTS package -B -Dinvoker.skip -Dmaven.test.skip
 script: tool/travis-script.sh
 
 notifications:
@@ -107,13 +105,12 @@ notifications:
       - "irc.freenode.org#jruby"
     on_success: change
     on_failure: always
+    only:
+      branch:
+      - master
+      - jruby-9.1
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
-    skip_join: true
-
-# we are on a branch
-    on_success: always
-    on_failure: never
 
 services:
   - redis-server
