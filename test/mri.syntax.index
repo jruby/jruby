@@ -1,3 +1,0 @@
-# MRI syntax test runs many (slow) subprocesses
-
-ruby/test_syntax.rb
