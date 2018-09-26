@@ -87,7 +87,7 @@ namespace :test do
     mri_suites = [:core, :extra, :stdlib]
 
     mri_suites.each do |suite|
-      test_files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
+      files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
 
       namespace suite do
 
