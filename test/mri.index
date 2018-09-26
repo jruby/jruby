@@ -2,10 +2,11 @@
 
 # next few files are at front so -jn will finish with them and not drag out
 # at end of the run.  This removes over 40s with -j2 for me locally.
-ruby/test_syntax.rb
-ruby/test_parse.rb
+ruby/test_process.rb
 ruby/test_optimization.rb
 ruby/test_rubyoptions.rb
+ruby/test_parse.rb
+
 ruby/test_alias.rb
 # Everything in here seems to fail or hang.rb
 #ruby/test_argf.rb
@@ -72,8 +73,6 @@ ruby/test_path.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
 ruby/test_proc.rb
-# hangs when run with other tests
-ruby/test_process.rb
 ruby/test_rand.rb
 ruby/test_range.rb
 ruby/test_rational.rb

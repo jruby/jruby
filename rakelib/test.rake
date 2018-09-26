@@ -85,10 +85,17 @@ namespace :test do
     }
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     mri_stdlib_test_files = File.readlines('test/mri.stdlib.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
+    mri_syntax_test_files = File.readlines('test/mri.syntax.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     jruby_opts.each do |task, opts|
       task task do
         ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
         ruby "test/mri/runner.rb -j2 #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_test_files}"
+      end
+      namespace :syntax do
+        task task do
+          ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-Xmx2G -Xbacktrace.style=mri -Xdebug.fullTrace #{opts}"
+          ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{mri_syntax_test_files}"
+        end
       end
       namespace :stdlib do
         task task do
@@ -98,6 +105,7 @@ namespace :test do
       end
     end
     task stdlib: 'test:mri:stdlib:int'
+    task syntax: 'test:mri:syntax:int'
 
     task all: jruby_opts.keys
   end

@@ -48,6 +48,8 @@ jobs:
       env: PHASE='-Prake -Dtask=test:mri:int'
     - env: PHASE='-Prake -Dtask=test:mri:fullint'
     - env: PHASE='-Prake -Dtask=test:mri:jit'
+    - env: PHASE='-Prake -Dtask=test:mri:syntax'
+    - env: PHASE='-Prake -Dtask=test:mri:stdlib'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - env: PHASE='-Prake -Dtask=test:jruby'
