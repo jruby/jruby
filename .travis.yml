@@ -80,9 +80,9 @@ jobs:
 #    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
 #      jdk: openjdk9
     - env: PHASE='-Pmain'
-      jdk: openjdk9
+      jdk: oraclejdk9
     - env: PHASE='-Pcomplete'
-      jdk: openjdk9
+      jdk: oraclejdk9
 
     - stage: deploy
       script: ./mvnw deploy -Pdist --settings .travis-maven-settings.xml -DskipTests=true -B
