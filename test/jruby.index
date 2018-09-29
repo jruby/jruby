@@ -101,6 +101,7 @@ jruby/test_ast_inspector
 jruby/test_jarred_gems
 jruby/test_dir_with_plusses
 jruby/test_jar
+jruby/test_require
 # Not sure how to test this, since soft references take too long to collect
 #test_thread_service
 jruby/test_instantiating_interfaces
