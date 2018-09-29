@@ -2,11 +2,6 @@ require 'java'
 require 'jruby'
 
 module JRuby
-  MethodArgs2 = org.jruby.internal.runtime.methods.MethodArgs2
-  IRMethodArgs = org.jruby.internal.runtime.methods.IRMethodArgs
-  Helpers = org.jruby.runtime.Helpers
-  Arity = org.jruby.runtime.Arity
-  
   # Extensions only provides one feature right now: stealing methods from one
   # class/module and inserting them into another.
   module Extensions
