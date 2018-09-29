@@ -1885,22 +1885,33 @@ CLASSDEF
     assert ! output.index('ambiguous'), output
   end
 
-# NOTE: this might be desired to be implemented - except coercion it's all in
-#  def test_java_constructor_with_prefered_match
-#    output = with_stderr_captured do # exact match should not warn :
-#      color = java.awt.Color.new(10, 10, 1.0)
-#      assert_equal 10, color.getRed # assert we called (int,int,int)
-#    end
-#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
-#    assert ! output.index('ambiguous'), output
-#
-#    output = with_stderr_captured do # exact match should not warn :
-#      color = java.awt.Color.new(1.0, 0.1, 1)
-#      assert_equal 255, color.getRed # assert we called (float,float,float)
-#    end
-#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
-#    assert ! output.index('ambiguous'), output
-#  end
+  # NOTE: this might be desired to be implemented - except coercion it's all in
+  def test_java_constructor_with_prefered_match
+    color = nil
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(10, 10, java.lang.Short.new(1))
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+    assert_equal 10, color.getRed # assert we called (int,int,int)
+
+    output = with_stderr_captured do
+      color = java.awt.Color.new(1, 1, 1.0) # (float,float,float)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    # TODO should not warn
+    #assert ! output.index('ambiguous'), output
+    assert_equal 255, color.getRed
+
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(1.0, 0.1, 1)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    # TODO should not warn
+    #assert ! output.index('ambiguous'), output
+    pend('[ji] did not select (float,float,float) ctor') if color.getRed != 255
+    assert_equal 255, color.getRed # assert we called (float,float,float)
+  end
 
   # original report: https://jira.codehaus.org/browse/JRUBY-5582
   # NOTE: we're not testing this "early" on still a good JI exercise

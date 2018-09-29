@@ -92,6 +92,7 @@ jruby/test_null_channel
 jruby/test_irubyobject_java_passing
 jruby/test_jruby_object_input_stream
 jruby/test_jruby_synchronized
+jruby/test_jruby_4198
 jruby/test_context_classloader
 jruby/test_uri_classloader
 jruby/test_rexml_document
