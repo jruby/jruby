@@ -836,7 +836,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         newLength += index;
         if (index >= Integer.MAX_VALUE || newLength >= Integer.MAX_VALUE) {
-            throw getRuntime().newArgumentError("index too big");
+            throw getRuntime().newIndexError("index " + index  + " too big");
         }
         realloc((int) newLength, valuesLength);
     }
@@ -1273,7 +1273,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modify();
         int valuesLength = values.length - begin;
         if (realLength == valuesLength) {
-            if (realLength == Integer.MAX_VALUE) throw getRuntime().newArgumentError("index too big");
+            if (realLength == Integer.MAX_VALUE) throw getRuntime().newIndexError("index " + Integer.MAX_VALUE + " too big");
 
             long newLength = valuesLength + (valuesLength >> 1);
             if (newLength > Integer.MAX_VALUE) {
