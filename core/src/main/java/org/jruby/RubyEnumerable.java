@@ -422,16 +422,16 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "first")
     public static IRubyObject first(ThreadContext context, IRubyObject self, final IRubyObject num) {
-        int firstCount = RubyNumeric.fix2int(num);
         final Ruby runtime = context.runtime;
-        final RubyArray result = runtime.newArray();
+        final long firstCount = RubyNumeric.num2long(num);
 
-        if (firstCount < 0) throw runtime.newArgumentError("negative index");
-        if (firstCount == 0) return result;
+        if (firstCount == 0) return runtime.newEmptyArray();
+        if (firstCount < 0) throw runtime.newArgumentError("attempt to take negative size");
+        final RubyArray result = RubyArray.newArray(runtime, firstCount);
 
         try {
             each(context, self, new JavaInternalBlockBody(runtime, context, null, Signature.ONE_REQUIRED) {
-                private int iter = RubyNumeric.fix2int(num);
+                private long iter = firstCount;
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     IRubyObject packedArg = packEnumValues(context.runtime, args);
                     result.append(packedArg);
