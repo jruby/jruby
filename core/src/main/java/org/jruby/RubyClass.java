@@ -684,6 +684,17 @@ public class RubyClass extends RubyModule {
     }
 
     /**
+    * MRI: rb_funcallv_public
+    */
+    public IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
+        DynamicMethod method = searchMethod(name);
+        if (shouldCallMethodMissing(method) || method.getVisibility() != PUBLIC) {
+            return Helpers.callMethodMissing(context, self, method.getVisibility(), name, CallType.FUNCTIONAL, arg, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, this, name, arg);
+    }
+
+    /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
      * MRI: rb_check_funcall

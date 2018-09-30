@@ -406,6 +406,13 @@ public class Helpers {
         return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
+    /**
+    * MRI: rb_funcallv_public
+    */
+    public static IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
+        return self.getMetaClass().invokePublic(context, self, name, arg);
+    }
+
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
         return self.getMetaClass().finvokeChecked(context, self, name);

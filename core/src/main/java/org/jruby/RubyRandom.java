@@ -714,7 +714,7 @@ public class RubyRandom extends RubyObject {
         RandomType rnd = tryGetRandomType(context, obj);
 
         if (rnd == null) {
-            RubyInteger v = Helpers.invoke(context, obj, "rand", context.runtime.newFixnum(limit + 1)).convertToInteger();
+            RubyInteger v = Helpers.invokePublic(context, obj, "rand", context.runtime.newFixnum(limit + 1)).convertToInteger();
             long r = RubyNumeric.num2long(v);
             if (r < 0) throw context.runtime.newRangeError("random number too small " + r);
             if (r > limit) throw context.runtime.newRangeError("random number too big " + r);
