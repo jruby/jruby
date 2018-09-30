@@ -360,6 +360,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
+    public static final int SMALL_ARRAY_LEN = 16;
 
     // volatile to ensure that initial nil-fill is visible to other threads
     protected volatile IRubyObject[] values;
@@ -1493,6 +1494,31 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @Deprecated
     public IRubyObject aref19(IRubyObject arg0) {
         return aref(arg0);
+    }
+
+    /** rb_ary_includes_by_eql
+    */
+    private static boolean includesByEql(ThreadContext context, RubyArray ary, IRubyObject item) {
+        IRubyObject e;
+        for (int i = 0; i < ary.realLength; i++) {
+            e = ary.eltOk(i);
+            if (Helpers.rbEql(context, item, e).isTrue()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** rb_ary_union
+    */
+    private static void arrayUnion(ThreadContext context, RubyArray ary_union, RubyArray ary) {
+        for (int i = 0; i < ary.realLength; i++) {
+            IRubyObject elt = ary.eltOk(i);
+            if (includesByEql(context, ary_union, elt)) {
+                continue;
+            }
+            ary_union.append(elt);
+        }
     }
 
     private IRubyObject arefCommon(IRubyObject arg0) {
@@ -3430,9 +3456,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_diff(IRubyObject other) {
         Ruby runtime = getRuntime();
-        RubyHash hash = other.convertToArray().makeHash();
+        RubyArray ary2 = other.convertToArray();
         RubyArray ary3 = newArray(runtime);
 
+        if (realLength <= SMALL_ARRAY_LEN && ary2.realLength <= SMALL_ARRAY_LEN) {
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject elt = eltOk(i);
+                if (includesByEql(runtime.getCurrentContext(), ary2, elt)) {
+                    continue;
+                }
+                ary3.append(elt);
+            }
+            return ary3;
+        }
+
+        RubyHash hash = ary2.makeHash();
         try {
             for (int i = 0; i < realLength; i++) {
                 IRubyObject value = eltOk(i);
@@ -3454,15 +3492,34 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject op_and(IRubyObject other) {
         Ruby runtime = getRuntime();
         RubyArray ary2 = other.convertToArray();
-        RubyHash hash = ary2.makeHash();
+        if (realLength == 0 || ary2.realLength == 0) return newEmptyArray(runtime);
 
         int maxSize = realLength < ary2.realLength ? realLength : ary2.realLength;
 
-        if (maxSize == 0) return newEmptyArray(runtime);
-
-        RubyArray ary3 = newBlankArray(runtime, maxSize);
-
         int index = 0;
+        if (realLength <= SMALL_ARRAY_LEN && ary2.realLength <= SMALL_ARRAY_LEN) {
+            ThreadContext context = runtime.getCurrentContext();
+            RubyArray ary3 = newArray(runtime);
+            for (int i = 0; i < realLength; i++) {
+                IRubyObject v = eltOk(i);
+                if (!includesByEql(context, ary2, v)) {
+                    continue;
+                }
+                if (includesByEql(context, ary3, v)) {
+                    continue;
+                }
+                index++;
+                ary3.append(v);
+            }
+            // if index is 1 and we made a size 2 array, repack
+            if (index == 0) return newEmptyArray(runtime);
+            if (index == 1 && maxSize == 2) return newArray(runtime, ary3.eltInternal(0));
+
+            return ary3;
+        }
+
+        RubyHash hash = ary2.makeHash();
+        RubyArray ary3 = newBlankArray(runtime, maxSize);
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
             if (hash.fastDelete(v)) ary3.store(index++, v);
@@ -3482,15 +3539,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject op_or(IRubyObject other) {
         Ruby runtime = getRuntime();
         RubyArray ary2 = other.convertToArray();
-        RubyHash set = makeHash(ary2);
 
         int maxSize = realLength + ary2.realLength;
-
         if (maxSize == 0) return newEmptyArray(runtime);
 
-        RubyArray ary3 = newBlankArray(runtime, maxSize);
+        if (maxSize <= SMALL_ARRAY_LEN) {
+            RubyArray ary3 = newArray(runtime);
+            ThreadContext context = runtime.getCurrentContext();
+            arrayUnion(context, ary3, this);
+            arrayUnion(context, ary3, ary2);
+            return ary3;
+        }
 
+        RubyArray ary3 = newBlankArray(runtime, maxSize);
         int index = 0;
+        RubyHash set = makeHash(ary2);
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
             if (set.fastDelete(v)) ary3.store(index++, v);
