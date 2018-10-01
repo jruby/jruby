@@ -360,7 +360,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
-    public static final int SMALL_ARRAY_LEN = 16;
+    public static final int SMALL_ARRAY_LEN = 10;
 
     // volatile to ensure that initial nil-fill is visible to other threads
     protected volatile IRubyObject[] values;
