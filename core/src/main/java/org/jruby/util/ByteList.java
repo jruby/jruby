@@ -510,9 +510,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public void append(byte[] moreBytes, int start, int len) {
         assert moreBytes != null : "moreBytes is null";
-        // FIXME: Problems on CI box tripping on this.  Re-enable later during 1.6 development.
-        //assert start >= 0 && (start == 0 || start < moreBytes.length) : "Invalid start";
-        assert len >= 0 && moreBytes.length - start >= len : "Bad length";
+        assert start >= 0 && (start == 0 || start < moreBytes.length) : "Invalid start: " + start;
+        assert len >= 0 && moreBytes.length - start >= len : "Bad length: " + len;
 
         grow(len);
         System.arraycopy(moreBytes, start, bytes, begin + realSize, len);
