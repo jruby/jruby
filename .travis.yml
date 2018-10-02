@@ -92,6 +92,12 @@ jobs:
       jdk: oraclejdk9
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk9
+    - env: PHASE='-Prake -Dtask=test:jruby'
+      jdk: openjdk11
+    - env: PHASE='-Pmain'
+      jdk: openjdk11
+    - env: PHASE='-Pcomplete'
+      jdk: openjdk11
 
 script: tool/travis-script.sh
 
