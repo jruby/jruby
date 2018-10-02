@@ -50,15 +50,22 @@ import org.jcodings.specific.ASCIIEncoding;
  * of characters. However, its API resembles StringBuffer/StringBuilder more than String
  * because it is a mutable object.
  */
+@SuppressWarnings("deprecation")
 public class ByteList implements Comparable, CharSequence, Serializable {
     private static final long serialVersionUID = -1286166947275543731L;
 
     public static final byte[] NULL_ARRAY = new byte[0];
-    public static final ByteList EMPTY_BYTELIST = new ByteList(0);
+    public static final ByteList EMPTY_BYTELIST = new ByteList(NULL_ARRAY, false);
 
-    private byte[] bytes;
-    private int begin;
-    private int realSize;
+    // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
+    // until there's new releases we shall keep them public and maybe review other exts using BL's API
+    @Deprecated
+    public byte[] bytes;
+    @Deprecated
+    public int begin;
+    @Deprecated
+    public int realSize;
+
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
     int hash;
@@ -137,7 +144,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(byte[] wrap, Encoding encoding, boolean copy) {
         assert wrap != null;
         if (copy) {
-            this.bytes = (byte[])wrap.clone();
+            this.bytes = wrap.clone();
         } else {
             this.bytes = wrap;
         }
@@ -178,7 +185,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param len how long the data is in the wrap array
      * @param copy if true array copy wrap. otherwise use as backing store
      */
-    // FIXME:  Fix the index != 0 not honoring copy and separate out into a different caller. JRuby.next would be the right time for this.
     public ByteList(byte[] wrap, int index, int len, boolean copy) {
         this(wrap, index, len, ASCIIEncoding.INSTANCE, copy);
     }
@@ -635,8 +641,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public void unsafeReplace(int beg, int len, byte[] nbytes, int index, int count) {
         grow(count - len);
         int newSize = realSize + count - len;
-        System.arraycopy(bytes,beg+len,bytes,beg+count,realSize - (len+beg));
-        System.arraycopy(nbytes,index,bytes,beg,count);
+        System.arraycopy(bytes, beg+len, bytes, beg+count, realSize - (len + beg));
+        System.arraycopy(nbytes, index, bytes, beg, count);
         realSize = newSize;
         invalidate();
     }
