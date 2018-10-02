@@ -3454,13 +3454,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject op_and(IRubyObject other) {
         Ruby runtime = getRuntime();
         RubyArray ary2 = other.convertToArray();
-        RubyHash hash = ary2.makeHash();
+        if (realLength == 0 || ary2.realLength == 0) return newEmptyArray(runtime);
 
         int maxSize = realLength < ary2.realLength ? realLength : ary2.realLength;
-
-        if (maxSize == 0) return newEmptyArray(runtime);
-
         RubyArray ary3 = newBlankArray(runtime, maxSize);
+        RubyHash hash = ary2.makeHash();
 
         int index = 0;
         for (int i = 0; i < realLength; i++) {
@@ -3482,13 +3480,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject op_or(IRubyObject other) {
         Ruby runtime = getRuntime();
         RubyArray ary2 = other.convertToArray();
-        RubyHash set = makeHash(ary2);
 
         int maxSize = realLength + ary2.realLength;
-
         if (maxSize == 0) return newEmptyArray(runtime);
 
         RubyArray ary3 = newBlankArray(runtime, maxSize);
+        RubyHash set = makeHash(ary2);
 
         int index = 0;
         for (int i = 0; i < realLength; i++) {
