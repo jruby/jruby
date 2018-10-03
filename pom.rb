@@ -82,7 +82,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jar-dependencies.version' => '0.4.0',
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
-              'asm.version' => '6.2',
+              'asm.version' => '6.2.1',
               'jffi.version' => '1.2.17',
               'joda.time.version' => '2.9.9' )
 

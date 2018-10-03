@@ -37,7 +37,6 @@ project 'JRuby Core' do
 
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
-  jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
