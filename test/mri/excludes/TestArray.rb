@@ -1,6 +1,5 @@
 exclude :test_aset_error, "needs investigation"
 exclude :test_combination_with_callcc, "no callcc"
-exclude :test_count, "needs investigation"
 exclude :test_flatten_with_callcc, "no callcc"
 exclude :test_permutation, "super flaky on travis"
 exclude :test_permutation_with_callcc, "no callcc"

@@ -387,10 +387,12 @@ public class RubyObject extends RubyBasicObject {
     }
 
     private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
-        if (a instanceof RubyFixnum) {
-            if (b instanceof RubyFixnum) return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
-        } else if (a instanceof RubyFloat) {
-            if (b instanceof RubyFloat) return ((RubyFloat) a).fastEqual((RubyFloat) b);
+        if (a instanceof RubyFixnum && b instanceof RubyFixnum &&
+            !context.runtime.getFixnum().isRefinement() && context.runtime.getFixnum().isMethodBuiltin("==")) {
+                return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
+        } else if (a instanceof RubyFloat && b instanceof RubyFloat &&
+            !context.runtime.getFloat().isRefinement() && context.runtime.getFloat().isMethodBuiltin("==")) {
+                return ((RubyFloat) a).fastEqual((RubyFloat) b);
         }
         return invokedynamic(context, a, OP_EQUAL, b).isTrue();
     }
