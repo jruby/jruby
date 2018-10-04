@@ -342,7 +342,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args, int begin) {
-        return new RubyArray(runtime, args, begin);
+        assert begin >= 0 : "begin must be >= 0";
+        assert begin <= args.length : "begin must be <= length";
+
+        return new RubyArray(runtime, args, begin, args.length - begin);
     }
 
     public static RubyArray newArrayNoCopy(Ruby runtime, IRubyObject[] args, int begin, int length) {
@@ -353,10 +356,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static RubyArray newArrayNoCopyLight(Ruby runtime, IRubyObject[] args) {
-        RubyArray arr = new RubyArray(runtime, false);
-        arr.values = args;
-        arr.realLength = args.length;
-        return arr;
+        return new RubyArray(runtime, args, false);
     }
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
@@ -379,8 +379,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     private RubyArray(Ruby runtime, IRubyObject[] vals) {
         super(runtime, runtime.getArray());
-        values = vals;
-        realLength = vals.length;
+        this.values = vals;
+        this.realLength = vals.length;
     }
 
     /*
@@ -388,37 +388,28 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     private RubyArray(Ruby runtime, IRubyObject[] vals, boolean objectSpace) {
         super(runtime, runtime.getArray(), objectSpace);
-        values = vals;
-        realLength = vals.length;
+        this.values = vals;
+        this.realLength = vals.length;
     }
 
     /*
      * plain internal array assignment
      */
-    private RubyArray(Ruby runtime, IRubyObject[] vals, int begin) {
-        super(runtime, runtime.getArray());
-        this.values = vals;
-        this.begin = begin;
-        this.realLength = vals.length - begin;
-        this.isShared = true;
-    }
-
     private RubyArray(Ruby runtime, IRubyObject[] vals, int begin, int length) {
         super(runtime, runtime.getArray());
         this.values = vals;
         this.begin = begin;
         this.realLength = length;
-        this.isShared = true;
     }
 
     public RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
-        values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
+        this.values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
     private RubyArray(Ruby runtime, int length, boolean objectspace) {
         super(runtime, runtime.getArray(), objectspace);
-        values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
+        this.values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
     /* NEWOBJ and OBJSETUP equivalent
@@ -440,9 +431,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
-    private RubyArray(Ruby runtime, RubyClass klass, IRubyObject[]vals, boolean objectspace) {
+    private RubyArray(Ruby runtime, RubyClass klass, IRubyObject[] vals, boolean objectspace) {
         super(runtime, klass, objectspace);
         values = vals;
+        realLength = vals.length;
     }
 
     protected RubyArray(Ruby runtime, RubyClass klass, boolean objectSpace) {
