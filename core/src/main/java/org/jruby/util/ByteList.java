@@ -68,9 +68,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    int hash;
+    transient int hash;
 
-    String stringValue;
+    transient String stringValue;
 
     private static final int DEFAULT_SIZE = 4;
 
@@ -1098,21 +1098,21 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     @Override
     public int hashCode() {
-        int currentHash = hash;
-        if (currentHash != 0) return currentHash;
+        int hash = this.hash;
+        if (hash != 0) return hash;
 
-        int key = 0;
+        hash = 0;
         int begin = this.begin, realSize = this.realSize;
         byte[] bytes = this.bytes;
 
         int index = begin;
         final int end = begin + realSize;
         while (index < end) {
-            // equivalent of: key = key * 65599 + byte;
-            key = ((key << 16) + (key << 6) - key) + (int)(bytes[index++]); // & 0xFF ?
+            // equivalent of: hash = hash * 65599 + byte;
+            hash = ((hash << 16) + (hash << 6) - hash) + (int)(bytes[index++]); // & 0xFF ?
         }
-        key = key + (key >> 5);
-        return hash = key;
+        hash = hash + (hash >> 5);
+        return this.hash = hash;
     }
 
     /**
