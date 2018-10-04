@@ -181,15 +181,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static final RubyArray newArray(final Ruby runtime, final int len) {
-        RubyArray array = new RubyArray(runtime, len);
-        Helpers.fillNil(array.values, 0, len, runtime);
-        return array;
+        IRubyObject[] values = len == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[len];
+        Helpers.fillNil(values, 0, len, runtime);
+        return new RubyArray(runtime, values, 0, 0);
     }
 
     public static final RubyArray newArrayLight(final Ruby runtime, final int len) {
-        RubyArray array = new RubyArray(runtime, len, false);
-        Helpers.fillNil(array.values, 0, len, runtime);
-        return array;
+        IRubyObject[] values = len == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[len];
+        Helpers.fillNil(values, 0, len, runtime);
+        return new RubyArray(runtime, values, 0, 0, false);
     }
 
     /** rb_ary_new
@@ -371,8 +371,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     protected int begin = 0;
     protected int realLength = 0;
 
-    private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(ByteList.plain("[]"), USASCIIEncoding.INSTANCE);
-    private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(ByteList.plain("[...]"), USASCIIEncoding.INSTANCE);
+    private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(new byte[] { '[',']' }, USASCIIEncoding.INSTANCE);
+    private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(new byte[] { '[','.','.','.',']' }, USASCIIEncoding.INSTANCE);
 
     /*
      * plain internal array assignment
@@ -402,13 +402,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         this.realLength = length;
     }
 
-    public RubyArray(Ruby runtime, int length) {
-        super(runtime, runtime.getArray());
-        this.values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
+    private RubyArray(Ruby runtime, IRubyObject[] vals, int begin, int length, boolean objectSpace) {
+        super(runtime, runtime.getArray(), objectSpace);
+        this.values = vals;
+        this.begin = begin;
+        this.realLength = length;
     }
 
-    private RubyArray(Ruby runtime, int length, boolean objectspace) {
-        super(runtime, runtime.getArray(), objectspace);
+    public RubyArray(Ruby runtime, int length) {
+        super(runtime, runtime.getArray());
         this.values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
     }
 
