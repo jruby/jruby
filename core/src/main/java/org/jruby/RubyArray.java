@@ -160,8 +160,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         if (args.length > 0) {
-            arr.values = new IRubyObject[args.length];
-            System.arraycopy(args, 0, arr.values, 0, args.length);
+            arr.values = args.clone();
             arr.realLength = args.length;
         }
         return arr;
@@ -361,18 +360,18 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public static final int ARRAY_DEFAULT_SIZE = 16;
 
-    // volatile to ensure that initial nil-fill is visible to other threads
-    protected volatile IRubyObject[] values;
-
     private static final int TMPLOCK_ARR_F = 1 << 9;
     private static final int TMPLOCK_OR_FROZEN_ARR_F = TMPLOCK_ARR_F | FROZEN_F;
 
-    protected volatile boolean isShared = false;
-    protected int begin = 0;
-    protected int realLength = 0;
-
     private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(new byte[] { '[',']' }, USASCIIEncoding.INSTANCE);
     private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(new byte[] { '[','.','.','.',']' }, USASCIIEncoding.INSTANCE);
+
+    private volatile boolean isShared = false;
+
+    protected IRubyObject[] values;
+
+    protected int begin = 0;
+    protected int realLength = 0;
 
     /*
      * plain internal array assignment
