@@ -193,6 +193,7 @@ public class RubyZlib {
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
         if (!args[1].isNil()) start = RubyNumeric.num2long(args[1]);
+        start &= 0xFFFFFFFFL;
 
         final boolean slowPath = start != 0;
         final int bytesLength = bytes == null ? 0 : bytes.length();
