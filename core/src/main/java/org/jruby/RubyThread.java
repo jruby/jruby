@@ -619,6 +619,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
             runtime.getThreadService().associateThread(thread, this);
 
+            // copy parent thread's interrupt masks
+            interruptMaskStack.addAll(context.getThread().interruptMaskStack);
+
             threadImpl.start();
 
             // We yield here to hopefully permit the target thread to schedule
@@ -739,6 +742,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         try {
+            // check for any interrupts that should fire with new masks
+            th.pollThreadEvents();
+
             return block.call(context);
         } finally {
             th.interruptMaskStack.remove(th.interruptMaskStack.size() - 1);
