@@ -1819,7 +1819,10 @@ public class RubyKernel {
                     }
                     envStrings.add(null);
 
-                    runtime.getPosix().execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
+                    int status = runtime.getPosix().execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
+                    if (status == -1) {
+                        runtime.getPosix().exec(progStr, argv);
+                    }
                 }
 
                 // Only here because native exec could not exec (always -1)
