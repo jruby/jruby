@@ -38,6 +38,7 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.jruby.ext.JRubyUtilLibraryTest;
 import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
@@ -100,6 +101,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRecursiveCheck.class);
         suite.addTestSuite(TestEncodingAPI.class);
         suite.addTestSuite(TestSignature.class);
+        suite.addTestSuite(JRubyUtilLibraryTest.class);
         // Disabled test due to difficulty of making WeakRef logic deterministic
 //        suite.addTestSuite(TestRegexpCache.class);
         return suite;
