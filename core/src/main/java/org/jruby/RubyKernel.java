@@ -1820,8 +1820,10 @@ public class RubyKernel {
                     envStrings.add(null);
 
                     int status = runtime.getPosix().execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
-                    if (status == -1) {
-                        runtime.getPosix().exec(progStr, argv);
+                    if (Platform.IS_WSL && status == -1) {
+                        if (runtime.getErrno(runtime.getPosix().errno()) == runtime.getErrno().getClass("ENOMEM")) {
+                          runtime.getPosix().exec(progStr, argv);
+                        }
                     }
                 }
 
