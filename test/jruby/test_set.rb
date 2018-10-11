@@ -65,7 +65,7 @@ class TestSet < Test::Unit::TestCase
 
   def test_yaml_dump; require 'yaml'
     str = YAML.dump(Set.new)
-    assert_equal "--- !ruby/object:Set\nhash: {}\n", str
+    assert_equal "--- !ruby/object:Set {hash: {}}\n", str
     set = YAML.load(str)
     assert_equal Set.new([]), set
 
