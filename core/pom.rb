@@ -268,11 +268,10 @@ project 'JRuby Core' do
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                    ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ],
-                   'createSourcesJar' => '${create.sources.jar}',
-                   filters:
-                       {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+                   'transformers' => [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main',
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
+                   'createSourcesJar' => '${create.sources.jar}'
     )
   end
 
