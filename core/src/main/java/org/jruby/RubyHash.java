@@ -382,15 +382,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final int nextPowOfTwo(final int i) {
-        int result = i;
-        result--;
-        result |= result >> 1;
-        result |= result >> 2;
-        result |= result >> 4;
-        result |= result >> 8;
-        result |= result >> 16;
-        result++;
-        return result;
+        return Integer.MIN_VALUE >>> Integer.numberOfLeadingZeros(i - 1) << 1; // i > 1
     }
 
     private final void alloc() {
