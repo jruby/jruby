@@ -1,0 +1,1 @@
+fails:Array#concat concatenates the initial value when given arguments contain 2 self

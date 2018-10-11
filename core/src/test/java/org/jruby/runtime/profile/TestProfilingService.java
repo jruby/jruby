@@ -20,7 +20,7 @@ public class TestProfilingService implements ProfilingService {
     public MethodEnhancer newMethodEnhancer(Ruby runtime) {
         return new MethodEnhancer() {
             @Override
-            public DynamicMethod enhance(String name, DynamicMethod delegate) {
+            public DynamicMethod enhance(String id, DynamicMethod delegate) {
                 return delegate;
             }
         };

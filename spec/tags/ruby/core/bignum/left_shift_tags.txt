@@ -1,1 +1,0 @@
-fails:Bignum#<< with n << m returns 0 when m < 0 and m is a Bignum

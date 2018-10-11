@@ -1,4 +1,6 @@
 require 'mspec/guards/guard'
+require 'mspec/guards/version'
+require 'mspec/utils/warnings'
 
 # MSpecScript provides a skeleton for all the MSpec runner scripts.
 
@@ -37,6 +39,10 @@ class MSpecScript
   end
 
   def initialize
+    ruby_version_is ""..."2.3" do
+      abort "MSpec needs Ruby 2.3 or more recent"
+    end
+
     config[:formatter] = nil
     config[:includes]  = []
     config[:excludes]  = []
@@ -50,6 +56,7 @@ class MSpecScript
     config[:astrings]  = []
     config[:ltags]     = []
     config[:abort]     = true
+    @loaded = []
   end
 
   # Returns the config object maintained by the instance's class.
@@ -70,7 +77,13 @@ class MSpecScript
     names.each do |name|
       config[:path].each do |dir|
         file = File.expand_path name, dir
-        return Kernel.load(file) if File.exist? file
+        if @loaded.include?(file)
+          return true
+        elsif File.exist? file
+          value = Kernel.load(file)
+          @loaded << file
+          return value
+        end
       end
     end
 
@@ -177,37 +190,41 @@ class MSpecScript
 
     patterns.each do |pattern|
       expanded = File.expand_path(pattern)
-      if File.file?(expanded)
+      if File.file?(expanded) && expanded.end_with?('.rb')
         return [expanded]
       elsif File.directory?(expanded)
-        return Dir["#{expanded}/**/*_spec.rb"].sort
+        specs = Dir["#{expanded}/**/*_spec.rb"].sort
+        return specs unless specs.empty?
       end
     end
 
     abort "Could not find spec file #{partial}"
   end
 
-  # Resolves each entry in +list+ to a set of files.
+  # Resolves each entry in +patterns+ to a set of files.
   #
-  # If the entry has a leading '^' character, the list of files
+  # If the pattern has a leading '^' character, the list of files
   # is subtracted from the list of files accumulated to that point.
   #
   # If the entry has a leading ':' character, the corresponding
   # key is looked up in the config object and the entries in the
   # value retrieved are processed through #entries.
-  def files(list)
-    list.inject([]) do |files, item|
-      case item[0]
+  def files(patterns)
+    list = []
+    patterns.each do |pattern|
+      case pattern[0]
       when ?^
-        files -= entries(item[1..-1])
+        list -= entries(pattern[1..-1])
       when ?:
-        key = item[1..-1].to_sym
-        files += files(Array(config[key]))
+        key = pattern[1..-1].to_sym
+        value = config[key]
+        abort "Key #{pattern} not found in mspec config." unless value
+        list += files(Array(value))
       else
-        files += entries(item)
+        list += entries(pattern)
       end
-      files
     end
+    list
   end
 
   def files_from_patterns(patterns)
@@ -218,30 +235,15 @@ class MSpecScript
       if patterns.empty? and File.directory? "./spec"
         patterns = ["spec/"]
       end
-      if patterns.empty?
-        puts "No files specified."
-        exit 1
-      end
     end
-    files patterns
+    list = files(patterns)
+    abort "No files specified." if list.empty?
+    list
   end
 
-  def cores
-    # From https://github.com/ruby-concurrency/concurrent-ruby/blob/master/lib/concurrent/utility/processor_counter.rb
-    if File.readable?("/proc/cpuinfo") # Linux
-      cores = File.readlines("/proc/cpuinfo").count { |line| line.start_with?('processor') }
-      raise "Could not parse /proc/cpuinfo" if cores == 0
-      cores
-    elsif File.executable?("/usr/sbin/psrinfo") # Solaris
-      File.readlines("/usr/sbin/psrinfo").grep(/on-*line/).size
-    elsif File.executable?("/usr/sbin/sysctl") # Darwin
-      Integer(`/usr/sbin/sysctl -n hw.ncpu`)
-    elsif File.executable?("/sbin/sysctl") # BSD
-      Integer(`/sbin/sysctl -n hw.ncpu`)
-    else
-      warn "Could not find number of processors"
-      1
-    end
+  def cores(max)
+    require 'etc'
+    [Etc.nprocessors, max].min
   end
 
   def setup_env
@@ -259,7 +261,6 @@ class MSpecScript
   # Instantiates an instance and calls the series of methods to
   # invoke the script.
   def self.main
-    $VERBOSE = nil unless ENV['OUTPUT_WARNINGS']
     script = new
     script.load_default
     script.try_load '~/.mspecrc'

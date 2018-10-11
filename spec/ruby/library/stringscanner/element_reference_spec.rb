@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'strscan'
 
 describe "StringScanner#[]" do
@@ -58,4 +58,3 @@ describe "StringScanner#[]" do
     @s[:day].should == "13"
   end
 end
-

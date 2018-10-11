@@ -38,7 +38,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
 
         // If we are printing, do the build right at creation time so we can see it
-        if (Options.IR_PRINT.load()) {
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
             ensureInstrsReady();
         }
     }
@@ -73,10 +73,10 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
             }
             interpreterContext = method.getInterpreterContext();
 
-            if (Options.IR_PRINT.load()) {
+            if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(method, false, true);
 
-                LOG.info("Printing simple IR for " + method.getName() + ":\n" + new String(baos.toByteArray()));
+                LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
             }
         }
 
@@ -88,7 +88,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, args, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, args, Block.NULL_BLOCK);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, Block.NULL_BLOCK);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -125,7 +125,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
         if (callCount >= 0) promoteToFullBuild(context);
 
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
         if (callCount >= 0) promoteToFullBuild(context);
 
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, Block.NULL_BLOCK);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, Block.NULL_BLOCK);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -162,7 +162,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, Block.NULL_BLOCK);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, Block.NULL_BLOCK);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -198,7 +198,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
     }
 
     @Override
@@ -206,7 +206,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, Block.NULL_BLOCK);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, Block.NULL_BLOCK);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -234,7 +234,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, arg2, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
     }
 
     @Override
@@ -242,7 +242,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass(), self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -273,7 +273,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         // FIXME: This is only printing out CFG once.  If we keep applying more passes then we
         // will want to print out after those new passes.
         ensureInstrsReady();
-        LOG.info("Executing '" + method.getName() + "'");
+        LOG.info("Executing '" + method.getId() + "'");
         if (!displayedCFG) {
             LOG.info(method.debugOutput());
             displayedCFG = true;
@@ -288,12 +288,18 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
-    protected void promoteToFullBuild(ThreadContext context) {
+    private void promoteToFullBuild(ThreadContext context) {
         Ruby runtime = context.runtime;
 
         if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return;   // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
+
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
+            ByteArrayOutputStream baos = IRDumper.printIR(method, true, true);
+
+            LOG.info("Printing full IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
+        }
     }
 
     public String getClassName(ThreadContext context) {

@@ -80,35 +80,54 @@ module Enumerable
   end
 
   def __slicey_chunky(invert, enum, block)
-    if respond_to?(:size) && size == 1
-      each {|x| enum.yield [x]}
-    else
-      ary = nil
-      last_after = nil
-      each_cons(2) do |before, after|
-        last_after = after
-        match = block.call before, after
+    ary = nil
+    last_after = nil
+    element_present = false
+    each_cons(2) do |before, after|
+      element_present = true
+      last_after = after
+      match = block.call before, after
 
-        ary ||= []
-        if invert ? !match : match
-          ary << before
-          enum.yield ary
-          ary = []
-        else
-          ary << before
-        end
-      end
-
-      unless ary.nil?
-        ary << last_after
+      ary ||= []
+      if invert ? !match : match
+        ary << before
         enum.yield ary
+        ary = []
+      else
+        ary << before
       end
     end
+
+    unless ary.nil?
+      ary << last_after
+      enum.yield ary
+    end
+    each_entry { |x| enum.yield [x] } unless element_present
   end
   private :__slicey_chunky
 
   def lazy
     klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
     Enumerator::Lazy.new(klass.new(self, :each, []))
+  end
+
+  def uniq
+    values = []
+    hash = {}
+    if block_given?
+      each_entry do |obj|
+        ret = yield(*obj)
+        next if hash.key? ret
+        hash[ret] = obj
+        values << obj
+      end
+    else
+      each_entry do |obj|
+        next if hash.key? obj
+        hash[obj] = obj unless hash.key? obj
+        values << obj
+      end
+    end
+    values
   end
 end

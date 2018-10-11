@@ -1,0 +1,5 @@
+# These tests are somewhat surface-level and also launch many subprocesses
+
+ruby/test_syntax.rb
+ruby/test_optimization.rb
+ruby/test_rubyoptions.rb

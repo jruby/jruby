@@ -3,6 +3,13 @@ require 'mspec/runner/exception'
 require 'mspec/runner/tag'
 
 module MSpec
+end
+
+class MSpecEnv
+  include MSpec
+end
+
+module MSpec
 
   @exit    = nil
   @abort   = nil
@@ -53,11 +60,19 @@ module MSpec
     if ENV["MSPEC_MULTI"]
       STDOUT.print "."
       STDOUT.flush
-      while (file = STDIN.gets.chomp) != "QUIT"
+      while file = STDIN.gets and file = file.chomp
+        return if file == "QUIT"
         yield file
-        STDOUT.print "."
-        STDOUT.flush
+        begin
+          STDOUT.print "."
+          STDOUT.flush
+        rescue Errno::EPIPE
+          # The parent died
+          exit 1
+        end
       end
+      # The parent closed the connection without QUIT
+      abort "the parent did not send QUIT"
     else
       return unless files = retrieve(:files)
       shuffle files if randomize?
@@ -76,8 +91,7 @@ module MSpec
   end
 
   def self.setup_env
-    @env = Object.new
-    @env.extend MSpec
+    @env = MSpecEnv.new
   end
 
   def self.actions(action, *args)
@@ -89,8 +103,8 @@ module MSpec
     begin
       @env.instance_eval(&block)
       return true
-    rescue SystemExit
-      raise
+    rescue SystemExit => e
+      raise e
     rescue Exception => exc
       register_exit 1
       actions :exception, ExceptionState.new(current && current.state, location, exc)
@@ -109,7 +123,7 @@ module MSpec
   end
 
   def self.guarded?
-    not @guarded.empty?
+    !@guarded.empty?
   end
 
   # Sets the toplevel ContextState to +state+.
@@ -388,4 +402,7 @@ module MSpec
     file = tags_file
     File.delete file if File.exist? file
   end
+
+  # Initialize @env
+  setup_env
 end

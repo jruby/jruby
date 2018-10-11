@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
@@ -11,7 +12,7 @@ public abstract class Variable extends Operand implements Comparable {
         super();
     }
 
-    public abstract String getName();
+    public abstract String getId();
 
     @Override
     public boolean canCopyPropagate() {

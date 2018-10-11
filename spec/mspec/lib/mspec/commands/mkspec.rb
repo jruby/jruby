@@ -75,7 +75,7 @@ class MkSpec
     parents = '../' * (sub.split('/').length + 1)
 
     File.open(file, 'w') do |f|
-      f.puts "require File.expand_path('../#{parents}spec_helper', __FILE__)"
+      f.puts "require_relative '#{parents}spec_helper'"
       config[:requires].each do |lib|
         f.puts "require '#{lib}'"
       end
@@ -95,7 +95,7 @@ class MkSpec
 
   def write_spec(file, meth, exists)
     if exists
-      out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run -fs -e '#{meth}' #{file}`
+      out = `#{ruby} #{MSPEC_HOME}/bin/mspec-run --dry-run --unguarded -fs -e '#{meth}' #{file}`
       return if out.include?(meth)
     end
 
@@ -153,4 +153,3 @@ EOS
     script.run
   end
 end
-

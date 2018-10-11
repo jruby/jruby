@@ -8,6 +8,7 @@ package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.ClosureLocalVariable;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -55,11 +57,8 @@ public class IRReader implements IRPersistenceValues {
             final IRScope scope = pair.getKey();
             final int instructionsOffset = pair.getValue();
 
-//            System.out.println("lazy");
             scope.allocateInterpreterContext(new Callable<List<Instr>>() {
-                @Override
-                public List<Instr> call() throws Exception {
-//                    System.out.println("eager");
+                public List<Instr> call() {
                     return file.decodeInstructionsAt(scope, instructionsOffset);
                 }
             });
@@ -79,7 +78,9 @@ public class IRReader implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
-        String name = decoder.decodeString();
+        // Wackiness we decode as bytelist when we encoded as symbol because currentScope is not defined yet on first
+        // name of first scope.  We will use manager in this method to finish the job in constructing our symbol.
+        ByteList name = decoder.decodeByteList();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("NAME = " + name);
         int line = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
@@ -99,7 +100,7 @@ public class IRReader implements IRPersistenceValues {
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, signature, staticScope);
+        IRScope scope = createScope(manager, type, manager.runtime.newSymbol(name), line, parent, signature, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
@@ -116,11 +117,11 @@ public class IRReader implements IRPersistenceValues {
         return new KeyValuePair<>(scope, instructionsOffset);
     }
 
-    private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
+    private static Map<RubySymbol, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
         int size = decoder.decodeInt();
-        Map<String, LocalVariable> localVariables = new HashMap(size);
+        Map<RubySymbol, LocalVariable> localVariables = new HashMap(size);
         for (int i = 0; i < size; i++) {
-            String name = decoder.decodeString();
+            RubySymbol name = scope.getManager().getRuntime().newSymbol(decoder.decodeByteList());
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?
@@ -148,8 +149,8 @@ public class IRReader implements IRPersistenceValues {
         return scope;
     }
 
-    public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
-            IRScope lexicalParent, Signature signature, StaticScope staticScope) {
+    public static IRScope createScope(IRManager manager, IRScopeType type, RubySymbol name, int line,
+                                      IRScope lexicalParent, Signature signature, StaticScope staticScope) {
 
         switch (type) {
         case CLASS_BODY:

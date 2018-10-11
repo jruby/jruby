@@ -4,6 +4,9 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.ascii.AsciiTables;
+import org.jcodings.exception.EncodingError;
+import org.jcodings.exception.EncodingException;
+import org.jcodings.exception.ErrorCodes;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
@@ -48,12 +51,13 @@ import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class EncodingUtils {
-    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
+    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
     public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
 
@@ -329,7 +333,7 @@ public class EncodingUtils {
         if (intenc != null) {
             if (intenc.isNil()) {
                 intencoding = null;
-            } else if (!(tmp = intenc.checkStringType19()).isNil()) {
+            } else if (!(tmp = intenc.checkStringType()).isNil()) {
                 String p = tmp.toString();
                 if (p.equals("-")) {
                     intencoding = null;
@@ -347,7 +351,7 @@ public class EncodingUtils {
         if (!encoding.isNil()) {
             extracted = true;
 
-            if (!(tmp = encoding.checkStringType19()).isNil()) {
+            if (!(tmp = encoding.checkStringType()).isNil()) {
                 parseModeEncoding(context, ioEncodable, tmp.asJavaString(), fmode_p);
             } else {
                 ioExtIntToEncs(context, ioEncodable, rbToEncoding(context, encoding), null, 0);
@@ -770,7 +774,7 @@ public class EncodingUtils {
     public static Encoding toEncodingIndex(ThreadContext context, IRubyObject enc) {
         if (enc instanceof RubyEncoding) {
             return ((RubyEncoding)enc).getEncoding();
-        } else if ((enc = enc.checkStringType19()).isNil()) {
+        } else if ((enc = enc.checkStringType()).isNil()) {
             return null;
         }
         if (!((RubyString)enc).getEncoding().isAsciiCompatible()) {
@@ -1329,7 +1333,7 @@ public class EncodingUtils {
 
         EConv ec = TranscoderDB.open(encoding.getName(), toEncoding.getName(), ecflags);
 
-        byte[] inBytes = string.getBytes(encoding.getCharset());
+        byte[] inBytes = string.getBytes(EncodingUtils.charsetForEncoding(encoding));
         Ptr inPos = new Ptr(0);
 
         int inStop = inBytes.length;
@@ -1514,7 +1518,7 @@ public class EncodingUtils {
         outStop.p = outStart.p + newLen;
     }
 
-    // io_set_encoding_by_bom
+    // MRI: io_set_encoding_by_bom
     public static void ioSetEncodingByBOM(ThreadContext context, RubyIO io) {
         Ruby runtime = context.runtime;
         Encoding bomEncoding = ioStripBOM(context, io);
@@ -1530,15 +1534,13 @@ public class EncodingUtils {
         }
     }
 
-    // mri: io_strip_bom
-    @Deprecated
-    public static Encoding ioStripBOM(RubyIO io) {
-        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
-    }
+    // MRI: io_strip_bom
     public static Encoding ioStripBOM(ThreadContext context, RubyIO io) {
         IRubyObject b1, b2, b3, b4;
 
+        if ((io.getOpenFile().getMode() & OpenFile.READABLE) == 0) return null;
         if ((b1 = io.getbyte(context)).isNil()) return null;
+
         switch ((int)((RubyFixnum)b1).getLongValue()) {
             case 0xEF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
@@ -1604,8 +1606,12 @@ public class EncodingUtils {
             throw runtime.newArgumentError("ASCII incompatible encoding needs binmode");
         }
 
+        if ((fmode & OpenFile.BINMODE) != 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0) {
+            throw runtime.newArgumentError("newline decorator with binary mode");
+        }
+
         if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0)) {
-            fmode |= EncodingUtils.DEFAULT_TEXTMODE;
+            fmode |= OpenFile.TEXTMODE;
             fmode_p[0] = fmode;
         } else if (EncodingUtils.DEFAULT_TEXTMODE == 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
             fmode &= ~OpenFile.TEXTMODE;
@@ -1706,38 +1712,38 @@ public class EncodingUtils {
     // rb_enc_str_buf_cat
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
-                enc, StringSupport.CR_UNKNOWN, null);
+                enc, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
-                ptr.getEncoding(), StringSupport.CR_UNKNOWN, null);
+                ptr.getEncoding(), StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes) {
-        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
+        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, USASCIIEncoding.INSTANCE, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, Encoding enc) {
-        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, enc, StringSupport.CR_UNKNOWN, null);
+        encCrStrBufCat(runtime, str, ptrBytes, 0, ptrBytes.length, enc, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding enc) {
         encCrStrBufCat(runtime, str, ptrBytes, ptr, len,
-                enc, StringSupport.CR_UNKNOWN, null);
+                enc, StringSupport.CR_UNKNOWN);
     }
 
     public static void encStrBufCat(Ruby runtime, RubyString str, CharSequence cseq) {
         byte[] utf8 = RubyEncoding.encodeUTF8(cseq.toString());
-        encCrStrBufCat(runtime, str, utf8, 0, utf8.length, UTF8Encoding.INSTANCE, StringSupport.CR_UNKNOWN, null);
+        encCrStrBufCat(runtime, str, utf8, 0, utf8.length, UTF8Encoding.INSTANCE, StringSupport.CR_UNKNOWN);
     }
 
     // rb_enc_cr_str_buf_cat
-    public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
-        encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr, ptr_cr_ret);
+    public static int encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr) {
+        return encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr);
     }
 
-    public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+    public static int encCrStrBufCat(Ruby runtime, CodeRangeable str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr) {
         Encoding strEnc = str.getByteList().getEncoding();
         Encoding resEnc;
         int str_cr, res_cr;
@@ -1753,14 +1759,12 @@ public class EncodingUtils {
             }
         } else {
             if (!EncodingUtils.encAsciicompat(strEnc) || !EncodingUtils.encAsciicompat(ptrEnc)) {
-                if (len == 0) {
-                    return;
-                }
+                if (len == 0) return ptr_cr;
                 if (str.getByteList().getRealSize() == 0) {
-                    rbStrBufCat(runtime, str, ptrBytes, ptr, len);
+                    strBufCat(runtime, str, ptrBytes, ptr, len);
                     str.getByteList().setEncoding(ptrEnc);
                     str.setCodeRange(ptr_cr);
-                    return;
+                    return ptr_cr;
                 }
                 incompatible = true;
             }
@@ -1774,9 +1778,6 @@ public class EncodingUtils {
                     }
                 }
             }
-        }
-        if (ptr_cr_ret != null) {
-            ptr_cr_ret[0] = ptr_cr;
         }
 
         if (incompatible ||
@@ -1815,6 +1816,8 @@ public class EncodingUtils {
         strBufCat(runtime, str, ptrBytes, ptr, len);
         str.getByteList().setEncoding(resEnc);
         str.setCodeRange(res_cr);
+
+        return ptr_cr;
     }
 
     // econv_args
@@ -1989,27 +1992,66 @@ public class EncodingUtils {
     }
 
     // rb_enc_uint_chr
-    public static IRubyObject encUintChr(ThreadContext context, int code, Encoding enc) {
+    public static RubyString encUintChr(ThreadContext context, int code, Encoding enc) {
         Ruby runtime = context.runtime;
 
-        if (!Character.isValidCodePoint(code)) {
-            // inefficient to create a fixnum for this
-            return new RubyFixnum(runtime, code).chr19(context);
+        long i = code & 0xFFFFFFFFL;
+
+        int n;
+        switch (n = EncodingUtils.encCodelen(context, code, enc)) {
+            case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
+                throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
+            case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
+            case 0:
+                throw runtime.newRangeError(Long.toString(i) + " out of char range");
         }
 
-        char[] chars = Character.toChars(code);
-        RubyString str = RubyString.newString(runtime, new String(chars), enc);
-//        ByteList strByteList = str.getByteList();
-//        if (StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.getRealSize()) != n) {
-//            rb_raise(rb_eRangeError, "invalid codepoint 0x%X in %s", code, rb_enc_name(enc));
-//        }
-        return str;
+        ByteList strBytes = new ByteList(n);
+        strBytes.setEncoding(enc);
+        strBytes.length(n);
+        byte[] bytes = strBytes.unsafeBytes();
+        int begin = strBytes.begin();
+        int end = strBytes.realSize();
+
+        encMbcput(context, code, bytes, begin, enc);
+        if (StringSupport.preciseLength(enc, bytes, begin, end) != n) {
+            throw runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
+        }
+
+        return RubyString.newString(runtime, strBytes);
 
     }
 
-    // rb_enc_mbcput
-    public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
-        enc.codeToMbc(c, buf, p);
+    // rb_enc_mbcput with Java exception
+    public static int encMbcput(int c, byte[] buf, int p, Encoding enc) {
+        int len = enc.codeToMbc(c, buf, p);
+        if (len < 0) {
+            throw new EncodingException(EncodingError.fromCode(len));
+        }
+
+        return len;
+    }
+
+    // rb_enc_mbcput with Ruby exception
+    public static int encMbcput(ThreadContext context, int c, byte[] buf, int p, Encoding enc) {
+        int len = enc.codeToMbc(c, buf, p);
+
+        // in MRI, this check occurs within some of the individual encoding functions, such as the
+        // US-ASCII check for values >= 0x80. In MRI, unlike in JRuby, we can't throw Ruby errors
+        // from within encoding logic, so we try to reproduce the expected results via normal
+        // error codes here.
+        // See MRI's rb_enc_mbcput and related downstream encoding functions.
+        if (len < 0) {
+            switch (len) {
+                case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
+                    throw context.runtime.newRangeError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+                case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
+                    throw context.runtime.newRangeError("" + (c & 0xFFFFFFFFL) + " out of char range");
+            }
+            throw context.runtime.newEncodingError(EncodingError.fromCode(len).getMessage());
+        }
+
+        return len;
     }
 
     // rb_enc_codepoint_len
@@ -2203,6 +2245,40 @@ public class EncodingUtils {
         }
         result.cat(buf);
         return buf.length;
+    }
+
+    /**
+     * Get an appropriate Java Charset for the given Encoding.
+     *
+     * This works around a bug in jcodings where it would return null as the charset for encodings that should have
+     * a match, like Windows-1252. This method is equivalent to enc.getCharset in jcodings 1.0.25 and higher.
+     *
+     * See https://github.com/jruby/jruby/issues/4716 for more information.
+     *
+     * @param enc the encoding for which to get a matching charset
+     * @return the matching charset
+     */
+    public static Charset charsetForEncoding(Encoding enc) {
+        Charset charset = enc.getCharset();
+
+        if (charset == null) {
+            charset = Charset.forName(enc.toString());
+        }
+
+        return charset;
+    }
+
+    public static int encCodelen(ThreadContext context, int c, Encoding enc) {
+        int n = enc.codeToMbcLength(c);
+        if (n == 0) {
+            throw context.runtime.newArgumentError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+        }
+        return n;
+    }
+
+    @Deprecated
+    public static Encoding ioStripBOM(RubyIO io) {
+        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
     }
 
 }

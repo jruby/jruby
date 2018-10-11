@@ -190,8 +190,3 @@ module JRuby
   MAP ||= HashMap.new
   MAP[VM_ID] = CURRENT
 end
-
-module Rubinius
-  VM = JRuby::VM
-  VM_ID = JRuby::VM_ID
-end

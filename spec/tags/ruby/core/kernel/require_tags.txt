@@ -12,3 +12,7 @@ fails:Kernel.require (concurrently) allows a 2nd require if the 1st raised an ex
 fails:Kernel.require (concurrently) blocks a second thread from returning while the 1st is still requiring
 fails:Kernel#require ($LOADED_FEATURES) complex, enumerator, rational, thread and unicode_normalize are already required
 fails:Kernel.require ($LOADED_FEATURES) complex, enumerator, rational, thread and unicode_normalize are already required
+fails:Kernel#require ($LOADED_FEATURES) with symlinks does not canonicalize the path and stores a path with symlinks
+fails:Kernel#require ($LOADED_FEATURES) with symlinks in the required feature and $LOAD_PATH canonicalizes the entry in $LOAD_PATH but not the filename passed to #require
+fails:Kernel.require ($LOADED_FEATURES) with symlinks does not canonicalize the path and stores a path with symlinks
+fails:Kernel.require ($LOADED_FEATURES) with symlinks in the required feature and $LOAD_PATH canonicalizes the entry in $LOAD_PATH but not the filename passed to #require

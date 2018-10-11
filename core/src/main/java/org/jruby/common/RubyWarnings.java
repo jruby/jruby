@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,16 +25,22 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.common;
 
 import java.util.EnumSet;
 import java.util.Set;
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 /**
  *
@@ -45,6 +51,17 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
+    }
+
+    public static RubyModule createWarningModule(Ruby runtime) {
+        RubyModule warning = runtime.defineModule("Warning");
+
+        warning.defineAnnotatedMethods(RubyWarnings.class);
+        warning.extend_object(warning);
+
+        runtime.setWarning(warning);
+
+        return warning;
     }
 
     @Override
@@ -84,23 +101,26 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         buffer.append(fileName).append(':').append(lineNumber + 1).append(": ");
         buffer.append("warning: ").append(message).append('\n');
-        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
+        RubyString errorString = runtime.newString(buffer.toString());
+
+        writeWarningDyncall(runtime.getCurrentContext(), errorString);
     }
 
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
-    @Override
-    public void warn(ID id, String fileName, String message) {
-        if (!runtime.warningsEnabled()) return;
+    // MRI: rb_write_warning_str
+    public static void writeWarningDyncall(ThreadContext context, RubyString errorString) {
+        RubyModule warning = context.runtime.getWarning();
 
-        StringBuilder buffer = new StringBuilder(100);
+        sites(context).warn.call(context, warning, warning, errorString);
+    }
 
-        buffer.append(fileName).append(' ');
-        buffer.append("warning: ").append(message).append('\n');
+    // MR: rb_write_error_str
+    public static void writeWarningToError(ThreadContext context, RubyString errorString) {
+        Ruby runtime = context.runtime;
+
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
+        RubyModule warning = runtime.getWarning();
+
+        sites(context).write.call(context, warning, errorStream, errorString);
     }
 
     @Override
@@ -146,6 +166,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warning(ID id, String message) {
         if (!runtime.warningsEnabled() || !runtime.isVerbose()) return;
 
+        writeWarning(runtime, id, message);
+    }
+
+    private static void writeWarning(Ruby runtime, ID id, String message) {
         RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
         String file;
         int line;
@@ -158,7 +182,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
             line = stack[0].getLineNumber();
         }
 
-        warning(id, file, line, message);
+        runtime.getWarnings().warning(id, file, line, message);
     }
 
     /**
@@ -180,10 +204,44 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(id, fileName, lineNumber, message);
     }
 
+    @JRubyMethod
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
+
+        if (!runtime.warningsEnabled()) return context.nil;
+
+        TypeConverter.checkType(context, arg, runtime.getString());
+        RubyString str = (RubyString) arg;
+        if (!str.getEncoding().isAsciiCompatible()) {
+            throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
+        }
+        writeWarningToError(runtime.getCurrentContext(), str);
+        return context.nil;
+    }
+
     private static RubyStackTraceElement[] getRubyStackTrace(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         RubyStackTraceElement[] stack = context.createWarningBacktrace(runtime);
-
         return stack;
+    }
+
+    private static JavaSites.WarningSites sites(ThreadContext context) {
+        return context.sites.Warning;
+    }
+
+    /**
+     * Prints a warning, unless $VERBOSE is nil.
+     */
+    @Override
+    @Deprecated
+    public void warn(ID id, String fileName, String message) {
+        if (!runtime.warningsEnabled()) return;
+
+        StringBuilder buffer = new StringBuilder(100);
+
+        buffer.append(fileName).append(' ');
+        buffer.append("warning: ").append(message).append('\n');
+        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
+        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
     }
 }

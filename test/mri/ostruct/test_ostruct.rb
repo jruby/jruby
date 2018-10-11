@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'test/unit'
 require 'ostruct'
 
@@ -52,22 +52,25 @@ class TC_OpenStruct < Test::Unit::TestCase
     foo.bar = 1
     foo.baz = 2
     assert_equal("#<OpenStruct bar=1, baz=2>", foo.inspect)
+    assert_equal(false, foo.inspect.frozen?)
 
     foo = OpenStruct.new
     foo.bar = OpenStruct.new
     assert_equal('#<OpenStruct bar=#<OpenStruct>>', foo.inspect)
     foo.bar.foo = foo
     assert_equal('#<OpenStruct bar=#<OpenStruct foo=#<OpenStruct ...>>>', foo.inspect)
+    assert_equal(false, foo.inspect.frozen?)
   end
 
   def test_frozen
-    o = OpenStruct.new
+    o = OpenStruct.new(foo: 42)
     o.a = 'a'
     o.freeze
     assert_raise(RuntimeError) {o.b = 'b'}
     assert_not_respond_to(o, :b)
     assert_raise(RuntimeError) {o.a = 'z'}
     assert_equal('a', o.a)
+    assert_equal(42, o.foo)
     o = OpenStruct.new :a => 42
     def o.frozen?; nil end
     o.freeze
@@ -140,6 +143,7 @@ class TC_OpenStruct < Test::Unit::TestCase
   def test_each_pair
     h = {name: "John Smith", age: 70, pension: 300}
     os = OpenStruct.new(h)
+    assert_same os, os.each_pair{ }
     assert_equal '#<Enumerator: #<OpenStruct name="John Smith", age=70, pension=300>:each_pair>', os.each_pair.inspect
     assert_equal [[:name, "John Smith"], [:age, 70], [:pension, 300]], os.each_pair.to_a
     assert_equal 3, os.each_pair.size
@@ -170,7 +174,7 @@ class TC_OpenStruct < Test::Unit::TestCase
     assert os.respond_to? :foo
     assert_equal([], os.singleton_methods)
     assert_equal(42, os.foo)
-    assert_equal([:foo, :foo=], os.singleton_methods)
+    assert_equal([:foo, :foo=], os.singleton_methods.sort)
   end
 
   def test_does_not_redefine
@@ -180,5 +184,38 @@ class TC_OpenStruct < Test::Unit::TestCase
     end
     os.foo = 44
     assert_equal(43, os.foo)
+  end
+
+  def test_allocate_subclass
+    bug = '[ruby-core:80292] [Bug #13358] allocate should not call initialize'
+    c = Class.new(OpenStruct) {
+      def initialize(x,y={})super(y);end
+    }
+    os = assert_nothing_raised(ArgumentError, bug) {c.allocate}
+    assert_instance_of(c, os)
+  end
+
+  def test_private_method
+    os = OpenStruct.new
+    class << os
+      private
+      def foo
+      end
+    end
+    assert_raise_with_message(NoMethodError, /private method/) do
+      os.foo true, true
+    end
+  end
+
+  def test_protected_method
+    os = OpenStruct.new
+    class << os
+      protected
+      def foo
+      end
+    end
+    assert_raise_with_message(NoMethodError, /protected method/) do
+      os.foo true, true
+    end
   end
 end

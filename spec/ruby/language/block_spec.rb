@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/block', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/block'
 
 describe "A block yielded a single" do
   before :all do
@@ -49,32 +49,27 @@ describe "A block yielded a single" do
       result.should == [1, 2, [], 3, 2, {x: 9}]
     end
 
-    it "assigns symbol keys from a Hash to keyword arguments" do
-      result = m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }
-      result.should == [{"a" => 1}, a: 10]
-    end
-
-    it "assigns symbol keys from a Hash returned by #to_hash to keyword arguments" do
+    it "calls #to_hash on the argument" do
       obj = mock("coerce block keyword arguments")
-      obj.should_receive(:to_hash).and_return({"a" => 1, b: 2})
+      obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
 
       result = m([obj]) { |a=nil, **b| [a, b] }
-      result.should == [{"a" => 1}, b: 2]
+      result.should == [{"a" => 1, "b" => 2}, {}]
     end
 
-    ruby_version_is "2.2.1" do # SEGV on MRI 2.2.0
-      it "calls #to_hash on the argument but does not use the result when no keywords are present" do
-        obj = mock("coerce block keyword arguments")
-        obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
-
-        result = m([obj]) { |a=nil, **b| [a, b] }
-        result.should == [{"a" => 1, "b" => 2}, {}]
+    describe "when non-symbol keys are in a keyword arguments Hash" do
+      ruby_version_is ""..."2.6" do
+        it "separates non-symbol keys and symbol keys" do
+          result = m(["a" => 10, b: 2]) { |a=nil, **b| [a, b] }
+          result.should == [{"a" => 10}, {b: 2}]
+        end
       end
-    end
 
-    it "assigns non-symbol keys to non-keyword arguments" do
-      result = m(["a" => 10, b: 2]) { |a=nil, **b| [a, b] }
-      result.should == [{"a" => 10}, {b: 2}]
+      ruby_version_is "2.6" do
+        it "raises an ArgumentError" do
+          lambda {m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }}.should raise_error(ArgumentError)
+        end
+      end
     end
 
     it "does not treat hashes with string keys as keyword arguments" do
@@ -599,7 +594,7 @@ describe "A block" do
       @y.m(1, 2) { |a, (b, (c, d))| [a, b, c, d] }.should == [1, 2, nil, nil]
     end
 
-    it "destructures a single multi-level Array value yielded" do
+    it "destructures a nested Array value yielded" do
       @y.m(1, [2, 3]) { |a, (b, (c, d))| [a, b, c, d] }.should == [1, 2, 3, nil]
     end
 
@@ -617,7 +612,7 @@ describe "A block" do
       @y.m(1, 2) { |a, ((b, c), d)| [a, b, c, d] }.should == [1, 2, nil, nil]
     end
 
-    it "destructures a single multi-level Array value yielded" do
+    it "destructures a nested value yielded" do
       @y.m(1, [2, 3]) { |a, ((b, c), d)| [a, b, c, d] }.should == [1, 2, nil, 3]
     end
 
@@ -687,7 +682,7 @@ describe "Block-local variables" do
     end.should raise_error(SyntaxError)
   end
 
-  it "need not be preceeded by standard parameters" do
+  it "need not be preceded by standard parameters" do
     [1].map {|; foo| foo }.should == [nil]
     [1].map {|; glark, bar| [glark, bar] }.should == [[nil, nil]]
   end
@@ -825,22 +820,26 @@ describe "Post-args" do
       end.call(2, 3).should == [2, 6, [], 3]
     end
 
-    ruby_version_is "2.2" do
-      describe "with a circular argument reference" do
-        it "shadows an existing local with the same name as the argument" do
-          a = 1
-          proc { |a=a| a }.call.should == nil
-        end
+    describe "with a circular argument reference" do
+      it "shadows an existing local with the same name as the argument" do
+        a = 1
+        -> {
+          @proc = eval "proc { |a=a| a }"
+        }.should complain(/circular argument reference/)
+        @proc.call.should == nil
+      end
 
-        it "shadows an existing method with the same name as the argument" do
-          def a; 1; end
-          proc { |a=a| a }.call.should == nil
-        end
+      it "shadows an existing method with the same name as the argument" do
+        def a; 1; end
+        -> {
+          @proc = eval "proc { |a=a| a }"
+        }.should complain(/circular argument reference/)
+        @proc.call.should == nil
+      end
 
-        it "calls an existing method with the same name as the argument if explicitly using ()" do
-          def a; 1; end
-          proc { |a=a()| a }.call.should == 1
-        end
+      it "calls an existing method with the same name as the argument if explicitly using ()" do
+        def a; 1; end
+        proc { |a=a()| a }.call.should == 1
       end
     end
   end

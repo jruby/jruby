@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,9 +30,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
+
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -41,20 +44,22 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
-    private String name;
+    private RubySymbol name;
     protected Node argsNode;
     protected Node iterNode;
 
-    public FCallNode(ISourcePosition position, String name) {
+    public FCallNode(ISourcePosition position, RubySymbol name) {
         this(position, name, null, null);
     }
-    public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
+
+    public FCallNode(ISourcePosition position, RubySymbol name, Node argsNode, Node iterNode) {
         super(position, argsNode != null && argsNode.containsVariableAssignment() || iterNode != null && iterNode.containsVariableAssignment());
         this.name = name;
         this.argsNode = argsNode;
         this.iterNode = iterNode;
         setNewline();
     }
+
 
     public NodeType getNodeType() {
         return NodeType.FCALLNODE;
@@ -103,7 +108,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
+    public RubySymbol getName() {
         return name;
     }
     

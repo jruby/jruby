@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -31,6 +31,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.load;
 
 import java.io.File;
@@ -50,6 +51,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
@@ -58,6 +60,7 @@ import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyKernel;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
@@ -181,10 +184,10 @@ public class LoadService {
     protected RubyArray loadPath;
     protected StringArraySet loadedFeatures;
     protected RubyArray loadedFeaturesDup;
-    private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<String, String>();
-    protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
+    private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
+    protected final Map<String, Library> builtinLibraries = new HashMap<>(36);
 
-    protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
+    protected final Map<String, JarFile> jarFiles = new HashMap<>();
 
     protected final Ruby runtime;
     protected final LibrarySearcher librarySearcher;
@@ -412,12 +415,12 @@ public class LoadService {
 
     private final RequireLocks requireLocks = new RequireLocks();
 
-    private static final class RequireLocks {
+    enum LockResult { LOCKED, CIRCULAR }
+
+    private final class RequireLocks {
         private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
-
-        public enum LockResult { LOCKED, CIRCULAR }
 
         private RequireLocks() {
             this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
@@ -445,7 +448,13 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return LockResult.CIRCULAR;
 
-            lock.lock();
+            try {
+                runtime.getCurrentContext().getThread().enterSleep();
+                lock.lock();
+            } finally {
+                runtime.getCurrentContext().getThread().exitSleep();
+            }
+
 
             return LockResult.LOCKED;
         }
@@ -467,12 +476,10 @@ public class LoadService {
     }
 
     protected void warnCircularRequire(String requireName) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("loading in progress, circular require considered harmful - " + requireName);
 
         runtime.getCurrentContext().renderCurrentBacktrace(sb);
-
-        runtime.getWarnings().warn("loading in progress, circular require considered harmful - " + requireName);
-        runtime.getErr().print(sb.toString());
+        runtime.getWarnings().warn(sb.toString());
     }
 
     /**
@@ -507,7 +514,7 @@ public class LoadService {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
-        if (requireLocks.lock(state.loadName) == RequireLocks.LockResult.CIRCULAR) {
+        if (requireLocks.lock(state.loadName) == LockResult.CIRCULAR) {
             if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(state.loadName);
             }
@@ -625,6 +632,13 @@ public class LoadService {
 
     public void removeBuiltinLibrary(String name) {
         builtinLibraries.remove(name);
+    }
+
+    /**
+     * Get a list of all libraries JRuby considers "built-in".
+     */
+    public List<String> getBuiltinLibraries() {
+        return builtinLibraries.keySet().stream().collect(Collectors.toList());
     }
 
     public void removeInternalLoadedFeature(String name) {
@@ -1046,7 +1060,7 @@ public class LoadService {
 //            if (runtime.getInstanceConfig().isCextEnabled()) {
 //                return new CExtension(resource);
 //            } else {
-//                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
+//                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getId() + "'", resource.getId());
 //            }
             throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
         } else if (file.endsWith(".jar")) {

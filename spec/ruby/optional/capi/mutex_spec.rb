@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension("mutex")
 
@@ -15,7 +15,7 @@ describe "C-API Mutex functions" do
   end
 
   describe "rb_mutex_locked_p" do
-    it "returns true if the mutex is locked" do
+    it "returns false if the mutex is not locked" do
       @s.rb_mutex_locked_p(@m).should be_false
     end
 

@@ -1,5 +1,12 @@
 package org.jruby.runtime.backtrace;
 
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
+import org.jruby.util.ConvertBytes;
+
 public class RubyStackTraceElement implements java.io.Serializable {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
 
@@ -72,6 +79,24 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return asStackTraceElement().toString();
     }
 
+    public static RubyString to_s_mri(ThreadContext context, RubyStackTraceElement element) {
+        RubySymbol methodSym = context.runtime.newSymbol(element.getMethodName());
+        RubyString line = context.runtime.newString(new ByteList(methodSym.getBytes().length() + element.getFileName().length() + 18));
+
+        line.setEncoding(methodSym.getEncoding());
+
+        line.cat(element.getFileName().getBytes());
+        line.cat(CommonByteLists.COLON);
+        line.cat(ConvertBytes.longToByteList(element.getLineNumber()));
+        line.cat(CommonByteLists.BACKTRACE_IN);
+        if (element.getFrameType() == FrameType.BLOCK) line.catString("block in ");
+        line.cat(methodSym.getBytes());
+        line.cat('\'');
+
+        return line;
+    }
+
+    @Deprecated
     public final CharSequence mriStyleString() {
         // return fileName + ':' + lineNumber + ":in `" + methodName + '\'';
         return new StringBuilder(fileName.length() + methodName.length() + 12).

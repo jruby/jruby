@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe :kernel_integer, shared: true do
   it "returns a Bignum for a Bignum" do
@@ -10,11 +10,29 @@ describe :kernel_integer, shared: true do
     Integer(100).should == 100
   end
 
-  it "uncritically return the value of to_int even if it is not an Integer" do
-    obj = mock("object")
-    obj.should_receive(:to_int).and_return("1")
-    obj.should_not_receive(:to_i)
-    Integer(obj).should == "1"
+  ruby_version_is ""..."2.6" do
+    it "uncritically return the value of to_int even if it is not an Integer" do
+      obj = mock("object")
+      obj.should_receive(:to_int).and_return("1")
+      obj.should_not_receive(:to_i)
+      Integer(obj).should == "1"
+    end
+  end
+
+  ruby_version_is "2.6" do
+    it "raises a TypeError when to_int returns not-an-Integer object and to_i returns nil" do
+      obj = mock("object")
+      obj.should_receive(:to_int).and_return("1")
+      obj.should_receive(:to_i).and_return(nil)
+      lambda { Integer(obj) }.should raise_error(TypeError)
+    end
+
+    it "return a result of to_i when to_int does not return an Integer" do
+      obj = mock("object")
+      obj.should_receive(:to_int).and_return("1")
+      obj.should_receive(:to_i).and_return(42)
+      Integer(obj).should == 42
+    end
   end
 
   it "raises a TypeError when passed nil" do
@@ -45,9 +63,9 @@ describe :kernel_integer, shared: true do
 
   it "returns the value of to_int if the result is a Bignum" do
     obj = mock("object")
-    obj.should_receive(:to_int).and_return(2e100)
+    obj.should_receive(:to_int).and_return(2 * 10**100)
     obj.should_not_receive(:to_i)
-    Integer(obj).should == 2e100
+    Integer(obj).should == 2 * 10**100
   end
 
   it "calls to_i on an object whose to_int returns nil" do

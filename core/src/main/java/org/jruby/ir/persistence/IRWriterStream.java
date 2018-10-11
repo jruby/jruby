@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -145,13 +146,18 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         encode(encoding.getName());
     }
 
+    public void encode(RubySymbol symbol) {
+        encode(symbol.getBytes());
+    }
+
     @Override
     public void encode(String value) {
         if (value == null) {
             encode(NULL_STRING);
         } else {
-            encode(value.length());
-            buf.put(value.getBytes());
+            byte[] bytes = value.getBytes();
+            encode(bytes.length);
+            buf.put(bytes);
         }
     }
 

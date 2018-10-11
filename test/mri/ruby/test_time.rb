@@ -236,6 +236,17 @@ class TestTime < Test::Unit::TestCase
     assert_equal(1, Time.at(0, 0.001).nsec)
   end
 
+  def test_at_with_unit
+    assert_equal(123456789, Time.at(0, 123456789, :nanosecond).nsec)
+    assert_equal(123456789, Time.at(0, 123456789, :nsec).nsec)
+    assert_equal(123456000, Time.at(0, 123456, :microsecond).nsec)
+    assert_equal(123456000, Time.at(0, 123456, :usec).nsec)
+    assert_equal(123000000, Time.at(0, 123, :millisecond).nsec)
+    assert_raise(ArgumentError){ Time.at(0, 1, 2) }
+    assert_raise(ArgumentError){ Time.at(0, 1, :invalid) }
+    assert_raise(ArgumentError){ Time.at(0, 1, nil) }
+  end
+
   def test_at_rational
     assert_equal(1, Time.at(Rational(1,1) / 1000000000).nsec)
     assert_equal(1, Time.at(1167609600 + Rational(1,1) / 1000000000).nsec)
@@ -308,7 +319,9 @@ class TestTime < Test::Unit::TestCase
     in_timezone('JST-9') do
       t = Time.local(2013, 2, 24)
       assert_equal('JST', Time.local(2013, 2, 24).zone)
-      assert_equal('JST', Marshal.load(Marshal.dump(t)).zone)
+      t = Marshal.load(Marshal.dump(t))
+      assert_equal('JST', t.zone)
+      assert_equal('JST', (t+1).zone, '[ruby-core:81892] [Bug #13710]')
     end
   end
 
@@ -411,7 +424,7 @@ class TestTime < Test::Unit::TestCase
   end
 
   def test_time_interval
-    m = Mutex.new.lock
+    m = Thread::Mutex.new.lock
     assert_nothing_raised {
       Timeout.timeout(10) {
         m.sleep(0)
@@ -651,6 +664,8 @@ class TestTime < Test::Unit::TestCase
     assert_equal("UTC", t2000.strftime("%Z"))
     assert_equal("%", t2000.strftime("%%"))
     assert_equal("0", t2000.strftime("%-S"))
+    assert_equal("12:00:00 AM", t2000.strftime("%r"))
+    assert_equal("Sat 2000-01-01T00:00:00", t2000.strftime("%3a %FT%T"))
 
     assert_equal("", t2000.strftime(""))
     assert_equal("foo\0bar\x0000\x0000\x0000", t2000.strftime("foo\0bar\0%H\0%M\0%S"))
@@ -678,6 +693,12 @@ class TestTime < Test::Unit::TestCase
     t = Time.at(946684800, 123456.789)
     assert_equal("946684800", t.strftime("%s"))
     assert_equal("946684800", t.utc.strftime("%s"))
+
+    t = Time.at(10000000000000000000000)
+    assert_equal("<<10000000000000000000000>>", t.strftime("<<%s>>"))
+    assert_equal("<<010000000000000000000000>>", t.strftime("<<%24s>>"))
+    assert_equal("<<010000000000000000000000>>", t.strftime("<<%024s>>"))
+    assert_equal("<< 10000000000000000000000>>", t.strftime("<<%_24s>>"))
   end
 
   def test_strftime_zone
@@ -728,6 +749,13 @@ class TestTime < Test::Unit::TestCase
     assert_equal(" 2", t.strftime("%l"))
     assert_equal("02", t.strftime("%0l"))
     assert_equal(" 2", t.strftime("%_l"))
+    assert_equal("MON", t.strftime("%^a"))
+    assert_equal("OCT", t.strftime("%^b"))
+
+    t = get_t2000
+    assert_equal("UTC", t.strftime("%^Z"))
+    assert_equal("utc", t.strftime("%#Z"))
+    assert_equal("SAT JAN  1 00:00:00 2000", t.strftime("%^c"))
   end
 
   def test_strftime_invalid_flags
@@ -747,6 +775,12 @@ class TestTime < Test::Unit::TestCase
     t = Time.utc(-1,1,4)
     assert_equal("-0001", t.strftime("%Y"))
     assert_equal("-0001", t.strftime("%G"))
+
+    t = Time.utc(10000000000000000000000,1,1)
+    assert_equal("<<10000000000000000000000>>", t.strftime("<<%Y>>"))
+    assert_equal("<<010000000000000000000000>>", t.strftime("<<%24Y>>"))
+    assert_equal("<<010000000000000000000000>>", t.strftime("<<%024Y>>"))
+    assert_equal("<< 10000000000000000000000>>", t.strftime("<<%_24Y>>"))
   end
 
   def test_strftime_weeknum
@@ -810,8 +844,7 @@ class TestTime < Test::Unit::TestCase
   end
 
   def test_strftime_too_wide
-    bug4457 = '[ruby-dev:43285]'
-    assert_raise(Errno::ERANGE, bug4457) {Time.now.strftime('%8192z')}
+    assert_equal(8192, Time.now.strftime('%8192z').size)
   end
 
   def test_strfimte_zoneoffset
@@ -1051,5 +1084,60 @@ class TestTime < Test::Unit::TestCase
     }
     assert_equal now2, now3
     assert_equal now2.zone, now3.zone
+  end
+
+  def test_strftime_yearday_on_last_day_of_year
+    t = Time.utc(2015, 12, 31, 0, 0, 0)
+    assert_equal("365", t.strftime("%j"))
+    t = Time.utc(2016, 12, 31, 0, 0, 0)
+    assert_equal("366", t.strftime("%j"))
+
+    t = Time.utc(2015, 12, 30, 20, 0, 0).getlocal("+05:00")
+    assert_equal("365", t.strftime("%j"))
+    t = Time.utc(2016, 12, 30, 20, 0, 0).getlocal("+05:00")
+    assert_equal("366", t.strftime("%j"))
+
+    t = Time.utc(2016, 1, 1, 1, 0, 0).getlocal("-05:00")
+    assert_equal("365", t.strftime("%j"))
+    t = Time.utc(2017, 1, 1, 1, 0, 0).getlocal("-05:00")
+    assert_equal("366", t.strftime("%j"))
+  end
+
+  def test_strftime_no_hidden_garbage
+    fmt = %w(Y m d).map { |x| "%#{x}" }.join('-') # defeats optimization
+    t = Time.at(0).getutc
+    ObjectSpace.count_objects(res = {}) # creates strings on first call
+    before = ObjectSpace.count_objects(res)[:T_STRING]
+    val = t.strftime(fmt)
+    after = ObjectSpace.count_objects(res)[:T_STRING]
+    assert_equal before + 1, after, 'only new string is the created one'
+    assert_equal '1970-01-01', val
+  end
+
+  def test_num_exact_error
+    bad = EnvUtil.labeled_class("BadValue").new
+    x = EnvUtil.labeled_class("Inexact") do
+      def to_s; "Inexact"; end
+      define_method(:to_int) {bad}
+      define_method(:to_r) {bad}
+    end.new
+    assert_raise_with_message(TypeError, /Inexact/) {Time.at(x)}
+  end
+
+  def test_memsize
+    # Time objects are common in some code, try to keep them small
+    skip "Time object size test" if /^(?:i.?86|x86_64)-linux/ !~ RUBY_PLATFORM
+    require 'objspace'
+    t = Time.at(0)
+    size = GC::INTERNAL_CONSTANTS[:RVALUE_SIZE]
+    case size
+    when 20 then expect = 50
+    when 40 then expect = 86
+    else
+      flunk "Unsupported RVALUE_SIZE=#{size}, update test_memsize"
+    end
+    assert_equal expect, ObjectSpace.memsize_of(t)
+  rescue LoadError => e
+    skip "failed to load objspace: #{e.message}"
   end
 end

@@ -9,12 +9,13 @@ class IO
   end
 
   def nonblock(nonblocking = true)
+    old_blocking = JRuby.reference(self).blocking?
     JRuby.reference(self).blocking = !nonblocking;
     if block_given?
       begin
         yield self
       ensure
-        JRuby.reference(self).blocking = nonblocking;
+        JRuby.reference(self).blocking = old_blocking;
       end
     end
   end

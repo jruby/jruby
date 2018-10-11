@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.net.protocol;
 
 import java.io.IOException;
@@ -41,7 +42,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyIO;
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
@@ -111,21 +111,22 @@ public class NetProtocolBufferedIO {
             synchronized (nim.channel.blockingLock()) {
                 boolean oldBlocking = nim.channel.isBlocking();
 
+                Ruby runtime = recv.getRuntime();
                 try {
-                    selector = SelectorFactory.openWithRetryFrom(recv.getRuntime(), SelectorProvider.provider());
+                    selector = SelectorFactory.openWithRetryFrom(runtime, SelectorProvider.provider());
                     nim.channel.configureBlocking(false);
                     SelectionKey key = nim.channel.register(selector, SelectionKey.OP_READ);
                     int n = selector.select(timeout);
 
                     if(n > 0) {
-                        IRubyObject readItems = io.read(new IRubyObject[]{recv.getRuntime().newFixnum(1024*16)});
+                        IRubyObject readItems = io.read(new IRubyObject[]{runtime.newFixnum(1024*16)});
                         return buf.concat(readItems);
                     } else {
-                        RubyClass exc = (RubyClass)(recv.getRuntime().getModule("Timeout").getConstant("Error"));
-                        throw new RaiseException(RubyException.newException(recv.getRuntime(), exc, "execution expired"),false);
+                        RubyClass exc = (RubyClass)(runtime.getModule("Timeout").getConstant("Error"));
+                        throw RaiseException.from(runtime, exc, "execution expired");
                     }
                 } catch(IOException exception) {
-                    throw recv.getRuntime().newIOErrorFromException(exception);
+                    throw runtime.newIOErrorFromException(exception);
                 } finally {
                     if (selector != null) {
                         try {

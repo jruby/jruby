@@ -41,7 +41,7 @@ public class StoreLocalVarInstr extends TwoOperandInstr implements FixedArityIns
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "scope_name: " + scope.getName()};
+        return new String[] { "scope_name: " + scope.getId()};
     }
 
     // SSS FIXME: This feels dirty

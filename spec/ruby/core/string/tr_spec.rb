@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#tr" do
   it "returns a new string with the characters from from_string replaced by the ones in to_string" do
@@ -122,10 +122,10 @@ describe "String#tr!" do
     s.should == "hello"
   end
 
-  it "raises a RuntimeError if self is frozen" do
+  it "raises a #{frozen_error_class} if self is frozen" do
     s = "abcdefghijklmnopqR".freeze
-    lambda { s.tr!("cdefg", "12") }.should raise_error(RuntimeError)
-    lambda { s.tr!("R", "S")      }.should raise_error(RuntimeError)
-    lambda { s.tr!("", "")        }.should raise_error(RuntimeError)
+    lambda { s.tr!("cdefg", "12") }.should raise_error(frozen_error_class)
+    lambda { s.tr!("R", "S")      }.should raise_error(frozen_error_class)
+    lambda { s.tr!("", "")        }.should raise_error(frozen_error_class)
   end
 end

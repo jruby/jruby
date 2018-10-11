@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Enumerable#drop" do
   before :each do
@@ -34,7 +34,7 @@ describe "Enumerable#drop" do
       EnumerableSpecs::Numerous.new(3, 2, 1, :go).drop(4).should == []
     end
 
-    it "raises a TypeError when the passed n can be coerced to Integer" do
+    it "raises a TypeError when the passed n cannot be coerced to Integer" do
       lambda{ @enum.drop("hat") }.should raise_error(TypeError)
       lambda{ @enum.drop(nil) }.should raise_error(TypeError)
     end

@@ -58,6 +58,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return id;
     }
 
+    public boolean canRaiseExceptions() {
+        for (Instr i: getInstrs()) {
+            if (i.canRaiseException()) return true;
+        }
+
+        return false;
+    }
+
     public boolean isEntryBB() {
         return cfg.getEntryBB() == this;
     }

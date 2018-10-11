@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,6 +28,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
@@ -35,74 +36,77 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
- *
- * @author  jpetersen
+ * Represents a method which has been aliased.
  */
 public class AliasMethod extends DynamicMethod {
     private DynamicMethod oldMethod;
-    private String oldName;
 
+    /**
+     * For some java native methods it is convenient to pass in a String instead
+     * of a ByteList.
+     */ 
     public AliasMethod(RubyModule implementationClass, DynamicMethod oldMethod, String oldName) {
-        super(implementationClass, oldMethod.getVisibility());
+        super(implementationClass, oldMethod.getVisibility(), oldName);
 
-        this.oldName = oldName;
         this.oldMethod = oldMethod;
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        return oldMethod.call(context, self, klazz, oldName);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused) {
+        return oldMethod.call(context, self, klazz, name);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg) {
-        return oldMethod.call(context, self, klazz, oldName, arg);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg) {
+        return oldMethod.call(context, self, klazz, name, arg);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2) {
+        return oldMethod.call(context, self, klazz, name, arg1, arg2);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return oldMethod.call(context, self, klazz, name, arg1, arg2, arg3);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
-        return oldMethod.call(context, self, klazz, oldName, args);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args) {
+        return oldMethod.call(context, self, klazz, name, args);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, Block block) {
+        return oldMethod.call(context, self, klazz, name, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, Block block) {
+        return oldMethod.call(context, self, klazz, name, arg1, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return oldMethod.call(context, self, klazz, name, arg1, arg2, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, arg1, arg2, arg3, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        return oldMethod.call(context, self, klazz, name, arg1, arg2, arg3, block);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-        return oldMethod.call(context, self, klazz, oldName, args, block);
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args, Block block) {
+        return oldMethod.call(context, self, klazz, name, args, block);
     }
 
     public DynamicMethod dup() {
-        return new AliasMethod(implementationClass, oldMethod, oldName);
+        return new AliasMethod(implementationClass, oldMethod, name);
     }
 
     @Override
@@ -111,7 +115,7 @@ public class AliasMethod extends DynamicMethod {
     }
 
     public String getOldName() {
-        return oldName;
+        return name;
     }
     
     @Override
@@ -123,4 +127,5 @@ public class AliasMethod extends DynamicMethod {
     public long getSerialNumber() {
         return oldMethod.getSerialNumber();
     }
+
 }

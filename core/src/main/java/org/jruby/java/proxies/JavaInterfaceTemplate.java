@@ -78,7 +78,7 @@ public class JavaInterfaceTemplate {
     private static class DummyMethodImpl extends org.jruby.internal.runtime.methods.JavaMethod {
 
         DummyMethodImpl(RubyModule targetModule) {
-            super(targetModule, Visibility.PUBLIC);
+            super(targetModule, Visibility.PUBLIC, ""); // NOTE: maybe dummy method should not be shared
         }
 
         @Override
@@ -171,7 +171,7 @@ public class JavaInterfaceTemplate {
 
                 // jcreate instantiates the proxy object which implements all interfaces
                 // and which is wrapped and implemented by this object
-                clazz.addMethod("__jcreate!", new InterfaceProxyFactory(clazz));
+                clazz.addMethod("__jcreate!", new InterfaceProxyFactory(clazz, "__jcreate!"));
             } else {
                 // The new "new" actually generates a real Java class to use for the Ruby class's
                 // backing store, instantiates that, and then calls initialize on it.
@@ -183,7 +183,7 @@ public class JavaInterfaceTemplate {
 
             // Used by our duck-typification of Proc into interface types, to allow
             // coercing a simple proc into an interface parameter.
-            clazz.addMethod("__jcreate_meta!", new InterfaceProxyFactory(clazz));
+            clazz.addMethod("__jcreate_meta!", new InterfaceProxyFactory(clazz, "__jcreate_meta!"));
 
             // If we hold a Java object, we need a java_class accessor
             clazz.addMethod("java_class", new JavaClassAccessor(clazz));
@@ -195,7 +195,7 @@ public class JavaInterfaceTemplate {
 
             // implement is called to force this class to create stubs for all methods in the given interface,
             // so they'll show up in the list of methods and be invocable without passing through method_missing
-            singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE) {
+            singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject iface) {
@@ -208,7 +208,7 @@ public class JavaInterfaceTemplate {
             });
 
             // implement all forces implementation of all interfaces we intend for this class to implement
-            singleton.addMethod("implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE) {
+            singleton.addMethod("implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement_all") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
@@ -226,7 +226,7 @@ public class JavaInterfaceTemplate {
 
     private static final class InterfaceProxyFactory extends JavaMethodN { // __jcreate! and __jcreate_meta!
 
-        InterfaceProxyFactory(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
+        InterfaceProxyFactory(final RubyClass clazz, String name) { super(clazz, Visibility.PRIVATE, name); }
 
         @Override // will be called with zero args
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
@@ -242,7 +242,7 @@ public class JavaInterfaceTemplate {
 
     private static class JavaClassAccessor extends JavaMethodZero {
 
-        JavaClassAccessor(final RubyClass klass) { super(klass, Visibility.PUBLIC); }
+        JavaClassAccessor(final RubyClass klass) { super(klass, Visibility.PUBLIC, "java_class"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
@@ -319,7 +319,7 @@ public class JavaInterfaceTemplate {
 
     private static class AppendFeatures extends JavaMethodOneBlock {
 
-        AppendFeatures(RubyModule singletonClass) { super(singletonClass, Visibility.PUBLIC); }
+        AppendFeatures(RubyModule singletonClass) { super(singletonClass, Visibility.PUBLIC, "append_features"); }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
@@ -376,8 +376,8 @@ public class JavaInterfaceTemplate {
 
         final Class<?> ifaceClass = JavaClass.getJavaClass(context, ((RubyModule) self));
         if ( methodNames == null ) {
-            final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
             for ( Method method : ifaceClass.getMethods() ) {
+                BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(method.getName());
                 if ( method.isBridge() || method.isSynthetic() ) continue;
                 if ( Modifier.isStatic( method.getModifiers() ) ) continue;
                 // override default methods (by default) - users should pass down method names or impl(false) { ... }
@@ -386,10 +386,10 @@ public class JavaInterfaceTemplate {
             }
         }
         else {
-            final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod();
             final Method[] decMethods = ifaceClass.getDeclaredMethods();
             loop: for ( IRubyObject methodName : methodNames ) {
                 final String name = methodName.toString();
+                final BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(name);
                 for ( int i = 0; i < decMethods.length; i++ ) {
                     final Method method = decMethods[i];
                     if ( method.isBridge() || method.isSynthetic() ) continue;
@@ -414,7 +414,7 @@ public class JavaInterfaceTemplate {
         private final Block implBlock;
 
         BlockInterfaceImpl(final RubyClass implClass, final Block implBlock, final IRubyObject[] methodNames) {
-            super(implClass, Visibility.PUBLIC);
+            super(implClass, Visibility.PUBLIC, "method_missing");
             this.implBlock = implBlock; this.methodNames = methodNames;
         }
 
@@ -460,12 +460,12 @@ public class JavaInterfaceTemplate {
 
         public DynamicMethod dup() { return this; }
 
-        final ConcreteMethod getConcreteMethod() { return new ConcreteMethod(); }
+        final ConcreteMethod getConcreteMethod(String name) { return new ConcreteMethod(name); }
 
         private final class ConcreteMethod extends JavaMethod {
 
-            ConcreteMethod() {
-                super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC);
+            ConcreteMethod(String name) {
+                super(BlockInterfaceImpl.this.implementationClass, Visibility.PUBLIC, name);
             }
 
             @Override

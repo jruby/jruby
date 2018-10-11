@@ -1,8 +1,14 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel#hash" do
-  it "needs to be reviewed for spec completeness"
+  it "is provided" do
+    1.respond_to?(:hash).should == true
+  end
+
+  it "is stable" do
+    1.hash.should == 1.hash
+  end
 end
 
 describe "Kernel" do

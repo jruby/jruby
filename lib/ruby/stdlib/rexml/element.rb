@@ -551,6 +551,30 @@ module REXML
     # Attributes                                    #
     #################################################
 
+    # Fetches an attribute value or a child.
+    #
+    # If String or Symbol is specified, it's treated as attribute
+    # name. Attribute value as String or +nil+ is returned. This case
+    # is shortcut of +attributes[name]+.
+    #
+    # If Integer is specified, it's treated as the index of
+    # child. It returns Nth child.
+    #
+    #   doc = REXML::Document.new("<a attr='1'><b/><c/></a>")
+    #   doc.root["attr"]             # => "1"
+    #   doc.root.attributes["attr"]  # => "1"
+    #   doc.root[1]                  # => <c/>
+    def [](name_or_index)
+      case name_or_index
+      when String
+        attributes[name_or_index]
+      when Symbol
+        attributes[name_or_index.to_s]
+      else
+        super
+      end
+    end
+
     def attribute( name, namespace=nil )
       prefix = nil
       if namespaces.respond_to? :key
@@ -686,7 +710,7 @@ module REXML
     #  doc.write( out )     #-> doc is written to the string 'out'
     #  doc.write( $stdout ) #-> doc written to the console
     def write(output=$stdout, indent=-1, transitive=false, ie_hack=false)
-      Kernel.warn("#{self.class.name}.write is deprecated.  See REXML::Formatters")
+      Kernel.warn("#{self.class.name}.write is deprecated.  See REXML::Formatters", uplevel: 1)
       formatter = if indent > -1
           if transitive
             require "rexml/formatters/transitive"

@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,13 +26,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyString;
 import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.StackState;
@@ -45,6 +45,8 @@ import org.jruby.util.ByteList;
  *
  */
 public class RipperParserBase {
+    private IRubyObject currentArg;
+
     public RipperParserBase(ThreadContext context, IRubyObject ripper, LexerSource source) {
         this.context = context;
         this.ripper = ripper;
@@ -106,44 +108,21 @@ public class RipperParserBase {
                 
         return identifier;
     }
-    
-    public IRubyObject assignable(IRubyObject name) {
-        // MRI calls get_id(name), but we differ quite a bit and we only need to worry about strings
-        // for anything we care about.  Possibly this should return nil and not original value?
-        if (!(name instanceof RubyString)) return name;
-        
-        String javaName = name.asJavaString();
-        
-        if (javaName.equals("self")) {
-            yyerror("Can't change the value of self");
-        } else if (javaName.equals("nil")) {
-            yyerror("Can't assign to nil");
-        } else if (javaName.equals("true")) {
-            yyerror("Can't assign to true");
-        } else if (javaName.equals("false")) {
-            yyerror("Can't assign to false");
-        } else if (javaName.equals("__FILE__")) {
-            yyerror("Can't assign to __FILE__");
-        } else if (javaName.equals("__LINE__")) {
-            yyerror("Can't assign to __LINE__");
-        } else if (Character.isUpperCase(javaName.charAt(0))) { // MRI: ID_CONST
-            if (isInDef() || isInSingle()) dispatch("on_assign_error", name);
-            return name;
-        } else if (javaName.charAt(0) == '@') { // MRI: ID_CLASS & ID_INSTANCE
-            if (javaName.charAt(1) == '@') {
-                return name;
-            } else {
-                return name;
-            }
-        } else if (javaName.charAt(0) == '$') { // MRI: ID_GLOBAL
-            return name;
-        }
 
-        currentScope.assign(lexer.getPosition(), javaName.intern(), null);
-        
-        return name;
+    public IRubyObject assignableConstant(IRubyObject value) {
+        if (isInDef()) {
+            value = dispatch("on_assign_error", value);
+            error();
+        }
+        return value;
     }
-    
+
+    public IRubyObject assignableIdentifier(IRubyObject value) {
+        String ident = lexer.getIdent().intern();
+        getCurrentScope().assign(lexer.getPosition(), context.runtime.newSymbol(lexer.getIdent()), null);
+        return value;
+    }
+
     public IRubyObject dispatch(String method_name) {
         return Helpers.invoke(context, ripper, method_name);
     }
@@ -173,7 +152,7 @@ public class RipperParserBase {
     }
 
     public IRubyObject escape(IRubyObject arg) {
-        return arg == null ? context.runtime.getNil() : arg;
+        return arg == null ? context.nil : arg;
     }
     
     public IRubyObject formal_argument(IRubyObject identifier) {
@@ -184,14 +163,10 @@ public class RipperParserBase {
         throw new SyntaxException("identifier " + identifier + " is not valid", identifier);
     }    
     
-    // FIXME: Consider removing identifier.
-    public boolean is_id_var(IRubyObject identifier) {
+    public boolean is_id_var() {
         String ident = lexer.getIdent().intern();
-        char c = ident.charAt(0);
-        
-        if (c == '$' || c == '@' || Character.toUpperCase(c) == c) return true;
 
-        return getCurrentScope().getLocalScope().isDefined(ident) >= 0;
+        return getCurrentScope().isDefined(ident) >= 0;
     }
     
     public boolean is_local_id(String identifier) {
@@ -267,6 +242,7 @@ public class RipperParserBase {
     
     public void pushLocalScope() {
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
+        getCmdArgumentState().reset();
     }
 
     public int getHeredocIndent() {
@@ -314,8 +290,12 @@ public class RipperParserBase {
         return inDefinition;
     }
 
-    public boolean isInSingle() {
-        return inSingleton != 0;
+    public boolean isInClass() {
+        return inClass;
+    }
+
+    public void setIsInClass(boolean inClass) {
+        this.inClass = inClass;
     }
 
     public StrTerm getStrTerm() {
@@ -331,7 +311,6 @@ public class RipperParserBase {
     }
     
     public void compile_error(String message) {
-        System.out.println(getRuntime().newString(message));
         dispatch("on_parse_error", getRuntime().newString(message));
     }
 
@@ -422,6 +401,14 @@ public class RipperParserBase {
     public Encoding encoding() {
         return lexer.getEncoding();
     }
+
+    public IRubyObject getCurrentArg() {
+        return currentArg;
+    }
+
+    public void setCurrentArg(IRubyObject arg) {
+        this.currentArg = arg;
+    }
     
     public boolean getYYDebug() {
         return yydebug;
@@ -448,6 +435,7 @@ public class RipperParserBase {
     protected RipperLexer lexer;
     protected StaticScope currentScope;
     protected boolean inDefinition;
+    protected boolean inClass;
     protected boolean yydebug; // FIXME: Hook up to yydebug
     protected boolean isError;
     

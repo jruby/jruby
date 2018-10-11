@@ -64,7 +64,7 @@ function check {
 # extended from 9 to 11 to accommodate temporary copy of stdlib 2.3
 check lib/target/jruby-stdlib-$jar_version.jar 11
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 30
-check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 13
+check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 15
 # extended from 9 to 11 to accommodate temporary copy of stdlib 2.3
 check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 11
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar 27
@@ -74,6 +74,6 @@ check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 20 jruby-$ja
 # extended from 15 to 20 to accommodate temporary copy of stdlib 2.2.2
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 20 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
-check core/target/jruby-core-$jar_version.jar 9
+check core/target/jruby-core-$jar_version.jar 10
 
 exit "${failed[0]}"

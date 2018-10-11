@@ -1,0 +1,1 @@
+fails:Proc#source_location returns the first line of a multi-line proc (i.e. the line containing 'proc do')

@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/commands/query_command'
 
@@ -115,6 +115,86 @@ a (2)
 
     This is a lot of text. This is a lot of text. This is a lot of text.
     This is a lot of text.
+
+pl (1)
+    Platform: i386-linux
+    Author: A User
+    Homepage: http://example.com
+
+    this is a summary
+    EOF
+
+    assert_equal expected, @ui.output
+    assert_equal '', @ui.error
+  end
+
+  def test_execute_details_cleans_text
+    spec_fetcher do |fetcher|
+      fetcher.spec 'a', 2 do |s|
+        s.summary = 'This is a lot of text. ' * 4
+        s.authors = ["Abraham Lincoln \x01", "\x02 Hirohito"]
+        s.homepage = "http://a.example.com/\x03"
+      end
+
+      fetcher.legacy_platform
+    end
+
+    @cmd.handle_options %w[-r -d]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** REMOTE GEMS ***
+
+a (2)
+    Authors: Abraham Lincoln ., . Hirohito
+    Homepage: http://a.example.com/.
+
+    This is a lot of text. This is a lot of text. This is a lot of text.
+    This is a lot of text.
+
+pl (1)
+    Platform: i386-linux
+    Author: A User
+    Homepage: http://example.com
+
+    this is a summary
+    EOF
+
+    assert_equal expected, @ui.output
+    assert_equal '', @ui.error
+  end
+
+  def test_execute_details_truncates_summary
+    spec_fetcher do |fetcher|
+      fetcher.spec 'a', 2 do |s|
+        s.summary = 'This is a lot of text. ' * 10_000
+        s.authors = ["Abraham Lincoln \x01", "\x02 Hirohito"]
+        s.homepage = "http://a.example.com/\x03"
+      end
+
+      fetcher.legacy_platform
+    end
+
+    @cmd.handle_options %w[-r -d]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** REMOTE GEMS ***
+
+a (2)
+    Authors: Abraham Lincoln ., . Hirohito
+    Homepage: http://a.example.com/.
+
+    Truncating the summary for a-2 to 100,000 characters:
+#{"    This is a lot of text. This is a lot of text. This is a lot of text.\n" * 1449}    This is a lot of te
 
 pl (1)
     Platform: i386-linux
@@ -537,6 +617,45 @@ a (2 universal-darwin, 1 ruby x86-linux)
     assert_equal '', @ui.error
   end
 
+  def test_execute_show_default_gems
+    spec_fetcher { |fetcher| fetcher.spec 'a', 2 }
+
+    a1 = new_default_spec 'a', 1
+    install_default_specs a1
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** LOCAL GEMS ***
+
+a (2, default: 1)
+EOF
+
+    assert_equal expected, @ui.output
+  end
+
+  def test_execute_show_default_gems_with_platform
+    a1 = new_default_spec 'a', 1
+    a1.platform = 'java'
+    install_default_specs a1
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** LOCAL GEMS ***
+
+a (default: 1 java)
+EOF
+
+    assert_equal expected, @ui.output
+  end
+
   def test_execute_default_details
     spec_fetcher do |fetcher|
       fetcher.spec 'a', 2
@@ -617,6 +736,83 @@ pl (1)
     Installed at: -
 
     this is a summary
+    EOF
+
+    assert_equal expected, @ui.output
+  end
+
+  def test_execute_exact_remote
+    spec_fetcher do |fetcher|
+      fetcher.spec 'coolgem-omg', 3
+      fetcher.spec 'coolgem', '4.2.1'
+      fetcher.spec 'wow_coolgem', 1
+    end
+
+    @cmd.handle_options %w[--remote --exact coolgem]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** REMOTE GEMS ***
+
+coolgem (4.2.1)
+    EOF
+
+    assert_equal expected, @ui.output
+  end
+
+  def test_execute_exact_local
+    spec_fetcher do |fetcher|
+      fetcher.spec 'coolgem-omg', 3
+      fetcher.spec 'coolgem', '4.2.1'
+      fetcher.spec 'wow_coolgem', 1
+    end
+
+    @cmd.handle_options %w[--exact coolgem]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** LOCAL GEMS ***
+
+coolgem (4.2.1)
+    EOF
+
+    assert_equal expected, @ui.output
+  end
+
+  def test_execute_exact_multiple
+    spec_fetcher do |fetcher|
+      fetcher.spec 'coolgem-omg', 3
+      fetcher.spec 'coolgem', '4.2.1'
+      fetcher.spec 'wow_coolgem', 1
+
+      fetcher.spec 'othergem-omg', 3
+      fetcher.spec 'othergem', '1.2.3'
+      fetcher.spec 'wow_othergem', 1
+    end
+
+    @cmd.handle_options %w[--exact coolgem othergem]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    expected = <<-EOF
+
+*** LOCAL GEMS ***
+
+coolgem (4.2.1)
+
+*** LOCAL GEMS ***
+
+othergem (1.2.3)
     EOF
 
     assert_equal expected, @ui.output

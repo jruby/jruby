@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 with_feature :encoding do
   describe "Encoding.default_internal" do
@@ -27,23 +27,6 @@ with_feature :encoding do
     it "returns the default internal encoding" do
       Encoding.default_internal = Encoding::ASCII_8BIT
       Encoding.default_internal.should == Encoding::ASCII_8BIT
-    end
-
-    describe "with command line options" do
-      it "returns Encoding::UTF_8 if ruby was invoked with -U" do
-        ruby_exe("print Encoding.default_internal", options: '-U').
-          should == 'UTF-8'
-      end
-
-      it "uses the encoding specified when ruby is invoked with an '-E :internal' argument" do
-        ruby_exe("print Encoding.default_internal", options: '-E :SHIFT_JIS').
-          should == 'Shift_JIS'
-      end
-
-      it "uses the encoding specified when ruby is invoked with an '-E external:internal' argument" do
-        ruby_exe("print Encoding.default_internal", options: '-E UTF-8:SHIFT_JIS').
-          should == 'Shift_JIS'
-      end
     end
   end
 

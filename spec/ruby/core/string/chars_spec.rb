@@ -1,8 +1,8 @@
-require File.expand_path('../shared/chars', __FILE__)
-require File.expand_path('../shared/each_char_without_block', __FILE__)
+require_relative 'shared/chars'
+require_relative 'shared/each_char_without_block'
 
 describe "String#chars" do
-  it_behaves_like(:string_chars, :chars)
+  it_behaves_like :string_chars, :chars
 
   it "returns an array when no block given" do
     ary = "hello".send(@method)

@@ -1,7 +1,10 @@
 package org.jruby.ir;
 
 import java.util.EnumSet;
+
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -22,6 +25,7 @@ import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.util.IGVInstrListener;
+import org.jruby.util.ByteList;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
@@ -36,8 +40,10 @@ public class IRManager {
     private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();
     private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
+    private final static ByteList OBJECT = new ByteList(new byte[] {'O', 'b', 'j', 'e', 'c', 't'});
+
     private int dummyMetaClassCount = 0;
-    private final IRModuleBody object = new IRClassBody(this, null, "Object", 0, null);
+    private final IRModuleBody object;
     private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
@@ -58,18 +64,25 @@ public class IRManager {
     private List<CompilerPass> jitPasses;
     private List<CompilerPass> safePasses;
     private final RubyInstanceConfig config;
+    public final Ruby runtime;
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
 
-    public IRManager(RubyInstanceConfig config) {
+    public IRManager(Ruby runtime, RubyInstanceConfig config) {
+        this.runtime = runtime;
         this.config = config;
+        object = new IRClassBody(this, null, runtime.newSymbol(OBJECT), 0, null);
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
 
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) instrsListener = new IGVInstrListener();
+    }
+
+    public Ruby getRuntime() {
+        return runtime;
     }
 
     public boolean isDryRun() {
@@ -228,8 +241,8 @@ public class IRManager {
         if (irScopeListener.equals(listener)) irScopeListener = null;
     }
 
-    public String getMetaClassName() {
-        return "<DUMMY_MC:" + dummyMetaClassCount++ + ">";
+    public RubySymbol getMetaClassName() {
+        return runtime.newSymbol("<DUMMY_MC:" + dummyMetaClassCount++ + ">");
     }
 
     private TemporaryLocalVariable[] temporaryLocalVariables = new TemporaryLocalVariable[1600];

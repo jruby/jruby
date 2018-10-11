@@ -29,8 +29,12 @@ public class SymbolObjectSite extends LazyObjectSite {
         this.encoding = encoding;
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SymbolObjectSite.class), "bootstrap",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(SymbolObjectSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encoding) {
         return new SymbolObjectSite(type, value, encoding).bootstrap(lookup);

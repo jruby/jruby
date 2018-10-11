@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 begin
   require_relative 'helper'
 rescue LoadError
@@ -8,23 +8,23 @@ module Fiddle
   class TestHandle < TestCase
     include Fiddle
 
-    include Test::Unit::Assertions
-
     def test_safe_handle_open
-      t = Thread.new do
+      Thread.new do
         $SAFE = 1
-        Fiddle::Handle.new(LIBC_SO.taint)
-      end
-      assert_raise(SecurityError) { t.value }
+        assert_raise(SecurityError) {
+          Fiddle::Handle.new(LIBC_SO.dup.taint)
+        }
+      end.join
     end
 
     def test_safe_function_lookup
-      t = Thread.new do
+      Thread.new do
         h = Fiddle::Handle.new(LIBC_SO)
         $SAFE = 1
-        h["qsort".taint]
-      end
-      assert_raise(SecurityError) { t.value }
+        assert_raise(SecurityError) {
+          h["qsort".dup.taint]
+        }
+      end.join
     end
 
     def test_to_i
@@ -181,6 +181,14 @@ module Fiddle
 
     def test_no_memory_leak
       assert_no_memory_leak(%w[-W0 -rfiddle.so], '', '100_000.times {Fiddle::Handle.allocate}; GC.start', rss: true)
+    end
+
+    if /cygwin|mingw|mswin/ =~ RUBY_PLATFORM
+      def test_fallback_to_ansi
+        k = Fiddle::Handle.new("kernel32.dll")
+        ansi = k["GetFileAttributesA"]
+        assert_equal(ansi, k["GetFileAttributes"], "should fallback to ANSI version")
+      end
     end
   end
 end if defined?(Fiddle)

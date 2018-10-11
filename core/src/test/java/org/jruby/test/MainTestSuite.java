@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -32,6 +32,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.test;
 
 import junit.framework.Test;
@@ -58,27 +59,33 @@ public class MainTestSuite extends TestSuite {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(TestLoadService.class);
         suite.addTestSuite(TestRubyInstanceConfig.class);
-        suite.addTestSuite(TestRubyObject.class);
-        suite.addTestSuite(TestRubyHash.class);
         suite.addTestSuite(TestRuby.class);
         suite.addTestSuite(TestRequire.class);
         suite.addTestSuite(TestJavaUtil.class);
         suite.addTestSuite(TestJava.class);
         suite.addTestSuite(TestJavaClass.class);
         suite.addTestSuite(TestKernel.class);
-        suite.addTestSuite(TestRubyCollect.class);
-        suite.addTestSuite(TestObjectSpace.class);
+        suite.addTestSuite(TestRubyArray.class);
+        suite.addTestSuite(TestRubyClass.class);
+        suite.addTestSuite(TestRubyException.class);
+        suite.addTestSuite(TestRubyFixnum.class);
+        suite.addTestSuite(TestRubyFloat.class);
+        suite.addTestSuite(TestRubyException.class);
+        suite.addTestSuite(TestRubyFixnum.class);
+        suite.addTestSuite(TestRubyHash.class);
+        suite.addTestSuite(TestRubyObject.class);
+        suite.addTestSuite(TestRubyRational.class);
+        suite.addTestSuite(TestRubyString.class);
         suite.addTestSuite(TestRubySymbol.class);
+        suite.addTestSuite(TestRubyBigDecimal.class);
+        suite.addTestSuite(TestObjectSpace.class);
         suite.addTest(JavaSupportTestSuite.suite());
         suite.addTestSuite(TestCommandlineParser.class);
-        suite.addTestSuite(TestRubyException.class);
         suite.addTestSuite(TestAdoptedThreading.class);
-        suite.addTestSuite(TestRubyArray.class);
         suite.addTestSuite(TestRaiseException.class);
         suite.addTestSuite(ShellLauncherTest.class);
         suite.addTestSuite(TestRbConfigLibrary.class);
         suite.addTestSuite(TestParser.class);
-        suite.addTestSuite(TestRubyBigDecimal.class);
         suite.addTestSuite(JRubyThreadContextTest.class);
         suite.addTestSuite(JavaFileStatTest.class);
         suite.addTestSuite(TestJavaReentrantExceptions.class);
@@ -87,11 +94,9 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(RubyTimeOutputFormatterTest.class);
         suite.addTestSuite(org.jruby.lexer.yacc.StringTermTest.class);
         suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
-        suite.addTestSuite(TestRubyString.class);
         suite.addTestSuite(TestRubyNKF.class);
         suite.addTestSuite(StandardErrorLoggerTest.class);
         suite.addTestSuite(ParameterSubstitutionTest.class);
-        suite.addTestSuite(TestRubyRational.class);
         suite.addTestSuite(TestRecursiveCheck.class);
         suite.addTestSuite(TestEncodingAPI.class);
         suite.addTestSuite(TestSignature.class);

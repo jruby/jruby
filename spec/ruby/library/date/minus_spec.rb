@@ -1,14 +1,14 @@
 require 'date'
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Date#-" do
 
-  it "substracts a number of days from a Date" do
+  it "subtracts a number of days from a Date" do
     d = Date.civil(2007, 5 ,2) - 13
     d.should == Date.civil(2007, 4, 19)
   end
 
-  it "substracts a negative number of days from a Date" do
+  it "subtracts a negative number of days from a Date" do
     d = Date.civil(2007, 4, 19).-(-13)
     d.should == Date.civil(2007, 5 ,2)
   end

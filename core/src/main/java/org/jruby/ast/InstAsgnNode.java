@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,10 +30,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -42,13 +44,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents an instance variable assignment.
  */
 public class InstAsgnNode extends AssignableNode implements INameNode {
-    private String name;
+    private RubySymbol name;
 
     /**
      * @param name the name of the instance variable
      * @param valueNode the value of the variable
      **/
-    public InstAsgnNode(ISourcePosition position, String name, Node valueNode) {
+    public InstAsgnNode(ISourcePosition position, RubySymbol name, Node valueNode) {
         super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;
@@ -70,15 +72,11 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
      * Gets the name.
      * @return Returns a String
      */
-    public String getName() {
+    public RubySymbol getName() {
         return name;
     }
     
     public List<Node> childNodes() {
         return createList(getValueNode());
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 }

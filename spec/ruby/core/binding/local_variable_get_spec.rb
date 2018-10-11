@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Binding#local_variable_get" do
   it "reads local variables captured in the binding" do
@@ -41,5 +41,16 @@ describe "Binding#local_variable_get" do
     bind.eval('number = 10')
 
     bind.local_variable_get(:number).should == 10
+  end
+
+  it "raises a NameError on global access" do
+    bind = binding
+    lambda { bind.local_variable_get(:$0) }.should raise_error(NameError)
+  end
+
+  it "raises a NameError on special variable access" do
+    bind = binding
+    lambda { bind.local_variable_get(:$~) }.should raise_error(NameError)
+    lambda { bind.local_variable_get(:$_) }.should raise_error(NameError)
   end
 end

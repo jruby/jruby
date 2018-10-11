@@ -145,7 +145,7 @@ class MSpecOptions
 
       # process first option
       option = process argv, entry, opt, arg
-      next unless option and not option.arg?
+      next unless option and !option.arg?
 
       # process the rest of the options
       while rest.size > 0
@@ -200,29 +200,14 @@ class MSpecOptions
        "Load FILE containing configuration options", &block)
   end
 
-  def name
-    on("-n", "--name", "RUBY_NAME",
-       "Set the value of RUBY_NAME (used to determine the implementation)") do |n|
-      Object.const_set :RUBY_NAME, n
-    end
-  end
-
   def targets
     on("-t", "--target", "TARGET",
        "Implementation to run the specs, where TARGET is:") do |t|
       case t
       when 'r', 'ruby'
         config[:target] = 'ruby'
-      when 'r19', 'ruby19'
-        config[:target] = 'ruby1.9'
       when 'x', 'rubinius'
         config[:target] = './bin/rbx'
-      when 'x18', 'rubinius18'
-        config[:target] = './bin/rbx -X18'
-      when 'x19', 'rubinius19'
-        config[:target] = './bin/rbx -X19'
-      when 'x20', 'rubinius20'
-        config[:target] = './bin/rbx -X20'
       when 'X', 'rbx'
         config[:target] = 'rbx'
       when 'j', 'jruby'
@@ -243,11 +228,7 @@ class MSpecOptions
 
     doc ""
     doc "     r or ruby         invokes ruby in PATH"
-    doc "     r19, ruby19       invokes ruby1.9 in PATH"
     doc "     x or rubinius     invokes ./bin/rbx"
-    doc "     x18 or rubinius18 invokes ./bin/rbx -X18"
-    doc "     x19 or rubinius19 invokes ./bin/rbx -X19"
-    doc "     x20 or rubinius20 invokes ./bin/rbx -X20"
     doc "     X or rbx          invokes rbx in PATH"
     doc "     j or jruby        invokes jruby in PATH"
     doc "     i or ironruby     invokes ir in PATH"
@@ -262,7 +243,7 @@ class MSpecOptions
     end
     on("-I", "--include", "DIR",
        "Pass DIR through as the -I option to the target") do |d|
-      config[:includes] << "-I#{d}"
+      config[:loadpath] << "-I#{d}"
     end
     on("-r", "--require", "LIBRARY",
        "Pass LIBRARY through as the -r option to the target") do |f|
@@ -384,13 +365,6 @@ class MSpecOptions
     end
   end
 
-  def background
-    on("--background",
-       "Enable guard for specs that may hang in background processes") do
-      MSpec.register_mode :background
-    end
-  end
-
   def unguarded
     on("--unguarded", "Turn off all guards") do
       MSpec.register_mode :unguarded
@@ -422,7 +396,7 @@ class MSpecOptions
       end
       def obj.load
         file = MSpec.retrieve :file
-        print "\n#{file.ljust(@width)}"
+        STDERR.print "\n#{file.ljust(@width)}"
       end
       MSpec.register :start, obj
       MSpec.register :load, obj
@@ -433,7 +407,7 @@ class MSpecOptions
       obj = Object.new
       obj.instance_variable_set :@marker, o
       def obj.load
-        print @marker
+        STDERR.print @marker
       end
       MSpec.register :load, obj
     end
@@ -488,14 +462,12 @@ class MSpecOptions
     # Generated with:
     # puts File.read(__FILE__).scan(/def (\w+).*\n\s*on\(/)
     configure {}
-    name
     targets
     formatters
     filters
     chdir
     prefix
     pretend
-    background
     unguarded
     randomize
     repeat

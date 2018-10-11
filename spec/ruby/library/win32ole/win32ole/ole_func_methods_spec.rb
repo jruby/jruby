@@ -1,4 +1,4 @@
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../fixtures/classes'
 
 platform_is :windows do
   require 'win32ole'
@@ -9,7 +9,7 @@ platform_is :windows do
     end
 
     after :each do
-      @ie.Quit
+      @ie.Quit if @ie
     end
 
     it "raises ArgumentError if argument is given" do

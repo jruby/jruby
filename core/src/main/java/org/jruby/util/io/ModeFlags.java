@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util.io;
 
 import jnr.constants.platform.Fcntl;
@@ -71,8 +72,10 @@ public class ModeFlags implements Cloneable {
     public static final int APPEND = OpenFlags.O_APPEND.intValue();
     /** nonblock flag, to perform all operations non-blocking. Unused currently */
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
-    /** binary flag, to ensure no encoding changes are made while writing */
-    public static final int BINARY = OpenFlags.O_BINARY.intValue();
+    /** binary flag, to ensure no encoding changes are made while writing (Windows only) */
+    public static final int BINARY = OpenFlags.O_BINARY.defined() ? OpenFlags.O_BINARY.intValue() : 0;
+    /** tmpfile flag (Linux only) **/
+    public static final int TMPFILE = OpenFlags.O_TMPFILE.defined() ? OpenFlags.O_TMPFILE.intValue() : 0;
     /** textmode flag, MRI has no equivalent but we use ModeFlags currently
      * to also capture what are oflags.
      */
@@ -272,6 +275,15 @@ public class ModeFlags implements Cloneable {
     }
     
     /**
+     * Whether the flags specify "unnamed temporary".
+     *
+     * @return true if unnamed temporary mode, false otherwise
+     */
+    public boolean isTemporary() {
+        return (flags & TMPFILE) != 0;
+    }
+
+    /**
      * Whether the flags specify to create nonexisting files.
      * 
      * @return true if nonexisting files should be created, false otherwise
@@ -347,6 +359,7 @@ public class ModeFlags implements Cloneable {
         if (isExclusive()) buf.append("EXCLUSIVE ");
         if (isReadOnly()) buf.append("READONLY ");
         if (isText()) buf.append("TEXT ");
+        if (isTemporary()) buf.append("TMPFILE ");
         if (isTruncate()) buf.append("TRUNCATE ");
         if (isWritable()) {
             if (isReadable()) {
@@ -393,12 +406,15 @@ public class ModeFlags implements Cloneable {
         if ((flags & CREAT) != 0) {
             fmodeFlags |= OpenFile.CREATE;
         }
-        if ((flags & BINARY) == BINARY) {
+        if ((flags & BINARY) != 0) {
             fmodeFlags |= OpenFile.BINMODE;
+        }
+        if ((flags & TMPFILE) != 0) {
+            fmodeFlags |= OpenFile.TMPFILE;
         }
 
         // This is unique to us to keep bridge betweeen mode_flags and oflags
-        if ((flags & TEXT) == TEXT) {
+        if ((flags & TEXT) != 0) {
             fmodeFlags |= OpenFile.TEXTMODE;
         }
         

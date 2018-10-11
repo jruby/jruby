@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#fill" do
   before :all do
@@ -43,12 +43,12 @@ describe "Array#fill" do
     [nil, nil, nil, nil].fill { |i| i * 2 }.should == [0, 2, 4, 6]
   end
 
-  it "raises a RuntimeError on a frozen array" do
-    lambda { ArraySpecs.frozen_array.fill('x') }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on a frozen array" do
+    lambda { ArraySpecs.frozen_array.fill('x') }.should raise_error(frozen_error_class)
   end
 
-  it "raises a RuntimeError on an empty frozen array" do
-    lambda { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on an empty frozen array" do
+    lambda { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(frozen_error_class)
   end
 
   it "raises an ArgumentError if 4 or more arguments are passed when no block given" do

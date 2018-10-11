@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -28,9 +28,11 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.internal.runtime;
 
 import java.lang.ref.SoftReference;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
@@ -136,13 +138,9 @@ public class ThreadService {
      */
     private final Map<Object, RubyThread> rubyThreadMap;
 
-    /**
-     * Indicates whether there's only a single thread executing, in which case
-     * we don't need to be polling for cross-thread events.
-     */
-    private volatile boolean polling = false;
-
     private final ReentrantLock criticalLock = new ReentrantLock();
+
+    private final AtomicLong threadCount = new AtomicLong(0);
 
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
@@ -214,13 +212,6 @@ public class ThreadService {
         return context;
     }
 
-    /*
-     * Used only for Fiber context management
-     */
-    public final void setCurrentContext(ThreadContext context) {
-        localContext.set(new SoftReference<ThreadContext>(context));
-    }
-
     private SoftReference<ThreadContext> adoptCurrentThread() {
         Thread current = Thread.currentThread();
 
@@ -236,10 +227,6 @@ public class ThreadService {
     public void setMainThread(Thread thread, RubyThread rubyThread) {
         mainContext.setThread(rubyThread);
         rubyThreadMap.put(thread, rubyThread);
-    }
-
-    public boolean getPolling() {
-        return polling;
     }
 
     public synchronized RubyThread[] getActiveRubyThreads() {
@@ -271,14 +258,6 @@ public class ThreadService {
         }
     }
 
-    public ThreadGroup getRubyThreadGroup() {
-    	return rubyThreadGroup;
-    }
-
-    public ThreadContext getThreadContextForThread(RubyThread thread) {
-        return thread.getContext();
-    }
-
     public synchronized ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference<ThreadContext>(context));
@@ -289,53 +268,50 @@ public class ThreadService {
 
     public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
         rubyThreadMap.put(threadOrFuture, rubyThread);
-        if (rubyThreadMap.size() >= 0) polling = true;
-    }
-
-    public synchronized void dissociateThread(Object threadOrFuture) {
-        rubyThreadMap.remove(threadOrFuture);
-        if (rubyThreadMap.size() <= 1) polling = false;
     }
 
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
         getCurrentContext().setThread(null);
         localContext.set(null);
-        if (rubyThreadMap.size() >= 0) polling = false;
     }
 
-    public void setCritical(boolean critical) {
-        if (critical && !criticalLock.isHeldByCurrentThread()) {
-            acquireCritical();
-        } else if (!critical && criticalLock.isHeldByCurrentThread()) {
-            releaseCritical();
-        }
+    public long incrementAndGetThreadCount() {
+        return threadCount.incrementAndGet();
     }
 
-    private void acquireCritical() {
-        criticalLock.lock();
-    }
-
-    private void releaseCritical() {
-        criticalLock.unlock();
-    }
-
-    public boolean getCritical() {
-        return criticalLock.isHeldByCurrentThread();
-    }
-
-    /**
-     * Get the map from threadlike objects to RubyThread instances. Used mainly
-     * for testing purposes.
-     *
-     * @return The ruby thread map
-     */
+    @Deprecated
     public Map<Object, RubyThread> getRubyThreadMap() {
         return rubyThreadMap;
     }
 
     @Deprecated
     public void deliverEvent(RubyThread sender, RubyThread target, Event event) {
+    }
+
+    @Deprecated
+    public ThreadGroup getRubyThreadGroup() {
+        return rubyThreadGroup;
+    }
+
+    @Deprecated
+    public ThreadContext getThreadContextForThread(RubyThread thread) {
+        return thread.getContext();
+    }
+
+    @Deprecated
+    public synchronized void dissociateThread(Object threadOrFuture) {
+        rubyThreadMap.remove(threadOrFuture);
+    }
+
+    @Deprecated
+    public final void setCurrentContext(ThreadContext context) {
+        localContext.set(new SoftReference<ThreadContext>(context));
+    }
+
+    @Deprecated
+    public boolean getPolling() {
+        return rubyThreadMap.size() > 1;
     }
 
     @Deprecated
@@ -378,5 +354,29 @@ public class ThreadService {
         public static Event wakeup(RubyThread sender, RubyThread target, Type type) {
             return new Event(sender.toString() + " sent KILL to " + target, type);
         }
+    }
+
+    @Deprecated
+    public void setCritical(boolean critical) {
+        if (critical && !criticalLock.isHeldByCurrentThread()) {
+            acquireCritical();
+        } else if (!critical && criticalLock.isHeldByCurrentThread()) {
+            releaseCritical();
+        }
+    }
+
+    @Deprecated
+    private void acquireCritical() {
+        criticalLock.lock();
+    }
+
+    @Deprecated
+    private void releaseCritical() {
+        criticalLock.unlock();
+    }
+
+    @Deprecated
+    public boolean getCritical() {
+        return criticalLock.isHeldByCurrentThread();
     }
 }

@@ -2,90 +2,88 @@ language: java
 
 sudo: false
 
+dist: trusty
+
+# don't need more than one level for our builds
+git:
+  depth: 1
+
 cache:
  directories:
    - $HOME/.m2
 
 before_install:
+  - unset _JAVA_OPTIONS
   - rm ~/.m2/settings.xml
   - export MAVEN_SKIP_RC=true
-  - mvn -Xmx32M -v | grep 1.7.0; if [ $? = 0 ]; then export MAVEN_OPTS="-XX:MaxPermSize=200M"; else export MAVEN_OPTS="-XX:MaxMetaspaceSize=200M -XX:CompressedClassSpaceSize=200M"; fi
-  - export MAVEN_OPTS="-Xmx512M $MAVEN_OPTS"
+  - export MAVEN_OPTS="-Xmn64M -Xmx512M -XX:CompressedClassSpaceSize=96M"
+  - export JAVA_OPTS="$JAVA_OPTS -XX:CompressedClassSpaceSize=96M"
 
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
+  - unset _JAVA_OPTIONS # travis/travis#8408
   - export PATH="`pwd`/bin:$PATH"
   - echo $HOME
   - echo $JAVA_OPTS
   - echo $MAVEN_OPTS
 
 jdk:
-  - openjdk7
-#  - oraclejdk8
+  - openjdk8
 
 os:
   - linux
 
 env:
   global:
-    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xmn48M -Xmx512M"
+    - JAVA_OPTS="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms48M -Xmx640M -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M -Djava.security.egd=file:/dev/./urandom"
     - MALLOC_ARENA_MAX=2
-  matrix:
-    - PHASE='-Ptest'
-    - PHASE='-Prake -Dtask=test:jruby'
-    - PHASE='-Prake -Dtask=test:jruby:fullint'
-    - PHASE='-Prake -Dtask=test:jruby:jit'
-    - PHASE='-Prake -Dtask=test:jruby:aot'
-    - PHASE='-Prake -Dtask=test:mri'
-    - PHASE='-Prake -Dtask=test:mri:fullint'
-    - PHASE='-Prake -Dtask=test:mri:jit'
-    - PHASE='-Prake -Dtask=test:slow_suites'
-    - PHASE='-Prake -Dtask=test:tracing'
-    - PHASE='-Prake -Dtask=spec:ji'
-    - PHASE='-Prake -Dtask=spec:compiler'
-    - PHASE='-Prake -Dtask=spec:compiler' JRUBY_OPTS=-Xcompile.invokedynamic
-    - PHASE='-Prake -Dtask=spec:ffi'
-    - PHASE='-Prake -Dtask=spec:regression'
-    - PHASE='-Prake -Dtask=spec:ruby:fast'
-    - PHASE='-Prake -Dtask=spec:jruby'
-    - PHASE='-Prake -Dtask=spec:jrubyc'
-    - PHASE='-Prake -Dtask=spec:profiler'
 
-matrix:
+install: true
+
+jobs:
+  fast_finish: true
+
   include:
-    # these profile do no need to run for all JDKs
-    - env: PHASE='-Pdist'
-      jdk: oraclejdk8
-    - env: PHASE='-Pjruby-jars'
-      jdk: openjdk7
-    - env: PHASE='-Pmain'
-      jdk: oraclejdk8
-    - env: PHASE='-Pcomplete'
-      jdk: oraclejdk8
-    - env: PHASE='-Posgi'
-      jdk: openjdk7
-    - env: PHASE='-Pj2ee'
-      jdk: oraclejdk7
-    # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
-    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-      jdk: oraclejdk8
-    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-      jdk: oraclejdk8
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
-      jdk: oraclejdk8
+    - stage: test
+      env: PHASE='-Prake -Dtask=test:mri:core:int'
+    - env: PHASE='-Prake -Dtask=test:mri:core:fullint'
+    - env: PHASE='-Prake -Dtask=test:mri:core:jit'
+    - env: PHASE='-Prake -Dtask=test:mri:extra'
+    - env: PHASE='-Prake -Dtask=test:mri:stdlib'
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
     - env: COMMAND=test/check_versions.sh
-      jdk: oraclejdk8
-  allow_failures:
+    - env: PHASE='-Ptest'
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - env: PHASE='-Prake -Dtask=test:jruby'
+    - env:
+      - PHASE='-Prake -Dtask=test:jruby'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=test:jruby:aot'
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+    - env: PHASE='-Prake -Dtask=test:slow_suites'
+    - env: PHASE='-Prake -Dtask=spec:ji'
+    - env: PHASE='-Prake -Dtask=spec:compiler'
+    - env:
+      - PHASE='-Prake -Dtask=spec:compiler'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=spec:ffi'
+    - env: PHASE='-Prake -Dtask=spec:regression'
+    - env: PHASE='-Prake -Dtask=spec:jruby'
+    - env: PHASE='-Prake -Dtask=spec:jrubyc'
+    - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pdist'
+    - env: PHASE='-Pjruby-jars'
+    - env: PHASE='-Pmain'
+    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Posgi'
     - env: PHASE='-Pj2ee'
-      jdk: oraclejdk7
-    # NOTE: build seems to never start (waited for any to finish for more than a day) - probably a travis-ci bug
-    #- env: PHASE='-Pmain'
-    #  sudo: required
-    #  dist: trusty
-    #  group: edge
-    #  jdk: oraclejdk9
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk9
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk9
 
-install: tool/travis-install.sh
 script: tool/travis-script.sh
 
 notifications:
@@ -94,13 +92,18 @@ notifications:
       - "irc.freenode.org#jruby"
     on_success: change
     on_failure: always
+    only:
+      branch:
+      - master
+      - jruby-9.1
     template:
       - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
-    skip_join: true
-
-# we are on a branch
-    on_success: always
-    on_failure: never
 
 services:
   - redis-server
+  - haveged
+
+addons:
+  apt:
+    packages:
+      - haveged

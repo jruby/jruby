@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,9 +24,9 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.ivars;
 
-import com.headius.unsafe.fences.UnsafeFences;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.util.ArraySupport;
@@ -152,13 +152,8 @@ public class StampedVariableAccessor extends VariableAccessor {
      */
     private static boolean updateTableUnsafe(RubyBasicObject self, int currentStamp, Object[] currentTable, int index, Object value) {
         // shared access to varTable field.
-        if(UnsafeFences.SUPPORTS_FENCES) {
-            currentTable[index] = value;
-            UnsafeFences.fullFence();
-        } else {
-            // TODO: maybe optimize by read and checking current value before setting
-            UnsafeHolder.U.putObjectVolatile(currentTable, UnsafeHolder.ARRAY_OBJECT_BASE_OFFSET + UnsafeHolder.ARRAY_OBJECT_INDEX_SCALE * index, value);
-        }
+        currentTable[index] = value;
+        UnsafeHolder.U.fullFence();
 
         // validate stamp. redo on concurrent modification
         return self.varTableStamp == currentStamp;

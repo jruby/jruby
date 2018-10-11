@@ -1,7 +1,7 @@
 require 'fileutils'
 
 project 'JRuby Complete' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
@@ -82,6 +82,8 @@ project 'JRuby Complete' do
                    :failOnError => false )
   end
 
+  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+
   ['sonatype-oss-release', 'snapshots'].each do |name|
     profile name do
 
@@ -109,6 +111,14 @@ project 'JRuby Complete' do
           execute_goals( 'attach-artifact',
                          :id => 'attach-artifacts',
                          'artifacts' => artifacts )
+
+          execute_goals( 'attach-artifact',
+                         :id => 'attach-checksums',
+                         'artifacts' => [ { file: '${project.build.directory}/jruby-complete-${project.version}.jar.sha256',
+                                            type: 'jar.sha256'},
+                                          { file: '${project.build.directory}/jruby-complete-${project.version}.jar.sha512',
+                                            type: 'jar.sha512'} ] )
+
         end
       end
     end

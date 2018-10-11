@@ -2,33 +2,41 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-abstract class JarResource extends AbstractFileResource {
-    private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
+abstract class JarResource implements FileResource, DummyResourceStat.FileResourceExt {
 
     private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
-        if (!pathname.contains("!")) return null;  // Optimization: no ! no jar!
+        int bang = pathname.indexOf('!');
+        if (bang == -1) return null;  // no ! no jar!
 
-        Matcher matcher = PREFIX_MATCH.matcher(pathname);
-        String sanitized = matcher.matches() ? matcher.group(1) : pathname;
+        if (pathname.startsWith("jar:")) {
+            if (pathname.startsWith("file:", 4)) {
+                pathname = pathname.substring(9); bang -= 9; // 4 + 5
+            }
+            else {
+                pathname = pathname.substring(4); bang -= 4;
+            }
+        }
+        else if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5); bang -= 5;
+        }
 
-        int bang = sanitized.indexOf('!');
-        String jarPath = sanitized.substring(0, bang);
-        String entryPath = sanitized.substring(bang + 1);
+        String jarPath = pathname.substring(0, bang);
+        String entryPath = pathname.substring(bang + 1);
         // normalize path -- issue #2017
-        if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
+        if (StringSupport.startsWith(entryPath, '/', '/')) entryPath = entryPath.substring(1);
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
 
-        if (resource == null && entryPath.startsWith("/")) {
+        if (resource == null && StringSupport.startsWith(entryPath, '/')) {
             resource = createJarResource(jarPath, entryPath.substring(1), true);
         }
 
@@ -38,24 +46,22 @@ abstract class JarResource extends AbstractFileResource {
     private static JarResource createJarResource(String jarPath, String entryPath, boolean rootSlashPrefix) {
         JarCache.JarIndex index = jarCache.getIndex(jarPath);
 
-        if (index == null) {
-            // Jar doesn't exist
+        if (index == null) { // Jar doesn't exist
             try {
                 jarPath = URLDecoder.decode(jarPath, "UTF-8");
                 entryPath = URLDecoder.decode(entryPath, "UTF-8");
-            } catch (IllegalArgumentException iae) {
+            }
+            catch (IllegalArgumentException e) {
                 // something in the path did not decode, so it's probably not a URI
                 // See jruby/jruby#2264.
                 return null;
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
+            }
+            catch (UnsupportedEncodingException e) {
+                throw new AssertionError(e);
             }
             index = jarCache.getIndex(jarPath);
 
-            if (index == null) {
-                // Jar doesn't exist
-                return null;
-            }
+            if (index == null) return null; // Jar doesn't exist
         }
 
         // Try it as directory first, because jars tend to have foo/ entries
@@ -63,7 +69,8 @@ abstract class JarResource extends AbstractFileResource {
         String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
             return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
-        } else if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
+        }
+        if (entryPath.length() > 1 && entryPath.endsWith("/")) {  // in case 'foo/' passed
             entries = index.getDirEntries(entryPath.substring(0, entryPath.length() - 1));
 
             if (entries != null) {
@@ -79,17 +86,25 @@ abstract class JarResource extends AbstractFileResource {
         return null;
     }
 
-    private final String jarPrefix;
-    private final JarFileStat fileStat;
-
-    protected JarResource(String jarPath, boolean rootSlashPrefix) {
-        this.jarPrefix = rootSlashPrefix ? jarPath + "!/" : jarPath + "!";
-        this.fileStat = new JarFileStat(this);
+    public static boolean removeJarResource(String jarPath){
+        return jarCache.remove(jarPath);
     }
 
+    private final CharSequence jarPrefix;
+
+    JarResource(String jarPath, boolean rootSlashPrefix) {
+        StringBuilder prefix = new StringBuilder(jarPath.length() + 2);
+        prefix.append(jarPath).append('!');
+        this.jarPrefix = rootSlashPrefix ? prefix.append('/') : prefix;
+    }
+
+    private transient String absolutePath;
+
     @Override
-    public String absolutePath() {
-        return jarPrefix + entryName();
+    public final String absolutePath() {
+        String path = this.absolutePath;
+        if (path != null) return path;
+        return this.absolutePath = jarPrefix + entryName();
     }
 
     @Override
@@ -115,6 +130,11 @@ abstract class JarResource extends AbstractFileResource {
     }
 
     @Override
+    public boolean canExecute() {
+        return false;
+    }
+
+    @Override
     public boolean isSymLink() {
         // Jar archives shouldn't contain symbolic links, or it would break portability. `jar`
         // command behavior seems to comform to that (it unwraps syumbolic links when creating a jar
@@ -124,20 +144,63 @@ abstract class JarResource extends AbstractFileResource {
         return false;
     }
 
+    private transient FileStat fileStat;
+
     @Override
     public FileStat stat() {
-        return fileStat;
+        FileStat fileStat = this.fileStat;
+        if (fileStat != null) return fileStat;
+        return this.fileStat = new DummyResourceStat(this);
     }
 
     @Override
     public FileStat lstat() {
-      return stat(); // jars don't have symbolic links, so lstat == stat
+        return stat(); // jars don't have symbolic links, so lstat == stat
     }
 
     @Override
-    public JRubyFile hackyGetJRubyFile() {
-      return JRubyFile.DUMMY;
+    public int errno() {
+        return 0; // stat() never fails
     }
 
-    abstract protected String entryName();
+    @Override
+    public boolean isNull() {
+        return false;
+    }
+
+    public abstract FileTime creationTime() throws IOException;
+    public abstract FileTime lastAccessTime() throws IOException;
+    public abstract FileTime lastModifiedTime() throws IOException;
+
+    @Override
+    public long lastModified() {
+        FileTime mod = null;
+        try {
+            mod = lastModifiedTime();
+        }
+        catch (IOException ex) { /* -1 invalid? */ }
+        return mod == null ? 0L : mod.toMillis();
+    }
+
+    abstract String entryName();
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + absolutePath() + '}';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof JarResource) {
+            JarResource that = (JarResource) obj;
+            return this.absolutePath().equals(that.absolutePath());
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 11 * entryName().hashCode();
+    }
+
 }

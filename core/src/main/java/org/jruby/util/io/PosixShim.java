@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -405,7 +406,18 @@ public class PosixShim {
         return ret;
     }
 
-    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
+    public int fcntlSetFD(int fd, int flags) {
+        int ret = posix.fcntlInt(fd, Fcntl.F_SETFD, flags);
+        if (ret == -1) errno = Errno.valueOf(posix.errno());
+        return ret;
+    }
+
+    public int fcntlGetFD(int fd) {
+        int ret = posix.fcntl(fd, Fcntl.F_GETFD);
+        return ret;
+    }
+
+    public Channel open(String cwd, String path, int flags, int perm) {
         if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
             path = "NUL:";
         }
@@ -416,16 +428,25 @@ public class PosixShim {
             errno = Errno.EEXIST;
         } catch (ResourceException.FileIsDirectory e) {
             errno = Errno.EISDIR;
+        } catch (ResourceException.FileIsNotDirectory e) {
+            errno = Errno.ENOTDIR;
         } catch (ResourceException.NotFound e) {
             errno = Errno.ENOENT;
         } catch (ResourceException.PermissionDenied e) {
             errno = Errno.EACCES;
         } catch (ResourceException.TooManySymlinks e) {
             errno = Errno.ELOOP;
-        } catch (IOException e) {
-            throw new RuntimeException("Unhandled IOException: " + e.getLocalizedMessage(), e);
+        } catch (ResourceException ex) {
+            throw ex.newRaiseException(runtime);
+        } catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
         }
         return null;
+    }
+
+    // no longer used
+    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
+        return open(cwd, path, flags, perm);
     }
 
     @Deprecated // special case is already handled with JRubyFile.createResource

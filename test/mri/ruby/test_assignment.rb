@@ -552,6 +552,11 @@ class TestAssignment < Test::Unit::TestCase
     a, b = Base::A, Base::B
     assert_equal [3,4], [a,b]
   end
+
+  def test_massign_in_cond
+    result = eval("if (a, b = MyObj.new); [a, b]; end", nil, __FILE__, __LINE__)
+    assert_equal [[1,2],[3,4]], result
+  end
 end
 
 require_relative 'sentence'
@@ -765,5 +770,15 @@ class TestAssignmentGen < Test::Unit::TestCase
     k = [:key]
     h[*k], = ["ok", "ng"]
     assert_equal("ok", h[:key], bug11970)
+  end
+
+  def test_chainged_assign_command
+    all_assertions do |a|
+      asgn = %w'= +='
+      asgn.product(asgn) do |a1, a2|
+        stmt = "a #{a1} b #{a2} raise 'x'"
+        a.for(stmt) {assert_valid_syntax(stmt)}
+      end
+    end
   end
 end

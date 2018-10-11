@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
@@ -45,8 +46,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
+import java.util.Spliterator;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
+import java.util.stream.Stream;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -139,7 +142,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] {arg});
     }
 
-    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject[] args) {
+    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject... args) {
         return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
     }
 
@@ -608,6 +611,28 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         throw new UnsupportedOperationException();
     }
 
+    // Java 8 stream support :
+
+    public Stream<Object> stream() {
+        return stream(false);
+    }
+
+    public Stream<Object> stream(final boolean parallel) {
+        return java.util.stream.StreamSupport.stream(spliterator(), parallel);
+    }
+
+    public Spliterator<Object> spliterator() {
+        final long size = size();
+        // we do not have ArrayNexter detection - assume immutable
+        int mod = java.util.Spliterator.IMMUTABLE;
+        if (size >= 0) mod |= java.util.Spliterator.SIZED;
+        return java.util.Spliterators.spliterator(this, size, mod);
+    }
+
+    public Spliterator<Object> spliterator(final int mod) {
+        return java.util.Spliterators.spliterator(this, size(), mod);
+    }
+
     /**
      * "Function" type for java-created enumerators with size.  Should be implemented so that calls to
      * SizeFn#size are kept in sync with the size of the created enum (i.e. if the object underlying an enumerator
@@ -745,20 +770,28 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
             // mark for death
             die = true;
+            if (dissociateNexterThread(true)) doneObject = null;
+        }
 
-            Thread myThread = thread;
-            if (myThread != null) {
-                if (DEBUG) System.out.println("clearing for shutdown");
+        private synchronized boolean dissociateNexterThread(boolean interrupt) {
+            Thread nexterThread = thread;
 
-                // we interrupt twice, to break out of iteration and
-                // (potentially) break out of final exchange
-                myThread.interrupt();
-                myThread.interrupt();
+            if (nexterThread != null) {
+                if (DEBUG) System.out.println("dissociating nexter thread, interrupt: " + interrupt);
+
+                if (interrupt) {
+                    // we interrupt twice, to break out of iteration and
+                    // (potentially) break out of final exchange
+                    nexterThread.interrupt();
+                    nexterThread.interrupt();
+                }
 
                 // release references
                 thread = null;
-                doneObject = null;
+                return true;
             }
+
+            return false;
         }
 
         @Override
@@ -827,7 +860,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             if (value instanceof RubyException) {
                 doneObject = value;
                 if ( silent ) return null;
-                throw new RaiseException((RubyException) value);
+                throw ((RubyException) value).toThrowable();
             }
 
             // otherwise, just return it
@@ -910,9 +943,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                     if (!die) out.put(finalObject);
                 }
                 catch (InterruptedException ie) { /* ignore */ }
-            }
-            finally {
-                thread = null; // disassociate this Nexter with the thread running it
+            } finally {
+                dissociateNexterThread(false); // disassociate this Nexter with the thread running it
             }
         }
     }

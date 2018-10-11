@@ -1,7 +1,7 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
 Master: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=master)](https://travis-ci.org/jruby/jruby)
-1.7 branch: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
+9.1 branch: [![Build Status](https://travis-ci.org/jruby/jruby.svg?branch=jruby-9.1)](https://travis-ci.org/jruby/jruby/branches)
 
 ## About
 
@@ -18,7 +18,7 @@ Java application.
 You can use JRuby simply as a faster version of Ruby, you can use it to run Ruby
 on the JVM and access powerful JVM libraries such as highly tuned concurrency
 primitives, you can use it to embed Ruby as a scripting language in your Java
-program, or many other possibilites.
+program, or many other possibilities.
 
 We're a welcoming community - you can talk to us on [#jruby on Freenode](http://richard.esplins.org/siwi/2011/07/08/getting-started-freenode-irc/).
 There are core team members in the EU and US time zones.
@@ -28,7 +28,7 @@ for more information.
 
 ## Getting JRuby
 
-To run JRuby you will need a JRE (the JVM runtime environment) version 7 or higher.
+To run JRuby you will need a JRE (the Java VM runtime environment) version 8 or higher.
 
 Your operating system may provide a JRE and JRuby in a package manager, but you may find that this
 version is very old.
@@ -37,10 +37,20 @@ An alternative is to use one of the [Ruby version managers](https://www.ruby-lan
 
 For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
 [`ruby-build`](https://github.com/sstephenson/ruby-build) plugin. You may find that your system
-package manager can provide these. Then you can run:
+package manager can provide these. To see which versions of JRuby are available you should run:
 
 ```
-$ rbenv install jruby-9.1.6.0
+$ rbenv install jruby
+```
+
+Note: if you do not regularly git update rbenv this list of versions may be out of date.
+
+We recommend always selecting the latest version of JRuby from the list. 
+You can install that particular version (9.1.17.0 is just for illustration):
+
+
+```
+$ rbenv install jruby-9.1.17.0
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:
@@ -52,10 +62,12 @@ $ rvm install jruby
 You can also [download packages from the JRuby website](http://jruby.org/download) that
 you can unpack and run in place.
 
-## Building JRuby from source
+## Building JRuby
 
 See [BUILDING](BUILDING.md) for information about prerequisites, how to compile JRuby from source
 and how to test it.
+
+Alternatively, if you need to test out some unreleased bits, there's [nightly builds](http://jruby.org/nightly).
 
 ## Authors
 
@@ -76,6 +88,6 @@ Project Contact: Thomas E Enebo <tom.enebo@gmail.com>
 
 ## License
 
-JRuby is licensed to you under three licenses - the EPL 1.0, GPL 2 and LGPL 2.1.
+JRuby is licensed to you under three licenses - the EPL 2.0, GPL 2 and LGPL 2.1.
 Some components have other licenses and copyright. See the [COPYING](COPYING)
 file for more specifics.

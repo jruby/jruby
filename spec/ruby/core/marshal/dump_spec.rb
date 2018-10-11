@@ -1,6 +1,6 @@
 # -*- encoding: binary -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/marshal_data', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/marshal_data'
 
 describe "Marshal.dump" do
   it "dumps nil" do
@@ -70,18 +70,9 @@ describe "Marshal.dump" do
       ].should be_computed_by(:dump)
     end
 
-    ruby_version_is ""..."2.2" do
-      it "dumps a binary encoded Symbol" do
-        s = "\u2192".force_encoding("binary").to_sym
-        Marshal.dump(s).should == "\x04\bI:\b\xE2\x86\x92\x00"
-      end
-    end
-
-    ruby_version_is "2.2" do
-      it "dumps a binary encoded Symbol" do
-        s = "\u2192".force_encoding("binary").to_sym
-        Marshal.dump(s).should == "\x04\b:\b\xE2\x86\x92"
-      end
+    it "dumps a binary encoded Symbol" do
+      s = "\u2192".force_encoding("binary").to_sym
+      Marshal.dump(s).should == "\x04\b:\b\xE2\x86\x92"
     end
 
   end
@@ -360,11 +351,13 @@ describe "Marshal.dump" do
       st = Struct.new("Thick").new
       st.instance_variable_set(:@ivar, 1)
       Marshal.dump(st).should == "\004\bIS:\022Struct::Thick\000\006:\n@ivari\006"
+      Struct.send(:remove_const, :Thick)
     end
 
     it "dumps an extended Struct" do
       st = Struct.new("Extended", :a, :b).new
       Marshal.dump(st.extend(Meths)).should == "\004\be:\nMethsS:\025Struct::Extended\a:\006a0:\006b0"
+      Struct.send(:remove_const, :Extended)
     end
   end
 
@@ -422,6 +415,15 @@ describe "Marshal.dump" do
       load = Marshal.load(dump)
       load.should == (1...2)
     end
+
+    it "dumps a Range with extra instance variables" do
+      range = (1...3)
+      range.instance_variable_set :@foo, 42
+      dump = Marshal.dump(range)
+      load = Marshal.load(dump)
+      load.should == range
+      load.instance_variable_get(:@foo).should == 42
+    end
   end
 
   describe "with a Time" do
@@ -444,39 +446,19 @@ describe "Marshal.dump" do
       Encoding.default_internal = @internal
     end
 
-    ruby_version_is ""..."2.2" do
-      it "dumps the zone and the offset" do
-        with_timezone 'AST', 3 do
-          dump = Marshal.dump(@t)
-          base = "\x04\bIu:\tTime\r#{@t_dump}\a"
-          offset = ":\voffseti\x020*"
-          zone = ":\tzoneI\"\bAST\x06:\x06ET" # Last is 'T' (UTF-8)
-          [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
-        end
+    it "dumps the zone and the offset" do
+      with_timezone 'AST', 3 do
+        dump = Marshal.dump(@t)
+        base = "\x04\bIu:\tTime\r#{@t_dump}\a"
+        offset = ":\voffseti\x020*"
+        zone = ":\tzoneI\"\bAST\x06:\x06EF" # Last is 'F' (US-ASCII)
+        [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
       end
 
       it "dumps the zone, but not the offset if zone is UTC" do
         dump = Marshal.dump(@utc)
-        zone = ":\tzoneI\"\bUTC\x06:\x06ET" # Last is 'T' (UTF-8)
+        zone = ":\tzoneI\"\bUTC\x06:\x06EF" # Last is 'F' (US-ASCII)
         dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06#{zone}"
-      end
-    end
-
-    ruby_version_is "2.2" do
-      it "dumps the zone and the offset" do
-        with_timezone 'AST', 3 do
-          dump = Marshal.dump(@t)
-          base = "\x04\bIu:\tTime\r#{@t_dump}\a"
-          offset = ":\voffseti\x020*"
-          zone = ":\tzoneI\"\bAST\x06:\x06EF" # Last is 'F' (US-ASCII)
-          [ "#{base}#{offset}#{zone}", "#{base}#{zone}#{offset}" ].should include(dump)
-        end
-
-        it "dumps the zone, but not the offset if zone is UTC" do
-          dump = Marshal.dump(@utc)
-          zone = ":\tzoneI\"\bUTC\x06:\x06EF" # Last is 'F' (US-ASCII)
-          dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06#{zone}"
-        end
       end
     end
 
@@ -557,6 +539,16 @@ describe "Marshal.dump" do
 
   end
 
+  describe "when passed a StringIO" do
+
+    it "should raise an error" do
+      require "stringio"
+
+      lambda { Marshal.dump(StringIO.new) }.should raise_error(TypeError)
+    end
+
+  end
+
   it "raises a TypeError if marshalling a Method instance" do
     lambda { Marshal.dump(Marshal.method(:dump)) }.should raise_error(TypeError)
   end
@@ -572,6 +564,11 @@ describe "Marshal.dump" do
 
   it "raises a TypeError if dumping a MatchData instance" do
     lambda { Marshal.dump(/(.)/.match("foo")) }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError if dumping a Mutex instance" do
+    m = Mutex.new
+    lambda { Marshal.dump(m) }.should raise_error(TypeError)
   end
 
   it "returns an untainted string if object is untainted" do

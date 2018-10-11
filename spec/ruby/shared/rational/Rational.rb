@@ -1,10 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../fixtures/rational', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../fixtures/rational'
 
 describe :kernel_Rational, shared: true do
   describe "passed Integer" do
     # Guard against the Mathn library
-    conflicts_with :Prime do
+    guard -> { !defined?(Math.rsqrt) } do
       it "returns a new Rational number with 1 as the denominator" do
         Rational(1).should eql(Rational(1, 1))
         Rational(-3).should eql(Rational(-3, 1))

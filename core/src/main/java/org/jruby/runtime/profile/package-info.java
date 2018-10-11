@@ -51,7 +51,7 @@
  *
  *    private boolean isMyApp( DynamicMethod method ) {
  *      //if( delegate.getRealMethod() instanceof PositionAware && ((PositionAware)delegate.getRealMethod()).getFile().contains(""))
- *      return method.getRealMethod().getImplementationClass().getName().startsWith("MyApp::");
+ *      return method.getRealMethod().getImplementationClass().getId().startsWith("MyApp::");
  *    }
  *  }
  *

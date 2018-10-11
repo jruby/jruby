@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.posix.util.Platform;
@@ -52,15 +53,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import org.objectweb.asm.Opcodes;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -180,9 +173,14 @@ public class RubyInstanceConfig {
     public void processArgumentsWithRubyopts() {
         // environment defaults to System.getenv normally
         Object rubyoptObj = environment.get("RUBYOPT");
-        String rubyopt = rubyoptObj == null ? null : rubyoptObj.toString();
 
-        if (rubyopt == null || rubyopt.length() == 0) return;
+        if (rubyoptObj == null) return;
+
+        // Our argument processor bails if an arg starts with space, so we trim the RUBYOPT line
+        // See #4849
+        String rubyopt = rubyoptObj.toString().trim();
+
+        if (rubyopt.length() == 0) return;
 
         String[] rubyoptArgs = rubyopt.split("\\s+");
         if (rubyoptArgs.length != 0) {
@@ -408,9 +406,9 @@ public class RubyInstanceConfig {
                         if (isXFlag()) {
                             // search for a shebang line and
                             // return the script between shebang and __END__ or CTRL-Z (0x1A)
-                            return findScript(resource.inputStream());
+                            return findScript(resource.openInputStream());
                         }
-                        return resource.inputStream();
+                        return resource.openInputStream();
                     }
                     else {
                         throw new FileNotFoundException(script + " (Not a file)");
@@ -426,21 +424,19 @@ public class RubyInstanceConfig {
     }
 
     private static InputStream findScript(InputStream is) throws IOException {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(64);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String currentLine = br.readLine();
         while (currentLine != null && !isRubyShebangLine(currentLine)) {
             currentLine = br.readLine();
         }
 
-        buf.append(currentLine);
-        buf.append("\n");
+        buf.append(currentLine).append('\n');
 
         do {
             currentLine = br.readLine();
             if (currentLine != null) {
-                buf.append(currentLine);
-                buf.append("\n");
+                buf.append(currentLine).append('\n');
             }
         } while (!(currentLine == null || currentLine.contains("__END__") || currentLine.contains("\026")));
         return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
@@ -601,15 +597,6 @@ public class RubyInstanceConfig {
 
     public InputStream getInput() {
         return input;
-    }
-
-    @Deprecated
-    public CompatVersion getCompatVersion() {
-        return CompatVersion.RUBY2_1;
-    }
-
-    @Deprecated
-    public void setCompatVersion(CompatVersion compatVersion) {
     }
 
     public void setOutput(PrintStream newOutput) {
@@ -1440,15 +1427,6 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * get whether IPv4 is preferred
-     *
-     * @see Options#PREFER_IPV4
-     */
-    public boolean getIPv4Preferred() {
-        return preferIPv4;
-    }
-
-    /**
      * get whether uppercase package names will be honored
      */
     public boolean getAllowUppercasePackageNames() {
@@ -1484,6 +1462,10 @@ public class RubyInstanceConfig {
 
     public void setDebuggingFrozenStringLiteral(boolean debuggingFrozenStringLiteral) {
         this.debuggingFrozenStringLiteral = debuggingFrozenStringLiteral;
+    }
+
+    public boolean isInterruptibleRegexps() {
+        return interruptibleRegexps;
     }
 
     public static ClassLoader defaultClassLoader() {
@@ -1542,7 +1524,7 @@ public class RubyInstanceConfig {
 
     private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
-    private String profilingService;
+    private String profilingService = Options.CLI_PROFILING_SERVICE.load();;
 
     private ClassLoader loader = defaultClassLoader();
 
@@ -1587,9 +1569,9 @@ public class RubyInstanceConfig {
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
-    private boolean preferIPv4 = Options.PREFER_IPV4.load();
     private boolean frozenStringLiteral = false;
     private boolean debuggingFrozenStringLiteral = false;
+    private boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
     private String jrubyHome;
 
     /**
@@ -1898,14 +1880,16 @@ public class RubyInstanceConfig {
     private static int initGlobalJavaVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
-            case "1.6" : return Opcodes.V1_6; // 50
-            case "1.7" : return Opcodes.V1_7; // 51
-            case "1.8" : case "8" : return Opcodes.V1_8; // 52
-            // NOTE: JDK 9 now returns "9" instead of "1.9"
-            case "1.9" : case "9" : return Opcodes.V1_8 + 1; // 53
-            default :
-                System.err.println("unsupported Java version \"" + specVersion + "\", defaulting to 1.7");
+            case "1.6" :
+                return Opcodes.V1_6;
+            case "1.7" :
                 return Opcodes.V1_7;
+            case "1.8" : case "8" : default :
+                return Opcodes.V1_8; // 52
+            case "9" :
+                return Opcodes.V9;
+            case "10" :
+                return Opcodes.V9; // TODO: switch when `V10 = 54` added
         }
     }
 
@@ -2034,4 +2018,18 @@ public class RubyInstanceConfig {
     }
 
     @Deprecated public static final String JIT_CODE_CACHE = "";
+
+    @Deprecated
+    public boolean getIPv4Preferred() {
+        return Options.PREFER_IPV4.load();
+    }
+
+    @Deprecated
+    public CompatVersion getCompatVersion() {
+        return CompatVersion.RUBY2_1;
+    }
+
+    @Deprecated
+    public void setCompatVersion(CompatVersion compatVersion) {
+    }
 }

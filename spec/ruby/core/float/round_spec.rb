@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Float#round" do
   it "returns the nearest Integer" do
@@ -10,7 +10,7 @@ describe "Float#round" do
     0.0.round.should == 0
   end
 
-  platform_is_not "x64-mingw32" do
+  platform_is_not :mingw32 do
     it "returns the nearest Integer for Float near the limit" do
       0.49999999999999994.round.should == 0
       -0.49999999999999994.round.should == 0
@@ -83,5 +83,19 @@ describe "Float#round" do
     +2.4e200.round(-200).should eql( +2 * 10 ** 200 )
     -2.5e200.round(-200).should eql( -3 * 10 ** 200 )
     -2.4e200.round(-200).should eql( -2 * 10 ** 200 )
+  end
+
+  ruby_version_is "2.4" do
+    it "returns different rounded values depending on the half option" do
+      2.5.round(half: :up).should      eql(3)
+      2.5.round(half: :down).should    eql(2)
+      2.5.round(half: :even).should    eql(2)
+      3.5.round(half: :up).should      eql(4)
+      3.5.round(half: :down).should    eql(3)
+      3.5.round(half: :even).should    eql(4)
+      (-2.5).round(half: :up).should   eql(-3)
+      (-2.5).round(half: :down).should eql(-2)
+      (-2.5).round(half: :even).should eql(-2)
+    end
   end
 end

@@ -10,6 +10,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -19,7 +20,7 @@ public class MemoryPointer extends Pointer {
     public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
         RubyClass memptrClass = module.defineClassUnder("MemoryPointer",
                 module.getClass("Pointer"),
-                RubyInstanceConfig.REIFY_RUBY_CLASSES ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
+                Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointerAllocator.INSTANCE);
         memptrClass.defineAnnotatedMethods(MemoryPointer.class);
         memptrClass.defineAnnotatedConstants(MemoryPointer.class);
         memptrClass.setReifiedClass(MemoryPointer.class);
@@ -61,8 +62,8 @@ public class MemoryPointer extends Pointer {
                 size > 0 ? (int) size : 1, align, clear));
         if (getMemoryIO() == null) {
             Ruby runtime = context.runtime;
-            throw new RaiseException(runtime, runtime.getNoMemoryError(),
-                    String.format("Failed to allocate %d objects of %d bytes", typeSize, count), true);
+            throw RaiseException.from(runtime, runtime.getNoMemoryError(),
+                    String.format("Failed to allocate %d objects of %d bytes", typeSize, count));
         }
         
         if (block.isGiven()) {
@@ -81,8 +82,8 @@ public class MemoryPointer extends Pointer {
         final int total = typeSize * count;
         MemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
         if (io == null) {
-            throw new RaiseException(runtime, runtime.getNoMemoryError(),
-                    String.format("Failed to allocate %d objects of %d bytes", count, typeSize), true);
+            throw RaiseException.from(runtime, runtime.getNoMemoryError(),
+                    String.format("Failed to allocate %d objects of %d bytes", count, typeSize));
         }
 
         return new MemoryPointer(runtime, runtime.getFFI().memptrClass, io, total, typeSize);
@@ -135,13 +136,13 @@ public class MemoryPointer extends Pointer {
         ((AllocatedDirectMemoryIO) getMemoryIO()).free();
         // Replace memory object with one that throws an exception on any access
         setMemoryIO(new FreedMemoryIO(context.runtime));
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "autorelease?")

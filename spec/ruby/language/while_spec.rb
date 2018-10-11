@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 # while bool-expr [do]
 #   body
@@ -127,7 +127,7 @@ describe "The while expression" do
     a.should == [1, 2]
   end
 
-  it "stops running body if interrupted by break in a parenthesized attribute op-assign-or value" do
+  it "stops running body if interrupted by break with unless in a parenthesized attribute op-assign-or value" do
     a = mock("attribute assignment break")
     a.should_receive(:m).twice.and_return(nil)
     a.should_receive(:m=)
@@ -142,7 +142,7 @@ describe "The while expression" do
     end.should be_nil
   end
 
-  it "stops running body if interrupted by break in a begin ... end attribute op-assign-or value" do
+  it "stops running body if interrupted by break with unless in a begin ... end attribute op-assign-or value" do
     a = mock("attribute assignment break")
     a.should_receive(:m).twice.and_return(nil)
     a.should_receive(:m=)

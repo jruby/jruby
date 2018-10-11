@@ -32,11 +32,9 @@ class MSpecRun < MSpecScript
     options.chdir
     options.prefix
     options.configure { |f| load f }
-    options.name
     options.randomize
     options.repeat
     options.pretend
-    options.background
     options.interrupt
 
     options.doc "\n How to modify the guard behavior"

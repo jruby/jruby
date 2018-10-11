@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "File.expand_path" do
   before :each do
@@ -109,8 +109,8 @@ describe "File.expand_path" do
       File.expand_path(Dir.pwd).should == Dir.pwd
       File.expand_path('~/').should == @home
       File.expand_path('~/..badfilename').should == "#{@home}/..badfilename"
-      File.expand_path('..').should == Dir.pwd.split('/')[0...-1].join("/")
       File.expand_path('~/a','~/b').should == "#{@home}/a"
+      File.expand_path('..').should == File.dirname(Dir.pwd)
     end
 
     it "does not replace multiple '/' at the beginning of the path" do
@@ -200,7 +200,7 @@ describe "File.expand_path" do
 
   it "does not modify a HOME string argument" do
     str = "~/a"
-    File.expand_path(str).should == "#{home_directory}/a"
+    File.expand_path(str).should == "#{Dir.home}/a"
     str.should == "~/a"
   end
 

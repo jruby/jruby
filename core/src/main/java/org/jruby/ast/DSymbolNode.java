@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -14,7 +14,7 @@
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -38,17 +38,17 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class DSymbolNode extends DNode {
     /**
      * For mutating from a DStr to a DSym (we just create a new one with same contents).
-     * 
+     *
      * @param node to be copied
      */
     public DSymbolNode(ISourcePosition position, DStrNode node) {
         super(position, node.getEncoding());
-        
+
         assert node != null : "node is not null";
-        
+
         addAll(node);
     }
-    
+
     public DSymbolNode(ISourcePosition position) {
         super(position);
     }
@@ -59,7 +59,7 @@ public class DSymbolNode extends DNode {
     }
 
     @Override
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitDSymbolNode(this);
     }
 }

@@ -15,13 +15,13 @@ public final class SingletonMethodInvoker extends MethodInvoker {
 
     private final Object singleton;
 
-    public SingletonMethodInvoker(Object singleton, RubyClass host, List<Method> methods) {
-        super(host, methods);
+    public SingletonMethodInvoker(Object singleton, RubyClass host, List<Method> methods, String name) {
+        super(host, methods, name);
         this.singleton = singleton;
     }
 
-    public SingletonMethodInvoker(Object singleton, RubyClass host, Method method) {
-        super(host, method);
+    public SingletonMethodInvoker(Object singleton, RubyClass host, Method method, String name) {
+        super(host, method, name);
         this.singleton = singleton;
     }
 

@@ -10,7 +10,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
-import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
+import static org.jruby.ir.IRFlags.REQUIRES_BLOCK;
 
 /**
  * Load the block passed to this scope via the on-heap frame (or similar cross-call structure).
@@ -46,7 +46,7 @@ public class LoadFrameClosureInstr extends NoOperandResultBaseInstr implements F
     @Override
     public boolean computeScopeFlags(IRScope scope) {
         super.computeScopeFlags(scope);
-        scope.getFlags().add(REQUIRES_FRAME);
+        scope.getFlags().add(REQUIRES_BLOCK);
         return true;
     }
 

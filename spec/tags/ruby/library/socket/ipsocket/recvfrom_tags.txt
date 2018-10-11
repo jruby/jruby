@@ -1,0 +1,5 @@
+fails(hangs):Socket::IPSocket#recvfrom using IPv4 allows specifying of flags when receiving data
+fails(hangs):Socket::IPSocket#recvfrom using IPv6 allows specifying of flags when receiving data
+fails:Socket::IPSocket#recvfrom using IPv4 returns an Array containing up to N bytes and address information
+fails:Socket::IPSocket#recvfrom using IPv6 returns an Array containing up to N bytes and address information
+fails:Socket::IPSocket#recvfrom using IPv6 using reverse lookups includes the hostname in the address Array

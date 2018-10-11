@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import org.jruby.ir.IRClassBody;
@@ -33,6 +34,7 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.backtrace.FrameType;
 
 import java.io.IOException;
 import java.util.List;
@@ -289,21 +291,22 @@ public class JavaNameMangler {
         return DANGEROUS_CHARS.charAt(REPLACEMENT_CHARS.indexOf(character));
     }
 
+    // FIXME: bytelist_love - if we want these mangled names to display properly we should be building this up with encoded data.
     public static String encodeScopeForBacktrace(IRScope scope) {
         if (scope instanceof IRMethod) {
-            return "RUBY$method$" + mangleMethodNameInternal(scope.getName());
+            return "RUBY$method$" + mangleMethodNameInternal(scope.getId());
         }
         if (scope instanceof IRClosure) {
-            return "RUBY$block$" + mangleMethodNameInternal(scope.getNearestTopLocalVariableScope().getName());
+            return "RUBY$block$" + mangleMethodNameInternal(scope.getNearestTopLocalVariableScope().getId());
         }
         if (scope instanceof IRMetaClassBody) {
             return "RUBY$metaclass";
         }
         if (scope instanceof IRClassBody) {
-            return "RUBY$class$" + mangleMethodNameInternal(scope.getName());
+            return "RUBY$class$" + mangleMethodNameInternal(scope.getId());
         }
         if (scope instanceof IRModuleBody) {
-            return "RUBY$module$" + mangleMethodNameInternal(scope.getName());
+            return "RUBY$module$" + mangleMethodNameInternal(scope.getId());
         }
         if (scope instanceof IRScriptBody) {
             return "RUBY$script";
@@ -313,12 +316,9 @@ public class JavaNameMangler {
 
     public static final String VARARGS_MARKER = "$__VARARGS__";
 
+    @Deprecated
     public static String decodeMethodForBacktrace(String methodName) {
-        if (!methodName.startsWith("RUBY$")) return null;
-
-        if (methodName.contains(VARARGS_MARKER)) return null;
-
-        final List<String> name = StringSupport.split(methodName, '$');
+        final List<String> name = decodeMethodTuple(methodName);
         final String type = name.get(1); // e.g. RUBY $ class $ methodName
         // root body gets named (root)
         switch (type) {
@@ -331,5 +331,38 @@ public class JavaNameMangler {
             case "module":    return '<' + type + ':' + demangleMethodNameInternal(name.get(2)) + '>';
         }
         throw new IllegalStateException("unknown encoded method type '" + type + "' from " + methodName);
+    }
+
+    // returns location $ type $ methodName as 3 elements or null if this is an invalid mangled name
+    public static List<String> decodeMethodTuple(String methodName) {
+        if (!methodName.startsWith("RUBY$") || methodName.contains(VARARGS_MARKER)) return null;
+
+        return StringSupport.split(methodName, '$');
+    }
+
+    public static String decodeMethodName(FrameType type, List<String> mangledTuple) {
+        switch (type) {
+            case ROOT:    return "<main>";
+            case METACLASS: return "singleton class";
+            case METHOD:    return demangleMethodName(mangledTuple.get(2));
+            case BLOCK:     return ""+demangleMethodNameInternal(mangledTuple.get(2));
+            case CLASS:     return "<class:" + demangleMethodNameInternal(mangledTuple.get(2)) + '>';
+            case MODULE:    return "<module:" + demangleMethodNameInternal(mangledTuple.get(2)) + '>';
+        }
+
+        return null; // not-reached
+    }
+
+    public static FrameType decodeFrameTypeFromMangledName(String type) {
+        switch (type) {
+            case "script":    return FrameType.ROOT;
+            case "metaclass": return FrameType.METACLASS;
+            case "method":    return FrameType.METHOD;
+            case "block":     return FrameType.BLOCK;
+            case "class":     return FrameType.MODULE;
+            case "module":    return FrameType.CLASS;
+        }
+        throw new IllegalStateException("unknown encoded method type '" + type);
+
     }
 }

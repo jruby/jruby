@@ -1,0 +1,8 @@
+fails:Marshal.restore when called on objects with custom _dump methods that return an immediate value loads an array containing an instance of the object, followed by multiple instances of another object
+fails:Marshal.restore when called on objects with custom _dump methods that return an immediate value loads any structure with multiple references to the same object, followed by multiple instances of another object
+fails:Marshal.restore when called on objects with custom _dump methods that return an immediate value loads an array containing references to multiple instances of the object, followed by multiple instances of another object
+fails:Marshal.restore for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
+fails:Marshal.restore for a Module loads an old module
+fails:Marshal.restore for a wrapped C pointer loads
+fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _load_data
+fails:Marshal.restore when a class does not exist in the namespace raises an ArgumentError

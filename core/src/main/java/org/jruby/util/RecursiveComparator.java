@@ -17,7 +17,7 @@ public class RecursiveComparator {
     public static <T> IRubyObject compare(ThreadContext context, T invokable, IRubyObject a, IRubyObject b) {
 
         if (a == b) {
-            return context.runtime.getTrue();
+            return context.tru;
         }
         
         boolean clear = false; // whether to clear thread-local set (at top comparison)
@@ -37,7 +37,7 @@ public class RecursiveComparator {
                     clear = true;
                 }
                 else if (seen.contains(pair)) { // are we recursing?
-                    return context.runtime.getTrue();
+                    return context.tru;
                 }
 
                 seen.add(pair);

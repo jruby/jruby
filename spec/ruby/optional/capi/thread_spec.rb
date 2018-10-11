@@ -1,5 +1,5 @@
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../../../core/thread/shared/wakeup', __FILE__)
+require_relative 'spec_helper'
+require_relative '../../core/thread/shared/wakeup'
 
 load_extension("thread")
 
@@ -20,36 +20,8 @@ describe "C-API Thread function" do
     Thread.capi_thread_specs = @t
   end
 
-  describe "rb_thread_select" do
-    ruby_version_is ""..."2.2" do
-      it "returns true if an fd is ready to read" do
-        read, write = IO.pipe
-
-        @t.rb_thread_select_fd(read.to_i, 0).should == false
-        write << "1"
-        @t.rb_thread_select_fd(read.to_i, 0).should == true
-      end
-
-      it "does not block all threads" do
-        t = Thread.new do
-          sleep 0.25
-          ScratchPad.record :inner
-        end
-        Thread.pass while t.status and t.status != "sleep"
-
-        @t.rb_thread_select(500_000)
-
-        t.alive?.should be_false
-        ScratchPad.recorded.should == :inner
-
-        t.join
-      end
-    end
-
-  end
-
   describe "rb_thread_wait_for" do
-    it "sleeps the current thread for the give ammount of time" do
+    it "sleeps the current thread for the give amount of time" do
       start = Time.now
       @t.rb_thread_wait_for(0, 100_000)
       (Time.now - start).should be_close(0.1, 0.2)
@@ -106,8 +78,11 @@ describe "C-API Thread function" do
     end
 
     it "handles throwing an exception in the thread" do
-      proc = lambda { |x| raise "my error" }
-      thr = @t.rb_thread_create(proc, nil)
+      prc = lambda { |x|
+        Thread.current.report_on_exception = false
+        raise "my error"
+      }
+      thr = @t.rb_thread_create(prc, nil)
       thr.should be_kind_of(Thread)
 
       lambda {
@@ -126,45 +101,49 @@ describe "C-API Thread function" do
     end
   end
 
-end
-
-describe :rb_thread_blocking_region, shared: true do
-  before :each do
-    @t = CApiThreadSpecs.new
-    ScratchPad.clear
-  end
-
-  it "runs a C function with the global lock unlocked" do
-    thr = Thread.new do
-      @t.send(@method)
-    end
-
-    # Wait until it's blocking...
-    Thread.pass while thr.status and thr.status != "sleep"
-
-    # Wake it up, causing the unblock function to be run.
-    thr.wakeup
-
-    # Make sure it stopped
-    thr.join(1).should_not be_nil
-
-    # And we got a proper value
-    thr.value.should be_true
-  end
-end
-
-describe "C-API Thread function" do
-  ruby_version_is ""..."2.2" do
-    describe "rb_thread_blocking_region_with_ubf_io" do
-      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
-    end
-
-    describe "rb_thread_blocking_region" do
-      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
-    end
-  end
-
   describe "rb_thread_call_without_gvl" do
-    it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl
+    it "runs a C function with the global lock unlocked" do
+      thr = Thread.new do
+        @t.rb_thread_call_without_gvl
+      end
+
+      # Wait until it's blocking...
+      Thread.pass while thr.status and thr.status != "sleep"
+
+      # The thread status is set to sleep by rb_thread_call_without_gvl(),
+      # but the thread might not be in the blocking read(2) yet, so wait a bit.
+      sleep 0.1
+
+      # Wake it up, causing the unblock function to be run.
+      thr.wakeup
+
+      # Make sure it stopped
+      thr.join(1).should_not be_nil
+
+      # And we got a proper value
+      thr.value.should be_true
+    end
+
+    it "runs a C function with the global lock unlocked amd unlocks IO with the generic RUBY_UBF_IO" do
+      thr = Thread.new do
+        @t.rb_thread_call_without_gvl_with_ubf_io
+      end
+
+      # Wait until it's blocking...
+      Thread.pass while thr.status and thr.status != "sleep"
+
+      # The thread status is set to sleep by rb_thread_call_without_gvl(),
+      # but the thread might not be in the blocking read(2) yet, so wait a bit.
+      sleep 0.1
+
+      # Wake it up, causing the unblock function to be run.
+      thr.wakeup
+
+      # Make sure it stopped
+      thr.join(1).should_not be_nil
+
+      # And we got a proper value
+      thr.value.should be_true
+    end
   end
 end

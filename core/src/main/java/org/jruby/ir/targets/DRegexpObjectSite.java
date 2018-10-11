@@ -31,7 +31,12 @@ public class DRegexpObjectSite extends ConstructObjectSite {
         options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
     }
 
-    public static final Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(DRegexpObjectSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class));
+    public static final Handle BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(DRegexpObjectSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class),
+            false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int options) {
         return new DRegexpObjectSite(type, options).bootstrap(lookup);

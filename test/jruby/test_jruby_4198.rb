@@ -1,8 +1,12 @@
 require 'test/unit'
 require 'java'
-require File.join(File.dirname(__FILE__), 'jruby-4198.jar')
 
-class TestJruby4198 < Test::Unit::TestCase
+class TestJRuby4198 < Test::Unit::TestCase
+
+  def setup
+    require File.join(File.dirname(__FILE__), 'jruby-4198.jar')
+  end
+
   def test_jruby_4198_a
     java_import 'A'
     a = A.new

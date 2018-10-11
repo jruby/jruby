@@ -222,7 +222,7 @@ public class DataConverters {
             }
             Pointer ptr = (Pointer) obj;
             if (ptr.getAddress() == 0) {
-                return context.runtime.getNil();
+                return context.nil;
             }
             return new org.jruby.ext.ffi.jffi.Function(context.runtime,
                     context.runtime.getModule("FFI").getClass("Function"),

@@ -22,7 +22,6 @@ project 'JRuby Core' do
 
               'jruby.basedir' => '${basedir}/..',
               'jruby.test.memory' => '3G',
-              'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G',
 
               'create.sources.jar' => false )
@@ -38,28 +37,24 @@ project 'JRuby Core' do
 
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
-  jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.16', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-x86asm:1.0.2', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.17', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.38', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.9', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.4'
+  jar 'com.github.jnr:jnr-enxio:0.18', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.20', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.45', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.11', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.1.9'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.11'
-  jar 'org.jruby.extras:bytelist:1.0.15'
-  jar 'org.jruby.jcodings:jcodings:1.0.18'
+  jar 'org.jruby.joni:joni:2.1.24'
+  jar 'org.jruby.jcodings:jcodings:1.0.40'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.7'
+  jar 'com.headius:invokebinder:1.11'
   jar 'com.headius:options:1.4'
-  jar 'com.headius:unsafe-fences:1.0'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
@@ -77,6 +72,8 @@ project 'JRuby Core' do
   jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
+
+  jar 'com.headius:modulator:1.0'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -166,8 +163,8 @@ project 'JRuby Core' do
           'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '1.7' ],
-          'target' => [ '${base.javac.version}', '1.7' ],
+          'source' => [ '${base.java.version}', '1.8' ],
+          'target' => [ '${base.javac.version}', '1.8' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
@@ -183,6 +180,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
+                   'debug' => 'true',
                    'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
@@ -192,6 +190,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
+                   'debug' => 'true',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
                                        '-J-Dfile.encoding=UTF-8',
@@ -223,12 +222,15 @@ project 'JRuby Core' do
           'systemProperties' => {
             'jruby.home' =>  '${basedir}/..'
           },
-          'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+          'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
                           'org/jruby/embed/**/*Test*.java',
                           'org/jruby/util/**/*Test*.java',
                           'org/jruby/runtime/**/*Test*.java' ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
+
+  plugin(:jar,
+         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby'}})
 
   build do
     default_goal 'package'
@@ -262,12 +264,15 @@ project 'JRuby Core' do
     execute_goals( 'shade',
                    :id => 'create lib/jruby.jar',
                    :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
+                   relocations: [
+                       {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                   ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ],
-                   'createSourcesJar' => '${create.sources.jar}' )
+                   'transformers' => [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main',
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
+                   'createSourcesJar' => '${create.sources.jar}'
+    )
   end
 
   [:all, :release, :main, :osgi, :j2ee, :complete, :dist, :'jruby_complete_jar_extended', :'jruby-jars' ].each do |name|
@@ -286,8 +291,13 @@ project 'JRuby Core' do
                                          'me.qmx.jitescript:jitescript',
                                          'org.ow2.asm:*' ]
                        },
-                       'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+                       relocations: [
+                           {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                           {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
+                       ],
+                       filters:
+                           {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+        )
       end
     end
   end
@@ -401,5 +411,13 @@ project 'JRuby Core' do
                      :id => 'pack core sources',
                      :phase => 'prepare-package' ) # Needs to run before the shade plugin
     end
+  end
+
+  profile 'java9' do
+    activation do
+      jdk '[9,)'
+    end
+
+    jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
   end
 end

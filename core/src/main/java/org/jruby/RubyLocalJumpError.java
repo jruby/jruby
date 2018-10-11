@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,11 +30,18 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.exceptions.LocalJumpError;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * The Java representation of a Ruby LocalJumpError.
+ *
+ * @see LocalJumpError
+ */
 @JRubyClass(name="LocalJumpError",parent="StandardError")
-public class RubyLocalJumpError extends RubyException {
+public class RubyLocalJumpError extends RubyStandardError {
     public enum Reason {
         REDO, BREAK, NEXT, RETURN, RETRY, NOREASON;
         
@@ -44,14 +51,9 @@ public class RubyLocalJumpError extends RubyException {
         }
     }
     
-    private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyLocalJumpError(runtime, klass);
-        }
-    };
+    private static ObjectAllocator LOCALJUMPERROR_ALLOCATOR = (runtime, klass) -> new RubyLocalJumpError(runtime, klass);
 
-    public static RubyClass createLocalJumpErrorClass(Ruby runtime, RubyClass standardErrorClass) {
+    public static RubyClass define(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
         
         nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class);
@@ -70,6 +72,11 @@ public class RubyLocalJumpError extends RubyException {
         this.reason = reason;
         setInternalVariable("reason", runtime.newSymbol(reason.toString()));
         setInternalVariable("exit_value", exitValue);
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new LocalJumpError(message, this);
     }
 
     @JRubyMethod

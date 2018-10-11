@@ -15,16 +15,19 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Visibility;
 
 public class JRubyObjectInputStream extends RubyObject {
+
     JRubyObjectInputStreamImpl impl;
-    private static final ObjectAllocator JROIS_ALLOCATOR = new ObjectAllocator() {
+
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
 	    public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-		return new JRubyObjectInputStream(runtime, klass);
+		    return new JRubyObjectInputStream(runtime, klass);
         }
     };
+
     public static RubyClass createJRubyObjectInputStream(Ruby runtime) {
-	RubyClass result = runtime.defineClass("JRubyObjectInputStream",runtime.getObject(),JROIS_ALLOCATOR);
-	result.defineAnnotatedMethods(JRubyObjectInputStream.class);
-	return result;
+	    RubyClass result = runtime.defineClass("JRubyObjectInputStream",runtime.getObject(), ALLOCATOR);
+	    result.defineAnnotatedMethods(JRubyObjectInputStream.class);
+	    return result;
     }
 
     @JRubyMethod(name = "new", rest = true, meta = true)
@@ -36,14 +39,14 @@ public class JRubyObjectInputStream extends RubyObject {
 
 
     public JRubyObjectInputStream(Ruby runtime, RubyClass rubyClass) {
-	super(runtime,rubyClass);
+	    super(runtime,rubyClass);
     }
     
     @JRubyMethod(name="initialize",required=1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject wrappedStream) {
-        InputStream stream = (InputStream)wrappedStream.toJava(InputStream.class);
+        InputStream stream = (InputStream) wrappedStream.toJava(InputStream.class);
         try {
-            impl = new JRubyObjectInputStreamImpl(getRuntime(),stream);
+            impl = new JRubyObjectInputStreamImpl(getRuntime(), stream);
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
         }
@@ -53,7 +56,7 @@ public class JRubyObjectInputStream extends RubyObject {
     @JRubyMethod(name="read_object", alias="readObject")
 	public IRubyObject readObject() {
         try {
-        	return Java.getInstance(getRuntime(),impl.readObject());
+        	return Java.getInstance(getRuntime(), impl.readObject());
         } catch (IOException ioe) {
             throw getRuntime().newIOErrorFromException(ioe);
         } catch (ClassNotFoundException cnfe) {
@@ -73,15 +76,15 @@ public class JRubyObjectInputStream extends RubyObject {
     }
 
     static class JRubyObjectInputStreamImpl extends ObjectInputStream {
-        protected Ruby runtime;
+        protected final Ruby runtime;
 
-        public JRubyObjectInputStreamImpl(Ruby rt,InputStream in) throws IOException {
+        public JRubyObjectInputStreamImpl(Ruby runtime, InputStream in) throws IOException {
             super(in);
-            runtime = rt;
+            this.runtime = runtime;
         }
         @Override
         protected Class resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-            return Class.forName(desc.getName(),true,runtime.getJRubyClassLoader());
+            return Class.forName(desc.getName(), true, runtime.getJRubyClassLoader());
         }
     }
 }

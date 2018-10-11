@@ -90,7 +90,7 @@ public class NativeCallbackFactory {
         }
 
         if (!isReturnTypeValid(cbInfo.getReturnType()) || FFIUtil.getFFIType(cbInfo.getReturnType()) == null) {
-            runtime.newTypeError("invalid callback return type: " + cbInfo.getReturnType());
+            throw runtime.newTypeError("invalid callback return type: " + cbInfo.getReturnType());
         }
 
         return new NativeFunctionInfo(runtime, cbInfo.getReturnType(), cbInfo.getParameterTypes(),

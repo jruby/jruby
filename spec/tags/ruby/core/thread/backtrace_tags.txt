@@ -1,0 +1,2 @@
+fails:Thread#backtrace returns an array (which may be empty) immediately after the thread is created
+fails:Thread#backtrace returns the current backtrace of a thread

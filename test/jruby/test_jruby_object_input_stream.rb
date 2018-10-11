@@ -1,14 +1,18 @@
 require 'test/unit'
 require 'java'
-require 'jruby'
-require 'jruby/serialization'
-require 'fileutils'
-java_import java.io.ObjectOutputStream
-java_import java.io.FileOutputStream
-java_import java.io.FileInputStream
 
+class TestJRubyObjectInputStream < Test::Unit::TestCase
 
-class TestJrubyObjectInputStream < Test::Unit::TestCase
+  java_import java.io.ObjectOutputStream
+  java_import java.io.FileOutputStream
+  java_import java.io.FileInputStream
+
+  def setup
+    require 'jruby'
+    require 'jruby/serialization'
+    require 'fileutils'
+  end
+
   def test_serialize_and_deserialize_java_object
     str = java.lang.String.new("hi")
     out_stream = ObjectOutputStream.new(FileOutputStream.new("store"))
@@ -24,6 +28,7 @@ class TestJrubyObjectInputStream < Test::Unit::TestCase
     FileUtils.rm_f "store"
     assert_equal str,str2
   end
+
 end
 
     

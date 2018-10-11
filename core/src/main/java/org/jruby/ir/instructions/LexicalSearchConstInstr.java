@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -21,58 +22,63 @@ import org.jruby.runtime.opto.Invalidator;
 // this call to the parent scope.
 
 public class LexicalSearchConstInstr extends OneOperandResultBaseInstr implements FixedArityInstr {
-    String constName;
+    private RubySymbol constantName;
 
     // Constant caching
     private volatile transient ConstantCache cache;
 
-    public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
+    public LexicalSearchConstInstr(Variable result, Operand definingScope, RubySymbol constantName) {
         super(Operation.LEXICAL_SEARCH_CONST, result, definingScope);
 
         assert result != null: "LexicalSearchConstInstr result is null";
 
-        this.constName = constName;
+        this.constantName = constantName;
     }
 
     public Operand getDefiningScope() {
         return getOperand1();
     }
 
-    public String getConstName() {
-        return constName;
+    public String getId() {
+        return constantName.idString();
+    }
+
+    public RubySymbol getName() {
+        return constantName;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + constName };
+        return new String[] { "name: " + constantName};
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), getDefiningScope().cloneForInlining(ii), constName);
+        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), getDefiningScope().cloneForInlining(ii), constantName);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getDefiningScope());
-        e.encode(getConstName());
+        e.encode(getName());
     }
 
     public static LexicalSearchConstInstr decode(IRReaderDecoder d) {
-        return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol());
     }
 
     private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         StaticScope staticScope = (StaticScope) getDefiningScope().retrieve(context, self, currScope, currDynScope, temp);
+        String id = getId();
 
-        IRubyObject constant = staticScope.getConstantDefined(constName);
+        IRubyObject constant = staticScope.getConstantDefined(id);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            Invalidator invalidator = context.runtime.getConstantInvalidator(constName);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(id);
             cache = new ConstantCache(constant, invalidator.getData(), invalidator);
         }
 

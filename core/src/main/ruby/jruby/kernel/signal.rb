@@ -1,9 +1,20 @@
 module Signal
+
+  SIGNALS = {
+      0  => "SIGEXIT",
+      1  => "SIGHUP", 2  => "SIGINT", 3  => "SIGQUIT", 4  => "SIGILL", 5  => "SIGTRAP", 6  => "SIGABRT",
+      7  => "SIGPOLL", 8  => "SIGFPE", 9  => "SIGKILL", 10 => "SIGBUS", 11 => "SIGSEGV", 12 => "SIGSYS",
+      13 => "SIGPIPE", 14 => "SIGALRM", 15 => "SIGTERM", 16 => "SIGURG", 17 => "SIGSTOP", 18 => "SIGTSTP",
+      19 => "SIGCONT", 20 => "SIGCHLD", 21 => "SIGTTIN", 22 => "SIGTTOU", 24 => "SIGXCPU", 25 => "SIGXFSZ",
+      26 => "SIGVTALRM", 27 => "SIGPROF", 30 => "SIGUSR1", 31 => "SIGUSR2"
+  }
+  private_constant :SIGNALS
+
   def trap(sig, cmd = nil, &block)
-    sig = SIGNALS[sig] if sig.kind_of?(Fixnum)
+    sig = SIGNALS[sig] if sig.kind_of?(Integer)
     sig = sig.to_s.sub(/^SIG(.+)/,'\1')
 
-    if RESERVED_SIGNALS.include?(sig)
+    if %w(SEGV BUS ILL FPE VTALRM).include?(sig)
       raise ArgumentError.new("can't trap reserved signal: SIG%s" % sig)
     end
 
@@ -46,17 +57,4 @@ module Kernel
     ::Signal.trap(sig, cmd, &block)
   end
   module_function :trap
-end
-
-class Object
-  SIGNALS = {
-    0  => "SIGEXIT",
-    1  => "SIGHUP", 2  => "SIGINT", 3  => "SIGQUIT", 4  => "SIGILL", 5  => "SIGTRAP", 6  => "SIGABRT",
-    7  => "SIGPOLL", 8  => "SIGFPE", 9  => "SIGKILL", 10 => "SIGBUS", 11 => "SIGSEGV", 12 => "SIGSYS",
-    13 => "SIGPIPE", 14 => "SIGALRM", 15 => "SIGTERM", 16 => "SIGURG", 17 => "SIGSTOP", 18 => "SIGTSTP",
-    19 => "SIGCONT", 20 => "SIGCHLD", 21 => "SIGTTIN", 22 => "SIGTTOU", 24 => "SIGXCPU", 25 => "SIGXFSZ",
-    26 => "SIGVTALRM", 27 => "SIGPROF", 30 => "SIGUSR1", 31 => "SIGUSR2"
-  }
-
-  RESERVED_SIGNALS = %w(SEGV BUS ILL FPE VTALRM)
 end

@@ -1,0 +1,1 @@
+fails:main.using does not affect methods defined before it is called

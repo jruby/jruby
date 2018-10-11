@@ -1,12 +1,8 @@
 module JRuby
-  # Implementations of key core process-launching methods using Java 7 process
-  # launching APIs.
+  # Implementations of key core process-launching methods using Java 7 process launching APIs.
   module ProcessManager
-    java_import org.jruby.RubyProcess
-    java_import org.jruby.util.ShellLauncher
     java_import java.lang.ProcessBuilder
-    java_import org.jruby.runtime.builtin.IRubyObject
-    java_import org.jruby.platform.Platform
+    java_import org.jruby.util.ShellLauncher
 
     Redirect = ProcessBuilder::Redirect
     LaunchConfig = ShellLauncher::LaunchConfig
@@ -15,9 +11,9 @@ module JRuby
     def self.`(command)
       command = command.to_str unless command.kind_of?(String)
 
-      config = LaunchConfig.new(JRuby.runtime, [command].to_java(IRubyObject), false)
+      config = LaunchConfig.new(JRuby.runtime, [command], false)
 
-      use_shell = Platform::IS_WINDOWS ? config.should_run_in_shell : false
+      use_shell = JRuby::Util::ON_WINDOWS ? config.should_run_in_shell : false
       use_shell |= ShellLauncher.should_use_shell(command)
 
       if use_shell
@@ -29,8 +25,9 @@ module JRuby
       pb = ProcessBuilder.new(config.exec_args)
       pb.redirect_input(Redirect::INHERIT)
       pb.redirect_error(Redirect::INHERIT)
-      pb.environment(ShellLauncher.get_current_env(JRuby.runtime))
-      cwd = JRuby.runtime.current_directory.start_with?('uri:classloader:/') ? ENV_JAVA['user.dir'] : JRuby.runtime.current_directory
+      pb.environment
+      cwd = JRuby.runtime.current_directory
+      cwd = cwd.start_with?('uri:classloader:/') ? ENV_JAVA['user.dir'] : cwd
       pb.directory(JFile.new(cwd))
       process = pb.start
 
@@ -40,8 +37,7 @@ module JRuby
       exit_value = process.wait_for
 
       # RubyStatus uses real native status now, so we unshift Java's shifted exit status
-      status = RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, exit_value << 8, pid)
-      JRuby.runtime.current_context.last_exit_status = status
+      JRuby.set_last_exit_status(exit_value << 8, pid)
 
       result.gsub(/\r\n/, "\n")
     end

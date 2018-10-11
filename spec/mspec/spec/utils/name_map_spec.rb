@@ -72,7 +72,6 @@ describe NameMap, "#class_or_module" do
       MSpecScript
       MkSpec
       NameMap
-      OptionParser
     ]
 
     excluded.each do |const|
@@ -130,7 +129,7 @@ describe NameMap, "#file_name" do
 
   it "returns the name of the spec file based on the special entry for the method" do
     @map.file_name("~", "Regexp").should == "match_spec.rb"
-    @map.file_name("~", "Fixnum").should == "complement_spec.rb"
+    @map.file_name("~", "Integer").should == "complement_spec.rb"
   end
 
   it "returns the name of the spec file based on the default entry for the method" do
@@ -138,7 +137,7 @@ describe NameMap, "#file_name" do
   end
 
   it "uses the last component of the constant to look up the method name" do
-    @map.file_name("^", "NameMapSpecs::Fixnum").should == "bit_xor_spec.rb"
+    @map.file_name("^", "NameMapSpecs::Integer").should == "bit_xor_spec.rb"
   end
 end
 

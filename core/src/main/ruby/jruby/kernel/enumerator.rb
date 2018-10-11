@@ -45,15 +45,19 @@ class Enumerator
       "#<#{self.class}: #{@receiver.inspect}#{suff}>"
     end
 
-    {
-        :slice_before => //,
-        :with_index => [],
-        :cycle => [],
-        :each_with_object => 42,
-        :each_slice => 42,
-        :each_entry => [],
-        :each_cons => 42,
-    }.each do |method, args|
+    [
+        :slice_before,
+        :slice_after,
+        :slice_when,
+        :chunk_while,
+        :chunk,
+        :with_index,
+        :cycle,
+        :each_with_object,
+        :each_slice,
+        :each_entry,
+        :each_cons,
+    ].each do |method|
       module_eval <<-EOT, __FILE__, __LINE__ + 1
         def #{method}(*args)                                     # def cycle(*args)
           return to_enum(:#{method}, *args) unless block_given?  #   return to_enum(:cycle, *args) unless block_given?
@@ -202,6 +206,24 @@ class Enumerator
           yielder << others.unshift(values)
         end
       end.__set_inspect :zip, args
+    end
+
+    def uniq
+      hash = {}
+      if block_given?
+        Lazy.new(self) do |yielder, obj|
+          ret = yield(*obj)
+          next if hash.key? ret
+          hash[ret] = obj
+          yielder << obj
+        end
+      else
+        Lazy.new(self) do |yielder, obj|
+          next if hash.key? obj
+          hash[obj] = obj unless hash.key? obj
+          yielder << obj
+        end
+      end
     end
 
     protected

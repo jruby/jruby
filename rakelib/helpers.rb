@@ -59,10 +59,15 @@ def sha256_checksum(filename)
   HashTask.hash_for(filename, Digest::SHA256)
 end
 
+def sha512_checksum(filename)
+  HashTask.hash_for(filename, Digest::SHA512)
+end
+
 def checksums(filename)
   md5_checksum filename
   sha1_checksum filename
   sha256_checksum filename
+  sha512_checksum filename
 end
 
 def permute_tests(base_name, options, *prereqs, &block)

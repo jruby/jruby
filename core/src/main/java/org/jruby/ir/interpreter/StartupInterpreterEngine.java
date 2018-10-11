@@ -1,12 +1,10 @@
 package org.jruby.ir.interpreter;
 
-import java.util.Stack;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -21,6 +19,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
+
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.ids;
 
 /**
  * This interpreter is meant to interpret the instructions generated directly from IRBuild.
@@ -41,7 +42,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         DynamicScope currDynScope = context.getCurrentScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        Stack<Integer> rescuePCs = null;
+        int[] rescuePCs = interpreterContext.getRescueIPCs();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -54,14 +55,12 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
             Operation operation = instr.getOperation();
             if (debug) {
-                Interpreter.LOG.info("I: {" + ipc + "} " + instr + "; <#RPCs=" + (rescuePCs == null ? 0 : rescuePCs.size()) + ">");
+                Interpreter.LOG.info("I: " + ipc + ", R: "  + rescuePCs[ipc] + " - " + instr + ">");
                 Interpreter.interpInstrsCount++;
             } else if (profile) {
                 Profiler.instrTick(operation);
                 Interpreter.interpInstrsCount++;
             }
-
-            ipc++;
 
             try {
                 switch (operation.opClass) {
@@ -78,16 +77,14 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         switch (operation) {
                             case JUMP:
                                 JumpInstr jump = ((JumpInstr)instr);
-                                if (jump.exitsExcRegion()) {
-                                    rescuePCs.pop();
-                                }
                                 ipc = jump.getJumpTarget().getTargetPC();
                                 break;
                             default:
-                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
+                                ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc + 1);
                                 break;
+
                         }
-                        break;
+                        continue;
                     case BOOK_KEEPING_OP:
                         switch (operation) {
                             case PUSH_METHOD_BINDING:
@@ -97,11 +94,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                                 currDynScope = interpreterContext.newDynamicScope(context);
                                 context.pushScope(currDynScope);
                             case EXC_REGION_START:
-                                if (rescuePCs == null) rescuePCs = new Stack<>();
-                                rescuePCs.push(((ExceptionRegionStartMarkerInstr) instr).getFirstRescueBlockLabel().getTargetPC());
-                                break;
                             case EXC_REGION_END:
-                                rescuePCs.pop();
                                 break;
                             default:
                                 processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
@@ -111,14 +104,12 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         processOtherOp(context, block, instr, operation, currDynScope, currScope, temp, self);
                         break;
                 }
+
+                ipc++;
             } catch (Throwable t) {
                 if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs == null || rescuePCs.empty()) {
-                    ipc = -1;
-                } else {
-                    ipc = rescuePCs.pop();
-                }
+                ipc = rescuePCs == null ? -1 : rescuePCs[ipc];
 
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
@@ -139,7 +130,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
 
     protected static void processOtherOp(ThreadContext context, Block block, Instr instr, Operation operation, DynamicScope currDynScope,
                                          StaticScope currScope, Object[] temp, IRubyObject self) {
-        Block.Type blockType = block == null ? null : block.type;
         switch(operation) {
             case RECV_SELF:
                 break;
@@ -155,7 +145,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 Object result = a == null ? null : (IRubyObject)a.get(object);
                 if (result == null) {
                     if (context.runtime.isVerbose()) {
-                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
+                        context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED,
+                                str(context.runtime, "instance variable ", ids(context.runtime, gfi.getId()), " not initialized"));
                     }
                     result = context.nil;
                 }
@@ -173,11 +164,11 @@ public class StartupInterpreterEngine extends InterpreterEngine {
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
-                        rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
+                        rhc.callHelper(context, currScope, currDynScope, self, temp, block));
                 break;
             }
             case CHECK_FOR_LJE:
-                ((CheckForLJEInstr) instr).check(context, currDynScope, blockType);
+                ((CheckForLJEInstr) instr).check(context, currDynScope, block);
                 break;
             case LOAD_FRAME_CLOSURE:
                 setResult(temp, currDynScope, instr, context.getFrameBlock());

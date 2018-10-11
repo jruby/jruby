@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Module#attr_writer" do
   it "creates a setter for each given attribute name" do
@@ -24,25 +24,12 @@ describe "Module#attr_writer" do
     o.instance_variable_get(:@test2).should == "test_2 updated"
   end
 
-  ruby_version_is ''...'2.2' do
-    it "allows for adding an attr_writer to an immediate" do
-      class TrueClass
-        attr_writer :spec_attr_writer
-      end
-
-      true.spec_attr_writer = "a"
-      true.instance_variable_get("@spec_attr_writer").should == "a"
+  it "not allows for adding an attr_writer to an immediate" do
+    class TrueClass
+      attr_writer :spec_attr_writer
     end
-  end
 
-  ruby_version_is '2.2' do
-    it "not allows for adding an attr_writer to an immediate" do
-      class TrueClass
-        attr_writer :spec_attr_writer
-      end
-
-      lambda { true.spec_attr_writer = "a" }.should raise_error(RuntimeError)
-    end
+    lambda { true.spec_attr_writer = "a" }.should raise_error(RuntimeError)
   end
 
   it "converts non string/symbol/fixnum names to strings using to_str" do
@@ -71,7 +58,14 @@ describe "Module#attr_writer" do
     lambda { c.new.foo=1 }.should raise_error(NoMethodError)
   end
 
-  it "is a private method" do
-    lambda { Class.new.attr_writer(:foo) }.should raise_error(NoMethodError)
+  ruby_version_is ''...'2.5' do
+    it "is a private method" do
+      Module.should have_private_instance_method(:attr_writer, false)
+    end
+  end
+  ruby_version_is '2.5' do
+    it "is a public method" do
+      Module.should have_public_instance_method(:attr_writer, false)
+    end
   end
 end

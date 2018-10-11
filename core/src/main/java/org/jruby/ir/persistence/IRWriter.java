@@ -1,6 +1,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
@@ -8,18 +9,21 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.ByteList;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 /**
- *  Write IR data out to persistent store.  IRReader is capable of re-reading this
+ * Write IR data out to persistent store.  IRReader is capable of re-reading this
  * information back into live IR data again.  This class knows the logical order of how
  * information will be written out but the IRWriterEncoder actually knows how to encode that
  * information.
  */
 public class IRWriter {
+
+    private IRWriter() { /* static methods only, for now */ }
+
     public static void persist(IRWriterEncoder file, IRScope script) throws IOException {
         file.startEncoding(script);
         persistScopeInstructions(file, script); // recursive dump of all scopes instructions
@@ -98,11 +102,14 @@ public class IRWriter {
 
     // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
     private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
-        Map<String, LocalVariable> localVariables = scope.getLocalVariables();
+        Map<RubySymbol, LocalVariable> localVariables = scope.getLocalVariables();
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("PERSISTING LVARS (" + localVariables.size() + ")");
         file.encode(localVariables.size());
-        for (String name: localVariables.keySet()) {
+        for (RubySymbol name: localVariables.keySet()) {
             file.encode(name);
-            file.encode(localVariables.get(name).getOffset()); // No need to write depth..it is zero.
+            int offset = localVariables.get(name).getOffset();
+            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
+            file.encode(offset); // No need to write depth..it is zero.
         }
     }
 

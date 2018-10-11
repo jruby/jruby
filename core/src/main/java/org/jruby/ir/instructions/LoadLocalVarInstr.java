@@ -51,7 +51,7 @@ public class LoadLocalVarInstr extends OneOperandResultBaseInstr implements Fixe
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "scope: " + scope.getName() };
+        return new String[] { "scope: " + scope.getId() };
     }
 
     @Override

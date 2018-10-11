@@ -1,1 +1,9 @@
 fails:Socket#listen verifies we can listen for incoming connections
+fails:Socket#listen using IPv4 using a DGRAM socket raises Errno::EOPNOTSUPP
+fails:Socket#listen using IPv4 using a STREAM socket returns 0
+fails:Socket#listen using IPv4 using a STREAM socket raises when the given argument can't be coerced to a Fixnum
+fails:Socket#listen using IPv6 using a DGRAM socket raises Errno::EOPNOTSUPP
+fails:Socket#listen using IPv6 using a STREAM socket returns 0
+fails:Socket#listen using IPv6 using a STREAM socket raises when the given argument can't be coerced to a Fixnum
+fails:Socket#listen using IPv4 using a STREAM socket raises when the given argument can't be coerced to an Integer
+fails:Socket#listen using IPv6 using a STREAM socket raises when the given argument can't be coerced to an Integer

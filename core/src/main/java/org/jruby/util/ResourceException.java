@@ -1,12 +1,15 @@
 package org.jruby.util;
 
-import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
+
 import java.io.IOException;
 
+/**
+ * @note Private API that might get removed later.
+ */
 // While it is public, please don't use this, since in master it will be
-// marked private and replaced by RaisableException usage.
+// marked private and replaced by RaiseException usage.
 public abstract class ResourceException extends IOException {
     public ResourceException() {}
     public ResourceException(Throwable t) {
@@ -23,6 +26,9 @@ public abstract class ResourceException extends IOException {
         }
 
         @Override
+        public Throwable fillInStackTrace() { return this; }
+
+        @Override
         public RaiseException newRaiseException(Ruby runtime) {
             return runtime.newRaiseException(runtime.getErrno().getClass(errnoClass), path);
         }
@@ -30,6 +36,10 @@ public abstract class ResourceException extends IOException {
 
     public static class FileIsDirectory extends ErrnoException {
         public FileIsDirectory(String path) { super("EISDIR", path); }
+    }
+
+    public static class FileIsNotDirectory extends ErrnoException {
+        public FileIsNotDirectory(String path) { super ("ENOTDIR", path); }
     }
 
     public static class FileExists extends ErrnoException {
@@ -52,6 +62,7 @@ public abstract class ResourceException extends IOException {
         public TooManySymlinks(String path) { super("ELOOP", path); }
     }
 
+    @Deprecated
     public static class IOError extends ResourceException {
         private final IOException ioe;
 

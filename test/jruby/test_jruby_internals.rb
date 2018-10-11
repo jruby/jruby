@@ -13,6 +13,11 @@ class TestJRubyInternals < Test::Unit::TestCase
     Dir.rmdir @dir
   end
 
+  def test_CONFIG; require 'jruby'
+    assert JRuby::CONFIG
+    assert_equal false, JRuby::CONFIG.rubygems_disabled?
+  end
+
   def test_smart_split_paths
     require 'jruby/path_helper'
     assert_equal %w(foo bar blah),

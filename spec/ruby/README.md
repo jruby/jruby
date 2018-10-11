@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/ruby/spec.svg)](https://travis-ci.org/ruby/spec)
 [![Build Status](https://ci.appveyor.com/api/projects/status/1gs6f399320o44b1?svg=true)](https://ci.appveyor.com/project/eregon/spec-x948i)
+[![Gitter](https://badges.gitter.im/ruby/spec.svg)](https://gitter.im/ruby/spec)
 
 The Ruby Spec Suite is a test suite for the behavior of the Ruby programming language.
 
@@ -23,9 +24,21 @@ The language specs are grouped by keyword while the core and standard library sp
 
 ruby/spec is known to be tested in these implementations for every commit:
 * [MRI](http://rubyci.org/) on 30 platforms and 4 versions
-* [JRuby](https://github.com/jruby/jruby/tree/master/spec/ruby) on Travis for both 1.7 and 9.x
-* [TruffleRuby](https://github.com/graalvm/truffleruby) on Travis
-* [Opal](https://github.com/opal/opal/tree/master/spec) on Travis
+* [JRuby](https://github.com/jruby/jruby/tree/master/spec/ruby) for both 1.7 and 9.x
+* [TruffleRuby](https://github.com/oracle/truffleruby/tree/master/spec/ruby)
+* [Opal](https://github.com/opal/opal/tree/master/spec)
+
+The specs are synchronized both ways around once a month by @eregon between ruby/spec, MRI, JRuby and TruffleRuby.
+Each of these repositories has a full copy of the files to ease editing specs.
+
+ruby/spec describes the behavior of Ruby 2.3 and more recent Ruby versions.
+More precisely, every latest stable MRI release [passes](https://rubyci.org/) all specs of ruby/spec
+(2.3.x, 2.4.x, 2.5.x, etc).
+
+For older specs try these commits:
+* Ruby 2.0.0-p647 - [Suite](https://github.com/ruby/spec/commit/245862558761d5abc676843ef74f86c9bcc8ea8d) using [MSpec](https://github.com/ruby/mspec/commit/f90efa068791064f955de7a843e96e2d7d3041c2) (may encounter 2 failures)
+* Ruby 2.1.9 - [Suite](https://github.com/ruby/spec/commit/f029e65241374386077ac500add557ae65069b55) using [MSpec](https://github.com/ruby/mspec/commit/55568ea3918c6380e64db8c567d732fa5781efed)
+* Ruby 2.2.10 - [Suite](https://github.com/ruby/spec/commit/cbaa0e412270c944df0c2532fc500c920dba0e92) using [MSpec](https://github.com/ruby/mspec/commit/d84d7668449e96856c5f6bac8cb1526b6d357ce3)
 
 ### Running the specs
 
@@ -78,6 +91,13 @@ In similar fashion, the following commands run the respective specs:
 ### Contributing
 
 See [CONTRIBUTING.md](https://github.com/ruby/spec/blob/master/CONTRIBUTING.md).
+
+### Socket specs from rubysl-socket
+
+Most specs under `library/socket` were imported from [the rubysl-socket project](https://github.com/rubysl/rubysl-socket).
+The 3 copyright holders of rubysl-socket, Yorick Peterse, Chuck Remes and
+Brian Shirai, [agreed to relicense those specs](https://github.com/rubysl/rubysl-socket/issues/15)
+under the MIT license in ruby/spec.
 
 ### History and RubySpec
 

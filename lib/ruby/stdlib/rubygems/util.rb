@@ -109,26 +109,16 @@ module Gem::Util
   ##
   # Enumerates the parents of +directory+.
 
-  def self.traverse_parents directory
+  def self.traverse_parents directory, &block
     return enum_for __method__, directory unless block_given?
 
     here = File.expand_path directory
-    start = here
+    loop do
+      Dir.chdir here, &block rescue Errno::EACCES
 
-    Dir.chdir start
-
-    begin
-      loop do
-        yield here
-
-        Dir.chdir '..'
-
-        return if Dir.pwd == here # toplevel
-
-        here = Dir.pwd
-      end
-    ensure
-      Dir.chdir start
+      new_here = File.expand_path('..', here)
+      return if new_here == here # toplevel
+      here = new_here
     end
   end
 

@@ -1,5 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "TCPSocket#recv_nonblock" do
   before :each do
@@ -16,7 +16,7 @@ describe "TCPSocket#recv_nonblock" do
   end
 
   it "returns a String read from the socket" do
-    @socket = TCPSocket.new @hostname, SocketSpecs.port
+    @socket = TCPSocket.new @hostname, @server.port
     @socket.write "TCPSocket#recv_nonblock"
 
     # Wait for the server to echo. This spec is testing the return
@@ -27,10 +27,8 @@ describe "TCPSocket#recv_nonblock" do
     @socket.recv_nonblock(50).should == "TCPSocket#recv_nonblock"
   end
 
-  ruby_version_is '2.3' do
-    it 'returns :wait_readable in exceptionless mode' do
-      @socket = TCPSocket.new @hostname, SocketSpecs.port
-      @socket.recv_nonblock(50, exception: false).should == :wait_readable
-    end
+  it 'returns :wait_readable in exceptionless mode' do
+    @socket = TCPSocket.new @hostname, @server.port
+    @socket.recv_nonblock(50, exception: false).should == :wait_readable
   end
 end

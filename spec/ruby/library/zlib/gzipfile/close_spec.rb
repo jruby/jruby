@@ -1,4 +1,4 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'stringio'
 require 'zlib'
 
@@ -19,4 +19,3 @@ describe "Zlib::GzipFile#close" do
     io.string[10..-1].should == ([3] + Array.new(9,0)).pack('C*')
   end
 end
-

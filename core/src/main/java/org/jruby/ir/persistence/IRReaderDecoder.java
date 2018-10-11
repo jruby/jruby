@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -54,6 +55,7 @@ public interface IRReaderDecoder {
     public double decodeDouble();
     public float decodeFloat();
     public RubyEvent decodeRubyEvent();
+    public RubySymbol decodeSymbol();
     public Signature decodeSignature();
 
     public Variable decodeVariable();

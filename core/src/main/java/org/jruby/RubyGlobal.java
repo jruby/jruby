@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -34,12 +34,14 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.GlobalVariables;
@@ -53,9 +55,12 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.Numeric;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.ChannelHelper;
 import org.jruby.util.io.EncodingUtils;
@@ -108,6 +113,10 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("TRUE", runtime.getTrue());
         runtime.defineGlobalConstant("FALSE", runtime.getFalse());
         runtime.defineGlobalConstant("NIL", runtime.getNil());
+
+        runtime.getObject().deprecateConstant(runtime, "TRUE");
+        runtime.getObject().deprecateConstant(runtime, "FALSE");
+        runtime.getObject().deprecateConstant(runtime, "NIL");
 
         initARGV(runtime);
 
@@ -173,9 +182,9 @@ public class RubyGlobal {
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
+            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
-            runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
+            runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
 
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
@@ -271,12 +280,27 @@ public class RubyGlobal {
     }
 
     public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
-        RubyIO stdin = RubyIO.prepStdio(
-                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-        RubyIO stdout = RubyIO.prepStdio(
-                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-        RubyIO stderr = RubyIO.prepStdio(
-                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        RubyIO stdin, stdout, stderr;
+
+        // If we're the main for the process and native stdio is enabled, use default descriptors
+        if (!Platform.IS_WINDOWS && // Windows does not do native IO yet
+                runtime.getPosix().isNative() &&
+                runtime.getInstanceConfig().isHardExit() && // main JRuby only
+                Options.NATIVE_STDIO.load()) {
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), new NativeDeviceChannel(1), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        } else {
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        }
 
         if (runtime.getObject().getConstantFromNoConstMissing("STDIN") == null) {
             runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
@@ -388,31 +412,31 @@ public class RubyGlobal {
             super(runtime, valueMap, defaultValue, updateRealENV);
         }
 
+        protected final boolean isCaseSensitive() { return false; }
+
         @Override
         public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return case_aware_op_aref(context, key, false);
+            IRubyObject val = super.op_aref(context, key);
+            val.setTaint(true);
+            return val;
         }
 
-        @Override
-        public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return case_aware_op_aset(context, key, value, false);
-        }
+        private static final ByteList ENV = new ByteList(new byte[] {'E','N','V'}, USASCIIEncoding.INSTANCE, false);
 
         @JRubyMethod(name = "to_s")
-        public IRubyObject to_s(ThreadContext context) {
-            return context.runtime.newString("ENV");
+        public RubyString to_s(ThreadContext context) {
+            return RubyString.newStringShared(context.runtime, ENV);
         }
 
         @Override
         public IRubyObject to_s() {
-            return getRuntime().newString("ENV");
+            return RubyString.newStringShared(getRuntime(), ENV);
         }
 
         @JRubyMethod
         public RubyHash to_h(){
-          return to_hash();
+            return to_hash();
         }
-
 
     }
 
@@ -433,13 +457,10 @@ public class RubyGlobal {
             this.updateRealENV = updateRealENV;
         }
 
+        protected boolean isCaseSensitive() { return true; }
+
         public StringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue) {
             this(runtime, valueMap, defaultValue, false);
-        }
-
-        @Override
-        public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-            return case_aware_op_aref(context, key, true);
         }
 
         @Override
@@ -451,8 +472,19 @@ public class RubyGlobal {
         }
 
         @Override
+        protected IRubyObject internalGet(IRubyObject key) {
+            if (size == 0) return null;
+
+            if (!isCaseSensitive()) {
+                key = getCorrectKey(key.convertToString());
+            }
+
+            return super.internalGet(key);
+        }
+
+        @Override
         public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-            return case_aware_op_aset(context, key, value, true);
+            return case_aware_op_aset(context, key, value);
         }
 
         @Override
@@ -461,60 +493,51 @@ public class RubyGlobal {
             return op_aset(context, key, value);
         }
 
-        protected IRubyObject case_aware_op_aref(ThreadContext context, IRubyObject key, boolean caseSensitive) {
-            if (! caseSensitive) {
-                key = getCorrectKey(key, context);
+        private IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, final IRubyObject value) {
+            if (!isStringLike(key)) {
+                throw context.runtime.newTypeError("can't convert " + key.getMetaClass() + " into String");
             }
-            return super.op_aref(context, key);
-        }
+            RubyString keyAsStr = key.convertToString();
+            if (!isCaseSensitive()) key = keyAsStr = getCorrectKey(keyAsStr);
 
-        protected IRubyObject case_aware_op_aset(ThreadContext context,
-            IRubyObject key, final IRubyObject value, boolean caseSensitive) {
-            if (!key.respondsTo("to_str")) {
-                throw getRuntime().newTypeError("can't convert " + key.getMetaClass() + " into String");
-            }
-            if (!value.respondsTo("to_str") && !value.isNil()) {
-                throw getRuntime().newTypeError("can't convert " + value.getMetaClass() + " into String");
-            }
-
-            if (!caseSensitive) {
-                key = getCorrectKey(key, context);
-            }
-
-            if (value.isNil()) {
+            if (value == context.nil) {
                 return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
             }
+            if (!isStringLike(value)) {
+                throw context.runtime.newTypeError("can't convert " + value.getMetaClass() + " into String");
+            }
 
-            IRubyObject keyAsStr = normalizeEnvString(context, key, Helpers.invoke(context, key, "to_str"));
-            IRubyObject valueAsStr = value.isNil() ? context.nil :
-                    normalizeEnvString(context, key, Helpers.invoke(context, value, "to_str"));
+            RubyString valueAsStr = normalizeEnvString(context, keyAsStr, value.convertToString());
 
             if (updateRealENV) {
-                POSIX posix = context.runtime.getPosix();
-                String keyAsJava = keyAsStr.asJavaString();
+                final POSIX posix = context.runtime.getPosix();
+                final String keyAsJava = keyAsStr.asJavaString();
                 // libc (un)setenv is not reentrant, so we need to synchronize across the entire JVM (JRUBY-5933)
                 if (valueAsStr == context.nil) {
                     synchronized (Object.class) { posix.unsetenv(keyAsJava); }
                 } else {
-                    synchronized (Object.class) { posix.setenv(keyAsJava, valueAsStr.asJavaString(), 1); }
+                    final String valueAsJava = valueAsStr.asJavaString();
+                    synchronized (Object.class) { posix.setenv(keyAsJava, valueAsJava, 1); }
                 }
             }
 
             return super.op_aset(context, keyAsStr, valueAsStr);
-
         }
 
-        private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
-            RubyString originalKey = key.convertToString();
-            RubyString actualKey = originalKey;
-            Ruby runtime = context.runtime;
+        private static boolean isStringLike(final IRubyObject obj) {
+            return obj instanceof RubyString || obj.respondsTo("to_str");
+        }
+
+        private RubyString getCorrectKey(final RubyString key) {
+            RubyString actualKey = key;
             if (Platform.IS_WINDOWS) {
                 // this is a rather ugly hack, but similar to MRI. See hash.c:ruby_setenv and similar in MRI
                 // we search all keys for a case-insensitive match, and use that
-                RubyArray keys = super.keys();
+                final ThreadContext context = getRuntime().getCurrentContext();
+                final RubyArray keys = super.keys(context);
                 for (int i = 0; i < keys.size(); i++) {
                     RubyString candidateKey = keys.eltInternal(i).convertToString();
-                    if (candidateKey.casecmp(context, originalKey).op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
+                    if (equalIgnoreCase(context, candidateKey, key)) {
                         actualKey = candidateKey;
                         break;
                     }
@@ -523,27 +546,32 @@ public class RubyGlobal {
             return actualKey;
         }
 
-        private IRubyObject normalizeEnvString(ThreadContext context, IRubyObject key, IRubyObject value) {
-            if (value instanceof RubyString) {
-                Ruby runtime = context.runtime;
-                RubyString valueStr = (RubyString) value;
+        private static final ByteList PATH_BYTES = new ByteList(new byte[] {'P','A','T','H'}, USASCIIEncoding.INSTANCE, false);
 
-                // Ensure PATH is encoded like filesystem
-                if (Platform.IS_WINDOWS ?
-                        key.toString().equalsIgnoreCase("PATH") :
-                        key.toString().equals("PATH")) {
-                    Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
-                    valueStr = EncodingUtils.strConvEnc(context, valueStr, valueStr.getEncoding(), enc);
-                } else {
-                    valueStr = RubyString.newString(runtime, valueStr.toString(), runtime.getEncodingService().getLocaleEncoding());
-                }
+        private static RubyString normalizeEnvString(ThreadContext context, RubyString key, RubyString value) {
+            final Ruby runtime = context.runtime;
 
-                valueStr.setFrozen(true);
+            RubyString valueStr;
 
-                return valueStr;
+            // Ensure PATH is encoded like filesystem
+            if (Platform.IS_WINDOWS ?
+                    equalIgnoreCase(context, key, RubyString.newString(context.runtime, PATH_BYTES)) :
+                        key.getByteList().equal(PATH_BYTES)) {
+                Encoding enc = runtime.getEncodingService().getFileSystemEncoding();
+                valueStr = EncodingUtils.strConvEnc(context, value, value.getEncoding(), enc);
+                if (value == valueStr) valueStr = (RubyString) value.dup();
+            } else {
+                valueStr = RubyString.newString(runtime, value.toString(), runtime.getEncodingService().getLocaleEncoding());
             }
-            return value;
+
+            valueStr.setFrozen(true);
+            return valueStr;
         }
+
+        private static boolean equalIgnoreCase(ThreadContext context, final RubyString str1, final RubyString str2) {
+            return ((RubyFixnum) str1.casecmp(context, str2)).isZero();
+        }
+
     }
 
     private static class ReadOnlySystemPropertiesHash extends StringOnlyRubyHash {
@@ -711,6 +739,20 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
+            }
+            return super.set(value);
+        }
+    }
+
+    public static class StringOrRegexpGlobalVariable extends GlobalVariable {
+        public StringOrRegexpGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            if (!value.isNil() && ! (value instanceof RubyString) && ! (value instanceof RubyRegexp)) {
+                throw runtime.newTypeError("value of " + name() + " must be String or Regexp");
             }
             return super.set(value);
         }

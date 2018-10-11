@@ -1,7 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-
-ruby_exe = RUBY_EXE.split
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO.popen" do
   before :each do
@@ -24,7 +22,8 @@ describe "IO.popen" do
 
   it "raises IOError when writing a read-only pipe" do
     @io = IO.popen(ruby_cmd('puts "foo"'), "r")
-    lambda { @io.write('foo') }.should raise_error(IOError)
+    lambda { @io.write('bar') }.should raise_error(IOError)
+    @io.read.should == "foo\n"
   end
 end
 
@@ -76,8 +75,9 @@ describe "IO.popen" do
   end
 
   it "does not throw an exception if child exited and has been waited for" do
-    @io = IO.popen(ruby_cmd('sleep'))
-    Process.kill "KILL", @io.pid
+    @io = IO.popen([*ruby_exe, '-e', 'sleep'])
+    pid = @io.pid
+    Process.kill "KILL", pid
     @io.close
     platform_is_not :windows do
       $?.signaled?.should == true
@@ -199,14 +199,14 @@ describe "IO.popen" do
     end
 
     it "accepts an Array of command and arguments" do
-      exe, *args = *ruby_exe
+      exe, *args = ruby_exe
       IO.popen({"FOO" => "bar"}, [[exe, "specfu"], *args, "-e", "puts ENV['FOO']"]) do |io|
         io.read.should == "bar\n"
       end
     end
 
     it "accepts an Array of command and arguments, and an IO mode" do
-      exe, *args = *ruby_exe
+      exe, *args = ruby_exe
       IO.popen({"FOO" => "bar"}, [[exe, "specfu"], *args, "-e", "puts ENV['FOO']"], "r") do |io|
         io.read.should == "bar\n"
       end

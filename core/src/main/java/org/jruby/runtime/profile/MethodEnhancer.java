@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime.profile;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -47,9 +48,9 @@ public interface MethodEnhancer {
      *     return delegate;
      * }
      * </pre>
-     * @param name the name of the given delegate
+     * @param id the name of the given delegate
      * @param delegate the method to enhance
      * @return the enhanced method. if nothing is to be done, the delegate itself can be returned
      */
-    public DynamicMethod enhance( String name, DynamicMethod delegate );
+    public DynamicMethod enhance(String id, DynamicMethod delegate);
 }

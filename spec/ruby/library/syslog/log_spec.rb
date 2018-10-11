@@ -1,9 +1,10 @@
+require_relative '../../spec_helper'
+
 platform_is_not :windows do
-  require File.expand_path('../../../spec_helper', __FILE__)
   require 'syslog'
 
   describe "Syslog.log" do
-    platform_is_not [:windows, :darwin] do
+    platform_is_not :windows, :darwin, :solaris, :aix do
 
       before :each do
         Syslog.opened?.should be_false

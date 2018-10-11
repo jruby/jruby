@@ -1,7 +1,25 @@
 package org.jruby.util.io;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.channels.Channel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
+
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -19,30 +37,17 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.channels.Channel;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
 
@@ -70,6 +75,7 @@ public class OpenFile implements Finalizable {
     public static final int TRUNC              = 0x00000800;
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
+    public static final int TMPFILE            = 0x00410000;
     public static final int PREP         = (1<<16);
 
     public static final int SYNCWRITE = SYNC | WRITABLE;
@@ -147,7 +153,7 @@ public class OpenFile implements Finalizable {
 
     private final Ruby runtime;
 
-    protected List<RubyThread> blockingThreads;
+    protected volatile Set<RubyThread> blockingThreads;
 
     public void clearStdio() {
         stdio_file = null;
@@ -393,8 +399,9 @@ public class OpenFile implements Finalizable {
         if (tiedIOForWriting != null) {
             OpenFile wfptr;
             wfptr = tiedIOForWriting.getOpenFileChecked();
-            if (wfptr.io_fflush(context) < 0)
+            if (wfptr.io_fflush(context) < 0) {
                 throw runtime.newErrnoFromErrno(wfptr.posix.errno, wfptr.getPath());
+            }
         }
     }
 
@@ -422,9 +429,7 @@ public class OpenFile implements Finalizable {
             checkClosed();
 
             while (wbuf.len > 0 && flushBuffer() != 0) {
-                if (!waitWritable(context)) {
-                    return -1;
-                }
+                if (!waitWritable(context)) return -1;
                 checkClosed();
             }
         } finally {
@@ -508,7 +513,14 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (fd.chSelect != null) {
-                return thread.select(fd.chSelect, this, ops & fd.chSelect.validOps(), timeout);
+                int realOps = ops & fd.chSelect.validOps();
+
+                if ((realOps & SelectionKey.OP_WRITE) != (ops & SelectionKey.OP_WRITE)) {
+                    // MRI or poll or select appears to return ready for write select on a read-only channel
+                    return true;
+                }
+
+                return thread.select(fd.chSelect, this, realOps, timeout);
 
             } else if (fd.chSeek != null) {
                 return fd.chSeek.position() != -1
@@ -576,8 +588,8 @@ public class OpenFile implements Finalizable {
             return 0;
         }
         if (0 <= r) {
-            wbuf.off += (int)r;
-            wbuf.len -= (int)r;
+            wbuf.off += r;
+            wbuf.len -= r;
             posix.errno = Errno.EAGAIN;
         }
         return -1;
@@ -809,6 +821,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
+    @Deprecated // no longer used
     public static final Finalizer PIPE_FINALIZE = new Finalizer() {
         @Override
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise) {
@@ -835,7 +848,11 @@ public class OpenFile implements Finalizable {
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
-        IRubyObject err = runtime.getNil();
+        finalizeFlush(context, noraise);
+    }
+
+    public void finalizeFlush(ThreadContext context, boolean noraise) {
+        IRubyObject err = context.nil;
         ChannelFD fd = this.fd();
         Closeable stdio_file = this.stdio_file;
 
@@ -855,11 +872,11 @@ public class OpenFile implements Finalizable {
         }
         if (wbuf.len != 0) {
             if (noraise) {
-                if (flushBufferSync() < 0 && err.isNil())
-                    err = runtime.getTrue();
+                if (flushBufferSync() < 0 && err == context.nil)
+                    err = context.tru;
             }
             else {
-                if (io_fflush(runtime.getCurrentContext()) < 0 && err.isNil()) {
+                if (io_fflush(context) < 0 && err == context.nil) {
                     err = RubyFixnum.newFixnum(runtime, posix.errno == null ? 0 :posix.errno.longValue());
                 }
             }
@@ -875,13 +892,13 @@ public class OpenFile implements Finalizable {
 	        /* stdio_file is deallocated anyway
              * even if fclose failed.  */
             if (posix.close(stdio_file) < 0 && err.isNil())
-                err = noraise ? runtime.getTrue() : RubyNumeric.int2fix(runtime, posix.errno.intValue());
+                err = noraise ? context.tru : RubyNumeric.int2fix(runtime, posix.errno.intValue());
         } else if (fd != null) {
             /* fptr->fd may be closed even if close fails.
              * POSIX doesn't specify it.
              * We assumes it is closed.  */
             if ((posix.close(fd) < 0) && err.isNil())
-                err = noraise ? runtime.getTrue() : runtime.newFixnum(posix.errno.intValue());
+                err = noraise ? context.tru : runtime.newFixnum(posix.errno.intValue());
         }
 
         if (!err.isNil() && !noraise) {
@@ -889,7 +906,7 @@ public class OpenFile implements Finalizable {
                 posix.errno = Errno.valueOf(RubyNumeric.num2int(err));
                 throw runtime.newErrnoFromErrno(posix.errno, pathv);
             } else {
-                throw new RaiseException((RubyException)err);
+                throw ((RubyException)err).toThrowable();
             }
         }
     }
@@ -1024,7 +1041,7 @@ public class OpenFile implements Finalizable {
     private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // MRI: appendline
-    public int appendline(ThreadContext context, int delim, ByteList[] strp, int[] lp) {
+    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp) {
         ByteList str = strp[0];
         int limit = lp[0];
 
@@ -1037,11 +1054,10 @@ public class OpenFile implements Finalizable {
                 if (searchlen > 0) {
                     byte[] pBytes = READ_CHAR_PENDING_PTR();
                     p = READ_CHAR_PENDING_OFF();
-                    if (0 < limit && limit < searchlen)
-                        searchlen = limit;
+                    if (0 < limit && limit < searchlen) searchlen = limit;
                     e = memchr(pBytes, p, delim, searchlen);
                     if (e != -1) {
-                        int len = (int)(e-p+1);
+                        int len = e - p + 1;
                         if (str == null) {
                             strp[0] = str = new ByteList(pBytes, p, len);
                         } else {
@@ -1080,26 +1096,28 @@ public class OpenFile implements Finalizable {
             if (pending > 0) {
                 byte[] pBytes = READ_DATA_PENDING_PTR();
                 int p = READ_DATA_PENDING_OFF();
-                int e = -1;
                 int last;
 
                 if (limit > 0 && pending > limit) pending = limit;
-                e = memchr(pBytes, p, delim, pending);
+                int e = memchr(pBytes, p, delim, pending);
                 if (e != -1) pending = e - p + 1;
                 if (str != null) {
                     last = str.getRealSize();
-                    str.length(last + pending);
+                    str.ensure(last + pending);
                 }
                 else {
                     last = 0;
                     strp[0] = str = new ByteList(pending);
-                    str.setRealSize(pending);
                 }
-                readBufferedData(str.getUnsafeBytes(), str.getBegin() + last, pending); /* must not fail */
+                readBufferedData(str.getUnsafeBytes(), last + str.getBegin(), pending); /* must not fail */
+                str.setRealSize(last + pending);
                 limit -= pending;
-                lp[0] = limit;
-                if (e != -1) return delim;
+                if (e != -1) {
+                    lp[0] = limit;
+                    return delim;
+                }
                 if (limit == 0) {
+                    lp[0] = limit;
                     return str.get(str.getRealSize() - 1) & 0xFF;
                 }
             }
@@ -1109,7 +1127,7 @@ public class OpenFile implements Finalizable {
         return EOF;
     }
 
-    private int memchr(byte[] pBytes, int p, int delim, int length) {
+    private static int memchr(byte[] pBytes, int p, int delim, int length) {
         for (int i = p; i < p + length; i++) {
             if ((pBytes[i] & 0xFF) == delim) {
                 return i;
@@ -1120,8 +1138,7 @@ public class OpenFile implements Finalizable {
 
     public void NEED_NEWLINE_DECORATOR_ON_READ_CHECK() {
         if (NEED_NEWLINE_DECORATOR_ON_READ()) {
-            if (isReadable() &&
-                    (encs.ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
+            if (isReadable() && (encs.ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
                 SET_BINARY_MODE();
             } else {
                 SET_TEXT_MODE();
@@ -1140,10 +1157,10 @@ public class OpenFile implements Finalizable {
     public int moreChar(ThreadContext context) {
         Object v;
         v = fillCbuf(context, EConvFlags.AFTER_OUTPUT);
-        if (!(v instanceof Integer) ||
-                ((Integer)v != MORE_CHAR_SUSPENDED && (Integer)v != MORE_CHAR_FINISHED))
-            throw (RaiseException)v;
-        return (Integer)v;
+        if (!(v instanceof Integer) || ((Integer)v != MORE_CHAR_SUSPENDED && (Integer)v != MORE_CHAR_FINISHED)) {
+            throw (RaiseException) v;
+        }
+        return (Integer) v;
     }
 
     private Object fillCbuf(ThreadContext context, int ec_flags) {
@@ -1178,9 +1195,9 @@ public class OpenFile implements Finalizable {
                 ds = dpPtr.p = cbuf.off + cbuf.len;
                 de = cbuf.capa;
                 res = readconv.convert(rbuf.ptr, spPtr, se, cbuf.ptr, dpPtr, de, ec_flags);
-                rbuf.off += (int) (spPtr.p - ss);
-                rbuf.len -= (int) (spPtr.p - ss);
-                cbuf.len += (int) (dpPtr.p - ds);
+                rbuf.off += spPtr.p - ss;
+                rbuf.len -= spPtr.p - ss;
+                cbuf.len += dpPtr.p - ds;
 
                 putbackable = readconv.putbackable();
                 if (putbackable != 0) {
@@ -1210,7 +1227,7 @@ public class OpenFile implements Finalizable {
                             ds = dpPtr.p = cbuf.off + cbuf.len;
                             de = cbuf.capa;
                             res = readconv.convert(null, null, 0, cbuf.ptr, dpPtr, de, 0);
-                            cbuf.len += (int) (dpPtr.p - ds);
+                            cbuf.len += dpPtr.p - ds;
                             EncodingUtils.econvCheckError(context, readconv);
                             break;
                         }
@@ -1254,9 +1271,7 @@ public class OpenFile implements Finalizable {
                 rbuf.len = 0;
                 rbuf.capa = IO_RBUF_CAPA_FOR();
                 rbuf.ptr = new byte[rbuf.capa];
-                if (Platform.IS_WINDOWS) {
-                    rbuf.capa--;
-                }
+                if (Platform.IS_WINDOWS) rbuf.capa--;
             }
             if (rbuf.len == 0) {
                 retry:
@@ -1271,10 +1286,10 @@ public class OpenFile implements Finalizable {
                     }
                     break;
                 }
+                if (r > 0) checkClosed();
                 rbuf.off = 0;
-                rbuf.len = (int) r; /* r should be <= rbuf_capa */
-                if (r == 0)
-                    return -1; /* EOF */
+                rbuf.len = r; /* r should be <= rbuf_capa */
+                if (r == 0) return -1; /* EOF */
             }
         } finally {
             if (locked) unlock();
@@ -1291,11 +1306,11 @@ public class OpenFile implements Finalizable {
             this.capa = count;
         }
 
-        public OpenFile fptr;
-        public ChannelFD fd;
-        public byte[] bufBytes;
-        public int buf;
-        public int capa;
+        public final OpenFile fptr;
+        public final ChannelFD fd;
+        public final byte[] bufBytes;
+        public final int buf;
+        public final int capa;
         public Selector selector;
     }
 
@@ -1399,6 +1414,12 @@ public class OpenFile implements Finalizable {
                 return false;
             }
 
+            if (posix.errno != null && posix.errno != Errno.EAGAIN
+                    && posix.errno != Errno.EWOULDBLOCK && posix.errno != Errno.EINTR) {
+                // Encountered a permanent error. Don't read again.
+                return false;
+            }
+
             if (fd.chSelect != null) {
                 unlock();
                 try {
@@ -1478,15 +1499,15 @@ public class OpenFile implements Finalizable {
                         i[0] = 0;
                         if (!needconv) {
                             if (pBytes[p] != term) return true;
-                            i[0] = (int) cnt;
+                            i[0] = cnt;
                             while ((--i[0] != 0) && pBytes[++p] == term) ;
                         } else {
                             int e = p + cnt;
                             if (EncodingUtils.encAscget(pBytes, p, e, i, enc) != term) return true;
                             while ((p += i[0]) < e && EncodingUtils.encAscget(pBytes, p, e, i, enc) == term) ;
-                            i[0] = (int) (e - p);
+                            i[0] = (e - p);
                         }
-                        shiftCbuf(context, (int) cnt - i[0], null);
+                        shiftCbuf(context, cnt - i[0], null);
                     }
                 } while (moreChar(context) != MORE_CHAR_FINISHED);
                 return false;
@@ -1502,7 +1523,7 @@ public class OpenFile implements Finalizable {
                     int i;
                     if (cnt > buf.length) cnt = buf.length;
                     if ((pBytes[p] & 0xFF) != term) return true;
-                    i = (int) cnt;
+                    i = cnt;
                     while (--i != 0 && (pBytes[++p] & 0xFF) == term) ;
                     if (readBufferedData(buf, 0, cnt - i) == 0) /* must not fail */
                         throw context.runtime.newRuntimeError("failure copying buffered IO bytes");
@@ -1547,9 +1568,9 @@ public class OpenFile implements Finalizable {
     }
 
     // rb_io_getline_fast
-    public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io) {
+    public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io, boolean chomp) {
         Ruby runtime = context.runtime;
-        IRubyObject str = null;
+        RubyString str = null;
         ByteList strByteList;
         int len = 0;
         int pos = 0;
@@ -1564,31 +1585,37 @@ public class OpenFile implements Finalizable {
                     byte[] pBytes = READ_DATA_PENDING_PTR();
                     int p = READ_DATA_PENDING_OFF();
                     int e;
+                    int chomplen = 0;
 
                     e = memchr(pBytes, p, '\n', pending);
                     if (e != -1) {
-                        pending = (int) (e - p + 1);
+                        pending = e - p + 1;
+                        if (chomp) chomplen = ((pending > 1 && pBytes[e - 1] == '\r') ? 1 : 0) + 1;
                     }
                     if (str == null) {
-                        str = RubyString.newString(runtime, pBytes, p, pending);
-                        strByteList = ((RubyString) str).getByteList();
+                        str = RubyString.newString(runtime, pBytes, p, pending - chomplen);
+                        strByteList = str.getByteList();
                         rbuf.off += pending;
                         rbuf.len -= pending;
                     } else {
-                        ((RubyString) str).resize(len + pending);
-                        strByteList = ((RubyString) str).getByteList();
-                        readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending);
+                        str.resize(len + pending - chomplen);
+                        strByteList = str.getByteList();
+                        readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending - chomplen);
+                        rbuf.off += chomplen;
+                        rbuf.len -= chomplen;
                     }
-                    len += pending;
-                    if (cr != StringSupport.CR_BROKEN)
-                        pos += StringSupport.codeRangeScanRestartable(enc, strByteList.unsafeBytes(), strByteList.begin() + pos, strByteList.begin() + len, cr);
+                    len += pending - chomplen;
+                    //if (cr != StringSupport.CR_BROKEN) {
+                        final int beg = strByteList.begin();
+                        pos += codeRangeScanRestartable(enc, strByteList.unsafeBytes(), beg + pos, beg + len, cr);
+                    //}
                     if (e != -1) break;
                 }
                 READ_CHECK(context);
             } while (fillbuf(context) >= 0);
             if (str == null) return context.nil;
-            str = EncodingUtils.ioEncStr(runtime, str, this);
-            ((RubyString) str).setCodeRange(cr);
+            str = (RubyString) EncodingUtils.ioEncStr(runtime, str, this);
+            str.setCodeRange(cr);
             incrementLineno(runtime, io);
         } finally {
             if (locked) unlock();
@@ -1674,8 +1701,10 @@ public class OpenFile implements Finalizable {
                 bytes += n;
                 ByteList strByteList = ((RubyString) str).getByteList();
                 strByteList.setRealSize(bytes);
-                if (cr != StringSupport.CR_BROKEN)
-                    pos += StringSupport.codeRangeScanRestartable(enc, strByteList.unsafeBytes(), strByteList.begin() + pos, strByteList.begin() + bytes, cr);
+                //if (cr != StringSupport.CR_BROKEN) {
+                    final int beg = strByteList.begin();
+                    pos += codeRangeScanRestartable(enc, strByteList.unsafeBytes(), beg + pos, beg + bytes, cr);
+                //}
                 if (bytes < siz) break;
                 siz += BUFSIZ;
                 ((RubyString) str).modify(BUFSIZ);
@@ -1740,7 +1769,7 @@ public class OpenFile implements Finalizable {
         int strPtr;
         int len;
         OpenFile fptr;
-    };
+    }
 
     static IRubyObject bufreadCall(ThreadContext context, BufreadArg p) {
         p.len = p.fptr.ioBufread(context, p.strPtrBytes, p.strPtr, p.len);
@@ -1781,7 +1810,7 @@ public class OpenFile implements Finalizable {
                 //                rb_raise(rb_eIOError, "ungetbyte failed");
                 //            #endif
                 if (len > min_capa)
-                    rbuf.capa = (int) len;
+                    rbuf.capa = len;
                 else
                     rbuf.capa = min_capa;
                 rbuf.ptr = new byte[rbuf.capa];
@@ -1793,8 +1822,8 @@ public class OpenFile implements Finalizable {
                 System.arraycopy(rbuf.ptr, rbuf.off, rbuf.ptr, rbuf.capa - rbuf.len, rbuf.len);
                 rbuf.off = rbuf.capa - rbuf.len;
             }
-            rbuf.off -= (int) len;
-            rbuf.len += (int) len;
+            rbuf.off -= len;
+            rbuf.len += len;
             ByteList strByteList = ((RubyString) str).getByteList();
             System.arraycopy(strByteList.unsafeBytes(), strByteList.begin(), rbuf.ptr, rbuf.off, len);
         } finally {
@@ -1819,7 +1848,7 @@ public class OpenFile implements Finalizable {
 
                 while (true) {
                     if (cbuf.len != 0) {
-                        r = StringSupport.preciseLength(read_enc, cbuf.ptr, cbuf.off, cbuf.off + cbuf.len);
+                        r = preciseLength(read_enc, cbuf.ptr, cbuf.off, cbuf.off + cbuf.len);
                         if (!StringSupport.MBCLEN_NEEDMORE_P(r))
                             break;
                         if (cbuf.len == cbuf.capa) {
@@ -1871,7 +1900,7 @@ public class OpenFile implements Finalizable {
                 cr = StringSupport.CR_7BIT;
             }
             else {
-                r = StringSupport.preciseLength(enc, rbuf.ptr, rbuf.off, rbuf.off + rbuf.len);
+                r = preciseLength(enc, rbuf.ptr, rbuf.off, rbuf.off + rbuf.len);
                 if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
                         (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= rbuf.len) {
                     str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, n);
@@ -1884,11 +1913,11 @@ public class OpenFile implements Finalizable {
                     rbuf.len = 0;
                     getc_needmore: while (true) {
                         if (fillbuf(context) != -1) {
-                            ((RubyString)str).cat(rbuf.ptr[rbuf.off]);
+                            ((RubyString) str).cat(rbuf.ptr[rbuf.off]);
                             rbuf.off++;
                             rbuf.len--;
-                            ByteList strByteList = ((RubyString)str).getByteList();
-                            r = StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.length());
+                            ByteList strByteList = ((RubyString) str).getByteList();
+                            r = preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.length());
                             if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
                                 continue getc_needmore;
                             }
@@ -1926,12 +1955,12 @@ public class OpenFile implements Finalizable {
         if (Platform.IS_WINDOWS) {
             unreadWindows(context);
         } else {
-            unreadUnix(context);
+            unreadPosix();
         }
     }
 
     // io_unread, UNIX version
-    private synchronized void unreadUnix(ThreadContext context) {
+    private void unreadPosix() {
         long r;
         boolean locked = lock();
         try {
@@ -1951,7 +1980,6 @@ public class OpenFile implements Finalizable {
         } finally {
             if (locked) unlock();
         }
-        return;
     }
 
     // io_unread, Windows version
@@ -1996,7 +2024,7 @@ public class OpenFile implements Finalizable {
             }
 
             /* add extra offset for removed '\r' in rbuf */
-            extra_max = (long) (pos - rbuf.len);
+            extra_max = (pos - rbuf.len);
             pBytes = rbuf.ptr;
             p = rbuf.off;
 
@@ -2035,7 +2063,6 @@ public class OpenFile implements Finalizable {
         } finally {
             if (locked) unlock();
         }
-        return;
     }
 
     // MRI: io_fwrite
@@ -2060,8 +2087,7 @@ public class OpenFile implements Finalizable {
     }
 
     // do_writeconv
-    public IRubyObject doWriteconv(ThreadContext context, IRubyObject str)
-    {
+    public IRubyObject doWriteconv(ThreadContext context, IRubyObject str) {
         boolean locked = lock();
         try {
             if (needsWriteConversion(context)) {
@@ -2155,13 +2181,12 @@ public class OpenFile implements Finalizable {
                         wbuf.off = 0;
                     }
                     System.arraycopy(ptrBytes, ptr + offset, wbuf.ptr, wbuf.off + wbuf.len, len);
-                    wbuf.len += (int) len;
+                    wbuf.len += len;
                     n = 0;
                 }
-                if (io_fflush(context) < 0)
-                    return -1L;
-                if (n == 0)
-                    return len;
+
+                if (io_fflush(context) < 0) return -1L;
+                if (n == 0) return len;
 
                 checkClosed();
                 arg.fptr = this;
@@ -2206,7 +2231,7 @@ public class OpenFile implements Finalizable {
                 wbuf.off = 0;
             }
             System.arraycopy(ptrBytes, ptr + offset, wbuf.ptr, wbuf.off + wbuf.len, len);
-            wbuf.len += (int) len;
+            wbuf.len += len;
         } finally {
             if (locked) unlock();
         }
@@ -2233,7 +2258,7 @@ public class OpenFile implements Finalizable {
         public final ChannelFD fd;
         public final byte[] bufBytes;
         public final int buf;
-        public int capa;
+        public final int capa;
     }
 
     // rb_write_internal
@@ -2308,7 +2333,6 @@ public class OpenFile implements Finalizable {
                     dsBytes = buf;
                     ds = dpPtr.p = 0;
                     de = buf.length;
-                    dpPtr.p = 0;
                     res = writeconv.convert(null, null, 0, dsBytes, dpPtr, de, 0);
                     outer:
                     while ((dpPtr.p - ds) != 0) {
@@ -2317,7 +2341,7 @@ public class OpenFile implements Finalizable {
                             if (write_lock != null && write_lock.isWriteLockedByCurrentThread())
                                 r = writeInternal2(fd, dsBytes, ds, dpPtr.p - ds);
                             else
-                                r = writeInternal(runtime.getCurrentContext(), this, fd, dsBytes, ds, dpPtr.p - ds);
+                                r = writeInternal(context, this, fd, dsBytes, ds, dpPtr.p - ds);
                             if (r == dpPtr.p - ds)
                                 break outer;
                             if (0 <= r) {
@@ -2325,7 +2349,7 @@ public class OpenFile implements Finalizable {
                             }
                             if (waitWritable(context)) {
                                 if (fd == null)
-                                    return noalloc ? runtime.getTrue() : runtime.newIOError(RubyIO.CLOSED_STREAM_MSG).getException();
+                                    return noalloc ? context.tru : runtime.newIOError(RubyIO.CLOSED_STREAM_MSG).getException();
                                 continue retry;
                             }
                             break retry;
@@ -2335,35 +2359,35 @@ public class OpenFile implements Finalizable {
                     if (res == EConvResult.InvalidByteSequence ||
                             res == EConvResult.IncompleteInput ||
                             res == EConvResult.UndefinedConversion) {
-                        return noalloc ? runtime.getTrue() : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                        return noalloc ? context.tru : EncodingUtils.makeEconvException(runtime, writeconv).getException();
                     }
                 }
 
-                return runtime.getNil();
+                return context.nil;
             }
 
             res = EConvResult.DestinationBufferFull;
             while (res == EConvResult.DestinationBufferFull) {
                 if (wbuf.len == wbuf.capa) {
                     if (io_fflush(context) < 0)
-                        return noalloc ? runtime.getTrue() : runtime.newFixnum(posix.errno == null ? 0 : posix.errno.longValue());
+                        return noalloc ? context.tru : runtime.newFixnum(posix.errno == null ? 0 : posix.errno.longValue());
                 }
 
                 dsBytes = wbuf.ptr;
                 ds = dpPtr.p = wbuf.off + wbuf.len;
                 de = wbuf.capa;
                 res = writeconv.convert(null, null, 0, dsBytes, dpPtr, de, 0);
-                wbuf.len += (int) (dpPtr.p - ds);
+                wbuf.len += (dpPtr.p - ds);
                 if (res == EConvResult.InvalidByteSequence ||
                         res == EConvResult.IncompleteInput ||
                         res == EConvResult.UndefinedConversion) {
-                    return noalloc ? runtime.getTrue() : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                    return noalloc ? context.tru : EncodingUtils.makeEconvException(runtime, writeconv).getException();
                 }
             }
         } finally {
             if (locked) unlock();
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     // rb_io_set_nonblock
@@ -2389,7 +2413,6 @@ public class OpenFile implements Finalizable {
             if (fd.chSelect != null) {
                 try {
                     fd.chSelect.configureBlocking(blocking);
-                    return;
                 } catch (IOException ioe) {
                     throw runtime.newIOErrorFromException(ioe);
                 }
@@ -2569,9 +2592,30 @@ public class OpenFile implements Finalizable {
 //            #endif
             if (ret == -1) return -1;
         }
-        // TODO?
-//        rb_maygvl_fd_fix_cloexec(ret);
+        fdFixCloexec(posix, ret);
         return ret;
+    }
+
+    // MRI: rb_maygvl_fd_fix_cloexec, without compiler conditions
+    public static void fdFixCloexec(PosixShim posix, int fd) {
+        if (fd >= 0 && fd < FilenoUtil.FIRST_FAKE_FD) {
+            int flags, flags2, ret;
+            flags = posix.fcntlGetFD(fd); /* should not fail except EBADF. */
+            if (flags == -1) {
+                throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_GETFD) failed: %s", fd, posix.errno.description()));
+            }
+            if (fd <= 2)
+                flags2 = flags & ~FcntlLibrary.FD_CLOEXEC; /* Clear CLOEXEC for standard file descriptors: 0, 1, 2. */
+            else
+                flags2 = flags | FcntlLibrary.FD_CLOEXEC; /* Set CLOEXEC for non-standard file descriptors: 3, 4, 5, ... */
+            if (flags != flags2) {
+                ret = posix.fcntlSetFD(fd, flags2);
+                if (ret == -1) {
+                    throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_SETFD, %d) failed: %s", fd, flags2, posix.errno.description()));
+                }
+            }
+        }
+        // otherwise JVM sets cloexec
     }
 
     /**
@@ -2580,14 +2624,19 @@ public class OpenFile implements Finalizable {
      * @param thread A thread blocking on this IO
      */
     public void addBlockingThread(RubyThread thread) {
-        boolean locked = lock();
-        try {
-            if (blockingThreads == null) {
-                blockingThreads = new ArrayList<RubyThread>(1);
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            synchronized (this) {
+                blockingThreads = this.blockingThreads;
+                if (blockingThreads == null) {
+                    this.blockingThreads = blockingThreads = new HashSet<>(1);
+                }
             }
+        }
+
+        synchronized (blockingThreads) {
             blockingThreads.add(thread);
-        } finally {
-            if (locked) unlock();
         }
     }
 
@@ -2596,40 +2645,58 @@ public class OpenFile implements Finalizable {
      *
      * @param thread A thread blocking on this IO
      */
-    public synchronized void removeBlockingThread(RubyThread thread) {
-        boolean locked = lock();
-        try {
-            if (blockingThreads == null) {
-                return;
-            }
-            for (int i = 0; i < blockingThreads.size(); i++) {
-                if (blockingThreads.get(i) == thread) {
-                    // not using remove(Object) here to avoid the equals() call
-                    blockingThreads.remove(i);
-                }
-            }
-        } finally {
-            if (locked) unlock();
+    public void removeBlockingThread(RubyThread thread) {
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            return;
+        }
+
+        synchronized (blockingThreads) {
+            blockingThreads.remove(thread);
         }
     }
 
     /**
      * Fire an IOError in all threads blocking on this IO object
      */
-    public void interruptBlockingThreads() {
-        boolean locked = lock();
-        try {
-            if (blockingThreads == null) {
-                return;
-            }
-            for (int i = 0; i < blockingThreads.size(); i++) {
-                RubyThread thread = blockingThreads.get(i);
+    public void interruptBlockingThreads(ThreadContext context) {
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            return;
+        }
+
+        synchronized (blockingThreads) {
+            for (RubyThread thread : blockingThreads) {
+                // If it's the current thread, ignore it since we're the one doing the interrupting
+                if (thread == context.getThread()) continue;
 
                 // raise will also wake the thread from selection
-                thread.raise(new IRubyObject[]{runtime.newIOError("stream closed").getException()}, Block.NULL_BLOCK);
+                RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed in another thread"), Block.NULL_BLOCK);
+                thread.raise(Helpers.arrayOf(exception), Block.NULL_BLOCK);
             }
-        } finally {
-            if (locked) unlock();
+        }
+    }
+
+    /**
+     * Wait until all blocking threads have exited their blocking area. Use in combination with
+     * interruptBlockingThreads to ensure every blocking thread has moved on before proceding to
+     * manipulate the IO.
+     */
+    public void waitForBlockingThreads(ThreadContext context) {
+        Set<RubyThread> blockingThreads = this.blockingThreads;
+
+        if (blockingThreads == null) {
+            return;
+        }
+
+        while (blockingThreads.size() > 0) {
+            try {
+                context.getThread().sleep(1);
+            } catch (InterruptedException ie) {
+                break;
+            }
         }
     }
 

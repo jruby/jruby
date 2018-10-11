@@ -6,24 +6,7 @@ rescue Exception => ex
 end
 require 'rbconfig'
 
-# Determine if we need to put a 32 or 64 bit flag to the command-line
-# based on what java reports as the hardward architecture.
-def jvm_model
-  return nil if RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
-
-  case ENV_JAVA['os.arch']
-  when 'amd64', 'x86_64', 'sparcv9', 's390x' then
-    '-d64'
-  when 'i386', 'x86', 'powerpc', 'ppc', 'sparc' then
-    '-d32'
-  else
-    nil
-  end
-end
-
 def initialize_paths
-  self.class.const_set(:JVM_MODEL, jvm_model)
-
   ant.path(:id => "jruby.execute.classpath") do
     pathelement :path => "lib/jruby.jar"
   end
@@ -42,7 +25,7 @@ def initialize_paths
 end
 
 def jruby(java_options = {}, &code)
-  initialize_paths unless defined? JVM_MODEL
+  initialize_paths
 
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
@@ -53,7 +36,6 @@ def jruby(java_options = {}, &code)
 
   ant.java(java_options) do
     classpath :path => 'lib/jruby.jar'
-    jvmarg :line => JVM_MODEL if JVM_MODEL
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
   end
@@ -112,8 +94,8 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
-    arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
-    arg :line => "-T -J-XX:MaxPermSize=512M" if ENV_JAVA["java.version"] !~ /\A1\.8/
+    arg :line => "-T -J-XX:MaxMetaspaceSize=512M"
+    arg :line => "-T --debug"
     arg :line => "-f #{ms[:format]}"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
     arg :line => "#{ms[:spec_target]}" if ms[:spec_target]

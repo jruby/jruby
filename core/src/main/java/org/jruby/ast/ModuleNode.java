@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -29,6 +29,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.List;
@@ -44,17 +45,18 @@ public class ModuleNode extends Node implements IScopingNode {
     private final Colon3Node cpath;
     private final StaticScope scope;
     private final Node bodyNode;
+    private final int endLine;
 
-    public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode) {
+    public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode, int endLine) {
         super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
-        assert cpath != null : "cpath is not null";
         assert scope != null : "scope is not null";
         assert bodyNode != null : "bodyNode is not null";
 
         this.cpath = cpath;
         this.scope = scope;
         this.bodyNode = bodyNode;
+        this.endLine = endLine;
     }
 
     public NodeType getNodeType() {
@@ -77,7 +79,14 @@ public class ModuleNode extends Node implements IScopingNode {
     public Node getBodyNode() {
         return bodyNode;
     }
-    
+
+    /**
+     * Gets line where the 'end' was for this module.
+     */
+    public int getEndLine() {
+        return endLine;
+    }
+
     /**
      * Get the static scoping information.
      * 

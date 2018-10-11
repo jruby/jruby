@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Enumerable#to_h" do
   it "converts empty enumerable to empty hash" do
@@ -42,5 +42,13 @@ describe "Enumerable#to_h" do
   it "raises ArgumentError if an element is not a [key, value] pair" do
     enum = EnumerableSpecs::EachDefiner.new([:x])
     lambda { enum.to_h }.should raise_error(ArgumentError)
+  end
+
+  ruby_version_is "2.6" do
+    it "converts [key, value] pairs returned by the block to a hash" do
+      enum = EnumerableSpecs::EachDefiner.new(:a, :b)
+      i = 0
+      enum.to_h {|k| [k, i += 1]}.should == { a: 1, b: 2 }
+    end
   end
 end

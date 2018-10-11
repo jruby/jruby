@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,13 +26,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.embed.jsr223;
 
 import javax.script.Invocable;
 import javax.script.Compilable;
 import java.io.*;
-import java.lang.reflect.Field;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -69,18 +68,26 @@ import static org.junit.Assert.*;
  * @author Yoko Harada
  */
 public class JRubyEngineTest {
-    private String basedir = new File(System.getProperty("user.dir")).getParent();
 
-    static Logger logger0 = Logger.getLogger(JRubyEngineTest.class.getName());
-    static Logger logger1 = Logger.getLogger(JRubyEngineTest.class.getName());
+    private static final String basedir = new File(System.getProperty("user.dir")).getParent();
+
+    static final Logger logger0 = Logger.getLogger(JRubyEngineTest.class.getName());
+    static final Logger logger1 = Logger.getLogger(JRubyEngineTest.class.getName());
+
     static OutputStream outStream = null;
-    FileWriter writer = null;
 
-    public JRubyEngineTest() {
-    }
+    FileWriter writer;
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
+        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
+        logger0.addHandler(handler);
+        logger0.setUseParentHandlers(false);
+        logger0.setLevel(Level.INFO);
+        logger1.setUseParentHandlers(false);
+        logger1.addHandler(new ConsoleHandler());
+        logger1.setLevel(Level.WARNING);
     }
 
     @AfterClass
@@ -90,15 +97,6 @@ public class JRubyEngineTest {
 
     @Before
     public void setUp() throws FileNotFoundException, IOException {
-        outStream = new FileOutputStream(basedir + "/core/target/run-junit-embed.log", true);
-        Handler handler = new StreamHandler(outStream, new SimpleFormatter());
-        logger0.addHandler(handler);
-        logger0.setUseParentHandlers(false);
-        logger0.setLevel(Level.INFO);
-        logger1.setUseParentHandlers(false);
-        logger1.addHandler(new ConsoleHandler());
-        logger1.setLevel(Level.WARNING);
-
         writer = new FileWriter(basedir + "/core/target/run-junit-embed.txt", true);
     }
 
@@ -110,7 +108,7 @@ public class JRubyEngineTest {
     /**
      * Test of compile method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testCompile_String() throws Exception {
         logger1.info("[compile string]");
         ScriptEngine instance;
@@ -137,13 +135,12 @@ public class JRubyEngineTest {
         assertEquals(7.141592654, result.get(1), 0.000001);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of compile method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testCompile_Reader() throws Exception {
         logger1.info("[compile reader]");
         ScriptEngine instance;
@@ -169,14 +166,12 @@ public class JRubyEngineTest {
         assertEquals(expResult, result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
-
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_String_ScriptContext() throws Exception {
         logger1.info("[eval String with ScriptContext]");
         ScriptEngine instance;
@@ -217,16 +212,15 @@ public class JRubyEngineTest {
         assertEquals(expResult.get(0), result2, 0.01);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_String_ScriptContext2() throws Exception {
         logger1.info("[eval String with ScriptContext 2]");
-        ScriptEngine instance = null;
+        ScriptEngine instance;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
@@ -247,13 +241,12 @@ public class JRubyEngineTest {
         assertEquals(expResult, result, 0.01);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_Reader_ScriptContext() throws Exception {
         logger1.info("[eval Reader with ScriptContext]");
         ScriptEngine instance;
@@ -276,13 +269,12 @@ public class JRubyEngineTest {
         assertEquals(expResult, sw.toString().trim());
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_String() throws Exception {
         logger1.info("eval String");
         ScriptEngine instance;
@@ -301,18 +293,16 @@ public class JRubyEngineTest {
         assertEquals(expResult, result, 0.01);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_Reader() throws Exception {
         logger1.info("eval Reader");
         ScriptEngine instance;
         synchronized (this) {
-            System.setProperty("org.jruby.embed.class.path", basedir + "/lib/ruby/1.9");
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "global");
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -326,7 +316,6 @@ public class JRubyEngineTest {
         assertEquals(expResult, result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     private int getNextYear() {
@@ -338,7 +327,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_String_Bindings() throws Exception {
         logger1.info("eval String with Bindings");
         ScriptEngine instance;
@@ -360,18 +349,16 @@ public class JRubyEngineTest {
         assertEquals(expResult, result, 0.01);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testEval_Reader_Bindings() throws Exception {
         logger1.info("eval Reader with Bindings");
         ScriptEngine instance;
         synchronized(this) {
-            System.setProperty("org.jruby.embed.class.path", basedir + "/lib/ruby/1.9");
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -387,13 +374,12 @@ public class JRubyEngineTest {
         assertTrue(result.startsWith("Happy") || result.startsWith("You have"));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of get method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testGet() {
         logger1.info("get");
         ScriptEngine instance;
@@ -423,13 +409,12 @@ public class JRubyEngineTest {
         assertEquals(expResult, ((Map)result).get("Ruby"));
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of put method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testPut() {
         logger1.info("put");
         String key = "";
@@ -444,13 +429,12 @@ public class JRubyEngineTest {
         }
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of getBindings method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testGetBindings() throws ScriptException {
         logger1.info("getBindings");
         ScriptEngine instance;
@@ -482,13 +466,12 @@ public class JRubyEngineTest {
         assertEquals(0, result.size());
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of setBindings method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testSetBindings() throws ScriptException {
         logger1.info("setBindings");
         ScriptEngine instance;
@@ -512,13 +495,12 @@ public class JRubyEngineTest {
         assertEquals(expResult, result);
 
         instance.getBindings(ScriptContext.ENGINE_SCOPE).clear();
-        instance = null;
     }
 
     /**
      * Test of createBindings method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testCreateBindings() {
         logger1.info("createBindings");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -533,7 +515,7 @@ public class JRubyEngineTest {
     /**
      * Test of getContext method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testGetContext() {
         logger1.info("getContext");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -547,7 +529,7 @@ public class JRubyEngineTest {
     /**
      * Test of setContext method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testSetContext() {
         logger1.info("setContext");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -569,7 +551,7 @@ public class JRubyEngineTest {
     /**
      * Test of getFactory method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testGetFactory() {
         logger1.info("getFactory");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -586,7 +568,7 @@ public class JRubyEngineTest {
     /**
      * Test of invokeMethod method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testInvokeMethod() throws Exception {
         logger1.info("invokeMethod");
         ScriptEngine instance = newScriptEngine();
@@ -617,9 +599,24 @@ public class JRubyEngineTest {
     }
 
     /**
+     * Test of invokeMethod method throwing an exception with a null message.
+     */
+    @Test
+    public void testInvokeMethodWithJavaException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
+        try {
+            ((Invocable) instance).invokeMethod(Object.class,"trigger_npe", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            // javax.script.ScriptException is expected
+        }
+    }
+
+    /**
      * Test of invokeFunction method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testInvokeFunction() throws Exception {
         logger1.info("invokeFunction");
         ScriptEngine instance = newScriptEngine();
@@ -643,9 +640,24 @@ public class JRubyEngineTest {
     }
 
     /**
+     * Test of invokeFunction method throwing an exception with a null message.
+     */
+    @Test
+    public void testInvokeFunctionWithJavaException() throws Exception {
+        ScriptEngine instance = newScriptEngine();
+        instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
+        try {
+            ((Invocable) instance).invokeFunction("trigger_npe", null);
+            fail("Expected javax.script.ScriptException");
+        } catch (javax.script.ScriptException sex) {
+            // javax.script.ScriptException is expected
+        }
+    }
+
+    /**
      * Test of getInterface method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testGetInterface_Class() throws FileNotFoundException, ScriptException {
         logger1.info("getInterface (no receiver)");
         ScriptEngine instance = newScriptEngine();
@@ -667,7 +679,7 @@ public class JRubyEngineTest {
     /**
      * Test of getInterface method, of class Jsr223JRubyEngine.
      */
-    //@Test
+    @Test
     public void testGetInterface_Object_Class() throws FileNotFoundException, ScriptException {
         logger1.info("getInterface (with receiver)");
         ScriptEngine instance = newScriptEngine();
@@ -694,13 +706,12 @@ public class JRubyEngineTest {
     /*
      * Test of ScriptEngine.ARGV, JRUBY-4090
      */
-    //@Test
+    @Test
     public void testARGV() throws ScriptException {
         logger1.info("ScriptEngine.ARGV");
         ScriptEngine instance = newScriptEngine();
         instance.getContext().setErrorWriter(writer);
         String script = "" +
-//            "ARGV << 'foo' \n" +
             "if ARGV.length == 0\n" +
             "  raise 'Error No argv passed'\n" +
             "end";
@@ -711,7 +722,7 @@ public class JRubyEngineTest {
     /*
      * Test of ScriptEngine.ARGV, JRUBY-4090
      */
-    //@Test
+    @Test
     public void testARGV_2() throws ScriptException {
         logger1.info("ScriptEngine.ARGV before initialization");
         ScriptEngine instance = newScriptEngine();
@@ -719,7 +730,7 @@ public class JRubyEngineTest {
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put(ScriptEngine.ARGV, new String[]{"init params"});
         String script = "" +
-//            "ARGV << 'foo' \n" +
+            "ARGV << 'foo' \n" +
             "if ARGV.length == 0\n" +
             "  raise 'Error No argv passed'\n" +
             "end";
@@ -756,7 +767,7 @@ public class JRubyEngineTest {
         assertNotSame(obj1, obj2);
     }
 
-    //@Test
+    @Test
     public void testTermination() throws ScriptException {
         logger1.info("Termination Test");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -776,7 +787,7 @@ public class JRubyEngineTest {
         instance.getContext().setAttribute("org.jruby.embed.termination", false, ScriptContext.ENGINE_SCOPE);
     }
 
-    //@Test
+    @Test
     public void testClearVariables() throws ScriptException {
         logger1.info("Clear Variables Test");
         final ScriptEngine instance = newScriptEngine("singlethread", "global");

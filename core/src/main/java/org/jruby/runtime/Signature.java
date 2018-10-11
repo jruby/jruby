@@ -208,13 +208,15 @@ public class Signature {
         // ForNode can aggregate either a single node (required = 1) or masgn
         if (var instanceof MultipleAsgnNode) {
             MultipleAsgnNode masgn = (MultipleAsgnNode)var;
+            Rest rest = masgn.getRest() == null ? Rest.NONE : restFromArg(masgn.getRest());
 
-            Rest rest = Rest.NONE;
-            if (masgn.getRest() != null) {
-                Node restArg = masgn.getRest();
-                rest = restFromArg(restArg);
-            }
-            return Signature.from(masgn.getPreCount(), 0, masgn.getPostCount(), 0, 0, rest, -1);
+            // 'for' can only have rest and pre args (no post or opt).  If var is a masgn then it is either
+            // n > 1 args, it includes rest, or it is a special case (for th, in @bleh).  In this last case,
+            // we need to increase the arg count by one so our iter arg passing code will destructure the
+            // incoming args array and not just pass it through as a single value.
+            int argCount = masgn.getPreCount();
+            if (rest == Rest.NONE && argCount == 1) argCount = 2;
+            return Signature.from(argCount, 0, 0, 0, 0, rest, -1);
         }
         return Signature.ONE_ARGUMENT;
     }

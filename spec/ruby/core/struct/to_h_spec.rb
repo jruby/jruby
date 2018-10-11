@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Struct#to_h" do
   it "returns a Hash with members as keys" do
@@ -11,5 +11,13 @@ describe "Struct#to_h" do
     car = StructClasses::Car.new('Ford', 'Ranger')
     car.to_h[:make] = 'Suzuki'
     car.make.should == 'Ford'
+  end
+
+  ruby_version_is "2.6" do
+    it "converts [key, value] pairs returned by the block to a hash" do
+      car = StructClasses::Car.new('Ford', 'Ranger')
+      h = car.to_h {|k, v| [k.to_s, "#{v}".downcase]}
+      h.should == {"make" => "ford", "model" => "ranger", "year" => ""}
+    end
   end
 end

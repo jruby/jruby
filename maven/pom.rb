@@ -1,5 +1,5 @@
 project 'JRuby Artifacts' do
-  
+
   version = ENV['JRUBY_VERSION'] ||
     File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
@@ -22,6 +22,13 @@ project 'JRuby Artifacts' do
                                         'classifier' =>  'sources' },
                                       { 'file' =>  '${basedir}/src/empty.jar',
                                         'classifier' =>  'javadoc' } ] )
+    end
+
+    plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin', '1.2' ) do
+      execute_goals(
+          :artifacts,
+          phase: :package,
+          algorithms: ['SHA-256', 'SHA-512' ] )
     end
   end
 

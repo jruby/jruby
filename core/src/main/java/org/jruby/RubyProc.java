@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -32,6 +32,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
@@ -49,6 +50,8 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * @author  jpetersen
@@ -80,10 +83,8 @@ public class RubyProc extends RubyObject implements DataType {
 
 
     public RubyProc(Ruby runtime, RubyClass rubyClass, Block block, String file, int line) {
-        this(runtime, rubyClass, block.type);
+        this(runtime, rubyClass, block.type, file, line);
         this.block = block;
-        this.file = file;
-        this.line = line;
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
@@ -176,6 +177,9 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getLine());
             block = new Block(procBlock.getBody(), newBinding);
 
+            // Mark as escaped, so non-local flow errors immediately
+            block.escape();
+
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
             StaticScope newScope = oldScope.duplicate();
@@ -211,22 +215,19 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @Override
-    public IRubyObject to_s() {
-        return to_s19();
-    }
-
     @JRubyMethod(name = "to_s", alias = "inspect")
-    public IRubyObject to_s19() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append("#<Proc:0x").append(Integer.toString(System.identityHashCode(block), 16));
+    public IRubyObject to_s() {
+        Ruby runtime = getRuntime();
+        RubyString string = runtime.newString("#<");
+
+        string.append(types(runtime, type()));
+        string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         String file = block.getBody().getFile();
-        if (file != null) sb.append('@').append(file).append(':').append(block.getBody().getLine() + 1);
+        if (file != null) string.catString("@" + file + ":" + (block.getBody().getLine() + 1));
 
-        if (isLambda()) sb.append(" (lambda)");
-        sb.append('>');
-
-        IRubyObject string = RubyString.newString(getRuntime(), sb.toString());
+        if (isLambda()) string.catString(" (lambda)");
+        string.catString(">");
 
         if (isTaint()) string.setTaint(true);
 
@@ -236,14 +237,6 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "binding")
     public IRubyObject binding() {
         return getRuntime().newBinding(block.getBinding());
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return call19(context, args, block);
-    }
-
-    public IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, null, Block.NULL_BLOCK);
     }
 
     /**
@@ -267,13 +260,17 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
-    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
+        return call(context, args, null, Block.NULL_BLOCK);
+    }
+
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         assert args != null;
 
         Block newBlock;
@@ -307,15 +304,22 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (file != null) return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+        if (file != null) {
+            return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+        }
 
         if (block != null) {
             Binding binding = block.getBinding();
-            return runtime.newArray(runtime.newString(binding.getFile()),
-                    runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
+
+            // block+binding may exist for a core method, which will have a null filename
+            if (binding.getFile() != null) {
+                return runtime.newArray(
+                        runtime.newString(binding.getFile()),
+                        runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
+            }
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
@@ -341,6 +345,16 @@ public class RubyProc extends RubyObject implements DataType {
 
     private boolean isThread() {
         return type.equals(Block.Type.THREAD);
+    }
+
+    @Deprecated
+    public final IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
+        return call(context, args, block);
+    }
+
+    @Deprecated
+    public IRubyObject to_s19() {
+        return to_s();
     }
 
 }

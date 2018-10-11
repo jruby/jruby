@@ -61,27 +61,27 @@ describe "List Ruby extensions" do
   it "should support rindex() with no arguments" do
     list = java.util.Stack.new
     list << 1; list << 2; list << 3; list << 1; list << 2; list << 3
-    expect( list.rindex.each {|x| x < 2 } ).to eq(3)
+    expect( list.rindex.each { |x| x < 2 } ).to eq(3)
   end
 
   # Java 8 adds a single-parameter sort method to List that sorts in-place
-  if ENV_JAVA['java.specification.version'] < '1.8'
-    it "should be sortable with sort() without block" do
-      expect(@list.sort.to_a).to eq(@data.sort)
-    end
-
-    it "should be sortable with sort() with block" do
-      result = @list.sort do |a, b|
-        a.length <=> b.length
-      end
-
-      expected = @data.sort do |a, b|
-        a.length <=> b.length
-      end
-
-      expect(result.to_a).to eq(expected)
-    end
-  end
+  # if ENV_JAVA['java.specification.version'] < '1.8'
+  #   it "should be sortable with sort() without block" do
+  #     expect(@list.sort.to_a).to eq(@data.sort)
+  #   end
+  #
+  #   it "should be sortable with sort() with block" do
+  #     result = @list.sort do |a, b|
+  #       a.length <=> b.length
+  #     end
+  #
+  #     expected = @data.sort do |a, b|
+  #       a.length <=> b.length
+  #     end
+  #
+  #     expect(result.to_a).to eq(expected)
+  #   end
+  # end
 
   it "should be sortable with sort!() without block" do
     list = java.util.LinkedList.new(@data)
@@ -114,11 +114,7 @@ describe "List Ruby extensions" do
 
     list = java.util.LinkedList.new ['b','a','c']
     # list = list.sort { |a, b| a <=> b }
-    if TestHelper::JAVA_8
-      sorted = list.ruby_sort { |a, b| a <=> b }
-    else
-      sorted = list.sort { |a, b| a <=> b }
-    end
+    sorted = list.ruby_sort { |a, b| a <=> b }
     expect( sorted ).to be_a java.util.LinkedList
     expect( sorted.to_a ).to eq ['a','b','c']
     expect( sorted ).to_not be list

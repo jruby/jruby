@@ -1,14 +1,11 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "TCPSocket#setsockopt" do
   before :each do
     @server = SocketSpecs::SpecTCPServer.new
     @hostname = @server.hostname
-  end
-
-  before :each do
-    @sock = TCPSocket.new @hostname, SocketSpecs.port
+    @sock = TCPSocket.new @hostname, @server.port
   end
 
   after :each do

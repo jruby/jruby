@@ -1,7 +1,7 @@
 # frozen_string_literal: false
 require 'test/unit'
 require 'tempfile'
-require "thread"
+require "-test-/file"
 require_relative 'ut_eof'
 
 class TestFile < Test::Unit::TestCase
@@ -121,8 +121,8 @@ class TestFile < Test::Unit::TestCase
 
   def test_truncate_size
     Tempfile.create("test-truncate") do |f|
-      q1 = Queue.new
-      q2 = Queue.new
+      q1 = Thread::Queue.new
+      q2 = Thread::Queue.new
 
       th = Thread.new do
         data = ''
@@ -270,7 +270,7 @@ class TestFile < Test::Unit::TestCase
       a = File.join(tmpdir, "x")
       begin
         File.symlink(tst, a)
-      rescue Errno::EACCES
+      rescue Errno::EACCES, Errno::EPERM
         skip "need privilege"
       end
       assert_equal(File.join(realdir, tst), File.realpath(a))
@@ -280,6 +280,26 @@ class TestFile < Test::Unit::TestCase
       open(File.join(tmpdir, tst), "w") {}
       File.symlink(tst, a)
       assert_equal(File.join(realdir, tst), File.realpath(a.encode("UTF-8")))
+    }
+  end
+
+  def test_realpath_taintedness
+    Dir.mktmpdir('rubytest-realpath') {|tmpdir|
+      dir = File.realpath(tmpdir).untaint
+      File.write(File.join(dir, base = "test.file"), '')
+      base.taint
+      dir.taint
+      assert_predicate(File.realpath(base, dir), :tainted?)
+      base.untaint
+      dir.taint
+      assert_predicate(File.realpath(base, dir), :tainted?)
+      base.taint
+      dir.untaint
+      assert_predicate(File.realpath(base, dir), :tainted?)
+      base.untaint
+      dir.untaint
+      assert_not_predicate(File.realpath(base, dir), :tainted?)
+      assert_predicate(Dir.chdir(dir) {File.realpath(base)}, :tainted?)
     }
   end
 
@@ -358,6 +378,7 @@ class TestFile < Test::Unit::TestCase
       sleep 2
       File.write(path, "bar")
       sleep 2
+      File.read(path)
       File.chmod(0644, path)
       sleep 2
       File.read(path)
@@ -369,7 +390,7 @@ class TestFile < Test::Unit::TestCase
       if stat.birthtime != stat.ctime
         assert_in_delta t0+4, stat.ctime.to_f, delta
       end
-      unless /mswin|mingw/ =~ RUBY_PLATFORM
+      if /mswin|mingw/ !~ RUBY_PLATFORM && !Bug::File::Fs.noatime?(path)
         # Windows delays updating atime
         assert_in_delta t0+6, stat.atime.to_f, delta
       end
@@ -466,4 +487,24 @@ class TestFile < Test::Unit::TestCase
       assert_file.not_exist?(path)
     end
   end
+
+  def test_open_tempfile_path
+    Dir.mktmpdir(__method__.to_s) do |tmpdir|
+      begin
+        io = File.open(tmpdir, File::RDWR | File::TMPFILE)
+      rescue Errno::EINVAL
+        skip 'O_TMPFILE not supported (EINVAL)'
+      rescue Errno::EOPNOTSUPP
+        skip 'O_TMPFILE not supported (EOPNOTSUPP)'
+      end
+
+      io.write "foo"
+      io.flush
+      assert_equal 3, io.size
+      assert_raise(IOError) { io.path }
+    ensure
+      io&.close
+    end
+  end if File::Constants.const_defined?(:TMPFILE)
+
 end

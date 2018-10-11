@@ -1,5 +1,5 @@
 # coding: us-ascii
-# frozen_string_literal: false
+# frozen_string_literal: true
 
 require 'rdoc/test_case'
 
@@ -207,9 +207,7 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
   end
 
   def test_force_encoding
-    skip "Encoding not implemented" unless Object.const_defined? :Encoding
-
-    @comment.force_encoding Encoding::UTF_8
+    @comment = RDoc::Encoding.change_encoding @comment, Encoding::UTF_8
 
     assert_equal Encoding::UTF_8, @comment.text.encoding
   end
@@ -343,15 +341,13 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
   end
 
   def test_remove_private_encoding
-    skip "Encoding not implemented" unless Object.const_defined? :Encoding
-
     comment = RDoc::Comment.new <<-EOS, @top_level
 # This is text
 #--
 # this is private
     EOS
 
-    comment.force_encoding Encoding::IBM437
+    comment = RDoc::Encoding.change_encoding comment, Encoding::IBM437
 
     comment.remove_private
 
@@ -467,8 +463,6 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
   end
 
   def test_remove_private_toggle_encoding
-    skip "Encoding not implemented" unless Object.const_defined? :Encoding
-
     comment = RDoc::Comment.new <<-EOS, @top_level
 # This is text
 #--
@@ -477,7 +471,7 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
 # This is text again.
     EOS
 
-    comment.force_encoding Encoding::IBM437
+    comment = RDoc::Encoding.change_encoding comment, Encoding::IBM437
 
     comment.remove_private
 
@@ -485,8 +479,6 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
   end
 
   def test_remove_private_toggle_encoding_ruby_bug?
-    skip "Encoding not implemented" unless Object.const_defined? :Encoding
-
     comment = RDoc::Comment.new <<-EOS, @top_level
 #--
 # this is private
@@ -494,7 +486,7 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
 # This is text again.
     EOS
 
-    comment.force_encoding Encoding::IBM437
+    comment = RDoc::Encoding.change_encoding comment, Encoding::IBM437
 
     comment.remove_private
 
@@ -502,4 +494,3 @@ lines, one line per element. Lines are assumed to be separated by _sep_.
   end
 
 end
-

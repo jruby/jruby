@@ -1,0 +1,1 @@
+fails:Socket#initialize using a custom protocol raises TypeError when using a Symbol

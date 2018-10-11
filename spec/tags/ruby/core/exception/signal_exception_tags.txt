@@ -1,1 +1,1 @@
-critical(crash):rescueing SignalException raises a SignalException when sent a signal
+critical(crash):rescuing SignalException raises a SignalException when sent a signal

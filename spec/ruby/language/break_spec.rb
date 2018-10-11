@@ -1,5 +1,5 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/break', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/break'
 
 describe "The break statement in a block" do
   before :each do
@@ -24,6 +24,24 @@ describe "The break statement in a block" do
       value.should == :value
     end
   end
+
+  describe "captured and delegated to another method repeatedly" do
+    it "breaks out of the block" do
+      @program.looped_break_in_captured_block
+      ScratchPad.recorded.should ==  [:begin,
+                                      :preloop,
+                                      :predele,
+                                      :preyield,
+                                      :prebreak,
+                                      :postbreak,
+                                      :postyield,
+                                      :postdele,
+                                      :predele,
+                                      :preyield,
+                                      :prebreak,
+                                      :end]
+    end
+  end
 end
 
 describe "The break statement in a captured block" do
@@ -40,12 +58,12 @@ describe "The break statement in a captured block" do
 
     it "raises a LocalJumpError when invoking the block from a method" do
       lambda { @program.break_in_nested_method }.should raise_error(LocalJumpError)
-      ScratchPad.recorded.should == [:a, :xa, :c, :aa, :b]
+      ScratchPad.recorded.should == [:a, :xa, :cc, :aa, :b]
     end
 
     it "raises a LocalJumpError when yielding to the block" do
       lambda { @program.break_in_yielding_method }.should raise_error(LocalJumpError)
-      ScratchPad.recorded.should == [:a, :xa, :c, :aa, :b]
+      ScratchPad.recorded.should == [:a, :xa, :cc, :aa, :b]
     end
   end
 
@@ -58,6 +76,19 @@ describe "The break statement in a captured block" do
     it "raises a LocalJumpError when yielding to the block" do
       lambda { @program.break_in_yield_captured }.should raise_error(LocalJumpError)
       ScratchPad.recorded.should == [:a, :za, :xa, :zd, :aa, :zb]
+    end
+  end
+
+  describe "from another thread" do
+    it "raises a LocalJumpError when getting the value from another thread" do
+      thread_with_break = Thread.new do
+        begin
+          break :break
+        rescue LocalJumpError => e
+          e
+        end
+      end
+      thread_with_break.value.should be_an_instance_of(LocalJumpError)
     end
   end
 end

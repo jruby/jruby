@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.socket;
 
 import java.io.IOException;
@@ -32,20 +33,16 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
-import java.net.PortUnreachableException;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
@@ -61,8 +58,6 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
 import jnr.netdb.Protocol;
-import jnr.unixsocket.UnixServerSocket;
-import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 
@@ -72,17 +67,13 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.Sockaddr;
 
@@ -207,13 +198,9 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-
         SocketAddress addr = addressForChannel(context, arg);
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
-
-        return doConnectNonblock(context, addr, exception);
+        return doConnectNonblock(context, addr, extractExceptionArg(context, opts));
     }
 
     @JRubyMethod()
@@ -646,6 +633,8 @@ public class RubySocket extends RubyBasicSocket {
                     throw runtime.newErrnoEACCESError("Address already in use - " + caller + " for " + formatAddress(addr));
                 case "Address already in use" :
                     throw runtime.newErrnoEADDRINUSEError(caller + " for " + formatAddress(addr));
+                case "Protocol family unavailable" :
+                    throw runtime.newErrnoEADDRNOTAVAILError(caller + " for " + formatAddress(addr));
             }
 
             // This is ugly, but what can we do, Java provides the same exception type
@@ -696,22 +685,20 @@ public class RubySocket extends RubyBasicSocket {
         return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
     }
 
+    @Override
     @JRubyMethod
-    public IRubyObject close() {
+    public IRubyObject close(final ThreadContext context) {
         if (getOpenFile() != null) {
-            Ruby runtime = getRuntime();
-            if (isClosed()) {
-                return runtime.getNil();
-            }
+            if (isClosed()) return context.nil;
             openFile.checkClosed();
-            return rbIoClose(runtime);
+            return rbIoClose(context);
         }
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Override
     public RubyBoolean closed_p(ThreadContext context) {
-        if (getOpenFile() == null) return context.runtime.getFalse();
+        if (getOpenFile() == null) return context.fals;
 
         return super.closed_p(context);
     }

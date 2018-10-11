@@ -4,6 +4,8 @@ import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -11,17 +13,21 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
     protected final IRClosure closure;
-    protected ThreadLocal<EvalType> evalType; // null is treated as NONE (@see getEvalType())
+    ThreadLocal<EvalType> evalType;
 
     public IRBlockBody(IRScope closure, Signature signature) {
+        // ThreadLocal not set by default to avoid having many thread-local values initialized
+        // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
+        // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
+        this(closure, signature, new ThreadLocal());
+    }
+
+    /* internal */ IRBlockBody(IRScope closure, Signature signature, ThreadLocal evalType) {
         super(closure.getStaticScope(), signature);
         this.closure = (IRClosure) closure;
         this.fileName = closure.getFileName();
         this.lineNumber = closure.getLineNumber();
-        // null (not set) by default to avoid having many thread-local values initialized
-        // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
-        // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
-        this.evalType = new ThreadLocal();
+        this.evalType = evalType;
     }
 
     public final EvalType getEvalType() {
@@ -69,9 +75,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         if (canCallDirect()) {
             return callDirect(context, block, args, blockArg);
-        } else {
-            return commonYieldPath(context, block, Block.Type.PROC, prepareArgumentsForCall(context, args, block.type), null, blockArg);
         }
+        return commonYieldPath(context, block, Block.Type.PROC, prepareArgumentsForCall(context, args, block.type), null, blockArg);
     }
 
     @Override
@@ -111,44 +116,40 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         }
     }
 
-    IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, Block block, IRubyObject[] args) {
-        int blockArity = getSignature().arityValue();
+    private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, Block block, IRubyObject... args) {
+        int blockArity = signature.arityValue();
         if (blockArity == 1) {
             args = new IRubyObject[] { RubyArray.newArrayMayCopy(context.runtime, args) };
         }
 
-        if (canCallDirect()) {
-            return yieldDirect(context, block, args, null);
-        } else {
-            if (blockArity == 0) {
-                args = IRubyObject.NULL_ARRAY; // discard args
-            }
-            if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+        if (canCallDirect()) return yieldDirect(context, block, args, null);
 
-            return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
+        if (blockArity == 0) {
+            args = IRubyObject.NULL_ARRAY; // discard args
         }
+        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+
+        return commonYieldPath(context, block, Block.Type.NORMAL, args, null, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        return yieldSpecificMultiArgsCommon(context, block, new IRubyObject[]{arg0, arg1});
+        return yieldSpecificMultiArgsCommon(context, block, arg0, arg1);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return yieldSpecificMultiArgsCommon(context, block, new IRubyObject[]{arg0, arg1, arg2});
+        return yieldSpecificMultiArgsCommon(context, block, arg0, arg1, arg2);
     }
 
     private IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
-        IRubyObject val0 = Helpers.aryToAry(value);
+        final IRubyObject ary = Helpers.aryToAry(context, value);
 
-        if (val0.isNil()) return new IRubyObject[] { value };
+        if (ary == context.nil) return new IRubyObject[] { value };
 
-        if (!(val0 instanceof RubyArray)) {
-            throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
-        }
+        if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArray();
 
-        return ((RubyArray)val0).toJavaArray();
+        throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
     }
 
     protected IRubyObject doYieldLambda(ThreadContext context, Block block, IRubyObject value) {
@@ -172,12 +173,12 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         if (block.type == Block.Type.LAMBDA) return doYieldLambda(context, block, value);
 
-        int blockArity = getSignature().arityValue();
+        int blockArity = signature.arityValue();
 
         IRubyObject[] args;
         if (value == null) { // no args case from BlockBody.yieldSpecific
             args = IRubyObject.NULL_ARRAY;
-        } else if (!getSignature().hasKwargs() && blockArity >= -1 && blockArity <= 1) {
+        } else if (!signature.hasKwargs() && blockArity >= -1 && blockArity <= 1) {
             args = new IRubyObject[] { value };
         } else {
             args = toAry(context, value);
@@ -193,8 +194,18 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return commonYieldPath(context, block, Block.Type.NORMAL, args, self, Block.NULL_BLOCK);
     }
 
-    protected IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        throw new RuntimeException("commonYieldPath not implemented in base class. We should never get here.");
+    protected abstract IRubyObject commonYieldPath(ThreadContext context, Block block, Block.Type type, IRubyObject[] args, IRubyObject self, Block blockArg) ;
+
+    static void postYield(ThreadContext context, InterpreterContext ic, Binding binding, Visibility oldVis, Frame prevFrame) {
+        // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
+        // Ex: eval("...", foo.instance_eval { binding })
+        // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
+        binding.getFrame().setVisibility(oldVis);
+        if (ic.popDynScope()) {
+            context.postYield(binding, prevFrame);
+        } else {
+            context.postYieldNoScope(prevFrame);
+        }
     }
 
     public IRClosure getScope() {

@@ -1,6 +1,6 @@
 # Windows symlink support borrowed from djberg96/win32-file and ffi-win32-extensions
 
-if org.jruby.platform.Platform::IS_WINDOWS
+if JRuby::Util::ON_WINDOWS
 
   begin
     require 'ffi'
@@ -57,6 +57,8 @@ if org.jruby.platform.Platform::IS_WINDOWS
             attach_pfunc :PathRemoveExtensionW, [:buffer_in], :void
             attach_pfunc :PathStripToRootW, [:buffer_in], :bool
 
+            ffi_lib :kernel32
+
             # We use the presence or absence of this method to indicate everything bound successfully (jruby/jruby#3998)
             attach_pfunc :CreateSymbolicLinkW, [:buffer_in, :buffer_in, :dword], :bool
           rescue FFI::NotFoundError
@@ -110,44 +112,14 @@ if org.jruby.platform.Platform::IS_WINDOWS
           wtarget = target.wincode
 
           unless CreateSymbolicLinkW(wlink, wtarget, flags)
-            raise SystemCallError.new('CreateSymbolicLink', FFI.errno)
+            errno = FFI.errno
+            # FIXME: in MRI all win calling methods call into a large map between windows errors and unixy ones.  We
+            # need to add that map or possibly expost whatever we have in jnr-posix
+            raise Errno::EACCES.new('File.symlink') if errno == 1314 # ERROR_PRIVILEGE_NOT_HELD
+            raise SystemCallError.new('File.symlink', errno)
           end
 
           0 # Comply with spec
-        end
-
-        # Returns whether or not +file+ is a symlink.
-        #
-        def self.symlink?(file)
-          return false unless File.exist?(file)
-
-          bool  = false
-          wfile = string_check(file).wincode
-
-          attrib = GetFileAttributesW(wfile)
-
-          if attrib == INVALID_FILE_ATTRIBUTES
-            raise SystemCallError.new('GetFileAttributes', FFI.errno)
-          end
-
-          if attrib & FILE_ATTRIBUTE_REPARSE_POINT > 0
-            begin
-              find_data = WIN32_FIND_DATA.new
-              handle = FindFirstFileW(wfile, find_data)
-
-              if handle == INVALID_HANDLE_VALUE
-                raise SystemCallError.new('FindFirstFile', FFI.errno)
-              end
-
-              if find_data[:dwReserved0] == IO_REPARSE_TAG_SYMLINK
-                bool = true
-              end
-            ensure
-              CloseHandle(handle)
-            end
-          end
-
-          bool
         end
 
         private
@@ -174,7 +146,7 @@ if org.jruby.platform.Platform::IS_WINDOWS
 end
 
 # flock support for Solaris
-if org.jruby.platform.Platform::IS_SOLARIS
+if JRuby::Util::ON_SOLARIS
   begin
     require 'ffi'
   rescue LoadError

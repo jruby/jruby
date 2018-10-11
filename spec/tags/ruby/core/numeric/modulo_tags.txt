@@ -1,1 +1,0 @@
-fails:Numeric#% returns self - other * self.div(other)

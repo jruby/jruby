@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 
 class TestGemResolver < Gem::TestCase
@@ -521,11 +521,11 @@ class TestGemResolver < Gem::TestCase
     assert_equal req('>= 0'), dependency.requirement
 
     activated = e.conflict.activated
-    assert_equal 'c-2', activated.full_name
+    assert_equal 'c-1', activated.full_name
 
-    assert_equal dep('c', '>= 2'), activated.request.dependency
+    assert_equal dep('c', '= 1'), activated.request.dependency
 
-    assert_equal [dep('c', '= 1'), dep('c', '>= 2')],
+    assert_equal [dep('c', '>= 2'), dep('c', '= 1')],
                  e.conflict.conflicting_dependencies
   end
 
@@ -683,6 +683,32 @@ class TestGemResolver < Gem::TestCase
     assert_resolves_to [b1, c1, d2], r
   end
 
+  def test_sorts_by_source_then_version
+    sourceA = Gem::Source.new 'http://example.com/a'
+    sourceB = Gem::Source.new 'http://example.com/b'
+    sourceC = Gem::Source.new 'http://example.com/c'
+
+    spec_A_1 = new_spec 'some-dep', '0.0.1'
+    spec_A_2 = new_spec 'some-dep', '1.0.0'
+    spec_B_1 = new_spec 'some-dep', '0.0.1'
+    spec_B_2 = new_spec 'some-dep', '0.0.2'
+    spec_C_1 = new_spec 'some-dep', '0.1.0'
+
+    set = StaticSet.new [
+      Gem::Resolver::SpecSpecification.new(nil, spec_B_1, sourceB),
+      Gem::Resolver::SpecSpecification.new(nil, spec_B_2, sourceB),
+      Gem::Resolver::SpecSpecification.new(nil, spec_C_1, sourceC),
+      Gem::Resolver::SpecSpecification.new(nil, spec_A_2, sourceA),
+      Gem::Resolver::SpecSpecification.new(nil, spec_A_1, sourceA),
+    ]
+
+    dependency = make_dep 'some-dep', '> 0'
+
+    resolver = Gem::Resolver.new [dependency], set
+
+    assert_resolves_to [spec_B_2], resolver
+  end
+
   def test_select_local_platforms
     r = Gem::Resolver.new nil, nil
 
@@ -693,6 +719,18 @@ class TestGemResolver < Gem::TestCase
     selected = r.select_local_platforms [a1, a1_p1, a1_p2]
 
     assert_equal [a1, a1_p1], selected
+  end
+
+  def test_search_for_local_platform_partial_string_match
+    a1    = util_spec 'a', 1
+    a1_p1 = util_spec 'a', 1 do |s| s.platform = Gem::Platform.local.os end
+    a1_p2 = util_spec 'a', 1 do |s| s.platform = 'unknown'              end
+
+    s = set(a1_p1, a1_p2, a1)
+    d = [make_dep('a')]
+    r = Gem::Resolver.new(d, s)
+
+    assert_resolves_to [a1_p1], r
   end
 
   def test_raises_and_explains_when_platform_prevents_install

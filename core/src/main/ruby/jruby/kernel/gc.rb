@@ -70,12 +70,10 @@ module GC
     module Profiler
       def self.__setup__
         @profiler ||= begin
-          java.lang.Class.forName('com.sun.management.GarbageCollectionNotificationInfo')
-
-          # class exists, proceed with GC notification version
-          @profiler = NotifiedProfiler.new
-        rescue java.lang.ClassNotFoundException
-          @profiler = NormalProfiler.new
+          NotifiedProfiler.new!
+          # class exists and Java dependecies are also present, proceed with GC notification version
+        rescue NameError
+          NormalProfiler.new
         end
       end
 
@@ -115,27 +113,14 @@ module GC
       end
 
       begin
-        javax.management.NotificationListener # try to access
         class NotifiedProfiler
           HEADER = "   ID  Type                      Timestamp(sec)    Before(kB)     After(kB)    Delta(kB)        Heap(kB)          GC Time(ms) \n"
           FORMAT = "%5d  %-20s %19.4f %13i %13i %12i %15i %20.10f\n"
 
-          class GCListener
-            include javax.management.NotificationListener
-
-            def initialize
-              @lines = []
-            end
-
-            attr_accessor :lines
-
-            def handleNotification(notification, o)
-              lines << notification
-            end
-
-            def clear
-              lines.clear
-            end
+          def self.new!
+            javax.management.NotificationListener # try to access
+            com.sun.management.GarbageCollectionNotificationInfo
+            new
           end
 
           def enabled?
@@ -143,7 +128,27 @@ module GC
           end
 
           def enable
-            @gc_listener ||= GCListener.new
+            @gc_listener ||= begin
+              # delay JI class-loading, generate listener on first use :
+              gc_listener = Class.new do # GCListener
+                include javax.management.NotificationListener
+
+                def initialize
+                  @lines = []
+                end
+
+                attr_accessor :lines
+
+                def handleNotification(notification, o)
+                  lines << notification
+                end
+
+                def clear
+                  lines.clear
+                end
+              end
+              gc_listener.new
+            end
             java.lang.management.ManagementFactory.garbage_collector_mx_beans.each do |gc_bean|
               gc_bean.add_notification_listener @gc_listener, nil, nil
             end
@@ -233,6 +238,7 @@ module GC
             return duration / 1000.0
           end
         end
+        private_constant :NotifiedProfiler
       rescue Exception
         # ignore, leave it undefined
       end
@@ -278,6 +284,7 @@ module GC
           (time - @start_time) / 1000.0
         end
       end
+      private_constant :NormalProfiler
     end
   end
 end

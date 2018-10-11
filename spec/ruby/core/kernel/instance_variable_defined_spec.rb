@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel#instance_variable_defined?" do
   before do
@@ -31,5 +31,11 @@ describe "Kernel#instance_variable_defined?" do
       obj = mock("kernel instance_variable_defined?")
       @instance.instance_variable_defined? obj
     end.should raise_error(TypeError)
+  end
+
+  it "returns false if the instance variable is not defined for different types" do
+    [nil, false, true, 1, 2.0, :test, "test"].each do |obj|
+      obj.instance_variable_defined?("@goodbye").should be_false
+    end
   end
 end

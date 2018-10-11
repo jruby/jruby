@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 describe 'The -C command line option' do
   before :all do
@@ -8,6 +8,11 @@ describe 'The -C command line option' do
 
   it 'changes the PWD when using a file' do
     output = ruby_exe(@script, options: "-C #{@tempdir}")
+    output.should == @tempdir
+  end
+
+  it 'does not need a space after -C for the argument' do
+    output = ruby_exe(@script, options: "-C#{@tempdir}")
     output.should == @tempdir
   end
 

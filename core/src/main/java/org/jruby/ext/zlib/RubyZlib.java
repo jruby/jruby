@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,12 +30,8 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.zlib;
-
-import java.lang.reflect.Field;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
@@ -66,29 +62,14 @@ import org.jruby.util.ByteList;
 
 import com.jcraft.jzlib.JZlib;
 
-import static org.jruby.CompatVersion.*;
-
 @JRubyModule(name="Zlib")
 public class RubyZlib {
     // version
     public final static String ZLIB_VERSION = "1.2.3.3";
     public final static String VERSION = "0.6.0";
 
-    private static final Field crc32InternalField = getCRC32InternalField();
-
-    private static final Field getCRC32InternalField() {
-        try {
-            Field field = CRC32.class.getDeclaredField("crc");
-            field.setAccessible(true);
-            field.setInt(new CRC32(), 1);
-            return field;
-        } catch(Exception e) {
-            return null;
-        }
-    }
-
     /** Create the Zlib module and add it to the Ruby runtime.
-     * 
+     *
      */
     public static RubyModule createZlibModule(Ruby runtime) {
         RubyModule mZlib = runtime.defineModule("Zlib");
@@ -208,26 +189,22 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
-        int start = 0;
+        long start = 0;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int)RubyNumeric.num2long(args[1]);
+        if (!args[1].isNil()) start = RubyNumeric.num2long(args[1]);
+        start &= 0xFFFFFFFFL;
 
-        CRC32 checksum = new CRC32();
-        boolean slow = crc32InternalField == null;
+        final boolean slowPath = start != 0;
+        final int bytesLength = bytes == null ? 0 : bytes.length();
+        long result = 0;
         if (bytes != null) {
-            if (start != 0 && !slow) {
-                try {
-                    crc32InternalField.setInt(checksum, start);
-                } catch (IllegalAccessException iae) {
-                    slow = true;
-                }
-            }
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            CRC32 checksum = new CRC32();
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytesLength);
+            result = checksum.getValue();
         }
-        long result = checksum.getValue();
-        if (start != 0 && slow) {
-            result = JZlib.crc32_combine(start, result, bytes.length());
+        if (slowPath) {
+            result = JZlib.crc32_combine(start, result, bytesLength);
         }
         return recv.getRuntime().newFixnum(result);
     }
@@ -251,7 +228,7 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(result);
     }
 
-    @JRubyMethod
+    @JRubyMethod(module = true)
     public static IRubyObject inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
         return JZlibInflate.s_inflate(context, recv, string);
     }
@@ -320,7 +297,7 @@ public class RubyZlib {
 
     static RaiseException newZlibError(Ruby runtime, String klass, String message) {
         RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
-        return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
+        return RaiseException.from(runtime, errorClass, message);
     }
 
     static RaiseException newGzipFileError(Ruby runtime, String message) {
@@ -344,12 +321,12 @@ public class RubyZlib {
         RubyException excn = RubyException.newException(runtime, errorClass, message);
         // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
         excn.setInstanceVariable("@input", runtime.getNil());
-        return new RaiseException(excn, true);
+        return excn.toThrowable();
     }
-    
+
     static int FIXNUMARG(IRubyObject obj, int ifnil) {
         if (obj.isNil()) return ifnil;
-        
+
         return RubyNumeric.fix2int(obj);
     }
 }

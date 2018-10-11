@@ -55,7 +55,7 @@ public class TestRegexpCache extends TestRubyBase {
         assertNotNull( RubyRegexp.patternCache.get(strBytes) );
 
         // str[0] = 'R'
-        str.op_aset19(runtime.getCurrentContext(), runtime.newFixnum(0), RubyString.newString(runtime, "R"));
+        str.op_aset(runtime.getCurrentContext(), runtime.newFixnum(0), RubyString.newString(runtime, "R"));
 
         assertEquals(ByteList.create("Regexp"), strBytes);
 

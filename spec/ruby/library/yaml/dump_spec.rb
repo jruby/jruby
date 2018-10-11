@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 # TODO: WTF is this using a global?
 describe "YAML.dump" do
@@ -42,6 +42,10 @@ describe "YAML.dump" do
 
   it "dumps a File without any state" do
     file = File.new(__FILE__)
-    YAML.dump(file).should match_yaml("--- !ruby/object:File {}\n")
+    begin
+      YAML.dump(file).should match_yaml("--- !ruby/object:File {}\n")
+    ensure
+      file.close
+    end
   end
 end

@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Numeric#to_c" do
   before :all do
@@ -29,7 +29,7 @@ describe "Numeric#to_c" do
   it "uses self as the real component" do
     @numbers.each do |number|
       real = number.to_c.real
-      if number.to_f.nan?
+      if Float === number and number.nan?
         real.nan?.should be_true
       else
         real.should == number

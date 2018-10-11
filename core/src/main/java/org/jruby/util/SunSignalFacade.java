@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import org.jruby.Ruby;
@@ -38,7 +39,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
@@ -58,8 +58,8 @@ public class SunSignalFacade implements SignalFacade {
      * to emulate {@code Signal.trap(...,"DEFAULT")} that's supposed to restore the platform
      * default handler.
      */
-    private final Map<Signal, SignalHandler> original = new HashMap<Signal, SignalHandler>();
-    private final Map<String, SignalHandler> fakeOriginal = new HashMap<String, SignalHandler>();
+    private final Map<Signal, SignalHandler> original = new HashMap<>(4);
+    private final Map<String, SignalHandler> fakeOriginal = new HashMap<>(4);
     
     private final static class JRubySignalHandler implements SignalHandler {
         private final Ruby runtime;
@@ -115,7 +115,7 @@ public class SunSignalFacade implements SignalFacade {
     }
 
     private IRubyObject trap(final Ruby runtime, final JRubySignalHandler handler) {
-        return trap(runtime,handler.signal,handler);
+        return trap(runtime,handler.signal, handler);
     }
 
     public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
@@ -137,7 +137,7 @@ public class SunSignalFacade implements SignalFacade {
             synchronized (fakeOriginal) {
                 handler = fakeOriginal.remove(sig.toString());
             }
-            return getSignalResult(runtime, handler, null, true);
+            return getSignalResult(runtime, handler, true);
         }
     }
 
@@ -172,11 +172,11 @@ public class SunSignalFacade implements SignalFacade {
             handled = signalName.equals("EXIT");
         }
 
-        return getSignalResult(runtime, oldHandler, signal, handled);
+        return getSignalResult(runtime, oldHandler, handled);
     }
 
-    private IRubyObject getSignalResult(final Ruby runtime, final SignalHandler oldHandler, final Signal signal, boolean handled) {
-        IRubyObject[] retVals = new IRubyObject[] {null, runtime.newBoolean(handled)};
+    private static IRubyObject getSignalResult(final Ruby runtime, final SignalHandler oldHandler, boolean handled) {
+        IRubyObject[] retVals = new IRubyObject[] { null, runtime.newBoolean(handled) };
         BlockCallback callback = null;
 
         if (oldHandler instanceof JRubySignalHandler) {

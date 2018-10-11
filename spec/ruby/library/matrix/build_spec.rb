@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 require 'matrix'
 
 describe "Matrix.build" do
@@ -24,7 +24,7 @@ describe "Matrix.build" do
 
   it "returns an Enumerator is no block is given" do
     enum = Matrix.build(2, 1)
-    enum.should  be_an_instance_of(Enumerator)
+    enum.should be_an_instance_of(Enumerator)
     enum.each{1}.should == Matrix[[1], [1]]
   end
 

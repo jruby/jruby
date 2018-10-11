@@ -1,19 +1,19 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../shared/new', __FILE__)
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
+require_relative 'shared/new'
 
 describe "UNIXServer.open" do
   it_behaves_like :unixserver_new, :open
 
   platform_is_not :windows do
     before :each do
-      @path = tmp("unixserver_spec")
-      rm_r @path
+      @path = SocketSpecs.socket_path
     end
 
     after :each do
       @server.close if @server
       @server = nil
-      rm_r @path
+      SocketSpecs.rm_socket @path
     end
 
     it "yields the new UNIXServer object to the block, if given" do

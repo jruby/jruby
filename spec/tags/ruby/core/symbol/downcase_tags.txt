@@ -1,0 +1,1 @@
+fails:Symbol#downcase uncapitalizes all Unicode characters

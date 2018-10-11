@@ -1,13 +1,13 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../../../shared/kernel/raise', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../shared/kernel/raise'
 
 describe "Thread#raise" do
-  it "ignores dead threads" do
+  it "ignores dead threads and returns nil" do
     t = Thread.new { :dead }
     Thread.pass while t.alive?
-    lambda {t.raise("Kill the thread")}.should_not raise_error
-    lambda {t.value}.should_not raise_error
+    t.raise("Kill the thread").should == nil
+    t.join
   end
 end
 
@@ -51,17 +51,19 @@ describe "Thread#raise on a sleeping thread" do
 
   it "is captured and raised by Thread#value" do
     t = Thread.new do
+      Thread.current.report_on_exception = false
       sleep
     end
 
     ThreadSpecs.spin_until_sleeping(t)
 
     t.raise
-    lambda { t.value }.should raise_error(RuntimeError)
+    -> { t.value }.should raise_error(RuntimeError)
   end
 
   it "raises a RuntimeError when called with no arguments inside rescue" do
     t = Thread.new do
+      Thread.current.report_on_exception = false
       begin
         1/0
       rescue ZeroDivisionError
@@ -74,7 +76,7 @@ describe "Thread#raise on a sleeping thread" do
       ThreadSpecs.spin_until_sleeping(t)
       t.raise
     end
-    lambda {t.value}.should raise_error(RuntimeError)
+    -> { t.value }.should raise_error(RuntimeError)
   end
 end
 
@@ -113,16 +115,18 @@ describe "Thread#raise on a running thread" do
 
   it "can go unhandled" do
     t = Thread.new do
+      Thread.current.report_on_exception = false
       loop { Thread.pass }
     end
 
     t.raise
-    lambda {t.value}.should raise_error(RuntimeError)
+    -> { t.value }.should raise_error(RuntimeError)
   end
 
   it "raises the given argument even when there is an active exception" do
     raised = false
     t = Thread.new do
+      Thread.current.report_on_exception = false
       begin
         1/0
       rescue ZeroDivisionError
@@ -135,18 +139,19 @@ describe "Thread#raise on a running thread" do
     rescue
       Thread.pass until raised
       t.raise RangeError
-      lambda {t.value}.should raise_error(RangeError)
+      -> { t.value }.should raise_error(RangeError)
     end
   end
 
   it "raises a RuntimeError when called with no arguments inside rescue" do
     raised = false
     t = Thread.new do
+      Thread.current.report_on_exception = false
       begin
         1/0
       rescue ZeroDivisionError
         raised = true
-        loop { }
+        loop { Thread.pass }
       end
     end
     begin
@@ -155,7 +160,7 @@ describe "Thread#raise on a running thread" do
       Thread.pass until raised
       t.raise
     end
-    lambda {t.value}.should raise_error(RuntimeError)
+    -> { t.value }.should raise_error(RuntimeError)
   end
 end
 
@@ -164,12 +169,13 @@ describe "Thread#raise on same thread" do
 
   it "raises a RuntimeError when called with no arguments inside rescue" do
     t = Thread.new do
+      Thread.current.report_on_exception = false
       begin
         1/0
       rescue ZeroDivisionError
         Thread.current.raise
       end
     end
-    lambda {t.value}.should raise_error(RuntimeError)
+    -> { t.value }.should raise_error(RuntimeError)
   end
 end

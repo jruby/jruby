@@ -11,7 +11,6 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.objectweb.asm.ClassReader;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -73,16 +72,8 @@ public class CompiledScriptLoader {
     }
 
     public static String getFilenameFromPathAndName(File resourcePath, String resourceName, boolean isAbsolute) {
-        String name = normalizeSeps(resourceName);
-        File path = resourcePath;
-
-        if(path != null && !isAbsolute) {
-            // Note: We use RubyFile's canonicalize rather than Java's,
-            // because Java's will follow symlinks and result in __FILE__
-            // being set to the target of the symlink rather than the
-            // filename provided.
-            name = normalizeSeps(canonicalize(path.getPath()));
-        }
-        return name;
+        // Note: We use RubyFile's canonicalize rather than Java's for relative paths because Java's will follow
+        // symlinks and result in __FILE__ being set to the target of the symlink rather than the filename provided.
+        return normalizeSeps(resourcePath != null && !isAbsolute ? canonicalize(resourcePath.getPath()) : resourceName);
     }
 }

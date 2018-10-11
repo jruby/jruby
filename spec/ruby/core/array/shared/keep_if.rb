@@ -1,4 +1,4 @@
-require File.expand_path('../../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../enumerable/shared/enumeratorized'
 
 describe :keep_if, shared: true do
   it "deletes elements for which the block returns a false value" do
@@ -41,8 +41,8 @@ describe :keep_if, shared: true do
         @frozen.should == @origin
       end
 
-      it "raises a RuntimeError" do
-        lambda { @frozen.send(@method) { true } }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class}" do
+        lambda { @frozen.send(@method) { true } }.should raise_error(frozen_error_class)
       end
     end
 
@@ -52,8 +52,8 @@ describe :keep_if, shared: true do
         @frozen.should == @origin
       end
 
-      it "raises a RuntimeError" do
-        lambda { @frozen.send(@method) { false } }.should raise_error(RuntimeError)
+      it "raises a #{frozen_error_class}" do
+        lambda { @frozen.send(@method) { false } }.should raise_error(frozen_error_class)
       end
     end
   end

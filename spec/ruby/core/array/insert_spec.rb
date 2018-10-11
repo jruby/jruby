@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#insert" do
   it "returns self" do
@@ -67,12 +67,12 @@ describe "Array#insert" do
     lambda { [].insert() }.should raise_error(ArgumentError)
   end
 
-  it "raises a RuntimeError on frozen arrays when the array is modified" do
-    lambda { ArraySpecs.frozen_array.insert(0, 'x') }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on frozen arrays when the array is modified" do
+    lambda { ArraySpecs.frozen_array.insert(0, 'x') }.should raise_error(frozen_error_class)
   end
 
   # see [ruby-core:23666]
-  it "raises a RuntimeError on frozen arrays when the array would not be modified" do
-    lambda { ArraySpecs.frozen_array.insert(0)      }.should raise_error(RuntimeError)
+  it "raises a #{frozen_error_class} on frozen arrays when the array would not be modified" do
+    lambda { ArraySpecs.frozen_array.insert(0) }.should raise_error(frozen_error_class)
   end
 end

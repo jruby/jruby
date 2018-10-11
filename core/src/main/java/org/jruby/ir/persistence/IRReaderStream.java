@@ -9,6 +9,7 @@ package org.jruby.ir.persistence;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -128,6 +129,11 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     }
 
     @Override
+    public RubySymbol decodeSymbol() {
+        return currentScope.getManager().getRuntime().newSymbol(decodeByteList());
+    }
+
+    @Override
     public String decodeString() {
         int strLength = decodeInt();
 
@@ -146,6 +152,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public void addScope(IRScope scope) {
         scopes.add(scope);
+        currentScope = scope;
     }
 
     @Override
@@ -217,7 +224,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case B_TRUE: return BTrueInstr.decode(this);
             case B_UNDEF: return BUndefInstr.decode(this);
             case BACKTICK_STRING: return BacktickInstr.decode(this);
-            case BEQ: return BEQInstr.decode(this);
             case BINDING_LOAD: return LoadLocalVarInstr.decode(this);
             case BINDING_STORE: return StoreLocalVarInstr.decode(this);
             case BLOCK_GIVEN: return BlockGivenInstr.decode(this);

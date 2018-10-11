@@ -1,4 +1,4 @@
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../fixtures/classes'
 
 platform_is :windows do
   require 'win32ole'
@@ -15,7 +15,7 @@ platform_is :windows do
     end
 
     it "dispatches the method bound to a specific ID" do
-      @shell._invoke(0x60020002, [0], [WIN32OLE::VARIANT::VT_VARIANT]).title.should =~ /Desktop/i
+      @shell._invoke(0x60020002, [37], [WIN32OLE::VARIANT::VT_VARIANT]).title.should =~ /System32/i
     end
 
   end

@@ -83,13 +83,20 @@ module DefinedSpecs
     end
 
     def global_variable_read
-      value = $defined_specs_global_variable_read
+      suppress_warning do
+        value = $defined_specs_global_variable_read
+      end
       defined? $defined_specs_global_variable_read
     end
 
     def global_variable_defined
       $defined_specs_global_variable_defined = 1
       defined? $defined_specs_global_variable_defined
+    end
+
+    def global_variable_defined_as_nil
+      $defined_specs_global_variable_defined_as_nil = nil
+      defined? $defined_specs_global_variable_defined_as_nil
     end
 
     def class_variable_undefined

@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'getoptlong'
 
 describe "GetoptLong#terminate" do
@@ -11,16 +11,11 @@ describe "GetoptLong#terminate" do
     )
   end
 
-  it "terminates option proccessing" do
-    begin
-      old_argv = ARGV
-      ARGV = [ "--size", "10k", "-v", "-q", "a.txt", "b.txt" ]
-
+  it "terminates option processing" do
+    argv [ "--size", "10k", "-v", "-q", "a.txt", "b.txt" ] do
       @opts.get.should == [ "--size", "10k" ]
       @opts.terminate
       @opts.get.should == nil
-    ensure
-      ARGV = old_argv
     end
   end
 

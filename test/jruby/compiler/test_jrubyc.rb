@@ -2,11 +2,11 @@ require 'test/unit'
 require 'stringio'
 require 'tempfile'
 require 'fileutils'
-require 'java'
-require 'jruby/jrubyc'
 
-class TestJrubyc < Test::Unit::TestCase
-  def setup
+class TestJRubyc < Test::Unit::TestCase
+
+  def setup; require 'jruby/jrubyc'
+
     @tempfile_stdout = Tempfile.open("test_jrubyc_stdout")
     @old_stdout = $stdout.dup
     $stdout.reopen @tempfile_stdout
@@ -19,65 +19,58 @@ class TestJrubyc < Test::Unit::TestCase
   end
 
   def teardown
-    FileUtils.rm_rf(["foo", "ruby"])
-    $stdout.reopen(@old_stdout)
-    $stderr.reopen(@old_stderr)
+    FileUtils.rm_rf(["foo", "ruby"]) rescue nil
+
+    $stdout.reopen(@old_stdout) if @old_stdout
+    $stderr.reopen(@old_stderr) if @old_stderr
+
+    $compile_test = nil; $encoding = nil
   end
 
-=begin Neither of these tests seem to work running under rake. FIXME
   def test_basic
-    begin
-      JRuby::Compiler::compile_argv(["--verbose", __FILE__])
-      output = File.read(@tempfile_stdout.path)
+    JRuby::Compiler::compile_argv ["--verbose", __FILE__]
 
-      assert_equal(
-        "Compiling #{__FILE__}\n",
-        output)
+    output = File.read(@tempfile_stdout.path)
+    assert_equal "Compiling #{__FILE__}\n", output
 
-      class_file = __FILE__.gsub('.rb', '.class')
+    class_file = __FILE__.sub('.rb', '.class')
 
-      assert(File.exist?(class_file))
-    ensure
-      File.delete(class_file) rescue nil
-    end
+    assert File.exist?(class_file)
+  ensure
+    ( class_file && FileUtils.rm_rf(class_file) ) rescue nil
   end
 
   def test_target
     tempdir = File.dirname(@tempfile_stdout.path)
-    JRuby::Compiler::compile_argv(["--verbose", "-t", tempdir, __FILE__])
+    class_file = File.join(tempdir, __FILE__.sub('.rb', '.class'))
+
+    JRuby::Compiler::compile_argv ["--verbose", "--target", tempdir, __FILE__]
+
     output = File.read(@tempfile_stdout.path)
+    assert_equal "Compiling #{__FILE__}\n", output
 
-    assert_equal(
-      "Compiling #{__FILE__}\n",
-      output)
-
-    assert(File.exist?(tempdir + "/test/compiler/test_jrubyc.class"))
-    FileUtils.rm_rf(tempdir + "/test/compiler/test_jrubyc.class")
+    assert File.exist?(class_file)
+  ensure
+    ( class_file && FileUtils.rm_rf(class_file) ) rescue nil
   end
-=end
 
   def test_bad_target
     begin
       JRuby::Compiler::compile_argv(["--verbose", "-t", "does_not_exist", __FILE__])
+      fail "expected #{__method__} to raise"
     rescue Exception => e
+      assert_equal "Target dir not found: does_not_exist", e.message
     end
-
-    assert(e)
-    assert_equal(
-      "Target dir not found: does_not_exist",
-      e.message)
   end
 
   def test_require
     $compile_test = false
-    File.open("test_file1.rb", "w") {|file| file.write("$compile_test = true")}
+    File.open("test_file1.rb", "w") { |file| file.write("$compile_test = true") }
 
     JRuby::Compiler::compile_argv(["--verbose", "test_file1.rb"])
     output = File.read(@tempfile_stdout.path)
 
-    assert_equal(
-      "Compiling test_file1.rb\n",
-      output)
+    assert_equal "Compiling test_file1.rb\n", output
 
     assert_nothing_raised { require 'test_file1' }
     assert($compile_test)
@@ -103,9 +96,10 @@ class TestJrubyc < Test::Unit::TestCase
 
   # only filesystem installations of jruby can compile ruby to java
   if !(RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//))
+
     def test_signature_with_arg_named_result
       $compile_test = false
-      File.open("test_file2.rb", "w") {|file| file.write(<<-RUBY
+      File.open("test_file2.rb", "w") { |file| file.write(<<-RUBY
       class C
         java_signature 'public int f(int result)'
         def f(arg)
@@ -120,7 +114,7 @@ class TestJrubyc < Test::Unit::TestCase
       JRuby::Compiler::compile_argv(["--verbose", "--java", "--javac", "test_file2.rb"])
       output = File.read(@tempfile_stderr.path)
       assert_equal("", output)
-      
+
       assert_nothing_raised { require 'test_file2' }
       assert($compile_test)
     ensure
@@ -128,5 +122,11 @@ class TestJrubyc < Test::Unit::TestCase
       File.delete("C.java") rescue nil
       File.delete("C.class") rescue nil
     end
+
   end
+
+  private
+
+  def println(msg); Java::JavaLang::System.out.println(msg.to_s) end
+
 end

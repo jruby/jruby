@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,11 +26,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.anno;
 
-import jnr.ffi.provider.jffi.SkinnyMethodAdapter;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.methods.DescriptorInfo;
 import org.jruby.runtime.Visibility;
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -47,7 +49,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,11 +57,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import static org.jruby.util.CodegenUtils.*;
 import static org.objectweb.asm.Opcodes.*;
@@ -112,6 +112,7 @@ public class IndyBinder extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
+    @SuppressWarnings("deprecation")
     public void processType(TypeElement cd) {
         // process inner classes
         for (TypeElement innerType : ElementFilter.typesIn(cd.getEnclosedElements())) {
@@ -130,7 +131,7 @@ public class IndyBinder extends AbstractProcessor {
 
             cw.visitAnnotation(p(Generated.class), true);
 
-            cw.visit(Opcodes.V1_7, ACC_PUBLIC, ("org.jruby.gen." + qualifiedName + POPULATOR_SUFFIX).replace('.', '/'), null, "org/jruby/anno/TypePopulator", null);
+            cw.visit(Opcodes.V1_8, ACC_PUBLIC, ("org.jruby.gen." + qualifiedName + POPULATOR_SUFFIX).replace('.', '/'), null, "org/jruby/anno/TypePopulator", null);
 
             mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>", "()V", null, null);
             mv.start();
@@ -182,27 +183,19 @@ public class IndyBinder extends AbstractProcessor {
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
             Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
 
-            Set<String> frameAwareMethods = null; // lazy init - there's usually none
-            Set<String> scopeAwareMethods = null; // lazy init - there's usually none
+            Map<Set<FrameField>, List<String>> readGroups = new HashMap<>();
+            Map<Set<FrameField>, List<String>> writeGroups = new HashMap<>();
 
             int methodCount = 0;
             for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
                 if (anno == null) continue;
 
+                if (anno.compat() == org.jruby.CompatVersion.RUBY1_8) continue;
+
                 methodCount++;
 
-                // warn if the method raises any exceptions (JRUBY-4494)
-                if (method.getThrownTypes().size() != 0) {
-                    System.err.print("Method " + cd.toString() + "." + method.toString() + " should not throw exceptions: ");
-                    boolean comma = false;
-                    for (TypeMirror thrownType : method.getThrownTypes()) {
-                        if (comma) System.err.print(", ");
-                        System.err.print(thrownType);
-                        comma = true;
-                    }
-                    System.err.print("\n");
-                }
+                AnnotationBinder.checkForThrows(cd, method);
 
                 final String[] names = anno.name();
                 CharSequence name = names.length == 0 ? method.getSimpleName() : names[0];
@@ -221,26 +214,7 @@ public class IndyBinder extends AbstractProcessor {
 
                 methodDescs.add(method);
 
-                // check for caller frame field reads or writes
-                boolean frame = false;
-                boolean scope = false;
-                for (FrameField field : anno.reads()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                for (FrameField field : anno.writes()) {
-                    frame |= field.needsFrame();
-                    scope |= field.needsScope();
-                }
-                
-                if (frame) {
-                    if (frameAwareMethods == null) frameAwareMethods = new HashSet<>(4, 1);
-                    AnnotationHelper.addMethodNamesToSet(frameAwareMethods, method.getSimpleName().toString(), names, anno.alias());
-                }
-                if (scope) {
-                    if (scopeAwareMethods == null) scopeAwareMethods = new HashSet<>(4, 1);
-                    AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, method.getSimpleName().toString(), names, anno.alias());
-                }
+                AnnotationHelper.groupFrameFields(readGroups, writeGroups, anno, method.getSimpleName().toString());
             }
 
             if (methodCount == 0) {
@@ -251,16 +225,51 @@ public class IndyBinder extends AbstractProcessor {
             classNames.add(getActualQualifiedName(cd));
 
             processMethodDeclarations(staticAnnotatedMethods);
+
+            List<ExecutableElement> simpleNames = new ArrayList<>();
+            Map<CharSequence, List<ExecutableElement>> complexNames = new HashMap<>();
+
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : staticAnnotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName) && anno.name().length <= 1) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
 
             processMethodDeclarations(annotatedMethods);
+
             for (Map.Entry<CharSequence, List<ExecutableElement>> entry : annotatedMethods.entrySet()) {
                 ExecutableElement decl = entry.getValue().get(0);
-                if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl);
+                JRubyMethod anno = decl.getAnnotation(JRubyMethod.class);
+
+                if (anno.omit()) continue;
+
+                CharSequence rubyName = entry.getKey();
+
+                if (decl.getSimpleName().equals(rubyName) && anno.name().length <= 1) {
+                    simpleNames.add(decl);
+                    continue;
+                }
+
+                List<ExecutableElement> complex = complexNames.get(rubyName);
+                if (complex == null) complexNames.put(rubyName, complex = new ArrayList<ExecutableElement>());
+                complex.add(decl);
             }
+
+            addCoreMethodMapping(cd, complexNames);
+
+            addSimpleMethodMappings(cd, simpleNames);
 
             mv.voidreturn();
             mv.end();
@@ -270,30 +279,8 @@ public class IndyBinder extends AbstractProcessor {
 
             mv.start();
 
-            if (frameAwareMethods != null && ! frameAwareMethods.isEmpty()) {
-                mv.ldc(frameAwareMethods.size());
-                mv.anewarray("java/lang/String");
-                int index = 0;
-                for (CharSequence name : frameAwareMethods) {
-                    mv.dup();
-                    mv.ldc(index++);
-                    mv.ldc(name);
-                    mv.aastore();
-                }
-                mv.invokestatic("org/jruby/runtime/MethodIndex", "addFrameAwareMethods", "([Ljava/lang/String;)V");
-            }
-            if (scopeAwareMethods != null && ! scopeAwareMethods.isEmpty()) {
-                mv.ldc(frameAwareMethods.size());
-                mv.anewarray("java/lang/String");
-                int index = 0;
-                for (CharSequence name : scopeAwareMethods) {
-                    mv.dup();
-                    mv.ldc(index++);
-                    mv.ldc(name);
-                    mv.aastore();
-                }
-                mv.invokestatic("org/jruby/runtime/MethodIndex", "addScopeAwareMethods", "([Ljava/lang/String;)V");
-            }
+            AnnotationHelper.populateMethodIndex(readGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodReadFieldsPacked"));
+            AnnotationHelper.populateMethodIndex(writeGroups, (bits, names) -> emitIndexCode(bits, names, "addMethodWriteFieldsPacked"));
 
             mv.voidreturn();
             mv.end();
@@ -309,6 +296,12 @@ public class IndyBinder extends AbstractProcessor {
             ex.printStackTrace(System.err);
             System.exit(1);
         }
+    }
+
+    public void emitIndexCode(Integer bits, String names, String methodName) {
+        mv.pushInt(bits);
+        mv.ldc(names);
+        mv.invokestatic("org/jruby/runtime/MethodIndex", methodName, "(ILjava/lang/String;)V");
     }
 
     public void processMethodDeclarations(Map<CharSequence, List<ExecutableElement>> declarations) {
@@ -365,7 +358,12 @@ public class IndyBinder extends AbstractProcessor {
                 }
                 buffer.append(')');
 
-                Handle handle = new Handle(isStatic ? H_INVOKESTATIC : H_INVOKEVIRTUAL, qualifiedName.toString().replace('.', '/'), method.getSimpleName().toString(), Method.getMethod(buffer.toString()).getDescriptor());
+                Handle handle = new Handle(
+                        isStatic ? H_INVOKESTATIC : H_INVOKEVIRTUAL,
+                        qualifiedName.toString().replace('.', '/'),
+                        method.getSimpleName().toString(),
+                        Method.getMethod(buffer.toString()).getDescriptor(),
+                        false);
 
                 int handleOffset = calculateHandleOffset(method.getParameters().size(), anno.required(), anno.optional(), anno.rest(), isStatic, hasContext, hasBlock);
 
@@ -374,16 +372,7 @@ public class IndyBinder extends AbstractProcessor {
 
                 meta |= anno.meta();
 
-                int specificArity = -1;
-                if (desc.optional == 0 && !desc.rest) {
-                    if (desc.required == 0) {
-                        if (desc.actualRequired <= 3) {
-                            specificArity = desc.actualRequired;
-                        }
-                    } else if (desc.required >= 0 && desc.required <= 3) {
-                        specificArity = desc.required;
-                    }
-                }
+                int specificArity = desc.calculateSpecificCallArity();
 
                 if (specificArity != -1) {
                     if (specificArity < min) min = specificArity;
@@ -403,6 +392,7 @@ public class IndyBinder extends AbstractProcessor {
 
         mv.aload(implClass);
         mv.getstatic(p(Visibility.class), anno.visibility().name(), ci(Visibility.class));
+        mv.ldc(AnnotationBinder.getBaseName(anno.name(), methods.get(0)));
         mv.ldc(encodeSignature(0, 0, 0, 0, 0, true, false));
         mv.ldc(true);
         mv.ldc(anno.notImplemented());
@@ -424,7 +414,7 @@ public class IndyBinder extends AbstractProcessor {
             }
         }
 
-        Method handleInit = Method.getMethod("void foo(org.jruby.RubyModule, org.jruby.runtime.Visibility, long, boolean, boolean, java.lang.String, int, int, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable)");
+        Method handleInit = Method.getMethod("void foo(org.jruby.RubyModule, org.jruby.runtime.Visibility, java.lang.String, long, boolean, boolean, java.lang.String, int, int, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable, java.util.concurrent.Callable)");
         mv.invokespecial("org/jruby/internal/runtime/methods/HandleMethod", "<init>", handleInit.getDescriptor());
 
         mv.astore(BASEMETHOD);
@@ -451,12 +441,43 @@ public class IndyBinder extends AbstractProcessor {
         mv.invokestatic("org/jruby/internal/runtime/methods/InvokeDynamicMethodFactory", "adaptHandle", Method.getMethod("java.util.concurrent.Callable adaptHandle(java.lang.invoke.MethodHandle, org.jruby.Ruby, int, int, int, boolean, java.lang.String, java.lang.Class, boolean, boolean, boolean, boolean, org.jruby.RubyModule)").getDescriptor());
     }
 
-    private void addCoreMethodMapping(CharSequence rubyName, ExecutableElement decl) {
+    private void addCoreMethodMapping(TypeElement cls, Map<CharSequence, List<ExecutableElement>> complexNames) {
+        StringBuilder encoded = new StringBuilder();
+
+        for (Map.Entry<CharSequence, List<ExecutableElement>> entry : complexNames.entrySet()) {
+
+            for (Iterator<ExecutableElement> iterator = entry.getValue().iterator(); iterator.hasNext(); ) {
+                if (encoded.length() > 0) encoded.append(";");
+
+                ExecutableElement elt = iterator.next();
+                encoded
+                        .append(elt.getSimpleName())
+                        .append(";")
+                        .append(entry.getKey());
+            }
+        }
+
+        if (encoded.length() == 0) return;
+
         mv.aload(RUNTIME);
-        mv.ldc(((TypeElement) decl.getEnclosingElement()).getQualifiedName().toString());
-        mv.ldc(decl.getSimpleName().toString());
-        mv.ldc(rubyName.toString());
-        mv.invokevirtual("org/jruby/Ruby", "addBoundMethod", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+        mv.ldc(cls.getQualifiedName().toString());
+        mv.ldc(encoded.toString());
+        mv.invokevirtual("org/jruby/Ruby", "addBoundMethodsPacked", "(Ljava/lang/String;Ljava/lang/String;)V");
+    }
+
+    private void addSimpleMethodMappings(TypeElement cls, List<ExecutableElement> simpleNames) {
+        StringBuilder encoded = new StringBuilder();
+        for (ExecutableElement elt : simpleNames) {
+            if (encoded.length() > 0) encoded.append(";");
+            encoded.append(elt.getSimpleName());
+        }
+
+        if (encoded.length() == 0) return;
+
+        mv.aload(RUNTIME);
+        mv.ldc(cls.getSimpleName().toString());
+        mv.ldc(encoded.toString());
+        mv.invokevirtual("org/jruby/Ruby", "addSimpleBoundMethodsPacked", "(Ljava/lang/String;Ljava/lang/String;)V");
     }
 
     private static CharSequence getActualQualifiedName(TypeElement td) {

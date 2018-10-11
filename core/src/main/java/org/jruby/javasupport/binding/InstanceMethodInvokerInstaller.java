@@ -12,7 +12,7 @@ public class InstanceMethodInvokerInstaller extends MethodInstaller {
 
     @Override void install(final RubyModule proxy) {
         if ( hasLocalMethod() ) {
-            defineMethods(proxy, new InstanceMethodInvoker(proxy, methods));
+            defineMethods(proxy, new InstanceMethodInvoker(proxy, methods, name));
         }
     }
 }

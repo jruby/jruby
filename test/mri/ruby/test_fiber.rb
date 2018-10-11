@@ -70,10 +70,12 @@ class TestFiber < Test::Unit::TestCase
     assert_raise(ArgumentError){
       Fiber.new # Fiber without block
     }
-    assert_raise(FiberError){
-      f = Fiber.new{}
-      Thread.new{f.resume}.join # Fiber yielding across thread
-    }
+    f = Fiber.new{}
+    Thread.new{
+      assert_raise(FiberError){ # Fiber yielding across thread
+        f.resume
+      }
+    }.join
     assert_raise(FiberError){
       f = Fiber.new{}
       f.resume
@@ -199,11 +201,11 @@ class TestFiber < Test::Unit::TestCase
   end
 
   def test_resume_root_fiber
-    assert_raise(FiberError) do
-      Thread.new do
+    Thread.new do
+      assert_raise(FiberError) do
         Fiber.current.resume
-      end.join
-    end
+      end
+    end.join
   end
 
   def test_gc_root_fiber
@@ -217,13 +219,24 @@ class TestFiber < Test::Unit::TestCase
     }, bug4612
   end
 
+  def test_mark_fiber
+    bug13875 = '[ruby-core:82681]'
+
+    assert_normal_exit %q{
+      GC.stress = true
+      up = 1.upto(10)
+      down = 10.downto(1)
+      up.zip(down) {|a, b| a + b == 11 or fail 'oops'}
+    }, bug13875
+  end
+
   def test_no_valid_cfp
     bug5083 = '[ruby-dev:44208]'
     assert_equal([], Fiber.new(&Module.method(:nesting)).resume, bug5083)
     assert_instance_of(Class, Fiber.new(&Class.new.method(:undef_method)).resume(:to_s), bug5083)
   end
 
-  def test_prohibit_resume_transfered_fiber
+  def test_prohibit_resume_transferred_fiber
     assert_raise(FiberError){
       root_fiber = Fiber.current
       f = Fiber.new{
@@ -284,7 +297,7 @@ class TestFiber < Test::Unit::TestCase
     env['RUBY_FIBER_VM_STACK_SIZE'] = vm_stack_size.to_s if vm_stack_size
     env['RUBY_FIBER_MACHINE_STACK_SIZE'] = machine_stack_size.to_s if machine_stack_size
     out, _ = Dir.mktmpdir("test_fiber") {|tmpdir|
-      EnvUtil.invoke_ruby([env, '-e', script], '', true, true, chdir: tmpdir)
+      EnvUtil.invoke_ruby([env, '-e', script], '', true, true, chdir: tmpdir, timeout: 30)
     }
     use_length ? out.length : out
   end
@@ -344,5 +357,25 @@ class TestFiber < Test::Unit::TestCase
     assert_equal("inner", s2)
     assert_equal(s1, $_, bug7678)
   end
-end
 
+  def test_new_symbol_proc
+    bug = '[ruby-core:80147] [Bug #13313]'
+    assert_ruby_status([], "#{<<-"begin;"}\n#{<<-'end;'}", bug)
+    begin;
+      exit("1" == Fiber.new(&:to_s).resume(1))
+    end;
+  end
+
+  def test_to_s
+    f = Fiber.new do
+      assert_match(/resumed/, f.to_s)
+      Fiber.yield
+    end
+    assert_match(/created/, f.to_s)
+    f.resume
+    assert_match(/suspended/, f.to_s)
+    f.resume
+    assert_match(/terminated/, f.to_s)
+    assert_match(/resumed/, Fiber.current.to_s)
+  end
+end

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -35,9 +35,7 @@ import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -468,7 +466,7 @@ public class SocketUtils {
     }
 
     public static RuntimeException sockerr(Ruby runtime, String msg) {
-        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+        return RaiseException.from(runtime, runtime.getClass("SocketError"), msg);
     }
 
     public static RuntimeException sockerr_with_trace(Ruby runtime, String msg, StackTraceElement[] trace) {
@@ -478,7 +476,7 @@ public class SocketUtils {
         for (int i = 0, il = trace.length; i < il; i++) {
             sb.append(eol).append(trace[i].toString());
         }
-        return new RaiseException(runtime, runtime.getClass("SocketError"), sb.toString(), true);
+        return RaiseException.from(runtime, runtime.getClass("SocketError"), sb.toString());
     }
 
     public static int getPortFrom(ThreadContext context, IRubyObject _port) {

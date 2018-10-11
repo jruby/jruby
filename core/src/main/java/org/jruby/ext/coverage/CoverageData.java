@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -71,12 +71,13 @@ public class CoverageData {
 
         for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
             String key = entry.getKey();
-            if (key.equals(CoverageData.STARTED)) continue; // ignore our hidden marker
 
             // on reset we do not reset files where no execution ever happened but we do reset
             // any files visited to be an empty array.  Why?  I don't know.  Matching MRI.
             if (hasCodeBeenPartiallyCovered(entry.getValue())) coverage.put(key, SVALUE);
         }
+
+        this.coverage = null;
 
         return coverage;
     }
@@ -91,6 +92,12 @@ public class CoverageData {
 
     public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
         assert lines != null;
+
+        if (filename == null) {
+            // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
+            // we opt to ignore scripts with no filename, since coverage means nothing
+            return coverage;
+        }
 
         Map<String, int[]> coverage = this.coverage;
 

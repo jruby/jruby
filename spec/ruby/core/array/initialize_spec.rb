@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Array#initialize" do
   before :each do
@@ -32,13 +32,13 @@ describe "Array#initialize" do
     end.should raise_error(ArgumentError)
   end
 
-  it "raises a RuntimeError on frozen arrays" do
+  it "raises a #{frozen_error_class} on frozen arrays" do
     lambda do
       ArraySpecs.frozen_array.send :initialize
-    end.should raise_error(RuntimeError)
+    end.should raise_error(frozen_error_class)
     lambda do
       ArraySpecs.frozen_array.send :initialize, ArraySpecs.frozen_array
-    end.should raise_error(RuntimeError)
+    end.should raise_error(frozen_error_class)
   end
 
   it "calls #to_ary to convert the value to an array, even if it's private" do
@@ -134,7 +134,10 @@ describe "Array#initialize with (size, object=nil)" do
   end
 
   it "uses the block value instead of using the default value" do
-    [].send(:initialize, 3, :obj) { |i| i.to_s }.should == ['0', '1', '2']
+    lambda {
+      @result = [].send(:initialize, 3, :obj) { |i| i.to_s }
+    }.should complain(/block supersedes default value argument/)
+    @result.should == ['0', '1', '2']
   end
 
   it "returns the value passed to break" do

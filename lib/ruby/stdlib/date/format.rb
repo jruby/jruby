@@ -9,23 +9,23 @@ class Date
       'january'  => 1, 'february' => 2, 'march'    => 3, 'april'    => 4,
       'may'      => 5, 'june'     => 6, 'july'     => 7, 'august'   => 8,
       'september'=> 9, 'october'  =>10, 'november' =>11, 'december' =>12
-    }
+    }.freeze
 
     DAYS = {
       'sunday'   => 0, 'monday'   => 1, 'tuesday'  => 2, 'wednesday'=> 3,
       'thursday' => 4, 'friday'   => 5, 'saturday' => 6
-    }
+    }.freeze
 
     ABBR_MONTHS = {
       'jan'      => 1, 'feb'      => 2, 'mar'      => 3, 'apr'      => 4,
       'may'      => 5, 'jun'      => 6, 'jul'      => 7, 'aug'      => 8,
       'sep'      => 9, 'oct'      =>10, 'nov'      =>11, 'dec'      =>12
-    }
+    }.freeze
 
     ABBR_DAYS = {
       'sun'      => 0, 'mon'      => 1, 'tue'      => 2, 'wed'      => 3,
       'thu'      => 4, 'fri'      => 5, 'sat'      => 6
-    }
+    }.freeze
 
     ZONES = {
       'ut'  =>  0*3600, 'gmt' =>  0*3600, 'est' => -5*3600, 'edt' => -4*3600,
@@ -103,44 +103,9 @@ class Date
       'w. central africa'     =>    3600, 'w. europe'             =>    3600,
       'west asia'             =>   18000, 'west pacific'          =>   36000,
       'yakutsk'               =>   32400
-    }
-
-    [MONTHS, DAYS, ABBR_MONTHS, ABBR_DAYS, ZONES].each do |x|
-      x.freeze
-    end
-
-    class Bag # :nodoc:
-
-      def initialize
-        @elem = {}
-      end
-
-      def method_missing(t, *args, &block)
-        t = t.to_s
-        set = t.chomp!('=')
-        t = t.intern
-        if set
-          @elem[t] = args[0]
-        else
-          @elem[t]
-        end
-      end
-
-      def to_hash
-        @elem.reject{|k, v| /\A_/ =~ k.to_s || v.nil?}
-      end
-
-    end
+    }.freeze
 
   end
-
-  def strftime(fmt='%F')
-    out = JRuby.runtime.current_context.getRubyDateFormatter.compileAndFormat(fmt, true, @dt, 0, @sub_millis.nonzero?)
-    out.taint if fmt.tainted?
-    out
-  end
-
-# alias_method :format, :strftime
 
   def asctime() strftime('%c') end
 
@@ -176,524 +141,57 @@ class Date
     end
   end
 
-=begin
-  def beat(n=0)
-    i, f = (new_offset(HOURS_IN_DAY).day_fraction * 1000).divmod(1)
-    ('@%03d' % i) +
-      if n < 1
-        ''
-      else
-        '.%0*d' % [n, (f / Rational(1, 10**n)).round]
-      end
-  end
-=end
-
-  def self.num_pattern? (s) # :nodoc:
-    /\A%[EO]?[CDdeFGgHIjkLlMmNQRrSsTUuVvWwXxYy\d]/ =~ s || /\A\d/ =~ s
-  end
-
-  private_class_method :num_pattern?
-
-  def self._strptime_i(str, fmt, e) # :nodoc:
-    fmt.scan(/%([EO]?(?::{1,3}z|.))|(.)/m) do |s, c|
-      a = $&
-      if s
-        case s
-        when 'A', 'a'
-          return unless str.sub!(/\A(#{Format::DAYS.keys.join('|')})/io, '') ||
-                        str.sub!(/\A(#{Format::ABBR_DAYS.keys.join('|')})/io, '')
-          val = Format::DAYS[$1.downcase] || Format::ABBR_DAYS[$1.downcase]
-          return unless val
-          e.wday = val
-        when 'B', 'b', 'h'
-          return unless str.sub!(/\A(#{Format::MONTHS.keys.join('|')})/io, '') ||
-                        str.sub!(/\A(#{Format::ABBR_MONTHS.keys.join('|')})/io, '')
-          val = Format::MONTHS[$1.downcase] || Format::ABBR_MONTHS[$1.downcase]
-          return unless val
-          e.mon = val
-        when 'C', 'EC'
-          return unless str.sub!(if num_pattern?($')
-                                 then /\A([-+]?\d{1,2})/
-                                 else /\A([-+]?\d{1,})/
-                                 end, '')
-          val = $1.to_i
-          e._cent = val
-        when 'c', 'Ec'
-          return unless _strptime_i(str, '%a %b %e %H:%M:%S %Y', e)
-        when 'D'
-          return unless _strptime_i(str, '%m/%d/%y', e)
-        when 'd', 'e', 'Od', 'Oe'
-          return unless str.sub!(/\A( \d|\d{1,2})/, '')
-          val = $1.to_i
-          return unless (1..31) === val
-          e.mday = val
-        when 'F'
-          return unless _strptime_i(str, '%Y-%m-%d', e)
-        when 'G'
-          return unless str.sub!(if num_pattern?($')
-                                 then /\A([-+]?\d{1,4})/
-                                 else /\A([-+]?\d{1,})/
-                                 end, '')
-          val = $1.to_i
-          e.cwyear = val
-        when 'g'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (0..99) === val
-          e.cwyear = val
-          e._cent ||= if val >= 69 then 19 else 20 end
-        when 'H', 'k', 'OH'
-          return unless str.sub!(/\A( \d|\d{1,2})/, '')
-          val = $1.to_i
-          return unless (0..24) === val
-          e.hour = val
-        when 'I', 'l', 'OI'
-          return unless str.sub!(/\A( \d|\d{1,2})/, '')
-          val = $1.to_i
-          return unless (1..12) === val
-          e.hour = val
-        when 'j'
-          return unless str.sub!(/\A(\d{1,3})/, '')
-          val = $1.to_i
-          return unless (1..366) === val
-          e.yday = val
-        when 'L'
-          return unless str.sub!(if num_pattern?($')
-                                 then /\A([-+]?\d{1,3})/
-                                 else /\A([-+]?\d{1,})/
-                                 end, '')
-#         val = Rational($1.to_i, 10**3)
-          val = Rational($1.to_i, 10**$1.size)
-          e.sec_fraction = val
-        when 'M', 'OM'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (0..59) === val
-          e.min = val
-        when 'm', 'Om'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (1..12) === val
-          e.mon = val
-        when 'N'
-          return unless str.sub!(if num_pattern?($')
-                                 then /\A([-+]?\d{1,9})/
-                                 else /\A([-+]?\d{1,})/
-                                 end, '')
-#         val = Rational($1.to_i, 10**9)
-          val = Rational($1.to_i, 10**$1.size)
-          e.sec_fraction = val
-        when 'n', 't'
-          return unless _strptime_i(str, "\s", e)
-        when 'P', 'p'
-          return unless str.sub!(/\A([ap])(?:m\b|\.m\.)/i, '')
-          e._merid = if $1.downcase == 'a' then 0 else 12 end
-        when 'Q'
-          return unless str.sub!(/\A(-?\d{1,})/, '')
-          val = Rational($1.to_i, 10**3)
-          e.seconds = val
-        when 'R'
-          return unless _strptime_i(str, '%H:%M', e)
-        when 'r'
-          return unless _strptime_i(str, '%I:%M:%S %p', e)
-        when 'S', 'OS'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (0..60) === val
-          e.sec = val
-        when 's'
-          return unless str.sub!(/\A(-?\d{1,})/, '')
-          val = $1.to_i
-          e.seconds = val
-        when 'T'
-          return unless _strptime_i(str, '%H:%M:%S', e)
-        when 'U', 'W', 'OU', 'OW'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (0..53) === val
-          e.__send__(if s[-1,1] == 'U' then :wnum0= else :wnum1= end, val)
-        when 'u', 'Ou'
-          return unless str.sub!(/\A(\d{1})/, '')
-          val = $1.to_i
-          return unless (1..7) === val
-          e.cwday = val
-        when 'V', 'OV'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (1..53) === val
-          e.cweek = val
-        when 'v'
-          return unless _strptime_i(str, '%e-%b-%Y', e)
-        when 'w'
-          return unless str.sub!(/\A(\d{1})/, '')
-          val = $1.to_i
-          return unless (0..6) === val
-          e.wday = val
-        when 'X', 'EX'
-          return unless _strptime_i(str, '%H:%M:%S', e)
-        when 'x', 'Ex'
-          return unless _strptime_i(str, '%m/%d/%y', e)
-        when 'Y', 'EY'
-          return unless str.sub!(if num_pattern?($')
-                                 then /\A([-+]?\d{1,4})/
-                                 else /\A([-+]?\d{1,})/
-                                 end, '')
-          val = $1.to_i
-          e.year = val
-        when 'y', 'Ey', 'Oy'
-          return unless str.sub!(/\A(\d{1,2})/, '')
-          val = $1.to_i
-          return unless (0..99) === val
-          e.year = val
-          e._cent ||= if val >= 69 then 19 else 20 end
-        when 'Z', /\A:{0,3}z/
-          return unless str.sub!(/\A((?:gmt|utc?)?[-+]\d+(?:[,.:]\d+(?::\d+)?)?
-                                    |[[:alpha:].\s]+(?:standard|daylight)\s+time\b
-                                    |[[:alpha:]]+(?:\s+dst)?\b
-                                    )/ix, '')
-          val = $1
-          e.zone = val
-          offset = zone_to_diff(val)
-          e.offset = offset
-        when '%'
-          return unless str.sub!(/\A%/, '')
-        when '+'
-          return unless _strptime_i(str, '%a %b %e %H:%M:%S %Z %Y', e)
-        else
-          return unless str.sub!(Regexp.new('\\A' + Regexp.quote(a)), '')
-        end
-      else
-        case c
-        when /\A\s/
-          str.sub!(/\A\s+/, '')
-        else
-          return unless str.sub!(Regexp.new('\\A' + Regexp.quote(a)), '')
-        end
-      end
-    end
-  end
-
-  private_class_method :_strptime_i
-
-  def self._strptime(str, fmt='%F')
-    str = str.dup
-    e = Format::Bag.new
-    return unless _strptime_i(str, fmt, e)
-
-    if e._cent
-      if e.cwyear
-        e.cwyear += e._cent * 100
-      end
-      if e.year
-        e.  year += e._cent * 100
-      end
-    end
-
-    if e._merid
-      if e.hour
-        e.hour %= 12
-        e.hour += e._merid
-      end
-    end
-
-    unless str.empty?
-      e.leftover = str
-    end
-
-    e.to_hash
-  end
-
-  def self.s3e(e, y, m, d, bc=false)
-    unless String === m
-      m = m.to_s
-    end
-
-    if y && m && !d
-      y, m, d = d, y, m
-    end
-
-    if y == nil
-      if d && d.size > 2
-        y = d
-        d = nil
-      end
-      if d && d[0,1] == "'"
-        y = d
-        d = nil
-      end
-    end
-
-    if y
-      y.scan(/(\d+)(.+)?/)
-      if $2
-        y, d = d, $1
-      end
-    end
-
-    if m
-      if m[0,1] == "'" || m.size > 2
-        y, m, d = m, d, y # us -> be
-      end
-    end
-
-    if d
-      if d[0,1] == "'" || d.size > 2
-        y, d = d, y
-      end
-    end
-
-    if y
-      y =~ /([-+])?(\d+)/
-      if $1 || $2.size > 2
-        c = false
-      end
-      iy = $&.to_i
-      if bc
-        iy = -iy + 1
-      end
-      e.year = iy
-    end
-
-    if m
-      m =~ /\d+/
-      e.mon = $&.to_i
-    end
-
-    if d
-      d =~ /\d+/
-      e.mday = $&.to_i
-    end
-
-    if c != nil
-      e._comp = c
-    end
-
-  end
-
-  private_class_method :s3e
-
-  def self._parse_day(str, e) # :nodoc:
-    if str.sub!(/\b(#{Format::ABBR_DAYS.keys.join('|')})[^-\d\s]*/io, ' ')
-      e.wday = Format::ABBR_DAYS[$1.downcase]
+  def self._parse_iso2(str, hash) # :nodoc:
+    if m = subs(str, /\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i)
+      hash[:cwyear] = m[1]&.to_i
+      hash[:cweek] = m[2].to_i
+      hash[:cwday] = m[3]&.to_i
       true
-=begin
-    elsif str.sub!(/\b(?!\dth)(su|mo|tu|we|th|fr|sa)\b/i, ' ')
-      e.wday = %w(su mo tu we th fr sa).index($1.downcase)
+    elsif m = subs(str, /-w-(\d)\b/i)
+      hash[:cwday] = m[1].to_i
       true
-=end
-    end
-  end
-
-  def self._parse_time(str, e) # :nodoc:
-    if str.sub!(
-                /(
-                   (?:
-                     \d+\s*:\s*\d+
-                     (?:
-                       \s*:\s*\d+(?:[,.]\d*)?
-                     )?
-                   |
-                     \d+\s*h(?:\s*\d+m?(?:\s*\d+s?)?)?
-                   )
-                   (?:
-                     \s*
-                     [ap](?:m\b|\.m\.)
-                   )?
-                 |
-                   \d+\s*[ap](?:m\b|\.m\.)
-                 )
-                 (?:
-                   \s*
-                   (
-                     (?:gmt|utc?)?[-+]\d+(?:[,.:]\d+(?::\d+)?)?
-                   |
-                     [[:alpha:].\s]+(?:standard|daylight)\stime\b
-                   |
-                     [[:alpha:]]+(?:\sdst)?\b
-                   )
-                 )?
-                /ix,
-                ' ')
-
-      t = $1
-      e.zone = $2 if $2
-
-      t =~ /\A(\d+)h?
-              (?:\s*:?\s*(\d+)m?
-                (?:
-                  \s*:?\s*(\d+)(?:[,.](\d+))?s?
-                )?
-              )?
-            (?:\s*([ap])(?:m\b|\.m\.))?/ix
-
-      e.hour = $1.to_i
-      e.min = $2.to_i if $2
-      e.sec = $3.to_i if $3
-      e.sec_fraction = Rational($4.to_i, 10**$4.size) if $4
-
-      if $5
-        e.hour %= 12
-        if $5.downcase == 'p'
-          e.hour += 12
-        end
-      end
+    elsif m = subs(str, /--(\d{2})?-(\d{2})\b/)
+      hash[:mon] = m[1]&.to_i
+      hash[:mday] = m[2].to_i
+      true
+    elsif m = subs(str, /--(\d{2})(\d{2})?\b/)
+      hash[:mon] = m[1].to_i
+      hash[:mday] = m[2]&.to_i
+      true
+    elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str && m = subs(str, /\b(\d{2}|\d{4})-(\d{3})\b/)
+      hash[:year] = m[1].to_i
+      hash[:yday] = m[2].to_i
+      true
+    elsif /\d-\d{3}\b/ !~ str && m = subs(str, /\b-(\d{3})\b/)
+      hash[:yday] = m[1].to_i
       true
     end
   end
 
-=begin
-  def self._parse_beat(str, e) # :nodoc:
-    if str.sub!(/@\s*(\d+)(?:[,.](\d*))?/, ' ')
-      beat = Rational($1.to_i)
-      beat += Rational($2.to_i, 10**$2.size) if $2
-      secs = Rational(beat, 1000)
-      h, min, s, fr = self.day_fraction_to_time(secs)
-      e.hour = h
-      e.min = min
-      e.sec = s
-      e.sec_fraction = fr * 86400
-      e.zone = '+01:00'
-      true
-    end
-  end
-=end
-
-  def self._parse_eu(str, e) # :nodoc:
-    if str.sub!(
-                /'?(\d+)[^-\d\s]*
-                 \s*
-                 (#{Format::ABBR_MONTHS.keys.join('|')})[^-\d\s']*
-                 (?:
-                   \s*
-                   (c(?:e|\.e\.)|b(?:ce|\.c\.e\.)|a(?:d|\.d\.)|b(?:c|\.c\.))?
-                   \s*
-                   ('?-?\d+(?:(?:st|nd|rd|th)\b)?)
-                 )?
-                /iox,
-                ' ') # '
-      s3e(e, $4, Format::ABBR_MONTHS[$2.downcase], $1,
-          $3 && $3[0,1].downcase == 'b')
+  def self._parse_jis(str, hash) # :nodoc:
+    if m = subs(str, /\b([mtsh])(\d+)\.(\d+)\.(\d+)/i)
+      era = { 'm'=>1867, 't'=>1911, 's'=>1925, 'h'=>1988 }[m[1].downcase]
+      hash[:year] = m[2].to_i + era
+      hash[:mon] = m[3].to_i
+      hash[:mday] = m[4].to_i
       true
     end
   end
 
-  def self._parse_us(str, e) # :nodoc:
-    if str.sub!(
-                /\b(#{Format::ABBR_MONTHS.keys.join('|')})[^-\d\s']*
-                 \s*
-                 ('?\d+)[^-\d\s']*
-                 (?:
-                   \s*
-                   (c(?:e|\.e\.)|b(?:ce|\.c\.e\.)|a(?:d|\.d\.)|b(?:c|\.c\.))?
-                   \s*
-                   ('?-?\d+)
-                 )?
-                /iox,
-                ' ') # '
-      s3e(e, $4, Format::ABBR_MONTHS[$1.downcase], $2,
-          $3 && $3[0,1].downcase == 'b')
+  ABBR_MONTHS_KEYS = Format::ABBR_MONTHS.keys.join('|').freeze
+  private_constant :ABBR_MONTHS_KEYS
+
+  def self._parse_vms(str, hash) # :nodoc:
+    if m = subs(str, /('?-?\d+)-(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)/iox)
+      s3e(hash, m[3], Format::ABBR_MONTHS[m[2].downcase].to_s, m[1])
+      true
+    elsif m = subs(str, /\b(#{ABBR_MONTHS_KEYS})[^-\/.]*-('?-?\d+)(?:-('?-?\d+))?/iox)
+      s3e(hash, m[3], Format::ABBR_MONTHS[m[1].downcase].to_s, m[2])
       true
     end
   end
 
-  def self._parse_iso(str, e) # :nodoc:
-    if str.sub!(/('?[-+]?\d+)-(\d+)-('?-?\d+)/, ' ')
-      s3e(e, $1, $2, $3)
-      true
-    end
-  end
-
-  def self._parse_iso2(str, e) # :nodoc:
-    if str.sub!(/\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i, ' ')
-      e.cwyear = $1.to_i if $1
-      e.cweek = $2.to_i
-      e.cwday = $3.to_i if $3
-      true
-    elsif str.sub!(/-w-(\d)\b/i, ' ')
-      e.cwday = $1.to_i
-      true
-    elsif str.sub!(/--(\d{2})?-(\d{2})\b/, ' ')
-      e.mon = $1.to_i if $1
-      e.mday = $2.to_i
-      true
-    elsif str.sub!(/--(\d{2})(\d{2})?\b/, ' ')
-      e.mon = $1.to_i
-      e.mday = $2.to_i if $2
-      true
-    elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str &&
-        str.sub!(/\b(\d{2}|\d{4})-(\d{3})\b/, ' ')
-      e.year = $1.to_i
-      e.yday = $2.to_i
-      true
-    elsif /\d-\d{3}\b/ !~ str &&
-        str.sub!(/\b-(\d{3})\b/, ' ')
-      e.yday = $1.to_i
-      true
-    end
-  end
-
-  def self._parse_jis(str, e) # :nodoc:
-    if str.sub!(/\b([mtsh])(\d+)\.(\d+)\.(\d+)/i, ' ')
-      era = { 'm'=>1867,
-              't'=>1911,
-              's'=>1925,
-              'h'=>1988
-          }[$1.downcase]
-      e.year = $2.to_i + era
-      e.mon = $3.to_i
-      e.mday = $4.to_i
-      true
-    end
-  end
-
-  def self._parse_vms(str, e) # :nodoc:
-    if str.sub!(/('?-?\d+)-(#{Format::ABBR_MONTHS.keys.join('|')})[^-]*
-                -('?-?\d+)/iox, ' ')
-      s3e(e, $3, Format::ABBR_MONTHS[$2.downcase], $1)
-      true
-    elsif str.sub!(/\b(#{Format::ABBR_MONTHS.keys.join('|')})[^-]*
-                -('?-?\d+)(?:-('?-?\d+))?/iox, ' ')
-      s3e(e, $3, Format::ABBR_MONTHS[$1.downcase], $2)
-      true
-    end
-  end
-
-  def self._parse_sla(str, e) # :nodoc:
-    if str.sub!(%r|('?-?\d+)/\s*('?\d+)(?:\D\s*('?-?\d+))?|, ' ') # '
-      s3e(e, $1, $2, $3)
-      true
-    end
-  end
-
-  def self._parse_dot(str, e) # :nodoc:
-    if str.sub!(%r|('?-?\d+)\.\s*('?\d+)\.\s*('?-?\d+)|, ' ') # '
-      s3e(e, $1, $2, $3)
-      true
-    end
-  end
-
-  def self._parse_year(str, e) # :nodoc:
-    if str.sub!(/'(\d+)\b/, ' ')
-      e.year = $1.to_i
-      true
-    end
-  end
-
-  def self._parse_mon(str, e) # :nodoc:
-    if str.sub!(/\b(#{Format::ABBR_MONTHS.keys.join('|')})\S*/io, ' ')
-      e.mon = Format::ABBR_MONTHS[$1.downcase]
-      true
-    end
-  end
-
-  def self._parse_mday(str, e) # :nodoc:
-    if str.sub!(/(\d+)(st|nd|rd|th)\b/i, ' ')
-      e.mday = $1.to_i
-      true
-    end
-  end
-
-  def self._parse_ddd(str, e) # :nodoc:
+  def self._parse_ddd(str, hash) # :nodoc:
     if str.sub!(
                 /([-+]?)(\d{2,14})
                   (?:
@@ -717,192 +215,132 @@ class Date
       case $2.size
       when 2
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
+          hash[:sec]  = $2[-2, 2].to_i
         else
-          e.mday = $2[ 0, 2].to_i
+          hash[:mday] = $2[ 0, 2].to_i
         end
       when 4
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
-          e.min  = $2[-4, 2].to_i
+          hash[:sec]  = $2[-2, 2].to_i
+          hash[:min]  = $2[-4, 2].to_i
         else
-          e.mon  = $2[ 0, 2].to_i
-          e.mday = $2[ 2, 2].to_i
+          hash[:mon]  = $2[ 0, 2].to_i
+          hash[:mday] = $2[ 2, 2].to_i
         end
       when 6
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
-          e.min  = $2[-4, 2].to_i
-          e.hour = $2[-6, 2].to_i
+          hash[:sec]  = $2[-2, 2].to_i
+          hash[:min]  = $2[-4, 2].to_i
+          hash[:hour] = $2[-6, 2].to_i
         else
-          e.year = ($1 + $2[ 0, 2]).to_i
-          e.mon  = $2[ 2, 2].to_i
-          e.mday = $2[ 4, 2].to_i
+          hash[:year] = ($1 + $2[ 0, 2]).to_i
+          hash[:mon]  = $2[ 2, 2].to_i
+          hash[:mday] = $2[ 4, 2].to_i
         end
       when 8, 10, 12, 14
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
-          e.min  = $2[-4, 2].to_i
-          e.hour = $2[-6, 2].to_i
-          e.mday = $2[-8, 2].to_i
+          hash[:sec]  = $2[-2, 2].to_i
+          hash[:min]  = $2[-4, 2].to_i
+          hash[:hour] = $2[-6, 2].to_i
+          hash[:mday] = $2[-8, 2].to_i
           if $2.size >= 10
-            e.mon  = $2[-10, 2].to_i
+            hash[:mon] = $2[-10, 2].to_i
           end
           if $2.size == 12
-            e.year = ($1 + $2[-12, 2]).to_i
+            hash[:year] = ($1 + $2[-12, 2]).to_i
           end
           if $2.size == 14
-            e.year = ($1 + $2[-14, 4]).to_i
-            e._comp = false
+            hash[:year] = ($1 + $2[-14, 4]).to_i
+            hash[:_comp] = false
           end
         else
-          e.year = ($1 + $2[ 0, 4]).to_i
-          e.mon  = $2[ 4, 2].to_i
-          e.mday = $2[ 6, 2].to_i
-          e.hour = $2[ 8, 2].to_i if $2.size >= 10
-          e.min  = $2[10, 2].to_i if $2.size >= 12
-          e.sec  = $2[12, 2].to_i if $2.size >= 14
-          e._comp = false
+          hash[:year] = ($1 + $2[ 0, 4]).to_i
+          hash[:mon]  = $2[ 4, 2].to_i
+          hash[:mday] = $2[ 6, 2].to_i
+          hash[:hour] = $2[ 8, 2].to_i if $2.size >= 10
+          hash[:min]  = $2[10, 2].to_i if $2.size >= 12
+          hash[:sec]  = $2[12, 2].to_i if $2.size >= 14
+          hash[:_comp] = false
         end
       when 3
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
-          e.min  = $2[-3, 1].to_i
+          hash[:sec]  = $2[-2, 2].to_i
+          hash[:min]  = $2[-3, 1].to_i
         else
-          e.yday = $2[ 0, 3].to_i
+          hash[:yday] = $2[ 0, 3].to_i
         end
       when 5
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
-          e.min  = $2[-4, 2].to_i
-          e.hour = $2[-5, 1].to_i
+          hash[:sec]  = $2[-2, 2].to_i
+          hash[:min]  = $2[-4, 2].to_i
+          hash[:hour] = $2[-5, 1].to_i
         else
-          e.year = ($1 + $2[ 0, 2]).to_i
-          e.yday = $2[ 2, 3].to_i
+          hash[:year] = ($1 + $2[ 0, 2]).to_i
+          hash[:yday] = $2[ 2, 3].to_i
         end
       when 7
         if $3.nil? && $4
-          e.sec  = $2[-2, 2].to_i
-          e.min  = $2[-4, 2].to_i
-          e.hour = $2[-6, 2].to_i
-          e.mday = $2[-7, 1].to_i
+          hash[:sec]  = $2[-2, 2].to_i
+          hash[:min]  = $2[-4, 2].to_i
+          hash[:hour] = $2[-6, 2].to_i
+          hash[:mday] = $2[-7, 1].to_i
         else
-          e.year = ($1 + $2[ 0, 4]).to_i
-          e.yday = $2[ 4, 3].to_i
+          hash[:year] = ($1 + $2[ 0, 4]).to_i
+          hash[:yday] = $2[ 4, 3].to_i
         end
       end
       if $3
         if $4
           case $3.size
           when 2, 4, 6
-            e.sec  = $3[-2, 2].to_i
-            e.min  = $3[-4, 2].to_i if $3.size >= 4
-            e.hour = $3[-6, 2].to_i if $3.size >= 6
+            hash[:sec]  = $3[-2, 2].to_i
+            hash[:min]  = $3[-4, 2].to_i if $3.size >= 4
+            hash[:hour] = $3[-6, 2].to_i if $3.size >= 6
           end
         else
           case $3.size
           when 2, 4, 6
-            e.hour = $3[ 0, 2].to_i
-            e.min  = $3[ 2, 2].to_i if $3.size >= 4
-            e.sec  = $3[ 4, 2].to_i if $3.size >= 6
+            hash[:hour] = $3[ 0, 2].to_i
+            hash[:min]  = $3[ 2, 2].to_i if $3.size >= 4
+            hash[:sec]  = $3[ 4, 2].to_i if $3.size >= 6
           end
         end
       end
       if $4
-        e.sec_fraction = Rational($4.to_i, 10**$4.size)
+        hash[:sec_fraction] = Rational($4.to_i, 10**$4.size)
       end
       if $5
-        e.zone = $5
-        if e.zone[0,1] == '['
-          o, n, = e.zone[1..-2].split(':')
-          e.zone = n || o
-          if /\A\d/ =~ o
+        hash[:zone] = zone = $5
+        if zone[0] == '['
+          o, n, = zone[1..-2].split(':')
+          hash[:zone] = n || o
+          if /\A\d/.match? o
             o = format('+%s', o)
           end
-          e.offset = zone_to_diff(o)
+          hash[:offset] = zone_to_diff(o)
         end
       end
       true
     end
   end
 
-  private_class_method :_parse_day, :_parse_time, # :_parse_beat,
-        :_parse_eu, :_parse_us, :_parse_iso, :_parse_iso2,
-        :_parse_jis, :_parse_vms, :_parse_sla, :_parse_dot,
-        :_parse_year, :_parse_mon, :_parse_mday, :_parse_ddd
+  private_class_method :_parse_iso2, :_parse_jis, :_parse_vms, :_parse_ddd
 
   def self._parse(str, comp=true)
-    # Newer MRI version (written in C converts non-strings to strings
-    # and also has other checks like all ascii.
-    str = str.to_str if !str.kind_of?(::String) && str.respond_to?(:to_str)
-    str = str.dup
-
-    e = Format::Bag.new
-
-    e._comp = comp
-
-    str.gsub!(/[^-+',.\/:@[:alnum:]\[\]]+/, ' ')
-
-    _parse_time(str, e) # || _parse_beat(str, e)
-    _parse_day(str, e)
-
-    _parse_eu(str, e)     ||
-    _parse_us(str, e)     ||
-    _parse_iso(str, e)    ||
-    _parse_jis(str, e)    ||
-    _parse_vms(str, e)    ||
-    _parse_sla(str, e)    ||
-    _parse_dot(str, e)    ||
-    _parse_iso2(str, e)   ||
-    _parse_year(str, e)   ||
-    _parse_mon(str, e)    ||
-    _parse_mday(str, e)   ||
-    _parse_ddd(str, e)
-
-    if str.sub!(/\b(bc\b|bce\b|b\.c\.|b\.c\.e\.)/i, ' ')
-      if e.year
-        e.year = -e.year + 1
-      end
+    if str.kind_of?(::String)
+      # no-op
+    elsif str.respond_to?(:to_str)
+      str = str.to_str
+    else
+      raise TypeError, "no implicit conversion of #{str.class.name} into String"
     end
-
-    if str.sub!(/\A\s*(\d{1,2})\s*\z/, ' ')
-      if e.hour && !e.mday
-        v = $1.to_i
-        if (1..31) === v
-          e.mday = v
-        end
-      end
-      if e.mday && !e.hour
-        v = $1.to_i
-        if (0..24) === v
-          e.hour = v
-        end
-      end
-    end
-
-    if e._comp
-      if e.cwyear
-        if e.cwyear >= 0 && e.cwyear <= 99
-          e.cwyear += if e.cwyear >= 69
-                      then 1900 else 2000 end
-        end
-      end
-      if e.year
-        if e.year >= 0 && e.year <= 99
-          e.year += if e.year >= 69
-                    then 1900 else 2000 end
-        end
-      end
-    end
-
-    e.offset ||= zone_to_diff(e.zone) if e.zone
-
-    e.to_hash
+    # we do not str = str.dup since we do a gsub (instead of gsub!)
+    return _parse_impl(str, :_comp => comp)
   end
 
   def self._iso8601(str) # :nodoc:
     h = {}
-    if /\A\s*
+    if m = match(/\A\s*
       (?:
           (?<year>[-+]?\d{2,} | -) - (?<mon>\d{2})? - (?<mday>\d{2})
         | (?<year>[-+]?\d{2,})? - (?<yday>\d{3})
@@ -914,38 +352,40 @@ class Date
         (?<hour>\d{2}) : (?<min>\d{2}) (?: :(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
         (?<zone>z | [-+]\d{2}(?::?\d{2})?)?
       )?
-      \s*\z/ix =~ str
+      \s*\z/ix, str)
 
-      if mday
-        h[:mday] = i mday
-        h[:year] = comp_year69(year) if year != "-"
+      if m[:mday]
+        h[:mday] = i m[:mday]
+        h[:year] = comp_year69(m[:year]) if m[:year] != "-"
 
-        if mon
-          h[:mon] = i mon
+        if m[:mon]
+          h[:mon] = i m[:mon]
         else
-          return {} if year != "-"
+          return {} if m[:year] != "-"
         end
-      elsif yday
-        h[:yday] = i yday
-        h[:year] = comp_year69(year) if year
-      elsif cwday
-        h[:cweek] = i cweek
-        h[:cwday] = i cwday
-        h[:cwyear] = comp_year69(cwyear) if cwyear
-      elsif cwday2
-        h[:cwday] = i cwday2
+      elsif m[:yday]
+        h[:yday] = i m[:yday]
+        h[:year] = comp_year69(m[:year]) if m[:year]
+      elsif m[:cwday]
+        h[:cweek] = i m[:cweek]
+        h[:cwday] = i m[:cwday]
+        h[:cwyear] = comp_year69(m[:cwyear]) if m[:cwyear]
+      elsif m[:cwday2]
+        h[:cwday] = i m[:cwday2]
       end
 
-      if hour
-        h[:hour] = i hour
-        h[:min] = i min
-        h[:sec] = i sec if sec
+      if m[:hour]
+        h[:hour] = i m[:hour]
+        h[:min] = i m[:min]
+        h[:sec] = i m[:sec] if m[:sec]
       end
 
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
-      set_zone(h, zone)
+      if sec_fraction = m[:sec_fraction] # JRuby bug fix!
+        h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size)
+      end
+      set_zone(h, m[:zone]) if m[:zone]
 
-    elsif /\A\s*
+    elsif m = match(/\A\s*
       (?:
           (?<year>[-+]?(?:\d{4}|\d{2})|--) (?<mon>\d{2}|-) (?<mday>\d{2})
         | (?<year>[-+]?(?:\d{4}|\d{2})) (?<yday>\d{3})
@@ -957,37 +397,39 @@ class Date
         (?<hour>\d{2}) (?<min>\d{2}) (?:(?<sec>\d{2})(?:[,.](?<sec_fraction>\d+))?)?
         (?<zone>z | [-+]\d{2}(?:\d{2})?)?
       )?
-      \s*\z/ix =~ str
+      \s*\z/ix, str)
 
-      if mday
-        h[:mday] = i mday
-        h[:year] = comp_year69(year) if year != "--"
-        if mon != "-"
-          h[:mon] = i mon
+      if m[:mday]
+        h[:mday] = i m[:mday]
+        h[:year] = comp_year69(m[:year]) if m[:year] != "--"
+        if m[:mon] != "-"
+          h[:mon] = i m[:mon]
         else
-          return {} if year != "--"
+          return {} if m[:year] != "--"
         end
-      elsif yday
-        h[:yday] = i yday
-        h[:year] = comp_year69(year)
-      elsif yday2
-        h[:yday] = i yday2
-      elsif cwday
-        h[:cweek] = i cweek if cweek != "-"
-        h[:cwday] = i cwday
-        h[:cwyear] = comp_year69(cwyear) if cwyear != "-"
+      elsif m[:yday]
+        h[:yday] = i m[:yday]
+        h[:year] = comp_year69(m[:year])
+      elsif m[:yday2]
+        h[:yday] = i m[:yday2]
+      elsif m[:cwday]
+        h[:cweek] = i m[:cweek] if m[:cweek] != "-"
+        h[:cwday] = i m[:cwday]
+        h[:cwyear] = comp_year69(m[:cwyear]) if m[:cwyear] != "-"
       end
 
-      if hour
-        h[:hour] = i hour
-        h[:min] = i min
-        h[:sec] = i sec if sec
+      if m[:hour]
+        h[:hour] = i m[:hour]
+        h[:min] = i m[:min]
+        h[:sec] = i m[:sec] if m[:sec]
       end
 
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
-      set_zone(h, zone)
+      if sec_fraction = m[:sec_fraction] # JRuby bug fix!
+        h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size)
+      end
+      set_zone(h, m[:zone]) if m[:zone]
 
-    elsif /\A\s*
+    elsif m = match(/\A\s*
       (?<hour>\d{2})
       (?:
         : (?<min>\d{2})
@@ -1002,13 +444,15 @@ class Date
           (?<zone>z | [-+]\d{2}(?:\d{2})?)?
         )?
       )
-      \s*\z/ix =~ str
+      \s*\z/ix, str)
 
-      h[:hour] = i hour
-      h[:min] = i min
-      h[:sec] = i sec if sec
-      h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size) if sec_fraction # JRuby bug fix!
-      set_zone(h, zone)
+      h[:hour] = i m[:hour]
+      h[:min] = i m[:min]
+      h[:sec] = i m[:sec] if m[:sec]
+      if sec_fraction = m[:sec_fraction] # JRuby bug fix!
+        h[:sec_fraction] = Rational(sec_fraction.to_i, 10**sec_fraction.size)
+      end
+      set_zone(h, m[:zone]) if m[:zone]
     end
     h
   end
@@ -1017,7 +461,7 @@ class Date
     if /\A\s*-?\d{4}-\d{2}-\d{2} # allow minus, anyway
         (t|\s)
         \d{2}:\d{2}:\d{2}(\.\d+)?
-        (z|[-+]\d{2}:\d{2})\s*\z/ix =~ str
+        (z|[-+]\d{2}:\d{2})\s*\z/ix.match?(str)
       _parse(str)
     else
       {}
@@ -1025,67 +469,71 @@ class Date
   end
 
   def self._xmlschema(str) # :nodoc:
-    if /\A\s*(-?\d{4,})(?:-(\d{2})(?:-(\d{2}))?)?
+    if m = match(/\A\s*(-?\d{4,})(?:-(\d{2})(?:-(\d{2}))?)?
         (?:t
           (\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?
-        (z|[-+]\d{2}:\d{2})?\s*\z/ix =~ str
-      e = Format::Bag.new
-      e.year = $1.to_i
-      e.mon = $2.to_i if $2
-      e.mday = $3.to_i if $3
-      e.hour = $4.to_i if $4
-      e.min = $5.to_i if $5
-      e.sec = $6.to_i if $6
-      e.sec_fraction = Rational($7.to_i, 10**$7.size) if $7
-      if $8
-        e.zone = $8
-        e.offset = zone_to_diff($8)
+        (z|[-+]\d{2}:\d{2})?\s*\z/ix, str)
+      hash = Hash.new
+      hash[:year] = m[1].to_i
+      hash[:mon] = m[2].to_i if m[2]
+      hash[:mday] = m[3].to_i if m[3]
+      hash[:hour] = m[4].to_i if m[4]
+      hash[:min] = m[5].to_i if m[5]
+      hash[:sec] = m[6].to_i if m[6]
+      if sf = m[7]
+        hash[:sec_fraction] = Rational(sf.to_i, 10**sf.size)
       end
-      e.to_hash
-    elsif /\A\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?
-        (z|[-+]\d{2}:\d{2})?\s*\z/ix =~ str
-      e = Format::Bag.new
-      e.hour = $1.to_i if $1
-      e.min = $2.to_i if $2
-      e.sec = $3.to_i if $3
-      e.sec_fraction = Rational($4.to_i, 10**$4.size) if $4
-      if $5
-        e.zone = $5
-        e.offset = zone_to_diff($5)
+      if zone = m[8]
+        hash[:zone] = zone
+        hash[:offset] = zone_to_diff(zone)
       end
-      e.to_hash
-    elsif /\A\s*(?:--(\d{2})(?:-(\d{2}))?|---(\d{2}))
-        (z|[-+]\d{2}:\d{2})?\s*\z/ix =~ str
-      e = Format::Bag.new
-      e.mon = $1.to_i if $1
-      e.mday = $2.to_i if $2
-      e.mday = $3.to_i if $3
-      if $4
-        e.zone = $4
-        e.offset = zone_to_diff($4)
+      hash
+    elsif m = match(/\A\s*(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?
+        (z|[-+]\d{2}:\d{2})?\s*\z/ix, str)
+      hash = Hash.new
+      hash[:hour] = m[1].to_i if m[1]
+      hash[:min] = m[2].to_i if m[2]
+      hash[:sec] = m[3].to_i if m[3]
+      if sf = m[4]
+        hash[:sec_fraction] = Rational(sf.to_i, 10**sf.size)
       end
-      e.to_hash
+      if zone = m[5]
+        hash[:zone] = zone
+        hash[:offset] = zone_to_diff(zone)
+      end
+      hash
+    elsif m = match(/\A\s*(?:--(\d{2})(?:-(\d{2}))?|---(\d{2}))
+        (z|[-+]\d{2}:\d{2})?\s*\z/ix, str)
+      hash = Hash.new
+      hash[:mon] = m[1].to_i if m[1]
+      hash[:mday] = m[2].to_i if m[2]
+      hash[:mday] = m[3].to_i if m[3]
+      if zone = m[4]
+        hash[:zone] = zone
+        hash[:offset] = zone_to_diff(zone)
+      end
+      hash
     else
       {}
     end
   end
 
   def self._rfc2822(str) # :nodoc:
-    if /\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
+    if m = match(/\A\s*(?:(?:#{Format::ABBR_DAYS.keys.join('|')})\s*,\s+)?
         \d{1,2}\s+
         (?:#{Format::ABBR_MONTHS.keys.join('|')})\s+
         -?(\d{2,})\s+ # allow minus, anyway
         \d{2}:\d{2}(:\d{2})?\s*
-        (?:[-+]\d{4}|ut|gmt|e[sd]t|c[sd]t|m[sd]t|p[sd]t|[a-ik-z])\s*\z/iox =~ str
-      e = _parse(str, false)
-      if $1.size < 4
-        if e[:year] < 50
-          e[:year] += 2000
-        elsif e[:year] < 1000
-          e[:year] += 1900
+        (?:[-+]\d{4}|ut|gmt|e[sd]t|c[sd]t|m[sd]t|p[sd]t|[a-ik-z])\s*\z/iox, str)
+      hash = _parse(str, false)
+      if m[1].size < 4
+        if hash[:year] < 50
+          hash[:year] += 2000
+        elsif hash[:year] < 1000
+          hash[:year] += 1900
         end
       end
-      e
+      hash
     else
       {}
     end
@@ -1099,20 +547,20 @@ class Date
         (#{Format::ABBR_MONTHS.keys.join('|')})\s+
         -?\d{4}\s+ # allow minus, anyway
         \d{2}:\d{2}:\d{2}\s+
-        gmt\s*\z/iox =~ str
+        gmt\s*\z/iox.match?(str)
       _rfc2822(str)
     elsif /\A\s*(#{Format::DAYS.keys.join('|')})\s*,\s+
         \d{2}\s*-\s*
         (#{Format::ABBR_MONTHS.keys.join('|')})\s*-\s*
         \d{2}\s+
         \d{2}:\d{2}:\d{2}\s+
-        gmt\s*\z/iox =~ str
+        gmt\s*\z/iox.match?(str)
       _parse(str)
     elsif /\A\s*(#{Format::ABBR_DAYS.keys.join('|')})\s+
         (#{Format::ABBR_MONTHS.keys.join('|')})\s+
         \d{1,2}\s+
         \d{2}:\d{2}:\d{2}\s+
-        \d{4}\s*\z/iox =~ str
+        \d{4}\s*\z/iox.match?(str)
       _parse(str)
     else
       {}
@@ -1123,8 +571,8 @@ class Date
     if /\A\s*[mtsh]?\d{2}\.\d{2}\.\d{2}
         (t
         (\d{2}:\d{2}(:\d{2}([,.]\d*)?)?
-        (z|[-+]\d{2}(:?\d{2})?)?)?)?\s*\z/ix =~ str
-      if /\A\s*\d/ =~ str
+        (z|[-+]\d{2}(:?\d{2})?)?)?)?\s*\z/ix.match?(str)
+      if /\A\s*\d/.match?(str)
         _parse(str.sub(/\A\s*(\d)/, 'h\1'))
       else
         _parse(str)
@@ -1134,86 +582,15 @@ class Date
     end
   end
 
-  t = Module.new do
-
-    private
-
-    def zone_to_diff(zone) # :nodoc:
-      zone = zone.downcase
-      if zone.sub!(/\s+(standard|daylight)\s+time\z/, '')
-        dst = $1 == 'daylight'
-      else
-        dst = zone.sub!(/\s+dst\z/, '')
-      end
-      if Format::ZONES.include?(zone)
-        offset = Format::ZONES[zone]
-        offset += 3600 if dst
-      elsif zone.sub!(/\A(?:gmt|utc?)?([-+])/, '')
-        sign = $1
-        if zone.include?(':')
-          hour, min, sec, = zone.split(':')
-        elsif zone.include?(',') || zone.include?('.')
-          hour, fr, = zone.split(/[,.]/)
-          min = Rational(fr.to_i, 10**fr.size) * 60
-        else
-          case zone.size
-          when 3
-            hour = zone[0,1]
-            min = zone[1,2]
-          else
-            hour = zone[0,2]
-            min = zone[2,2]
-            sec = zone[4,2]
-          end
-        end
-        offset = hour.to_i * 3600 + min.to_i * 60 + sec.to_i
-        offset *= -1 if sign == '-'
-      end
-      offset
-    end
-
+  def self.set_zone(hash, zone) # :nodoc:
+    hash[:zone] = zone
+    hash[:offset] = zone_to_diff(zone)
   end
+  private_class_method :set_zone
 
-  extend  t
-  include t
-
-  extend Module.new {
-    private
-    def set_zone(h, zone)
-      if zone
-        h[:zone] = zone
-        h[:offset] = zone_to_diff(zone)
-      end
-    end
-
-    def comp_year69(year)
-      y = i year
-      if year.length < 4
-        if y >= 69
-          y + 1900
-        else
-          y + 2000
-        end
-      else
-        y
-      end
-    end
-
-    def i(str)
-      Integer(str, 10)
-    end
-  }
 end
 
 class DateTime < Date
-
-  def strftime(fmt='%FT%T%:z')
-    super(fmt)
-  end
-
-  def self._strptime(str, fmt='%FT%T%z')
-    super(str, fmt)
-  end
 
   def iso8601_timediv(n) # :nodoc:
     n = n.to_i
@@ -1225,7 +602,6 @@ class DateTime < Date
              end +
              '%:z')
   end
-
   private :iso8601_timediv
 
   def iso8601(n=0)

@@ -119,6 +119,12 @@ static VALUE array_spec_rb_ary_new2(VALUE self, VALUE length) {
 }
 #endif
 
+#ifdef HAVE_RB_ARY_NEW_CAPA
+static VALUE array_spec_rb_ary_new_capa(VALUE self, VALUE length) {
+  return rb_ary_new_capa(NUM2LONG(length));
+}
+#endif
+
 #ifdef HAVE_RB_ARY_NEW3
 static VALUE array_spec_rb_ary_new3(VALUE self, VALUE first, VALUE second, VALUE third) {
   return rb_ary_new3(3, first, second, third);
@@ -141,6 +147,16 @@ static VALUE array_spec_rb_ary_new4(VALUE self, VALUE first, VALUE second, VALUE
 }
 #endif
 
+#ifdef HAVE_RB_ARY_NEW_FROM_VALUES
+static VALUE array_spec_rb_ary_new_from_values(VALUE self, VALUE first, VALUE second, VALUE third) {
+  VALUE values[3];
+  values[0] = first;
+  values[1] = second;
+  values[2] = third;
+  return rb_ary_new_from_values(3, values);
+}
+#endif
+
 #ifdef HAVE_RB_ARY_POP
 static VALUE array_spec_rb_ary_pop(VALUE self, VALUE array) {
   return rb_ary_pop(array);
@@ -154,9 +170,23 @@ static VALUE array_spec_rb_ary_push(VALUE self, VALUE array, VALUE item) {
 }
 #endif
 
+#ifdef HAVE_RB_ARY_CAT
+static VALUE array_spec_rb_ary_cat(int argc, VALUE *argv, VALUE self) {
+  VALUE ary, args;
+  rb_scan_args(argc, argv, "1*", &ary, &args);
+  return rb_ary_cat(ary, RARRAY_PTR(args), RARRAY_LEN(args));
+}
+#endif
+
 #ifdef HAVE_RB_ARY_REVERSE
 static VALUE array_spec_rb_ary_reverse(VALUE self, VALUE array) {
   return rb_ary_reverse(array);
+}
+#endif
+
+#ifdef HAVE_RB_ARY_ROTATE
+static VALUE array_spec_rb_ary_rotate(VALUE self, VALUE array, VALUE count) {
+  return rb_ary_rotate(array, NUM2LONG(count));
 }
 #endif
 
@@ -330,6 +360,10 @@ void Init_array_spec(void) {
   rb_define_method(cls, "rb_ary_new2", array_spec_rb_ary_new2, 1);
 #endif
 
+#ifdef HAVE_RB_ARY_NEW_CAPA
+  rb_define_method(cls, "rb_ary_new_capa", array_spec_rb_ary_new_capa, 1);
+#endif
+
 #ifdef HAVE_RB_ARY_NEW3
   rb_define_method(cls, "rb_ary_new3", array_spec_rb_ary_new3, 3);
 #endif
@@ -342,6 +376,10 @@ void Init_array_spec(void) {
   rb_define_method(cls, "rb_ary_new4", array_spec_rb_ary_new4, 3);
 #endif
 
+#ifdef HAVE_RB_ARY_NEW_FROM_VALUES
+  rb_define_method(cls, "rb_ary_new_from_values", array_spec_rb_ary_new_from_values, 3);
+#endif
+
 #ifdef HAVE_RB_ARY_POP
   rb_define_method(cls, "rb_ary_pop", array_spec_rb_ary_pop, 1);
 #endif
@@ -350,8 +388,16 @@ void Init_array_spec(void) {
   rb_define_method(cls, "rb_ary_push", array_spec_rb_ary_push, 2);
 #endif
 
+#ifdef HAVE_RB_ARY_CAT
+  rb_define_method(cls, "rb_ary_cat", array_spec_rb_ary_cat, -1);
+#endif
+
 #ifdef HAVE_RB_ARY_REVERSE
   rb_define_method(cls, "rb_ary_reverse", array_spec_rb_ary_reverse, 1);
+#endif
+
+#ifdef HAVE_RB_ARY_ROTATE
+  rb_define_method(cls, "rb_ary_rotate", array_spec_rb_ary_rotate, 2);
 #endif
 
 #ifdef HAVE_RB_ARY_SHIFT

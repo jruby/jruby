@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/gets_ascii', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/gets_ascii'
 
 describe "IO#gets" do
   it_behaves_like :io_gets_ascii, :gets
@@ -138,6 +138,14 @@ describe "IO#gets" do
       end
     end
   end
+
+  ruby_version_is "2.4" do
+    describe "when passed chomp" do
+      it "returns the first line without a trailing newline character" do
+        @io.gets(chomp: true).should == IOSpecs.lines_without_newline_characters[0]
+      end
+    end
+  end
 end
 
 describe "IO#gets" do
@@ -191,7 +199,7 @@ describe "IO#gets" do
     @io.gets(obj, 5).should == "one\n"
   end
 
-  it "reads to the default seperator when passed a single argument greater than the number of bytes to the separator" do
+  it "reads to the default separator when passed a single argument greater than the number of bytes to the separator" do
     @io.gets(6).should == "one\n"
   end
 

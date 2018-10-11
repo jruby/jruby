@@ -1,9 +1,6 @@
 package org.jruby.util.cli;
 
 import com.headius.options.Option;
-import jnr.posix.util.Platform;
-import org.jruby.CompatVersion;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;

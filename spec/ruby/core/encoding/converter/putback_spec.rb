@@ -1,5 +1,5 @@
 # -*- encoding: binary -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 
 with_feature :encoding do
   describe "Encoding::Converter#putback" do
@@ -40,8 +40,7 @@ with_feature :encoding do
       src = "\x00\xd8\x61\x00"
       dst = ""
       ec.primitive_convert(src, dst).should == :invalid_byte_sequence
-      ec.primitive_errinfo.should ==
-        [:invalid_byte_sequence, "UTF-16LE", "UTF-8", "\x00\xD8", "a\x00"]
+      ec.primitive_errinfo.should == [:invalid_byte_sequence, "UTF-16LE", "UTF-8", "\x00\xD8", "a\x00"]
       ec.putback(1).should == "\x00".force_encoding("utf-16le")
       ec.putback.should == "a".force_encoding("utf-16le")
       ec.putback.should == ""

@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __FILE__)
+require_relative 'spec_helper'
 
 load_extension("constants")
 
@@ -25,8 +25,10 @@ describe "C-API constant" do
     @s.rb_mComparable.should == Comparable
   end
 
-  specify "rb_cData references the Data class" do
-    @s.rb_cData.should == Data
+  ruby_version_is ""..."2.5" do
+    specify "rb_cData references the Data class" do
+      @s.rb_cData.should == Data
+    end
   end
 
   specify "rb_mEnumerable references the Enumerable module" do

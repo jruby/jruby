@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,12 +33,12 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import org.jcodings.Encoding;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -50,10 +50,12 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.util.TypeConverter.toFloat;
 
 public class Pack {
     private static final byte[] sSp10 = "          ".getBytes();
@@ -83,23 +85,21 @@ public class Pack {
     private static final Converter[] converters = new Converter[256];
 
     private static long num2quad(IRubyObject arg) {
-        if (arg == arg.getRuntime().getNil()) {
-            return 0L;
-        }
-        else if (arg instanceof RubyBignum) {
-            BigInteger big = ((RubyBignum)arg).getValue();
+        if (arg.isNil()) return 0L;
+        if (arg instanceof RubyBignum) {
+            BigInteger big = ((RubyBignum) arg).getValue();
             return big.longValue();
         }
         return RubyNumeric.num2long(arg);
     }
 
     private static float obj2flt(Ruby runtime, IRubyObject o) {
-        return (float) TypeConverter.toFloat(runtime, o).getDoubleValue();        
+        return (float) toFloat(runtime, o).getDoubleValue();
     }
 
     private static double obj2dbl(Ruby runtime, IRubyObject o) {
-        return TypeConverter.toFloat(runtime, o).getDoubleValue();        
-    }    
+        return toFloat(runtime, o).getDoubleValue();
+    }
 
     static {
         uu_table =
@@ -550,11 +550,23 @@ public class Pack {
     }
 
     /**
+     * @see #unpack(ThreadContext, Ruby, ByteList, ByteList, Block)
+     * @param runtime
+     * @param encodedString
+     * @param formatString
+     * @return
+     */
+    public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
+        return unpackWithBlock(runtime.getCurrentContext(), runtime, encodedString, formatString, Block.NULL_BLOCK);
+    }
+
+    /**
      *    Decodes <i>str</i> (which may contain binary data) according to the format
      *       string, returning an array of each value extracted.
      *       The format string consists of a sequence of single-character directives.<br/>
      *       Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
      *       remaining elements.  <br/>
+     *       Note that if passed a block, this method will return null and instead yield results to the block.
      *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
      *       Spaces are ignored in the format string.
      * 
@@ -785,9 +797,9 @@ public class Pack {
      *
      * @see RubyArray#pack
      **/
-    public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
+    public static RubyArray unpackWithBlock(ThreadContext context, Ruby runtime, ByteList encodedString, ByteList formatString, Block block) {
         // Encoding encoding = encodedString.getEncoding();
-        final RubyArray result = runtime.newArray();
+        final RubyArray result = block.isGiven() ? null : runtime.newArray();
         // FIXME: potentially could just use ByteList here?
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteBuffer encode = ByteBuffer.wrap(encodedString.getUnsafeBytes(), encodedString.begin(), encodedString.length());
@@ -853,7 +865,7 @@ public class Pack {
             // See if we have a converter for the job...
             Converter converter = converters[type];
             if (converter != null) {
-                decode(runtime, encode, occurrences, result, converter);
+                decode(context, runtime, encode, occurrences, result, block, converter);
                 type = next;
                 continue;
             }
@@ -873,26 +885,27 @@ public class Pack {
                     break;
                 case '%' :
                     throw runtime.newArgumentError("% is not supported");
-                case 'A' :
-                    {
-                    if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                        occurrences = encode.remaining();
-                    }
+                case 'A' : {
+                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+                            occurrences = encode.remaining();
+                        }
 
-                    byte[] potential = new byte[occurrences];
-                    encode.get(potential);
+                        byte[] potential = new byte[occurrences];
+                        encode.get(potential);
 
-                    for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
-                        byte c = potential[t];
+                        for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
+                            byte c = potential[t];
 
-                           if (c != '\0' && c != ' ') {
-                               break;
-                           }
-                    }
+                               if (c != '\0' && c != ' ') {
+                                   break;
+                               }
+                        }
 
-                    result.append(RubyString.newString(runtime, new ByteList(potential, 0, occurrences, ASCIIEncoding.INSTANCE, false)));
-                    }
+                        RubyString item = RubyString.newString(runtime, new ByteList(potential, 0, occurrences, ASCIIEncoding.INSTANCE, false));
+                    appendOrYield(context, block, result, item);
+
                     break;
+                    }
                 case 'Z' :
                     {
                         boolean isStar = (occurrences == IS_STAR);
@@ -909,11 +922,12 @@ public class Pack {
                             if (b == 0) {
                                 break;
                             }
-                            potential[t] = b; 
+                            potential[t] = b;
                             t++;
                         }
 
-                        result.append(RubyString.newString(runtime, new ByteList(potential, 0, t, ASCIIEncoding.INSTANCE, false)));
+                        RubyString item = RubyString.newString(runtime, new ByteList(potential, 0, t, ASCIIEncoding.INSTANCE, false));
+                        appendOrYield(context, block, result, item);
 
                         // When the number of occurrences is
                         // explicitly specified, we have to read up
@@ -934,13 +948,15 @@ public class Pack {
                         }
                     }
                     break;
-                case 'a' :
-                    if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                        occurrences = encode.remaining();
-                    }
-                    byte[] potential = new byte[occurrences];
-                    encode.get(potential);
-                    result.append(RubyString.newString(runtime, new ByteList(potential, ASCIIEncoding.INSTANCE, false)));
+                case 'a' : {
+                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+                            occurrences = encode.remaining();
+                        }
+                        byte[] potential = new byte[occurrences];
+                        encode.get(potential);
+                        RubyString item = RubyString.newString(runtime, new ByteList(potential, ASCIIEncoding.INSTANCE, false));
+                    appendOrYield(context, block, result, item);
+                }
                     break;
                 case 'b' :
                     {
@@ -957,7 +973,8 @@ public class Pack {
                             }
                             lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, USASCII, false)));
+                        RubyString item = RubyString.newString(runtime, new ByteList(lElem, USASCII, false));
+                        appendOrYield(context, block, result, item);
                     }
                     break;
                 case 'B' :
@@ -976,7 +993,8 @@ public class Pack {
                             lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
                         }
 
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
+                        RubyString item = RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false));
+                        appendOrYield(context, block, result, item);
                     }
                     break;
                 case 'h' :
@@ -994,7 +1012,8 @@ public class Pack {
                             }
                             lElem[lCurByte] = sHexDigits[bits & 15];
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
+                        RubyString item = RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false));
+                        appendOrYield(context, block, result, item);
                     }
                     break;
                 case 'H' :
@@ -1012,7 +1031,8 @@ public class Pack {
                             }
                             lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false)));
+                        RubyString item = RubyString.newString(runtime, new ByteList(lElem, ASCIIEncoding.INSTANCE, false));
+                        appendOrYield(context, block, result, item);
                     }
                     break;
 
@@ -1080,7 +1100,8 @@ public class Pack {
                             }
                         }
                     }
-                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false)));
+                    RubyString item = RubyString.newString(runtime, new ByteList(lElem, 0, index, ASCIIEncoding.INSTANCE, false));
+                    appendOrYield(context, block, result, item);
                 }
                 break;
 
@@ -1205,8 +1226,9 @@ public class Pack {
                             }
                         }
                     }
-                    result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,
-                            ASCIIEncoding.INSTANCE, false)));
+                    RubyString item = RubyString.newString(runtime, new ByteList(lElem, 0, index,
+                            ASCIIEncoding.INSTANCE, false));
+                    appendOrYield(context, block, result, item);
                 }
                 break;
 
@@ -1241,8 +1263,9 @@ public class Pack {
                                 lElem[index++] = value;
                             }
                         }
-                        result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,
-                                ASCIIEncoding.INSTANCE, false)));
+                        RubyString item = RubyString.newString(runtime, new ByteList(lElem, 0, index,
+                                ASCIIEncoding.INSTANCE, false));
+                        appendOrYield(context, block, result, item);
                     }
                     break;
                 case 'U' :
@@ -1257,8 +1280,9 @@ public class Pack {
                                 // reimplementation of MRI's algorithm,
                                 // but should use UTF8Encoding facilities
                                 // from Joni, once it starts prefroming
-                                // UTF-8 content validation. 
-                                result.append(runtime.newFixnum(utf8Decode(encode)));
+                                // UTF-8 content validation.
+                                RubyFixnum item = runtime.newFixnum(utf8Decode(encode));
+                                appendOrYield(context, block, result, item);
                             } catch (IllegalArgumentException e) {
                                 throw runtime.newArgumentError(e.getMessage());
                             }
@@ -1297,7 +1321,7 @@ public class Pack {
                     }
 
                     long ul = 0;
-                    long ulmask = (0xfe << 56) & 0xffffffff;
+                    long ulmask = (0xfeL << 56) & 0xffffffff;
                     RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
                     int pos = encode.position();
 
@@ -1305,7 +1329,7 @@ public class Pack {
                         ul <<= 7;
                         ul |= encode.get(pos) & 0x7f;
                         if((encode.get(pos++) & 0x80) == 0) {
-                            result.append(RubyFixnum.newFixnum(runtime, ul));
+                            appendOrYield(context, block, result, RubyFixnum.newFixnum(runtime, ul));
                             occurrences--;
                             ul = 0;
                         } else if((ul & ulmask) == 0) {
@@ -1320,7 +1344,7 @@ public class Pack {
                                     big = (RubyBignum)v;
                                 }
                                 if((encode.get(pos++) & 0x80) == 0) {
-                                    result.add(RubyBignum.bignorm(runtime, big.getValue()));
+                                    appendOrYield(context, block, result, RubyBignum.bignorm(runtime, big.getValue()));
                                     occurrences--;
                                     ul = 0;
                                     break;
@@ -1337,6 +1361,14 @@ public class Pack {
             }
         }
         return result;
+    }
+
+    private static void appendOrYield(ThreadContext context, Block block, RubyArray result, IRubyObject item) {
+        if (block.isGiven()) {
+            block.yield(context, item);
+        } else {
+            result.append(item);
+        }
     }
 
     /** rb_uv_to_utf8
@@ -1466,8 +1498,8 @@ public class Pack {
         return next;
     }
 
-    public static void decode(Ruby runtime, ByteBuffer encode, int occurrences,
-            RubyArray result, Converter converter) {
+    public static void decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
+            RubyArray result, Block block, Converter converter) {
         int lPadLength = 0;
 
         if (occurrences == IS_STAR) {
@@ -1477,11 +1509,20 @@ public class Pack {
             occurrences = encode.remaining() / converter.size;
         }
         for (; occurrences-- > 0;) {
-            result.append(converter.decode(runtime, encode));
+            if (block.isGiven()) {
+                block.yield(context, converter.decode(runtime, encode));
+            } else {
+                result.append(converter.decode(runtime, encode));
+            }
         }
 
-        for (; lPadLength-- > 0;)
-            result.append(runtime.getNil());
+        for (; lPadLength-- > 0;) {
+            if (block.isGiven()) {
+                block.yield(context, context.nil);
+            } else {
+                result.append(context.nil);
+            }
+        }
     }
 
     public static int encode(Ruby runtime, int occurrences, ByteList result,
@@ -1616,20 +1657,27 @@ public class Pack {
      * Same as pack but defaults tainting of output to false.
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime, list, formatString, false, executor());
+        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor());
     }
 
+    /**
+     * @deprecated
+     */
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(runtime, list, formatString.getByteList(), formatString.isTaint(), executor());
+        return pack(context, list, formatString);
+    }
+
+    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString) {
+        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor());
         return (RubyString) pack.infectBy(formatString);
     }
 
-    private static RubyString packCommon(Ruby runtime, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = tainted;
         int listSize = list.size();
-        int type = 0;
+        int type;
         int next = safeGet(format);
 
         int idx = 0;
@@ -1663,8 +1711,7 @@ public class Pack {
             if (next == '!' || next == '_') {
                 int index = NATIVE_CODES.indexOf(type);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + next +
-                            "' allowed only after types " + NATIVE_CODES);
+                    throw context.runtime.newArgumentError("'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
                 int typeBeforeMap = type;
                 type = MAPPED_CODES.charAt(index);
@@ -1679,8 +1726,7 @@ public class Pack {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
                 if (index == -1) {
-                    throw runtime.newArgumentError("'" + (char)next +
-                            "' allowed only after types sSiIlLqQ");
+                    throw context.runtime.newArgumentError("'" + (char)next + "' allowed only after types sSiIlLqQ");
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = safeGet(format);
@@ -1726,13 +1772,13 @@ public class Pack {
 
             if (converter != null) {
                 executor.setConverter(converter);
-                idx = encode(runtime, occurrences, result, list, idx, executor);
+                idx = encode(context.runtime, occurrences, result, list, idx, executor);
                 continue;
             }
 
             switch (type) {
                 case '%' :
-                    throw runtime.newArgumentError("% is not supported");
+                    throw context.runtime.newArgumentError("% is not supported");
                 case 'A' :
                 case 'a' :
                 case 'Z' :
@@ -1742,13 +1788,13 @@ public class Pack {
                 case 'h' :
                     {
                         if (listSize-- <= 0) {
-                            throw runtime.newArgumentError(sTooFew);
+                            throw context.runtime.newArgumentError(sTooFew);
                         }
 
                         IRubyObject from = list.eltInternal(idx++);
                         if(from.isTaint()) taintOutput = true;
 
-                        lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
+                        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
 
                         if (isStar) {
                             occurrences = lCurElemString.length();
@@ -1932,7 +1978,7 @@ public class Pack {
                     try {
                         shrink(result, occurrences);
                     } catch (IllegalArgumentException e) {
-                        throw runtime.newArgumentError("in `pack': X outside of string");
+                        throw context.runtime.newArgumentError("in `pack': X outside of string");
                     }
                     break;
                 case '@' :
@@ -1947,19 +1993,19 @@ public class Pack {
                     break;
                 case 'u' :
                 case 'm' : {
-                        if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                         IRubyObject from = list.eltInternal(idx++);
-                        if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
+                        if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        encodeUM(runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
+                        encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
                     }
                     break;
                 case 'M' : {
-                       if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                       if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                        IRubyObject from = list.eltInternal(idx++);
-                       lCurElemString = from == runtime.getNil() ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
+                       lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
 
                        if (occurrences <= 1) {
                            occurrences = 72;
@@ -1970,34 +2016,34 @@ public class Pack {
                     break;
                 case 'U' :
                     while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                         IRubyObject from = list.eltInternal(idx++);
-                        int code = from == runtime.getNil() ? 0 : RubyNumeric.num2int(from);
+                        int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
 
-                        if (code < 0) throw runtime.newRangeError("pack(U): value out of range");
+                        if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
 
-                        result.ensure(result.getRealSize() + 6);
-                        result.setRealSize(result.getRealSize() + utf8Decode(runtime, result.getUnsafeBytes(), result.getBegin() + result.getRealSize(), code));
+                        int len = result.getRealSize();
+                        result.ensure(len + 6);
+                        result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
                     }
                     break;
                 case 'w' :
                     while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
+                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                         ByteList buf = new ByteList();
                         IRubyObject from = list.eltInternal(idx++);
 
-                        if (from.isNil()) throw runtime.newTypeError("pack('w') does not take nil");
-
+                        if (from.isNil()) throw context.runtime.newTypeError("pack('w') does not take nil");
 
                         if (from instanceof RubyBignum) {
-                            RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
+                            RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
                             while (from instanceof RubyBignum) {
                                 RubyBignum bignum = (RubyBignum)from;
-                                RubyArray ary = (RubyArray)bignum.divmod(runtime.getCurrentContext(), big128);
-                                buf.append((byte)(RubyNumeric.fix2int(ary.at(RubyFixnum.one(runtime))) | 0x80) & 0xff);
-                                from = ary.at(RubyFixnum.zero(runtime));
+                                RubyArray ary = (RubyArray)bignum.divmod(context, big128);
+                                buf.append((byte)(RubyNumeric.fix2int(ary.at(RubyFixnum.one(context.runtime))) | 0x80) & 0xff);
+                                from = ary.at(RubyFixnum.zero(context.runtime));
                             }
                         }
 
@@ -2031,7 +2077,7 @@ public class Pack {
 
                             result.append(buf);
                         } else {
-                            throw runtime.newArgumentError("can't compress negative numbers");
+                            throw context.runtime.newArgumentError("can't compress negative numbers");
                         }
                     }
 
@@ -2039,8 +2085,8 @@ public class Pack {
             }
         }        
 
-        RubyString output = runtime.newString(result);
-        if (taintOutput) output.taint(runtime.getCurrentContext());
+        RubyString output = context.runtime.newString(result);
+        if (taintOutput) output.taint(context);
 
         switch (enc_info)
         {
@@ -2048,8 +2094,7 @@ public class Pack {
                 output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
-                output.force_encoding(runtime.getCurrentContext(),
-                        runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
+                output.force_encoding(context, context.runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
                 break;
             default:
                 /* do nothing, keep ASCII-8BIT */

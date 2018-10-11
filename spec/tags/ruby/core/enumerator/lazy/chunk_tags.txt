@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#chunk sets #size to nil
+fails:Enumerator::Lazy#chunk on a nested Lazy sets #size to nil

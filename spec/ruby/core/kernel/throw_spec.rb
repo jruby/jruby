@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel.throw" do
   it "transfers control to the end of the active catch block waiting for symbol" do
@@ -45,10 +45,8 @@ describe "Kernel.throw" do
     lambda { throw :blah }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "2.2" do
-    it "raises an UncaughtThrowError if there is no catch block for the symbol" do
-      lambda { throw :blah }.should raise_error(UncaughtThrowError)
-    end
+  it "raises an UncaughtThrowError if there is no catch block for the symbol" do
+    lambda { throw :blah }.should raise_error(UncaughtThrowError)
   end
 
   it "raises ArgumentError if 3 or more arguments provided" do

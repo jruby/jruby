@@ -205,13 +205,13 @@ real_open3 && module Open3
     end
     pid = spawn(*cmd, opts)
     wait_thr = Process.detach(pid)
-    child_io.each {|io| io.close }
+    child_io.each(&:close)
     result = [*parent_io, wait_thr]
     if defined? yield
       begin
         return yield(*result)
       ensure
-        parent_io.each{|io| io.close unless io.closed?}
+        parent_io.each(&:close)
         wait_thr.join
       end
     end
@@ -271,7 +271,11 @@ real_open3 && module Open3
       out_reader = Thread.new { o.read }
       err_reader = Thread.new { e.read }
       begin
-        i.write stdin_data
+        if stdin_data.respond_to? :readpartial
+          IO.copy_stream(stdin_data, i)
+        else
+          i.write stdin_data
+        end
       rescue Errno::EPIPE
       end
       i.close
@@ -318,7 +322,11 @@ real_open3 && module Open3
       out_reader = Thread.new { o.read }
       if stdin_data
         begin
-          i.write stdin_data
+          if stdin_data.respond_to? :readpartial
+            IO.copy_stream(stdin_data, i)
+          else
+            i.write stdin_data
+          end
         rescue Errno::EPIPE
         end
       end
@@ -353,7 +361,11 @@ real_open3 && module Open3
       outerr_reader = Thread.new { oe.read }
       if stdin_data
         begin
-          i.write stdin_data
+          if stdin_data.respond_to? :readpartial
+            IO.copy_stream(stdin_data, i)
+          else
+            i.write stdin_data
+          end
         rescue Errno::EPIPE
         end
       end
@@ -608,7 +620,7 @@ real_open3 && module Open3
   #
   def pipeline(*cmds, **opts)
     pipeline_run(cmds, opts, [], []) {|ts|
-      ts.map {|t| t.value }
+      ts.map(&:value)
     }
   end
   module_function :pipeline
@@ -657,13 +669,13 @@ real_open3 && module Open3
       r = r2
     }
     result = parent_io + [wait_thrs]
-    child_io.each {|io| io.close }
+    child_io.each(&:close)
     if defined? yield
       begin
         return yield(*result)
       ensure
-        parent_io.each{|io| io.close unless io.closed?}
-        wait_thrs.each {|t| t.join }
+        parent_io.each(&:close)
+        wait_thrs.each(&:join)
       end
     end
     result

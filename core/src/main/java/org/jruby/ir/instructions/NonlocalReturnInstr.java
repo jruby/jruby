@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -10,9 +11,9 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
-    public final String methodName; // Primarily a debugging aid
+    public final RubySymbol methodName; // Primarily a debugging aid
 
-    public NonlocalReturnInstr(Operand returnValue, String methodName) {
+    public NonlocalReturnInstr(Operand returnValue, RubySymbol methodName) {
         super(Operation.NONLOCAL_RETURN, returnValue);
         this.methodName = methodName;
     }
@@ -53,7 +54,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     public static NonlocalReturnInstr decode(IRReaderDecoder d) {
-        return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString());
+        return new NonlocalReturnInstr(d.decodeOperand(), d.decodeSymbol());
     }
 
     @Override

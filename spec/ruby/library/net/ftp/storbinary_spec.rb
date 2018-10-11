@@ -1,6 +1,6 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../fixtures/server', __FILE__)
+require_relative '../../../spec_helper'
+require_relative 'spec_helper'
+require_relative 'fixtures/server'
 
 describe "Net::FTP#storbinary" do
   before :each do
@@ -41,7 +41,7 @@ describe "Net::FTP#storbinary" do
         "This is an", " example f",
         "ile\nwhich ", "is going t",
         "o be trans", "mitted\nusi",
-        "ng #putbin", "aryfile."
+        "ng #putbin", "aryfile.\n"
       ]
     end
   end

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,6 +23,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import org.jruby.util.RubyDateFormatter.FieldType;
@@ -66,7 +67,7 @@ public class RubyTimeOutputFormatter {
         return padder;
     }
 
-    public String format(String sequence, long value, FieldType type) {
+    public String format(CharSequence sequence, long value, FieldType type) {
         int width = getWidth(type.defaultWidth);
         char padder = getPadder(type.defaultPadder);
 
@@ -79,60 +80,71 @@ public class RubyTimeOutputFormatter {
         for (int i = 0; i < flags.length(); i++) {
             switch (flags.charAt(i)) {
                 case '^':
-                    sequence = sequence.toUpperCase();
+                    sequence = sequence.toString().toUpperCase();
                     break;
                 case '#': // change case
                     char last = sequence.charAt(sequence.length() - 1);
                     if (Character.isLowerCase(last)) {
-                        sequence = sequence.toUpperCase();
+                        sequence = sequence.toString().toUpperCase();
                     } else {
-                        sequence = sequence.toLowerCase();
+                        sequence = sequence.toString().toLowerCase();
                     }
                     break;
             }
         }
 
-        return sequence;
+        return sequence.toString();
     }
 
-    static String formatNumber(long value, int width, char padder) {
+    static CharSequence formatNumber(long value, int width, char padder) {
         if (value >= 0 || padder != '0') {
             return padding(Long.toString(value), width, padder);
-        } else {
-            return "-" + padding(Long.toString(-value), width - 1, padder);
         }
+        return padding(new StringBuilder().append('-'), Long.toString(-value), width - 1, padder);
     }
 
-    static String formatSignedNumber(long value, int width, char padder) {
+    static StringBuilder formatSignedNumber(long value, int width, char padder) {
+        StringBuilder out = new StringBuilder();
         if (padder == '0') {
             if (value >= 0) {
-                return "+" + padding(Long.toString(value), width - 1, padder);
+                return padding(out.append('+'), Long.toString(value), width - 1, padder);
             } else {
-                return "-" + padding(Long.toString(-value), width - 1, padder);
+                return padding(out.append('-'), Long.toString(-value), width - 1, padder);
             }
         } else {
             if (value >= 0) {
-                return padding("+" + Long.toString(value), width, padder);
+                final StringBuilder str = new StringBuilder().append('+').append(Long.toString(value));
+                return padding(out, str, width, padder);
             } else {
-                return padding(Long.toString(value), width, padder);
+                return padding(out, Long.toString(value), width, padder);
             }
         }
     }
 
     private static final int SMALLBUF = 100;
 
-    static String padding(String sequence, int width, char padder) {
-        if (sequence.length() >= width) {
-            return sequence;
-        }
+    private static CharSequence padding(CharSequence sequence, int width, char padder) {
+        final int len = sequence.length();
+        if (len >= width) return sequence;
 
         if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
 
-        StringBuilder buf = new StringBuilder(width + sequence.length());
-        for (int i = sequence.length(); i < width; i++) {
-            buf.append(padder);
-        }
-        buf.append(sequence);
-        return buf.toString();
+        StringBuilder out = new StringBuilder(width + len);
+        for (int i = len; i < width; i++) out.append(padder);
+        out.append(sequence);
+        return out;
     }
+
+    private static StringBuilder padding(final StringBuilder out, CharSequence sequence,
+                                         final int width, final char padder) {
+        final int len = sequence.length();
+        if (len >= width) return out.append(sequence);
+
+        if (width > SMALLBUF) throw new IndexOutOfBoundsException("padding width " + width + " too large");
+
+        out.ensureCapacity(width + len);
+        for (int i = len; i < width; i++) out.append(padder);
+        return out.append(sequence);
+    }
+
 }

@@ -1,2 +1,16 @@
 fails:BasicSocket#recv accepts flags to specify unusual receiving behaviour
 fails:BasicSocket#recv allows an output buffer as third argument
+fails:BasicSocket#recv using IPv4 using a bound socket with data available reads the given amount of bytes
+fails:BasicSocket#recv using IPv4 using a bound socket with data available reads the given amount of bytes when it exceeds the data size
+fails:BasicSocket#recv using IPv4 using a bound socket with data available blocks the caller when called twice without new data being available
+fails:BasicSocket#recv using IPv4 using a bound socket with data available takes a peek at the data when using the MSG_PEEK flag
+fails:BasicSocket#recv using IPv6 using a bound socket with data available reads the given amount of bytes
+fails:BasicSocket#recv using IPv6 using a bound socket with data available reads the given amount of bytes when it exceeds the data size
+fails:BasicSocket#recv using IPv6 using a bound socket with data available blocks the caller when called twice without new data being available
+fails:BasicSocket#recv using IPv6 using a bound socket with data available takes a peek at the data when using the MSG_PEEK flag
+fails:BasicSocket#recv receives a specified number of bytes of a message from another socket
+fails:BasicSocket#recv gets lines delimited with a custom separator
+fails:BasicSocket#recv using IPv4 using an unbound socket blocks the caller
+fails:BasicSocket#recv using IPv4 using a bound socket without any data available blocks the caller
+fails:BasicSocket#recv using IPv6 using an unbound socket blocks the caller
+fails:BasicSocket#recv using IPv6 using a bound socket without any data available blocks the caller

@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require_relative 'helper'
 
 require 'stringio'
@@ -84,7 +84,7 @@ class TestPsych < Psych::TestCase
 
   def test_dump_io
     hash = {'hello' => 'TGIF!'}
-    stringio = StringIO.new ''
+    stringio = StringIO.new ''.dup
     assert_equal stringio, Psych.dump(hash, stringio)
     assert_equal Psych.dump(hash), stringio.string
   end
@@ -98,8 +98,8 @@ class TestPsych < Psych::TestCase
     assert_equal Psych.libyaml_version.join('.'), Psych::LIBYAML_VERSION
   end
 
-  def test_load_documents
-    docs = Psych.load_documents("--- foo\n...\n--- bar\n...")
+  def test_load_stream
+    docs = Psych.load_stream("--- foo\n...\n--- bar\n...")
     assert_equal %w{ foo bar }, docs
   end
 
@@ -144,6 +144,12 @@ class TestPsych < Psych::TestCase
     }
   end
 
+  def test_load_file_with_fallback
+    Tempfile.create(['empty', 'yml']) {|t|
+      assert_equal Hash.new, Psych.load_file(t.path, fallback: Hash.new)
+    }
+  end
+
   def test_parse_file
     Tempfile.create(['yikes', 'yml']) {|t|
       t.binmode
@@ -175,5 +181,23 @@ class TestPsych < Psych::TestCase
       ["tag:yaml.org,2002:foo", "bar"],
       ["tag:example.com,2002:foo", "bar"]
     ], types
+  end
+
+  def test_symbolize_names
+    yaml = <<-eoyml
+foo:
+  bar: baz
+hoge:
+  - fuga: piyo
+    eoyml
+
+    result = Psych.load(yaml)
+    assert_equal result, { "foo" => { "bar" => "baz"}, "hoge" => [{ "fuga" => "piyo" }] }
+
+    result = Psych.load(yaml, symbolize_names: true)
+    assert_equal result, { foo: { bar: "baz" }, hoge: [{ fuga: "piyo" }] }
+
+    result = Psych.safe_load(yaml, symbolize_names: true)
+    assert_equal result, { foo: { bar: "baz" }, hoge: [{ fuga: "piyo" }] }
   end
 end

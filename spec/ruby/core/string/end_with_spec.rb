@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#end_with?" do
   it "returns true only if ends match" do
@@ -44,13 +44,7 @@ describe "String#end_with?" do
   end
 
   it "works for multibyte strings" do
-    old_kcode = $KCODE
-    begin
-      $KCODE = "UTF-8"
-      "céréale".end_with?("réale").should be_true
-    ensure
-      $KCODE = old_kcode
-    end
+    "céréale".end_with?("réale").should be_true
   end
 
 end

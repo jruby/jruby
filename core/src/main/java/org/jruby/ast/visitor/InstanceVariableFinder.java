@@ -3,6 +3,8 @@ package org.jruby.ast.visitor;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.jruby.RubySymbol;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
@@ -34,7 +36,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
     }
 
     /** The set of instance variables found during walking. */
-    private final Set<String> foundVariables = new HashSet<String>();
+    private final Set<RubySymbol> foundVariables = new HashSet<>();
     
     /**
      * Walk a node and its children looking for instance variables using a new
@@ -43,7 +45,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      * @param node the node to walk
      * @return an array of instance variable names found
      */
-    public static Set<String> findVariables(Node node) {
+    public static Set<RubySymbol> findVariables(Node node) {
         InstanceVariableFinder ivf = new InstanceVariableFinder();
         node.accept(ivf);
         return ivf.getFoundVariables();
@@ -54,7 +56,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
      * 
      * @return a Set of all instance variable names found
      */
-    public Set<String> getFoundVariables() {
+    public Set<RubySymbol> getFoundVariables() {
         return foundVariables;
     }
     

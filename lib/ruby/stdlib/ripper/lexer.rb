@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 #
 # $Id$
 #
@@ -23,29 +23,47 @@ class Ripper
   end
 
   # Tokenizes the Ruby program and returns an array of an array,
-  # which is formatted like <code>[[lineno, column], type, token]</code>.
+  # which is formatted like
+  # <code>[[lineno, column], type, token, state]</code>.
   #
   #   require 'ripper'
   #   require 'pp'
   #
   #   pp Ripper.lex("def m(a) nil end")
-  #     #=> [[[1,  0], :on_kw,     "def"],
-  #          [[1,  3], :on_sp,     " "  ],
-  #          [[1,  4], :on_ident,  "m"  ],
-  #          [[1,  5], :on_lparen, "("  ],
-  #          [[1,  6], :on_ident,  "a"  ],
-  #          [[1,  7], :on_rparen, ")"  ],
-  #          [[1,  8], :on_sp,     " "  ],
-  #          [[1,  9], :on_kw,     "nil"],
-  #          [[1, 12], :on_sp,     " "  ],
-  #          [[1, 13], :on_kw,     "end"]]
+  #   #=> [[[1,  0], :on_kw,     "def", Ripper::EXPR_FNAME                   ],
+  #        [[1,  3], :on_sp,     " ",   Ripper::EXPR_FNAME                   ],
+  #        [[1,  4], :on_ident,  "m",   Ripper::EXPR_ENDFN                   ],
+  #        [[1,  5], :on_lparen, "(",   Ripper::EXPR_LABEL | Ripper::EXPR_BEG],
+  #        [[1,  6], :on_ident,  "a",   Ripper::EXPR_ARG                     ],
+  #        [[1,  7], :on_rparen, ")",   Ripper::EXPR_ENDFN                   ],
+  #        [[1,  8], :on_sp,     " ",   Ripper::EXPR_BEG                     ],
+  #        [[1,  9], :on_kw,     "nil", Ripper::EXPR_END                     ],
+  #        [[1, 12], :on_sp,     " ",   Ripper::EXPR_END                     ],
+  #        [[1, 13], :on_kw,     "end", Ripper::EXPR_END                     ]]
   #
   def Ripper.lex(src, filename = '-', lineno = 1)
     Lexer.new(src, filename, lineno).lex
   end
 
   class Lexer < ::Ripper   #:nodoc: internal use only
-    Elem = Struct.new(:pos, :event, :tok)
+    State = Struct.new(:to_int, :to_s) do
+      alias to_i to_int
+      def initialize(i) super(i, Ripper.lex_state_name(i)).freeze end
+      def inspect; "#<#{self.class}: #{self}>" end
+      def pretty_print(q) q.text(to_s) end
+      def ==(i) super or to_int == i end
+      def &(i) self.class.new(to_int & i) end
+      def |(i) self.class.new(to_int & i) end
+      def allbits?(i) to_int.allbits?(i) end
+      def anybits?(i) to_int.anybits?(i) end
+      def nobits?(i) to_int.nobits?(i) end
+    end
+
+    Elem = Struct.new(:pos, :event, :tok, :state) do
+      def initialize(pos, event, tok, state)
+        super(pos, event, tok, State.new(state))
+      end
+    end
 
     def tokenize
       parse().sort_by(&:pos).map(&:tok)
@@ -66,12 +84,24 @@ class Ripper
     private
 
     def on_heredoc_dedent(v, w)
-      @buf.last.each do |e|
-        if e.event == :on_tstring_content
+      ignored_sp = []
+      heredoc = @buf.last
+      heredoc.each_with_index do |e, i|
+        if Elem === e and e.event == :on_tstring_content and e.pos[1].zero?
+          tok = e.tok.dup if w > 0 and /\A\s/ =~ e.tok
           if (n = dedent_string(e.tok, w)) > 0
+            if e.tok.empty?
+              e.tok = tok[0, n]
+              e.event = :on_ignored_sp
+              next
+            end
+            ignored_sp << [i, Elem.new(e.pos.dup, :on_ignored_sp, tok[0, n], e.state)]
             e.pos[1] += n
           end
         end
+      end
+      ignored_sp.reverse_each do |i, e|
+        heredoc[i, 0] = [e]
       end
       v
     end
@@ -81,20 +111,25 @@ class Ripper
       buf = []
       @buf << buf
       @buf = buf
-      @buf.push Elem.new([lineno(), column()], __callee__, tok)
+      @buf.push Elem.new([lineno(), column()], __callee__, tok, state())
     end
 
     def on_heredoc_end(tok)
-      @buf.push Elem.new([lineno(), column()], __callee__, tok)
+      @buf.push Elem.new([lineno(), column()], __callee__, tok, state())
       @buf = @stack.pop
     end
 
+    def _push_token(tok)
+      @buf.push Elem.new([lineno(), column()], __callee__, tok, state())
+    end
+
     (SCANNER_EVENTS.map {|event|:"on_#{event}"} - private_instance_methods(false)).each do |event|
-      module_eval(<<-End, __FILE__+'/module_eval', __LINE__ + 1)
-        def #{event}(tok)
-          @buf.push Elem.new([lineno(), column()], :#{event}, tok)
-        end
-      End
+      # FIXME: Our callee impl is broken and returns same result as __method__
+      #  which is old method name and not new one.
+      define_method(event) { |tok|
+        @buf.push Elem.new([lineno(), column()], event, tok, state())
+      }
+#      alias_method event, :_push_token
     end
   end
 

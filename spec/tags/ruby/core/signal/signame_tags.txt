@@ -1,1 +1,2 @@
 fails:Signal.signame returns nil if the argument is an invalid signal number
+fails:Signal.signame the original should take precendence over alias when looked up by number

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,12 +25,14 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.util;
 
 import java.io.InputStream;
 import java.io.IOException;
 import org.jcodings.Encoding;
 
+import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
@@ -51,8 +53,8 @@ public class IOInputStream extends InputStream {
     private final IRubyObject io;
     private final InputStream in;
     private final IRubyObject numOne;
-    private static final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
-    private static final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
+    private final CallSite readAdapter = MethodIndex.getFunctionalCallSite("read");
+    private final CallSite closeAdapter = MethodIndex.getFunctionalCallSite("close");
 
     /**
      * Creates a new InputStream with the object provided.
@@ -60,13 +62,21 @@ public class IOInputStream extends InputStream {
      * @param io the ruby object
      */
     public IOInputStream(IRubyObject io) {
-        if (!io.respondsTo("read")) {
-            throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, cause it doesn't respond to \"read\".");
-        }
+        this(io, true);
+    }
+
+    public IOInputStream(final IRubyObject io, boolean verifyCanRead) {
         this.io = io;
-        this.in = ((io instanceof RubyIO) && !((RubyIO)io).isClosed() && ((RubyIO)io).isBuiltin("read"))
-                ? ((RubyIO)io).getInStream() : null;
-        this.numOne = RubyFixnum.one(this.io.getRuntime());
+        this.in = ( io instanceof RubyIO && !((RubyIO) io).isClosed() &&
+                ((RubyIO) io).isBuiltin("read") ) ?
+                    ((RubyIO) io).getInStream() : null;
+        if (this.in == null) {
+            if (verifyCanRead && !io.respondsTo("read")) {
+                throw new IllegalArgumentException("Object: " + io + " is not a legal argument to this wrapper, " +
+                        "cause it doesn't respond to \"read\".");
+            }
+        }
+        this.numOne = RubyFixnum.one(io.getRuntime());
     }
 
     @Override
@@ -93,27 +103,15 @@ public class IOInputStream extends InputStream {
         if (in != null) {
             return in.read();
         }
-        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, numOne);
-        int returnValue = -1;
-        if (!readValue.isNil()) {
-            returnValue = readValue.convertToString().getByteList().get(0) & 0xff;
-        }
-        return returnValue;
+        final Ruby runtime = io.getRuntime();
+        IRubyObject readValue = readAdapter.call(runtime.getCurrentContext(), io, io, numOne);
+        if (readValue.isNil()) return -1;
+        return readValue.convertToString().getByteList().get(0) & 0xff;
     }
 
     @Override
     public int read(byte[] b) throws IOException {
-        if (in != null) {
-            return in.read(b, 0, b.length);
-        }
-        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(b.length));
-        int returnValue = -1;
-        if (!readValue.isNil()) {
-            ByteList str = readValue.convertToString().getByteList();
-            System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, 0, str.getRealSize());
-            returnValue = str.getRealSize();
-        }
-        return returnValue;
+        return read(b, 0, b.length);
     }
 
     @Override
@@ -121,13 +119,11 @@ public class IOInputStream extends InputStream {
         if (in != null) {
             return in.read(b, off, len);
         }
-        IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(len));
-        int returnValue = -1;
-        if (!readValue.isNil()) {
-            ByteList str = readValue.convertToString().getByteList();
-            System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, str.getRealSize());
-            returnValue = str.getRealSize();
-        }
-        return returnValue;
+        final Ruby runtime = io.getRuntime();
+        IRubyObject readValue = readAdapter.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(len));
+        if (readValue.isNil()) return -1;
+        ByteList str = readValue.convertToString().getByteList();
+        System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, str.getRealSize());
+        return str.getRealSize();
      }
 }

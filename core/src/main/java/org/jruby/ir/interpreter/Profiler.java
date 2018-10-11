@@ -173,7 +173,7 @@ public class Profiler {
 
             RubyModule implClass = ircs.tgtM.getImplementationClass();
             int classToken = implClass.getGeneration();
-            String n = tgtMethod.getName();
+            String n = tgtMethod.getId();
             boolean inlineCall = true;
             if (isHotClosure) {
                 Operand clArg = call.getClosureArg(null);

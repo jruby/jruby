@@ -1,0 +1,1 @@
+fails:Symbol#capitalize capitalizes the first character if it is Unicode

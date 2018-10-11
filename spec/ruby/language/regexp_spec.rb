@@ -1,15 +1,17 @@
-require File.expand_path('../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Literal Regexps" do
   it "matches against $_ (last input) in a conditional if no explicit matchee provided" do
-    $_ = nil
+    -> {
+      eval <<-EOR
+      $_ = nil
+      (true if /foo/).should_not == true
 
-    (true if /foo/).should_not == true
-
-    $_ = "foo"
-
-    (true if /foo/).should == true
+      $_ = "foo"
+      (true if /foo/).should == true
+      EOR
+    }.should complain(/regex literal in condition/)
   end
 
   it "yields a Regexp" do
@@ -137,12 +139,32 @@ describe "Literal Regexps" do
     pattern.should_not =~ 'T'
   end
 
-  it "supports conditional regular expressions with positional capture groups" do
+  it "supports conditional regular expressions with named capture groups" do
     pattern = /\A(?<word>foo)?(?(<word>)(T)|(F))\z/
 
     pattern.should =~ 'fooT'
     pattern.should =~ 'F'
     pattern.should_not =~ 'fooF'
     pattern.should_not =~ 'T'
+  end
+
+  escapable_terminators =  ['!', '"', '#', '%', '&', "'", ',', '-', ':', ';', '@', '_', '`']
+
+  it "supports escaping characters when used as a terminator" do
+    escapable_terminators.each do |c|
+      ref = "(?-mix:#{c})"
+      pattern = eval("%r" + c + "\\" + c + c)
+      pattern.to_s.should == ref
+    end
+  end
+
+  it "treats an escaped non-escapable character normally when used as a terminator" do
+    all_terminators = [*("!".."/"), *(":".."@"), *("[".."`"), *("{".."~")]
+    special_cases = ['(', '{', '[', '<', '\\', '=', '~']
+    (all_terminators - special_cases - escapable_terminators).each do |c|
+      ref = "(?-mix:\\#{c})"
+      pattern = eval("%r" + c + "\\" + c + c)
+      pattern.to_s.should == ref
+    end
   end
 end

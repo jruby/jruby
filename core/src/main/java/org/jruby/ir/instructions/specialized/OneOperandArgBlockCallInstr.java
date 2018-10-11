@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions.specialized;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
@@ -14,7 +15,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneOperandArgBlockCallInstr extends CallInstr {
-    public OneOperandArgBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args,
+    public OneOperandArgBlockCallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
                                        Operand closure, boolean isPotentiallyRefined) {
         super(Operation.CALL_1OB, callType, result, name, receiver, args, closure, isPotentiallyRefined);
     }
@@ -27,9 +28,15 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
+        // NOTE: This logic shouod always match the CALL_10B logic in InterpreterEngine.processCall
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, currScope, dynamicScope, temp);
         IRubyObject arg1 = (IRubyObject) getArg1().retrieve(context, self, currScope, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
+
+        if (hasLiteralClosure()) {
+            return getCallSite().callIter(context, self, object, arg1, preparedBlock);
+        }
+
         return getCallSite().call(context, self, object, arg1, preparedBlock);
     }
 }

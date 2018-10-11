@@ -58,6 +58,8 @@ class Gem::CommandManager
     :rdoc,
     :search,
     :server,
+    :signin,
+    :signout,
     :sources,
     :specification,
     :stale,

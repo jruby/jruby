@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 
 describe "Time#localtime" do
   it "converts self to local time, modifying the receiver" do
@@ -20,6 +20,20 @@ describe "Time#localtime" do
     t.localtime(3630)
     t.should == Time.new(2007, 1, 9, 13, 0, 30, 3630)
     t.utc_offset.should == 3630
+  end
+
+  describe "on a frozen time" do
+    it "does not raise an error if already in the right time zone" do
+      time = Time.now
+      time.freeze
+      time.localtime.should equal(time)
+    end
+
+    it "raises a RuntimeError if the time has a different time zone" do
+      time = Time.gm(2007, 1, 9, 12, 0, 0)
+      time.freeze
+      lambda { time.localtime }.should raise_error(RuntimeError)
+    end
   end
 
   describe "with an argument that responds to #to_int" do
@@ -75,6 +89,19 @@ describe "Time#localtime" do
       end
 
       t.utc_offset.should == -18000
+    end
+
+    it "does nothing if already in a local time zone" do
+      time = with_timezone("America/New_York") do
+        Time.new(2005, 2, 27, 22, 50, 0)
+      end
+      zone = time.zone
+
+      with_timezone("Europe/Amsterdam") do
+        time.localtime
+      end
+
+      time.zone.should == zone
     end
   end
 

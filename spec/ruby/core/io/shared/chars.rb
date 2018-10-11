@@ -2,13 +2,11 @@
 describe :io_chars, shared: true do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
-    @kcode, $KCODE = $KCODE, "utf-8"
     ScratchPad.record []
   end
 
   after :each do
     @io.close unless @io.closed?
-    $KCODE = @kcode
   end
 
   it "yields each character" do
@@ -58,7 +56,6 @@ end
 
 describe :io_chars_empty, shared: true do
   before :each do
-    @kcode, $KCODE = $KCODE, "utf-8"
     @name = tmp("io_each_char")
     @io = new_io @name, "w+:utf-8"
     ScratchPad.record []
@@ -67,7 +64,6 @@ describe :io_chars_empty, shared: true do
   after :each do
     @io.close unless @io.closed?
     rm_r @name
-    $KCODE = @kcode
   end
 
   it "does not yield any characters on an empty stream" do

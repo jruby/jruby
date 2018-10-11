@@ -46,6 +46,7 @@ class Module
         end
       end
     end
+    nil
   end
 
   # Imports the package specified by +package_name+, first by trying to scan JAR resources

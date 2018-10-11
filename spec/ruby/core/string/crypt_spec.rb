@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "String#crypt" do
   # Note: MRI's documentation just says that the C stdlib function crypt() is
@@ -31,11 +31,13 @@ describe "String#crypt" do
   it "raises an ArgumentError when the salt is shorter than two characters" do
     lambda { "hello".crypt("")  }.should raise_error(ArgumentError)
     lambda { "hello".crypt("f") }.should raise_error(ArgumentError)
-    ruby_version_is "2.2" do
-      lambda { "hello".crypt("\x00\x00") }.should raise_error(ArgumentError)
-      lambda { "hello".crypt("\x00a") }.should raise_error(ArgumentError)
-      lambda { "hello".crypt("a\x00") }.should raise_error(ArgumentError)
-    end
+    lambda { "hello".crypt("\x00\x00") }.should raise_error(ArgumentError)
+    lambda { "hello".crypt("\x00a") }.should raise_error(ArgumentError)
+    lambda { "hello".crypt("a\x00") }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the string contains NUL character" do
+    lambda { "poison\0null".crypt("aa") }.should raise_error(ArgumentError)
   end
 
   it "calls #to_str to converts the salt arg to a String" do

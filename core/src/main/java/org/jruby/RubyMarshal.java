@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -30,6 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import java.io.ByteArrayInputStream;
@@ -41,10 +42,7 @@ import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -73,17 +71,19 @@ public class RubyMarshal {
     }
 
     @JRubyMethod(required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        final Ruby runtime = context.runtime;
+
         IRubyObject objectToDump = args[0];
         IRubyObject io = null;
         int depthLimit = -1;
 
         if (args.length >= 2) {
-            if (args[1].respondsTo("write")) {
-                io = args[1];
-            } else if (args[1] instanceof RubyFixnum) {
-                depthLimit = (int) ((RubyFixnum) args[1]).getLongValue();
+            IRubyObject arg1 = args[1];
+            if (sites(context).respond_to_write.respondsTo(context, arg1, arg1)) {
+                io = arg1;
+            } else if (arg1 instanceof RubyFixnum) {
+                depthLimit = (int) ((RubyFixnum) arg1).getLongValue();
             } else {
                 throw runtime.newTypeError("Instance of IO needed");
             }
@@ -94,13 +94,13 @@ public class RubyMarshal {
 
         try {
             if (io != null) {
-                dumpToStream(runtime, objectToDump, outputStream(runtime.getCurrentContext(), io), depthLimit);
+                dumpToStream(runtime, objectToDump, outputStream(context, io), depthLimit);
                 return io;
             }
             
             ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
             boolean taint = dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
-            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray()));
+            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
             
             if (taint) result.setTaint(true);
 
@@ -108,16 +108,11 @@ public class RubyMarshal {
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
-
     }
 
-    private static OutputStream outputStream(ThreadContext context, IRubyObject out) {
-        setBinmodeIfPossible(context, out);
-        return new IOOutputStream(out);
-    }
-
-    private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {
-        if (io.respondsTo("binmode")) io.callMethod(context, "binmode");
+    @Deprecated
+    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
     }
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
@@ -125,17 +120,16 @@ public class RubyMarshal {
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];
         IRubyObject proc = args.length == 2 ? args[1] : context.nil;
-        
+
+        final IRubyObject str = in.checkStringType();
         try {
-            InputStream rawInput;
-            boolean tainted;
-            IRubyObject v = in.checkStringType();
-            
-            if (!v.isNil()) {
+            InputStream rawInput; boolean tainted;
+            if (str != context.nil) {
                 tainted = in.isTaint();
-                ByteList bytes = ((RubyString) v).getByteList();
+                ByteList bytes = ((RubyString) str).getByteList();
                 rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-            } else if (in.respondsTo("getc") && in.respondsTo("read")) {
+            } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
+                        sites(context).respond_to_read.respondsTo(context, in, in)) {
                 tainted = true;
                 rawInput = inputStream(context, in);
             } else {
@@ -144,7 +138,7 @@ public class RubyMarshal {
 
             return new UnmarshalStream(runtime, rawInput, proc, tainted).unmarshalObject();
         } catch (EOFException e) {
-            if (in.respondsTo("to_str")) throw runtime.newArgumentError("marshal data too short");
+            if (str != context.nil) throw runtime.newArgumentError("marshal data too short");
 
             throw runtime.newEOFError();
         } catch (IOException ioe) {
@@ -154,13 +148,36 @@ public class RubyMarshal {
 
     private static InputStream inputStream(ThreadContext context, IRubyObject in) {
         setBinmodeIfPossible(context, in);
-        return new IOInputStream(in);
+        return new IOInputStream(in, false); // respond_to?(:read) already checked
     }
 
-    private static boolean dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput,
-            int depthLimit) throws IOException {
+    private static OutputStream outputStream(ThreadContext context, IRubyObject out) {
+        setBinmodeIfPossible(context, out);
+        return new IOOutputStream(out, true, false); // respond_to?(:write) already checked
+    }
+
+    private static boolean dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
+        throws IOException {
         MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
         output.dumpObject(object);
         return output.isTainted();
     }
+
+    private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {
+        if (sites(context).respond_to_binmode.respondsTo(context, io, io)) {
+            sites(context).binmode.call(context, io, io);
+        }
+    }
+
+    /**
+     * Convenience method for objects that are undumpable. Always throws (a TypeError).
+     */
+    public static IRubyObject undumpable(ThreadContext context, RubyObject self) {
+        throw context.runtime.newTypeError("can't dump " + self.type());
+    }
+
+    private static JavaSites.MarshalSites sites(ThreadContext context) {
+        return context.sites.Marshal;
+    }
+
 }

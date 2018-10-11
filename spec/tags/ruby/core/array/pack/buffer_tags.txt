@@ -1,0 +1,3 @@
+fails:Array#pack with :buffer option offset (@) is specified keeps buffer content if it is longer than offset
+fails:Array#pack with :buffer option offset (@) is specified fills the gap with \0 if buffer content is shorter than offset
+fails:Array#pack with :buffer option offset (@) is specified does not keep buffer content if it is longer than offset + result

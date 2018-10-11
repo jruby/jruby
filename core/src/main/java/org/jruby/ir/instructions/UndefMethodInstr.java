@@ -53,7 +53,7 @@ public class UndefMethodInstr extends OneOperandResultBaseInstr implements Fixed
         Object nameArg = getMethodName().retrieve(context, self, currScope, currDynScope, temp);
         String name = (nameArg instanceof String) ? (String) nameArg : nameArg.toString();
         module.undef(context, name);
-        return context.runtime.getNil();
+        return context.nil;
     }
 
     @Override

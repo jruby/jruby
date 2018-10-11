@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -13,7 +13,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006-2007 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -26,6 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ast;
 
 import java.util.Arrays;
@@ -37,13 +38,13 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class ArgsPushNode extends Node {
     private Node firstNode;
     private Node secondNode;
-    
+
     public ArgsPushNode(ISourcePosition position, Node firstNode, Node secondNode) {
         super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
-        
+
         assert firstNode != null : "ArgsPushNode.first == null";
         assert secondNode != null : "ArgsPushNode.second == null";
-        
+
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }
@@ -52,14 +53,14 @@ public class ArgsPushNode extends Node {
         return NodeType.ARGSPUSHNODE;
     }
 
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitArgsPushNode(this);
     }
-    
+
     public Node getFirstNode() {
         return firstNode;
     }
-    
+
     public Node getSecondNode() {
         return secondNode;
     }

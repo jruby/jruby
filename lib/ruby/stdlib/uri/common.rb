@@ -74,12 +74,16 @@ module URI
     #   String to replaces in.
     # +unsafe+::
     #   Regexp that matches all symbols that must be replaced with codes.
-    #   By default uses <tt>REGEXP::UNSAFE</tt>.
+    #   By default uses <tt>UNSAFE</tt>.
     #   When this argument is a String, it represents a character set.
     #
     # == Description
     #
     # Escapes the string, replacing all unsafe characters with codes.
+    #
+    # This method is obsolete and should not be used. Instead, use
+    # CGI.escape, URI.encode_www_form or URI.encode_www_form_component
+    # depending on your specific use case.
     #
     # == Usage
     #
@@ -96,7 +100,7 @@ module URI
     #   # => "@%3F@%21"
     #
     def escape(*arg)
-      warn "#{caller(1)[0]}: warning: URI.escape is obsolete" if $VERBOSE
+      warn "URI.escape is obsolete", uplevel: 1 if $VERBOSE
       DEFAULT_PARSER.escape(*arg)
     end
     alias encode escape
@@ -110,6 +114,12 @@ module URI
     # +str+::
     #   Unescapes the string.
     #
+    # == Description
+    #
+    # This method is obsolete and should not be used. Instead, use
+    # CGI.unescape, URI.decode_www_form or URI.decode_www_form_component
+    # depending on your specific use case.
+    #
     # == Usage
     #
     #   require 'uri'
@@ -122,7 +132,7 @@ module URI
     #   # => "http://example.com/?a=\t\r"
     #
     def unescape(*arg)
-      warn "#{caller(1)[0]}: warning: URI.unescape is obsolete" if $VERBOSE
+      warn "URI.unescape is obsolete", uplevel: 1 if $VERBOSE
       DEFAULT_PARSER.unescape(*arg)
     end
     alias decode unescape
@@ -290,7 +300,7 @@ module URI
   #   # => ["http://foo.example.com/bla", "mailto:test@example.com"]
   #
   def self.extract(str, schemes = nil, &block)
-    warn "#{caller(1)[0]}: warning: URI.extract is obsolete" if $VERBOSE
+    warn "URI.extract is obsolete", uplevel: 1 if $VERBOSE
     DEFAULT_PARSER.extract(str, schemes, &block)
   end
 
@@ -326,7 +336,7 @@ module URI
   #   end
   #
   def self.regexp(schemes = nil)
-    warn "#{caller(1)[0]}: warning: URI.regexp is obsolete" if $VERBOSE
+    warn "URI.regexp is obsolete", uplevel: 1 if $VERBOSE
     DEFAULT_PARSER.make_regexp(schemes)
   end
 
@@ -487,7 +497,24 @@ module URI
   end
 
   private
-  # curl http://encoding.spec.whatwg.org/encodings.json|rb -rpp -rjson -e'H={};h={"shift_jis"=>"Windows-31J","euc-jp"=>"cp51932","iso-2022-jp"=>"cp50221","x-mac-cyrillic"=>"macCyrillic"};JSON($<.read).map{|x|x["encodings"]}.flatten.each{|x|Encoding.find(n=h.fetch(n=x["name"],n))rescue next;x["labels"].each{|y|H[y]=n}};pp H'
+=begin command for WEB_ENCODINGS_
+  curl https://encoding.spec.whatwg.org/encodings.json|
+  ruby -rjson -e 'H={}
+  h={
+    "shift_jis"=>"Windows-31J",
+    "euc-jp"=>"cp51932",
+    "iso-2022-jp"=>"cp50221",
+    "x-mac-cyrillic"=>"macCyrillic",
+  }
+  JSON($<.read).map{|x|x["encodings"]}.flatten.each{|x|
+    Encoding.find(n=h.fetch(n=x["name"].downcase,n))rescue next
+    x["labels"].each{|y|H[y]=n}
+  }
+  puts "{"
+  H.each{|k,v|puts %[  #{k.dump}=>#{v.dump},]}
+  puts "}"
+'
+=end
   WEB_ENCODINGS_ = {
     "unicode-1-1-utf-8"=>"utf-8",
     "utf-8"=>"utf-8",
@@ -593,6 +620,7 @@ module URI
     "koi8"=>"koi8-r",
     "koi8-r"=>"koi8-r",
     "koi8_r"=>"koi8-r",
+    "koi8-ru"=>"koi8-u",
     "koi8-u"=>"koi8-u",
     "dos-874"=>"windows-874",
     "iso-8859-11"=>"windows-874",
@@ -673,6 +701,7 @@ module URI
     "csiso2022jp"=>"cp50221",
     "iso-2022-jp"=>"cp50221",
     "csshiftjis"=>"Windows-31J",
+    "ms932"=>"Windows-31J",
     "ms_kanji"=>"Windows-31J",
     "shift-jis"=>"Windows-31J",
     "shift_jis"=>"Windows-31J",
@@ -691,7 +720,7 @@ module URI
     "windows-949"=>"euc-kr",
     "utf-16be"=>"utf-16be",
     "utf-16"=>"utf-16le",
-    "utf-16le"=>"utf-16le"
+    "utf-16le"=>"utf-16le",
   } # :nodoc:
 
   # :nodoc:

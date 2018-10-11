@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Kernel#freeze" do
   it "prevents self from being further modified" do
@@ -40,28 +40,31 @@ describe "Kernel#freeze" do
   end
 
   describe "on true, false and nil" do
-    ruby_version_is ""..."2.2" do
-      it "actually freezes them" do
-        true.frozen?.should be_false
-        false.frozen?.should be_false
-        nil.frozen?.should be_false
+    it "has no effect since they are already frozen" do
+      nil.frozen?.should be_true
+      true.frozen?.should be_true
+      false.frozen?.should be_true
 
-        # Test in a separate process so as to avoid polluting
-        # the spec process with frozen true, false and nil.
-        ruby_exe("print [true, false, nil].map { |o| o.freeze; o.frozen? }").should ==
-          "[true, true, true]"
+      nil.freeze
+      true.freeze
+      false.freeze
+    end
+  end
+
+  ruby_version_is "2.5" do
+    describe "on a Complex" do
+      it "has no effect since it is already frozen" do
+        c = Complex(1.3, 3.1)
+        c.frozen?.should be_true
+        c.freeze
       end
     end
 
-    ruby_version_is "2.2" do
-      it "has no effect since they are already frozen" do
-        nil.frozen?.should be_true
-        true.frozen?.should be_true
-        false.frozen?.should be_true
-
-        nil.freeze
-        true.freeze
-        false.freeze
+    describe "on a Rational" do
+      it "has no effect since it is already frozen" do
+        r = Rational(1, 3)
+        r.frozen?.should be_true
+        r.freeze
       end
     end
   end

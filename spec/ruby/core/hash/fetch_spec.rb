@@ -1,15 +1,17 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../shared/hash/key_error'
 
 describe "Hash#fetch" do
-  it "returns the value for key" do
-    { a: 1, b: -1 }.fetch(:b).should == -1
+  context "when the key is not found" do
+    it_behaves_like :key_error, ->(obj, key) { obj.fetch(key) }, Hash.new(a: 5)
+    it_behaves_like :key_error, ->(obj, key) { obj.fetch(key) }, {}
+    it_behaves_like :key_error, ->(obj, key) { obj.fetch(key) }, Hash.new { 5 }
+    it_behaves_like :key_error, ->(obj, key) { obj.fetch(key) }, Hash.new(5)
   end
 
-  it "raises a KeyError if key is not found" do
-    lambda { {}.fetch(:a)       }.should raise_error(KeyError)
-    lambda { Hash.new(5).fetch(:a)    }.should raise_error(KeyError)
-    lambda { Hash.new { 5 }.fetch(:a) }.should raise_error(KeyError)
+  it "returns the value for key" do
+    { a: 1, b: -1 }.fetch(:b).should == -1
   end
 
   it "returns default if key is not found when passed a default" do
@@ -23,7 +25,10 @@ describe "Hash#fetch" do
   end
 
   it "gives precedence to the default block over the default argument when passed both" do
-    {}.fetch(9, :foo) { |i| i * i }.should == 81
+    lambda {
+      @result = {}.fetch(9, :foo) { |i| i * i }
+    }.should complain(/block supersedes default value argument/)
+    @result.should == 81
   end
 
   it "raises an ArgumentError when not passed one or two arguments" do

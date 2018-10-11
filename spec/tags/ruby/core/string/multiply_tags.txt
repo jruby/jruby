@@ -1,0 +1,1 @@
+fails:String#* raises an ArgumentError if the length of the resulting string doesn't fit into a long

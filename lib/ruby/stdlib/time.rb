@@ -134,8 +134,8 @@ class Time
     def zone_offset(zone, year=self.now.year)
       off = nil
       zone = zone.upcase
-      if /\A([+-])(\d\d):?(\d\d)\z/ =~ zone
-        off = ($1 == '-' ? -1 : 1) * ($2.to_i * 60 + $3.to_i) * 60
+      if /\A([+-])(\d\d)(:?)(\d\d)(?:\3(\d\d))?\z/ =~ zone
+        off = ($1 == '-' ? -1 : 1) * (($2.to_i * 60 + $4.to_i) * 60 + $5.to_i)
       elsif /\A[+-]\d\d\z/ =~ zone
         off = zone.to_i * 3600
       elsif ZoneOffset.include?(zone)
@@ -254,14 +254,18 @@ class Time
         raise ArgumentError, "no time information in #{date.inspect}"
       end
 
-      off_year = year || now.year
       off = nil
-      off = zone_offset(zone, off_year) if zone
+      if year || now
+        off_year = year || now.year
+        off = zone_offset(zone, off_year) if zone
+      end
 
-      if off
-        now = now.getlocal(off) if now.utc_offset != off
-      else
-        now = now.getlocal
+      if now
+        if off
+          now = now.getlocal(off) if now.utc_offset != off
+        else
+          now = now.getlocal
+        end
       end
 
       usec = nil

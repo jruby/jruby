@@ -1,4 +1,4 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
+require_relative '../../../spec_helper'
 require 'rexml/document'
 
 describe "REXML::Attribute#xpath" do
@@ -17,4 +17,3 @@ describe "REXML::Attribute#xpath" do
     lambda { @attr.xpath }.should raise_error(Exception)
   end
 end
-

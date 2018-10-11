@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require_relative '../../spec_helper'
 require 'tempfile'
 
 describe "Tempfile#open" do
@@ -79,4 +79,3 @@ describe "Tempfile.open when passed a block" do
     @tempfile.closed?.should be_true
   end
 end
-

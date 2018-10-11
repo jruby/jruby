@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -65,7 +65,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
             if ( ! ( wrappedObj instanceof JavaObject ) ) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
         }
@@ -80,12 +80,12 @@ public class JavaProxyReflectionObject extends RubyObject {
     @Override
     @JRubyMethod(name = "equal?")
     public RubyBoolean op_equal(final ThreadContext context, IRubyObject obj) {
-        if ( this == obj ) return context.runtime.getTrue();
+        if ( this == obj ) return context.tru;
 
         if ( ! ( obj instanceof JavaProxyReflectionObject ) ) {
             final Object wrappedObj = obj.dataGetStruct();
             if ( ! ( wrappedObj instanceof JavaObject ) ) {
-                return context.runtime.getFalse();
+                return context.fals;
             }
             obj = (IRubyObject) wrappedObj;
         }

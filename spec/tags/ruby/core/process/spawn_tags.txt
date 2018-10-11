@@ -73,3 +73,5 @@ windows:Process.spawn when passed close_others: false does not close STDERR
 windows:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
 fails:Process.spawn unsets other environment variables when given a true :unsetenv_others option
 fails:Process.spawn unsets other environment variables when given a non-false :unsetenv_others option
+fails:Process.spawn redirects both STDERR and STDOUT at the time to the given name
+fails:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

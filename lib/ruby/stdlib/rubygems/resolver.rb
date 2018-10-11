@@ -235,17 +235,16 @@ class Gem::Resolver
 
     groups = Hash.new { |hash, key| hash[key] = [] }
 
-    possibles.each do |spec|
+    # create groups & sources in the same loop
+    sources = possibles.map { |spec|
       source = spec.source
-
-      sources << source unless sources.include? source
-
       groups[source] << spec
-    end
+      source
+    }.uniq.reverse
 
     activation_requests = []
 
-    sources.sort.each do |source|
+    sources.each do |source|
       groups[source].
         sort_by { |spec| [spec.version, Gem::Platform.local =~ spec.platform ? 1 : 0] }.
         map { |spec| ActivationRequest.new spec, dependency, [] }.
@@ -275,13 +274,14 @@ class Gem::Resolver
   end
 
   def sort_dependencies(dependencies, activated, conflicts)
-    dependencies.sort_by do |dependency|
+    dependencies.sort_by.with_index do |dependency, i|
       name = name_for(dependency)
       [
         activated.vertex_named(name).payload ? 0 : 1,
         amount_constrained(dependency),
         conflicts[name] ? 0 : 1,
         activated.vertex_named(name).payload ? 0 : search_for(dependency).count,
+        i # for stable sort
       ]
     end
   end

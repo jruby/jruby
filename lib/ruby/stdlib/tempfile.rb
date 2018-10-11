@@ -32,7 +32,7 @@ end
 #      ... do something with f ...
 #   end
 #
-def Tempfile.create(basename, tmpdir=nil, mode: 0, **options)
+def Tempfile.create(basename="", tmpdir=nil, mode: 0, **options)
   tmpfile = nil
   Dir::Tmpname.create(basename, tmpdir, options) do |tmpname, n, opts|
     mode |= File::RDWR|File::CREAT|File::EXCL
@@ -43,8 +43,18 @@ def Tempfile.create(basename, tmpdir=nil, mode: 0, **options)
     begin
       yield tmpfile
     ensure
-      tmpfile.close if !tmpfile.closed?
-      File.unlink tmpfile
+      unless tmpfile.closed?
+        if File.identical?(tmpfile, tmpfile.path)
+          unlinked = File.unlink tmpfile.path rescue nil
+        end
+        tmpfile.close
+      end
+      unless unlinked
+        begin
+          File.unlink tmpfile.path
+        rescue Errno::ENOENT
+        end
+      end
     end
   else
     tmpfile

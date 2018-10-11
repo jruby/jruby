@@ -1,5 +1,7 @@
 package org.jruby.ir;
 
+import java.util.EnumSet;
+
 public enum IRFlags {
     // Does this scope require a binding to be materialized?
     // Yes if any of the following holds true:
@@ -49,13 +51,48 @@ public enum IRFlags {
     RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
     RECEIVES_KEYWORD_ARGS,        // receives keyword args
     REQUIRES_DYNSCOPE,            // does this scope require a dynamic scope?
-    USES_BACKREF_OR_LASTLINE,     // Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope
     USES_EVAL,                    // calls eval
     USES_ZSUPER,                  // has zsuper instr
-    REQUIRES_FRAME,               // callee may read/write caller's frame elements
+
+    REQUIRES_LASTLINE,
+    REQUIRES_BACKREF,
     REQUIRES_VISIBILITY,          // callee may read/write caller's visibility
+    REQUIRES_BLOCK,
+    REQUIRES_SELF,
+    REQUIRES_METHODNAME,
+    REQUIRES_LINE,
+    REQUIRES_CLASS,
+    REQUIRES_FILENAME,
+    REQUIRES_SCOPE,
 
     DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
     REUSE_PARENT_DYNSCOPE,        // for closures -- reuse parent's dynscope
-    CODE_COVERAGE,                // Was marked as needing code coverage (only used by lazy methods and converting closures->methods)
+    CODE_COVERAGE;                // Was marked as needing code coverage (only used by lazy methods and converting closures->methods)
+
+    public static final EnumSet<IRFlags> REQUIRE_ALL_FRAME_FIELDS =
+            EnumSet.of(
+                    REQUIRES_LASTLINE,
+                    REQUIRES_BACKREF,
+                    REQUIRES_VISIBILITY,
+                    REQUIRES_BLOCK,
+                    REQUIRES_SELF,
+                    REQUIRES_METHODNAME,
+                    REQUIRES_LINE,
+                    REQUIRES_CLASS,
+                    REQUIRES_FILENAME,
+                    REQUIRES_SCOPE);
+
+
+    public static final EnumSet<IRFlags> REQUIRE_ALL_FRAME_EXCEPT_SCOPE =
+            EnumSet.of(
+                    REQUIRES_LASTLINE,
+                    REQUIRES_BACKREF,
+                    REQUIRES_VISIBILITY,
+                    REQUIRES_BLOCK,
+                    REQUIRES_SELF,
+                    REQUIRES_METHODNAME,
+                    REQUIRES_LINE,
+                    REQUIRES_CLASS,
+                    REQUIRES_FILENAME,
+                    REQUIRES_SCOPE);
 }

@@ -50,7 +50,7 @@ public class Addrinfo extends RubyObject {
     public static void createAddrinfo(Ruby runtime) {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
-                runtime.getClass("Data"),
+                runtime.getData(),
                 new ObjectAllocator() {
                     public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                         return new Addrinfo(runtime, klazz);
@@ -214,7 +214,7 @@ public class Addrinfo extends RubyObject {
 
                 RubyString sockaddrString = sockaddr.convertToString();
 
-                InetAddress inetAddress = null;
+                InetAddress inetAddress;
 
                 inetAddress = getRubyInetAddress(sockaddr);
                 if (inetAddress == null) {
@@ -467,7 +467,7 @@ public class Addrinfo extends RubyObject {
         if (getAddressFamily() == AF_INET) {
             return context.runtime.newBoolean(getInet4Address().isMulticastAddress());
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "ipv6_unspecified?")
@@ -475,7 +475,7 @@ public class Addrinfo extends RubyObject {
         if (getAddressFamily() == AF_INET6) {
             return context.runtime.newBoolean(getInet6Address().getHostAddress().equals("::"));
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "ipv6_loopback?")
@@ -491,7 +491,7 @@ public class Addrinfo extends RubyObject {
         if (getAddressFamily() == AF_INET6) {
             return context.runtime.newBoolean(getInet6Address().isMulticastAddress());
         }
-        return context.runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = "ipv6_linklocal?")

@@ -2,7 +2,6 @@
 
 require 'socket'
 require 'timeout'
-require 'thread'
 require 'io/wait'
 require 'ipaddr'
 
@@ -26,7 +25,7 @@ end
 #
 #   Resolv::DNS.open do |dns|
 #     ress = dns.getresources "www.ruby-lang.org", Resolv::DNS::Resource::IN::A
-#     p ress.map { |r| r.address }
+#     p ress.map(&:address)
 #     ress = dns.getresources "ruby-lang.org", Resolv::DNS::Resource::IN::MX
 #     p ress.map { |r| [r.exchange.to_s, r.preference] }
 #   end
@@ -185,7 +184,7 @@ class Resolv
 
     def initialize(filename = DefaultFileName)
       @filename = filename
-      @mutex = Mutex.new
+      @mutex = Thread::Mutex.new
       @initialized = nil
     end
 
@@ -194,7 +193,7 @@ class Resolv
         unless @initialized
           @name2addr = {}
           @addr2name = {}
-          open(@filename, 'rb') {|f|
+          File.open(@filename, 'rb') {|f|
             f.each {|line|
               line.sub!(/#.*/, '')
               addr, hostname, *aliases = line.split(/\s+/)
@@ -269,9 +268,7 @@ class Resolv
 
     def each_name(address, &proc)
       lazy_initialize
-      if @addr2name.include?(address)
-        @addr2name[address].each(&proc)
-      end
+      @addr2name[address]&.each(&proc)
     end
   end
 
@@ -339,7 +336,7 @@ class Resolv
     #                   :ndots => 1)
 
     def initialize(config_info=nil)
-      @mutex = Mutex.new
+      @mutex = Thread::Mutex.new
       @config = Config.new(config_info)
       @initialized = nil
     end
@@ -630,7 +627,7 @@ class Resolv
     end
 
     RequestID = {} # :nodoc:
-    RequestIDMutex = Mutex.new # :nodoc:
+    RequestIDMutex = Thread::Mutex.new # :nodoc:
 
     def self.allocate_request_id(host, port) # :nodoc:
       id = nil
@@ -727,9 +724,11 @@ class Resolv
       def close
         socks = @socks
         @socks = nil
-        if socks
-          socks.each {|sock| sock.close }
-        end
+        socks&.each(&:close)
+      end
+
+      def lazy_initialize
+        self
       end
 
       class Sender # :nodoc:
@@ -744,39 +743,51 @@ class Resolv
         def initialize(*nameserver_port)
           super()
           @nameserver_port = nameserver_port
-          @socks_hash = {}
-          @socks = []
-          nameserver_port.each {|host, port|
-            if host.index(':')
-              bind_host = "::"
-              af = Socket::AF_INET6
-            else
-              bind_host = "0.0.0.0"
-              af = Socket::AF_INET
-            end
-            next if @socks_hash[bind_host]
-            begin
-              sock = UDPSocket.new(af)
-            rescue Errno::EAFNOSUPPORT
-              next # The kernel doesn't support the address family.
-            end
-            sock.do_not_reverse_lookup = true
-            DNS.bind_random_port(sock, bind_host)
-            @socks << sock
-            @socks_hash[bind_host] = sock
+          @mutex = Thread::Mutex.new
+          @initialized = false
+        end
+
+        def lazy_initialize
+          @mutex.synchronize {
+            next if @initialized
+            @initialized = true
+            @socks_hash = {}
+            @socks = []
+            @nameserver_port.each {|host, port|
+              if host.index(':')
+                bind_host = "::"
+                af = Socket::AF_INET6
+              else
+                bind_host = "0.0.0.0"
+                af = Socket::AF_INET
+              end
+              next if @socks_hash[bind_host]
+              begin
+                sock = UDPSocket.new(af)
+              rescue Errno::EAFNOSUPPORT
+                next # The kernel doesn't support the address family.
+              end
+              @socks << sock
+              @socks_hash[bind_host] = sock
+              sock.do_not_reverse_lookup = true
+              DNS.bind_random_port(sock, bind_host)
+            }
           }
+          self
         end
 
         def recv_reply(readable_socks)
+          lazy_initialize
           reply, from = readable_socks[0].recvfrom(UDPSize)
           return reply, [IPAddr.new(from[3]),from[1]]
         end
 
         def sender(msg, data, host, port=Port)
+          lazy_initialize
           sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
           return nil if !sock
           service = [IPAddr.new(host), port]
-          id = DNS.allocate_request_id(host, port)
+          id = DNS.allocate_request_id(service[0], service[1])
           request = msg.encode
           request[0,2] = [id].pack('n')
           return @senders[[service, id]] =
@@ -784,9 +795,14 @@ class Resolv
         end
 
         def close
-          super
-          @senders.each_key {|service, id|
-            DNS.free_request_id(service[0], service[1], id)
+          @mutex.synchronize {
+            if @initialized
+              super
+              @senders.each_key {|service, id|
+                DNS.free_request_id(service[0], service[1], id)
+              }
+              @initialized = false
+            end
           }
         end
 
@@ -808,22 +824,34 @@ class Resolv
       class ConnectedUDP < Requester # :nodoc:
         def initialize(host, port=Port)
           super()
+          @mutex = Thread::Mutex.new
           @host = host
           @port = port
-          is_ipv6 = host.index(':')
-          sock = UDPSocket.new(is_ipv6 ? Socket::AF_INET6 : Socket::AF_INET)
-          @socks = [sock]
-          sock.do_not_reverse_lookup = true
-          DNS.bind_random_port(sock, is_ipv6 ? "::" : "0.0.0.0")
-          sock.connect(host, port)
+          @initialized = false
+        end
+
+        def lazy_initialize
+          @mutex.synchronize {
+            next if @initialized
+            @initialized = true
+            is_ipv6 = @host.index(':')
+            sock = UDPSocket.new(is_ipv6 ? Socket::AF_INET6 : Socket::AF_INET)
+            @socks = [sock]
+            sock.do_not_reverse_lookup = true
+            DNS.bind_random_port(sock, is_ipv6 ? "::" : "0.0.0.0")
+            sock.connect(@host, @port)
+          }
+          self
         end
 
         def recv_reply(readable_socks)
+          lazy_initialize
           reply = readable_socks[0].recv(UDPSize)
           return reply, nil
         end
 
         def sender(msg, data, host=@host, port=@port)
+          lazy_initialize
           unless host == @host && port == @port
             raise RequestError.new("host/port don't match: #{host}:#{port}")
           end
@@ -834,9 +862,14 @@ class Resolv
         end
 
         def close
-          super
-          @senders.each_key {|from, id|
-            DNS.free_request_id(@host, @port, id)
+          @mutex.synchronize {
+            if @initialized
+              super
+              @senders.each_key {|from, id|
+                DNS.free_request_id(@host, @port, id)
+              }
+              @initialized = false
+            end
           }
         end
 
@@ -851,6 +884,7 @@ class Resolv
 
       class MDNSOneShot < UnconnectedUDP # :nodoc:
         def sender(msg, data, host, port=Port)
+          lazy_initialize
           id = DNS.allocate_request_id(host, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
@@ -915,7 +949,7 @@ class Resolv
 
     class Config # :nodoc:
       def initialize(config_info=nil)
-        @mutex = Mutex.new
+        @mutex = Thread::Mutex.new
         @config_info = config_info
         @initialized = nil
         @timeouts = nil
@@ -938,13 +972,11 @@ class Resolv
         nameserver = []
         search = nil
         ndots = 1
-        open(filename, 'rb') {|f|
+        File.open(filename, 'rb') {|f|
           f.each {|line|
             line.sub!(/[#;].*/, '')
             keyword, *args = line.split(/\s+/)
-            args.each { |arg|
-              arg.untaint
-            }
+            args.each(&:untaint)
             next unless keyword
             case keyword
             when 'nameserver'
@@ -1532,12 +1564,12 @@ class Resolv
         def initialize(data)
           @data = data
           @index = 0
-          @limit = data.length
+          @limit = data.bytesize
           yield self
         end
 
         def inspect
-          "\#<#{self.class}: #{@data[0, @index].inspect} #{@data[@index..-1].inspect}>"
+          "\#<#{self.class}: #{@data.byteslice(0, @index).inspect} #{@data.byteslice(@index..-1).inspect}>"
         end
 
         def get_length16
@@ -1556,7 +1588,7 @@ class Resolv
 
         def get_bytes(len = @limit - @index)
           raise DecodeError.new("limit exceeded") if @limit < @index + len
-          d = @data[@index, len]
+          d = @data.byteslice(@index, len)
           @index += len
           return d
         end
@@ -1584,9 +1616,9 @@ class Resolv
 
         def get_string
           raise DecodeError.new("limit exceeded") if @limit <= @index
-          len = @data[@index].ord
+          len = @data.getbyte(@index)
           raise DecodeError.new("limit exceeded") if @limit < @index + 1 + len
-          d = @data[@index + 1, len]
+          d = @data.byteslice(@index + 1, len)
           @index += 1 + len
           return d
         end
@@ -1609,7 +1641,7 @@ class Resolv
           d = []
           while true
             raise DecodeError.new("limit exceeded") if @limit <= @index
-            case @data[@index].ord
+            case @data.getbyte(@index)
             when 0
               @index += 1
               if save_index
@@ -1646,7 +1678,13 @@ class Resolv
           name = self.get_name
           type, klass, ttl = self.get_unpack('nnN')
           typeclass = Resource.get_class(type, klass)
-          res = self.get_length16 { typeclass.decode_rdata self }
+          res = self.get_length16 do
+            begin
+              typeclass.decode_rdata self
+            rescue => e
+              raise DecodeError, e.message, e.backtrace
+            end
+          end
           res.instance_variable_set :@ttl, ttl
           return name, ttl, res
         end
@@ -2609,7 +2647,7 @@ class Resolv
     def each_address(name)
       name = Resolv::DNS::Name.create(name)
 
-      return unless name.to_a.last == 'local'
+      return unless name.to_a.last.to_s == 'local'
 
       super(name)
     end
@@ -2704,10 +2742,12 @@ class Resolv
           return arg
         when String
           coordinates = ''
-          if Regex =~ arg &&  $1<180
-            hemi = ($4[/([NE])/,1]) || ($4[/([SW])/,1]) ? 1 : -1
-            coordinates = [(($1.to_i*(36e5))+($2.to_i*(6e4))+($3.to_f*(1e3)))*hemi+(2**31)].pack("N")
-            (orientation ||= '') << $4[[/NS/],1] ? 'lat' : 'lon'
+          if Regex =~ arg && $1.to_f < 180
+            m = $~
+            hemi = (m[4][/[NE]/]) || (m[4][/[SW]/]) ? 1 : -1
+            coordinates = [ ((m[1].to_i*(36e5)) + (m[2].to_i*(6e4)) +
+                             (m[3].to_f*(1e3))) * hemi+(2**31) ].pack("N")
+            orientation = m[4][/[NS]/] ? 'lat' : 'lon'
           else
             raise ArgumentError.new("not a properly formed Coord string: " + arg)
           end

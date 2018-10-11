@@ -1,0 +1,2 @@
+fails:Enumerator#inject appends given arguments to receiver.each
+fails:Enumerator#inject returns the same value from receiver.each if block and arguments are given

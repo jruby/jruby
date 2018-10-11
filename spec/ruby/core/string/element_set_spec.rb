@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 # TODO: Add missing String#[]= specs:
 #   String#[re, idx] = obj
@@ -50,11 +50,11 @@ describe "String#[]= with Fixnum index" do
     str.should == "hello"
   end
 
-  it "raises a RuntimeError when self is frozen" do
+  it "raises a #{frozen_error_class} when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a[0] = "bam" }.should raise_error(RuntimeError)
+    lambda { a[0] = "bam" }.should raise_error(frozen_error_class)
   end
 
   it "calls to_int on index" do

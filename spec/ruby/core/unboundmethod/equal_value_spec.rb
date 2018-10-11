@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 context "Creating UnboundMethods" do
   specify "there is no difference between Method#unbind and Module#instance_method" do
@@ -72,8 +72,8 @@ describe "UnboundMethod#==" do
   end
 
   it "returns false if both have identical body but are not the same" do
-    (@original_name == @identical_body).should == false
-    (@identical_body == @original_name).should == false
+    (@original_body == @identical_body).should == false
+    (@identical_body == @original_body).should == false
   end
 
   it "returns false if same method but one extracted from a subclass" do

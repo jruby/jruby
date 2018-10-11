@@ -1,10 +1,10 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
-
+require_relative '../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "TCPServer#accept" do
   before :each do
-    @server = TCPServer.new("127.0.0.1", SocketSpecs.port)
+    @server = TCPServer.new("127.0.0.1", 0)
+    @port = @server.addr[1]
   end
 
   after :each do
@@ -22,7 +22,7 @@ describe "TCPServer#accept" do
     end
     Thread.pass while t.status and t.status != "sleep"
 
-    socket = TCPSocket.new('127.0.0.1', SocketSpecs.port)
+    socket = TCPSocket.new('127.0.0.1', @port)
     socket.write('hello')
     socket.shutdown(1) # we are done with sending
     socket.read.should == 'goodbye'
@@ -38,29 +38,62 @@ describe "TCPServer#accept" do
 
     # kill thread, ensure it dies in a reasonable amount of time
     t.kill
-    a = 1
-    while a < 2000
-      break unless t.alive?
-      Thread.pass
-      sleep 0.2
+    a = 0
+    while t.alive? and a < 5000
+      sleep 0.001
       a += 1
     end
-    a.should < 2000
+    a.should < 5000
   end
 
   it "can be interrupted by Thread#raise" do
-    t = Thread.new { @server.accept }
+    t = Thread.new {
+      -> {
+        @server.accept
+      }.should raise_error(Exception, "interrupted")
+    }
 
     Thread.pass while t.status and t.status != "sleep"
-
-    # raise in thread, ensure the raise happens
-    ex = Exception.new
-    t.raise ex
-    lambda { t.join }.should raise_error(Exception)
+    t.raise Exception, "interrupted"
+    t.join
   end
 
   it "raises an IOError if the socket is closed" do
     @server.close
     lambda { @server.accept }.should raise_error(IOError)
+  end
+end
+
+describe 'TCPServer#accept' do
+  SocketSpecs.each_ip_protocol do |family, ip_address|
+    before do
+      @server = TCPServer.new(ip_address, 0)
+    end
+
+    after do
+      @server.close
+    end
+
+    describe 'without a connected client' do
+      it 'blocks the caller' do
+        lambda { @server.accept }.should block_caller
+      end
+    end
+
+    describe 'with a connected client' do
+      before do
+        @client = TCPSocket.new(ip_address, @server.connect_address.ip_port)
+      end
+
+      after do
+        @socket.close if @socket
+        @client.close
+      end
+
+      it 'returns a TCPSocket' do
+        @socket = @server.accept
+        @socket.should be_an_instance_of(TCPSocket)
+      end
+    end
   end
 end

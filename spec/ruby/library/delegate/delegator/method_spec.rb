@@ -1,5 +1,5 @@
-require File.expand_path('../../../../spec_helper', __FILE__)
-require File.expand_path('../../fixtures/classes', __FILE__)
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
 
 describe "Delegator#method" do
   before :each do
@@ -13,15 +13,19 @@ describe "Delegator#method" do
     m.call.should == :foo
   end
 
-  it "returns a method object for protected methods of the delegate object" do
+  it "raises a NameError for protected methods of the delegate object" do
     lambda {
-      @delegate.method(:prot)
+      -> {
+        @delegate.method(:prot)
+      }.should complain(/delegator does not forward private method #prot/)
     }.should raise_error(NameError)
   end
 
   it "raises a NameError for a private methods of the delegate object" do
     lambda {
-      @delegate.method(:priv)
+      -> {
+        @delegate.method(:priv)
+      }.should complain(/delegator does not forward private method #priv/)
     }.should raise_error(NameError)
   end
 

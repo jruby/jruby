@@ -1,4 +1,17 @@
 module ProcessSpecs
+  def self.use_system_ruby(context)
+    if defined?(MSpecScript::SYSTEM_RUBY)
+      context.send(:before, :all) do
+        @ruby = ::RUBY_EXE
+        Object.const_set(:RUBY_EXE, MSpecScript::SYSTEM_RUBY)
+      end
+
+      context.send(:after, :all) do
+        Object.const_set(:RUBY_EXE, @ruby)
+      end
+    end
+  end
+
   class Daemonizer
     attr_reader :input, :data
 
@@ -13,7 +26,7 @@ module ProcessSpecs
     end
 
     def wait_for_daemon
-      sleep 0.1 until File.exist?(@data) and File.size?(@data)
+      sleep 0.001 until File.exist?(@data) and File.size?(@data)
     end
 
     def invoke(behavior, arguments=[])
@@ -38,6 +51,7 @@ module ProcessSpecs
         fail "not supported on windows"
       end
       @script = fixture __FILE__, "kill.rb"
+      @pid = nil
       @pid_file = tmp("process_kill_signal_file")
       rm_r @pid_file
 
@@ -45,7 +59,6 @@ module ProcessSpecs
         Thread.current.abort_on_exception = true
         args = [@pid_file]
         args << scenario if scenario
-        args << RUBY_EXE.inspect if scenario
         @result = ruby_exe @script, args: args
       end
       Thread.pass while @thread.status and !File.exist?(@pid_file)
@@ -55,13 +68,6 @@ module ProcessSpecs
     end
 
     def wait_on_result
-      # Ensure the process exits
-      begin
-        Process.kill :TERM, pid if pid
-      rescue Errno::ESRCH
-        # Ignore the process not existing
-      end
-
       @thread.join
     end
 

@@ -26,9 +26,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     archives "https://github.com/jruby/jruby/wiki/MailingLists"
   end
 
-  license 'GPL 2', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
-  license 'LGPL 2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
-  license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
+  license 'GPL-2.0', 'http://www.gnu.org/licenses/gpl-2.0-standalone.html'
+  license 'LGPL-2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
+  license 'EPL-2.0', 'http://www.eclipse.org/legal/epl-v20.html'
 
   plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
@@ -56,8 +56,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby.basedir' => '${project.basedir}',
               'main.basedir' => '${project.basedir}',
               'project.build.sourceEncoding' => 'utf-8',
-              'base.java.version' => '1.7',
-              'base.javac.version' => '1.7',
+              'base.java.version' => '1.8',
+              'base.javac.version' => '1.8',
               'invoker.skip' => 'true',
               'version.jruby' => '${project.version}',
               'github.global.server' => 'github',
@@ -65,31 +65,29 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'polyglot.dump.readonly' => 'true',
               'jruby.plugins.version' => '1.0.10',
 
-              'json.version' => '1.8.3',
-              'rspec.version' => '3.4.0',
-              'rspec-core.version' => '3.4.4',
-              'rspec-expectations.version' => '3.4.0',
-              'rspec-mocks.version' => '3.4.1',
-              'rspec-support.version' => '3.4.1',
-              'minitest.version' => '5.4.1',
-              'test-unit.version' => '3.1.1',
-              'power_assert.version' => '0.2.3',
-              'diff-lcs.version' => '1.1.3',
-              'racc.version' => '1.4.14',
+              'json.version' => '2.1.0',
+              'rspec.version' => '3.6.0',
+              'rspec-core.version' => '3.6.0',
+              'rspec-expectations.version' => '3.6.0',
+              'rspec-mocks.version' => '3.6.0',
+              'rspec-support.version' => '3.6.0',
+              'minitest.version' => '5.10.3',
+              'test-unit.version' => '3.2.7',
+              'power_assert.version' => '1.1.1',
+
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-              'rdoc.version' => '4.2.0',
-              'rake.version' => '10.4.2',
-              'jar-dependencies.version' => '0.3.10',
-
-              'jruby-launcher.version' => '1.1.1',
-              'ant.version' => '1.9.2',
-              'asm.version' => '5.0.4',
-              'jffi.version' => '1.2.15',
-              'joda.time.version' => '2.8.2' )
+              'rdoc.version' => '6.0.1',
+              'rake.version' => '12.3.0',
+              'jar-dependencies.version' => '0.4.0',
+              'jruby-launcher.version' => '1.1.6',
+              'ant.version' => '1.9.8',
+              'asm.version' => '6.2.1',
+              'jffi.version' => '1.2.17',
+              'joda.time.version' => '2.9.9' )
 
   plugin_management do
-    jar( 'junit:junit:4.11',
+    jar( 'junit:junit:4.12',
          :scope => 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:2.4.0',
@@ -108,17 +106,17 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin( :site, '3.3', 'skipDeploy' =>  'true' )
     plugin 'org.codehaus.mojo:build-helper-maven-plugin:1.8'
     plugin 'org.codehaus.mojo:exec-maven-plugin:1.2.1'
-    plugin :antrun, '1.7'
+    plugin :antrun, '1.8'
     plugin :source, '2.1.2'
     plugin :assembly, '2.4'
     plugin :install, '2.4'
     plugin :deploy, '2.7'
-    plugin :javadoc, '2.7'
+    plugin :javadoc, '2.10.4'
     plugin :resources, '2.6'
     plugin :clean, '2.5'
     plugin :dependency, '2.8'
     plugin :release, '2.4.1'
-    plugin :jar, '2.6'
+    plugin :jar, '3.0.0'
 
     rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
@@ -129,7 +127,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     plugin :compiler, '3.3'
-    plugin :shade, '2.4.3'
+    plugin :shade, '3.1.0'
     plugin :surefire, '2.15'
     plugin :plugin, '3.2'
     plugin( :invoker, '1.8',
@@ -149,6 +147,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '1.0-beta-2'
+    plugin 'org.apache.felix:maven-bundle-plugin' do
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
+    end
   end
 
   plugin( :site,
@@ -267,8 +268,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'release' do
-    modules [ 'test', 'maven' ]
+    modules [ 'maven' ]
     properties 'invoker.skip' => true
+    plugin(:source) do
+      execute_goals('jar-no-fork', :id => 'attach-sources')
+    end
+    plugin(:javadoc) do
+      execute_goals('jar', :id => 'attach-javadocs')
+    end
   end
 
   profile 'snapshots' do

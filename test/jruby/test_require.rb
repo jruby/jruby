@@ -8,9 +8,9 @@ class TestRequire < Test::Unit::TestCase
   def test_require_fires_once_across_threads
     $foo = 0
     100.times do
-      [1,2,3,4,5].map do
-        Thread.new {require "test/foo_for_test_require_once"}
-      end.each {|t| t.join}
+      (1..(ENV['THREAD_COUNT'] || 5).to_i).map do
+        Thread.new { require 'test/jruby/test_require_once_foo' }
+      end.each { |t| t.join }
       raise "Concurrent requires caused double-loading" if $foo != 1
       $foo = 0
       $".pop

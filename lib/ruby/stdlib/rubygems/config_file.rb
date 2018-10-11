@@ -336,6 +336,15 @@ if you believe they were disclosed to a third party.
     load_api_keys # reload
   end
 
+  ##
+  # Remove the +~/.gem/credentials+ file to clear all the current sessions.
+
+  def unset_api_key!
+    return false unless File.exist?(credentials_path)
+
+    File.delete(credentials_path)
+  end
+
   def load_file(filename)
     Gem.load_yaml
 
@@ -345,7 +354,7 @@ if you believe they were disclosed to a third party.
     return {} unless filename and File.exist? filename
 
     begin
-      content = YAML.load(File.read(filename))
+      content = Gem::SafeYAML.load(File.read(filename))
       unless content.kind_of? Hash
         warn "Failed to load #{filename} because it doesn't contain valid YAML hash"
         return {}
@@ -449,7 +458,7 @@ if you believe they were disclosed to a third party.
 
   # Writes out this config file, replacing its source.
   def write
-    open config_file_name, 'w' do |io|
+    File.open config_file_name, 'w' do |io|
       io.write to_yaml
     end
   end

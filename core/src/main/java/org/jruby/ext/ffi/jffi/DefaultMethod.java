@@ -23,10 +23,9 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
     protected final Arity arity;
     protected final Function function;
 
-
     public DefaultMethod(RubyModule implementationClass, Function function,
                          Signature signature, NativeInvoker defaultInvoker) {
-        super(implementationClass, Visibility.PUBLIC);
+        super(implementationClass, Visibility.PUBLIC, defaultInvoker.getName());
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
         this.defaultInvoker = defaultInvoker;
@@ -83,7 +82,6 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
 
         NativeInvoker invoker = getJITHandle().compile(getImplementationClass(), function, signature, getName());
         if (invoker != null) {
-            invoker.setName(getName());
             compiledInvoker = invoker;
             getImplementationClass().invalidateCacheDescendants();
             return compiledInvoker;

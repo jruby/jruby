@@ -1,10 +1,10 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../../../shared/enumerator/with_index', __FILE__)
-require File.expand_path('../../enumerable/shared/enumeratorized', __FILE__)
+require_relative '../../spec_helper'
+require_relative '../../shared/enumerator/with_index'
+require_relative '../enumerable/shared/enumeratorized'
 
 describe "Enumerator#each_with_index" do
-  it_behaves_like(:enum_with_index, :each_with_index)
-  it_behaves_like(:enumeratorized_with_origin_size, :each_with_index, [1,2,3].select)
+  it_behaves_like :enum_with_index, :each_with_index
+  it_behaves_like :enumeratorized_with_origin_size, :each_with_index, [1,2,3].select
 
   it "returns a new Enumerator when no block is given" do
     enum1 = [1,2,3].select

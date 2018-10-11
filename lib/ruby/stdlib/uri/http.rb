@@ -25,12 +25,12 @@ module URI
     DEFAULT_PORT = 80
 
     # An Array of the available components for URI::HTTP
-    COMPONENT = [
-      :scheme,
-      :userinfo, :host, :port,
-      :path,
-      :query,
-      :fragment
+    COMPONENT = %i[
+      scheme
+      userinfo host port
+      path
+      query
+      fragment
     ].freeze
 
     #
@@ -49,8 +49,7 @@ module URI
     #
     # Example:
     #
-    #     newuri = URI::HTTP.build({:host => 'www.example.com',
-    #       :path => '/foo/bar'})
+    #     newuri = URI::HTTP.build(host: 'www.example.com', path: '/foo/bar')
     #
     #     newuri = URI::HTTP.build([nil, "www.example.com", nil, "/path",
     #       "query", 'fragment'])
@@ -59,33 +58,9 @@ module URI
     # invalid HTTP URIs as per RFC 1738.
     #
     def self.build(args)
-      tmp = Util::make_components_hash(self, args)
-      return super(tmp)
+      tmp = Util.make_components_hash(self, args)
+      super(tmp)
     end
-
-=begin
-    #
-    # == Description
-    #
-    # Create a new URI::HTTP object from generic URI components as per
-    # RFC 2396. No HTTP-specific syntax checking (as per RFC 1738) is
-    # performed.
-    #
-    # Arguments are +scheme+, +userinfo+, +host+, +port+, +registry+, +path+,
-    # +opaque+, +query+ and +fragment+, in that order.
-    #
-    # Example:
-    #
-    #     uri = URI::HTTP.new("http", nil, "www.example.com", nil, nil,
-    #                         "/path", nil, "query", "fragment")
-    #
-    #
-    # See also URI::Generic.new
-    #
-    def initialize(*arg)
-      super(*arg)
-    end
-=end
 
     #
     # == Description
@@ -95,15 +70,19 @@ module URI
     # If the URI contains a query, the full path is URI#path + '?' + URI#query.
     # Otherwise, the path is simply URI#path.
     #
+    # Example:
+    #
+    #     newuri = URI::HTTP.build(path: '/foo/bar', query: 'test=true')
+    #     newuri.request_uri # => "/foo/bar?test=true"
+    #
     def request_uri
-      return nil unless @path
-      if @path.start_with?(?/.freeze)
-        @query ? "#@path?#@query" : @path.dup
-      else
-        @query ? "/#@path?#@query" : "/#@path"
-      end
+      return unless @path
+
+      url = @query ? "#@path?#@query" : @path.dup
+      url.start_with?(?/.freeze) ? url : ?/ + url
     end
   end
 
   @@schemes['HTTP'] = HTTP
+
 end

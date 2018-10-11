@@ -1,11 +1,11 @@
 /*
  **** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -24,6 +24,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.zlib;
 
 import com.jcraft.jzlib.Deflater;
@@ -69,17 +70,19 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     };
 
     @JRubyMethod(name = "new", rest = true, meta = true)
-    public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyClass klass = (RubyClass) recv;
-        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate();
-        
-        result.callInit(args, block);
-        
-        return result;
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        JZlibRubyGzipWriter result = newInstance(recv, args);
+
+        return RubyGzipFile.wrapBlock(context, result, block);
     }
 
-    public static IRubyObject open18(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return open19(context, recv, args, block);
+    public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass klass = (RubyClass) recv;
+        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate();
+
+        result.callInit(args, Block.NULL_BLOCK);
+
+        return result;
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 3, meta = true)
@@ -88,7 +91,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         
         args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
         
-        JZlibRubyGzipWriter gzio = newInstance(recv, args, block);
+        JZlibRubyGzipWriter gzio = newInstance(recv, args);
         
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -102,7 +105,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block unused) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
         
@@ -189,7 +192,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         
         this.closed = true;
         
-        return getRuntime().getNil();
+        return realIo;
     }
 
     @JRubyMethod(name = {"append", "<<"}, required = 1)
@@ -227,7 +230,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "orig_name=", required = 1)
     public IRubyObject set_orig_name(IRubyObject obj) {
-        nullFreeOrigName = obj.convertToString();
+        nullFreeOrigName = obj.convertToString().strDup(getRuntime());
         ensureNonNull(nullFreeOrigName);
         
         try {
@@ -241,7 +244,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "comment=", required = 1)
     public IRubyObject set_comment(IRubyObject obj) {
-        nullFreeComment = obj.convertToString();
+        nullFreeComment = obj.convertToString().strDup(getRuntime());
         ensureNonNull(nullFreeComment);
         
         try {
@@ -275,12 +278,13 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "puts", rest = true)
     public IRubyObject puts(ThreadContext context, IRubyObject[] args) {
-        StringIO sio = (StringIO) getRuntime().getClass("StringIO").newInstance(context, new IRubyObject[0], Block.NULL_BLOCK);
+        final RubyClass StringIO = context.runtime.getClass("StringIO");
+        StringIO sio = (StringIO) StringIO.newInstance(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
         
         sio.puts(context, args);
         write(sio.string(context));
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Override

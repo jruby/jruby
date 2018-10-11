@@ -1,11 +1,11 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope.Type;
@@ -23,6 +23,7 @@ public interface IRWriterEncoder {
 
     public void encode(ByteList bytelist);
     public void encode(Encoding encoding);
+    public void encode(RubySymbol value);
     public void encode(String value);
     public void encode(String[] values);
     public void encode(Instr value);

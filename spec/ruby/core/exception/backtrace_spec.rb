@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/common', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/common'
 
 describe "Exception#backtrace" do
   before :each do
@@ -55,5 +55,14 @@ describe "Exception#backtrace" do
     end
 
     exception.backtrace.first.should =~ /backtrace_spec/
+  end
+
+  it "returns an Array that can be updated" do
+    begin
+      raise
+    rescue RuntimeError => e
+      e.backtrace.unshift "backtrace first"
+      e.backtrace[0].should == "backtrace first"
+    end
   end
 end

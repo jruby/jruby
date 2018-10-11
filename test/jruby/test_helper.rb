@@ -1,6 +1,5 @@
 require 'rbconfig'
 require 'jruby' if defined?(JRUBY_VERSION)
-require 'tempfile'
 
 module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
@@ -19,9 +18,7 @@ module TestHelper
            exe = 'java'
            exe += RbConfig::CONFIG['EXEEXT'] if RbConfig::CONFIG['EXEEXT']
            # assume the parent CL of jruby-classloader has a getUrls method
-           urls = JRuby.runtime.getJRubyClassLoader.parent.get_ur_ls.collect do |u|
-             u.path
-           end
+           urls = JRuby.runtime.getJRubyClassLoader.parent.getURLs.collect { |u| u.path }
            urls.unshift '.'
            exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.Main"
            exe
@@ -32,12 +29,14 @@ module TestHelper
            exe
          end
 
-  if (WINDOWS)
+  if WINDOWS
     RUBY.gsub!('/', '\\')
     DEVNULL = 'NUL:'
   else
     DEVNULL = '/dev/null'
   end
+
+  IS_JRUBY = defined?(JRUBY_VERSION) ? true : false
 
   if defined? JRUBY_VERSION
     arch = java.lang.System.getProperty('sun.arch.data.model')
@@ -46,10 +45,24 @@ module TestHelper
 
   IBM_JVM = RbConfig::CONFIG['host_vendor'] =~ /IBM Corporation/
 
-  JAVA_8 = ENV_JAVA['java.specification.version'] >= '1.8'
+  JAVA_9 = ENV_JAVA['java.specification.version'] > '1.8' rescue nil
 
   def q
     WINDOWS ? '"' : '\''
+  end
+
+  protected
+
+  def with_temp_script(script, filename="test-script"); require 'tempfile'
+    Tempfile.open([filename, ".rb"]) do |f|
+      begin
+        # we ignore errors writing to the tempfile to ensure the test tries to run
+        f.syswrite(script) rescue 1
+        return yield f
+      ensure
+        f.close!
+      end
+    end
   end
 
   def interpreter( options = {} )
@@ -71,6 +84,15 @@ module TestHelper
     with_jruby_shell_spawning { sh "#{interpreter(options)} #{args.join(' ')}" }
   end
 
+  def jruby(*args)
+    options = []
+    if args.last.is_a? Hash
+      options = args.last
+      args = args[0..-2]
+    end
+    sh "#{interpreter(options)} #{args.join(' ')}"
+  end unless IS_JRUBY
+
   def jruby_with_pipe(pipe, *args)
     options = []
     if args.last.is_a? Hash
@@ -85,19 +107,8 @@ module TestHelper
     puts cmd if $DEBUG
     return `#{cmd}`
   end
-  private :sh
 
-  def with_temp_script(script, filename="test-script")
-    Tempfile.open([filename, ".rb"]) do |f|
-      begin
-        # we ignore errors writing to the tempfile to ensure the test tries to run
-        f.syswrite(script) rescue 1
-        return yield f
-      ensure
-        f.close!
-      end
-    end
-  end
+  private
 
   def with_jruby_shell_spawning
     prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
@@ -126,6 +137,15 @@ module TestHelper
 
   def assert_in_sub_runtime(script)
     assert run_in_sub_runtime(script)
+  end
+
+  def assert_java_raises(type)
+    begin
+      yield
+      fail("expected to raise (#{type}) but did not")
+    rescue java.lang.Throwable => ex
+      raise(ex) unless ex.is_a?(type)
+    end
   end
 
   def self.included(base)

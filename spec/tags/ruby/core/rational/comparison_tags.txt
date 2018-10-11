@@ -1,0 +1,1 @@
+fails:Rational#<=> when passed an Object that responds to #coerce rescues exception (StandardError and subclasses) raised in other#coerce and returns nil

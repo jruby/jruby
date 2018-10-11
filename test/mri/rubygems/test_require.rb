@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems'
 
@@ -59,7 +59,7 @@ class TestGemRequire < Gem::TestCase
 
     install_specs c1, c2, b1, a1
 
-    dir = Dir.mktmpdir
+    dir = Dir.mktmpdir("test_require", @tempdir)
     dash_i_arg = File.join dir, 'lib'
 
     c_rb = File.join dash_i_arg, 'b', 'c.rb'
@@ -301,6 +301,23 @@ class TestGemRequire < Gem::TestCase
     assert_equal %w(default-2.0.0.0), loaded_spec_names
   end
 
+  def test_realworld_default_gem
+    skip "no default gems on ruby < 2.0" unless RUBY_VERSION >= "2"
+    begin
+      gem 'json'
+    rescue Gem::MissingSpecError
+      skip "default gems are only available after ruby installation"
+    end
+
+    cmd = <<-RUBY
+      $stderr = $stdout
+      require "json"
+      puts Gem.loaded_specs["json"].default_gem?
+    RUBY
+    output = Gem::Util.popen(Gem.ruby, "-e", cmd).strip
+    assert_equal "true", output
+  end
+
   def test_default_gem_and_normal_gem
     default_gem_spec = new_default_spec("default", "2.0.0.0",
                                         nil, "default/gem.rb")
@@ -318,5 +335,96 @@ class TestGemRequire < Gem::TestCase
 
   def unresolved_names
     Gem::Specification.unresolved_deps.values.map(&:to_s).sort
+  end
+
+  def test_try_activate_error_unlocks_require_monitor
+    silence_warnings do
+      class << ::Gem
+        alias old_try_activate try_activate
+        def try_activate(*); raise 'raised from try_activate'; end
+      end
+    end
+
+    require 'does_not_exist_for_try_activate_test'
+  rescue RuntimeError => e
+    assert_match(/raised from try_activate/, e.message)
+    assert Kernel::RUBYGEMS_ACTIVATION_MONITOR.try_enter, "require monitor was not unlocked when try_activate raised"
+  ensure
+    silence_warnings do
+      class << ::Gem
+        alias try_activate old_try_activate
+      end
+    end
+    Kernel::RUBYGEMS_ACTIVATION_MONITOR.exit
+  end
+
+  def test_require_when_gem_defined
+    default_gem_spec = new_default_spec("default", "2.0.0.0",
+                                        nil, "default/gem.rb")
+    install_default_specs(default_gem_spec)
+    c = Class.new do
+      def self.gem(*args)
+        raise "received #gem with #{args.inspect}"
+      end
+    end
+    assert c.send(:require, "default/gem")
+    assert_equal %w(default-2.0.0.0), loaded_spec_names
+  end
+
+  def test_require_default_when_gem_defined
+    a = new_spec("a", "1", nil, "lib/a.rb")
+    install_specs a
+    c = Class.new do
+      def self.gem(*args)
+        raise "received #gem with #{args.inspect}"
+      end
+    end
+    assert c.send(:require, "a")
+    assert_equal %w(a-1), loaded_spec_names
+  end
+
+
+  def test_require_bundler
+    b1 = new_spec('bundler', '1', nil, "lib/bundler/setup.rb")
+    b2a = new_spec('bundler', '2.a', nil, "lib/bundler/setup.rb")
+    install_specs b1, b2a
+
+    require "rubygems/bundler_version_finder"
+    $:.clear
+    assert_require 'bundler/setup'
+    assert_equal %w[bundler-2.a], loaded_spec_names
+    assert_empty unresolved_names
+  end
+
+  def test_require_bundler_missing_bundler_version
+    Gem::BundlerVersionFinder.stub(:bundler_version_with_reason, ["55", "reason"]) do
+      b1 = new_spec('bundler', '1.999999999', nil, "lib/bundler/setup.rb")
+      b2a = new_spec('bundler', '2.a', nil, "lib/bundler/setup.rb")
+      install_specs b1, b2a
+
+      e = assert_raises Gem::MissingSpecVersionError do
+        gem('bundler')
+      end
+      assert_match "Could not find 'bundler' (55) required by reason.", e.message
+    end
+  end
+
+  def test_require_bundler_with_bundler_version
+    Gem::BundlerVersionFinder.stub(:bundler_version_with_reason, ["1", "reason"]) do
+      b1 = new_spec('bundler', '1.999999999', nil, "lib/bundler/setup.rb")
+      b2 = new_spec('bundler', '2', nil, "lib/bundler/setup.rb")
+      install_specs b1, b2
+
+      $:.clear
+      assert_require 'bundler/setup'
+      assert_equal %w[bundler-1.999999999], loaded_spec_names
+    end
+  end
+
+  def silence_warnings
+    old_verbose, $VERBOSE = $VERBOSE, false
+    yield
+  ensure
+    $VERBOSE = old_verbose
   end
 end

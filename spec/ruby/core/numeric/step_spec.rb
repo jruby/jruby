@@ -1,6 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
-require File.expand_path('../shared/step', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/step'
 
 describe "Numeric#step" do
 
@@ -22,24 +22,43 @@ describe "Numeric#step" do
     it_behaves_like :numeric_step, :step
 
     describe "when no block is given" do
-      it "returns an Enumerator when step is 0" do
-        1.step(5, 0).should be_an_instance_of(Enumerator)
+      step_enum_class = Enumerator
+      ruby_version_is "2.6" do
+        step_enum_class = Enumerator::ArithmeticSequence
       end
 
-      it "returns an Enumerator when step is 0.0" do
-        1.step(2, 0.0).should be_an_instance_of(Enumerator)
+      it "returns an #{step_enum_class} when step is 0" do
+        1.step(5, 0).should be_an_instance_of(step_enum_class)
       end
 
-      describe "returned Enumerator" do
+      it "returns an #{step_enum_class} when step is 0.0" do
+        1.step(2, 0.0).should be_an_instance_of(step_enum_class)
+      end
+
+      describe "returned #{step_enum_class}" do
         describe "size" do
-          it "raises an ArgumentError when step is 0" do
-            enum = 1.step(5, 0)
-            lambda { enum.size }.should raise_error(ArgumentError)
+          ruby_version_is ""..."2.6" do
+            it "raises an ArgumentError when step is 0" do
+              enum = 1.step(5, 0)
+              lambda { enum.size }.should raise_error(ArgumentError)
+            end
+
+            it "raises an ArgumentError when step is 0.0" do
+              enum = 1.step(2, 0.0)
+              lambda { enum.size }.should raise_error(ArgumentError)
+            end
           end
 
-          it "raises an ArgumentError when step is 0.0" do
-            enum = 1.step(2, 0.0)
-            lambda { enum.size }.should raise_error(ArgumentError)
+          ruby_version_is "2.6" do
+            it "is infinity when step is 0" do
+              enum = 1.step(5, 0)
+              enum.size.should == Float::INFINITY
+            end
+
+            it "is infinity when step is 0.0" do
+              enum = 1.step(2, 0.0)
+              enum.size.should == Float::INFINITY
+            end
           end
         end
       end
@@ -65,6 +84,10 @@ describe "Numeric#step" do
     describe "when no block is given" do
       describe "returned Enumerator" do
         describe "size" do
+          it "should return infinity_value when limit is nil" do
+            1.step(by: 42).size.should == infinity_value
+          end
+
           it "should return infinity_value when step is 0" do
             1.step(to: 5, by: 0).size.should == infinity_value
           end
@@ -73,12 +96,20 @@ describe "Numeric#step" do
             1.step(to: 2, by: 0.0).size.should == infinity_value
           end
 
-          it "should return infinity_value when the limit is Float::INFINITY" do
+          it "should return infinity_value when ascending towards a limit of Float::INFINITY" do
             1.step(to: Float::INFINITY, by: 42).size.should == infinity_value
+          end
+
+          it "should return infinity_value when decending towards a limit of -Float::INFINITY" do
+            1.step(to: -Float::INFINITY, by: -42).size.should == infinity_value
           end
 
           it "should return 1 when the both limit and step are Float::INFINITY" do
             1.step(to: Float::INFINITY, by: Float::INFINITY).size.should == 1
+          end
+
+          it "should return 1 when the both limit and step are -Float::INFINITY" do
+            1.step(to: -Float::INFINITY, by: -Float::INFINITY).size.should == 1
           end
         end
       end

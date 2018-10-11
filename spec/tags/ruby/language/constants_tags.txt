@@ -7,3 +7,5 @@ fails(2.3 feature):Constant resolution within a singleton class (class << obj) u
 fails(2.3 feature):Constant resolution within a singleton class (class << obj) allows nested modules to have proper resolution
 fails:Module#private_constant marked constants in a module cannot be reopened as a module from scope where constant would be private
 fails:Module#private_constant marked constants in a module cannot be reopened as a class from scope where constant would be private
+fails:Module#private_constant marked constants NameError by #private_constant has :receiver and :name attributes
+fails:Module#private_constant marked constants NameError by #private_constant has the defined class as the :name attribute

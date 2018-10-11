@@ -17,10 +17,9 @@ describe "A Ruby class generating a Java stub" do
   describe "with no initialize method" do
     it "generates a default constructor" do
       cls = generate("class Foo; end").classes[0]
-      cls.constructor?.should be false
+      expect( cls.has_constructor? ).to be false
 
-      java = cls.to_s
-      java.should match EMPTY_INITIALIZE_PATTERN
+      expect( cls.to_s ).to match EMPTY_INITIALIZE_PATTERN
     end
   end
 
@@ -28,33 +27,31 @@ describe "A Ruby class generating a Java stub" do
     describe "and a constructor java_signature on a another method" do
       it "generates a default constructor" do
         cls = generate("class Foo; def initialize(a); end; java_signature 'Foo()'; def default_cnstr(); end; end").classes[0]
-        cls.constructor?.should be true
+        expect( cls.has_constructor? ).to be true
 
-        init = cls.methods[0]
-        init.should_not be nil
-        init.name.should == "initialize"
-        init.constructor?.should == true
-        init.java_signature.to_s.should == "Object initialize(Object a)"
-        init.args.length.should == 1
+        expect( init = cls.methods[0] ).to_not be nil
+        expect( init.name ).to eql "initialize"
+        expect( init.constructor? ).to be true
+        expect( init.java_signature.to_s ).to eql "Object initialize(Object a)"
+        expect( init.args.length ).to eql 1
 
         java = init.to_s
-        java.should match OBJECT_INITIALIZE_PATTERN
+        expect( java ).to match OBJECT_INITIALIZE_PATTERN
 
-        def_cnstr = cls.methods[1]
-        def_cnstr.should_not be nil
-        def_cnstr.constructor?.should == true
-        def_cnstr.java_signature.to_s.should == "Foo()"
-        def_cnstr.args.length.should == 0
+        expect( def_cnstr = cls.methods[1] ).to_not be nil
+        expect( def_cnstr.constructor? ).to be true
+        expect( def_cnstr.java_signature.to_s ).to eql "Foo()"
+        expect( def_cnstr.args.length ).to eql 0
 
         java = def_cnstr.to_s
-        java.should match EMPTY_INITIALIZE_PATTERN
+        expect( java ).to match EMPTY_INITIALIZE_PATTERN
       end
     end
 
     describe "with no arguments" do
       it "generates a default constructor" do
         cls = generate("class Foo; def initialize; end; end").classes[0]
-        expect( cls.constructor? ).to be true
+        expect( cls.has_constructor? ).to be true
 
         expect( init = cls.methods[0] ).to_not be nil
         expect( init.name ).to eql 'initialize'
@@ -70,7 +67,7 @@ describe "A Ruby class generating a Java stub" do
     describe "with one argument and no java_signature" do
       it "generates an (Object) constructor" do
         cls = generate("class Foo; def initialize(a); end; end").classes[0]
-        expect( cls.constructor? ).to be true
+        expect( cls.has_constructor? ).to be true
 
         init = cls.methods[0]
         expect( init.name ).to eql 'initialize'
@@ -86,7 +83,7 @@ describe "A Ruby class generating a Java stub" do
     describe "with one argument and a java_signature" do
       it "generates a type-appropriate constructor" do
         cls = generate("class Foo; java_signature 'Foo(String)'; def initialize(a); end; end").classes[0]
-        expect( cls.constructor? ).to be true
+        expect( cls.has_constructor? ).to be true
 
         init = cls.methods[0]
         expect( init.name ).to eql 'initialize'
@@ -112,9 +109,37 @@ describe "A Ruby class generating a Java stub" do
         cls = generate("class Foo; java_signature 'Foo() throws FooBarException,QuxBazException'; def initialize(); end; end").classes[0]
 
         method = cls.methods[0]
-        method.java_signature.to_s.should == 'Foo() throws FooBarException, QuxBazException'
+        expect( method.java_signature.to_s ).to eql 'Foo() throws FooBarException, QuxBazException'
       end
     end
 
+  end
+
+  describe "with an initialize() Java method override" do
+    it "generates correct method despite initialize name" do
+      # java.beans.beancontext.BeanContextSupport
+      cls = generate("class BeanContext < RubyObject; def initialize(); end;" +
+                     " java_signature 'void initialize()'; def init(); end; end").classes[0]
+
+      init = cls.methods[0]
+
+      expect( init.name ).to eql 'initialize'
+      expect( init.constructor? ).to be true
+      expect( init.args.length ).to eql 0
+
+      init = cls.methods[1]
+
+      expect( init.name ).to eql 'init'
+      expect( init.constructor? ).to be false
+      expect( init.args.length ).to eql 0
+
+      java = init.to_s
+      expect( java.index('public void initialize()') ).to_not be nil
+
+      puts cls.to_s if $VERBOSE
+
+      javac_status = javac_compile_contents(cls.to_s, 'BeanContext.java')
+      raise 'javac failed (see above output)' unless javac_status
+    end
   end
 end

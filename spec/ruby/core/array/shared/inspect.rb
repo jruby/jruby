@@ -1,4 +1,4 @@
-require File.expand_path('../../fixtures/encoded_strings', __FILE__)
+require_relative '../fixtures/encoded_strings'
 
 describe :array_inspect, shared: true do
   it "returns a string" do
@@ -16,6 +16,46 @@ describe :array_inspect, shared: true do
       obj
     end
     items.send(@method).should == "[0, 1, 2]"
+  end
+
+  it "does not call #to_s on a String returned from #inspect" do
+    str = "abc"
+    str.should_not_receive(:to_s)
+
+    [str].send(@method).should == '["abc"]'
+  end
+
+  it "calls #to_s on the object returned from #inspect if the Object isn't a String" do
+    obj = mock("Array#inspect/to_s calls #to_s")
+    obj.should_receive(:inspect).and_return(obj)
+    obj.should_receive(:to_s).and_return("abc")
+
+    [obj].send(@method).should == "[abc]"
+  end
+
+  it "does not call #to_str on the object returned from #inspect when it is not a String" do
+    obj = mock("Array#inspect/to_s does not call #to_str")
+    obj.should_receive(:inspect).and_return(obj)
+    obj.should_not_receive(:to_str)
+
+    [obj].send(@method).should =~ /^\[#<MockObject:0x[0-9a-f]+>\]$/
+  end
+
+  it "does not call #to_str on the object returned from #to_s when it is not a String" do
+    obj = mock("Array#inspect/to_s does not call #to_str on #to_s result")
+    obj.should_receive(:inspect).and_return(obj)
+    obj.should_receive(:to_s).and_return(obj)
+    obj.should_not_receive(:to_str)
+
+    [obj].send(@method).should =~ /^\[#<MockObject:0x[0-9a-f]+>\]$/
+  end
+
+  it "does not swallow exceptions raised by #to_s" do
+    obj = mock("Array#inspect/to_s does not swallow #to_s exceptions")
+    obj.should_receive(:inspect).and_return(obj)
+    obj.should_receive(:to_s).and_raise(Exception)
+
+    lambda { [obj].send(@method) }.should raise_error(Exception)
   end
 
   it "represents a recursive element with '[...]'" do
@@ -81,24 +121,11 @@ describe :array_inspect, shared: true do
       array.send(@method).encoding.name.should == "US-ASCII"
     end
 
-    ruby_version_is ''...'2.3' do
-      it "raises if inspected result is not default external encoding" do
-        utf_16be = mock("utf_16be")
-        utf_16be.should_receive(:inspect).and_return(%<"utf_16be \u3042">.encode!(Encoding::UTF_16BE))
+    it "does not raise if inspected result is not default external encoding" do
+      utf_16be = mock("utf_16be")
+      utf_16be.should_receive(:inspect).and_return(%<"utf_16be \u3042">.encode!(Encoding::UTF_16BE))
 
-        lambda {
-          [utf_16be].send(@method)
-        }.should raise_error(Encoding::CompatibilityError)
-      end
-    end
-
-    ruby_version_is '2.3' do
-      it "does not raise if inspected result is not default external encoding" do
-        utf_16be = mock("utf_16be")
-        utf_16be.should_receive(:inspect).and_return(%<"utf_16be \u3042">.encode!(Encoding::UTF_16BE))
-
-        [utf_16be].send(@method).should == '["utf_16be \u3042"]'
-      end
+      [utf_16be].send(@method).should == '["utf_16be \u3042"]'
     end
   end
 end

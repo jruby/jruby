@@ -1,1 +1,0 @@
-unstable:Thread#stop? reports aborting on a killed thread

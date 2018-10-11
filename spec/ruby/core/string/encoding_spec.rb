@@ -1,6 +1,6 @@
 # -*- encoding: us-ascii -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/iso-8859-9-encoding', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/iso-8859-9-encoding'
 
 with_feature :encoding do
   describe "String#encoding" do
@@ -133,7 +133,7 @@ with_feature :encoding do
       str += [0xDF].pack('C')
       str.ascii_only?.should be_false
       str.encoding.should == Encoding::ASCII_8BIT
-     end
+    end
 
     # TODO: Deal with case when the byte in question isn't valid in the source
     # encoding?

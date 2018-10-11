@@ -18,13 +18,62 @@ class TestObject < Test::Unit::TestCase
     assert_same(object, object.itself, feature6373)
   end
 
+  def test_yield_self
+    feature = '[ruby-core:46320] [Feature #6721]'
+    object = Object.new
+    assert_same(self, object.yield_self {self}, feature)
+    assert_same(object, object.yield_self {|x| break x}, feature)
+    enum = object.yield_self
+    assert_instance_of(Enumerator, enum)
+    assert_equal(1, enum.size)
+  end
+
   def test_dup
-    assert_raise(TypeError) { 1.dup }
-    assert_raise(TypeError) { true.dup }
-    assert_raise(TypeError) { nil.dup }
+    assert_equal 1, 1.dup
+    assert_equal true, true.dup
+    assert_equal nil, nil.dup
+    assert_equal false, false.dup
+    x = :x; assert_equal x, x.dup
+    x = "bug13145".intern; assert_equal x, x.dup
+    x = 1 << 64; assert_equal x, x.dup
+    x = 1.72723e-77; assert_equal x, x.dup
 
     assert_raise(TypeError) do
       Object.new.instance_eval { initialize_copy(1) }
+    end
+  end
+
+  def test_clone
+    a = Object.new
+    def a.b; 2 end
+
+    a.freeze
+    c = a.clone
+    assert_equal(true, c.frozen?)
+    assert_equal(2, c.b)
+
+    assert_raise(ArgumentError) {a.clone(freeze: [])}
+    d = a.clone(freeze: false)
+    def d.e; 3; end
+    assert_equal(false, d.frozen?)
+    assert_equal(2, d.b)
+    assert_equal(3, d.e)
+
+    assert_equal 1, 1.clone
+    assert_equal true, true.clone
+    assert_equal nil, nil.clone
+    assert_equal false, false.clone
+    x = :x; assert_equal x, x.dup
+    x = "bug13145".intern; assert_equal x, x.dup
+    x = 1 << 64; assert_equal x, x.clone
+    x = 1.72723e-77; assert_equal x, x.clone
+    assert_raise(ArgumentError) {1.clone(freeze: false)}
+    assert_raise(ArgumentError) {true.clone(freeze: false)}
+    assert_raise(ArgumentError) {nil.clone(freeze: false)}
+    assert_raise(ArgumentError) {false.clone(freeze: false)}
+    x = EnvUtil.labeled_class("\u{1f4a9}").new
+    assert_raise_with_message(ArgumentError, /\u{1f4a9}/) do
+      Object.new.clone(freeze: x)
     end
   end
 
@@ -50,12 +99,12 @@ class TestObject < Test::Unit::TestCase
   def test_taint_frozen_obj
     o = Object.new
     o.freeze
-    assert_raise(RuntimeError) { o.taint }
+    assert_raise(FrozenError) { o.taint }
 
     o = Object.new
     o.taint
     o.freeze
-    assert_raise(RuntimeError) { o.untaint }
+    assert_raise(FrozenError) { o.untaint }
   end
 
   def test_freeze_immediate
@@ -74,7 +123,7 @@ class TestObject < Test::Unit::TestCase
       attr_accessor :foo
     }
     obj = klass.new.freeze
-    assert_raise_with_message(RuntimeError, /#{name}/) {
+    assert_raise_with_message(FrozenError, /#{name}/) {
       obj.foo = 1
     }
   end
@@ -350,7 +399,7 @@ class TestObject < Test::Unit::TestCase
   def test_remove_method
     c = Class.new
     c.freeze
-    assert_raise(RuntimeError) do
+    assert_raise(FrozenError) do
       c.instance_eval { remove_method(:foo) }
     end
 
@@ -387,19 +436,15 @@ class TestObject < Test::Unit::TestCase
 
     m = "\u{30e1 30bd 30c3 30c9}"
     c = Class.new
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      assert_raise_with_message(NameError, /#{m}/) do
-        c.class_eval {remove_method m}
-      end
+    assert_raise_with_message(NameError, /#{m}/) do
+      c.class_eval {remove_method m}
     end
     c = Class.new {
       define_method(m) {}
       remove_method(m)
     }
-    EnvUtil.with_default_external(Encoding::UTF_8) do
-      assert_raise_with_message(NameError, /#{m}/) do
-        c.class_eval {remove_method m}
-      end
+    assert_raise_with_message(NameError, /#{m}/) do
+      c.class_eval {remove_method m}
     end
   end
 
@@ -762,7 +807,7 @@ class TestObject < Test::Unit::TestCase
     class<<x;self;end.class_eval {define_method(:to_s) {name}}
     assert_same(name, x.to_s)
     assert_not_predicate(name, :tainted?)
-    assert_raise(RuntimeError) {name.taint}
+    assert_raise(FrozenError) {name.taint}
     assert_equal("X", [x].join(""))
     assert_not_predicate(name, :tainted?)
     assert_not_predicate(eval('"X".freeze'), :tainted?)
@@ -844,7 +889,7 @@ class TestObject < Test::Unit::TestCase
         end
       end
 
-      assert_raise_with_message(#{exc}, "bug5473") {1.foo}
+      assert_raise_with_message(#{exc}, "bug5473", #{bug5473.dump}) {1.foo}
       SRC
     end
   end
@@ -854,7 +899,7 @@ class TestObject < Test::Unit::TestCase
     b = yield
     assert_nothing_raised("copy") {a.instance_eval {initialize_copy(b)}}
     c = a.dup.freeze
-    assert_raise(RuntimeError, "frozen") {c.instance_eval {initialize_copy(b)}}
+    assert_raise(FrozenError, "frozen") {c.instance_eval {initialize_copy(b)}}
     d = a.dup.trust
     [a, b, c, d]
   end
@@ -878,6 +923,7 @@ class TestObject < Test::Unit::TestCase
     _issue = "Bug #7539"
     assert_raise_with_message(TypeError, "can't convert Array into Integer") {Integer([42])}
     assert_raise_with_message(TypeError, 'no implicit conversion of Array into Integer') {[].first([42])}
+    assert_raise_with_message(TypeError, "can't convert Array into Rational") {Rational([42])}
   end
 
   def test_copied_ivar_memory_leak
@@ -888,5 +934,15 @@ class TestObject < Test::Unit::TestCase
     end;
       num.times {a.clone.set}
     end;
+  end
+
+  def test_clone_object_should_not_be_old
+    assert_normal_exit <<-EOS, '[Bug #13775]'
+      b = proc { }
+      10.times do |i|
+        b.clone
+        GC.start
+      end
+    EOS
   end
 end

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -39,7 +39,6 @@ import java.nio.channels.SelectableChannel;
 
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.ProtocolFamily;
-import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 
@@ -196,10 +195,9 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         int argc = args.length;
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-        if (!opts.isNil()) argc--;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+        if (opts != context.nil) argc--;
 
         IRubyObject length, flags, str;
         length = flags = context.nil; str = null;
@@ -210,18 +208,17 @@ public class RubyBasicSocket extends RubyIO {
             case 1: length = args[0];
         }
 
-        boolean ex = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
         // TODO: implement flags
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
         ByteList bytes = doReadNonblock(context, buffer);
 
         if (bytes == null) {
-            if (!ex) return context.runtime.newSymbol("wait_readable");
+            if (!extractExceptionArg(context, opts)) return context.runtime.newSymbol("wait_readable");
             throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
-        if (str != null && !str.isNil()) {
+        if (str != null && str != context.nil) {
             str = str.convertToString();
             ((RubyString) str).setValue(bytes);
             return str;
@@ -444,7 +441,6 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject closeHalf(ThreadContext context, int closeHalf) {
-        Ruby runtime = context.runtime;
         OpenFile fptr;
 
         int otherHalf = closeHalf == OpenFile.READABLE ? OpenFile.WRITABLE : OpenFile.READABLE;
@@ -452,7 +448,7 @@ public class RubyBasicSocket extends RubyIO {
         fptr = getOpenFileChecked();
         if ((fptr.getMode() & otherHalf) == 0) {
             // shutdown fully
-            return rbIoClose(runtime);
+            return rbIoClose(context);
         }
 
         // shutdown half
@@ -473,13 +469,13 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod(rest = true, notImplemented = true)
-    public IRubyObject readmsg(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("readmsg is not implemented");
+    public IRubyObject recvmsg(ThreadContext context, IRubyObject[] args) {
+        throw context.runtime.newNotImplementedError("recvmsg is not implemented");
     }
 
     @JRubyMethod(rest = true, notImplemented = true)
-    public IRubyObject readmsg_nonblock(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("readmsg_nonblock is not implemented");
+    public IRubyObject recvmsg_nonblock(ThreadContext context, IRubyObject[] args) {
+        throw context.runtime.newNotImplementedError("recvmsg_nonblock is not implemented");
     }
 
     protected ByteList doRead(ThreadContext context, final ByteBuffer buffer) {
@@ -682,6 +678,10 @@ public class RubyBasicSocket extends RubyIO {
         RuntimeException ex = SocketUtils.sockerr(runtime, msg);
         if ( cause != null ) ex.initCause(cause);
         return ex;
+    }
+
+    static boolean extractExceptionArg(ThreadContext context, IRubyObject opts) {
+        return ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals;
     }
 
     private static int asNumber(IRubyObject val) {

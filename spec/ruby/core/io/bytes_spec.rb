@@ -1,16 +1,14 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#bytes" do
   before :each do
-    @kcode, $KCODE = $KCODE, "utf-8"
     @io = IOSpecs.io_fixture "lines.txt"
   end
 
   after :each do
     @io.close unless @io.closed?
-    $KCODE = @kcode
   end
 
   it "returns an enumerator of the next bytes from the stream" do

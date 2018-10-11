@@ -1,4 +1,4 @@
-require File.expand_path('../../spec_helper', __FILE__)
+require_relative '../spec_helper'
 
 class AliasObject
   attr :foo
@@ -22,6 +22,62 @@ describe "The alias keyword" do
       alias __value value
     end
     @obj.__value.should == 5
+  end
+
+  it "works with a simple symbol on the left-hand side" do
+    @meta.class_eval do
+      alias :a value
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with a single quoted symbol on the left-hand side" do
+    @meta.class_eval do
+      alias :'a' value
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with a doubule quoted symbol on the left-hand side" do
+    @meta.class_eval do
+      alias :"a" value
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with an interoplated symbol on the left-hand side" do
+    @meta.class_eval do
+      alias :"#{'a'}" value
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with a simple symbol on the right-hand side" do
+    @meta.class_eval do
+      alias a :value
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with a single quoted symbol on the right-hand side" do
+    @meta.class_eval do
+      alias a :'value'
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with a doubule quoted symbol on the right-hand side" do
+    @meta.class_eval do
+      alias a :"value"
+    end
+    @obj.a.should == 5
+  end
+
+  it "works with an interoplated symbol on the right-hand side" do
+    @meta.class_eval do
+      alias a :"#{'value'}"
+    end
+    @obj.a.should == 5
   end
 
   it "adds the new method to the list of methods" do

@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -52,7 +52,13 @@ public class JRubyFile extends JavaSecuredFile {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
-        return createNoUnicodeConversion(cwd, pathname);
+        if (pathname == null || pathname.length() == 0 || Ruby.isSecurityRestricted()) {
+            return JRubyFile.DUMMY;
+        }
+        if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5);
+        }
+        return createNoUnicodeConversion(cwd, pathname, new File(pathname));
     }
 
     public static FileResource createResource(ThreadContext context, String pathname) {
@@ -76,22 +82,22 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     private static FileResource createResource(Ruby runtime, String cwd, String pathname, boolean isFile) {
-        FileResource emptyResource = EmptyFileResource.create(pathname);
-        if (emptyResource != null) return emptyResource;
+        FileResource resource = EmptyFileResource.create(pathname);
+        if (resource != null) return resource;
 
         // This will work against anything potentially containing a '!' in it and does not require a scheme.
         // (see test/test_java_on_load_path.rb: $LOAD_PATH << "test/test_jruby_1332.jar!"; require 'test_jruby_1332.rb'
-        FileResource jarResource = JarResource.create(pathname);
-        if (jarResource != null) return jarResource;
+        resource = JarResource.create(pathname);
+        if (resource != null) return resource;
 
         if (Platform.IS_WINDOWS &&
                 (pathname.equalsIgnoreCase("nul") || pathname.equalsIgnoreCase("nul:"))) {
-            return new NullDeviceResource(runtime.getPosix());
+            return new NullDeviceResource();
         }
 
         if (pathname.indexOf(':') > 0) { // scheme-oriented resources
             if (pathname.startsWith("classpath:")) {
-                pathname = pathname.replace("classpath:", "uri:classloader:/");
+                pathname = "uri:classloader:/" + pathname.substring(10);
             }
 
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
@@ -100,47 +106,35 @@ public class JRubyFile extends JavaSecuredFile {
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);
 
-                if (pathname.length() == 0) return EmptyFileResource.create(pathname);
+                if (pathname.length() == 0) return EmptyFileResource.INSTANCE;
             }
         }
 
-        File internal = new JavaSecuredFile(pathname);
-        if (cwd != null && !internal.isAbsolute() && (cwd.startsWith("uri:") || cwd.startsWith("file:"))) {
+        if (cwd != null && (cwd.startsWith("uri:") || cwd.startsWith("file:")) && !new File(pathname).isAbsolute()) {
             return createResource(runtime, null, cwd + '/' + pathname);
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        JRubyFile f = create(cwd, pathname);
-        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, f);
+        return new RegularFileResource(runtime != null ? runtime.getPosix() : null, create(cwd, pathname), pathname);
     }
 
     public static String normalizeSeps(String path) {
-        if (Platform.IS_WINDOWS) {
-            return path.replace(File.separatorChar, '/');
-        }
-        return path;
+        return Platform.IS_WINDOWS ? path.replace(File.separatorChar, '/') : path;
     }
 
-    private static JRubyFile createNoUnicodeConversion(String cwd, String pathname) {
-        if (pathname == null || pathname.length() == 0 || Ruby.isSecurityRestricted()) {
-            return JRubyFile.DUMMY;
-        }
-        if (pathname.startsWith("file:")) {
-            pathname = pathname.substring(5);
-        }
-        File internal = new JavaSecuredFile(pathname);
+    private static JRubyFile createNoUnicodeConversion(String cwd, String pathname, File path) {
         // File and company do not seem to recognize bare \ and / on Windows as absolute.  Cheat!
-        if (internal.isAbsolute() || Platform.IS_WINDOWS && (pathname.startsWith("/") || pathname.startsWith("\\"))) {
-            return new JRubyFile(internal);
+        if (path.isAbsolute() || Platform.IS_WINDOWS && (pathname.startsWith("/") || pathname.startsWith("\\"))) {
+            return new JRubyFile(path);
         }
-        if(cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
+        if (cwd != null && cwd.startsWith("uri:") && !pathname.startsWith("uri:") && !pathname.contains("!/")) {
             return new JRubyFile(cwd + '/' + pathname);
         }
-        internal = new JavaSecuredFile(cwd, pathname);
-        if(!internal.isAbsolute()) {
+        path = new File(cwd, pathname);
+        if (!path.isAbsolute()) {
             throw new IllegalArgumentException("Neither current working directory ("+cwd+") nor pathname ("+pathname+") led to an absolute path");
         }
-        return new JRubyFile(internal);
+        return new JRubyFile(path);
     }
 
     public static String getFileProperty(String property) {
@@ -184,6 +178,10 @@ public class JRubyFile extends JavaSecuredFile {
     @Override
     public String getPath() {
         return normalizeSeps(super.getPath());
+    }
+
+    final String getPathDefault() {
+        return super.getPath();
     }
 
     @Override
@@ -250,42 +248,27 @@ public class JRubyFile extends JavaSecuredFile {
 
     @Override
     public File[] listFiles() {
-        File[] files = super.listFiles();
-        if (files == null) {
-            return null;
-        }
-
-        JRubyFile[] smartFiles = new JRubyFile[files.length];
-        for (int i = 0, j = files.length; i < j; i++) {
-            smartFiles[i] = createNoUnicodeConversion(super.getAbsolutePath(), files[i].getPath());
-        }
-        return smartFiles;
+        return convertFiles(super.listFiles());
     }
 
     @Override
     public File[] listFiles(final FileFilter filter) {
-        final File[] files = super.listFiles(filter);
-        if (files == null) {
-            return null;
-        }
-
-        JRubyFile[] smartFiles = new JRubyFile[files.length];
-        for (int i = 0,j = files.length; i < j; i++) {
-            smartFiles[i] = createNoUnicodeConversion(super.getAbsolutePath(), files[i].getPath());
-        }
-        return smartFiles;
+        return convertFiles(super.listFiles(filter));
     }
 
     @Override
     public File[] listFiles(final FilenameFilter filter) {
-        final File[] files = super.listFiles(filter);
-        if (files == null) {
-            return null;
-        }
+        return convertFiles(super.listFiles(filter));
+    }
 
+    private JRubyFile[] convertFiles(final File[] files) {
+        if (files == null) return null; // non-existent directory
+
+        final String absolutePath = super.getAbsolutePath();
         JRubyFile[] smartFiles = new JRubyFile[files.length];
-        for (int i = 0,j = files.length; i < j; i++) {
-            smartFiles[i] = createNoUnicodeConversion(super.getAbsolutePath(), files[i].getPath());
+        for (int i = 0; i < files.length; i++) {
+            final File file = files[i];
+            smartFiles[i] = createNoUnicodeConversion(absolutePath, file.getPath(), file);
         }
         return smartFiles;
     }

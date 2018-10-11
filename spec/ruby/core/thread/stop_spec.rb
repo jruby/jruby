@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "Thread.stop" do
   it "causes the current thread to sleep indefinitely" do
@@ -48,9 +48,7 @@ describe "Thread#stop?" do
     ThreadSpecs.status_of_dying_sleeping_thread.stop?.should == true
   end
 
-  quarantine! do
-  it "reports aborting on a killed thread" do
-    ThreadSpecs.status_of_aborting_thread.stop?.should == false
-  end
+  it "describes a dying thread after sleep" do
+    ThreadSpecs.status_of_dying_thread_after_sleep.stop?.should == false
   end
 end

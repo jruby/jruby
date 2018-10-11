@@ -10,7 +10,9 @@ require 'mspec/runner/actions/timer'
 
 class MSpecMain < MSpecScript
   def initialize
-    config[:includes] = []
+    super
+
+    config[:loadpath] = []
     config[:requires] = []
     config[:target]   = ENV['RUBY'] || 'ruby'
     config[:flags]    = []
@@ -35,14 +37,13 @@ class MSpecMain < MSpecScript
 
     options.targets
 
-    options.on("--warnings", "Don't supress warnings") do
+    options.on("--warnings", "Don't suppress warnings") do
       config[:flags] << '-w'
       ENV['OUTPUT_WARNINGS'] = '1'
     end
 
     options.on("-j", "--multi", "Run multiple (possibly parallel) subprocesses") do
       config[:multi] = true
-      config[:options] << "-fy"
     end
 
     options.version MSpec::VERSION do
@@ -92,9 +93,13 @@ class MSpecMain < MSpecScript
 
     require 'mspec/runner/formatters/multi'
     formatter = MultiFormatter.new
+    if config[:formatter]
+      warn "formatter options is ignored due to multi option"
+    end
 
     output_files = []
-    children = cores.times.map { |i|
+    processes = cores(@files.size)
+    children = processes.times.map { |i|
       name = tmp "mspec-multi-#{i}"
       output_files << name
 
@@ -102,13 +107,14 @@ class MSpecMain < MSpecScript
         "SPEC_TEMP_DIR" => "rubyspec_temp_#{i}",
         "MSPEC_MULTI" => i.to_s
       }
-      command = argv + ["-o", name]
+      command = argv + ["-fy", "-o", name]
       $stderr.puts "$ #{command.join(' ')}" if $MSPEC_DEBUG
-      IO.popen([env, *command], "rb+")
+      IO.popen([env, *command, close_others: false], "rb+")
     }
 
     puts children.map { |child| child.gets }.uniq
     formatter.start
+    last_files = {}
 
     until @files.empty?
       IO.select(children)[0].each { |io|
@@ -122,19 +128,33 @@ class MSpecMain < MSpecScript
           while chunk = (io.read_nonblock(4096) rescue nil)
             reply += chunk
           end
-          raise reply
+          reply.chomp!('.')
+          msg = "A child mspec-run process printed unexpected output on STDOUT"
+          if last_file = last_files[io]
+            msg += " while running #{last_file}"
+          end
+          abort "\n#{msg}: #{reply.inspect}"
         end
-        io.puts @files.shift unless @files.empty?
+
+        unless @files.empty?
+          file = @files.shift
+          last_files[io] = file
+          io.puts file
+        end
       }
     end
 
+    success = true
     children.each { |child|
       child.puts "QUIT"
-      Process.wait(child.pid)
+      _pid, status = Process.wait2(child.pid)
+      success &&= status.success?
+      child.close
     }
 
     formatter.aggregate_results(output_files)
     formatter.finish
+    success
   end
 
   def run
@@ -142,16 +162,17 @@ class MSpecMain < MSpecScript
 
     argv.concat config[:launch]
     argv.concat config[:flags]
-    argv.concat config[:includes]
+    argv.concat config[:loadpath]
     argv.concat config[:requires]
-    argv << "#{MSPEC_HOME}/bin/mspec-#{ config[:command] || "run" }"
+    argv << "#{MSPEC_HOME}/bin/mspec-#{config[:command] || 'run'}"
     argv.concat config[:options]
 
     if config[:multi]
-      multi_exec argv
+      exit multi_exec(argv)
     else
       $stderr.puts "$ #{argv.join(' ')}"
-      exec *argv
+      $stderr.flush
+      exec(*argv, close_others: false)
     end
   end
 end

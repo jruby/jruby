@@ -1,0 +1,7 @@
+fails:Socket#connect_address using an unbound socket raises SocketError
+fails:Socket#connect_address using a socket bound to 0.0.0.0 uses 127.0.0.1 as the IP address
+fails:Socket#connect_address using a socket bound to 0.0.0.0 uses AF_INET as the address family
+fails:Socket#connect_address using a socket bound to 0.0.0.0 uses PF_INET as the address family
+fails:Socket#connect_address using a socket bound to 0.0.0.0 uses 0 as the protocol
+fails:Socket#connect_address using a socket bound to :: uses PF_INET6 as the address family
+fails:Socket#connect_address using a socket bound to :: uses 0 as the protocol

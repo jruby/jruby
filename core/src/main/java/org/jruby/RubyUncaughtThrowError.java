@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -23,40 +23,37 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.UncaughtThrowError;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
+ * The Java representation of a Ruby UncaughtThrowError.
+ *
+ * @see UncaughtThrowError
  * @author kares
  */
 @JRubyClass(name="UncaughtThrowError", parent="ArgumentError")
-public class RubyUncaughtThrowError extends RubyException {
+public class RubyUncaughtThrowError extends RubyArgumentError {
 
     private IRubyObject tag, value;
 
-    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-        @Override
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new RubyUncaughtThrowError(runtime, klass);
-        }
-    };
-
-    static RubyClass createUncaughtThrowErrorClass(Ruby runtime, RubyClass argumentError) {
-        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, ALLOCATOR);
+    static RubyClass define(Ruby runtime, RubyClass argumentError) {
+        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, (runtime1, klass) -> new RubyUncaughtThrowError(runtime1, klass));
         UncaughtThrowError.defineAnnotatedMethods(RubyUncaughtThrowError.class);
         return UncaughtThrowError;
     }
 
     protected RubyUncaughtThrowError(Ruby runtime, RubyClass exceptionClass) {
         super(runtime, exceptionClass, exceptionClass.getName());
-        // this.tag = this.value = runtime.getNil();
         this.message = runtime.getNil();
     }
 
@@ -67,6 +64,11 @@ public class RubyUncaughtThrowError extends RubyException {
         error.value = value;
         error.message = message;
         return error;
+    }
+
+    @Override
+    protected RaiseException constructThrowable(String message) {
+        return new UncaughtThrowError(message, this);
     }
 
     @Override

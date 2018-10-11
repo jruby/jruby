@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,12 +25,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.lexer.LexerSource;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 
 import static org.jruby.lexer.LexingCommon.*;
 
@@ -47,11 +52,17 @@ public class StringTerm extends StrTerm {
     // How many strings are nested in the current string term
     private int nest;
 
+    private List<ByteList> regexpFragments;
+    private boolean regexpDynamic;
+
     public StringTerm(int flags, int begin, int end) {
         this.flags = flags;
         this.begin = (char) begin;
         this.end   = (char) end;
         this.nest  = 0;
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            this.regexpFragments = new ArrayList<>();
+        }
     }
 
     public int getFlags() {
@@ -62,22 +73,44 @@ public class StringTerm extends StrTerm {
         return new ByteList(ByteList.NULL_ARRAY, lexer.getEncoding());
     }
 
-    private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
-            if ((flags & STR_FUNC_QWORDS) != 0) {
-                flags = -1;
-                buffer.append(end);
-                return ' ';
-            }
+    private int endFound(RipperLexer lexer) throws IOException {
+        if ((flags & STR_FUNC_QWORDS) != 0) {
+            flags |= STR_FUNC_TERM;
+            lexer.pushback(0);
+            lexer.addDelayedToken(lexer.tokp, lexer.lex_p);
+            return ' ';
+        }
 
-            if ((flags & STR_FUNC_REGEXP) != 0) {
-                String options = parseRegexpFlags(lexer, src);
-                buffer.append(options.getBytes());
+        lexer.setStrTerm(null);
 
-                return Tokens.tREGEXP_END;
-            }
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            validateRegexp(lexer);
+            lexer.dispatchScanEvent(RipperParser.tREGEXP_END);
+            lexer.setState(EXPR_END | EXPR_ENDARG);
+            return RipperParser.tREGEXP_END;
+        }
 
-            buffer.append(end);
-            return Tokens.tSTRING_END;
+        if ((flags & STR_FUNC_LABEL) != 0 && lexer.isLabelSuffix()) {
+            lexer.nextc();
+            lexer.setState(EXPR_BEG | EXPR_LABEL);
+            return RipperParser.tLABEL_END;
+        }
+
+        lexer.setState(EXPR_END | EXPR_ENDARG);
+        return RipperParser.tSTRING_END;
+    }
+
+    private void validateRegexp(RipperLexer lexer) throws IOException {
+        Ruby runtime = lexer.getRuntime();
+        RegexpOptions options = lexer.parseRegexpFlags();
+        for (ByteList fragment : regexpFragments) {
+            lexer.checkRegexpFragment(runtime, fragment, options);
+        }
+        if (!regexpDynamic && regexpFragments.size() == 1) {
+            lexer.checkRegexpSyntax(runtime, regexpFragments.get(0), options);
+        }
+        regexpFragments.clear();
+        regexpDynamic = false;
     }
 
     @Override
@@ -85,11 +118,11 @@ public class StringTerm extends StrTerm {
         boolean spaceSeen = false;
         int c;
 
-        // FIXME: How much more obtuse can this be?
-        // Heredoc already parsed this and saved string...Do not parse..just return
-        if (flags == -1) {
-            lexer.ignoreNextScanEvent = true;
-            return Tokens.tSTRING_END;
+        if ((flags & STR_FUNC_TERM) != 0) {
+            if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
+            lexer.setState(EXPR_END | EXPR_ENDARG);
+            lexer.setStrTerm(null);
+            return ((flags & STR_FUNC_REGEXP) != 0) ? RipperParser.tREGEXP_END : RipperParser.tSTRING_END;
         }
         
         ByteList buffer = createByteList(lexer);        
@@ -97,76 +130,58 @@ public class StringTerm extends StrTerm {
         c = lexer.nextc();
         if ((flags & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
             do { 
-                buffer.append((char) c);
                 c = lexer.nextc();
             } while (Character.isWhitespace(c));
             spaceSeen = true;
         }
 
+        if ((flags & STR_FUNC_LIST) != 0) {
+            flags &= ~STR_FUNC_LIST;
+            spaceSeen = true;
+        }
+
         if (c == end && nest == 0) {
-            return endFound(lexer, src, buffer);
+            return endFound(lexer);
         }
         
         if (spaceSeen) {
             lexer.pushback(c);
+            lexer.addDelayedToken(lexer.tokp, lexer.lex_p);
             return ' ';
         }        
 
         if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
-            c = lexer.nextc();
-            switch (c) {
-            case '$':
-            case '@':
-                lexer.pushback(c);
-                return Tokens.tSTRING_DVAR;
-            case '{':
-                return Tokens.tSTRING_DBEG;
+            int token = lexer.peekVariableName(RipperParser.tSTRING_DVAR, RipperParser.tSTRING_DBEG);
+
+            if (token != 0) {
+                if ((flags & STR_FUNC_REGEXP) != 0) {
+                    regexpDynamic = true;
+                }
+                return token;
+            } else {
+                buffer.append(c);
             }
-            buffer.append((byte) '#');
         }
         lexer.pushback(c);
-        
+
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
 
         if (parseStringIntoBuffer(lexer, src, buffer, enc) == EOF) {
             if ((flags & STR_FUNC_REGEXP) != 0) {
-                if (lexer.eofp) lexer.compile_error("unterminated regexp meets end of file");
-                return Tokens.tREGEXP_END;
+                lexer.compile_error("unterminated regexp meets end of file");
             } else {
-                if (lexer.eofp) lexer.compile_error("unterminated string meets end of file");
-                return Tokens.tSTRING_END;
+                lexer.compile_error("unterminated string meets end of file");
             }
+            flags |= STR_FUNC_TERM;
         }
 
         lexer.setValue(lexer.createStr(buffer, flags));
+        if ((flags & STR_FUNC_REGEXP) != 0) {
+            regexpFragments.add(buffer);
+        }
         lexer.flush_string_content(enc[0]);
-        return Tokens.tSTRING_CONTENT;
-    }
-
-    private String parseRegexpFlags(RipperLexer lexer, LexerSource src) throws IOException {
-        StringBuilder buf = new StringBuilder(end);
-
-        int c;
-        StringBuilder unknownFlags = new StringBuilder(10);
-
-        for (c = lexer.nextc(); c != EOF
-                && Character.isLetter(c); c = lexer.nextc()) {
-            switch (c) {
-                case 'i': case 'x': case 'm': case 'o': case 'n':
-                case 'e': case 's': case 'u':
-                    buf.append((char) c);
-                break;
-            default:
-                unknownFlags.append((char) c);
-                break;
-            }
-        }
-        lexer.pushback(c);
-        if (unknownFlags.length() != 0) {
-            lexer.compile_error("unknown regexp option" + (unknownFlags.length() > 1 ? "s" : "") + " - " + unknownFlags.toString());
-        }
-        return buf.toString();
+        return RipperParser.tSTRING_CONTENT;
     }
 
     private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {

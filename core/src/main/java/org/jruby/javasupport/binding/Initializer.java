@@ -1,5 +1,6 @@
 package org.jruby.javasupport.binding;
 
+import com.headius.modulator.Modulator;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.util.StringSupport.startsWith;
 
 /**
 * Created by headius on 2/26/15.
@@ -200,12 +202,9 @@ public abstract class Initializer {
             // Add scala aliases for apply/update to roughly equivalent Ruby names
             if (name.equals("apply")) {
                 addUnassignedAlias("[]", assignedNames, installer, Priority.ALIAS);
-            }
-            if (name.equals("update") && argCount == 2) {
+            } else if (argCount == 2 && name.equals("update")) {
                 addUnassignedAlias("[]=", assignedNames, installer, Priority.ALIAS);
-            }
-            // Scala aliases for $ method names
-            if (name.startsWith("$")) {
+            } else if (startsWith(name, '$')) { // Scala aliases for $ method names
                 addUnassignedAlias(ClassInitializer.fixScalaNames(name), assignedNames, installer, Priority.ALIAS);
             }
 
@@ -418,7 +417,7 @@ public abstract class Initializer {
             else { // lower-case name
                 if ( ! proxy.respondsTo(simpleName) ) {
                     // define a class method
-                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethod.JavaMethodZero(proxy.getSingletonClass(), PUBLIC) {
+                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethod.JavaMethodZero(proxy.getSingletonClass(), PUBLIC, simpleName) {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                             return innerProxy;
@@ -538,6 +537,9 @@ public abstract class Initializer {
             final int mod = method.getModifiers();
             // Skip private methods, since they may mess with dispatch
             if ( Modifier.isPrivate(mod) ) continue;
+
+            // Skip protected methods if we can't set accessible
+            if ( !Modifier.isPublic(mod) && !Modulator.trySetAccessible(method)) continue;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)

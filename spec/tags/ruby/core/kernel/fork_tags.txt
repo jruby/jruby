@@ -1,1 +1,11 @@
 windows:Kernel#fork returns false from #respond_to?
+fails:Kernel#fork returns status zero
+fails:Kernel#fork returns status non-zero
+fails:Kernel#fork returns nil for the child process
+fails:Kernel#fork runs a block in a child process
+fails:Kernel#fork marks threads from the parent as killed
+fails:Kernel.fork returns status zero
+fails:Kernel.fork returns status non-zero
+fails:Kernel.fork returns nil for the child process
+fails:Kernel.fork runs a block in a child process
+fails:Kernel.fork marks threads from the parent as killed

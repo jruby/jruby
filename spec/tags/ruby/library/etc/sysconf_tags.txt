@@ -1,0 +1,15 @@
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variables
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_ARG_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_CHILD_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_HOST_NAME_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_LOGIN_NAME_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_NGROUPS_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_CLK_TCK
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_OPEN_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_PAGESIZE
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_RE_DUP_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_STREAM_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_SYMLOOP_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_TTY_NAME_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_TZNAME_MAX
+fails:Etc.sysconf returns the value of POSIX.1 system configuration variable SC_VERSION

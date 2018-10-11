@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -26,13 +26,13 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.anno;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.jruby.CompatVersion;
 import org.jruby.runtime.Visibility;
 
 
@@ -72,41 +72,41 @@ public @interface JRubyMethod {
      */
     boolean frame() default false;
     /**
-     * Whether this method expects to have a heap-based variable scope allocated for it.
-     */
-    @Deprecated
-    boolean scope() default false;
-    /**
-     * Whether this method is specific to Ruby 1.9
-     */
-    CompatVersion compat() default CompatVersion.BOTH;
-    /**
      * The visibility of this method.
      */
     Visibility visibility() default Visibility.PUBLIC;
-    /**
-     * Whether to use a frame slot for backtrace information
-     */
-    @Deprecated
-    boolean backtrace() default false;
+
     /**
      * What, if anything, method reads from caller's frame
      */
     FrameField[] reads() default {};
+
     /**
      * What, if anything, method writes to caller's frame
      */
     FrameField[] writes() default {};
+
     /**
      * Argument types to coerce to before calling
      */
     Class[] argTypes() default {};
+
     /**
      * Whether to use a frame slot for backtrace information
      */
     boolean omit() default false;
+
     /**
      * Whether this method should show up as defined in response to respond_to? calls
      */
     boolean notImplemented() default false;
+
+    @Deprecated
+    boolean scope() default false;
+
+    @Deprecated
+    org.jruby.CompatVersion compat() default org.jruby.CompatVersion.BOTH;
+
+    @Deprecated
+    boolean backtrace() default false;
 }

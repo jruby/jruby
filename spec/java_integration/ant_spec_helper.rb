@@ -2,7 +2,7 @@ require File.expand_path('../spec_helper', __FILE__)
 require 'ant'
 require 'tmpdir'
 
-class Ant
+class Rake::Ant
   module RSpec
     module AntExampleGroup
       def self.included(example_group)

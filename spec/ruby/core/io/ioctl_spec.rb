@@ -1,5 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 
 describe "IO#ioctl" do
   platform_is_not :windows do
@@ -8,7 +8,7 @@ describe "IO#ioctl" do
     end
   end
 
-  platform_is os: :linux do
+  platform_is :linux do
     platform_is "86" do # x86 / x86_64
       it "resizes an empty String to match the output size" do
         File.open(__FILE__, 'r') do |f|

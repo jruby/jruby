@@ -1,11 +1,11 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -33,19 +33,19 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.runtime;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
@@ -140,7 +140,6 @@ public final class ThreadContext {
 
     // These two fields are required to support explicit call protocol
     // (via IR instructions) for blocks.
-    private Block.Type currentBlockType; // See prepareBlockArgs code in IRRuntimeHelpers
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
     /**
@@ -198,7 +197,6 @@ public final class ThreadContext {
         this.nil = runtime.getNil();
         this.tru = runtime.getTrue();
         this.fals = runtime.getFalse();
-        this.currentBlockType = Block.Type.NORMAL;
         this.savedExcInLambda = null;
 
         if (runtime.getInstanceConfig().isProfilingEntireRun()) {
@@ -255,14 +253,6 @@ public final class ThreadContext {
     public IRubyObject setErrorInfo(IRubyObject errorInfo) {
         thread.setErrorInfo(errorInfo);
         return errorInfo;
-    }
-
-    public Block.Type getCurrentBlockType() {
-        return currentBlockType;
-    }
-
-    public void setCurrentBlockType(Block.Type type) {
-        currentBlockType = type;
     }
 
     public Throwable getSavedExceptionInLambda() {
@@ -458,16 +448,38 @@ public final class ThreadContext {
                                IRubyObject self, Block block) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
-        stack[index].updateFrame(clazz, self, name, block, callNumber);
+        stack[index].updateFrame(clazz, self, name, block);
         if (index + 1 == stack.length) {
             expandFrameStack();
+        }
+    }
+
+    private void pushBackrefFrame() {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrameForBackref();
+        if (index + 1 == stack.length) {
+            expandFrameStack();
+        }
+    }
+
+    private void popBackrefFrame() {
+        Frame[] stack = frameStack;
+        int index = frameIndex--;
+        Frame frame = stack[index];
+
+        // if the frame was captured, we must replace it but not clear
+        if (frame.isCaptured()) {
+            stack[index] = new Frame();
+        } else {
+            frame.clearFrameForBackref();
         }
     }
 
     private void pushEvalFrame(IRubyObject self) {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
-        stack[index].updateFrameForEval(self, callNumber);
+        stack[index].updateFrameForEval(self);
         if (index + 1 == stack.length) {
             expandFrameStack();
         }
@@ -487,7 +499,7 @@ public final class ThreadContext {
         Frame frame = stack[index];
 
         // if the frame was captured, we must replace it but not clear
-        if (frame.isCaptured()) {
+        if (frame.captured) {
             stack[index] = new Frame();
         } else {
             frame.clear();
@@ -532,7 +544,36 @@ public final class ThreadContext {
      * @return the value of $~
      */
     public IRubyObject getBackRef() {
-        return getCurrentFrame().getBackRef(nil);
+        return frameStack[frameIndex].getBackRef(nil);
+    }
+
+    /**
+     * MRI: rb_reg_last_match
+     */
+    public IRubyObject last_match() {
+        return RubyRegexp.nth_match(0, frameStack[frameIndex].getBackRef(nil));
+    }
+
+    /**
+     * MRI: rb_reg_match_pre
+     */
+    public IRubyObject match_pre() {
+        return RubyRegexp.match_pre(frameStack[frameIndex].getBackRef(nil));
+    }
+
+
+    /**
+     * MRI: rb_reg_match_post
+     */
+    public IRubyObject match_post() {
+        return RubyRegexp.match_post(frameStack[frameIndex].getBackRef(nil));
+    }
+
+    /**
+     * MRI: rb_reg_match_last
+     */
+    public IRubyObject match_last() {
+        return RubyRegexp.match_last(frameStack[frameIndex].getBackRef(nil));
     }
 
     /**
@@ -694,7 +735,7 @@ public final class ThreadContext {
      */
     public void renderCurrentBacktrace(StringBuilder sb) {
         TraceType traceType = runtime.getInstanceConfig().getTraceType();
-        BacktraceData backtraceData = traceType.getBacktrace(this, false);
+        BacktraceData backtraceData = traceType.getBacktrace(this);
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
@@ -710,13 +751,14 @@ public final class ThreadContext {
         RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
         int traceLength = safeLength(level, length, fullTrace);
-        if (traceLength < 0) return nil;
 
-        final RubyClass stringClass = runtime.getString();
+        // MRI started returning [] instead of nil some time after 1.9 (#4891)
+        if (traceLength < 0) return runtime.newEmptyArray();
+
         final IRubyObject[] traceArray = new IRubyObject[traceLength];
 
         for (int i = 0; i < traceLength; i++) {
-            traceArray[i] = new RubyString(runtime, stringClass, fullTrace[i + level].mriStyleString());
+            traceArray[i] = RubyStackTraceElement.to_s_mri(this, fullTrace[i + level]);
         }
 
         RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
@@ -738,7 +780,9 @@ public final class ThreadContext {
         RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
 
         int traceLength = safeLength(level, length, fullTrace);
-        if (traceLength < 0) return nil;
+
+        // MRI started returning [] instead of nil some time after 1.9 (#4891)
+        if (traceLength < 0) return runtime.newEmptyArray();
 
         RubyArray backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
@@ -747,7 +791,7 @@ public final class ThreadContext {
 
     private RubyStackTraceElement[] getFullTrace(Integer length, StackTraceElement[] stacktrace) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace, false).getBacktrace(runtime);
+        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace).getBacktrace(runtime);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
@@ -771,7 +815,7 @@ public final class ThreadContext {
     }
 
     public RubyStackTraceElement[] gatherCallerBacktrace() {
-        return Gather.CALLER.getBacktraceData(this, false).getBacktrace(runtime);
+        return Gather.CALLER.getBacktraceData(this).getBacktrace(runtime);
     }
 
     public boolean isEventHooksEnabled() {
@@ -808,7 +852,7 @@ public final class ThreadContext {
 
         if (javaStackTrace == null || javaStackTrace.length == 0) return "";
 
-        return TraceType.printBacktraceJRuby(
+        return TraceType.printBacktraceJRuby(null,
                 new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
                 ex.getClass().getName(),
                 ex.getLocalizedMessage(),
@@ -876,8 +920,16 @@ public final class ThreadContext {
         pushCallFrame(clazz, name, self, Block.NULL_BLOCK);
     }
 
+    public void preBackrefMethod() {
+        pushBackrefFrame();
+    }
+
     public void postMethodFrameOnly() {
         popFrame();
+    }
+
+    public void postBackrefMethod() {
+        popBackrefFrame();
     }
 
     public void preMethodScopeOnly(StaticScope staticScope) {
@@ -1094,7 +1146,7 @@ public final class ThreadContext {
         isProfiling = true;
         // use new profiling data every time profiling is started, useful in
         // case users keep a reference to previous data after profiling stop
-        profileCollection = getRuntime().getProfilingService().newProfileCollection( this );
+        profileCollection = runtime.getProfilingService().newProfileCollection( this );
     }
 
     public void stopProfiling() {
@@ -1245,7 +1297,7 @@ public final class ThreadContext {
 
     @Deprecated
     public org.jruby.util.RubyDateFormat getRubyDateFormat() {
-        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US, true);
+        if (dateFormat == null) dateFormat = new org.jruby.util.RubyDateFormat("-", Locale.US);
 
         return dateFormat;
     }

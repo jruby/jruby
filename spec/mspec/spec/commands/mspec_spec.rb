@@ -60,13 +60,13 @@ describe MSpecMain, "#run" do
   end
 
   it "uses exec to invoke the runner script" do
-    @script.should_receive(:exec).with("ruby", "#{MSPEC_HOME}/bin/mspec-run")
+    @script.should_receive(:exec).with("ruby", "#{MSPEC_HOME}/bin/mspec-run", close_others: false)
     @script.options []
     @script.run
   end
 
   it "shows the command line on stderr" do
-    @script.should_receive(:exec).with("ruby", "#{MSPEC_HOME}/bin/mspec-run")
+    @script.should_receive(:exec).with("ruby", "#{MSPEC_HOME}/bin/mspec-run", close_others: false)
     @script.options []
     @script.run
     $stderr.to_s.should == "$ ruby #{Dir.pwd}/bin/mspec-run\n"
@@ -74,7 +74,7 @@ describe MSpecMain, "#run" do
 
   it "adds config[:launch] to the exec options" do
     @script.should_receive(:exec).with("ruby",
-        "-Xlaunch.option", "#{MSPEC_HOME}/bin/mspec-run")
+        "-Xlaunch.option", "#{MSPEC_HOME}/bin/mspec-run", close_others: false)
     @config[:launch] << "-Xlaunch.option"
     @script.options []
     @script.run
@@ -83,10 +83,12 @@ describe MSpecMain, "#run" do
 
   it "calls #multi_exec if the command is 'ci' and the multi option is passed" do
     @script.should_receive(:multi_exec).and_return do |argv|
-      argv.should == ["ruby", "#{MSPEC_HOME}/bin/mspec-ci", "-fy"]
+      argv.should == ["ruby", "#{MSPEC_HOME}/bin/mspec-ci"]
     end
     @script.options ["ci", "-j"]
-    @script.run
+    lambda do
+      @script.run
+    end.should raise_error(SystemExit)
   end
 end
 
@@ -136,14 +138,6 @@ describe "The -j, --multi option" do
       @config[:multi] = nil
       @script.options [opt]
       @config[:multi].should == true
-    end
-  end
-
-  it "sets the formatter to YamlFormatter" do
-    ["-j", "--multi"].each do |opt|
-      @config[:options] = []
-      @script.options [opt]
-      @config[:options].should include("-fy")
     end
   end
 end

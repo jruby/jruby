@@ -22,9 +22,7 @@ class MSpecCI < MSpecScript
     options.chdir
     options.prefix
     options.configure { |f| load f }
-    options.name
     options.pretend
-    options.background
     options.interrupt
 
     options.doc "\n How to modify the guard behavior"

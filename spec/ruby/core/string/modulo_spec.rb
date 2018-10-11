@@ -1,7 +1,12 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes.rb', __FILE__)
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../shared/hash/key_error'
 
 describe "String#%" do
+  context "when key is missing from passed-in hash" do
+    it_behaves_like :key_error, -> (obj, key) { "%{#{key}}" % obj }, { a: 5 }
+  end
+
   it "formats multiple expressions" do
     ("%b %x %d %s" % [10, 10, 10, 10]).should == "1010 a 10 10"
   end
@@ -14,9 +19,18 @@ describe "String#%" do
     ("%d%% %s" % [10, "of chickens!"]).should == "10% of chickens!"
   end
 
-  it "formats single % character at the end as literal %" do
-    ("%" % []).should == "%"
-    ("foo%" % []).should == "foo%"
+  ruby_version_is ""..."2.5" do
+    it "formats single % character at the end as literal %" do
+      ("%" % []).should == "%"
+      ("foo%" % []).should == "foo%"
+    end
+  end
+
+  ruby_version_is "2.5" do
+    it "raises an error if single % appears at the end" do
+      lambda { ("%" % []) }.should raise_error(ArgumentError)
+      lambda { ("foo%" % [])}.should raise_error(ArgumentError)
+    end
   end
 
   it "formats single % character before a newline as literal %" do
@@ -298,6 +312,7 @@ describe "String#%" do
     ("%*b" % [10, 6]).should == "       110"
     ("%*b" % [-10, 6]).should == "110       "
     ("%.4b" % 2).should == "0010"
+    ("%.32b" % 2147483648).should == "10000000000000000000000000000000"
   end
 
   it "supports binary formats using %b for negative numbers" do
@@ -524,6 +539,7 @@ describe "String#%" do
     ("%-22p" % 10).should == "10                    "
     ("%*p" % [10, 10]).should == "        10"
     ("%p" % {capture: 1}).should == "{:capture=>1}"
+    ("%p" % "str").should == "\"str\""
   end
 
   it "calls inspect on arguments for %p format" do
@@ -751,10 +767,6 @@ describe "String#%" do
   describe "when format string contains %{} sections" do
     it "replaces %{} sections with values from passed-in hash" do
       ("%{foo}bar" % {foo: 'oof'}).should == "oofbar"
-    end
-
-    it "raises KeyError if key is missing from passed-in hash" do
-      lambda {"%{foo}" % {}}.should raise_error(KeyError)
     end
 
     it "should raise ArgumentError if no hash given" do

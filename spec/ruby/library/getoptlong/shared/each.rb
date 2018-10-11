@@ -9,15 +9,10 @@ describe :getoptlong_each, shared: true do
   end
 
   it "passes each argument/value pair to the block" do
-    begin
-      old_argv = ARGV
-      ARGV = [ "--size", "10k", "-v", "-q", "a.txt", "b.txt" ]
-
+    argv [ "--size", "10k", "-v", "-q", "a.txt", "b.txt" ] do
       pairs = []
       @opts.send(@method) { |arg, val| pairs << [ arg, val ] }
       pairs.should == [ [ "--size", "10k" ], [ "--verbose", "" ], [ "--query", ""] ]
-    ensure
-      ARGV = old_argv
     end
   end
 end

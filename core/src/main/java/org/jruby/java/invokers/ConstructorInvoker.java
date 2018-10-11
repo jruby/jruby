@@ -17,8 +17,10 @@ import org.jruby.util.ArraySupport;
 
 public final class ConstructorInvoker extends RubyToJavaInvoker {
 
-    public ConstructorInvoker(RubyModule host, List<Constructor> ctors) {
-        super(host, setAccessible( ctors.toArray(new Constructor[ctors.size()]) ) );
+    private static final Constructor[] EMPTY_ARRAY = new Constructor[0];
+
+    public ConstructorInvoker(RubyModule host, List<Constructor> ctors, String name) {
+        super(host, setAccessible(ctors.toArray(EMPTY_ARRAY)), name);
     }
 
     @Override

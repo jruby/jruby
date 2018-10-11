@@ -13,80 +13,78 @@ describe :process_fork, shared: true do
   end
 
   platform_is_not :windows do
-    not_supported_on :jruby do
-      before :each do
-        @file = tmp('i_exist')
-        rm_r @file
-      end
+    before :each do
+      @file = tmp('i_exist')
+      rm_r @file
+    end
 
-      after :each do
-        rm_r @file
-      end
+    after :each do
+      rm_r @file
+    end
 
-      it "returns status zero" do
-        pid = Process.fork { exit! 0 }
-        _, result = Process.wait2(pid)
-        result.exitstatus.should == 0
-      end
+    it "returns status zero" do
+      pid = Process.fork { exit! 0 }
+      _, result = Process.wait2(pid)
+      result.exitstatus.should == 0
+    end
 
-      it "returns status zero" do
-        pid = Process.fork { exit 0 }
-        _, result = Process.wait2(pid)
-        result.exitstatus.should == 0
-      end
+    it "returns status zero" do
+      pid = Process.fork { exit 0 }
+      _, result = Process.wait2(pid)
+      result.exitstatus.should == 0
+    end
 
-      it "returns status zero" do
-        pid = Process.fork {}
-        _, result = Process.wait2(pid)
-        result.exitstatus.should == 0
-      end
+    it "returns status zero" do
+      pid = Process.fork {}
+      _, result = Process.wait2(pid)
+      result.exitstatus.should == 0
+    end
 
-      it "returns status non-zero" do
-        pid = Process.fork { exit! 42 }
-        _, result = Process.wait2(pid)
-        result.exitstatus.should == 42
-      end
+    it "returns status non-zero" do
+      pid = Process.fork { exit! 42 }
+      _, result = Process.wait2(pid)
+      result.exitstatus.should == 42
+    end
 
-      it "returns status non-zero" do
-        pid = Process.fork { exit 42 }
-        _, result = Process.wait2(pid)
-        result.exitstatus.should == 42
-      end
+    it "returns status non-zero" do
+      pid = Process.fork { exit 42 }
+      _, result = Process.wait2(pid)
+      result.exitstatus.should == 42
+    end
 
-      it "returns nil for the child process" do
-        child_id = @object.fork
-        if child_id == nil
-          touch(@file) { |f| f.write 'rubinius' }
-          Process.exit!
-        else
-          Process.waitpid(child_id)
+    it "returns nil for the child process" do
+      child_id = @object.fork
+      if child_id == nil
+        touch(@file) { |f| f.write 'rubinius' }
+        Process.exit!
+      else
+        Process.waitpid(child_id)
+      end
+      File.exist?(@file).should == true
+    end
+
+    it "runs a block in a child process" do
+      pid = @object.fork {
+        touch(@file) { |f| f.write 'rubinius' }
+        Process.exit!
+      }
+      Process.waitpid(pid)
+      File.exist?(@file).should == true
+    end
+
+    it "marks threads from the parent as killed" do
+      t = Thread.new { sleep }
+      pid = @object.fork {
+        touch(@file) do |f|
+          f.write Thread.current.alive?
+          f.write t.alive?
         end
-        File.exist?(@file).should == true
-      end
-
-      it "runs a block in a child process" do
-        pid = @object.fork {
-          touch(@file) { |f| f.write 'rubinius' }
-          Process.exit!
-        }
-        Process.waitpid(pid)
-        File.exist?(@file).should == true
-      end
-
-      it "marks threads from the parent as killed" do
-        t = Thread.new { sleep }
-        pid = @object.fork {
-          touch(@file) do |f|
-            f.write Thread.current.alive?
-            f.write t.alive?
-          end
-          Process.exit!
-        }
-        Process.waitpid(pid)
-        t.kill
-        t.join
-        File.read(@file).should == "truefalse"
-      end
+        Process.exit!
+      }
+      Process.waitpid(pid)
+      t.kill
+      t.join
+      File.read(@file).should == "truefalse"
     end
   end
 end

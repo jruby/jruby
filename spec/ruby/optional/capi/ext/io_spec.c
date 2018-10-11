@@ -1,22 +1,29 @@
 #include "ruby.h"
 #include "rubyspec.h"
 #include "ruby/io.h"
+#include <errno.h>
 #include <fcntl.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static int set_non_blocking(int fd) {
-  int flags;
-#if defined(O_NONBLOCK)
-  if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+#if defined(O_NONBLOCK) && defined(F_GETFL)
+  int flags = fcntl(fd, F_GETFL, 0);
+  if (flags == -1)
     flags = 0;
   return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-#else
-  flags = 1;
+#elif defined(FIOBIO)
+  int flags = 1;
   return ioctl(fd, FIOBIO, &flags);
+#else
+# define SET_NON_BLOCKING_FAILS_ALWAYS 1
+  errno = ENOSYS;
+  return -1;
 #endif
 }
 
@@ -128,45 +135,56 @@ VALUE io_spec_rb_io_taint_check(VALUE self, VALUE io) {
 }
 #endif
 
-typedef int wait_bool;
-#define wait_bool_to_ruby_bool(x) (x ? Qtrue : Qfalse)
-
 #ifdef HAVE_RB_IO_WAIT_READABLE
 #define RB_IO_WAIT_READABLE_BUF 13
 
+#if SET_NON_BLOCKING_FAILS_ALWAYS
+NORETURN(VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p));
+#endif
+
 VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
   int fd = io_spec_get_fd(io);
+# if !SET_NON_BLOCKING_FAILS_ALWAYS
   char buf[RB_IO_WAIT_READABLE_BUF];
-  wait_bool ret;
+  int ret, saved_errno;
+# endif
 
-  set_non_blocking(fd);
+  if (set_non_blocking(fd) == -1)
+    rb_sys_fail("set_non_blocking failed");
 
+# if !SET_NON_BLOCKING_FAILS_ALWAYS
   if(RTEST(read_p)) {
-    rb_ivar_set(self, rb_intern("@write_data"), Qtrue);
-    if(read(fd, buf, RB_IO_WAIT_READABLE_BUF) != -1) {
+    if (read(fd, buf, RB_IO_WAIT_READABLE_BUF) != -1) {
       return Qnil;
     }
+    saved_errno = errno;
+    rb_ivar_set(self, rb_intern("@write_data"), Qtrue);
+    errno = saved_errno;
   }
 
   ret = rb_io_wait_readable(fd);
 
   if(RTEST(read_p)) {
-    if(read(fd, buf, RB_IO_WAIT_READABLE_BUF) != 13) {
-      return Qnil;
+    ssize_t r = read(fd, buf, RB_IO_WAIT_READABLE_BUF);
+    if (r != RB_IO_WAIT_READABLE_BUF) {
+      perror("read");
+      return SSIZET2NUM(r);
     }
     rb_ivar_set(self, rb_intern("@read_data"),
         rb_str_new(buf, RB_IO_WAIT_READABLE_BUF));
   }
 
-  return wait_bool_to_ruby_bool(ret);
+  return ret ? Qtrue : Qfalse;
+# else
+  UNREACHABLE;
+# endif
 }
 #endif
 
 #ifdef HAVE_RB_IO_WAIT_WRITABLE
 VALUE io_spec_rb_io_wait_writable(VALUE self, VALUE io) {
-  wait_bool ret;
-  ret = rb_io_wait_writable(io_spec_get_fd(io));
-  return wait_bool_to_ruby_bool(ret);
+  int ret = rb_io_wait_writable(io_spec_get_fd(io));
+  return ret ? Qtrue : Qfalse;
 }
 #endif
 
@@ -210,6 +228,17 @@ VALUE io_spec_rb_io_close(VALUE self, VALUE io) {
   return rb_io_close(io);
 }
 #endif
+
+/*
+ * this is needed to ensure rb_io_wait_*able functions behave
+ * predictably because errno may be set to unexpected values
+ * otherwise.
+ */
+static VALUE io_spec_errno_set(VALUE self, VALUE val) {
+  int e = NUM2INT(val);
+  errno = e;
+  return val;
+}
 
 void Init_io_spec(void) {
   VALUE cls = rb_define_class("CApiIOSpecs", rb_cObject);
@@ -289,6 +318,8 @@ void Init_io_spec(void) {
 #ifdef HAVE_RB_CLOEXEC_OPEN
   rb_define_method(cls, "rb_cloexec_open", io_spec_rb_cloexec_open, 3);
 #endif
+
+  rb_define_method(cls, "errno=", io_spec_errno_set, 1);
 }
 
 #ifdef __cplusplus

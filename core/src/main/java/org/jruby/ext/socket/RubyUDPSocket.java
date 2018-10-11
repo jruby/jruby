@@ -1,10 +1,10 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: EPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
- * License Version 1.0 (the "License"); you may not use this file
+ * License Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v20.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.socket;
 
 import java.io.IOException;
@@ -44,10 +45,11 @@ import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
+import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
+import java.nio.channels.UnsupportedAddressTypeException;
 
 import jnr.constants.platform.AddressFamily;
 import jnr.netdb.Service;
@@ -123,12 +125,18 @@ public class RubyUDPSocket extends RubyIPSocket {
         Ruby runtime = context.runtime;
 
         try {
+            this.family = family;
             DatagramChannel channel = DatagramChannel.open(family);
             initSocket(newChannelFD(runtime, channel));
         } catch (ConnectException e) {
             throw runtime.newErrnoECONNREFUSEDError();
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+        } catch (UnsupportedOperationException uoe) {
+            if (uoe.getMessage().contains("IPv6 not available")) {
+                throw runtime.newErrnoEAFNOSUPPORTError("socket(2) - udp");
+            }
+            throw sockerr(runtime, "UnsupportedOperationException: " + uoe.getLocalizedMessage(), uoe);
         } catch (IOException e) {
             throw sockerr(runtime, "initialize: name or service not known", e);
         }
@@ -183,11 +191,19 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             return RubyFixnum.zero(runtime);
         }
+        catch (UnsupportedAddressTypeException e) {
+            // This may not be the appropriate message for all such exceptions
+            ProtocolFamily family = this.family == null ? StandardProtocolFamily.INET : this.family;
+            throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect() + " for protocol family " + family);
+        }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         }
         catch (BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e);
+        }
+        catch (AlreadyBoundException e) {
+            throw runtime.newErrnoEINVALError("bind(2) for " + host.inspect() + " port " + port);
         }
         catch (SocketException e) {
             final String message = e.getMessage();
@@ -254,10 +270,9 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     public static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         int argc = args.length;
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (!opts.isNil()) argc--;
+        if (opts != context.nil) argc--;
 
         IRubyObject length, flags, str;
         length = flags = str = context.nil;
@@ -268,9 +283,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             case 1: length = args[0];
         }
 
-        boolean exception = ArgsUtil.extractKeywordArg(context, "exception", opts) != runtime.getFalse();
-
-        return recvfrom_nonblock(socket, context, length, flags, str, exception);
+        return recvfrom_nonblock(socket, context, length, flags, str, extractExceptionArg(context, opts));
     }
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
@@ -430,6 +443,14 @@ public class RubyUDPSocket extends RubyIPSocket {
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "send: name or service not known");
         } catch (IOException e) { // SocketException
+            final String message = e.getMessage();
+            if (message != null) {
+                switch(message) {
+                case "Message too large": // Alpine Linux
+                case "Message too long":
+                    throw runtime.newErrnoEMSGSIZEError();
+                }
+            }
             throw runtime.newIOErrorFromException(e);
         }
         catch (RaiseException e) { throw e; }
@@ -617,6 +638,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     private volatile Class<? extends InetAddress> explicitFamily;
+    private volatile ProtocolFamily family;
 
     @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {

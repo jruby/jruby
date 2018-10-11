@@ -260,7 +260,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             invoker.invokeInt(function, args);
-            return context.runtime.getNil();
+            return context.nil;
         }
     }
 

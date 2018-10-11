@@ -15,9 +15,10 @@ jruby/test_case
 jruby/test_class
 jruby/test_comparable
 jruby/test_core_arities
+jruby/test_coverage
 jruby/test_custom_enumerable
 jruby/test_cvars_in_odd_scopes
-jruby/test_date_joda_time
+jruby/test_date
 jruby/test_defined
 jruby/test_default_constants
 jruby/test_delegated_array_equals
@@ -26,7 +27,9 @@ jruby/test_dir_with_jar_without_dir_entry
 jruby/test_digest_extend
 jruby/test_digest2
 jruby/test_env
+jruby/test_enumerator
 jruby/test_etc
+jruby/test_exception
 jruby/test_file
 # IRBuilder is unable to build these currently
 #jruby/test_flip
@@ -34,6 +37,7 @@ jruby/test_frame_self
 jruby/test_hash
 jruby/test_higher_javasupport
 jruby/test_ifaddr
+jruby/test_include_order
 jruby/test_included_in_object_space
 jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
@@ -51,7 +55,6 @@ jruby/test_marshal_with_instance_variables
 jruby/test_marshal_gemspec
 jruby/test_method_missing
 jruby/test_name_error
-jruby/test_no_stack_trace_stomp
 jruby/test_pack
 jruby/test_primitive_to_java
 jruby/test_process
@@ -62,53 +65,53 @@ jruby/test_random
 jruby/test_rbconfig
 jruby/test_require_once
 jruby/test_respond_to
+jruby/test_set
 jruby/test_socket
 jruby/test_string_java_bytes
 jruby/test_string_printf
 jruby/test_string_to_number
 jruby/test_super_call_site_caching
+jruby/test_symbol
 jruby/test_system
-jruby/test_system_error
 jruby/test_timeout
 jruby/test_thread
-# FIXME probably should figure this one out
-#test_thread_backtrace
+jruby/test_thread_backtrace
 jruby/test_threaded_nonlocal_return
-jruby/test_time_add
-jruby/test_time_nil_ops
-jruby/test_time_tz
+jruby/test_time
 jruby/test_unmarshal
 jruby/test_vietnamese_charset
 jruby/test_win32
+# TODO test_yaml seems outdated
+# jruby/test_yaml
 jruby/test_zlib
 
 # these tests are last because they pull in libraries that can affect others
+jruby/test_kernel
 jruby/test_loading_builtin_libraries
 jruby/test_null_channel
 jruby/test_irubyobject_java_passing
 jruby/test_jruby_object_input_stream
-jruby/test_jar_on_load_path
-jruby/test_jruby_core_ext
-jruby/test_thread_context_frame_dereferences_unreachable_variables
+jruby/test_jruby_synchronized
+jruby/test_jruby_4198
 jruby/test_context_classloader
-# fails with -j-ea on java :(
-# jruby/test_uri_classloader
+jruby/test_uri_classloader
 jruby/test_rexml_document
-jruby/test_openssl_stub
 jruby/test_missing_jruby_home
 jruby/test_ast_inspector
 jruby/test_jarred_gems
-jruby/test_kernel
 jruby/test_dir_with_plusses
-jruby/test_jar_file
+jruby/test_jar
+jruby/test_require
 # Not sure how to test this, since soft references take too long to collect
 #test_thread_service
-jruby/test_jruby_synchronized
 jruby/test_instantiating_interfaces
 jruby/test_openssl
 jruby/test_tempfile_cleanup
 
+jruby/test_jruby_core_ext
+jruby/test_thread_context_frame_dereferences_unreachable_variables
 jruby/test_reified_variables
+
 jruby/compiler/test_jrubyc
 jruby/test_load_compiled_ruby
 jruby/test_load_compiled_ruby_class_from_classpath

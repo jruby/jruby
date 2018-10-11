@@ -6,8 +6,7 @@ module JRuby
     def self.parse(signature)
       string = signature.to_s
       stream = java.io.ByteArrayInputStream.new(string.to_java_bytes)
-      ast = org.jruby.parser.JavaSignatureParser.parse(stream)
-      new string, ast
+      new string, org.jruby.parser.JavaSignatureParser.parse(stream)
     end
 
     def initialize(string, ast)
@@ -15,7 +14,7 @@ module JRuby
     end
 
     def name
-      @ast.name
+      @ast.name.to_s
     end
 
     def as_java_type(string); self.class.as_java_type(string)  end

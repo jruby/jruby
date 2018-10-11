@@ -1,4 +1,4 @@
-# frozen_string_literal: false
+# frozen_string_literal: true
 require File.expand_path '../xref_test_case', __FILE__
 
 class TestRDocMarkupToHtmlCrossref < XrefTestCase
@@ -42,6 +42,12 @@ class TestRDocMarkupToHtmlCrossref < XrefTestCase
 
     result = @to.convert 'C1@Section'
     assert_equal para("<a href=\"C1.html#Section\">Section at C1</a>"), result
+  end
+
+  def test_convert_CROSSREF_constant
+    result = @to.convert 'C1::CONST'
+
+    assert_equal para("<a href=\"C1.html#CONST\">C1::CONST</a>"), result
   end
 
   def test_convert_RDOCLINK_rdoc_ref

@@ -1,0 +1,3 @@
+fails:Hash literal checks duplicated keys on initialization
+fails:Hash literal expands an '**{}' element with the last key/value pair taking precedence
+fails:Hash literal merges multiple nested '**obj' in Hash literals

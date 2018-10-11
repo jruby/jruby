@@ -1,16 +1,16 @@
 require 'socket'
 
 module SocketSpecs
-  # helper to get the hostname associated to 127.0.0.1
-  def self.hostname
+  # helper to get the hostname associated to 127.0.0.1 or the given ip
+  def self.hostname(ip = "127.0.0.1")
     # Calculate each time, without caching, since the result might
     # depend on things like do_not_reverse_lookup mode, which is
     # changing from test to test
-    Socket.getaddrinfo("127.0.0.1", nil)[0][2]
+    Socket.getaddrinfo(ip, nil)[0][2]
   end
 
-  def self.hostnamev6
-    Socket.getaddrinfo("::1", nil)[0][2]
+  def self.hostname_reverse_lookup(ip = "127.0.0.1")
+    Socket.getaddrinfo(ip, nil, 0, 0, 0, 0, true)[0][2]
   end
 
   def self.addr(which=:ipv4)
@@ -23,27 +23,9 @@ module SocketSpecs
     Socket.getaddrinfo(host, nil)[0][3]
   end
 
-  def self.find_available_port
-    begin
-      s = TCPServer.open(0)
-      port = s.addr[1]
-      s.close
-      port
-    rescue
-      43191
-    end
-  end
-
-  def self.port
-    @@_port ||= find_available_port
-  end
-
-  def self.str_port
-    port.to_s
-  end
-
-  def self.local_port
-    find_available_port
+  def self.reserved_unused_port
+    # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+    0
   end
 
   def self.sockaddr_in(port, host)
@@ -51,31 +33,91 @@ module SocketSpecs
   end
 
   def self.socket_path
-    tmp("unix_server_spec.socket", false)
+    path = tmp("unix.sock", false)
+    # Check for too long unix socket path (max 108 bytes including \0 => 107)
+    # Note that Linux accepts not null-terminated paths but the man page advises against it.
+    if path.bytesize > 107
+      path = "/tmp/unix_server_spec.socket"
+    end
+    rm_socket(path)
+    path
+  end
+
+  def self.rm_socket(path)
+    File.delete(path) if File.exist?(path)
+  end
+
+  def self.ipv6_available?
+    @ipv6_available ||= begin
+      server = TCPServer.new('::1', 0)
+    rescue Errno::EADDRNOTAVAIL, SocketError
+      :no
+    else
+      server.close
+      :yes
+    end
+    @ipv6_available == :yes
+  end
+
+  def self.each_ip_protocol
+    describe 'using IPv4' do
+      yield Socket::AF_INET, '127.0.0.1', 'AF_INET'
+    end
+
+    guard -> { SocketSpecs.ipv6_available? } do
+      describe 'using IPv6' do
+        yield Socket::AF_INET6, '::1', 'AF_INET6'
+      end
+    end
+  end
+
+  def self.loop_with_timeout(timeout = 5)
+    require 'timeout'
+    time = Time.now
+
+    loop do
+      if Time.now - time >= timeout
+        raise TimeoutError, "Did not succeed within #{timeout} seconds"
+      end
+
+      sleep 0.01 # necessary on OSX; don't know why
+      yield
+    end
+  end
+
+  def self.wait_until_success(timeout = 5)
+    loop_with_timeout(timeout) do
+      begin
+        return yield
+      rescue
+      end
+    end
+  end
+
+  def self.dest_addr_req_error
+    error = Errno::EDESTADDRREQ
+    platform_is :windows do
+      error = Errno::ENOTCONN
+    end
+    error
   end
 
   # TCPServer echo server accepting one connection
   class SpecTCPServer
-    attr_accessor :hostname, :port, :logger
+    attr_reader :hostname, :port
 
-    def initialize(host=nil, port=nil, logger=nil)
-      @hostname = host || SocketSpecs.hostname
-      @port = port || SocketSpecs.port
-      @logger = logger
+    def initialize
+      @hostname = SocketSpecs.hostname
+      @server = TCPServer.new @hostname, 0
+      @port = @server.addr[1]
 
-      start
-    end
-
-    def start
       log "SpecTCPServer starting on #{@hostname}:#{@port}"
-      @server = TCPServer.new @hostname, @port
 
       @thread = Thread.new do
         socket = @server.accept
         log "SpecTCPServer accepted connection: #{socket}"
         service socket
       end
-      self
     end
 
     def service(socket)

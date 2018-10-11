@@ -43,7 +43,7 @@ module JITSpecUtils
 
   def compile_to_method(src, filename, lineno)
     node = JRuby.parse(src, filename, false, lineno)
-    oj = org.jruby
+    runtime = JRuby.runtime
 
     # This logic is a mix of logic from InterpretedIRMethod's JIT, o.j.Ruby's script compilation, and IRScriptBody's
     # interpret. We need to figure out a cleaner path.
@@ -51,32 +51,29 @@ module JITSpecUtils
     scope = node.getStaticScope
     currModule = scope.getModule
     if currModule == nil
-      currModule = JRuby.runtime.top_self.class
-      scope.setModule(currModule)
+      scope.setModule currModule = runtime.top_self.class
     end
 
-    method = oj.ir.IRBuilder.build_root(JRuby.runtime.getIRManager(), node).scope
+    method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
-    compiler = oj.ir.targets.JVMVisitor.new
-    compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
-    scriptMethod = compiled.getMethod(
-        "RUBY$script",
-        oj.runtime.ThreadContext.java_class,
-        oj.parser.StaticScope.java_class,
-        oj.runtime.builtin.IRubyObject.java_class,
-        oj.runtime.builtin.IRubyObject[].java_class,
-        oj.runtime.Block.java_class,
-        oj.RubyModule.java_class,
+    compiler = org.jruby.ir.targets.JVMVisitor.new(runtime)
+    compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
+    scriptMethod = compiled.getMethod("RUBY$script",
+        org.jruby.runtime.ThreadContext.java_class,
+        org.jruby.parser.StaticScope.java_class,
+        org.jruby.runtime.builtin.IRubyObject.java_class,
+        org.jruby.runtime.builtin.IRubyObject[].java_class,
+        org.jruby.runtime.Block.java_class,
+        org.jruby.RubyModule.java_class,
         java.lang.String.java_class)
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
 
-    return oj.internal.runtime.methods.CompiledIRMethod.new(
+    return org.jruby.internal.runtime.methods.CompiledIRMethod.new(
         handle,
         method,
-        oj.runtime.Visibility::PUBLIC,
-        currModule,
-        false)
+        org.jruby.runtime.Visibility::PUBLIC,
+        currModule)
   end
 
   def compile_run(src, filename, line)
@@ -127,7 +124,7 @@ modes.each do |mode|
 
     it "compiles calls" do
       run("'bar'.capitalize") {|result| expect(result).to eq 'Bar' }
-      run("rand(10)") {|result| expect(result).to be_a_kind_of Fixnum }
+      run("rand(10)") {|result| expect(result).to be_a_kind_of Integer }
     end
 
     it "compiles branches" do
@@ -369,20 +366,20 @@ modes.each do |mode|
     end
 
     it "compiles class reopening" do
-      run("class Fixnum; def x; 3; end; end; 1.x") {|result| expect(result).to eq 3 }
+      run("class Integer; def x; 3; end; end; 1.x") {|result| expect(result).to eq 3 }
     end
 
     it "compiles singleton method definitions" do
       run("a = 'bar'; def a.foo; 'foo'; end; a.foo") {|result| expect(result).to eq "foo" }
-      run("class Fixnum; def self.foo; 'foo'; end; end; Fixnum.foo") {|result| expect(result).to eq "foo" }
+      run("class Integer; def self.foo; 'foo'; end; end; Integer.foo") {|result| expect(result).to eq "foo" }
       run("def String.foo; 'foo'; end; String.foo") {|result| expect(result).to eq "foo" }
     end
 
     it "compiles singleton class definitions" do
       run("a = 'bar'; class << a; def bar; 'bar'; end; end; a.bar") {|result| expect(result).to eq "bar" }
-      run("class Fixnum; class << self; def bar; 'bar'; end; end; end; Fixnum.bar") {|result| expect(result).to eq "bar" }
-      run("class Fixnum; def self.metaclass; class << self; self; end; end; end; Fixnum.metaclass") do |result|
-        expect(result).to eq class << Fixnum; self; end
+      run("class Integer; class << self; def bar; 'bar'; end; end; end; Integer.bar") {|result| expect(result).to eq "bar" }
+      run("class Integer; def self.metaclass; class << self; self; end; end; end; Integer.metaclass") do |result|
+        expect(result).to eq class << Integer; self; end
       end
     end
 
@@ -405,7 +402,7 @@ modes.each do |mode|
       run("a = 0; 1.times { a += 1; redo if a < 2 }; a") {|result| expect(result).to eq 2 }
       run("def foo(&b); while true; b.call; end; end; foo { break 3 }") {|result| expect(result).to eq 3 }
       
-      expect(lambda { run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }") }).to raise_error(LocalJumpError)
+      expect(lambda { run("def foo(&b); while true; b.call; end; end; foo { eval 'break 3' }") }).to raise_error(SyntaxError)
     end
 
     it "compiles block passing" do
@@ -615,10 +612,10 @@ modes.each do |mode|
 
     it "prevents reopening or extending non-modules" do
       # ensure that invalid classes and modules raise errors
-      AFixnum ||= 1
-      expect { run("class AFixnum; end")}.to raise_error(TypeError)
-      expect { run("class B < AFixnum; end")}.to raise_error(TypeError)
-      expect { run("module AFixnum; end")}.to raise_error(TypeError)
+      AInteger ||= 1
+      expect { run("class AInteger; end")}.to raise_error(TypeError)
+      expect { run("class B < AInteger; end")}.to raise_error(TypeError)
+      expect { run("module AInteger; end")}.to raise_error(TypeError)
     end
 
     it "assigns array elements properly as LHS of masgn" do
@@ -1141,7 +1138,7 @@ modes.each do |mode|
       end
     end
 
-    it "compiles calls with one fixnum arg that do not have optimized paths" do
+    it "compiles calls with one Integer arg that do not have optimized paths" do
       run('ary = []; ary.push(1)') {|x| expect(x).to eq([1]) }
     end
 

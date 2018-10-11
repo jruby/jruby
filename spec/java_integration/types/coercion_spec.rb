@@ -12,17 +12,17 @@ java_import "java_integration.fixtures.PrivateConstructor"
 describe "Java String and primitive-typed methods" do
   it "should coerce to Ruby types when returned" do
     expect(CoreTypeMethods.getString).to be_kind_of(String)
-    expect(CoreTypeMethods.getString).to eq("foo");
+    expect(CoreTypeMethods.getString).to eq("foo")
 
-    expect(CoreTypeMethods.getByte).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getByte).to be_kind_of(Integer)
     expect(CoreTypeMethods.getByte).to eq(1)
-    expect(CoreTypeMethods.getShort).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getShort).to be_kind_of(Integer)
     expect(CoreTypeMethods.getShort).to eq(2)
-    expect(CoreTypeMethods.getChar).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getChar).to be_kind_of(Integer)
     expect(CoreTypeMethods.getChar).to eq(2)
-    expect(CoreTypeMethods.getInt).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getInt).to be_kind_of(Integer)
     expect(CoreTypeMethods.getInt).to eq(4)
-    expect(CoreTypeMethods.getLong).to be_kind_of(Fixnum)
+    expect(CoreTypeMethods.getLong).to be_kind_of(Integer)
     expect(CoreTypeMethods.getLong).to eq(8)
 
     expect(CoreTypeMethods.getFloat).to be_kind_of(Float)
@@ -224,15 +224,15 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.stringStaticField).to be_kind_of(String)
     expect(JavaFields.stringStaticField).to eq("foo");
 
-    expect(JavaFields.byteStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.byteStaticField).to be_kind_of(Integer)
     expect(JavaFields.byteStaticField).to eq(1)
-    expect(JavaFields.shortStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.shortStaticField).to be_kind_of(Integer)
     expect(JavaFields.shortStaticField).to eq(2)
-    expect(JavaFields.charStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.charStaticField).to be_kind_of(Integer)
     expect(JavaFields.charStaticField).to eq(2)
-    expect(JavaFields.intStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.intStaticField).to be_kind_of(Integer)
     expect(JavaFields.intStaticField).to eq(4)
-    expect(JavaFields.longStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.longStaticField).to be_kind_of(Integer)
     expect(JavaFields.longStaticField).to eq(8)
 
     expect(JavaFields.floatStaticField).to be_kind_of(Float)
@@ -258,15 +258,15 @@ describe "Java String and primitive-typed fields" do
     expect(jf.stringField).to be_kind_of(String)
     expect(jf.stringField).to eq("foo");
 
-    expect(jf.byteField).to be_kind_of(Fixnum)
+    expect(jf.byteField).to be_kind_of(Integer)
     expect(jf.byteField).to eq(1)
-    expect(jf.shortField).to be_kind_of(Fixnum)
+    expect(jf.shortField).to be_kind_of(Integer)
     expect(jf.shortField).to eq(2)
-    expect(jf.charField).to be_kind_of(Fixnum)
+    expect(jf.charField).to be_kind_of(Integer)
     expect(jf.charField).to eq(2)
-    expect(jf.intField).to be_kind_of(Fixnum)
+    expect(jf.intField).to be_kind_of(Integer)
     expect(jf.intField).to eq(4)
-    expect(jf.longField).to be_kind_of(Fixnum)
+    expect(jf.longField).to be_kind_of(Integer)
     expect(jf.longField).to eq(8)
 
     expect(jf.floatField).to be_kind_of(Float)
@@ -292,15 +292,15 @@ end
 describe "Java primitive-box-typed fields" do
   it "coerce to Ruby types when retrieved" do
     # static
-    expect(JavaFields.byteObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.byteObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.byteObjStaticField).to eq(1)
-    expect(JavaFields.shortObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.shortObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.shortObjStaticField).to eq(2)
-    expect(JavaFields.charObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.charObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.charObjStaticField).to eq(2)
-    expect(JavaFields.intObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.intObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.intObjStaticField).to eq(4)
-    expect(JavaFields.longObjStaticField).to be_kind_of(Fixnum)
+    expect(JavaFields.longObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.longObjStaticField).to eq(8)
 
     expect(JavaFields.floatObjStaticField).to be_kind_of(Float)
@@ -315,15 +315,15 @@ describe "Java primitive-box-typed fields" do
 
     # instance
     jf = JavaFields.new
-    expect(jf.byteObjField).to be_kind_of(Fixnum)
+    expect(jf.byteObjField).to be_kind_of(Integer)
     expect(jf.byteObjField).to eq(1)
-    expect(jf.shortObjField).to be_kind_of(Fixnum)
+    expect(jf.shortObjField).to be_kind_of(Integer)
     expect(jf.shortObjField).to eq(2)
-    expect(jf.charObjField).to be_kind_of(Fixnum)
+    expect(jf.charObjField).to be_kind_of(Integer)
     expect(jf.charObjField).to eq(2)
-    expect(jf.intObjField).to be_kind_of(Fixnum)
+    expect(jf.intObjField).to be_kind_of(Integer)
     expect(jf.intObjField).to eq(4)
-    expect(jf.longObjField).to be_kind_of(Fixnum)
+    expect(jf.longObjField).to be_kind_of(Integer)
     expect(jf.longObjField).to eq(8)
 
     expect(jf.floatObjField).to be_kind_of(Float)
@@ -377,23 +377,23 @@ describe "Java String, primitive, and object-typed interface methods" do
 
     expect(vri_handler.receiveByte(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveShort(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveChar(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveInt(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveLong(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveFloat(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
@@ -442,23 +442,23 @@ describe "Java primitive-typed interface methods" do
 
     expect(vri_handler.receiveByte(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveShort(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveChar(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveInt(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveLong(nil)).to eq(0)
     expect(vri.result).to eq(0)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveFloat(nil)).to eq(0.0)
     expect(vri.result).to eq(0.0)
@@ -504,23 +504,23 @@ describe "Java primitive-box-typed interface methods" do
 
     expect(vri_handler.receiveByteObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveShortObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveCharObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveIntObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveLongObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
-    expect(vri.result.class).to eq(Fixnum)
+    expect(vri.result.class).to eq(Integer)
 
     expect(vri_handler.receiveFloatObj(obj)).to eq(obj)
     expect(vri.result).to eq(obj)
@@ -679,7 +679,7 @@ describe "Fixnum\#to_java" do
   end
 end
 
-describe "String\#to_java" do
+describe "String#to_java" do
   it "coerces to java.lang.String by default" do
     str = "123".to_java
     expect(str.class).to eq(java.lang.String)
@@ -694,10 +694,10 @@ describe "String\#to_java" do
   end
 
   describe "when passed java.lang.CharSequence" do
-    it "coerces to java.lang.String" do
+    it "returns a RubyString" do
       cs = "123".to_java java.lang.CharSequence
 
-      expect(cs.class).to eq(java.lang.String)
+      expect(cs.class).to eq(org.jruby.RubyString)
     end
   end
 
@@ -706,6 +706,15 @@ describe "String\#to_java" do
       cs = "123".to_java java.lang.Object
 
       expect(cs.class).to eq(java.lang.String)
+    end
+  end
+
+  describe "when passed org.jruby.util.ByteList" do
+    it "coerces to java.lang.String" do
+      cs = "123".to_java 'org.jruby.util.ByteList'
+
+      expect(cs.class).to eq(org.jruby.util.ByteList)
+      expect(cs.toString).to eq('123')
     end
   end
 
@@ -718,15 +727,16 @@ describe "String\#to_java" do
   end
 end
 
-describe "Class\#to_java" do
+describe "Class#to_java" do
   describe "when passed java.lang.Class.class" do
     cls = java.lang.Class
-    it "coerces core classes to their Java class object" do
-      # TODO: add all core, native types here
-      [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(cls)).to eq(eval("cls.forName('org.jruby.Ruby#{rubycls}')"))
-      end
-    end
+
+    # NOTE: moved to a Java test @see org.jruby.javasupport.TestJavaClass#testToJava
+    # it "coerces core classes to their Java class object" do
+    #   [Object, Array, String, Hash, File, IO].each do |rubycls|
+    #     expect(rubycls.to_java(cls)).to eq(eval("cls.forName('org.jruby.Ruby#{rubycls}')"))
+    #   end
+    # end
 
     class UserKlass < Object; end
 
@@ -747,17 +757,19 @@ describe "Class\#to_java" do
   end
 
   describe "when passed java.lang.Object.class" do
-    it "coerces core classes to their Ruby class object" do
-      [Object, Array, String, Hash, File, IO].each do |rubycls|
-        expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
-      end
-      BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
-      [Bignum, Dir, ENV, FalseClass, Fixnum, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
-        expect(clazz.to_java(java.lang.Object)).to eq(clazz)
-      end
-      expect(Exception.to_java(java.lang.Object)).to eq Exception
-      expect(StandardError.to_java(java.lang.Object)).to eq StandardError
-    end
+
+    # NOTE: moved to a Java test @see org.jruby.javasupport.TestJavaClass#testToJavaObject
+    # it "coerces core classes to their Ruby class object" do
+    #   [Object, Array, String, Hash, File, IO].each do |rubycls|
+    #     expect(rubycls.to_java(java.lang.Object)).to eq(rubycls)
+    #   end
+    #   BasicObject.to_java(java.lang.Object).should == BasicObject if defined? BasicObject
+    #   [Bignum, Dir, ENV, FalseClass, Integer, Float, Kernel, Struct, Symbol, Thread].each do |clazz|
+    #     expect(clazz.to_java(java.lang.Object)).to eq(clazz)
+    #   end
+    #   expect(Exception.to_java(java.lang.Object)).to eq Exception
+    #   expect(StandardError.to_java(java.lang.Object)).to eq StandardError
+    # end
 
     it "coerces user classes/modules to their Ruby class object" do
       clazz = Class.new
@@ -772,7 +784,7 @@ describe "Class\#to_java" do
   end
 end
 
-describe "Time\"to_java" do
+describe "Time#to_java" do
   describe "when passed java.util.Date" do
     it "coerces to java.util.Date" do
       t = Time.now
@@ -789,35 +801,23 @@ describe "Time\"to_java" do
     end
   end
 
-  describe "when passed java.sql.Date" do
+  describe 'java.sql date types' do
     it "coerces to java.sql.Date" do
       t = Time.now
       d = t.to_java(java.sql.Date)
       expect(d.class).to eq(java.sql.Date)
     end
-  end
 
-  describe "when passed java.sql.Time" do
     it "coerces to java.sql.Time" do
       t = Time.now
       d = t.to_java(java.sql.Time)
       expect(d.class).to eq(java.sql.Time)
     end
-  end
 
-  describe "when passed java.sql.Timestamp" do
     it "coerces to java.sql.Timestamp" do
       t = Time.now
       d = t.to_java(java.sql.Timestamp)
       expect(d.class).to eq(java.sql.Timestamp)
-    end
-  end
-
-  describe "when passed org.joda.time.DateTime" do
-    it "coerces to org.joda.time.DateTime" do
-      t = Time.now
-      d = t.to_java(org.joda.time.DateTime)
-      expect(d.class).to eq(org.joda.time.DateTime)
     end
   end
 
@@ -826,6 +826,163 @@ describe "Time\"to_java" do
       t = Time.now
       d = t.to_java(java.lang.Object)
       expect(d.class).to eq(java.util.Date)
+    end
+  end
+
+  describe "when passed java.io.Serializable" do
+    it "returns RubyTime instance" do
+      t = Time.at(0)
+      expect(t.to_java('java.io.Serializable').class).to eq(org.jruby.RubyTime)
+    end
+  end
+
+  describe 'joda types' do
+    it "coerces to org.joda.time.DateTime" do
+      t = Time.at(0)
+      d = t.to_java(org.joda.time.DateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+
+    it "coerces to DateTime from ReadableDateTime interface" do
+      t = Time.now
+      d = t.to_java(org.joda.time.ReadableDateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+  end
+
+  describe 'java 8 types' do
+    it "coerces to java.time.Instant" do
+      t = Time.at(0)
+      expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+    end
+
+    it "coerces to Temporal to Instant" do
+      t = Time.at(0, 123456.789)
+      d = t.to_java(java.time.temporal.Temporal)
+      expect(d.class).to eq(java.time.Instant)
+      expect(d.to_s).to eq('1970-01-01T00:00:00.123456789Z')
+    end
+
+    it "coerces to LocalDateTime" do
+      t = Time.new(2002, 10, 31, 12, 24, 48)
+      d = t.to_java(java.time.LocalDateTime)
+      expect(d.class).to eq(java.time.LocalDateTime)
+      expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
+    end
+
+    it "coerces to ZonedDateTime" do
+      t = Time.new(2018, 10, 31, 10, 20, 50.123456, '+02:00')
+      d = t.to_java(java.time.chrono.ChronoZonedDateTime)
+      expect(d.class).to eq(java.time.ZonedDateTime)
+      expect(d).to eq(java.time.ZonedDateTime.of(2018, 10, 31, 10, 20, 50, 123456 * 1000, java.time.ZoneId.of('+02:00')))
+    end
+  end
+end
+
+describe "Date/DateTime#to_java" do
+
+  before(:all) { require 'date' }
+
+  describe "when passed java.util.Date" do
+    it "coerces to java.util.Date" do
+      t = Date.today
+      d = t.to_java(java.util.Date)
+      expect(d.class).to eq(java.util.Date)
+    end
+  end
+
+  describe "when passed java.util.Calendar" do
+    it "coerces to java.util.Calendar" do
+      t = Date.today
+      d = t.to_java(java.util.Calendar)
+      expect(d.class).to be < java.util.Calendar
+    end
+  end
+
+  describe 'java.sql date types' do
+    it "coerces to java.sql.Date" do
+      t = Date.today
+      d = t.to_java(java.sql.Date)
+      expect(d.class).to eq(java.sql.Date)
+    end
+
+    it "coerces to java.sql.Time" do
+      t = Date.today
+      d = t.to_java(java.sql.Time)
+      expect(d.class).to eq(java.sql.Time)
+    end
+
+    it "coerces to java.sql.Timestamp" do
+      t = Date.today
+      d = t.to_java(java.sql.Timestamp)
+      expect(d.class).to eq(java.sql.Timestamp)
+    end
+  end
+
+  describe "when passed java.lang.Object" do
+    it "coerces to java.util.Date" do
+      t = Date.today
+      d = t.to_java(java.lang.Object)
+      expect(d.class).to eq(java.util.Date)
+    end
+  end
+
+  describe "when passed java.io.Serializable" do
+    it "returns RubyTime instance" do
+      t = Date.new
+      expect(t.to_java('java.io.Serializable').class.to_java.name).to eq('Java::OrgJrubyExtDate::RubyDate')
+    end
+  end
+
+  describe 'joda types' do
+    it "coerces to org.joda.time.DateTime" do
+      t = Date.new(0)
+      d = t.to_java(org.joda.time.DateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+
+    it "coerces to DateTime from ReadableDateTime interface" do
+      t = Date.today
+      d = t.to_java(org.joda.time.ReadableDateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+
+      t = DateTime.now
+      d = t.to_java(org.joda.time.ReadableDateTime)
+      expect(d.class).to eq(org.joda.time.DateTime)
+    end
+  end
+
+  describe 'java 8 types' do
+    it "coerces to java.time.Instant" do
+      t = Date.new(0)
+      expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+      local_date = java.time.LocalDate.of(-1, 12, 30) # joda-time vs ruby-date rules
+      expect(t.to_java(java.time.Instant)).to eq(local_date.atTime(0, 0).toInstant(java.time.ZoneOffset::UTC))
+
+      t = Time.new(1970, 1, 1, 00, 00, 42, '+00:00').to_datetime
+      expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+      expect(t.to_java(java.time.Instant)).to eq(java.time.Instant::EPOCH.plusSeconds(42))
+    end
+
+    it "coerces to Temporal to Instant" do
+      t = Time.at(0, 123456.789).to_datetime
+      d = t.to_java(java.time.temporal.Temporal)
+      expect(d.class).to eq(java.time.Instant)
+      expect(d.to_s).to eq('1970-01-01T00:00:00.123456789Z')
+    end
+
+    it "coerces to LocalDate" do
+      t = Time.new(2002, 10, 31, 12, 24, 48).to_date
+      d = t.to_java(java.time.LocalDate)
+      expect(d.class).to eq(java.time.LocalDate)
+      expect(d).to eq(java.time.LocalDate.of(2002, 10, 31))
+    end
+
+    it "coerces to LocalDateTime" do
+      t = Time.new(2002, 10, 31, 12, 24, 48).to_datetime
+      d = t.to_java(java.time.LocalDateTime)
+      expect(d.class).to eq(java.time.LocalDateTime)
+      expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
     end
   end
 end

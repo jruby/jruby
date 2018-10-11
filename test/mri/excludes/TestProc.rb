@@ -1,4 +1,5 @@
 exclude :test_attr_source_location, "needs investigation"
+exclude :test_block_source_location, "needs investigation, new in 2.5"
 exclude :test_curry, "needs investigation"
 exclude :test_curry_from_knownbug, "needs investigation"
 exclude :test_curry_optional_params, "needs investigation"
