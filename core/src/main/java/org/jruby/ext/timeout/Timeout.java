@@ -26,91 +26,40 @@
 
 package org.jruby.ext.timeout;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.Library;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.util.RegexpOptions;
 
-public class Timeout implements Library {
-    public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyModule timeout = runtime.defineModule("Timeout");
-        RubyClass RuntimeError = runtime.getRuntimeError();
-        RubyClass TimeoutError = runtime.defineClassUnder("Error", RuntimeError, RuntimeError.getAllocator(), timeout);
-        timeout.defineConstant("ExitException", TimeoutError);
+public class Timeout {
+    public static final String EXECUTOR_VARIABLE = "__executor__";
 
-        // Here we create an "anonymous" exception type used for unrolling the stack.
-        // MRI creates a new one for *every call* to timeout, which can be costly.
-        // We opt to use a single exception type for all cases to avoid this overhead.
-        RubyClass anonException = runtime.defineClassUnder("AnonymousException", runtime.getException(), runtime.getException().getAllocator(), timeout);
-        anonException.setBaseName(null); // clear basename so it's anonymous when raising
-
-        // These are not really used by timeout, but exposed for compatibility
-        timeout.defineConstant("THIS_FILE", RubyRegexp.newRegexp(runtime, "timeout\\.rb", new RegexpOptions()));
-        timeout.defineConstant("CALLER_OFFSET", RubyFixnum.newFixnum(runtime, 0));
-
+    public static void define(RubyModule timeout) {
         // Timeout module methods
         timeout.defineAnnotatedMethods(Timeout.class);
 
-        // Toplevel defines
-        runtime.getObject().defineConstant("TimeoutError", TimeoutError);
-        runtime.getObject().deprecateConstant(runtime, "TimeoutError");
-        runtime.getObject().defineAnnotatedMethods(TimeoutToplevel.class);
+        timeout.setInternalVariable(
+                EXECUTOR_VARIABLE,
+                new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory()));
     }
 
-    private static ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
-
-    public static class TimeoutToplevel {
-        @JRubyMethod(visibility = PRIVATE)
-        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject seconds, Block block) {
-            warnToplevel(context);
-
-            return sites(context).timeout.call(context, self, context.runtime.getModule("Timeout"), seconds, block);
-        }
-
-        @JRubyMethod(visibility = PRIVATE)
-        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject seconds, IRubyObject exceptionType, Block block) {
-            warnToplevel(context);
-
-            return sites(context).timeout.call(context, self, context.runtime.getModule("Timeout"), seconds, exceptionType, block);
-        }
-        @JRubyMethod(visibility = PRIVATE)
-        public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject seconds, IRubyObject exceptionType, IRubyObject message, Block block) {
-            warnToplevel(context);
-
-            return sites(context).timeout.call(context, self, context.runtime.getModule("Timeout"), seconds, exceptionType, message, block);
-        }
-
-        private static void warnToplevel(ThreadContext context) {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "Object#timeout is deprecated, use Timeout.timeout instead");
-        }
-    }
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, Block block) {
@@ -119,7 +68,7 @@ public class Timeout implements Library {
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, Block block) {
-        return timeout(context, recv, seconds, exceptionType, RubyString.newString(context.runtime, "execution expired"), block);
+        return timeout(context, recv, seconds, exceptionType, RubyString.newString(context.runtime, "execution expired").freeze(context), block);
     }
 
     @JRubyMethod(module = true)
@@ -140,12 +89,13 @@ public class Timeout implements Library {
                 TimeoutTask.newAnonymousTask(currentThread, timeout, latch, id, message.convertToString()) :
                 TimeoutTask.newTaskWithException(currentThread, timeout, latch, exceptionType, message.convertToString());
 
+        ScheduledThreadPoolExecutor executor = (ScheduledThreadPoolExecutor) timeout.getInternalVariables().getInternalVariable("__executor__");
+
         try {
-            return yieldWithTimeout(context, seconds, block, timeoutRunnable, latch);
-        }
-        catch (RaiseException re) {
+            return yieldWithTimeout(executor, context, seconds, block, timeoutRunnable, latch);
+        } catch (RaiseException re) {
             // if it's the exception we're expecting
-            if (re.getException().getMetaClass() == getAnonymousException(timeout)) {
+            if (re.getException().getMetaClass() == getDefaultException(timeout)) {
                 // and we were not given a specific exception
                 if ( exceptionType.isNil() ) {
                     raiseTimeoutErrorIfMatches(context, timeout, re, id);
@@ -161,18 +111,18 @@ public class Timeout implements Library {
         return seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue();
     }
 
-    private static IRubyObject yieldWithTimeout(ThreadContext context,
+    private static IRubyObject yieldWithTimeout(ScheduledThreadPoolExecutor executor, ThreadContext context,
         final IRubyObject seconds, final Block block,
         final Runnable runnable, final AtomicBoolean latch) throws RaiseException {
 
         final long micros = (long) ( RubyTime.convertTimeInterval(context, seconds) * 1000000 );
         Future timeoutFuture = null;
         try {
-            timeoutFuture = timeoutExecutor.schedule(runnable, micros, TimeUnit.MICROSECONDS);
+            timeoutFuture = executor.schedule(runnable, micros, TimeUnit.MICROSECONDS);
             return block.yield(context, seconds);
         }
         finally {
-            if ( timeoutFuture != null ) killTimeoutThread(context, timeoutFuture, latch);
+            if ( timeoutFuture != null ) killTimeoutThread(executor, context, timeoutFuture, latch);
             // ... when timeoutFuture == null there's likely an error thrown from schedule
         }
     }
@@ -211,32 +161,31 @@ public class Timeout implements Library {
             if ( latch.compareAndSet(false, true) ) {
                 if ( exception == null ) {
                     raiseAnonymous();
-                }
-                else {
+                } else {
                     raiseException();
                 }
             }
         }
 
         private void raiseAnonymous() {
-            final Ruby runtime = timeout.getRuntime();
-            IRubyObject anonException = getAnonymousException(timeout).newInstance(runtime.getCurrentContext(), message, Block.NULL_BLOCK);
+            // TODO: MRI calls Timeout::Error.catch here with the body of the timeout; we use __identifier__.
+            IRubyObject anonException =
+                    getDefaultException(timeout).newInstance(timeout.getRuntime().getCurrentContext(), message, Block.NULL_BLOCK);
             anonException.getInternalVariables().setInternalVariable("__identifier__", id);
             currentThread.raise(anonException);
         }
 
         private void raiseException() {
-            final Ruby runtime = timeout.getRuntime();
             currentThread.raise(exception, message);
         }
 
     }
 
-    private static void killTimeoutThread(ThreadContext context, final Future timeoutFuture, final AtomicBoolean latch) {
+    private static void killTimeoutThread(ScheduledThreadPoolExecutor executor, ThreadContext context, final Future timeoutFuture, final AtomicBoolean latch) {
         if (latch.compareAndSet(false, true) && timeoutFuture.cancel(false)) {
             // ok, exception will not fire
-            if (timeoutExecutor instanceof ScheduledThreadPoolExecutor && timeoutFuture instanceof Runnable) {
-                ((ScheduledThreadPoolExecutor) timeoutExecutor).remove((Runnable) timeoutFuture);
+            if (timeoutFuture instanceof Runnable) {
+                executor.remove((Runnable) timeoutFuture);
             }
         } else {
             // future is not cancellable, wait for it to run and then poll
@@ -250,22 +199,10 @@ public class Timeout implements Library {
         }
     }
 
-    private static IRubyObject raiseBecauseCritical(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        return RubyKernel.raise(
-                context,
-                runtime.getKernel(),
-                new IRubyObject[] {
-                    runtime.getThreadError(),
-                    runtime.newString("timeout within critical section")
-                },
-                Block.NULL_BLOCK);
-    }
-
     private static IRubyObject raiseTimeoutErrorIfMatches(ThreadContext context,
         final IRubyObject timeout, final RaiseException ex, final IRubyObject id) {
-        // check if it's the exception intended for us (@see prepareRunnable):
+
+        // check if it's the exception intended for us
         if ( ex.getException().getInternalVariable("__identifier__") == id ) {
             final RubyException rubyException = ex.getException();
 
@@ -282,17 +219,11 @@ public class Timeout implements Library {
         return null;
     }
 
-    // Timeout::AnonymousException (@see above)
-    private static RubyClass getAnonymousException(final IRubyObject timeout) {
-        return getClassFrom(timeout, "AnonymousException");
+    private static RubyClass getDefaultException(final IRubyObject timeout) {
+        return getClassFrom(timeout, "Error");
     }
 
     private static RubyClass getClassFrom(final IRubyObject timeout, final String name) {
         return ((RubyModule) timeout).getClass(name); // Timeout::[name]
     }
-
-    private static JavaSites.TimeoutSites sites(ThreadContext context) {
-        return context.sites.Timeout;
-    }
-
 }
