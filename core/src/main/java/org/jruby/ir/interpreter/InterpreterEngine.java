@@ -16,6 +16,7 @@ import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.PopBlockFrameInstr;
 import org.jruby.ir.instructions.PushBlockFrameInstr;
+import org.jruby.ir.instructions.PushMethodFrameInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
@@ -383,10 +384,7 @@ public class InterpreterEngine {
                 break;
             case PUSH_METHOD_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, blockArg);
-                // Only the top-level script scope has PRIVATE visibility.
-                // This is already handled as part of Interpreter.execute above.
-                // Everything else is PUBLIC by default.
-                context.setCurrentVisibility(Visibility.PUBLIC);
+                context.setCurrentVisibility(((PushMethodFrameInstr) instr).getVisibility());
                 break;
             case PUSH_BACKREF_FRAME:
                 context.preBackrefMethod();
