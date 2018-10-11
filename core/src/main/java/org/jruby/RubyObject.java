@@ -60,6 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
+import org.jruby.runtime.callsite.CachingCallSite;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -387,12 +388,18 @@ public class RubyObject extends RubyBasicObject {
     }
 
     private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
-        if (a instanceof RubyFixnum && b instanceof RubyFixnum &&
-            !context.runtime.getFixnum().isRefinement() && context.runtime.getFixnum().isMethodBuiltin("==")) {
+        if (a instanceof RubyFixnum && b instanceof RubyFixnum) {
+            CachingCallSite op_equal_fixnum = context.sites.Fixnum.op_equal;
+            RubyClass fixnumMeta = context.runtime.getFixnum();
+            if (!fixnumMeta.isRefinement() && op_equal_fixnum.retrieveCache(fixnumMeta).method.isBuiltin()) {
                 return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
-        } else if (a instanceof RubyFloat && b instanceof RubyFloat &&
-            !context.runtime.getFloat().isRefinement() && context.runtime.getFloat().isMethodBuiltin("==")) {
+            }
+        } else if (a instanceof RubyFloat && b instanceof RubyFloat) {
+            CachingCallSite op_equal_float = context.sites.Float.op_equal;
+            RubyClass floatMeta = context.runtime.getFloat();
+            if (!floatMeta.isRefinement() && op_equal_float.retrieveCache(floatMeta).method.isBuiltin()) {
                 return ((RubyFloat) a).fastEqual((RubyFloat) b);
+            }
         }
         return invokedynamic(context, a, OP_EQUAL, b).isTrue();
     }

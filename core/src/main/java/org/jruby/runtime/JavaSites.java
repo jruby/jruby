@@ -248,6 +248,7 @@ public class JavaSites {
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite basic_op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite basic_op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite op_equal = new FunctionalCachingCallSite("==");
         public final CallSite op_exp_complex = new FunctionalCachingCallSite("**");
         public final CallSite op_lt_bignum = new FunctionalCachingCallSite("<");
         public final CallSite op_exp_rational = new FunctionalCachingCallSite("**");
@@ -294,7 +295,7 @@ public class JavaSites {
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
-        public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CachingCallSite op_equal = new FunctionalCachingCallSite("==");
         public final RespondToCallSite respond_to_infinite = new RespondToCallSite("infinite?");
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
     }
