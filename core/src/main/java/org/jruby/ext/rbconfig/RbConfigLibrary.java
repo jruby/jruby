@@ -39,22 +39,18 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jnr.posix.util.Platform;
-
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
-import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
-
-import static org.jruby.platform.Platform.IS_WINDOWS;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -69,7 +65,7 @@ public class RbConfigLibrary implements Library {
     private static String normalizedHome;
 
     /** This is a map from Java's "friendly" OS names to those used by Ruby */
-    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<String, String>();
+    public static final Map<String, String> RUBY_OS_NAMES = new HashMap<>(24, 1);
     static {
         RUBY_OS_NAMES.put("Mac OS X", RUBY_DARWIN);
         RUBY_OS_NAMES.put("Darwin", RUBY_DARWIN);
@@ -93,20 +89,19 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getOSName() {
-        if (Platform.IS_WINDOWS) {
-            return RUBY_WIN32;
-        }
+        if (Platform.IS_LINUX) return RUBY_LINUX;
+        if (Platform.IS_MAC) return RUBY_DARWIN;
+        if (Platform.IS_WINDOWS) return RUBY_WIN32;
 
-        String OSName = Platform.getOSName();
-        String theOSName = RUBY_OS_NAMES.get(OSName);
-
-        return theOSName == null ? OSName : theOSName;
+        String osName = SafePropertyAccessor.getProperty("os.name");
+        String rubyName = RUBY_OS_NAMES.get(osName);
+        return rubyName == null ? osName : rubyName;
     }
 
     public static String getArchitecture() {
         String architecture = Platform.ARCH;
         if (architecture == null) architecture = "unknown";
-        if (architecture.equals("amd64")) architecture = "x86_64";
+        if ("amd64".equals(architecture)) architecture = "x86_64";
 
         return architecture;
     }
@@ -246,24 +241,28 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "bindir", binDir);
 
         setConfig(context, CONFIG, "RUBY_INSTALL_NAME", jrubyScript());
-        setConfig(context, CONFIG, "RUBYW_INSTALL_NAME", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
+        setConfig(context, CONFIG, "RUBYW_INSTALL_NAME", Platform.IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(context, CONFIG, "ruby_install_name", jrubyScript());
-        setConfig(context, CONFIG, "rubyw_install_name", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
+        setConfig(context, CONFIG, "rubyw_install_name", Platform.IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(context, CONFIG, "SHELL", jrubyShell());
         setConfig(context, CONFIG, "prefix", normalizedHome);
         setConfig(context, CONFIG, "exec_prefix", normalizedHome);
 
-        setConfig(context, CONFIG, "host_os", getOSName());
-        setConfig(context, CONFIG, "host_vendor", System.getProperty("java.vendor"));
-        setConfig(context, CONFIG, "host_cpu", getArchitecture());
+        final String osName = getOSName();
+        final String arch = getArchitecture();
+        final String vendor = SafePropertyAccessor.getProperty("java.vendor");
 
-        String host = String.format("%s-%s-%s", getOSName(), System.getProperty("java.vendor"), getArchitecture());
+        setConfig(context, CONFIG, "host_os", osName);
+        setConfig(context, CONFIG, "host_vendor", vendor);
+        setConfig(context, CONFIG, "host_cpu", arch);
+
+        String host = String.format("%s-%s-%s", osName, vendor, arch);
         setConfig(context, CONFIG, "host", host);
         setConfig(context, CONFIG, "host_alias", host);
 
-        setConfig(context, CONFIG, "target_os", getOSName());
+        setConfig(context, CONFIG, "target_os", osName);
 
-        setConfig(context, CONFIG, "target_cpu", getArchitecture());
+        setConfig(context, CONFIG, "target_cpu", arch);
 
         String jrubyJarFile = "jruby.jar";
         URL jrubyPropertiesUrl = Ruby.getClassLoader().getResource("/org/jruby/Ruby.class");
@@ -376,14 +375,16 @@ public class RbConfigLibrary implements Library {
             setConfig(context, mkmfHash, "rubygemsdir", newFile(rubygemsDir).getPath());
         }
 
-        setupMakefileConfig(context, rbConfig, mkmfHash);
+        setupMakefileConfig(context, mkmfHash);
 
         rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
 
         runtime.getLoadService().load("jruby/kernel/rbconfig.rb", false);
     }
 
-    private static void setupMakefileConfig(ThreadContext context, final RubyModule rbConfig, final RubyHash mkmfHash) {
+    private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;
+
+    private static void setupMakefileConfig(ThreadContext context, final RubyHash mkmfHash) {
 
         RubyHash envHash = (RubyHash) context.runtime.getObject().fetchConstant("ENV");
         String cc = getRubyEnv(envHash, "CC", "cc");
@@ -404,13 +405,13 @@ public class RbConfigLibrary implements Library {
         String dldflags = "";
         String ldsharedflags = " -shared ";
 
-        String archflags = " -m" + (Platform.IS_64_BIT ? "64" : "32");
+        String archflags = " -m" + (IS_64_BIT ? "64" : "32");
 
         String hdr_dir = newFile(normalizedHome, "lib/native/include/").getPath();
 
         // A few platform specific values
         if (Platform.IS_WINDOWS) {
-            ldflags += " -L" + newFile(normalizedHome, "lib/native/" + (Platform.IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
+            ldflags += " -L" + newFile(normalizedHome, "lib/native/" + (IS_64_BIT ? "x86_64" : "i386") + "-Windows").getPath();
             ldsharedflags += " $(if $(filter-out -g -g0,$(debugflags)),,-s)";
             dldflags = "-Wl,--enable-auto-image-base,--enable-auto-import $(DEFFILE)";
             archflags += " -march=native -mtune=native";
@@ -419,7 +420,7 @@ public class RbConfigLibrary implements Library {
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
             cflags = " -fPIC -DTARGET_RT_MAC_CFM=0 " + cflags;
-            archflags = " -arch " + Platform.ARCH;
+            archflags = " -arch " + getArchitecture();
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(context, mkmfHash, "DLEXT", "bundle");
 	        setConfig(context, mkmfHash, "EXEEXT", "");
