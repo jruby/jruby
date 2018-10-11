@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
@@ -24,6 +25,15 @@ public class NoResultCallInstr extends CallBase {
     public NoResultCallInstr(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args,
                              Operand closure, boolean isPotentiallyRefined) {
         super(op, callType, name, receiver, args, closure, isPotentiallyRefined);
+    }
+
+    /**
+     * result and non-result call instructions are processed with the same code so we provide
+     * this method to make that same code simpler.
+     */
+    @Override
+    public Variable getResult() {
+        return null;
     }
 
     @Override

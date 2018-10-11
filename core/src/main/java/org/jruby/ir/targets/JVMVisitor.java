@@ -587,19 +587,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
-        Operand[] callArgs = attrAssignInstr.getCallArgs();
-
-        compileCallCommon(
-                jvmMethod(),
-                attrAssignInstr.getId(),
-                callArgs,
-                attrAssignInstr.getReceiver(),
-                callArgs.length,
-                null,
-                BlockPassType.NONE,
-                attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
-                null,
-                attrAssignInstr.isPotentiallyRefined());
+        compileCallCommon(jvmMethod(), attrAssignInstr);
     }
 
     @Override
@@ -1082,26 +1070,19 @@ public class JVMVisitor extends IRVisitor {
             throw new NotCompilableException("refinements are unsupported in JIT");
         }
 
-        IRBytecodeAdapter m = jvmMethod();
-        String name = callInstr.getId();
-        Operand[] args = callInstr.getCallArgs();
-        Operand receiver = callInstr.getReceiver();
-        int numArgs = args.length;
-        Operand closure = callInstr.getClosureArg(null);
-        BlockPassType blockPassType = BlockPassType.fromIR(callInstr);
-        CallType callType = callInstr.getCallType();
-        Variable result = callInstr.getResult();
-
-        compileCallCommon(m, name, args, receiver, numArgs, closure, blockPassType, callType, result, callInstr.isPotentiallyRefined());
+        compileCallCommon(jvmMethod(), callInstr);
     }
 
-    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, BlockPassType blockPassType, CallType callType, Variable result, boolean isPotentiallyRefined) {
+    private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        String id = call.getId();
+        Operand[] args = call.getCallArgs();
+        BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
         m.loadSelf(); // caller
-        visit(receiver);
-        int arity = numArgs;
+        visit(call.getReceiver());
+        int arity = args.length;
 
-        if (numArgs == 1 && args[0] instanceof Splat) {
+        if (args.length == 1 && args[0] instanceof Splat) {
             visit(args[0]);
             m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
             arity = -1;
@@ -1115,22 +1096,24 @@ public class JVMVisitor extends IRVisitor {
 
         if (blockPassType.given()) {
             m.loadContext();
-            visit(closure);
+            visit(call.getClosureArg());
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
         }
 
-        switch (callType) {
+        boolean isPotentiallyRefined = call.isPotentiallyRefined();
+        switch (call.getCallType()) {
             case FUNCTIONAL:
-                m.invokeSelf(file, lastLine, name, arity, blockPassType, CallType.FUNCTIONAL, isPotentiallyRefined);
+                m.invokeSelf(file, lastLine, id, arity, blockPassType, CallType.FUNCTIONAL, isPotentiallyRefined);
                 break;
             case VARIABLE:
-                m.invokeSelf(file, lastLine, name, arity, blockPassType, CallType.VARIABLE, isPotentiallyRefined);
+                m.invokeSelf(file, lastLine, id, arity, blockPassType, CallType.VARIABLE, isPotentiallyRefined);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, name, arity, blockPassType, isPotentiallyRefined);
+                m.invokeOther(file, lastLine, id, arity, blockPassType, isPotentiallyRefined);
                 break;
         }
 
+        Variable result = call.getResult();
         if (result != null) {
             jvmStoreLocal(result);
         } else {
@@ -1360,8 +1343,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void EQQInstr(EQQInstr eqqinstr) {
         if (!eqqinstr.isSplattedValue() && !(eqqinstr.getArg1() instanceof UndefinedValue)) {
-            compileCallCommon(jvmMethod(), eqqinstr.getId(), eqqinstr.getCallArgs(), eqqinstr.getReceiver(),
-                    1, eqqinstr.getClosureArg(null), BlockPassType.fromIR(eqqinstr), eqqinstr.getCallType(), eqqinstr.getResult(), eqqinstr.isPotentiallyRefined());
+            compileCallCommon(jvmMethod(), eqqinstr);
         } else {
             jvmMethod().loadContext();
             visit(eqqinstr.getReceiver());
@@ -1544,7 +1526,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void MatchInstr(MatchInstr matchInstr) {
-        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, BlockPassType.NONE, CallType.NORMAL, matchInstr.getResult(), false);
+        compileCallCommon(jvmMethod(), matchInstr);
     }
 
     @Override
@@ -1560,16 +1542,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
-        IRBytecodeAdapter m = jvmMethod();
-        String name = noResultCallInstr.getId();
-        Operand[] args = noResultCallInstr.getCallArgs();
-        Operand receiver = noResultCallInstr.getReceiver();
-        int numArgs = args.length;
-        Operand closure = noResultCallInstr.getClosureArg(null);
-        BlockPassType blockPassType = BlockPassType.fromIR(noResultCallInstr);
-        CallType callType = noResultCallInstr.getCallType();
-
-        compileCallCommon(m, name, args, receiver, numArgs, closure, blockPassType, callType, null, noResultCallInstr.isPotentiallyRefined());
+        compileCallCommon(jvmMethod(), noResultCallInstr);
     }
 
     public void oneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {

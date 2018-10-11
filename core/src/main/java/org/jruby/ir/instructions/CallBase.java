@@ -114,6 +114,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return operands[0];
     }
 
+    // CallInstr and descendents have results and this method is obvious.
+    // NoResultCallInstr still provides an impl (returns null) to make processing in JIT simpler.
+    public abstract Variable getResult();
+
     /**
      * This getter is potentially unsafe if you do not know you have >=1 arguments to the call.  It may return
      * null of the closure argument from operands.
