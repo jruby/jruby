@@ -356,7 +356,7 @@ class TestBigDecimal < Test::Unit::TestCase
     b = BigDecimal("+55555x6")
     assert_equal 55555, b
     b = BigDecimal("-10000.5,9")
-    assert_equal -10000.5, b
+    assert_equal(-10000.5, b)
 
     b = BigDecimal("+55555d-66E")
     assert_equal BigDecimal('55555e-66'), b
