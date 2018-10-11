@@ -4195,9 +4195,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
         }
         int i = realLength;
+        int len = i;
         try {
             while (i > 0) {
                 int r = (int) RubyRandom.randomLongLimited(context, randgen, i - 1);
+                if (len != realLength) { // || ptr != RARRAY_CONST_PTR(ary)
+                    throw context.runtime.newRuntimeError("modified during shuffle");
+                }
                 T tmp = eltOk(--i);
                 eltSetOk(i, eltOk(r));
                 eltSetOk(r, tmp);
