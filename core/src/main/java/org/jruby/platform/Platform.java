@@ -119,7 +119,7 @@ public abstract class Platform {
     public static final boolean IS_FREEBSD = OS.equals(FREEBSD);
     public static final boolean IS_OPENBSD = OS.equals(OPENBSD);
     public static final boolean IS_LINUX = OS.equals(LINUX);
-    public static final boolean IS_WSL = OS.equals(LINUX) && OS_VERSION.contains("Microsoft");
+    public static final boolean IS_WSL = IS_LINUX && OS_VERSION.contains("Microsoft");
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
     public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
     public static final boolean IS_OPENVMS = OS.equals(OPENVMS);
