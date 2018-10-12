@@ -384,7 +384,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void invokeOther(String file, int line, CallBase call, int arity) {
-        invoke(file, line, call.getId(), arity, BlockPassType.fromIR(call), CallType.NORMAL, call.isPotentiallyRefined());
+        invoke(file, line, call, arity);
     }
 
     public void invokeArrayDeref(String file, int line) {
@@ -411,13 +411,15 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invoke(String file, int lineNumber, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
-        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
+    public void invoke(String file, int lineNumber, CallBase call, int arity) {
+        String id = call.getId();
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         SkinnyMethodAdapter adapter2;
         String incomingSig;
         String outgoingSig;
 
+        BlockPassType blockPassType = BlockPassType.fromIR(call);
         boolean blockGiven = blockPassType.given();
         if (blockGiven) {
             switch (arity) {
@@ -457,7 +459,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             }
         }
 
-        String methodName = getUniqueSiteName(name);
+        String methodName = getUniqueSiteName(id);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -469,7 +471,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         adapter2.line(lineNumber);
 
-        cacheCallSite(adapter2, getClassData().clsName, methodName, name, callType, isPotentiallyRefined);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, id, call.getCallType(), call.isPotentiallyRefined());
 
         // use call site to invoke
         adapter2.aload(0); // context
@@ -648,10 +650,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeSelf(String file, int line, CallBase call, int arity) {
-        String id = call.getId();
-        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + call.getId() + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(file, line, id, arity, BlockPassType.fromIR(call), call.getCallType(), call.isPotentiallyRefined());
+        invoke(file, line, call, arity);
     }
 
     public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
