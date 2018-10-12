@@ -138,12 +138,12 @@ public class RubyInstanceConfig {
     }
 
     private void initEnvironment() {
-        environment = new HashMap<String,String>();
+        environment = new HashMap<>();
         try {
             environment.putAll(System.getenv());
         }
         catch (SecurityException se) { /* ignore missing getenv permission */ }
-        setupEnvironment(getJRubyHome());
+        setupEnvironment();
     }
 
     public RubyInstanceConfig(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -347,7 +347,7 @@ public class RubyInstanceConfig {
         if ("uri:classloader://META-INF/jruby.home".equals(home) || "uri:classloader:/META-INF/jruby.home".equals(home)) {
             return home;
         }
-        if (home.equals(".")) {
+        if (".".equals(home)) {
             home = SafePropertyAccessor.getProperty("user.dir");
         }
         else if (home.startsWith("cp:")) {
@@ -357,7 +357,7 @@ public class RubyInstanceConfig {
                 home.startsWith("classpath:") || home.startsWith("uri:")) {
             error.println("Warning: JRuby home with uri like paths may not have full functionality - use at your own risk");
         }
-        // do not normalize on plain jar like pathes coming from jruby-rack
+        // do not normalize on plain jar like paths coming from jruby-rack
         else if (!home.contains(".jar!/") && !home.startsWith("uri:")) {
             File file = new File(home);
             if (!file.exists()) {
@@ -488,8 +488,8 @@ public class RubyInstanceConfig {
     }
 
     public void setJRubyHome(String home) {
-        jrubyHome = verifyHome(home, error);
-        setupEnvironment(jrubyHome);
+        jrubyHome = home != null ? verifyHome(home, error) : null;
+        setupEnvironment();
     }
 
     public CompileMode getCompileMode() {
@@ -660,15 +660,15 @@ public class RubyInstanceConfig {
     }
 
     public void setEnvironment(Map<String, String> newEnvironment) {
-        environment = new HashMap<String, String>();
+        environment = new HashMap<>();
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
         }
-        setupEnvironment(getJRubyHome());
+        setupEnvironment();
     }
 
-    private void setupEnvironment(String jrubyHome) {
-        if (RubyFile.PROTOCOL_PATTERN.matcher(jrubyHome).matches() && !environment.containsKey("RUBY")) {
+    private void setupEnvironment() {
+        if (!environment.containsKey("RUBY") && RubyFile.PROTOCOL_PATTERN.matcher(getJRubyHome()).matches()) {
             // the assumption that if JRubyHome is not a regular file that jruby
             // got launched in an embedded fashion
             environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
