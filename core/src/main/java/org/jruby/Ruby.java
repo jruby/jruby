@@ -1655,7 +1655,7 @@ public final class Ruby implements Constantizable {
         new ThreadFiberLibrary().load(this, false);
     }
 
-    private Map<Integer, RubyClass> errnos = new HashMap<Integer, RubyClass>();
+    private final Map<Integer, RubyClass> errnos = new HashMap<>();
 
     public RubyClass getErrno(int n) {
         return errnos.get(n);
@@ -1698,7 +1698,7 @@ public final class Ruby implements Constantizable {
      * @param name of the error to define.
      **/
     private void createSysErr(int i, String name) {
-        if(profile.allowClass(name)) {
+        if (profile.allowClass(name)) {
             if (errnos.get(i) == null) {
                 RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
                 errnos.put(i, errno);
