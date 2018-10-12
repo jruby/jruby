@@ -33,7 +33,6 @@ public abstract class IRVisitor {
     public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) { error(instr); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) { error(arrayderefinstr); }
-    public void BacktickInstr(BacktickInstr instr) { error(instr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }

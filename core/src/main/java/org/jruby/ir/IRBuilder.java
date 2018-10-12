@@ -2543,15 +2543,18 @@ public class IRBuilder {
         return getLocalVariable(node.getName(), node.getDepth());
     }
 
-    public Operand buildDXStr(Variable result, DXStrNode dstrNode) {
-        Node[] nodePieces = dstrNode.children();
+    public Operand buildDXStr(Variable result, DXStrNode node) {
+        Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
+        Variable stringResult = createTemporaryVariable();
         if (result == null) result = createTemporaryVariable();
-        return addResultInstr(new BacktickInstr(result, pieces));
+        boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
     }
 
     /* ****************************************************************
@@ -3976,8 +3979,9 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(),
-                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine())}));
+        return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, createTemporaryVariable(),
+                manager.getRuntime().newSymbol("`"), Self.SELF,
+                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine()) }, null));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
