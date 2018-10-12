@@ -26,4 +26,18 @@ describe "inspect method" do
     expect(java.util.ArrayList.new([1, '2']).inspect).to eql '[1, 2]'
   end
 
+  class SubDate < java.util.Date; end
+
+  it 'inherits (Java) inspect' do
+    date = SubDate.new(0)
+    expect(date.inspect).to include '1970'
+  end
+
+  it 'overrides custom (Java) inspect' do
+    date = Java::java_integration.fixtures.types.DateLike.new
+    inspect = date.inspect
+    expect(inspect).to be_a java.lang.StringBuilder
+    expect(inspect.to_s).to match /inspect:.*/
+  end
+
 end
