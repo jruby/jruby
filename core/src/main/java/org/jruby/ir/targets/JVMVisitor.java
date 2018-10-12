@@ -1041,7 +1041,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
-        String id = call.getId();
         Operand[] args = call.getCallArgs();
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
@@ -1067,16 +1066,13 @@ public class JVMVisitor extends IRVisitor {
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
         }
 
-        boolean isPotentiallyRefined = call.isPotentiallyRefined();
         switch (call.getCallType()) {
             case FUNCTIONAL:
-                m.invokeSelf(file, lastLine, id, arity, blockPassType, CallType.FUNCTIONAL, isPotentiallyRefined);
-                break;
             case VARIABLE:
-                m.invokeSelf(file, lastLine, id, arity, blockPassType, CallType.VARIABLE, isPotentiallyRefined);
+                m.invokeSelf(file, lastLine, call, arity);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, id, arity, blockPassType, isPotentiallyRefined);
+                m.invokeOther(file, lastLine, call, arity);
                 break;
         }
 
@@ -1527,7 +1523,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFixnum(file, lastLine, name, fixnum, oneFixnumArgNoBlockCallInstr.getCallType());
+        m.invokeOtherOneFixnum(file, lastLine, oneFixnumArgNoBlockCallInstr, fixnum);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1552,7 +1548,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFloat(file, lastLine, name, flote, oneFloatArgNoBlockCallInstr.getCallType());
+        m.invokeOtherOneFloat(file, lastLine, oneFloatArgNoBlockCallInstr, flote);
 
         if (result != null) {
             jvmStoreLocal(result);

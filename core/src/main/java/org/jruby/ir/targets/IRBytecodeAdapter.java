@@ -9,6 +9,7 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
@@ -370,11 +371,9 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, self, all arguments, optional block
      *
-     * @param name name of the method to invoke
-     * @param arity arity of the call
-     * @param blockPassType what type of closure is passed
+     * @param call the call to be invoked
      */
-    public abstract void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined);
+    public abstract void invokeOther(String file, int line, CallBase call, int arity);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -392,18 +391,16 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, self, receiver (fixnum will be handled separately)
      *
-     * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType);
+    public abstract void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum);
 
     /**
      * Invoke a float-receiving method on an object other than self.
      *
      * Stack required: context, self, receiver (float will be handled separately)
      *
-     * @param name name of the method to invoke
      */
-    public abstract void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType);
+    public abstract void invokeOtherOneFloat(String file, int line, CallBase call, double flote);
 
     public enum BlockPassType {
         NONE(false, false),
@@ -437,12 +434,10 @@ public abstract class IRBytecodeAdapter {
      *
      * @param file the filename of the script making this call
      * @param line the line number where this call appears
-     * @param name name of the method to invoke
-     * @param arity arity of the call
-     * @param blockPassType what type of closure is passed
-     * @param callType
+     * @param call to be invoked on self
+     * @param arity of the call.
      */
-    public abstract void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined);
+    public abstract void invokeSelf(String file, int line, CallBase call, int arity);
 
     /**
      * Invoke a superclass method from an instance context.

@@ -28,6 +28,7 @@ import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -382,8 +383,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeOther(String file, int line, String name, int arity, BlockPassType blockPassType, boolean isPotentiallyRefined) {
-        invoke(file, line, name, arity, blockPassType, CallType.NORMAL, isPotentiallyRefined);
+    public void invokeOther(String file, int line, CallBase call, int arity) {
+        invoke(file, line, call.getId(), arity, BlockPassType.fromIR(call), CallType.NORMAL, call.isPotentiallyRefined());
     }
 
     public void invokeArrayDeref(String file, int line) {
@@ -530,13 +531,15 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void invokeOtherOneFixnum(String file, int line, String name, long fixnum, CallType callType) {
-        if (!MethodIndex.hasFastFixnumOps(name)) {
+    @Override
+    public void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum) {
+        String id = call.getId();
+        if (!MethodIndex.hasFastFixnumOps(id)) {
             pushFixnum(fixnum);
-            if (callType == CallType.NORMAL) {
-                invokeOther(file, line, name, 1, BlockPassType.NONE, false);
+            if (call.getCallType() == CallType.NORMAL) {
+                invokeOther(file, line, call, 1);
             } else {
-                invokeSelf(file, line, name, 1, BlockPassType.NONE, callType, false);
+                invokeSelf(file, line, call, 1);
             }
             return;
         }
@@ -545,7 +548,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
 
-        String methodName = "invokeOtherOneFixnum" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        String methodName = "invokeOtherOneFixnum" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(id);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -566,7 +569,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
-        adapter2.ldc(name);
+        adapter2.ldc(id);
         adapter2.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CallSite.class));
@@ -586,13 +589,15 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeOtherOneFloat(String file, int line, String name, double flote, CallType callType) {
-        if (!MethodIndex.hasFastFloatOps(name)) {
+    @Override
+    public void invokeOtherOneFloat(String file, int line, CallBase call, double flote) {
+        String id = call.getId();
+        if (!MethodIndex.hasFastFloatOps(id)) {
             pushFloat(flote);
-            if (callType == CallType.NORMAL) {
-                invokeOther(file, line, name, 1, BlockPassType.NONE, false);
+            if (call.getCallType() == CallType.NORMAL) {
+                invokeOther(file, line, call, 1);
             } else {
-                invokeSelf(file, line, name, 1, BlockPassType.NONE, callType, false);
+                invokeSelf(file, line, call, 1);
             }
             return;
         }
@@ -601,7 +606,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
 
-        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
+        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(id);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -622,7 +627,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
-        adapter2.ldc(name);
+        adapter2.ldc(id);
         adapter2.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CallSite.class));
@@ -642,10 +647,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String file, int line, String name, int arity, BlockPassType blockPassType, CallType callType, boolean isPotentiallyRefined) {
-        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
+    public void invokeSelf(String file, int line, CallBase call, int arity) {
+        String id = call.getId();
+        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(file, line, name, arity, blockPassType, callType, isPotentiallyRefined);
+        invoke(file, line, id, arity, BlockPassType.fromIR(call), call.getCallType(), call.isPotentiallyRefined());
     }
 
     public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
