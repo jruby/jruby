@@ -51,10 +51,10 @@ module Timeout
   CALLER_OFFSET = ((c = caller[0]) && THIS_FILE =~ c) ? 1 : 0
   private_constant :THIS_FILE, :CALLER_OFFSET
   # :startdoc:
-
-  # Load executor-based timeout logic into module
-  org.jruby.ext.timeout.Timeout.define(self)
 end
+
+# Load executor-based timeout logic into Timeout mod
+JRuby::Util.load_ext('org.jruby.ext.timeout.Timeout')
 
 def timeout(*args, &block)
   warn "Object##{__method__} is deprecated, use Timeout.timeout instead.", uplevel: 1

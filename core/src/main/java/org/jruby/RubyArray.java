@@ -474,12 +474,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         values = reallocated;
     }
 
-    private static void fill(IRubyObject[]arr, int from, int to, IRubyObject with) {
-        for (int i=from; i<to; i++) {
-            arr[i] = with;
-        }
-    }
-
     protected static final void checkLength(Ruby runtime, long length) {
         if (length < 0) {
             throw runtime.newArgumentError("negative array size (or size too big)");
@@ -682,7 +676,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 if (arg1 == null) {
                     Helpers.fillNil(values, begin, begin + ilen, runtime);
                 } else {
-                    fill(values, begin, begin + ilen, arg1);
+                    Arrays.fill(values, begin, begin + ilen, arg1);
                 }
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw concurrentModification(runtime, ex);
@@ -2272,7 +2266,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (len > 0) {
             try {
-                fill(values, begin + beg, begin + end, item);
+                Arrays.fill(values, begin + beg, begin + end, item);
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw concurrentModification(context.runtime, ex);
             }
@@ -5332,7 +5326,7 @@ float_loop:
     }
 
     private void safeArrayCopy(IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {
-        safeArrayCopy(getRuntime(), source, sourceStart, target, targetStart, length);
+        safeArrayCopy(metaClass.getClassRuntime(), source, sourceStart, target, targetStart, length);
     }
 
     private static void safeArrayCopy(Ruby runtime, IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {

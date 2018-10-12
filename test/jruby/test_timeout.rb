@@ -112,7 +112,7 @@ class TestTimeout < Test::Unit::TestCase
         end
       end
     end
-    assert cls.new.timeout(0), "timeout should have returned 42"
+    assert_equal 42, cls.new.timeout, "timeout should have returned 42"
   end
 
   class Seconds

@@ -381,7 +381,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    private final int nextPowOfTwo(final int i) {
+    private static int nextPowOfTwo(final int i) {
         return Integer.MIN_VALUE >>> Integer.numberOfLeadingZeros(i - 1) << 1; // i > 1
     }
 
@@ -407,7 +407,6 @@ public class RubyHash extends RubyObject implements Map {
     public static final class RubyHashEntry implements Map.Entry {
         IRubyObject key;
         IRubyObject value;
-        private int index;
         private RubyHash hash;
 
         RubyHashEntry() {
@@ -476,9 +475,6 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private static final int HASH_SIGN_BIT_MASK = ~(1 << 31);
-    private static int MRIBucketIndex(final int h, final int length) {
-        return ((h & HASH_SIGN_BIT_MASK) % length);
-    }
 
     private final synchronized void resize(final int newCapacity) {
         final IRubyObject[] newEntries = new IRubyObject[newCapacity << 1];

@@ -808,39 +808,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void BacktickInstr(BacktickInstr instr) {
-        // prepare for call to "`" below
-        jvmMethod().loadContext();
-        jvmMethod().loadSelf(); // TODO: remove caller
-        jvmMethod().loadSelf();
-
-        ByteList csByteList = new ByteList();
-        jvmMethod().pushString(csByteList, StringSupport.CR_BROKEN);
-
-        for (Operand p : instr.getOperands()) {
-            // visit piece and ensure it's a string
-            visit(p);
-            jvmAdapter().dup();
-            org.objectweb.asm.Label after = new org.objectweb.asm.Label();
-            jvmAdapter().instance_of(p(RubyString.class));
-            jvmAdapter().iftrue(after);
-            jvmAdapter().invokevirtual(p(IRubyObject.class), "anyToString", sig(IRubyObject.class));
-
-            jvmAdapter().label(after);
-            jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
-        }
-
-        // freeze the string
-        jvmAdapter().dup();
-        jvmAdapter().ldc(true);
-        jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
-
-        // invoke the "`" method on self
-        jvmMethod().invokeSelf(file, lastLine, "`", 1, BlockPassType.NONE, CallType.FUNCTIONAL, false);
-        jvmStoreLocal(instr.getResult());
-    }
-
-    @Override
     public void BNEInstr(BNEInstr bneinstr) {
         jvmMethod().loadContext();
         visit(bneinstr.getArg1());
@@ -1743,7 +1710,7 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
         // See also CompiledIRMethod.call
         jvmMethod().loadContext();
-        jvmAdapter().getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
+        jvmAdapter().getstatic(p(Visibility.class), pushframeinstr.getVisibility().name(), ci(Visibility.class));
         jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
     }
 

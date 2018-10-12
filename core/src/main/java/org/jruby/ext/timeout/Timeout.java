@@ -51,6 +51,10 @@ import org.jruby.threading.DaemonThreadFactory;
 public class Timeout {
     public static final String EXECUTOR_VARIABLE = "__executor__";
 
+    public static void load(Ruby runtime) {
+        define(runtime.getOrCreateModule("Timeout"));
+    }
+
     public static void define(RubyModule timeout) {
         // Timeout module methods
         timeout.defineAnnotatedMethods(Timeout.class);
