@@ -362,6 +362,15 @@ if $cygwin; then
 
 fi
 
+# Determine whether to use -classpath or --module-path
+classmod_flag="-classpath"
+bootclasspath_flags="-Xbootclasspath/a:"
+if [ -d $JAVA_HOME/jmods ]; then
+  classmod_flag="--module-path"
+  bootclasspath_flags="-Xverify:none --module-path "
+fi
+
+# Run JRuby!
 if [ "$nailgun_client" != "" ]; then
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
     exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
@@ -380,7 +389,7 @@ if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
     JRUBY_OPTS=''
   fi
 
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -403,7 +412,7 @@ if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
 else
   if $cygwin; then
     # exec doed not work correctly with cygwin bash
-    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${bootclasspath_flags}"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
@@ -416,7 +425,7 @@ else
 
     exit $JRUBY_STATUS
   else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${bootclasspath_flags}"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
