@@ -511,6 +511,15 @@ public class Numeric {
      */
     public static long i_gcd(long x, long y) {
         long shift, uz, vz;
+        if (x == Long.MIN_VALUE) {
+            if (y == Long.MIN_VALUE)
+                throw new IllegalArgumentException("gcd() is too big");
+            return 1 << Long.numberOfTrailingZeros(Math.abs(y));
+        }
+        if (y == Long.MIN_VALUE) {
+            return 1 << Long.numberOfTrailingZeros(Math.abs(x));
+        }
+
         x = Math.abs(x);
         y = Math.abs(y);
         if (x == 0) {
