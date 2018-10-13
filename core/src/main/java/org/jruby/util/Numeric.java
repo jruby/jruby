@@ -513,7 +513,7 @@ public class Numeric {
         long shift, uz, vz;
         if (x == Long.MIN_VALUE) {
             if (y == Long.MIN_VALUE)
-                throw new IllegalArgumentException("gcd() is too big");
+                return x;
             return 1 << Long.numberOfTrailingZeros(Math.abs(y));
         }
         if (y == Long.MIN_VALUE) {
