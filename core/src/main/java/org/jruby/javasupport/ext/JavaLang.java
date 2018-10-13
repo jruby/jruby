@@ -34,7 +34,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -45,6 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
 
+import static org.jruby.javasupport.Java.getProxyClass;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
@@ -59,6 +59,9 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 public abstract class JavaLang {
 
     public static void define(final Ruby runtime) {
+        // NOTE: used immediately as JavaLang boots from loading Java support :
+        Object.define(runtime, (RubyClass) getProxyClass(runtime, java.lang.Object.class));
+        // JavaExtensions.put(runtime, java.lang.Object.class, (proxyClass) -> Object.define(runtime, (RubyClass) proxyClass));
         JavaExtensions.put(runtime, java.lang.Iterable.class, (proxyClass) -> Iterable.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.lang.Comparable.class, (proxyClass) -> Comparable.define(runtime, proxyClass));
         JavaExtensions.put(runtime, java.lang.Throwable.class, (proxyClass) -> Throwable.define(runtime, (RubyClass) proxyClass));
@@ -75,6 +78,22 @@ public abstract class JavaLang {
         JavaExtensions.put(runtime, java.lang.String.class, (proxyClass) -> {
             proxyClass.defineAlias("to_str", "to_s");
         });
+    }
+
+    @JRubyClass(name = "Java::JavaLang::Object")
+    public static class Object {
+
+        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
+            proxy.defineAnnotatedMethods(Object.class);
+            return proxy;
+        }
+
+        @JRubyMethod(name = "to_s")
+        public static IRubyObject to_s(final ThreadContext context, final IRubyObject self) {
+            final String str = self.toJava(java.lang.Object.class).toString();
+            return str == null ? context.nil : context.runtime.newString(str);
+        }
+
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")
@@ -95,7 +114,7 @@ public abstract class JavaLang {
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
             while ( iterator.hasNext() ) {
-                final Object value = iterator.next();
+                final java.lang.Object value = iterator.next();
                 block.yield(context, convertJavaToUsableRubyObject(runtime, value));
             }
             return self;
@@ -112,7 +131,7 @@ public abstract class JavaLang {
             final boolean arity2 = block.getSignature().arity() == Arity.TWO_ARGUMENTS;
             int i = 0; while ( iterator.hasNext() ) {
                 final RubyInteger index = RubyFixnum.newFixnum(runtime, i++);
-                final Object value = iterator.next();
+                final java.lang.Object value = iterator.next();
                 final IRubyObject rValue = convertJavaToUsableRubyObject(runtime, value);
                 if ( arity2 ) {
                     block.yieldSpecific(context, rValue, index);
@@ -130,7 +149,7 @@ public abstract class JavaLang {
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
             java.util.Iterator iterator = iterable.iterator();
             while ( iterator.hasNext() ) {
-                final Object value = iterator.next();
+                final java.lang.Object value = iterator.next();
                 ary.append( convertJavaToUsableRubyObject(runtime, value) );
             }
             return ary;

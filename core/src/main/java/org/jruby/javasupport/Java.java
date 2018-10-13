@@ -91,7 +91,6 @@ import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
-import static org.jruby.java.invokers.RubyToJavaInvoker.convertArguments;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyModule(name = "Java")
@@ -119,14 +118,13 @@ public class Java implements Library {
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
-        ArrayJavaProxy.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
+        ArrayJavaProxy.setSuperClass(runtime.getJavaSupport().getObjectClass());
         ArrayJavaProxy.includeModule(runtime.getEnumerable());
 
         RubyClassPathVariable.createClassPathVariable(runtime);
 
         runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
-        // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
         RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
         runtime.getObject().setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
@@ -183,9 +181,6 @@ public class Java implements Library {
 
         // add all name-to-class mappings
         addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
-
-        // add some base Java classes everyone will need
-        runtime.getJavaSupport().setObjectJavaClass( JavaClass.get(runtime, Object.class) );
 
         return Java;
     }
@@ -1409,21 +1404,16 @@ public class Java implements Library {
             final Ruby runtime = wrapper.getRuntime();
             final ThreadContext context = runtime.getCurrentContext();
 
-            //try {
-                switch ( length ) {
-                    case 0 :
-                        return Helpers.invoke(context, wrapper, methodName).toJava(method.getReturnType());
-                    case 1 :
-                        IRubyObject arg = JavaUtil.convertJavaToUsableRubyObject(runtime, nargs[0]);
-                        return Helpers.invoke(context, wrapper, methodName, arg).toJava(method.getReturnType());
-                    default :
-                        IRubyObject[] args = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
-                        return Helpers.invoke(context, wrapper, methodName, args).toJava(method.getReturnType());
-                }
-            //}
-            //catch (RuntimeException e) {
-            //    e.printStackTrace(); throw e;
-            //}
+            switch ( length ) {
+                case 0 :
+                    return Helpers.invoke(context, wrapper, methodName).toJava(method.getReturnType());
+                case 1 :
+                    IRubyObject arg = JavaUtil.convertJavaToUsableRubyObject(runtime, nargs[0]);
+                    return Helpers.invoke(context, wrapper, methodName, arg).toJava(method.getReturnType());
+                default :
+                    IRubyObject[] args = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
+                    return Helpers.invoke(context, wrapper, methodName, args).toJava(method.getReturnType());
+            }
         }
 
         final String proxyToString(final Object proxy) {
