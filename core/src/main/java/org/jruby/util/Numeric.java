@@ -510,19 +510,42 @@ public class Numeric {
      *
      */
     public static long i_gcd(long x, long y) {
-        if (x < 0) x = -x;
-        if (y < 0) y = -y;
-
-        if (x == 0) return y;
-        if (y == 0) return x;
-
-        while (x > 0) {
-            long t = x;
-            x = y % x;
-            y = t;
+        long shift, uz, vz;
+        if (x == Long.MIN_VALUE) {
+            if (y == Long.MIN_VALUE)
+                return x;
+            return 1 << Long.numberOfTrailingZeros(Math.abs(y));
+        }
+        if (y == Long.MIN_VALUE) {
+            return 1 << Long.numberOfTrailingZeros(Math.abs(x));
         }
 
-        return y;
+        x = Math.abs(x);
+        y = Math.abs(y);
+        if (x == 0) {
+            return y;
+        }
+        if (y == 0 || x == y) {
+            return x;
+        }
+        uz = Long.numberOfTrailingZeros(x);
+        vz = Long.numberOfTrailingZeros(y);
+        shift = Math.min(uz, vz);
+
+        x >>= uz;
+        y >>= vz;
+
+        while (x != y) {
+            if (x > y) {
+                x -= y;
+                x >>= Long.numberOfTrailingZeros(x);
+            } else {
+                y -= x;
+                y >>= Long.numberOfTrailingZeros(y);
+            }
+        }
+
+        return x << shift;
     }
 
     /** f_gcd
