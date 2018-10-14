@@ -1452,8 +1452,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         }
 
         long n = value;
-        // FIXME: this is obviously not super efficient, but floorSqrt(long) did not pass tests
-        long sq = floorSqrt(BigInteger.valueOf(n)).longValue();
+        long sq = floorSqrt(n);
         
         return RubyFixnum.newFixnum(runtime, sq);
     }

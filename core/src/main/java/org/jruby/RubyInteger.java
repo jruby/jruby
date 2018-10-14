@@ -150,13 +150,13 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public abstract IRubyObject sqrt(ThreadContext context);
 
-    // floorSqrt :: unsigned long -> unsigned int
+    // floorSqrt :: unsigned long -> unsigned long
     // Gives the exact floor of the square root of x, treated as unsigned.
     // Public domain code from http://www.codecodex.com/wiki/Calculate_an_integer_square_root
-    public static final int floorSqrt(final long x) {
-        if ((x & 0xfff0000000000000L) == 0L) return (int) StrictMath.sqrt(x);
-        final long result = (long) StrictMath.sqrt(2.0d*(x >>> 1));
-        return result*result - x > 0L ? (int) result - 1 : (int) result;
+    public static final long floorSqrt(final long x) {
+        if ((x & 0xfff0000000000000L) == 0L) return (long) StrictMath.sqrt(x);
+        final long result = (long) StrictMath.sqrt(2.0d*(x >>> 1));  
+        return result*result - x > 0L ? (long) result - 1 : (long) result;
     }
 
     // floorSqrt :: BigInteger -> BigInteger
