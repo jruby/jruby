@@ -93,6 +93,7 @@ public class RubyTime extends RubyObject {
 
     private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
+    public static final int TIME_SCALE = 1000000000;
 
     private DateTime dt;
     private long nsec;
@@ -1715,7 +1716,6 @@ public class RubyTime extends RubyObject {
         int i_args1 = argToInt(context, args, 1 + 2, 0);
         int i_args2 = argToInt(context, args, 2 + 2, 0);
         int i_args3 = argToInt(context, args, 3 + 2, 0);
-        int i_args4 = argToInt(context, args, 4 + 2, 0);
         //int i_args5 = argToInt(context, args, 5 + 2, 0);
 
         // Validate the times
@@ -1743,6 +1743,9 @@ public class RubyTime extends RubyObject {
             // 1.9 will observe fractional seconds *if* not given usec
             if (args[5] != context.nil && args[6] == context.nil) {
                 double secs = RubyFloat.num2dbl(context, args[5]);
+                if (secs < 0 || secs >= TIME_SCALE) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
                 int int_millis = (int) (secs * 1000) % 1000;
                 instant = chrono.millis().add(instant, int_millis);
                 nanos = ((long) (secs * 1000000000) % 1000000);
@@ -1770,15 +1773,29 @@ public class RubyTime extends RubyObject {
         // Ignores usec if 8 args (for compatibility with parse-date) or if not supplied.
         if (args.length != 8 && args[6] != context.nil) {
             if (args[6] instanceof RubyRational) {
-                RubyRational nsec = (RubyRational) ((RubyRational) args[6]).op_mul(context, runtime.newFixnum(1000));
+                RubyRational rat = (RubyRational) args[6];
+                if (rat.isNegative()) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
+                RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1000));
                 long tmpNanos = (long) nsec.getDoubleValue(context);
                 dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
                 nanos = tmpNanos % 1_000_000;
             } else if (args[6] instanceof RubyFloat) {
-                double micros = ((RubyFloat) args[6]).getDoubleValue();
+                RubyFloat flo = (RubyFloat) args[6];
+                if (flo.isNegative()) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
+                double micros = flo.getDoubleValue();
                 dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {
+                int i_args4 = argToInt(context, args, 4 + 2, 0);
+
+                if (i_args4 < 0 || i_args4 >= TIME_SCALE) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
+
                 int usec = i_args4 % 1000;
                 int msec = i_args4 / 1000;
 
