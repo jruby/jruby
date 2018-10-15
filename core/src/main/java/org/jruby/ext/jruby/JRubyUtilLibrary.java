@@ -29,6 +29,7 @@
 
 package org.jruby.ext.jruby;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
@@ -141,7 +142,7 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
         String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
+        if ( launcher == null || !(new File(launcher.split(" -cp :")[0]).exists()) ) launcher = ClasspathLauncher.jrubyCommand(runtime);
         return runtime.newString(launcher);
     }
 
