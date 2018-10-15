@@ -89,11 +89,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.ArraySupport;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.CodegenUtils;
-import org.jruby.util.JavaNameMangler;
+import org.jruby.util.*;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
@@ -1434,8 +1430,8 @@ public class RubyClass extends RubyModule {
         final String name = getBaseName() != null ? getName() :
                 ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
 
-        final String javaName = "rubyobj." + name.replaceAll("::", ".");
-        final String javaPath = "rubyobj/" + name.replaceAll("::", "/");
+        final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
+        final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
 
         final Class parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {

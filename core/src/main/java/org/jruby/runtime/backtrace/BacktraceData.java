@@ -48,7 +48,7 @@ public class BacktraceData implements Serializable {
     }
 
     private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
-        ArrayList<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
+        ArrayList<RubyStackTraceElement> trace = new ArrayList<>(javaTrace.length);
 
         // used for duplicating the previous Ruby frame when masking native calls
         boolean dupFrame = false; String dupFrameName = null;
@@ -157,7 +157,7 @@ public class BacktraceData implements Serializable {
             }
         }
 
-        return trace.toArray(new RubyStackTraceElement[trace.size()]);
+        return trace.toArray(RubyStackTraceElement.EMPTY_ARRAY);
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {

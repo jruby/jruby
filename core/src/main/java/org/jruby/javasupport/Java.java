@@ -1478,7 +1478,7 @@ public class Java implements Library {
             // no-name class, generate a bogus name for it
             implClassName = "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName = clazz.getName().replaceAll("::", "\\$\\$") + '_' + Math.abs(interfacesHashCode);
+            implClassName = StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {
