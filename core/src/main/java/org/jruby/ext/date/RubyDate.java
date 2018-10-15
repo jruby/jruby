@@ -1162,15 +1162,15 @@ public class RubyDate extends RubyObject {
         //   sub_millis -= 1
         //   ms += 1
         // end
-        RubyNumeric val = (RubyNumeric) RubyFixnum.newFixnum(runtime, DAY_MS).op_mul(context, n);
+        RubyNumeric val = (RubyNumeric) RubyFixnum.newFixnum(runtime, DAY_MS).op_mul(context, n).convertToFloat().round(context, RubyFixnum.newFixnum(context.runtime, 10));
 
         RubyArray res = (RubyArray) val.divmod(context, RubyFixnum.one(context.runtime));
         long ms = ((RubyInteger) res.eltInternal(0)).getLongValue();
         RubyNumeric sub = (RubyNumeric) res.eltInternal(1);
         //if ( sub.isZero() ) sub = RubyFixnum.zero(runtime); // avoid Rational(0, 1)
         RubyNumeric sub_millis = (RubyNumeric) subMillis(context.runtime).op_plus(context, sub);
-        int subNum = sub_millis.numerator(context).convertToInteger().getIntValue();
-        int subDen = sub_millis.denominator(context).convertToInteger().getIntValue();
+        long subNum = sub_millis.numerator(context).convertToInteger().getLongValue();
+        long subDen = sub_millis.denominator(context).convertToInteger().getLongValue();
         if (subNum / subDen >= 1) { // sub_millis >= 1
             subNum -= subDen; ms += 1; // sub_millis -= 1
         }
