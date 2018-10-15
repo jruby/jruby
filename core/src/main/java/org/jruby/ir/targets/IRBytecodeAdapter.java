@@ -11,6 +11,7 @@ import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
+import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -384,7 +385,7 @@ public abstract class IRBytecodeAdapter {
      * @param file
      * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line);
+    public abstract void invokeArrayDeref(String file, int line, CallBase call);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -661,7 +662,7 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, case value, when value
      */
-    public abstract void callEqq(boolean isSplattedValue);
+    public abstract void callEqq(EQQInstr call);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;

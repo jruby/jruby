@@ -596,7 +596,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine);
+        jvmMethod().invokeArrayDeref(file, lastLine, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -1311,7 +1311,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             visit(eqqinstr.getReceiver());
             visit(eqqinstr.getArg1());
-            jvmMethod().callEqq(eqqinstr.isSplattedValue());
+            jvmMethod().callEqq(eqqinstr);
             jvmStoreLocal(eqqinstr.getResult());
         }
     }
