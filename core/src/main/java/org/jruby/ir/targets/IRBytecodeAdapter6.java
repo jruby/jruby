@@ -390,13 +390,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void invokeArrayDeref(String file, int line, CallBase call) {
-        String id = call.getId();
-        SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
-
-        String methodName = getUniqueSiteName(id);
-
-        adapter2 = new SkinnyMethodAdapter(
+        String methodName = getUniqueSiteName(call.getId());
+        SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
                 methodName,
@@ -405,7 +401,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         adapter2.aloadMany(0, 1, 2, 3);
-        cacheCallSite(adapter2, getClassData().clsName, methodName, id, call.getCallType(), false);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, call);
         adapter2.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
         adapter2.areturn();
         adapter2.end();
@@ -474,7 +470,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         adapter2.line(lineNumber);
 
-        cacheCallSite(adapter2, getClassData().clsName, methodName, id, call.getCallType(), call.isPotentiallyRefined());
+        cacheCallSite(adapter2, getClassData().clsName, methodName, call);
 
         // use call site to invoke
         adapter2.aload(0); // context
@@ -1028,9 +1024,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void callEqq(EQQInstr call) {
-        String id = call.getId();
-        String siteName = getUniqueSiteName(id);
-        IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, siteName, id, call.getCallType(), false);
+        IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, getUniqueSiteName(call.getId()), call);
         adapter.ldc(call.isSplattedValue());
         invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }

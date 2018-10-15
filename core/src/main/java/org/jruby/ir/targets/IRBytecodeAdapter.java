@@ -60,11 +60,9 @@ public abstract class IRBytecodeAdapter {
      * @param method the SkinnyMethodAdapter to that's generating the containing method body
      * @param className the name of the class in which the field will reside
      * @param siteName the unique name of the site, used for the field
-     * @param rubyName the Ruby method name being invoked
-     * @param callType the type of call
-     * @param isPotentiallyRefined whether the call might be refined
+     * @param call of we are making a callsite for.
      */
-    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String rubyName, CallType callType, boolean isPotentiallyRefined) {
+    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, CallBase call) {
         // call site object field
         method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
 
@@ -74,10 +72,12 @@ public abstract class IRBytecodeAdapter {
         Label doCall = new Label();
         method.ifnonnull(doCall);
         method.pop();
-        method.ldc(rubyName);
+        method.ldc(call.getId());
+
+        CallType callType = call.getCallType();
         Class<? extends CachingCallSite> siteClass;
         String signature;
-        if (isPotentiallyRefined) {
+        if (call.isPotentiallyRefined()) {
             siteClass = RefinedCachingCallSite.class;
             signature = sig(siteClass, String.class, String.class);
             method.ldc(callType.name());
