@@ -362,12 +362,24 @@ if $cygwin; then
 
 fi
 
+# Allow overriding default JSA file location
+if [ "$JRUBY_JSA" == "" ]; then
+  JRUBY_JSA=${JRUBY_HOME}/lib/jruby.jsa
+fi
+
 # Determine whether to use -classpath or --module-path
 classmod_flag="-classpath"
-bootclasspath_flags="-Xbootclasspath/a:"
 if [ -d $JAVA_HOME/jmods ]; then
+  # Use module path instead of classpath
   classmod_flag="--module-path"
-  bootclasspath_flags="-Xverify:none --module-path "
+
+  # Switch to non-boot path since we can't use bootclasspath on 9+
+  NO_BOOTCLASSPATH=1
+
+  # If we have a jruby.jsa file, enable AppCDS
+  if [ -f $JRUBY_JSA ]; then
+    JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
+  fi
 fi
 
 # Run JRuby!
@@ -412,7 +424,7 @@ if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
 else
   if $cygwin; then
     # exec doed not work correctly with cygwin bash
-    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${bootclasspath_flags}"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
@@ -425,7 +437,7 @@ else
 
     exit $JRUBY_STATUS
   else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${bootclasspath_flags}"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
