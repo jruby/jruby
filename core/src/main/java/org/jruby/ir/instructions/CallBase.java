@@ -13,6 +13,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.util.ArraySupport;
 
@@ -54,7 +55,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name.idString(), potentiallyRefined);
+        this.callSite = getCallSiteFor(callType, name.idString(), hasLiteralClosure(), potentiallyRefined);
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -170,7 +171,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    protected static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
+    protected static CallSite getCallSiteFor(CallType callType, String name, boolean hasLiteralClosure, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
         if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);

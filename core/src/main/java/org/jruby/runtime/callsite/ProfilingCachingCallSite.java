@@ -39,6 +39,17 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         this.scope = scope;
     }
 
+    private void printCallsiteData(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, CacheEntry cache) {
+        // FIXME: This does not handle site as closure.
+        boolean targetIsIR = cache.method instanceof AbstractIRMethod;
+        boolean siteIsIR = scope.compilable != null;
+
+        //System.err.println("SITE_IR: " + siteIsIR + ", TARGET_IR: " + targetIsIR);
+        if (targetIsIR && siteIsIR) {
+            System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
+        }
+    }
+
     protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }
@@ -77,12 +88,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, block, args, context, self);
-        }
-    }
-
-    private void printCallsiteData(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, CacheEntry cache) {
-        if (cache.method instanceof AbstractIRMethod) { // we only care about mono calls to IR
-            System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
         }
     }
 

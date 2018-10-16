@@ -5,11 +5,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
-import org.jruby.ast.util.SexpMaker;
 import org.jruby.compiler.Compilable;
-import org.jruby.compiler.MethodJITClassGenerator;
-import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
@@ -22,24 +19,17 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.targets.JVMVisitor;
-import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ByteList;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -147,7 +137,7 @@ public abstract class IRScope implements ParseResult {
     private TemporaryVariable yieldClosureVariable;
 
     private boolean alreadyHasInline;
-    private Compilable compilable;
+    public Compilable compilable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {

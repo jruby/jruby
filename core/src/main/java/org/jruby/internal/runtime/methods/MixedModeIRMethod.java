@@ -37,6 +37,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
                 Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
         }
+
+        // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
+        method.compilable = this;
     }
 
     public DynamicMethod getActualMethod() {

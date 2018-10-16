@@ -41,6 +41,9 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
             ensureInstrsReady();
         }
+
+        // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
+        method.compilable = this;
     }
 
     public void setCallCount(int callCount) {
