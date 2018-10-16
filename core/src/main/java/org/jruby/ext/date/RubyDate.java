@@ -788,8 +788,11 @@ public class RubyDate extends RubyObject {
 
         if (cmp == 0) {
             if (this.subMillisDen == 1 && that.subMillisDen == 1) {
-                long diff = this.subMillisNum - that.subMillisNum;
-                return diff < 0 ? -1 : ( diff == 0 ? 0 : +1 );
+                long subNum1 = this.subMillisNum;
+                long subNum2 = that.subMillisNum;
+                if (subNum1 < subNum2) return -1;
+                if (subNum1 > subNum2) return +1;
+                return 0;
             }
             return cmpSubMillis(that);
         }
