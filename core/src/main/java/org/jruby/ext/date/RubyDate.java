@@ -1162,7 +1162,7 @@ public class RubyDate extends RubyObject {
         //   sub_millis -= 1
         //   ms += 1
         // end
-        RubyNumeric val = (RubyNumeric) RubyFixnum.newFixnum(runtime, DAY_MS).op_mul(context, n);
+        RubyNumeric val = (RubyNumeric) RubyFixnum.newFixnum(runtime, DAY_MS).op_mul(context, n).convertToFloat().round(context, RubyFixnum.newFixnum(context.runtime, 10));
 
         RubyArray res = (RubyArray) val.divmod(context, RubyFixnum.one(context.runtime));
         long ms = ((RubyInteger) res.eltInternal(0)).getLongValue();
