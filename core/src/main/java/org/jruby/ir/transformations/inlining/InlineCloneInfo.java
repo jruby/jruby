@@ -36,6 +36,7 @@ public class InlineCloneInfo extends CloneInfo {
     private Operand[] callArgs;
     private Variable argsArray;
     private boolean canMapArgsStatically;
+    private boolean singleArg;
 
     private Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<>();
 
@@ -76,6 +77,10 @@ public class InlineCloneInfo extends CloneInfo {
         return isClosure;
     }
 
+    public boolean isSingleArg() {
+        return singleArg;
+    }
+
     public InlineCloneInfo cloneForInliningClosure(IRScope scopeBeingInlined) {
         InlineCloneInfo clone = new InlineCloneInfo(hostCFG, hostCFG.getScope(), scopeBeingInlined);
 
@@ -87,6 +92,8 @@ public class InlineCloneInfo extends CloneInfo {
     }
 
     public Operand getArg(int index) {
+        if (isSingleArg()) return yieldArg;
+
         return index < getArgsCount() ? (isClosure ? ((Array)yieldArg).get(index) : callArgs[index]) : null;
     }
 
@@ -143,7 +150,7 @@ public class InlineCloneInfo extends CloneInfo {
         return getHostScope().getNewLabel();
     }
 
-    protected Variable getRenamedSelfVariable(Variable self) {
+    public Variable getRenamedSelfVariable(Variable self) {
         return callReceiver;
     }
 
@@ -189,7 +196,10 @@ public class InlineCloneInfo extends CloneInfo {
         } else if (yieldInstrArg instanceof Array) {
             yieldArg = yieldInstrArg;
             // 1:1 arg match
-            if (((Array)yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
+            if (((Array) yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
+        } else if (blockArityValue == 1) {
+            yieldArg = yieldInstrArg;
+            singleArg = true;
         } else {
             // SSS FIXME: The code below is not entirely correct.  We have to process 'yi.getYieldArg()' similar
             // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction

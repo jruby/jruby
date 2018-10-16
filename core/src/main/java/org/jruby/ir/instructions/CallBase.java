@@ -23,11 +23,11 @@ import java.util.Set;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
-    private static long callSiteCounter = 1;
+public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
+    public static long callSiteCounter = 1;
     private static final EnumSet<FrameField> ALL = EnumSet.allOf(FrameField.class);
 
-    public transient final long callSiteId;
+    public transient long callSiteId;
     private final CallType callType;
     protected RubySymbol name;
     protected final transient CallSite callSite;
@@ -95,6 +95,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
      */
     public String getId() {
         return name.idString();
+    }
+
+    public long getCallSiteId() {
+        return callSiteId;
+    }
+
+    public void setCallSiteId(long callSiteId) {
+        this.callSiteId = callSiteId;
     }
 
     public RubySymbol getName() {

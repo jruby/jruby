@@ -17,6 +17,7 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * Created by enebo on 2/27/15.
@@ -33,6 +34,14 @@ public class FullInterpreterContext extends InterpreterContext {
 
     /** What passes have been run on this scope? */
     private List<CompilerPass> executedPasses = new ArrayList<>();
+
+    // For duplicate()
+    public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList) {
+        super(scope, (List<Instr>) null);
+
+        this.cfg = cfg;
+        this.linearizedBBList = linearizedBBList;
+    }
 
     // FIXME: Perhaps abstract IC into interface of base class so we do not have a null instructions field here
     public FullInterpreterContext(IRScope scope, Instr[] instructions) {
@@ -176,6 +185,23 @@ public class FullInterpreterContext extends InterpreterContext {
     public String toStringInstrs() {
         return "\nCFG:\n" + cfg.toStringGraph() + "\nInstructions:\n" + cfg.toStringInstrs();
     }
+
+    public FullInterpreterContext duplicate() {
+        try {
+            CFG newCFG = cfg.clone(new SimpleCloneInfo(getScope(), false, true), getScope());
+            BasicBlock[] newLinearizedBBList = new BasicBlock[linearizedBBList.length];
+
+            for (int i = 0; i < linearizedBBList.length; i++) {
+                newLinearizedBBList[i] = newCFG.getBBForLabel(linearizedBBList[i].getLabel());
+            }
+
+            return new FullInterpreterContext(getScope(), newCFG, newLinearizedBBList);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return null;
+        }
+    }
+
 
     public int determineRPC(int ipc) {
         int length = rescueIPCs.length;

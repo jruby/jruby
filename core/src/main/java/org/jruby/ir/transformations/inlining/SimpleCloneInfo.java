@@ -10,15 +10,24 @@ import org.jruby.ir.operands.Variable;
  */
 public class SimpleCloneInfo extends CloneInfo {
     private boolean isEnsureBlock;
+    private boolean cloneIPC;
 
-    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock) {
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC) {
         super(scope);
 
         this.isEnsureBlock = isEnsureBlock;
     }
 
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock) {
+        this(scope, isEnsureBlock, false);
+    }
+
     public boolean isEnsureBlockCloneMode() {
         return this.isEnsureBlock;
+    }
+
+    public boolean shouldCloneIPC() {
+        return cloneIPC;
     }
 
     public Variable getRenamedVariable(Variable variable) {
@@ -39,7 +48,7 @@ public class SimpleCloneInfo extends CloneInfo {
         return isEnsureBlock ? l : l.clone();
     }
 
-    protected Variable getRenamedSelfVariable(Variable self) {
+    public Variable getRenamedSelfVariable(Variable self) {
         return self;
     }
 

@@ -1,9 +1,16 @@
 package org.jruby.ir;
 
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ast.util.SexpMaker;
+import org.jruby.compiler.Compilable;
+import org.jruby.compiler.MethodJITClassGenerator;
+import org.jruby.embed.internal.EmbedRubyObjectAdapterImpl;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -15,17 +22,24 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ByteList;
+import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -104,6 +118,9 @@ public abstract class IRScope implements ParseResult {
     /** -X-C full interpretation OR JIT depends on this */
     protected FullInterpreterContext fullInterpreterContext;
 
+    /** Speculatively optimized code */
+    protected FullInterpreterContext optimizedInterpreterContext;
+
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -128,6 +145,9 @@ public abstract class IRScope implements ParseResult {
     private IRManager manager;
 
     private TemporaryVariable yieldClosureVariable;
+
+    private boolean alreadyHasInline;
+    private Compilable compilable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -1098,18 +1118,77 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        // Inline
-        new CFGInliner(getCFG()).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
+    private FullInterpreterContext inlineMethodCommon(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        alreadyHasInline = true;
+        IRMethod methodToInline = (IRMethod) method.getIRScope();
 
-        // Reset state
-        resetState();
+        // We need fresh fic so we can modify it during inlining without making already running code explode.
+        FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
 
-        // Re-run opts
-        for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
-            pass.run(this);
-        }
+        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+
+        return newContext;
     }
+    // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
+    public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
+
+         newContext.generateInstructionsForInterpretation();
+         this.optimizedInterpreterContext = newContext;
+
+         // FIXME: No work done on interpreted inlining yet...trying to do something other than stashing compilable too.
+         // compilable.setInterpreterContext(fullInterpreterContext);
+         alreadyHasInline = true;
+     }
+
+     // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
+     public void inlineMethodJIT(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+         FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
+
+         // We are not running any JIT-specific passes here.
+         Ruby runtime = implClass.getRuntime();
+
+         newContext.linearizeBasicBlocks();
+         this.fullInterpreterContext = newContext;
+
+         if (compilable instanceof MixedModeIRMethod) {
+             runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
+             alreadyHasInline = true;
+             return;
+         }
+         /*
+
+         String key = SexpMaker.sha1(this);
+         JVMVisitor visitor = new JVMVisitor();
+         MethodJITClassGenerator generator = new MethodJITClassGenerator(implClass.getName(), getName(), key, runtime, compilable, visitor);
+
+         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+         generator.compile(context);
+
+         Class sourceClass = visitor.defineFromBytecode(this, generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
+
+         String jittedName = context.getJittedName();
+         IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+         try {
+             MethodHandle variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
+             if (signatures.size() == 0) {
+                 ((CompiledIRMethod) compilable).variable = variable;
+             } else {
+                 ((CompiledIRMethod) compilable).variable = variable;
+                 for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
+                     ((CompiledIRMethod) compilable).specific = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue());
+                     ((CompiledIRMethod) compilable).specificArity = entry.getKey();
+                     break;
+                 }
+             }
+         } catch(Exception e) {
+             e.printStackTrace();
+         }
+         */
+
+         alreadyHasInline = true;
+     }
+
 
     /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {
@@ -1242,5 +1321,10 @@ public abstract class IRScope implements ParseResult {
 
     public boolean needsBinding() {
         return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+    }
+
+    // FIXME: This should become some heuristic later
+    public boolean inliningAllowed() {
+        return alreadyHasInline;
     }
 }
