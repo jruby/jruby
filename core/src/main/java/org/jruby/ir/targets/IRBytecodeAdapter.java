@@ -9,6 +9,7 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.EQQInstr;
@@ -24,6 +25,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
@@ -62,7 +64,7 @@ public abstract class IRBytecodeAdapter {
      * @param siteName the unique name of the site, used for the field
      * @param call of we are making a callsite for.
      */
-    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, CallBase call) {
+    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String scopeFieldName, CallBase call) {
         // call site object field
         method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
 
@@ -77,6 +79,8 @@ public abstract class IRBytecodeAdapter {
         CallType callType = call.getCallType();
         Class<? extends CachingCallSite> siteClass;
         String signature;
+        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null;
+        boolean profiled = false;
         if (call.isPotentiallyRefined()) {
             siteClass = RefinedCachingCallSite.class;
             signature = sig(siteClass, String.class, String.class);
@@ -84,7 +88,12 @@ public abstract class IRBytecodeAdapter {
         } else {
             switch (callType) {
                 case NORMAL:
-                    siteClass = NormalCachingCallSite.class;
+                    if (profileCandidate) {
+                        profiled = true;
+                        siteClass = ProfilingCachingCallSite.class;
+                    } else {
+                        siteClass = NormalCachingCallSite.class;
+                    }
                     break;
                 case FUNCTIONAL:
                     siteClass = FunctionalCachingCallSite.class;
@@ -95,7 +104,12 @@ public abstract class IRBytecodeAdapter {
                 default:
                     throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
             }
-            signature = sig(siteClass, String.class);
+            if (profiled) {
+                method.getstatic(className, scopeFieldName, ci(IRScope.class));
+                signature = sig(siteClass, String.class, IRScope.class);
+            } else {
+                signature = sig(siteClass, String.class);
+            }
         }
         method.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
         method.dup();
@@ -374,7 +388,7 @@ public abstract class IRBytecodeAdapter {
      *
      * @param call the call to be invoked
      */
-    public abstract void invokeOther(String file, int line, CallBase call, int arity);
+    public abstract void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -438,7 +452,7 @@ public abstract class IRBytecodeAdapter {
      * @param call to be invoked on self
      * @param arity of the call.
      */
-    public abstract void invokeSelf(String file, int line, CallBase call, int arity);
+    public abstract void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity);
 
     /**
      * Invoke a superclass method from an instance context.

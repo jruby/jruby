@@ -384,8 +384,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeOther(String file, int line, CallBase call, int arity) {
-        invoke(file, line, call, arity);
+    public void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity) {
+        invoke(file, line, scopeFieldName, call, arity);
     }
 
     @Override
@@ -401,7 +401,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         adapter2.aloadMany(0, 1, 2, 3);
-        cacheCallSite(adapter2, getClassData().clsName, methodName, call);
+        cacheCallSite(adapter2, getClassData().clsName, null, methodName, call);
         adapter2.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
         adapter2.areturn();
         adapter2.end();
@@ -410,7 +410,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invoke(String file, int lineNumber, CallBase call, int arity) {
+    public void invoke(String file, int lineNumber, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
 
@@ -470,7 +470,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         adapter2.line(lineNumber);
 
-        cacheCallSite(adapter2, getClassData().clsName, methodName, call);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, scopeFieldName, call);
 
         // use call site to invoke
         adapter2.aload(0); // context
@@ -538,9 +538,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         if (!MethodIndex.hasFastFixnumOps(id)) {
             pushFixnum(fixnum);
             if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, call, 1);
+                invokeOther(file, line, null, call, 1);
             } else {
-                invokeSelf(file, line, call, 1);
+                invokeSelf(file, line, null, call, 1);
             }
             return;
         }
@@ -596,9 +596,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         if (!MethodIndex.hasFastFloatOps(id)) {
             pushFloat(flote);
             if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, call, 1);
+                invokeOther(file, line, null, call, 1);
             } else {
-                invokeSelf(file, line, call, 1);
+                invokeSelf(file, line, null, call, 1);
             }
             return;
         }
@@ -648,10 +648,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String file, int line, CallBase call, int arity) {
+    public void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + call.getId() + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(file, line, call, arity);
+        invoke(file, line, scopeFieldName, call, arity);
     }
 
     public void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap) {
@@ -1024,7 +1024,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void callEqq(EQQInstr call) {
-        IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, getUniqueSiteName(call.getId()), call);
+        IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, getUniqueSiteName(call.getId()), null, call);
         adapter.ldc(call.isSplattedValue());
         invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }

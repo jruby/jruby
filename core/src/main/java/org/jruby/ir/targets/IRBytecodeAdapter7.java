@@ -128,11 +128,11 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
-    public void invokeOther(String file, int line, CallBase call, int arity) {
+    public void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (call.isPotentiallyRefined()) {
-            super.invokeOther(file, line, call, arity);
+            super.invokeOther(file, line, scopeFieldName, call, arity);
             return;
         }
 
@@ -163,9 +163,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         if (!MethodIndex.hasFastFixnumOps(id)) {
             pushFixnum(fixnum);
             if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, call, 1);
+                invokeOther(file, line, null, call, 1);
             } else {
-                invokeSelf(file, line, call, 1);
+                invokeSelf(file, line, null, call, 1);
             }
             return;
         }
@@ -188,9 +188,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         if (!MethodIndex.hasFastFloatOps(id)) {
             pushFloat(flote);
             if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, call, 1);
+                invokeOther(file, line, null, call, 1);
             } else {
-                invokeSelf(file, line, call, 1);
+                invokeSelf(file, line, null, call, 1);
             }
             return;
         }
@@ -207,11 +207,12 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             0);
     }
 
-    public void invokeSelf(String file, int line, CallBase call, int arity) {
+    @Override
+    public void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + id + "' has more than " + MAX_ARGUMENTS + " arguments");
         if (call.isPotentiallyRefined()) {
-            super.invokeSelf(file, line, call, arity);
+            super.invokeSelf(file, line, scopeFieldName, call, arity);
             return;
         }
 

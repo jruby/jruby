@@ -133,6 +133,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
+        // We record this name so we can reference the unique scope field name for profiled callsites since we
+        // want the live IRScope instance of the callers scope.
+        String savedScopeName = currentScopeName;
+        currentScopeName = name + "_IRScope";
+
         BasicBlock[] bbs = scope.prepareForCompilation();
 
         if (print && IRRuntimeHelpers.shouldPrintIR(runtime)) {
@@ -148,7 +153,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushmethod(name, scope, signature, specificArity);
 
         // store IRScope in map for insertion into class later
-        String scopeField = name + "_IRScope";
+        String scopeField = currentScopeName;
         if (scopeMap.get(scopeField) == null) {
             scopeMap.put(scopeField, scope);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
@@ -250,6 +255,7 @@ public class JVMVisitor extends IRVisitor {
         }
 
         jvm.popmethod();
+        currentScopeName = savedScopeName;
     }
 
     protected void emitVarargsMethodWrapper(IRScope scope, String variableName, String specificName, Signature variableSignature, Signature specificSignature) {
@@ -1069,10 +1075,10 @@ public class JVMVisitor extends IRVisitor {
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.invokeSelf(file, lastLine, call, arity);
+                m.invokeSelf(file, lastLine, currentScopeName, call, arity);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, call, arity);
+                m.invokeOther(file, lastLine, currentScopeName, call, arity);
                 break;
         }
 
@@ -2603,6 +2609,7 @@ public class JVMVisitor extends IRVisitor {
     private final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;
+    private String currentScopeName;
     private Map<String, IRScope> scopeMap;
     private String file;
     private int lastLine = -1;

@@ -70,6 +70,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
@@ -1659,6 +1660,10 @@ public class IRRuntimeHelpers {
     @JIT
     public static FunctionalCachingCallSite newFunctionalCachingCallSite(String name) {
         return new FunctionalCachingCallSite(name);
+    }
+
+    public static ProfilingCachingCallSite newProfilingCachingCallSite(String name, IRScope scope) {
+        return new ProfilingCachingCallSite(name, scope);
     }
 
     @JIT
