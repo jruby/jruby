@@ -127,7 +127,11 @@ public class RubyRational extends RubyNumeric {
 
     public static IRubyObject newRationalCanonicalize(ThreadContext context, long x, long y) {
         Ruby runtime = context.runtime;
-        return canonicalizeInternal(context, runtime.getRational(), runtime.newFixnum(x), runtime.newFixnum(y));
+        return canonicalizeInternal(context, runtime.getRational(), x, y);
+    }
+    public static IRubyObject newRationalCanonicalize(ThreadContext context, long x) {
+        Ruby runtime = context.runtime;
+        return canonicalizeInternal(context, runtime.getRational(), x, 1);
     }
 
     static RubyNumeric newRationalNoReduce(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -206,12 +210,9 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static RubyNumeric canonicalizeInternal(ThreadContext context, RubyClass clazz, RubyInteger num, RubyInteger den) {
-        final int res = den.signum();
-        if (res < 0) { // MRI: nurat_canonicalize, negation part (replacement)
+        if (canonicalizeShouldNegate(context, den)) {
             num = num.negate();
             den = den.negate();
-        } else if (res == 0) {
-            throw context.runtime.newZeroDivisionError();
         }
 
         RubyInteger gcd = f_gcd(context, num, den);
@@ -219,6 +220,20 @@ public class RubyRational extends RubyNumeric {
         RubyInteger _den = (RubyInteger) den.idiv(context, gcd);
 
         if (Numeric.CANON && canonicalization && f_one_p(context, _den)) return _num;
+
+        return newRational(context.runtime, clazz, _num, _den);
+    }
+
+    private static RubyNumeric canonicalizeInternal(ThreadContext context, RubyClass clazz, long num, long den) {
+        if (den == 0)
+            throw context.runtime.newZeroDivisionError();
+        if (num == Long.MIN_VALUE && den == Long.MIN_VALUE)
+            canonicalizeInternal(context, clazz, context.runtime.newFixnum(num), context.runtime.newFixnum(den));
+        long gcd = i_gcd(num, den);
+        RubyInteger _num = (RubyInteger) context.runtime.newFixnum(num).idiv(context, gcd);
+        RubyInteger _den = (RubyInteger) context.runtime.newFixnum(den).idiv(context, gcd);
+
+        if (Numeric.CANON && canonicalization && _den.getLongValue() == 1) return _num;
 
         return newRational(context.runtime, clazz, _num, _den);
     }
