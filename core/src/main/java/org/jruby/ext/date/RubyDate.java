@@ -932,10 +932,10 @@ public class RubyDate extends RubyObject {
 
     // Get any fractional day part of the date.
     @JRubyMethod(name = "day_fraction")
-    public IRubyObject day_fraction(ThreadContext context) { // Rational(millis, 86_400_000)
+    public RubyNumeric day_fraction(ThreadContext context) { // Rational(millis, 86_400_000)
         long ms = dt.getSecondOfDay() * 1000 + dt.getMillisOfSecond();
         if (subMillisDen == 1) {
-            return RubyRational.newRationalCanonicalize(context, ms + subMillisNum, DAY_MS);
+            return (RubyNumeric) RubyRational.newRationalCanonicalize(context, ms + subMillisNum, DAY_MS);
         }
         final Ruby runtime = context.runtime;
         RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_plus(context, subMillis(runtime));
@@ -958,10 +958,10 @@ public class RubyDate extends RubyObject {
     }
 
     @JRubyMethod(name = "sec_fraction", alias = "second_fraction", visibility = Visibility.PRIVATE)
-    public IRubyObject sec_fraction(ThreadContext context) {
+    public RubyNumeric sec_fraction(ThreadContext context) {
         long ms = dt.getMillisOfSecond();
         if (subMillisDen == 1) {
-            return RubyRational.newRationalCanonicalize(context, ms + subMillisNum, 1000);
+            return (RubyNumeric) RubyRational.newRationalCanonicalize(context, ms + subMillisNum, 1000);
         }
         final Ruby runtime = context.runtime;
         RubyNumeric sum = RubyRational.newRational(runtime, ms, 1).op_plus(context, subMillis(runtime));
@@ -1167,11 +1167,23 @@ public class RubyDate extends RubyObject {
         // end
         RubyNumeric val = (RubyNumeric) RubyFixnum.newFixnum(runtime, DAY_MS).op_mul(context, n);
 
-        RubyArray res = (RubyArray) val.divmod(context, RubyFixnum.one(context.runtime));
+        RubyArray res = (RubyArray) val.divmod(context, RubyFixnum.one(runtime));
         long ms = ((RubyInteger) res.eltInternal(0)).getLongValue();
         RubyNumeric sub = (RubyNumeric) res.eltInternal(1);
-        //if ( sub.isZero() ) sub = RubyFixnum.zero(runtime); // avoid Rational(0, 1)
-        RubyNumeric sub_millis = (RubyNumeric) subMillis(context.runtime).op_plus(context, sub);
+
+        RubyNumeric sub_millis = subMillis(runtime);
+
+        if ( sub.isZero() ) ; // done - noop
+        else if ( sub instanceof RubyFloat ) {
+            final int SUB_MS_PRECISION = 1_000_000_000;
+            long s = Math.round(((RubyFloat) sub).getDoubleValue() * SUB_MS_PRECISION);
+            sub = (RubyNumeric) RubyRational.newRationalCanonicalize(context, s, SUB_MS_PRECISION);
+            sub_millis = (RubyNumeric) sub_millis.op_plus(context, sub);
+        }
+        else {
+            sub_millis = (RubyNumeric) sub_millis.op_plus(context, sub);
+        }
+
         long subNum = sub_millis.numerator(context).convertToInteger().getLongValue();
         long subDen = sub_millis.denominator(context).convertToInteger().getLongValue();
         if (subNum / subDen >= 1) { // sub_millis >= 1
@@ -1201,7 +1213,7 @@ public class RubyDate extends RubyObject {
 
         RubyNumeric subDiff = subMillisDiff(context, that);
         if ( ! subDiff.isZero() ) { // diff += diff_sub;
-            return (RubyNumeric) Numeric.f_add(context, diffMillis, subDiff);
+            return (RubyNumeric) diffMillis.op_plus(context, subDiff);
         }
         return diffMillis;
     }
@@ -1209,9 +1221,8 @@ public class RubyDate extends RubyObject {
     private RubyNumeric subMillisDiff(final ThreadContext context, final RubyDate that) {
         final Ruby runtime = context.runtime;
         if (this.subMillisDen == 1 && that.subMillisDen == 1) {
-            return RubyFixnum.newFixnum(runtime, this.subMillisNum - that.subMillisNum);
+            return (RubyInteger) RubyFixnum.newFixnum(runtime, this.subMillisNum).op_minus(context, that.subMillisNum);
         }
-        // this.subMillis - that.subMillis
         return this.subMillis(runtime).op_minus(context, that.subMillis(runtime));
     }
 
