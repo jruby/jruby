@@ -235,7 +235,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static long float2long(RubyFloat flt) {
-        double aFloat = flt.getDoubleValue();
+        final double aFloat = flt.value;
         if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
         }
@@ -282,7 +282,7 @@ public class RubyNumeric extends RubyObject {
     public static double num2dbl(ThreadContext context, IRubyObject arg) {
         switch (((RubyBasicObject) arg).getNativeClassIndex()) {
             case FLOAT:
-                return ((RubyFloat) arg).getDoubleValue();
+                return ((RubyFloat) arg).value;
             case FIXNUM:
                 if (context.sites.Fixnum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyFixnum) arg).getDoubleValue();
                 break;
@@ -299,7 +299,7 @@ public class RubyNumeric extends RubyObject {
                 throw context.runtime.newTypeError(str(context.runtime, "can't convert ", arg.inspect(), " into Float"));
         }
         IRubyObject val = TypeConverter.convertToType(arg, context.runtime.getFloat(), "to_f");
-        return ((RubyFloat) val).getDoubleValue();
+        return ((RubyFloat) val).value;
     }
 
     /** rb_dbl_cmp (numeric.c)
@@ -1050,7 +1050,7 @@ public class RubyNumeric extends RubyObject {
         if (step.op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
             inf = true;
         } else if (to instanceof RubyFloat) {
-            double f = ((RubyFloat) to).getDoubleValue();
+            double f = ((RubyFloat) to).value;
             inf = Double.isInfinite(f) && (f <= -0.0 ? desc : !desc);
         } else {
             inf = false;
@@ -1184,7 +1184,7 @@ public class RubyNumeric extends RubyObject {
             }
             // fall through to duck-typed logic
         } else if (from instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            double n = floatStepSize(from.convertToFloat().getDoubleValue(), to.convertToFloat().getDoubleValue(), step.convertToFloat().getDoubleValue(), excl);
+            double n = floatStepSize(from.convertToFloat().value, to.convertToFloat().value, step.convertToFloat().value, excl);
 
             if (Double.isInfinite(n)) {
                 return runtime.newFloat(n);
@@ -1348,11 +1348,9 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"arg", "angle", "phase"})
     public IRubyObject arg(ThreadContext context) {
-        double value = this.getDoubleValue();
-        if (Double.isNaN(value)) {
-            return this;
-        }
-        if (f_negative_p(context, this) || (value == 0.0 && 1/value == Double.NEGATIVE_INFINITY)) {
+        final double value = getDoubleValue();
+        if (Double.isNaN(value)) return this;
+        if (f_negative_p(context, this) || (value == 0.0 && 1 / value == Double.NEGATIVE_INFINITY)) {
             // negative or -0.0
             return context.runtime.getMath().getConstant("PI");
         }

@@ -454,7 +454,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     private IRubyObject addFloat(RubyFloat other) {
-        return RubyFloat.newFloat(getRuntime(), big2dbl(this) + other.getDoubleValue());
+        return RubyFloat.newFloat(getRuntime(), big2dbl(this) + other.value);
     }
 
     private IRubyObject addOther(ThreadContext context, IRubyObject other) {
@@ -492,7 +492,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     private IRubyObject subtractFloat(RubyFloat other) {
-        return RubyFloat.newFloat(getRuntime(), big2dbl(this) - other.getDoubleValue());
+        return RubyFloat.newFloat(getRuntime(), big2dbl(this) - other.value);
     }
 
     private IRubyObject subtractOther(ThreadContext context, IRubyObject other) {
@@ -511,7 +511,7 @@ public class RubyBignum extends RubyInteger {
             return bignorm(context.runtime, value.multiply(((RubyBignum) other).value));
         }
         if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(context.runtime, big2dbl(this) * ((RubyFloat) other).getDoubleValue());
+            return RubyFloat.newFloat(context.runtime, big2dbl(this) * ((RubyFloat) other).value);
         }
         return coerceBin(context, sites(context).op_times, other);
     }
@@ -537,7 +537,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
-            double otherFloatValue = ((RubyFloat) other).getDoubleValue();
+            double otherFloatValue = ((RubyFloat) other).value;
             if (!slash) {
                 if (otherFloatValue == 0.0) throw runtime.newZeroDivisionError();
             }
@@ -604,7 +604,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else {
-            if (other instanceof RubyFloat && ((RubyFloat)other).getDoubleValue() == 0) {
+            if (other instanceof RubyFloat && ((RubyFloat) other).value == 0) {
                 throw context.runtime.newZeroDivisionError();
             }
             return coerceBin(context, sites(context).divmod, other);
@@ -641,7 +641,7 @@ public class RubyBignum extends RubyInteger {
             return bignorm(context.runtime, result);
         }
 
-        if (other instanceof RubyFloat && ((RubyFloat) other).getDoubleValue() == 0) {
+        if (other instanceof RubyFloat && ((RubyFloat) other).value == 0) {
             throw context.runtime.newZeroDivisionError();
         }
         return coerceBin(context, sites(context).op_mod, other);
@@ -677,7 +677,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     @JRubyMethod(name = "remainder", required = 1)
     public IRubyObject remainder(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFloat && ((RubyFloat) other).getDoubleValue() == 0) {
+        if (other instanceof RubyFloat && ((RubyFloat) other).value == 0) {
             throw context.runtime.newZeroDivisionError();
         }
 
@@ -687,7 +687,7 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else {
-            if (other instanceof RubyFloat && ((RubyFloat) other).getDoubleValue() == 0) {
+            if (other instanceof RubyFloat && ((RubyFloat) other).value == 0) {
                 throw context.runtime.newZeroDivisionError();
             }
             return coerceBin(context, sites(context).remainder, other);
@@ -991,12 +991,12 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
-            RubyFloat flt = (RubyFloat)other;
+            RubyFloat flt = (RubyFloat) other;
             if (flt.infinite_p().isTrue()) {
-                if (flt.getDoubleValue() > 0.0) return RubyFixnum.minus_one(context.runtime);
+                if (flt.value > 0.0) return RubyFixnum.minus_one(context.runtime);
                 return RubyFixnum.one(context.runtime);
             }
-            return dbl_cmp(context.runtime, big2dbl(this), flt.getDoubleValue());
+            return dbl_cmp(context.runtime, big2dbl(this), flt.value);
         } else {
             return coerceCmp(context, sites(context).op_cmp, other);
         }
@@ -1016,10 +1016,8 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
-            double a = ((RubyFloat) other).getDoubleValue();
-            if (Double.isNaN(a)) {
-                return context.fals;
-            }
+            double a = ((RubyFloat) other).value;
+            if (Double.isNaN(a)) return context.fals;
             return RubyBoolean.newBoolean(context.runtime, a == big2dbl(this));
         } else {
             return other.op_eqq(context, this);
@@ -1165,7 +1163,7 @@ public class RubyBignum extends RubyInteger {
         } else if (y instanceof RubyBignum) {
             return fdivDouble(context, (RubyBignum) y);
         } else if (y instanceof RubyFloat) {
-            dy = ((RubyFloat) y).getDoubleValue();
+            dy = ((RubyFloat) y).value;
             if (Double.isNaN(dy)) {
                 return context.runtime.newFloat(dy);
             }

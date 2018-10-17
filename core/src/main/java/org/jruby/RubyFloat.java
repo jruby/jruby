@@ -122,7 +122,7 @@ public class RubyFloat extends RubyNumeric {
         return floatc;
     }
 
-    private final double value;
+    final double value;
 
     @Override
     public ClassIndex getNativeClassIndex() {
