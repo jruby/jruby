@@ -519,11 +519,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         // TODO: (CON) Some calls to makeShared could create packed array almost as efficiently
         unpack();
 
-        return makeShared(begin, realLength, getMetaClass());
+        return makeShared(begin, realLength, metaClass);
     }
 
     private RubyArray makeShared(int beg, int len, RubyClass klass) {
-        return makeShared(beg, len, new RubyArray(klass.getRuntime(), klass));
+        return makeShared(beg, len, new RubyArray(klass.runtime, klass));
     }
 
     private final RubyArray makeShared(int beg, int len, RubyArray sharedArray) {
@@ -556,7 +556,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     protected final void modifyCheck() {
         if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(this.getMetaClass());
+            if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError(metaClass);
             if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         }
     }
@@ -605,10 +605,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject initialize(ThreadContext context, Block block) {
         modifyCheck();
         unpack();
-        Ruby runtime = context.runtime;
         realLength = 0;
-        if (block.isGiven() && runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
+        if (block.isGiven() && context.runtime.isVerbose()) {
+            context.runtime.getWarnings().warning(ID.BLOCK_UNUSED, "given block not used");
         }
         return this;
     }
@@ -703,7 +702,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject dup() {
         if (metaClass.getClassIndex() != ClassIndex.ARRAY) return super.dup();
 
-        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
+        RubyArray dup = new RubyArray(metaClass.runtime, values, begin, realLength);
         dup.isShared = isShared = true;
         dup.flags |= flags & TAINTED_F; // from DUP_SETUP
 
@@ -1127,7 +1126,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
         // dup returns an instance of Array, rather than an instance of the subclass
         // Also, taintedness and trustedness are not inherited to duplicates
-        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
+        RubyArray dup = new RubyArray(metaClass.runtime, values, begin, realLength);
         dup.isShared = true;
         isShared = true;
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
@@ -1796,36 +1795,34 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public IRubyObject eachSlice(ThreadContext context, int size, Block block) {
         unpack();
-        Ruby runtime = context.runtime;
-        RubyClass array = runtime.getArray();
+        final RubyClass array = context.runtime.getArray();
 
         // local copies of everything
-        int localRealLength = realLength;
-        IRubyObject[] localValues = values;
-        int localBegin = begin;
+        int realLength = this.realLength;
+        int begin = this.begin;
 
         // sliding window
-        RubyArray window = makeShared(localBegin, size, array);
+        RubyArray window = makeShared(begin, size, array);
 
         // don't expose shared array to ruby
         Signature signature = block.getSignature();
         final boolean specificArity = signature.isFixed() && signature.required() != 1;
 
-        for (; localRealLength >= size; localRealLength -= size) {
+        for (; realLength >= size; realLength -= size) {
             block.yield(context, window);
             if (specificArity) { // array is never exposed to ruby, just use for yielding
-                window.begin = localBegin += size;
+                window.begin = begin += size;
             } else { // array may be exposed to ruby, create new
-                window = makeShared(localBegin += size, size, array);
+                window = makeShared(begin += size, size, array);
             }
         }
 
         // remainder
-        if (localRealLength > 0) {
-            window.realLength = localRealLength;
+        if (realLength > 0) {
+            window.realLength = realLength;
             block.yield(context, window);
         }
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
@@ -2029,7 +2026,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "to_a")
     @Override
     public RubyArray to_a() {
-        if(getMetaClass() != getRuntime().getArray()) {
+        final RubyClass metaClass = this.metaClass;
+        if (metaClass != metaClass.runtime.getArray()) {
             return aryDup();
         }
         return this;
@@ -2958,19 +2956,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-        IRubyObject ary2 = runtime.getNil();
+        final Ruby runtime = context.runtime;
+
         boolean isAnArray = (obj instanceof RubyArray) || obj.getMetaClass().getSuperClass() == runtime.getArray();
 
         if (!isAnArray && !sites(context).respond_to_to_ary.respondsTo(context, obj, obj, true)) {
-            return ary2;
-        } else if (!isAnArray) {
-            ary2 = sites(context).to_ary.call(context, obj, obj);
+            return context.nil;
+        }
+
+        RubyArray ary2;
+        if (!isAnArray) {
+            ary2 = (RubyArray) sites(context).to_ary.call(context, obj, obj);
         } else {
             ary2 = obj.convertToArray();
         }
 
-        return cmpCommon(context, runtime, (RubyArray) ary2);
+        return cmpCommon(context, runtime, ary2);
     }
 
     private IRubyObject cmpCommon(ThreadContext context, Ruby runtime, RubyArray ary2) {
@@ -5373,7 +5374,7 @@ float_loop:
     }
 
     private void safeArrayCopy(IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {
-        safeArrayCopy(metaClass.getClassRuntime(), source, sourceStart, target, targetStart, length);
+        safeArrayCopy(metaClass.runtime, source, sourceStart, target, targetStart, length);
     }
 
     private static void safeArrayCopy(Ruby runtime, IRubyObject[] source, int sourceStart, IRubyObject[] target, int targetStart, int length) {

@@ -2171,7 +2171,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     public RubyHash dupFast(final ThreadContext context) {
         final Ruby runtime = context.runtime;
-        RubyHash dup = new RubyHash(runtime, getMetaClass(), this);
+        RubyHash dup = new RubyHash(runtime, metaClass, this);
 
         dup.setComparedByIdentity(this.isComparedByIdentity());
 

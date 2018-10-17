@@ -336,7 +336,7 @@ public class RubyBignum extends RubyInteger {
             try {
                 base = base.convertToInteger();
             } catch (ClassCastException e) {
-                String cname = base.getMetaClass().getRealClass().getName();
+                String cname = getMetaClass(base).getRealClass().getName();
                 throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
             }
         }

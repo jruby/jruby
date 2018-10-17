@@ -221,7 +221,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // Since method_missing is marked module we actually define two builtin versions
         runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"),
-                objectClass.getMetaClass().searchMethod("method_missing"));
+                objectClass.metaClass.searchMethod("method_missing"));
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -535,7 +535,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyClass getSingletonClass() {
-        RubyClass klass = getMetaClass().toSingletonClass(this);
+        RubyClass klass = metaClass.toSingletonClass(this);
 
         klass.setTaint(isTaint());
         if (isFrozen()) klass.setFrozen(true);
@@ -587,13 +587,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public final boolean respondsTo(String name) {
         final Ruby runtime = getRuntime();
-        final CacheEntry entry = getMetaClass().searchWithCache("respond_to?");
+        final CacheEntry entry = metaClass.searchWithCache("respond_to?");
         final DynamicMethod respondTo = entry.method;
 
         // fastest path; builtin respond_to? and respond_to_missing? so we just check isMethodBound
         if ( respondTo.equals(runtime.getRespondToMethod()) &&
-             getMetaClass().searchMethod("respond_to_missing?").equals(runtime.getRespondToMissingMethod()) ) {
-            return getMetaClass().respondsToMethod(name, false);
+                metaClass.searchMethod("respond_to_missing?").equals(runtime.getRespondToMissingMethod()) ) {
+            return metaClass.respondsToMethod(name, false);
         }
 
         final ThreadContext context = runtime.getCurrentContext();
@@ -634,7 +634,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public final boolean respondsToMissing(String name, boolean incPrivate) {
-        CacheEntry entry = getMetaClass().searchWithCache("respond_to_missing?");
+        CacheEntry entry = metaClass.searchWithCache("respond_to_missing?");
         DynamicMethod method = entry.method;
         // perhaps should try a smart version as for respondsTo above?
         if ( method.isUndefined() ) return false;
@@ -651,7 +651,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public final Ruby getRuntime() {
-        return getMetaClass().getClassRuntime();
+        return metaClass.runtime;
     }
 
     /**
@@ -804,7 +804,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         /* 6:tags 16:addr 1:eos */
         String hex = Integer.toHexString(System.identityHashCode(this));
-        ByteList className = getMetaClass().getRealClass().toRubyString(runtime.getCurrentContext()).getByteList();
+        ByteList className = metaClass.getRealClass().toRubyString(runtime.getCurrentContext()).getByteList();
         ByteList bytes = new ByteList(2 + className.realSize() + 3 + hex.length() + 1);
         bytes.setEncoding(className.getEncoding());
         bytes.append('#').append('<');
@@ -905,7 +905,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             return this;
         }
 
-        IRubyObject dup = getMetaClass().getRealClass().allocate();
+        IRubyObject dup = metaClass.getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
 
         final Ruby runtime = getRuntime();
@@ -1008,7 +1008,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         // We're cloning ourselves, so we know the result should be a RubyObject
-        RubyBasicObject clone = (RubyBasicObject) getMetaClass().getRealClass().allocate();
+        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
         clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
         if (isTaint()) clone.setTaint(true);
 
@@ -1156,7 +1156,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     public final IRubyObject hashyInspect() {
         final Ruby runtime = getRuntime();
-        ByteList name = types(runtime, getMetaClass().getRealClass()).getByteList();
+        ByteList name = types(runtime, metaClass.getRealClass()).getByteList();
         RubyString part = RubyString.newStringLight(runtime, 2 + name.length() + 3 + 8 + 1); // #<Object:0x5a1c0542>
         encStrBufCat(runtime, part, INSPECT_POUND_LT);
         encStrBufCat(runtime, part, name);
@@ -1663,7 +1663,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if so
      */
     public boolean isBuiltin(String methodName) {
-        return getMetaClass().isMethodBuiltin(methodName);
+        return metaClass.isMethodBuiltin(methodName);
     }
 
     @JRubyMethod(name = "singleton_method_added", module = true, visibility = PRIVATE)

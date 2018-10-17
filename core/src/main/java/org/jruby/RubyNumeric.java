@@ -679,7 +679,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = getRuntime();
-        if (getMetaClass() == other.getMetaClass()) return runtime.newArray(other, this);
+        if (metaClass == other.getMetaClass()) return runtime.newArray(other, this);
 
         IRubyObject cdr = RubyKernel.new_float(runtime, this);
         IRubyObject car = RubyKernel.new_float(runtime, other);
