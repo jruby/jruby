@@ -2039,11 +2039,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "to_h")
     public IRubyObject to_h(ThreadContext context) {
-        int begin = this.begin;
         int realLength = this.realLength;
         RubyHash hash = new RubyHash(context.runtime, realLength);
 
-        for (int i = begin; i < begin + realLength; i++) {
+        for (int i = 0; i < realLength; i++) {
             IRubyObject elt = eltInternal(i).checkArrayType();
             if (elt == context.nil) {
                 throw context.runtime.newTypeError("wrong element type " + eltInternal(i).getMetaClass().getRealClass() + " at " + i + " (expected array)");
@@ -2054,7 +2053,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
             hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
         }
-
         return hash;
     }
 
