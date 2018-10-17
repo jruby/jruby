@@ -628,6 +628,10 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
     public synchronized BasicBlock[] prepareForCompilation() {
+        if (optimizedInterpreterContext != null && optimizedInterpreterContext.buildComplete()) {
+            System.err.println("HERE WE GO!!!!");
+            return optimizedInterpreterContext.getLinearizedBBList();
+        }
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.

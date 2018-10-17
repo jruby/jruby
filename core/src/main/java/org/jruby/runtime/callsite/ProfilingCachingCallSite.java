@@ -49,7 +49,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
         //System.err.println("SITE_IR: " + siteIsIR + ", TARGET_IR: " + targetIsIR);
         if (targetIsIR && siteIsIR) {
-            System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
+            //System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
             // FIXME: Dterming what clone host is really about and pick proper boolean
             scope.inlineMethodJIT((IRMethod) ((AbstractIRMethod) cache.method).getIRScope(), scope.compilable, callSiteId, cache.token, false);
 
