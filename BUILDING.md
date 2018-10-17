@@ -157,7 +157,7 @@ If you are familiar with Java debuggers, you can attach one to a JRuby process u
 The exact flag may vary with debugger and platform:
 
 ```
-bin/jruby -T-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 <rest of arguments>
+JRUBY_OPTS="-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:5005" bin/jruby <rest of arguments>
 ```
 #### JRuby internal unit tests
 
