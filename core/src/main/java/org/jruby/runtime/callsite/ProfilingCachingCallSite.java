@@ -5,6 +5,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -32,11 +33,13 @@ public class ProfilingCachingCallSite extends CachingCallSite {
     public volatile int totalMonomorphicCalls = 0;
     public volatile int totalTypeChanges = -1;
     private final IRScope scope;
+    private final long callSiteId;
 
-    public ProfilingCachingCallSite(String methodName, IRScope scope) {
+    public ProfilingCachingCallSite(String methodName, IRScope scope, long callSiteId) {
         super(methodName, CallType.NORMAL);
 
         this.scope = scope;
+        this.callSiteId = callSiteId;
     }
 
     private void printCallsiteData(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, CacheEntry cache) {
@@ -47,6 +50,9 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         //System.err.println("SITE_IR: " + siteIsIR + ", TARGET_IR: " + targetIsIR);
         if (targetIsIR && siteIsIR) {
             System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
+            // FIXME: Dterming what clone host is really about and pick proper boolean
+            scope.inlineMethodJIT((IRMethod) ((AbstractIRMethod) cache.method).getIRScope(), scope.compilable, callSiteId, cache.token, false);
+
         }
     }
 

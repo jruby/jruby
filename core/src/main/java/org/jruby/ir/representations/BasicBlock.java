@@ -117,6 +117,19 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return instrs.isEmpty();
     }
 
+    /**
+     * What site object contains this callsiteId or die trying.
+     * @param callsiteId to be found
+     * @return the Site instance (CallBase or YieldInstr)
+     */
+    public Site siteOf(long callsiteId) {
+        for (Instr instr: instrs) {
+            if (instr instanceof Site && ((Site) instr).getCallSiteId() == callsiteId) return (Site) instr;
+        }
+
+        throw new RuntimeException("siteOf asked for non-existent callsiteId: " + callsiteId);
+    }
+
     // Adds all instrs after the found instr to a new BB and removes them from the original BB
     // If includeSpltpointInstr is true it will include that instr in the new BB.
     public BasicBlock splitAtInstruction(Site splitPoint, Label newLabel, boolean includeSplitPointInstr) {
@@ -125,15 +138,21 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         int numInstrs = instrs.size();
         boolean found = false;
         for (Instr i: instrs) {
+            // FIXME: once found we should not be continually checking for more should be in !found
             if (i instanceof Site && ((Site) i).getCallSiteId() == splitPoint.getCallSiteId()) found = true;
 
             // Move instructions from split point into the new bb
             if (found) {
-                if (includeSplitPointInstr || !(i instanceof Site) || ((Site) i).getCallSiteId() != splitPoint.getCallSiteId()) newBB.addInstr(i);
+                // FIXME: move includeSplit when found so we can remove consuing site id logic from here...
+                if (includeSplitPointInstr ||
+                        !(i instanceof Site) ||
+                        ((Site) i).getCallSiteId() != splitPoint.getCallSiteId()) newBB.addInstr(i);
             } else {
                 idx++;
             }
         }
+
+        if (!found) throw new RuntimeException("Cound not find split point: " + splitPoint);
 
         // Remove all instructions from current bb that were moved over.
         for (int j = 0; j < numInstrs-idx; j++) {

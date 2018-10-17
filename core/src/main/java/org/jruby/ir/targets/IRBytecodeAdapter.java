@@ -106,7 +106,8 @@ public abstract class IRBytecodeAdapter {
             }
             if (profiled) {
                 method.getstatic(className, scopeFieldName, ci(IRScope.class));
-                signature = sig(siteClass, String.class, IRScope.class);
+                method.ldc(call.getCallSiteId());
+                signature = sig(siteClass, String.class, IRScope.class, long.class);
             } else {
                 signature = sig(siteClass, String.class);
             }

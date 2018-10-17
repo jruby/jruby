@@ -1662,8 +1662,8 @@ public class IRRuntimeHelpers {
         return new FunctionalCachingCallSite(name);
     }
 
-    public static ProfilingCachingCallSite newProfilingCachingCallSite(String name, IRScope scope) {
-        return new ProfilingCachingCallSite(name, scope);
+    public static ProfilingCachingCallSite newProfilingCachingCallSite(String name, IRScope scope, long callSiteId) {
+        return new ProfilingCachingCallSite(name, scope, callSiteId);
     }
 
     @JIT

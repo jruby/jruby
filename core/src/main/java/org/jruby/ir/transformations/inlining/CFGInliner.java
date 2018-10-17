@@ -84,12 +84,12 @@ public class CFGInliner {
         return null;
     }
 
-    private void printInlineDebugPrologue(IRScope methodScope, CallBase call) {
+    private void printInlineDebugPrologue(IRScope scopeToInline, CallBase call) {
         System.out.println("---------------------------------- PROLOGUE (start) --------");
-        System.out.println("Looking for: " + call.getCallSiteId() + ": " + call);
-        printInlineCFG(cfg);
-        System.out.println("source cfg   :" + methodScope.getCFG().toStringGraph());
-        System.out.println("source instrs:" + methodScope.getCFG().toStringInstrs());
+        System.out.println("Looking for: " + call.getCallSiteId() + ":\n    > " + call + "\n");
+        printInlineCFG(cfg, "host of inline");
+        System.out.println("method to inline cfg:\n" + scopeToInline.getCFG().toStringGraph());
+        System.out.println("method to inline instrs:\n" + scopeToInline.getCFG().toStringInstrs());
         System.out.println("---------------------------------- PROLOGUE (end) -----------");
     }
 
@@ -102,18 +102,18 @@ public class CFGInliner {
     private void printInlineCannotFindCallsiteBB(CallBase call) {
         System.out.println("----------------------------------");
         System.out.println("Did not find BB with call: " + call);
-        printInlineCFG(cfg);
+        printInlineCFG(cfg, "");
         System.out.println("----------------------------------");
     }
 
-    private void printInlineCFG(CFG aCFG) {
-        System.out.println("cfg   :" + aCFG.toStringGraph());
-        System.out.println("instrs:" + aCFG.toStringInstrs());
+    private void printInlineCFG(CFG aCFG, String label) {
+        System.out.println(label + " cfg:\n" + aCFG.toStringGraph());
+        System.out.println(label + " instrs:\n" + aCFG.toStringInstrs());
     }
 
     private void printInlineEpilogue() {
         System.out.println("---------------------------------- EPILOGUE (start) --------");
-        printInlineCFG(cfg);
+        printInlineCFG(cfg, "");
         System.out.println("---------------------------------- EPILOGUE (end) -----------");
     }
 
@@ -123,7 +123,7 @@ public class CFGInliner {
         System.out.println(beforeBB.toStringInstrs());
         System.out.println("After:" + afterBB.getLabel());
         System.out.println(afterBB.toStringInstrs());
-        printInlineCFG(cfg);
+        printInlineCFG(cfg, "");
         System.out.println("---------------------------------- SPLIT BB (end) -----------");
     }
 
@@ -132,11 +132,11 @@ public class CFGInliner {
     //   methodScope - scope of the method to be inlined
     //   callBB - BB where callsite is located
     //   call - callsite where we want to inline the methods body.
-    public void inlineMethod(IRScope methodScope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
+    public void inlineMethod(IRScope scopeToInline, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
         // Temporarily turn off inlining of recursive methods
         // Conservative turning off for inlining of a method in a closure nested within the same method
-        if (isRecursiveInline(methodScope)) return;
-        if (debug) printInlineDebugPrologue(methodScope, call);
+        if (isRecursiveInline(scopeToInline)) return;
+        if (debug) printInlineDebugPrologue(scopeToInline, call);
 
         if (callBB == null) {
             callBB = findCallsiteBB(call);
@@ -159,13 +159,13 @@ public class CFGInliner {
 
         // Host method data init
         Variable callReceiverVar = getReceiverVariable(call.getReceiver());
-        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, methodScope);
+        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scopeToInline);
 
         // Inlinee method data init
-        CFG methodCFG = methodScope.getCFG();
+        CFG methodCFG = scopeToInline.getCFG();
         List<BasicBlock> methodBBs = new ArrayList<>(methodCFG.getBasicBlocks());
 
-        if (isRecursiveInline(methodScope)) {
+        if (isRecursiveInline(scopeToInline)) {
             // 1. clone self
             // SSS: FIXME: We need a clone-graph api method in cfg and graph
             CFG selfClone = cloneSelf(ii);

@@ -13,6 +13,7 @@ import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
+import org.jruby.ir.instructions.Site;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -210,5 +211,19 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         throw new RuntimeException("BUG: no RPC found for " + getFileName() + ":" + getName() + ":" + ipc);
+    }
+
+    public BasicBlock findBasicBlockOf(long callsiteId) {
+        for (BasicBlock basicBlock: linearizeBasicBlocks()) {
+            for (Instr instr: basicBlock.getInstrs()) {
+                if (instr instanceof Site) {
+                    Site site = (Site) instr;
+
+                    if (site.getCallSiteId() == callsiteId) return basicBlock;
+                }
+            }
+        }
+
+        throw new RuntimeException("Bug: Looking for callsiteId: " + callsiteId + " in " + this);
     }
 }

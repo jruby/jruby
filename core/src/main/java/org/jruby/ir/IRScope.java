@@ -1108,9 +1108,9 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private FullInterpreterContext inlineMethodCommon(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, RubyModule implClass, int classToken,
+                                                      BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         alreadyHasInline = true;
-        IRMethod methodToInline = (IRMethod) method.getIRScope();
 
         // We need fresh fic so we can modify it during inlining without making already running code explode.
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
@@ -1119,33 +1119,42 @@ public abstract class IRScope implements ParseResult {
 
         return newContext;
     }
-    // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
-    public void inlineMethod(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
 
-         newContext.generateInstructionsForInterpretation();
-         this.optimizedInterpreterContext = newContext;
+    public void inlineMethod(IRMethod methodToInline, RubyModule implClass, int classToken,
+                             BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
-         // FIXME: No work done on interpreted inlining yet...trying to do something other than stashing compilable too.
-         // compilable.setInterpreterContext(fullInterpreterContext);
-         alreadyHasInline = true;
-     }
+        newContext.generateInstructionsForInterpretation();
+        this.optimizedInterpreterContext = newContext;
 
-     // FIXME: Passing in DynamicMethod is gross here we probably can minimally cast to Compilable
-     public void inlineMethodJIT(Compilable method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-         FullInterpreterContext newContext = inlineMethodCommon(method, implClass, classToken, basicBlock, call, cloneHost);
+        // FIXME: No work done on interpreted inlining yet...trying to do something other than stashing compilable too.
+        // compilable.setInterpreterContext(fullInterpreterContext);
+        alreadyHasInline = true;
+    }
 
-         // We are not running any JIT-specific passes here.
-         Ruby runtime = implClass.getRuntime();
+    public void inlineMethodJIT(IRMethod methodToInline, Compilable compilable, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
+        FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
+        BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
+        CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
 
-         newContext.linearizeBasicBlocks();
-         this.fullInterpreterContext = newContext;
+        RubyModule implClass = compilable.getImplementationClass();
 
-         if (compilable instanceof MixedModeIRMethod) {
-             runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
-             alreadyHasInline = true;
-             return;
-         }
+        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+
+        // We are not running any JIT-specific passes here.
+
+        newContext.linearizeBasicBlocks();
+        this.optimizedInterpreterContext = newContext;
+
+        if (compilable instanceof MixedModeIRMethod) {
+            Ruby runtime = implClass.getRuntime();
+            runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
+            alreadyHasInline = true;
+            return;
+        }
+
+        throw new RuntimeException("Do not support anything other than Mixed atm");
          /*
 
          String key = SexpMaker.sha1(this);
@@ -1175,8 +1184,6 @@ public abstract class IRScope implements ParseResult {
              e.printStackTrace();
          }
          */
-
-         alreadyHasInline = true;
      }
 
 
