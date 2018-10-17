@@ -401,7 +401,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         adapter2.aloadMany(0, 1, 2, 3);
-        cacheCallSite(adapter2, getClassData().clsName, null, methodName, call);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, call.getId(), call);
         adapter2.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
         adapter2.areturn();
         adapter2.end();

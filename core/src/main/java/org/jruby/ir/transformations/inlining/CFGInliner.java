@@ -11,6 +11,7 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
+import org.jruby.runtime.CallType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,8 +163,8 @@ public class CFGInliner {
         InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scopeToInline);
 
         // Inlinee method data init
-        CFG methodCFG = scopeToInline.getCFG();
-        List<BasicBlock> methodBBs = new ArrayList<>(methodCFG.getBasicBlocks());
+        CFG methodToInline = scopeToInline.getCFG();
+        List<BasicBlock> methodBBs = new ArrayList<>(methodToInline.getBasicBlocks());
 
         if (isRecursiveInline(scopeToInline)) {
             // 1. clone self
@@ -180,14 +181,14 @@ public class CFGInliner {
             }
         } else {
             // clone callee and add it to the host cfg
-            for (BasicBlock b : methodCFG.getBasicBlocks()) {
+            for (BasicBlock b : methodToInline.getBasicBlocks()) {
                 if (!b.isEntryBB() && !b.isExitBB()) cfg.addBasicBlock(b.cloneForInlining(ii));
             }
-            for (BasicBlock x : methodCFG.getBasicBlocks()) {
+            for (BasicBlock x : methodToInline.getBasicBlocks()) {
                 if (x.isEntryBB() || x.isExitBB()) continue;
 
                 BasicBlock rx = ii.getRenamedBB(x);
-                for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(x)) {
+                for (Edge<BasicBlock> e : methodToInline.getOutgoingEdges(x)) {
                     BasicBlock b = e.getDestination().getData();
                     if (!b.isExitBB()) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
                 }
@@ -195,8 +196,8 @@ public class CFGInliner {
         }
 
         // Hook up entry edges
-        assert methodCFG.outDegree(methodCFG.getEntryBB()) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
-        for (BasicBlock destination : methodCFG.getOutgoingDestinations(methodCFG.getEntryBB())) {
+        assert methodToInline.outDegree(methodToInline.getEntryBB()) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodToInline.toStringGraph();
+        for (BasicBlock destination : methodToInline.getOutgoingDestinations(methodToInline.getEntryBB())) {
             if (destination.isExitBB()) continue;
 
             BasicBlock dstBB = ii.getRenamedBB(destination);
@@ -222,7 +223,7 @@ public class CFGInliner {
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(methodCFG.getExitBB())) {
+        for (Edge<BasicBlock> e : methodToInline.getIncomingEdges(methodToInline.getExitBB())) {
             BasicBlock source = e.getSource().getData();
             if (source.isEntryBB()) continue;
 
@@ -253,7 +254,7 @@ public class CFGInliner {
             if (x.isEntryBB() || x.isExitBB()) continue;
 
             BasicBlock xRenamed = ii.getRenamedBB(x);
-            BasicBlock xProtector = methodCFG.getRescuerBBFor(x);
+            BasicBlock xProtector = methodToInline.getRescuerBBFor(x);
             if (xProtector != null) {
                 cfg.setRescuerBB(xRenamed, ii.getRenamedBB(xProtector));
             } else if (callBBrescuer != null) {
@@ -272,6 +273,7 @@ public class CFGInliner {
 
         BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
         cfg.addBasicBlock(failurePathBB);
+        //failurePathBB.addInstr(new RaiseArgumentErrorInstr(1, 2, false, 10));
         failurePathBB.addInstr(call);
         failurePathBB.addInstr(new JumpInstr(hostCloneInfo == null ? splitBBLabel : hostCloneInfo.getRenamedLabel(splitBBLabel)));
         call.blockInlining();

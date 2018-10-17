@@ -1501,7 +1501,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
         // SSS FIXME: Unused at this time
-        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
+        //throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
     }
 
     @Override
@@ -1516,7 +1516,6 @@ public class JVMVisitor extends IRVisitor {
 
     public void oneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFixnumArgNoBlockCallInstr.getId();
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
