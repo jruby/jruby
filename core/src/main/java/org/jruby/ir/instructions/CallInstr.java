@@ -132,9 +132,15 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
+        CallInstr newCall = new CallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+
+        // Logically all callsites are the same across versions of the same scope in different forms from the
+        // standpoint or profiling.
+        newCall.setCallSiteId(getCallSiteId());
+
+        return newCall;
     }
 
     @Override
