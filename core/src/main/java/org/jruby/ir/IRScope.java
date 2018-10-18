@@ -630,7 +630,6 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
     public synchronized BasicBlock[] prepareForCompilation() {
         if (optimizedInterpreterContext != null && optimizedInterpreterContext.buildComplete()) {
-            System.err.println("HERE WE GO!!!!");
             return optimizedInterpreterContext.getLinearizedBBList();
         }
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
@@ -1115,6 +1114,7 @@ public abstract class IRScope implements ParseResult {
 
     private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
+        getFullInterpreterContext().linearizeBasicBlocks();
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
