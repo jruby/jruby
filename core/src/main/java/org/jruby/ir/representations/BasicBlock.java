@@ -1,6 +1,7 @@
 package org.jruby.ir.representations;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.dirgra.Edge;
 import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.instructions.CallBase;
@@ -15,6 +16,7 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class BasicBlock implements ExplicitVertexID, Comparable {
@@ -250,7 +252,15 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     public String toStringInstrs() {
-        StringBuilder buf = new StringBuilder(toString()).append('\n');
+        StringBuilder buf = new StringBuilder(toString());
+
+        Collection<Edge<BasicBlock>> outs = cfg.getOutgoingEdges(this);
+        if (!outs.isEmpty()) {
+            for (Edge<BasicBlock> edge : outs) {
+                buf.append(" -" + edge.getType() + "->" + edge.getDestination().getID());
+            }
+        }
+        buf.append('\n');
 
         for (Instr instr : getInstrs()) {
             buf.append('\t').append(instr).append('\n');
