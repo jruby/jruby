@@ -30,7 +30,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * An interesting callsite which we will look for monomorphic behavior.
  */
 public class ProfilingCachingCallSite extends CachingCallSite {
-    protected CacheEntry cache = CacheEntry.NULL_CACHE;
     public volatile int totalMonomorphicCalls = 0;
     public volatile int totalTypeChanges = -1;
     private final IRScope scope;
