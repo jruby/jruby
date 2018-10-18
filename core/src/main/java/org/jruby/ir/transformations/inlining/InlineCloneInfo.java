@@ -36,7 +36,6 @@ public class InlineCloneInfo extends CloneInfo {
     private Operand[] callArgs;
     private Variable argsArray;
     private boolean canMapArgsStatically;
-    private boolean singleArg;
 
     private Map<BasicBlock, BasicBlock> bbRenameMap = new HashMap<>();
 
@@ -77,10 +76,6 @@ public class InlineCloneInfo extends CloneInfo {
         return isClosure;
     }
 
-    public boolean isSingleArg() {
-        return singleArg;
-    }
-
     public InlineCloneInfo cloneForInliningClosure(IRScope scopeBeingInlined) {
         InlineCloneInfo clone = new InlineCloneInfo(hostCFG, hostCFG.getScope(), scopeBeingInlined);
 
@@ -92,7 +87,8 @@ public class InlineCloneInfo extends CloneInfo {
     }
 
     public Operand getArg(int index) {
-        if (isSingleArg()) return yieldArg;
+        // yield 1 -> { |a| } case
+        if (canMapArgsStatically && isClosure && !(yieldArg instanceof Array)) return yieldArg;
 
         return index < getArgsCount() ? (isClosure ? ((Array)yieldArg).get(index) : callArgs[index]) : null;
     }
@@ -191,15 +187,15 @@ public class InlineCloneInfo extends CloneInfo {
     public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, int blockArityValue) {
         Operand yieldInstrArg = yi.getYieldArg();
 
-        if ((yieldInstrArg == UndefinedValue.UNDEFINED) || (blockArityValue == 0)) {
+        if ((yieldInstrArg == UndefinedValue.UNDEFINED) || blockArityValue == 0) {
             yieldArg = new Array(); // Zero-elt array
         } else if (yieldInstrArg instanceof Array) {
             yieldArg = yieldInstrArg;
             // 1:1 arg match
             if (((Array) yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
-        } else if (blockArityValue == 1) {
+        } else if (blockArityValue == 1 && yi.unwrapArray == false) {
             yieldArg = yieldInstrArg;
-            singleArg = true;
+            canMapArgsStatically = true;
         } else {
             // SSS FIXME: The code below is not entirely correct.  We have to process 'yi.getYieldArg()' similar
             // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction
