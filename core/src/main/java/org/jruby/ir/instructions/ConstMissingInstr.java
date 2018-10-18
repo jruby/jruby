@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
 import java.util.Arrays;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -25,9 +25,9 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
 
     private static final ByteList CONST_MISSING = new ByteList(new byte[] {'c', 'o', 'n', 's', 't', '_', 'm', 'i', 's', 's', 'i', 'n', 'g'});
 
-    public ConstMissingInstr(Variable result, Operand currentModule, RubySymbol missingConst, boolean isPotentiallyRefined) {
+    public ConstMissingInstr(IRScope scope, Variable result, Operand currentModule, RubySymbol missingConst, boolean isPotentiallyRefined) {
         // FIXME: Missing encoding knowledge of the constant name.
-        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, missingConst.getRuntime().newSymbol(CONST_MISSING), currentModule,
+        super(scope, Operation.CONST_MISSING, CallType.FUNCTIONAL, result, missingConst.getRuntime().newSymbol(CONST_MISSING), currentModule,
                 new Operand[]{new Symbol(missingConst)}, null, isPotentiallyRefined);
 
         this.missingConst = missingConst;
@@ -39,7 +39,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst, isPotentiallyRefined());
+        return new ConstMissingInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst, isPotentiallyRefined());
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     }
 
     public static ConstMissingInstr decode(IRReaderDecoder d) {
-        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeSymbol(), d.getCurrentScope().maybeUsingRefinements());
+        return new ConstMissingInstr(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), d.decodeSymbol(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

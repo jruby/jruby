@@ -22,7 +22,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     private boolean splattedValue;
 
     public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue) {
-        super(Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, false);
+        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, false);
 
         assert result != null: "EQQInstr result is null";
 

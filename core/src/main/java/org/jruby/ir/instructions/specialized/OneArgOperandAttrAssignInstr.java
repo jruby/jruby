@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions.specialized;
 
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
@@ -10,13 +11,13 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
-    public OneArgOperandAttrAssignInstr(Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
-        super(obj, attr, args, isPotentiallyRefined);
+    public OneArgOperandAttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
+        super(scope, obj, attr, args, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneArgOperandAttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
+        return new OneArgOperandAttrAssignInstr(ii.getScope(), getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     @Override

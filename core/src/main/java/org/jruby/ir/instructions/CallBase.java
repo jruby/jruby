@@ -46,7 +46,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
-    protected CallBase(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
         super(op, arrayifyOperands(receiver, args, closure));
 
@@ -55,7 +55,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name.idString(), hasLiteralClosure(), potentiallyRefined);
+        this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined);
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -171,13 +171,18 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    protected static CallSite getCallSiteFor(CallType callType, String name, boolean hasLiteralClosure, boolean potentiallyRefined) {
+    protected static CallSite getCallSiteFor(IRScope scope, CallType callType, String name, long callsiteId, boolean hasLiteralClosure, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
         if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
 
         switch (callType) {
-            case NORMAL: return MethodIndex.getCallSite(name);
+            case NORMAL:
+                if (hasLiteralClosure) {
+                    return MethodIndex.getProfilingCallSite(name, scope, callsiteId);
+                } else {
+                    return MethodIndex.getCallSite(name);
+                }
             case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
             case VARIABLE: return MethodIndex.getVariableCallSite(name);
             case SUPER: return MethodIndex.getSuperCallSite();

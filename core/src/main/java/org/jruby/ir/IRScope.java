@@ -585,6 +585,7 @@ public abstract class IRScope implements ParseResult {
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
      */
     public synchronized FullInterpreterContext prepareFullBuild() {
+        if (optimizedInterpreterContext != null) return optimizedInterpreterContext;
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -1112,82 +1113,42 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, RubyModule implClass, int classToken,
-                                                      BasicBlock basicBlock, CallBase call, boolean cloneHost) {
+    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
-
-        // We need fresh fic so we can modify it during inlining without making already running code explode.
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
+        BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
+        CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
+        RubyModule implClass = compilable.getImplementationClass();
 
         new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
         return newContext;
     }
 
-    public void inlineMethod(IRMethod methodToInline, RubyModule implClass, int classToken,
-                             BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+    public void inlineMethod(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
 
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
         newContext.generateInstructionsForInterpretation();
         this.optimizedInterpreterContext = newContext;
 
-        // FIXME: No work done on interpreted inlining yet...trying to do something other than stashing compilable too.
-        // compilable.setInterpreterContext(fullInterpreterContext);
-        alreadyHasInline = true;
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
     }
 
-    public void inlineMethodJIT(IRMethod methodToInline, Compilable compilable, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethodJIT(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
-        FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
-        BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
-        CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
 
-        RubyModule implClass = compilable.getImplementationClass();
-
-        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
 
         // We are not running any JIT-specific passes here.
 
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        if (compilable instanceof MixedModeIRMethod) {
-            Ruby runtime = implClass.getRuntime();
-            runtime.getJITCompiler().getTaskFor(runtime.getCurrentContext(), compilable).run();
-            alreadyHasInline = true;
-            return;
-        }
+        // FIXME: CompiledIRMethod needs to be supports which may be changing compiled to Mixed with immediate Compiled in it.
+        if (!(compilable instanceof MixedModeIRMethod)) throw new RuntimeException("Do not support anything other than Mixed atm");
 
-        throw new RuntimeException("Do not support anything other than Mixed atm");
-         /*
-
-         String key = SexpMaker.sha1(this);
-         JVMVisitor visitor = new JVMVisitor();
-         MethodJITClassGenerator generator = new MethodJITClassGenerator(implClass.getName(), getName(), key, runtime, compilable, visitor);
-
-         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-         generator.compile(context);
-
-         Class sourceClass = visitor.defineFromBytecode(this, generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
-
-         String jittedName = context.getJittedName();
-         IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
-         try {
-             MethodHandle variable = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, context.getNativeSignature(-1));
-             if (signatures.size() == 0) {
-                 ((CompiledIRMethod) compilable).variable = variable;
-             } else {
-                 ((CompiledIRMethod) compilable).variable = variable;
-                 for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                     ((CompiledIRMethod) compilable).specific = MethodHandles.publicLookup().findStatic(sourceClass, jittedName, entry.getValue());
-                     ((CompiledIRMethod) compilable).specificArity = entry.getKey();
-                     break;
-                 }
-             }
-         } catch(Exception e) {
-             e.printStackTrace();
-         }
-         */
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
 

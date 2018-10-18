@@ -25,7 +25,7 @@ public class UnresolvedSuperInstr extends CallInstr {
     // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
     public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args, Operand closure,
                                 boolean isPotentiallyRefined) {
-        super(op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(UNKNOWN_SUPER_TARGET), receiver, args, closure, isPotentiallyRefined);
+        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(UNKNOWN_SUPER_TARGET), receiver, args, closure, isPotentiallyRefined);
     }
 
     public UnresolvedSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
@@ -72,11 +72,13 @@ public class UnresolvedSuperInstr extends CallInstr {
         return new UnresolvedSuperInstr(d.getCurrentScope(), d.decodeVariable(), receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
+    /*
     // We cannot convert this into a NoCallResultInstr
     @Override
     public Instr discardResult() {
         return this;
     }
+    */
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {

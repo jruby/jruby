@@ -5,6 +5,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.Block;
@@ -49,9 +50,13 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
         //System.err.println("SITE_IR: " + siteIsIR + ", TARGET_IR: " + targetIsIR);
         if (targetIsIR && siteIsIR) {
-            //System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
-            // FIXME: Dterming what clone host is really about and pick proper boolean
-            scope.inlineMethodJIT((IRMethod) ((AbstractIRMethod) cache.method).getIRScope(), scope.compilable, callSiteId, cache.token, false);
+            IRMethod scopeToInline = (IRMethod) ((AbstractIRMethod) cache.method).getIRScope();
+            System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
+            if (cache.method instanceof InterpretedIRMethod) {
+                scope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
+            } else {
+                scope.inlineMethodJIT(scopeToInline, callSiteId, cache.token, false);
+            }
 
         }
     }
