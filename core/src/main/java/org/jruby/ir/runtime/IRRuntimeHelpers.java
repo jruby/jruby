@@ -2000,7 +2000,7 @@ public class IRRuntimeHelpers {
             return ((RubyHash) target).op_aref(context, keyStr);
         }
 
-        return site.call(context, caller, target, keyStr.strDup(context.runtime));
+        return site.call(context, caller, target, keyStr);
     }
 
     public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodId) {

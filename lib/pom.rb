@@ -71,7 +71,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.1'
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 

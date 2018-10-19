@@ -96,4 +96,12 @@ describe "Time.new with a utc_offset argument" do
     Time.new(2000, 1, 1, 0, 0, 0, 86400 - 1).utc_offset.should == (86400 - 1)
     lambda { Time.new(2000, 1, 1, 0, 0, 0, 86400) }.should raise_error(ArgumentError)
   end
+
+  it "raises ArgumentError if the seconds argument is negative" do
+    lambda { Time.new(2000, 1, 1, 0, 0, -1) }.should raise_error(ArgumentError)
+  end
+
+  it "raises ArgumentError if the utc_offset argument is greater than or equal to 10e9" do
+    lambda { Time.new(2000, 1, 1, 0, 0, 0, 1000000000) }.should raise_error(ArgumentError)
+  end
 end

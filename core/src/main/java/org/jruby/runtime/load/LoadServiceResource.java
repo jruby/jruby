@@ -28,6 +28,7 @@
 
 package org.jruby.runtime.load;
 
+import org.jruby.util.StringSupport;
 import org.jruby.util.URLUtil;
 
 import java.io.File;
@@ -131,8 +132,11 @@ public class LoadServiceResource {
     // marked as 'reserved' in the URI spec: ?/[]@.  Of these characters
     // the file: uri only seems to care about '[' and ']'.  Let's escape
     // them
-    private String escapeReservedChars(String path) {
-        return path.replaceAll("\\[", "%5b").replaceAll("\\]", "%5a");
+    private static String escapeReservedChars(String path) {
+        String str = path;
+        str = StringSupport.replaceAll(str, "[", "%5b").toString();
+        str = StringSupport.replaceAll(str, "]", "%5a").toString();
+        return str;
     }
 
     public String getAbsolutePath() {

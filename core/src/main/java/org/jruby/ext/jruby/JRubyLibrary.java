@@ -323,11 +323,11 @@ public class JRubyLibrary implements Library {
     }
 
     private static RubyArray subclasses(ThreadContext context, final IRubyObject recv,
-                                          final RubyClass klass, final boolean recurseAll) {
+                                        final RubyClass klass, final boolean recurseAll) {
 
         final RubyArray subclasses = RubyArray.newArray(context.runtime);
 
-        RubyClass singletonClass = ((RubyClass) klass).getSingletonClass();
+        RubyClass singletonClass = klass.getSingletonClass();
         RubyObjectSpace.each_objectInternal(context, recv, new IRubyObject[] { singletonClass },
                 new Block(new JavaInternalBlockBody(context.runtime, Signature.ONE_ARGUMENT) {
 

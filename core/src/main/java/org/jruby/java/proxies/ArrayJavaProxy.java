@@ -491,7 +491,12 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, arrayToString());
+        return inspect(context.runtime, null); // -> toStringImpl
+    }
+
+    @Override
+    CharSequence toStringImpl(final Ruby runtime, final IRubyObject opts) {
+        return arrayToString();
     }
 
     @Override

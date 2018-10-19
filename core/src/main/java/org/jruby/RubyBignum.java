@@ -69,7 +69,7 @@ public class RubyBignum extends RubyInteger {
     public static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX - 1);
     public static final BigInteger ULONG_MAX = BigInteger.valueOf(1).shiftLeft(BIT_SIZE).subtract(BigInteger.valueOf(1));
 
-    private final BigInteger value;
+    final BigInteger value;
 
     public RubyBignum(Ruby runtime, BigInteger value) {
         super(runtime, runtime.getBignum());
@@ -785,10 +785,15 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
             return bignorm(context.runtime, value.and(((RubyBignum) other).value));
-        } else if (other instanceof RubyFixnum) {
-            return bignorm(context.runtime, value.and(fix2big((RubyFixnum)other)));
+        }
+        if (other instanceof RubyFixnum) {
+            return op_and(context, (RubyFixnum) other);
         }
         return coerceBit(context, sites(context).checked_op_and, other);
+    }
+
+    final RubyInteger op_and(ThreadContext context, RubyFixnum other) {
+        return bignorm(context.runtime, value.and(fix2big(other)));
     }
 
     @Deprecated
@@ -805,9 +810,13 @@ public class RubyBignum extends RubyInteger {
             return bignorm(context.runtime, value.or(((RubyBignum) other).value));
         }
         if (other instanceof RubyFixnum) { // no bignorm here needed
-            return bignorm(context.runtime, value.or(fix2big((RubyFixnum)other)));
+            return op_or(context, (RubyFixnum) other);
         }
         return coerceBit(context, sites(context).checked_op_or, other);
+    }
+
+    final RubyInteger op_or(ThreadContext context, RubyFixnum other) {
+        return bignorm(context.runtime, value.or(fix2big(other))); // no bignorm here needed
     }
 
     @Override

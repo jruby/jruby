@@ -1655,7 +1655,7 @@ public final class Ruby implements Constantizable {
         new ThreadFiberLibrary().load(this, false);
     }
 
-    private Map<Integer, RubyClass> errnos = new HashMap<Integer, RubyClass>();
+    private final Map<Integer, RubyClass> errnos = new HashMap<>();
 
     public RubyClass getErrno(int n) {
         return errnos.get(n);
@@ -1698,7 +1698,7 @@ public final class Ruby implements Constantizable {
      * @param name of the error to define.
      **/
     private void createSysErr(int i, String name) {
-        if(profile.allowClass(name)) {
+        if (profile.allowClass(name)) {
             if (errnos.get(i) == null) {
                 RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
                 errnos.put(i, errno);
@@ -1730,7 +1730,6 @@ public final class Ruby implements Constantizable {
         addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
         addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
-        addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.timeout.Timeout");
         addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
         addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
         addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.ext.jruby.JRubySerializationLibrary");

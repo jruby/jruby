@@ -69,15 +69,15 @@ public abstract class Platform {
     private static final String GCJ = "GNU libgcj";
     private static final String IBM = "IBM J9 VM";
 
+    @Deprecated // no longer used
     public static final Map<String, String> OS_NAMES = Helpers.map("Mac OS X", DARWIN);
+    @Deprecated // no longer used
     public static final Map<String, String> ARCH_NAMES = Helpers.map("x86", "i386");
     
     private static String initOperatingSystem() {
         String osname = getProperty("os.name", "unknown").toLowerCase();
-        for (String s : OS_NAMES.keySet()) {
-            if (s.equalsIgnoreCase(osname)) {
-                return OS_NAMES.get(s);
-            }
+        switch (osname) {
+            case "mac os x" /* "Mac OS X" */ : return DARWIN;
         }
         if (osname.startsWith("windows")) {
             return WINDOWS;
@@ -87,23 +87,20 @@ public abstract class Platform {
         }
         return osname;
     }
+
     private static String initArchitecture() {
         String arch = getProperty("os.arch", "unknown").toLowerCase();
-        for (String s : ARCH_NAMES.keySet()) {
-            if (s.equalsIgnoreCase(arch)) {
-                return ARCH_NAMES.get(s);
-            }
-        }
-        if ("universal".equals(arch)) {
-            // OS X OpenJDK7 builds report "universal" right now
-            String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
-            if ("32".equals(bits)) {
-                System.setProperty("os.arch", "i386");
-                arch = "i386";
-            } else if ("64".equals(bits)) {
-                System.setProperty("os.arch", "x86_64");
-                arch = "x86_64";
-            }
+        switch (arch) {
+            case "x86" : return "i386";
+            case "universal" : // OS X OpenJDK7 builds used to report "universal"
+                String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
+                if ("32".equals(bits)) {
+                    System.setProperty("os.arch", "i386");
+                    arch = "i386";
+                } else if ("64".equals(bits)) {
+                    System.setProperty("os.arch", "x86_64");
+                    arch = "x86_64";
+                }
         }
         return arch;
     }
@@ -111,6 +108,7 @@ public abstract class Platform {
     public static final String ARCH = initArchitecture();
     public static final String OS = initOperatingSystem();
     public static final String JVM = getProperty("java.vm.name", "unknown");
+    public static final String OS_VERSION = getProperty("os.version", "unknown");
 
     public static final boolean IS_WINDOWS = OS.equals(WINDOWS);
 
@@ -118,6 +116,7 @@ public abstract class Platform {
     public static final boolean IS_FREEBSD = OS.equals(FREEBSD);
     public static final boolean IS_OPENBSD = OS.equals(OPENBSD);
     public static final boolean IS_LINUX = OS.equals(LINUX);
+    public static final boolean IS_WSL = IS_LINUX && OS_VERSION.contains("Microsoft");
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
     public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
     public static final boolean IS_OPENVMS = OS.equals(OPENVMS);

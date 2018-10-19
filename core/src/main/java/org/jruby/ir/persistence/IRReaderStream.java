@@ -223,7 +223,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case B_SWITCH: return BSwitchInstr.decode(this);
             case B_TRUE: return BTrueInstr.decode(this);
             case B_UNDEF: return BUndefInstr.decode(this);
-            case BACKTICK_STRING: return BacktickInstr.decode(this);
             case BINDING_LOAD: return LoadLocalVarInstr.decode(this);
             case BINDING_STORE: return StoreLocalVarInstr.decode(this);
             case BLOCK_GIVEN: return BlockGivenInstr.decode(this);

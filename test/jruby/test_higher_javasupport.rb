@@ -464,7 +464,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     begin
       Class.new(Java::long); fail 'extended a primitive type!'
     rescue TypeError => e
-      assert /can not extend .* long/.match(e.message)
+      assert(/can not extend .* long/.match(e.message))
     end
 
     begin
@@ -496,7 +496,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     begin
       Class.new(Java::void); fail 'extended void type!'
     rescue TypeError => e
-      assert /can not extend .* void/.match(e.message)
+      assert(/can not extend .* void/.match(e.message))
     end
 
     # NOTE: Java::Void is simply a package stub -

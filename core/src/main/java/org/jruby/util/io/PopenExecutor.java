@@ -1839,7 +1839,8 @@ public class PopenExecutor {
             "while",		/* reserved */
     };
 
-    private static final byte[] DUMMY_ARRAY = {};
+    private static final byte[] DUMMY_ARRAY = ByteList.NULL_ARRAY;
+
     private static void execFillarg(ThreadContext context, RubyString prog, IRubyObject[] argv, IRubyObject env, IRubyObject opthash, ExecArg eargp) {
         Ruby runtime = context.runtime;
         int argc = argv.length;
@@ -1849,11 +1850,9 @@ public class PopenExecutor {
         }
         // add chdir if necessary
         if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
-            // only if we are inside a jar and spawning org.jruby.Main we
-            // change to the current directory inside the jar
-            if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
-                prog.toString().contains("org.jruby.Main")) {
-                prog = RubyString.newString(runtime, prog.toString().replace("org.jruby.Main", "org.jruby.Main -C " + runtime.getCurrentDirectory()));
+            String arg = prog.toString();
+            if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
+                prog = RubyString.newString(runtime, arg);
             }
             else if (!eargp.chdir_given()) { // only if :chdir is not specified
                 eargp.chdir_given_set();

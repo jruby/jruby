@@ -77,17 +77,18 @@ describe "a java.util.Map instance" do
     expect( m.empty? ).to be true
   end
 
-  it "supports Hash-like operations" do
+  it 'supports Hash-like operations' do
     h = java.util.HashMap.new
     test_ok(h.kind_of? java.util.Map)
     h.put(1, 2); h.put(3, 4); h.put(5, 6)
-    test_equal({1=>2, 3=>4, 5=>6}, eval(h.inspect))
+    # test_equal({1=>2, 3=>4, 5=>6}, eval(h.inspect))
     test_equal(4, h[3])
     test_equal(nil, h[10])
 
     h[7]=8
     test_ok({3=>4, 1=>2, 7=>8, 5=>6} == h)
-    test_equal(0, h.clear.size)
+    h.clear
+    test_equal(0, h.size)
     test_equal(Java::JavaUtil::HashMap, h.class)
 
     h.put("a", 100); h.put("b", 200); h.put("c", 300)
@@ -128,7 +129,8 @@ describe "a java.util.Map instance" do
     test_equal(["a", "b", "c"], a1)
     test_equal([100, 200, 300], a2)
 
-    test_ok(h.clear.empty?)
+    h.clear
+    test_ok(h.empty?)
 
     # Java 8 adds a replace method to Map that takes a key and value
     h.ruby_replace({1=>100})
@@ -148,7 +150,7 @@ describe "a java.util.Map instance" do
     test_ok(!h.key?(0))
     test_equal([1, 2, 3], h.keys)
     test_ok(!h.value?(0.1))
-# java.util.Map has values method. Java's values() is used.
+    # java.util.Map has values method. Java's values() is used.
     test_equal("[100, 200, 300]", h.values.to_a.inspect)
     test_equal(3, h.length)
     h.delete(1)
@@ -167,18 +169,20 @@ describe "a java.util.Map instance" do
       test_equal({"a"=>100, "b"=>254, "c"=>300}, h1.ruby_merge(h2))
     end
     test_equal({"a"=>100, "b"=>454, "c"=>300}, h1.ruby_merge(h2) { |k, o, n| o+n })
-    test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
+    test_equal('{a=100, b=200}', h1.inspect) # does Map#toString since 9.2
+    # used to do dispatch as Hash#inspect before 9.2
+    # test_equal("{\"a\"=>100, \"b\"=>200}", h1.inspect)
 
     h1.merge!(h2) { |k, o, n| o }
-    test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h1.inspect)
+    test_equal(h1.toString, h1.inspect)
     test_equal(Java::JavaUtil::LinkedHashMap, h1.class)
 
     h.clear
     h.put(1, 100); h.put(2, 200); h.put(3, 300)
     test_equal({1=>100, 2=>200}, h.reject { |k, v| k > 2 })
-    test_equal("{1=>100, 2=>200, 3=>300}", h.inspect)
+    test_equal("{1=100, 2=200, 3=300}", h.inspect)
     test_equal({1=>100, 2=>200}, h.reject! { |k, v| k > 2 })
-    test_equal("{1=>100, 2=>200}", h.inspect)
+    test_equal("{1=100, 2=200}", h.inspect)
 
     # Java 8 adds a replace method to Map that takes a key and value
     test_equal({"c"=>300, "d"=>400, "e"=>500}, h.ruby_replace({"c"=>300, "d"=>400, "e"=>500}))
@@ -202,7 +206,8 @@ describe "a java.util.Map instance" do
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
     test_equal(Hash, rh.class)
 
-    test_equal("{\"a\"=>20, \"d\"=>10, \"c\"=>30, \"b\"=>0, \"e\"=>20}", h.to_s)
+    test_equal('{a=20, d=10, c=30, b=0, e=20}', h.to_s)
+    test_equal("{\"a\"=>20, \"d\"=>10, \"c\"=>30, \"b\"=>0, \"e\"=>20}", h.send(:hash_to_s))
 
     test_ok(h.all? { |k, v| k.length == 1 })
     test_ok(!h.all? { |k, v| v > 100 })
@@ -215,7 +220,7 @@ describe "a java.util.Map instance" do
 
     h2 = {"b"=>254, "c"=>300}
     test_equal({"a"=>100, "b"=>200, "c"=>300}, h.update(h2) { |k, o, n| o })
-    test_equal("{\"a\"=>100, \"b\"=>200, \"c\"=>300}", h.inspect)
+    # test_equal("{a=100, b=200, c=300}", h.to_s)
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
     test_equal([100, 200], h.values_at("a", "b"))
     test_equal([100, 200, nil], h.values_at("a", "b", "z"))
@@ -237,14 +242,6 @@ describe "a java.util.Map instance" do
     test_equal(1, get_hash_key(h, 2))
     test_equal(nil, get_hash_key(h, 10))
 
-# java.util.HashMap can't have a block as an arg for its constructor
-#h = Hash.new {|h,k| h[k] = k.to_i*10 }
-
-#test_ok(!nil, h.default_proc)
-#test_equal(100, h[10])
-#test_equal(20, h.default(2))
-
-#behavior change in 1.8.5 led to this:
     h = java.util.HashMap.new
     test_equal(nil, h.default)
 
@@ -253,23 +250,17 @@ describe "a java.util.Map instance" do
     test_equal(nil, h.default_proc)
 
     test_equal(5, h[12])
+  end
 
-###
-# Maybe this test doens't work for a Java object.
-#class << h
-# def default(k); 2; end
-#end
-
-#test_equal(nil, h.default_proc)
-#test_equal(2, h[30])
-###
-
-# test that extensions of the base classes are typed correctly
-    class HashExt < java.util.HashMap
-    end
+  it 'behaves properly when sub-classed' do
+    class HashExt < java.util.HashMap; end
     test_equal(HashExt, HashExt.new.class)
+
+    test_equal(HashExt, HashExt.new.clone.class)
+
 # [] method of JavaProxy is used, and the test fails.
 #test_equal(HashExt, HashExt[:foo => :bar].class)
+  end
 
 ###
 # no need to test these against java.util.HashMap
@@ -294,19 +285,16 @@ describe "a java.util.Map instance" do
 #end
 ###
 
-# Test hash coercion
+  it 'coerces to_hash' do
     class ToHashImposter
       def initialize(hash)
         @hash = hash
       end
 
-      def to_hash
-        @hash
-      end
+      def to_hash; @hash end
     end
 
-    class SubHash < Hash
-    end
+    class SubHash < Hash; end
 
     x = java.util.HashMap.new
     x.put(:a, 1); x.put(:b, 2)
@@ -325,23 +313,20 @@ describe "a java.util.Map instance" do
 
     x.put(:a, 1); x.put(:b, 2)
 
-    # Java 8 adds a replace method to Map that takes a key and value
-    if ENV_JAVA['java.specification.version'] < '1.8'
-      x.replace(ToHashImposter.new({:a => 10, :b => 20}))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-      test_exception(TypeError) { x.replace(ToHashImposter.new(4)) }
+    x.ruby_replace(ToHashImposter.new({:a => 10, :b => 20}))
+    test_equal(10, x[:a])
+    test_equal(20, x[:b])
+    test_exception(TypeError) { x.ruby_replace(ToHashImposter.new(4)) }
 
-      x.put(:a, 1); x.put(:b, 2)
-      x.replace(ToHashImposter.new(sub2))
-      test_equal(10, x[:a])
-      test_equal(20, x[:b])
-    end
+    x.put(:a, 1); x.put(:b, 2)
+    x.ruby_replace(ToHashImposter.new(sub2))
+    test_equal(10, x[:a])
+    test_equal(20, x[:b])
+  end
 
-    class H1 < java.util.HashMap
-    end
-
-    test_no_exception { H1.new.clone }
+  it 'aliases toString as to_s' do
+    map = java.util.concurrent.ConcurrentSkipListMap.new({ 'a'.to_java => 111, 'b' => 222.to_java, 'c' => 300.0.to_java })
+    expect(map.to_s).to eql '{a=111, b=222, c=300.0}'
   end
 
   it 'converts to_hash' do

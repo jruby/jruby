@@ -699,7 +699,7 @@ public class ArgumentProcessor {
         Object maybePath = config.getEnvironment().get("PATH");
         if (maybePath != null) {
             String path = maybePath.toString();
-            String[] paths = path.split(System.getProperty("path.separator"));
+            String[] paths = path.split(File.pathSeparator);
             for (int i = 0; i < paths.length; i++) {
                 result = resolve(new File(paths[i]).getAbsolutePath(), scriptName);
                 if (result != null) return result;

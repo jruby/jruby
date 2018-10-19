@@ -1559,7 +1559,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (entry == null) {
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
             path = new File(path).getCanonicalPath().substring(prefixForNoEntry.length() + 1);
-            entry = jar.getEntry(path.replaceAll("\\\\", "/"));
+            entry = jar.getEntry(StringSupport.replaceAll(path, "\\\\", "/").toString());
         }
         return entry;
     }

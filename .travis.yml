@@ -6,7 +6,7 @@ dist: trusty
 
 # don't need more than one level for our builds
 git:
-  depth: 1
+  depth: 10
 
 cache:
  directories:

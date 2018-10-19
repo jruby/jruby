@@ -3,19 +3,18 @@ package java_integration.fixtures;
 import java.math.BigInteger;
 
 public class JavaFields {
-    public static String stringStaticField = "foo";
+    public static String stringStaticField = "000";
     public static byte byteStaticField = (byte)1;
     public static short shortStaticField = (short)2;
-    public static char charStaticField = (char)2;
+    public static char charStaticField = (char)'3';
     public static int intStaticField = 4;
-    public static long longStaticField = 8;
-    public static float floatStaticField = 4.5f;
-    public static double doubleStaticField = 8.5;
+    public static long longStaticField = 5;
+    public static float floatStaticField = 6.0f;
+    public static double doubleStaticField = 7.2d;
     public static boolean trueStaticField = true;
     public static boolean falseStaticField = false;
     public static Object nullStaticField = null;
-    public static BigInteger bigIntegerStaticField =
-            new BigInteger("1234567890123456789012345678901234567890");
+    public static BigInteger bigIntegerStaticField = new BigInteger("111111111111111111110");
     
     public static Byte byteObjStaticField = Byte.valueOf(byteStaticField);
     public static Short shortObjStaticField = Short.valueOf(shortStaticField);
@@ -30,19 +29,18 @@ public class JavaFields {
     public static String $LEADING = "leading";
     public static Boolean TRAILING$ = Boolean.TRUE;
 
-    public String stringField = "foo";
+    public String stringField = stringStaticField;
     public byte byteField = (byte)1;
     public short shortField = (short)2;
-    public char charField = (char)2;
+    public char charField = (char)'T';
     public int intField = 4;
-    public long longField = 8;
-    public float floatField = 4.5f;
-    public double doubleField = 8.5;
+    public long longField = 5;
+    public float floatField = floatStaticField;
+    public double doubleField = doubleStaticField;
     public boolean trueField = true;
     public boolean falseField = false;
-    public Object nullField = null;
-    public BigInteger bigIntegerField =
-            new BigInteger("1234567890123456789012345678901234567890");
+    public final Object nullField = null;
+    public BigInteger bigIntegerField = new BigInteger("111111111111111111111");
     
     public Byte byteObjField = Byte.valueOf(byteField);
     public Short shortObjField = Short.valueOf(shortField);
@@ -53,4 +51,8 @@ public class JavaFields {
     public Double doubleObjField = Double.valueOf(doubleField);
     public Boolean trueObjField = Boolean.TRUE;
     public Boolean falseObjField = Boolean.FALSE;
+
+    Object field1 = this;
+    Object[] aryField2 = new Object[] { this };
+
 }

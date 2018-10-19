@@ -37,7 +37,6 @@ project 'JRuby Core' do
 
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
-  jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
@@ -50,8 +49,8 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.24'
-  jar 'org.jruby.jcodings:jcodings:1.0.40'
+  jar 'org.jruby.joni:joni:2.1.25'
+  jar 'org.jruby.jcodings:jcodings:1.0.41'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -269,11 +268,10 @@ project 'JRuby Core' do
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                    ],
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ],
-                   'createSourcesJar' => '${create.sources.jar}',
-                   filters:
-                       {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+                   'transformers' => [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main',
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
+                   'createSourcesJar' => '${create.sources.jar}'
     )
   end
 

@@ -62,7 +62,7 @@ class TestJavaExtension < Test::Unit::TestCase
         msg = 'java.lang.Integer cannot be cast to java.lang.Short'
         unless msg.eql? e.message
           # IBM Java: #<TypeError: java.lang.Integer incompatible with java.lang.Short>
-          assert_match /java.lang.Integer.*java.lang.Short/, e.message
+          assert_match(/java.lang.Integer.*java.lang.Short/, e.message)
         end
       end
     end

@@ -11,6 +11,7 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+import org.jruby.runtime.Visibility;
 
 import java.util.ListIterator;
 
@@ -135,7 +136,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     if (scope.needsOnlyBackref()) {
                         entryBB.addInstr(new PushBackrefFrameInstr());
                     } else {
-                        entryBB.addInstr(new PushMethodFrameInstr(scope.getName()));
+                        entryBB.addInstr(new PushMethodFrameInstr(
+                                scope.getName(),
+                                scope.isScriptScope() ? Visibility.PRIVATE : Visibility.PUBLIC));
                     }
                 }
                 if (requireBinding) entryBB.addInstr(new PushMethodBindingInstr());

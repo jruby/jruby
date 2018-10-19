@@ -104,36 +104,36 @@ DO NOT MODIFIY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <jffi.version>1.2.17</jffi.version>
-    <rspec.version>3.6.0</rspec.version>
-    <jruby.basedir>${project.basedir}</jruby.basedir>
-    <its.j2ee>j2ee*/pom.xml</its.j2ee>
-    <rspec-mocks.version>3.6.0</rspec-mocks.version>
-    <main.basedir>${project.basedir}</main.basedir>
-    <invoker.skip>true</invoker.skip>
-    <version.jruby>${project.version}</version.jruby>
-    <rake.version>12.3.0</rake.version>
-    <base.javac.version>1.8</base.javac.version>
-    <test-unit.version>3.2.7</test-unit.version>
-    <asm.version>6.2</asm.version>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <rspec-core.version>3.6.0</rspec-core.version>
-    <power_assert.version>1.1.1</power_assert.version>
-    <minitest.version>5.10.3</minitest.version>
-    <base.java.version>1.8</base.java.version>
-    <rspec-support.version>3.6.0</rspec-support.version>
-    <rdoc.version>6.0.1</rdoc.version>
-    <rspec-expectations.version>3.6.0</rspec-expectations.version>
-    <polyglot.dump.readonly>true</polyglot.dump.readonly>
-    <json.version>2.1.0</json.version>
-    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
-    <its.osgi>osgi*/pom.xml</its.osgi>
-    <jruby.plugins.version>1.0.10</jruby.plugins.version>
     <ant.version>1.9.8</ant.version>
-    <joda.time.version>2.9.9</joda.time.version>
+    <asm.version>6.2.1</asm.version>
+    <base.java.version>1.8</base.java.version>
+    <base.javac.version>1.8</base.javac.version>
     <github.global.server>github</github.global.server>
+    <invoker.skip>true</invoker.skip>
+    <its.j2ee>j2ee*/pom.xml</its.j2ee>
+    <its.osgi>osgi*/pom.xml</its.osgi>
     <jar-dependencies.version>0.4.0</jar-dependencies.version>
+    <jffi.version>1.2.17</jffi.version>
+    <joda.time.version>2.9.9</joda.time.version>
     <jruby-launcher.version>1.1.6</jruby-launcher.version>
+    <jruby.basedir>${project.basedir}</jruby.basedir>
+    <jruby.plugins.version>1.0.10</jruby.plugins.version>
+    <json.version>2.1.0</json.version>
+    <main.basedir>${project.basedir}</main.basedir>
+    <minitest.version>5.10.3</minitest.version>
+    <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
+    <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <power_assert.version>1.1.1</power_assert.version>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <rake.version>12.3.0</rake.version>
+    <rdoc.version>6.0.1</rdoc.version>
+    <rspec-core.version>3.6.0</rspec-core.version>
+    <rspec-expectations.version>3.6.0</rspec-expectations.version>
+    <rspec-mocks.version>3.6.0</rspec-mocks.version>
+    <rspec-support.version>3.6.0</rspec-support.version>
+    <rspec.version>3.6.0</rspec.version>
+    <test-unit.version>3.2.7</test-unit.version>
+    <version.jruby>${project.version}</version.jruby>
   </properties>
   <dependencyManagement>
     <dependencies>

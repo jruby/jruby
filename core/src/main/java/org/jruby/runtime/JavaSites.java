@@ -42,7 +42,6 @@ public class JavaSites {
     public final RangeSites Range = new RangeSites();
     public final WarningSites Warning = new WarningSites();
     public final ZlibSites Zlib = new ZlibSites();
-    public final TimeoutSites Timeout = new TimeoutSites();
     public final ArgfSites Argf = new ArgfSites();
     public final TracePointSites TracePoint = new TracePointSites();
     public final MarshalSites Marshal = new MarshalSites();
@@ -441,10 +440,6 @@ public class JavaSites {
     public static class ZlibSites {
         public final RespondToCallSite reader_respond_to = new RespondToCallSite();
         public final RespondToCallSite writer_respond_to = new RespondToCallSite();
-    }
-
-    public static class TimeoutSites {
-        public final CallSite timeout = new FunctionalCachingCallSite("timeout");
     }
 
     public static class ArgfSites {
