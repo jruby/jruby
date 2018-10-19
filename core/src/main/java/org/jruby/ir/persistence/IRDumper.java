@@ -19,7 +19,6 @@ import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Complex;
-import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
 import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Fixnum;
@@ -291,7 +290,6 @@ public class IRDumper extends IRVisitor {
     public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { LocalVariable(closurelocalvariable); }
     public void Complex(Complex complex) { visit(complex.getNumber()); }
-    public void CurrentScope(CurrentScope currentscope) { print(currentscope.getScopeNestingDepth()); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { print(dynamicsymbol.getSymbolName()); }
     public void Filename(Filename filename) { }
     public void Fixnum(Fixnum fixnum) { print(fixnum.getValue()); }
