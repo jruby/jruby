@@ -731,7 +731,8 @@ public class Dir {
             if ( path[ptr] == '/' ) ptr++;
 
             final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
-            if ( has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
+            if ( true || // disable this magic check, since the else branch is missing unescape logic
+                    has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
