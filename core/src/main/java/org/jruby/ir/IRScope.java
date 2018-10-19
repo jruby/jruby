@@ -981,6 +981,9 @@ public abstract class IRScope implements ParseResult {
 
     // Generate a new variable for inlined code
     public Variable getNewInlineVariable(ByteList inlinePrefix, Variable v) {
+        // FIXME: This should definitely not be polluting inlined scope with %i_old_var_name but we do want
+        //   a nice understandable temp var name so it is more easy to track.
+        /*
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
             ByteList newName = inlinePrefix.dup();
@@ -988,9 +991,9 @@ public abstract class IRScope implements ParseResult {
             newName.append(lv.getName().getBytes());
 
             return getLocalVariable(getManager().getRuntime().newSymbol(newName), lv.getScopeDepth());
-        } else {
+        } else {*/
             return createTemporaryVariable();
-        }
+        //}
     }
 
     public int getThreadPollInstrsCount() {
