@@ -27,6 +27,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
@@ -2566,4 +2567,7 @@ public class Helpers {
                 (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
     }
 
+    public static StaticScope getStaticScope(IRScope scope) {
+        return scope.getStaticScope();
+    }
 }
