@@ -1488,7 +1488,7 @@ public class IRBuilder {
 
     private Operand startingSearchScope() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.ScopeFor(nearestModuleBodyDepth);
+        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.INSTANCE;
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
@@ -2057,7 +2057,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.ScopeFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
@@ -3473,7 +3473,7 @@ public class IRBuilder {
 
     private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
@@ -3808,7 +3808,7 @@ public class IRBuilder {
     }
 
     private void addCurrentScopeAndModule() {
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %current_scope
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 

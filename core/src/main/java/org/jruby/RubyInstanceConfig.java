@@ -138,12 +138,10 @@ public class RubyInstanceConfig {
     }
 
     private void initEnvironment() {
-        environment = new HashMap<>();
         try {
-            environment.putAll(System.getenv());
+            setEnvironment(System.getenv());
         }
         catch (SecurityException se) { /* ignore missing getenv permission */ }
-        setupEnvironment();
     }
 
     public RubyInstanceConfig(final InputStream in, final PrintStream out, final PrintStream err) {
@@ -489,7 +487,7 @@ public class RubyInstanceConfig {
 
     public void setJRubyHome(String home) {
         jrubyHome = home != null ? verifyHome(home, error) : null;
-        setupEnvironment();
+        resetEnvRuby();
     }
 
     public CompileMode getCompileMode() {
@@ -664,19 +662,21 @@ public class RubyInstanceConfig {
         if (newEnvironment != null) {
             environment.putAll(newEnvironment);
         }
-        setupEnvironment();
-    }
-
-    private void setupEnvironment() {
-        if (!environment.containsKey("RUBY") && RubyFile.PROTOCOL_PATTERN.matcher(getJRubyHome()).matches()) {
-            // the assumption that if JRubyHome is not a regular file that jruby
-            // got launched in an embedded fashion
-            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
-        }
     }
 
     public Map<String, String> getEnvironment() {
+        if (!environment.containsKey("RUBY") && RubyFile.PROTOCOL_PATTERN.matcher(getJRubyHome()).matches()) {
+            // assumption: if JRubyHome is not a regular file than jruby got launched in an embedded fashion
+            environment.put("RUBY", ClasspathLauncher.jrubyCommand(defaultClassLoader()));
+            setEnvRuby = true;
+        }
         return environment;
+    }
+
+    private transient boolean setEnvRuby;
+
+    private void resetEnvRuby() { // when jruby-home changes, we might need to recompute
+        if (setEnvRuby) environment.remove("RUBY");
     }
 
     public ClassLoader getLoader() {

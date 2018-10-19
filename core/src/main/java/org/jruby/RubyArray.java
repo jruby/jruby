@@ -251,7 +251,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (size == 0) {
             return newEmptyArray(runtime);
         }
-        return isPackedArray(size) ? packedArray(runtime, args) 
+        return isPackedArray(size) ? packedArray(runtime, args)
             : new RubyArray(runtime, args.clone());
     }
 
@@ -267,10 +267,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (list.isEmpty()) {
             return newEmptyArray(runtime);
         }
-        return isPackedArray(list) ? packedArray(runtime, list) 
+        return isPackedArray(list) ? packedArray(runtime, list)
             : new RubyArray(runtime, list.toArray(IRubyObject.NULL_ARRAY));
     }
-    
+
     private static RubyArray packedArray(final Ruby runtime, final IRubyObject[] args) {
         if (args.length == 1) {
             return new RubyArrayOneObject(runtime, args[0]);
@@ -294,7 +294,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private static boolean isPackedArray(final Collection<? extends IRubyObject> collection) {
         return USE_PACKED_ARRAYS && collection.size() <= 2;
     }
-    
+
     /**
      * @see RubyArray#newArrayMayCopy(Ruby, IRubyObject[], int, int)
      */
@@ -1668,7 +1668,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         return str;
     }
-    
+
     /** rb_ary_inspect
     *
     */
@@ -1972,7 +1972,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (ary == this) throw context.runtime.newArgumentError("recursive array join");
 
         first[0] = false;
-        
+
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
@@ -2035,6 +2035,25 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "to_ary")
     public IRubyObject to_ary() {
     	return this;
+    }
+
+    @JRubyMethod(name = "to_h")
+    public IRubyObject to_h(ThreadContext context) {
+        int realLength = this.realLength;
+        RubyHash hash = new RubyHash(context.runtime, realLength);
+
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject elt = eltInternal(i).checkArrayType();
+            if (elt == context.nil) {
+                throw context.runtime.newTypeError("wrong element type " + eltInternal(i).getMetaClass().getRealClass() + " at " + i + " (expected array)");
+            }
+            RubyArray ary = (RubyArray)elt;
+            if (ary.getLength() != 2) {
+                throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
+            }
+            hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
+        }
+        return hash;
     }
 
     @Override

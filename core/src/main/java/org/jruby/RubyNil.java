@@ -238,7 +238,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static IRubyObject to_r(ThreadContext context, IRubyObject recv) {
-        return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.runtime));
+        return RubyRational.newRationalCanonicalize(context, 0);
     }
 
     /** nilclass_rationalize

@@ -185,6 +185,42 @@ public final class StringSupport {
         return ary == null ? str : new String(ary, 0, end);
     }
 
+    public static CharSequence replaceFirst(final String str, final String sub, final String repl) {
+        return replaceImpl(str, sub, repl, 1, false);
+    }
+
+    public static CharSequence replaceAll(final String str, final String sub, final String repl) {
+        return replaceImpl(str, sub, repl, -1, false);
+    }
+
+    // borrowed from commons-lang StringUtils
+    private static CharSequence replaceImpl(final String str, String sub, final String repl, int max, final boolean ignoreCase) {
+        if (str.length() == 0 || sub.length() == 0) return str;
+
+        String search = str;
+        if (ignoreCase) {
+            search = str.toLowerCase();
+            sub = sub.toLowerCase();
+        }
+        int start = 0;
+        int end = search.indexOf(sub, start);
+        if (end == -1) return str;
+
+        final int replLength = sub.length();
+        int increase = repl.length() - replLength;
+        increase = increase < 0 ? 0 : increase;
+        increase *= max < 0 ? 16 : max > 64 ? 64 : max;
+        final StringBuilder buf = new StringBuilder(str.length() + increase);
+        while (end != -1) {
+            buf.append(str, start, end).append(repl);
+            start = end + replLength;
+            if (--max == 0) break;
+            end = search.indexOf(sub, start);
+        }
+        buf.append(str, start, str.length());
+        return buf;
+    }
+
     private static int copy(final String str, final int soff, final int slen, final char[] dest, int doff) {
         switch(slen) {
             case 0:
