@@ -33,7 +33,7 @@ default_gems = [
     ImportedGem.new('jruby-readline', '1.3.5'),
     ImportedGem.new('jruby-openssl', '0.10.1'),
     ImportedGem.new('json', '${json.version}'),
-    ImportedGem.new('psych', '3.0.3.pre2'),
+    ImportedGem.new('psych', '3.0.3.pre4'),
     ImportedGem.new('rake-ant', '1.0.4'),
     ImportedGem.new('rdoc', '${rdoc.version}'),
     ImportedGem.new('scanf', '1.0.0'),
