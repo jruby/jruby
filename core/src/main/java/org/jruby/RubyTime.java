@@ -1197,8 +1197,7 @@ public class RubyTime extends RubyObject {
 
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
-            // However in the case of a single argument, any portion after
-            // the decimal point is honored.
+            // However in the case of a single argument, any portion after the decimal point is honored.
             if (arg instanceof RubyFloat) {
                 // use integral and decimal forms to calculate nanos
                 long seconds = RubyNumeric.float2long((RubyFloat) arg);
@@ -1664,18 +1663,20 @@ public class RubyTime extends RubyObject {
         final DateTimeZone dtz;
         if (gmt) {
             dtz = DateTimeZone.UTC;
-        } else if (args.length == 10 && args[9] instanceof RubyString) {
-            if (utcOffset) {
-                dtz = getTimeZoneFromUtcOffset(context, args[9]);
-                setTzRelative = true;
-            } else {
-                dtz = getTimeZoneFromString(runtime, args[9].toString());
-            }
-        } else if (args.length == 10 && sites(context).respond_to_to_int.respondsTo(context, args[9], args[9])) {
-            IRubyObject offsetInt = sites(context).to_int.call(context, args[9], args[9]);
-            dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
         } else {
-            dtz = getLocalTimeZone(runtime);
+            if (utcOffset) {
+                if (args.length == 10 && args[9] instanceof RubyString) {
+                    dtz = getTimeZoneFromUtcOffset(context, args[9]);
+                    setTzRelative = true;
+                } else if (args.length == 10 && sites(context).respond_to_to_int.respondsTo(context, args[9], args[9])) {
+                    IRubyObject offsetInt = sites(context).to_int.call(context, args[9], args[9]);
+                    dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
+                } else {
+                    dtz = getLocalTimeZone(runtime);
+                }
+            } else {
+                dtz = getLocalTimeZone(runtime);
+            }
         }
 
         if (args.length == 10) {
@@ -1755,15 +1756,18 @@ public class RubyTime extends RubyObject {
             dt = dt.withZoneRetainFields(dtz);
 
             // If we're at a DST boundary, we need to choose the correct side of the boundary
+            final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
+            final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
+
+            final int offsetBeforeBoundary = dtz.getOffset(beforeDstBoundary);
+            final int offsetAfterBoundary = dtz.getOffset(afterDstBoundary);
+
             if (isDst) {
-                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
-                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
-
-                final int offsetBeforeBoundary = dtz.getOffset(beforeDstBoundary);
-                final int offsetAfterBoundary = dtz.getOffset(afterDstBoundary);
-
                 // If the time is during DST, we need to pick the time with the highest offset
                 dt = offsetBeforeBoundary > offsetAfterBoundary ? beforeDstBoundary : afterDstBoundary;
+            }
+            else {
+                dt = offsetBeforeBoundary > offsetAfterBoundary ? afterDstBoundary : beforeDstBoundary;
             }
         }
         catch (org.joda.time.IllegalFieldValueException e) {
