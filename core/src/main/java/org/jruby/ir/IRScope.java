@@ -1121,7 +1121,6 @@ public abstract class IRScope implements ParseResult {
 
     private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
-        getFullInterpreterContext().linearizeBasicBlocks();
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
