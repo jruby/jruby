@@ -1078,6 +1078,10 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext;
     }
 
+    public FullInterpreterContext getOptimizedInterpreterContext() {
+        return optimizedInterpreterContext;
+    }
+
     protected void depends(Object obj) {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
                 "up wrong.  Use depends(build()) not depends(build).";

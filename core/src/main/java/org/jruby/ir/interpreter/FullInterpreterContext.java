@@ -187,6 +187,16 @@ public class FullInterpreterContext extends InterpreterContext {
         return "\nCFG:\n" + cfg.toStringGraph() + "\nInstructions:\n" + cfg.toStringInstrs();
     }
 
+    public String toStringLinearized() {
+        StringBuilder buf = new StringBuilder();
+
+        for (BasicBlock bb: getLinearizedBBList()) {
+            buf.append(bb + bb.toStringInstrs());
+        }
+
+        return buf.toString();
+    }
+
     public FullInterpreterContext duplicate() {
         try {
             CFG newCFG = cfg.clone(new SimpleCloneInfo(getScope(), false, true), getScope());

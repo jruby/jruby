@@ -53,6 +53,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
             if (cache.method instanceof InterpretedIRMethod) {
                 scope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
+                //System.err.println("LINEARIZED: " + scope.getOptimizedInterpreterContext().toStringLinearized());
             } else {
                 scope.inlineMethodJIT(scopeToInline, callSiteId, cache.token, false);
             }

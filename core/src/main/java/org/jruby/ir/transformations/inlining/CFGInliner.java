@@ -312,11 +312,39 @@ public class CFGInliner {
         }
         cfg.optimize(returnBBs);
 
+        addMissingJumps();
+
         if (debug) printInlineEpilogue();
 /*
         System.out.println("final cfg   :" + cfg.toStringGraph());
         System.out.println("final instrs:" + cfg.toStringInstrs());
 */
+    }
+
+    // FIXME: Adding some more similar logic and we could make a CFG verifier looking for invalid CFGs (e.g. mismatched edge vs instrs in it).
+    // FIXME: original inlined EXIT scopes should be renamed as regular edges as part of inline since they are no longer actually exits.
+    private void addMissingJumps() {
+        for (BasicBlock bb: cfg.getBasicBlocks()) {
+            boolean fallThrough = false;
+            Label jumpLabel = null;
+
+            for (Edge<BasicBlock> edge : cfg.getOutgoingEdges(bb)) {
+                if (edge.getType() == EdgeType.FALL_THROUGH) {           // Assume next BB will be correct
+                    fallThrough = true;
+                } else if (edge.getType() == EdgeType.REGULAR || edge.getType() == EdgeType.EXIT) {         // Not sure if we can have regular and fallthrough but only add regular if no fallthrough
+                    if (fallThrough) continue;
+                    jumpLabel = edge.getDestination().getData().getLabel();
+                }
+            }
+
+            if (fallThrough) continue; // we know this will just go to next BB already so no missing jump.
+            if (jumpLabel == null) continue;  // last instr does not transfer control so nothing to add.
+
+            Instr lastInstr = bb.getLastInstr();
+            if (lastInstr != null && !lastInstr.transfersControl()) {
+                bb.addInstr(new JumpInstr(jumpLabel));
+            }
+        }
     }
 
     // Make all original outgoing edges get moved to the afterInlineBB since it is now
