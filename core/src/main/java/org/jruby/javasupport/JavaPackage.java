@@ -73,10 +73,6 @@ public class JavaPackage extends RubyModule {
         Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
         // JavaPackage.setReifiedClass(JavaPackage.class);
 
-        // @deprecated JavaPackageModuleTemplate used previously
-        runtime.getObject().setConstant("JavaPackageModuleTemplate", JavaPackage); // JavaPackageModuleTemplate
-        runtime.getObject().deprecateConstant(runtime, "JavaPackageModuleTemplate");
-
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
     }
