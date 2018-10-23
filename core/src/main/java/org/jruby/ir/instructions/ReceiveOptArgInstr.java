@@ -73,7 +73,7 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
 
     @Override
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
-        return IRRuntimeHelpers.receiveOptArg(args, requiredArgs, preArgs, argIndex, acceptsKeywordArgument);
+        return IRRuntimeHelpers.receiveOptArg(context, args, requiredArgs, preArgs, argIndex, acceptsKeywordArgument);
     }
 
     @Override

@@ -527,7 +527,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return metaClass;
     }
 
-    static RubyClass getMetaClass(IRubyObject arg) {
+    public static RubyClass getMetaClass(IRubyObject arg) {
         return ((RubyBasicObject) arg).metaClass;
     }
 
