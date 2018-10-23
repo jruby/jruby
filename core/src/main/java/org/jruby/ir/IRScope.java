@@ -1121,6 +1121,7 @@ public abstract class IRScope implements ParseResult {
 
     private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
+        // FIXME: Tried prepareFullBuild here and for methodToInline and a couple of missing callsiteid errors happened in spec:ruby:fast
         if (getFullInterpreterContext() == null) return null;
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);

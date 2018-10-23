@@ -207,6 +207,9 @@ public class CFGInliner {
             }
 
             if (!ii.canMapArgsStatically()) {
+                return false;
+                /*
+                // FIXME: fail for now
                 // SSS FIXME: This is buggy!
                 // This code has to mimic whatever CallBase.prepareArguments does!
                 // We may need a special instruction that takes care of this.
@@ -218,6 +221,7 @@ public class CFGInliner {
                     args = new Array(callArgs);
                 }
                 dstBB.insertInstr(new CopyInstr((Variable)ii.getArgs(), args));
+                */
             }
             cfg.addEdge(beforeInlineBB, dstBB, CFG.EdgeType.FALL_THROUGH);
         }
