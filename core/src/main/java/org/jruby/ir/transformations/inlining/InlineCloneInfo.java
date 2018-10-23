@@ -147,7 +147,25 @@ public class InlineCloneInfo extends CloneInfo {
     }
 
     public Variable getRenamedSelfVariable(Variable self) {
-        return callReceiver;
+        /* Note: evals make all this weird but our heuristics are such that we should not see the same callsite
+         *   make a monocall across an eval (within an eval is fine).  If we ever cache pre-compiled evals we may
+         *   end up breaking here.
+         *
+         * There are two closure types we will see while inlinine.
+         *   1. A closure attached to the call we are inlining or exists within host scope itself. ( .... inline_me { foo }
+         *         This will have same self as the host scope itself.
+         *   2. A closure in the method we are inlining.
+         *         That will the same self as the inlined methods scope
+         */
+        if (isClosure) {
+            if (getScopeBeingInlined().getNearestTopLocalVariableScope() == getHostScope()) {
+                return self;
+            } else {
+                return callReceiver;
+            }
+        } else { // method scope
+            return callReceiver;
+        }
     }
 
     protected Variable getRenamedVariableSimple(Variable v) {
