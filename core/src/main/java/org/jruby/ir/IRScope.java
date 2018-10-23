@@ -1126,15 +1126,16 @@ public abstract class IRScope implements ParseResult {
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
         RubyModule implClass = compilable.getImplementationClass();
 
-        new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+        boolean success = new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
-        return newContext;
+        return success ? newContext : null;
     }
 
     public void inlineMethod(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        if (newContext == null) return;
         newContext.generateInstructionsForInterpretation();
         this.optimizedInterpreterContext = newContext;
 
@@ -1145,7 +1146,7 @@ public abstract class IRScope implements ParseResult {
         if (alreadyHasInline) return;
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
-
+        if (newContext == null) return;
         // We are not running any JIT-specific passes here.
 
         newContext.linearizeBasicBlocks();

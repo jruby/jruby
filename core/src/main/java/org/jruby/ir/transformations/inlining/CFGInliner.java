@@ -133,17 +133,17 @@ public class CFGInliner {
     //   methodScope - scope of the method to be inlined
     //   callBB - BB where callsite is located
     //   call - callsite where we want to inline the methods body.
-    public void inlineMethod(IRScope scopeToInline, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
+    public boolean inlineMethod(IRScope scopeToInline, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call, boolean cloneHost) {
         // Temporarily turn off inlining of recursive methods
         // Conservative turning off for inlining of a method in a closure nested within the same method
-        if (isRecursiveInline(scopeToInline)) return;
+        if (isRecursiveInline(scopeToInline)) return false;
         if (debug) printInlineDebugPrologue(scopeToInline, call);
 
         if (callBB == null) {
             callBB = findCallsiteBB(call);
             if (callBB == null) {
                 if (debug) printInlineCannotFindCallsiteBB(call);
-                return;
+                return false;
             } else {
                 if (debug) printInlineFoundBB(callBB);
             }
@@ -287,9 +287,9 @@ public class CFGInliner {
         if (closureArg != null && !yieldSites.isEmpty()) {
             // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
             // if we inline the closure at all those yield sites!
-            if (yieldSites.size() > 1) {
-                throw new RuntimeException("Encountered " + yieldSites.size() + " yield sites.  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
-            }
+
+            // currently we will only inline a single block into a single yield.
+            if (yieldSites.size() > 1) return false;
 
             if (!(closureArg instanceof WrappedIRClosure)) {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
@@ -319,6 +319,7 @@ public class CFGInliner {
         System.out.println("final cfg   :" + cfg.toStringGraph());
         System.out.println("final instrs:" + cfg.toStringInstrs());
 */
+        return true;
     }
 
     // FIXME: Adding some more similar logic and we could make a CFG verifier looking for invalid CFGs (e.g. mismatched edge vs instrs in it).
