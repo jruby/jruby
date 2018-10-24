@@ -3,6 +3,7 @@ package org.jruby.runtime.callsite;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -12,52 +13,49 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
-
-/* ENEBO:
-  I wanted to completely decouple of CachingCallSite so not influence it's performance but current JIT assumes it
-  as the base type for a JIT'd method.  Notes:
-
-  1. isBuiltin or retrieveCache usage.  We want mono calls to these but I think in this case none of these sites use
-  blocks.  If so then there may be an issue if there is a second cache object in this type (since we will stop using
-  the one in cachingcallsite.  Let's try this and see where we land.  Ultimately, this may lead to some refactoring.
-  2. Lots of duplicated code here.  I think from JIT perspective these types will always be a single type so things
-  should still inline ok.
-
+/*
+ * Note: I originally had a totalType changes thinking that we did not want to churn through
+ * repeated inlines if the type is changing a "little bit".  It should give up.  This is premature
+ * as hostScope only allows a single inline and we have no deoptimization yet.  So it is a candidate
+ * again once the opt/deopt system exists and we can contemplate multiple speculative optimizations.
  */
 
 /**
- * An interesting callsite which we will look for monomorphic behavior.
+ * An interesting callsite in which we will look for monomorphic behavior in case we want to inline.
  */
 public class ProfilingCachingCallSite extends CachingCallSite {
-    public volatile int totalMonomorphicCalls = 0;
-    public volatile int totalTypeChanges = -1;
-    private final IRScope scope;
+    public static final Logger LOG = LoggerFactory.getLogger(ProfilingCachingCallSite.class);
+    private volatile int totalMonomorphicCalls = 0;
+    private final IRScope hostScope;
     private final long callSiteId;
 
     public ProfilingCachingCallSite(String methodName, IRScope scope, long callSiteId) {
         super(methodName, CallType.NORMAL);
 
-        this.scope = scope;
+        this.hostScope = scope;
         this.callSiteId = callSiteId;
     }
 
-    private void printCallsiteData(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, CacheEntry cache) {
-        // FIXME: This does not handle site as closure.
-        boolean targetIsIR = cache.method instanceof AbstractIRMethod;
-        boolean siteIsIR = scope.compilable != null;
+    private void inlineCheck(IRubyObject self, CacheEntry cache) {
+        // Either host has already failed to inline or the scope has decided this is not an elligble host for inlining.
+        if (!hostScope.inliningAllowed()) return;
 
-        //System.err.println("SITE_IR: " + siteIsIR + ", TARGET_IR: " + targetIsIR);
+        // CompiledIRMethod* is not supported
+        boolean targetIsIR = cache.method instanceof AbstractIRMethod;//MixedModeIRMethod || cache.method instanceof InterpretedIRMethod;
+        boolean siteIsIR = hostScope.compilable != null;
+
         if (targetIsIR && siteIsIR) {
-            IRMethod scopeToInline = (IRMethod) ((AbstractIRMethod) cache.method).getIRScope();
-            System.err.println("PROFILE: " + scope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
-            if (cache.method instanceof InterpretedIRMethod) {
-                scope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
-                //System.err.println("LINEARIZED: " + scope.getOptimizedInterpreterContext().toStringLinearized());
-            } else {
-                scope.inlineMethodJIT(scopeToInline, callSiteId, cache.token, false);
-            }
+            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
 
+            IRMethod scopeToInline = (IRMethod) ((AbstractIRMethod) cache.method).getIRScope();
+            if (cache.method instanceof InterpretedIRMethod) {
+                hostScope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
+            } else { // MixedModelIRMethod
+                hostScope.inlineMethodJIT(scopeToInline, callSiteId, cache.token, false);
+            }
         }
     }
 
@@ -81,7 +79,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;  // This must be retrieved *once* to avoid racing with other threads.
 
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, args, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, args);
         } else {
             totalMonomorphicCalls = 1;
@@ -94,7 +92,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache; // This must be retrieved *once* to avoid racing with other threads.
 
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, args, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, args, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -108,7 +106,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, IRubyObject.NULL_ARRAY, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName);
         } else {
             totalMonomorphicCalls = 1;
@@ -121,7 +119,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, IRubyObject.NULL_ARRAY, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -135,7 +133,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, new IRubyObject[] { arg1 }, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1);
         } else {
             totalMonomorphicCalls = 1;
@@ -148,7 +146,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, new IRubyObject[] { arg1 }, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -162,7 +160,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, new IRubyObject[] { arg1, arg2 }, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2);
         } else {
             totalMonomorphicCalls = 1;
@@ -175,7 +173,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, new IRubyObject[] { arg1, arg2 }, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -189,7 +187,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, new IRubyObject[] { arg1, arg2, arg3 }, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
         } else {
             totalMonomorphicCalls = 1;
@@ -202,7 +200,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % 10) == 0) printCallsiteData(context, caller, self, new IRubyObject[] { arg1, arg2, arg3 }, cache);
+            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -214,7 +212,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, args, block);
         } else {
@@ -227,7 +224,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, args);
         } else {
@@ -240,7 +236,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method);
         } else {
@@ -253,7 +248,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, block);
         } else {
@@ -265,7 +259,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg);
         } else {
@@ -278,7 +271,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      ThreadContext context, IRubyObject self, IRubyObject arg) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg, block);
         } else {
@@ -290,7 +282,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2);
         } else {
@@ -303,7 +294,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2, block);
         } else {
@@ -317,7 +307,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2, arg3);
         } else {
@@ -331,7 +320,6 @@ public class ProfilingCachingCallSite extends CachingCallSite {
                                      IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
-        totalTypeChanges++;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
         } else {

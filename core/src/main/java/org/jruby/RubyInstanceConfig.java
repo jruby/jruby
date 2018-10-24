@@ -1853,6 +1853,7 @@ public class RubyInstanceConfig {
     public static boolean IR_WRITING = Options.IR_WRITING.load();
     public static boolean IR_READING = Options.IR_READING.load();
     public static boolean IR_INLINER = Options.IR_INLINER.load();
+    public static int IR_INLINER_THRESHOLD = Options.IR_INLINER_THRESHOLD.load();
     public static boolean IR_INLINER_VERBOSE = Options.IR_INLINER_VERBOSE.load();
     public static boolean IR_READING_DEBUG = Options.IR_READING_DEBUG.load();
     public static boolean IR_WRITING_DEBUG = Options.IR_WRITING_DEBUG.load();

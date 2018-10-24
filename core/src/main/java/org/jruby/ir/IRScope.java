@@ -1323,6 +1323,6 @@ public abstract class IRScope implements ParseResult {
 
     // FIXME: This should become some heuristic later
     public boolean inliningAllowed() {
-        return alreadyHasInline;
+        return !alreadyHasInline;
     }
 }
