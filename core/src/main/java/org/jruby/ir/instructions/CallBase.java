@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRFlags;
@@ -178,7 +179,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         switch (callType) {
             case NORMAL:
-                if (hasLiteralClosure) {
+                if (RubyInstanceConfig.IR_INLINER && hasLiteralClosure) {
                     return MethodIndex.getProfilingCallSite(name, scope, callsiteId);
                 } else {
                     return MethodIndex.getCallSite(name);

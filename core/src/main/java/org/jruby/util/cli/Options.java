@@ -127,6 +127,7 @@ public class Options {
     public static final Option<Boolean> IR_READING           = bool(IR, "ir.reading", false, "Read JRuby IR file.");
     public static final Option<Boolean> IR_READING_DEBUG     = bool(IR, "ir.reading.debug", false, "Debug reading JRuby IR file.");
     public static final Option<Boolean> IR_WRITING           = bool(IR, "ir.writing", false, "Write JRuby IR file.");
+    public static final Option<Boolean> IR_INLINER           = bool(IR, "ir.inliner", false, "Enable the inliner.");
     public static final Option<Boolean> IR_INLINER_VERBOSE   = bool(IR, "ir.inliner.verbose", false, "Report inlining activity.");
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");

@@ -8,6 +8,7 @@ import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
@@ -88,7 +89,7 @@ public abstract class IRBytecodeAdapter {
         } else {
             switch (callType) {
                 case NORMAL:
-                    if (profileCandidate) {
+                    if (profileCandidate && RubyInstanceConfig.IR_INLINER) {
                         profiled = true;
                         siteClass = ProfilingCachingCallSite.class;
                     } else {
