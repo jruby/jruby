@@ -1,12 +1,10 @@
 package org.jruby.ir;
 
 import org.jruby.ParseResult;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
@@ -137,6 +135,7 @@ public abstract class IRScope implements ParseResult {
     private TemporaryVariable yieldClosureVariable;
 
     private boolean alreadyHasInline;
+    private String inlineFailed;
     public Compilable compilable;
 
     // Used by cloning code
@@ -1119,25 +1118,47 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    private FullInterpreterContext inlineFailed(String reason) {
+        inlineFailed = reason;
+        return null;
+    }
+
     private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
         // FIXME: Tried prepareFullBuild here and for methodToInline and a couple of missing callsiteid errors happened in spec:ruby:fast
-        if (getFullInterpreterContext() == null) return null;
+        if (getFullInterpreterContext() == null) return inlineFailed("inline into startup interpreter scope");
+
+        // FIXME: So a potential problem is closures contain local variables in the method being inlined then we will nuke
+        // those scoped variables and the closure cannot see them.  One idea is since for deoptimization we will need to
+        // create a scope restore table we will have a list of all lvars -> temps.  Since this will be a map we depend on
+        // for restoring scope we can probably make an temp variable which will look for values from this table.  Even in
+        // that solution we need access to the temp table from the closure so I am unsure that will work.
+        //
+        // Another solution is to force inline those closures but that only works if the methods they are calling through
+        // are IR methods (or are native but can be substituted with IR methods).
+        //
+        // Note: we can look for scoped methods and make this less conservative.
+        if (!methodToInline.getClosures().isEmpty()) return inlineFailed("inline a method which contains nested closures");
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
         RubyModule implClass = compilable.getImplementationClass();
 
-        boolean success = new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+        String error = new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
-        return success ? newContext : null;
+        return error == null ? newContext : inlineFailed(error);
     }
 
     public void inlineMethod(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
-        if (newContext == null) return;
+        if (newContext == null) {
+            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
         newContext.generateInstructionsForInterpretation();
         this.optimizedInterpreterContext = newContext;
 
@@ -1148,7 +1169,13 @@ public abstract class IRScope implements ParseResult {
         if (alreadyHasInline) return;
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
-        if (newContext == null) return;
+        if (newContext == null) {
+            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
+
         // We are not running any JIT-specific passes here.
 
         newContext.linearizeBasicBlocks();
