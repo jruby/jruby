@@ -5165,7 +5165,7 @@ public final class Ruby implements Constantizable {
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
-    private final Stack<RubyProc> atExitBlocks = new Stack<RubyProc>();
+    private final Stack<RubyProc> atExitBlocks = new Stack<>();
 
     private Profile profile;
 
@@ -5176,9 +5176,9 @@ public final class Ruby implements Constantizable {
     private final AtomicInteger moduleLastId = new AtomicInteger(0);
 
     // Weak map of all Modules in the system (and by extension, all Classes
-    private final Set<RubyModule> allModules = new WeakHashSet<RubyModule>();
+    private final Set<RubyModule> allModules = new WeakHashSet<>(128);
 
-    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<String,DateTimeZone>();
+    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
      * weakly referenced, to be executed on tearDown.
