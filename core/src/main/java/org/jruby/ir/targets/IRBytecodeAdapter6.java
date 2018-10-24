@@ -418,7 +418,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig;
         String outgoingSig;
 
-        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null;
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         boolean blockGiven = blockPassType.given();
         if (blockGiven) {
