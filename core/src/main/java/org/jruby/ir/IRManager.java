@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -25,6 +26,7 @@ import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.util.IGVInstrListener;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
@@ -298,5 +300,9 @@ public class IRManager {
 
     public RubyInstanceConfig getInstanceConfig() {
         return config;
+    }
+
+    public boolean loadInternalMethod(ThreadContext context, String type, String method) {
+        return context.runtime.evalScriptlet("require 'jruby/ruby_implementations/" + type + "/" + method + "'").isTrue();
     }
 }
