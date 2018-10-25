@@ -579,9 +579,15 @@ public class Dir {
 
                 continue;
             case '\\':
-                if (escape && i == end) return false;
+                // We treat backslash as a magic character, since otherwise logic in glob_helper does not unescape.
+                // See jruby/jruby#5333 for more details.
 
-                break;
+//                if (escape && i == end) return false;
+//                break;
+
+                if (escape) return true; // force magic logic whenever there's escaped chars
+
+                continue;
             default:
                 if (FNM_SYSCASE == 0 && nocase && Character.isLetter((char)(bytes[i] & 0xFF))) return true;
             }
@@ -731,7 +737,7 @@ public class Dir {
             if ( path[ptr] == '/' ) ptr++;
 
             final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
-            if ( has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
+            if (has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
