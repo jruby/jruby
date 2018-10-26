@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -46,13 +48,25 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getReceiver());
-        e.encode(getArg1());
-        e.encode(isSplattedValue());
+
+        e.encode(splattedValue);
     }
 
     public static EQQInstr decode(IRReaderDecoder d) {
-        return new EQQInstr(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call");
+        int callTypeOrdinal = d.decodeInt();
+        CallType callType = CallType.fromOrdinal(callTypeOrdinal);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  " + callType);
+        RubySymbol methAddr = d.decodeSymbol();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, methaddr:  " + methAddr);
+        Operand receiver = d.decodeOperand();
+        d.decodeInt(); // we always know it is 1 arg (args count)
+        Operand arg1 = d.decodeOperand();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
+        Variable result = d.decodeVariable();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
+
+        return new EQQInstr(d.getCurrentScope(),result, receiver, arg1, d.decodeBoolean());
     }
 
     @Override
