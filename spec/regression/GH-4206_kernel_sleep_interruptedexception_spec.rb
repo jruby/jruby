@@ -5,6 +5,8 @@ describe "Kernel#sleep" do
       :ok
     end
 
+    Thread.pass until t.status == 'sleep'
+
     JRuby.reference(t).native_thread.interrupt
 
     expect(t.value).to eq :ok

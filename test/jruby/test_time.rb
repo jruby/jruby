@@ -73,6 +73,26 @@ class TestTime < Test::Unit::TestCase
     assert_equal 999999999, time.nsec
   end
 
+  @@tz = ENV['TZ']
+
+  def test_local_zone
+    ENV['TZ'] = 'US/Pacific'
+    time = Time.local(0, 30, 1, 30, 10, 2005, 0, 0, false, 'UTC')
+    assert_equal '2005-10-30 01:30:00 -0800', time.to_s
+    assert_equal 'PST', time.zone
+  ensure
+    @@tz.nil? ? ENV.delete('TZ') : ENV['TZ'] = @@tz
+  end
+
+  def test_local_zone_utc
+    ENV['TZ'] = 'UTC'
+    time = Time.local(0, 30, 1, 30, 10, 2005, 0, 0, false, 'US/Eastern')
+    assert_equal '2005-10-30 01:30:00 +0000', time.to_s
+    assert_equal 'UTC', time.zone
+  ensure
+    @@tz.nil? ? ENV.delete('TZ') : ENV['TZ'] = @@tz
+  end
+
   def time_change(time, options) # from ActiveSupport
     new_year  = options.fetch(:year, time.year)
     new_month = options.fetch(:month, time.month)
@@ -111,7 +131,7 @@ class TestTime < Test::Unit::TestCase
 
     assert dat = Time.new.to_java(java.sql.Date)
     assert dat.is_a?(java.sql.Date)
-  end
+  end if defined? JRUBY_VERSION
 
 end
 

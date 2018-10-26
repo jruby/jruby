@@ -63,9 +63,7 @@ describe "java package (and class)" do
     expect( Java::Default.respond_to?(:name) ).to be true
 
     quiet do
-      if Object.const_defined?(:JavaPackageModuleTemplate) # should go-away in 9K
-        expect( JavaPackageModuleTemplate.respond_to?(:name) ).to be true
-      end
+      expect( Java::JavaPackage.respond_to?(:name) ).to be true
     end
   end
 

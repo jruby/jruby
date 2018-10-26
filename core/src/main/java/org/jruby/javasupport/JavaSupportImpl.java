@@ -99,7 +99,6 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyClass javaMethodClass;
     private RubyClass javaConstructorClass;
     private RubyModule javaInterfaceTemplate;
-    private RubyModule packageModuleTemplate;
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
     private RubyClass mapJavaProxy;
@@ -310,9 +309,7 @@ public class JavaSupportImpl extends JavaSupport {
 
     @Deprecated
     public RubyModule getPackageModuleTemplate() {
-        RubyModule module;
-        if ((module = packageModuleTemplate) != null) return module;
-        return packageModuleTemplate = runtime.getModule("JavaPackageModuleTemplate");
+        return null; // no longer used + has been deprecated since ~ 9.1
     }
 
     public RubyClass getJavaProxyClass() {

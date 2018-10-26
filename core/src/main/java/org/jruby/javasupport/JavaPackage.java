@@ -41,9 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.TypeConverter;
@@ -72,10 +70,6 @@ public class JavaPackage extends RubyModule {
         JavaPackage.setParent(Java);
         Java.setConstant("JavaPackage", JavaPackage); // Java::JavaPackage
         // JavaPackage.setReifiedClass(JavaPackage.class);
-
-        // @deprecated JavaPackageModuleTemplate used previously
-        runtime.getObject().setConstant("JavaPackageModuleTemplate", JavaPackage); // JavaPackageModuleTemplate
-        runtime.getObject().deprecateConstant(runtime, "JavaPackageModuleTemplate");
 
         JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
@@ -346,12 +340,44 @@ public class JavaPackage extends RubyModule {
         @Override
         protected DynamicMethod searchMethodCommon(String id) {
             // this module is special and only searches itself;
-
-            // TODO implement a switch to allow for 'more-aligned' behavior
-
+            if ("superclass".equals(id)) {
+                return new MethodValue(id, superClass); // JavaPackage.superclass
+            }
             return (id = handlesMethod(id)) != null ? superClass.searchMethodInner(id) : NullMethod.INSTANCE;
         }
 
+        private static class MethodValue extends DynamicMethod {
+
+            private final IRubyObject value;
+
+            MethodValue(final String name, final IRubyObject value) {
+                super(name);
+                this.value = value;
+            }
+
+            public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                return call(context, self, clazz, name);
+            }
+
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+                return value;
+            }
+
+            @Override
+            public DynamicMethod dup() {
+                try {
+                    return (DynamicMethod) super.clone();
+                }
+                catch (CloneNotSupportedException ex) {
+                    throw new AssertionError(ex);
+                }
+            }
+
+            @Override
+            public Arity getArity() { return Arity.NO_ARGUMENTS; }
+
+        }
         private static String handlesMethod(final String name) {
             // FIXME: We should consider pure-bytelist search here.
             switch (name) {

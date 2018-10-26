@@ -1051,6 +1051,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert org.jruby.singleton_class.is_a?(Class)
     assert_not_equal org.jruby.singleton_class, org.jruby.class
     assert_not_equal org.jruby.singleton_class, org.jruby.javasupport.singleton_class
+
+    # really to avoid unexpected outcomes for Class instances :
+
+    assert Java::JavaPackage.is_a?(Module)
+    # can not make it a Module instance "only", really
+    if Java::JavaPackage.is_a?(Class)
+      assert_equal Module, Java::JavaPackage.superclass
+    end
   end
 
   def test_package_name_colliding_with_name_method

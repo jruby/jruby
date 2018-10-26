@@ -287,7 +287,7 @@ public class RubyModule extends RubyObject {
     }
 
     public synchronized Map<String, ConstantEntry> getConstantMapForWrite() {
-        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, ConstantEntry>(4, 0.9f, 1) : constants;
+        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<>(4, 0.9f, 1) : constants;
     }
 
     /**

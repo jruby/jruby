@@ -296,6 +296,7 @@ public class IRRuntimeHelpers {
         return context.nil;
     }
 
+    @JIT
     public static double unboxFloat(IRubyObject val) {
         if (val instanceof RubyFloat) {
             return ((RubyFloat)val).getValue();
@@ -304,6 +305,7 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static long unboxFixnum(IRubyObject val) {
         if (val instanceof RubyFloat) {
             return (long)((RubyFloat)val).getValue();
@@ -525,7 +527,7 @@ public class IRRuntimeHelpers {
     public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, int required, int opt, boolean rest,
                                   boolean receivesKwargs, int restKey, Block block) {
         int argsLength = args.length;
-        RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
+        RubyHash keywordArgs = extractKwargsHash(context, args, required, receivesKwargs);
 
         if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, scope, keywordArgs);
 
@@ -537,16 +539,17 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
         // No kwarg because required args slurp them up.
         int length = args.length;
 
         if (length <= requiredArgsCount) return args;
 
-        final IRubyObject maybeKwargs = toHash(args[length - 1], context);
+        final IRubyObject maybeKwargs = toHash(context, args[length - 1]);
 
         if (maybeKwargs != null) {
-            if (maybeKwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
+            if (maybeKwargs == context.nil) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
                 return ArraySupport.newCopy(args, new RubyHash(context.runtime));
             }
 
@@ -613,18 +616,32 @@ public class IRRuntimeHelpers {
         }
     };
 
-    private static IRubyObject toHash(IRubyObject lastArg, ThreadContext context) {
+    private static IRubyObject toHash(ThreadContext context, IRubyObject lastArg) {
         if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
         if (lastArg.respondsTo("to_hash")) {
-            if ( context == null ) context = lastArg.getRuntime().getCurrentContext();
             lastArg = lastArg.callMethod(context, "to_hash");
-            if (lastArg.isNil()) return lastArg;
+            if (lastArg == context.nil) return lastArg;
             TypeConverter.checkType(context, lastArg, context.runtime.getHash());
             return (RubyHash) lastArg;
         }
         return null;
     }
 
+    public static RubyHash extractKwargsHash(ThreadContext context, Object[] args, int requiredArgsCount, boolean receivesKwargs) {
+        if (!receivesKwargs) return null;
+        if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
+
+        Object lastArg = args[args.length - 1];
+
+        if (lastArg instanceof IRubyObject) {
+            IRubyObject returnValue = toHash(context, (IRubyObject) lastArg);
+            if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
+        }
+
+        return null;
+    }
+
+    @Deprecated // not used
     public static RubyHash extractKwargsHash(Object[] args, int requiredArgsCount, boolean receivesKwargs) {
         if (!receivesKwargs) return null;
         if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
@@ -632,7 +649,7 @@ public class IRRuntimeHelpers {
         Object lastArg = args[args.length - 1];
 
         if (lastArg instanceof IRubyObject) {
-            IRubyObject returnValue = toHash((IRubyObject) lastArg, null);
+            IRubyObject returnValue = toHash(((IRubyObject) lastArg).getRuntime().getCurrentContext(), (IRubyObject) lastArg);
             if (returnValue instanceof RubyHash) return (RubyHash) returnValue;
         }
 
@@ -954,12 +971,12 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArguments);
+        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArguments);
         return constructRestArg(context, args, keywordArguments, required, argIndex);
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
-        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArguments);
+        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArguments);
         return constructRestArg(context, args, keywordArguments, required, argIndex);
     }
 
@@ -990,7 +1007,7 @@ public class IRRuntimeHelpers {
                                                  int argIndex, boolean acceptsKeywordArgument) {
         int required = pre + post;
         // FIXME: Once we extract kwargs from rest of args processing we can delete this extract and n calc.
-        boolean kwargs = extractKwargsHash(args, required, acceptsKeywordArgument) != null;
+        boolean kwargs = extractKwargsHash(context, args, required, acceptsKeywordArgument) != null;
         int n = kwargs ? args.length - 1 : args.length;
         int remaining = n - pre;       // we know we have received all pre args by post receives.
 
@@ -1013,6 +1030,18 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
+    public static IRubyObject receiveOptArg(ThreadContext context, IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
+        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
+        RubyHash keywordArguments = extractKwargsHash(context, args, requiredArgs, acceptsKeywordArgument);
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+
+        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+
+        return args[preArgs + optArgIndex];
+    }
+
+    @Deprecated // not used
     public static IRubyObject receiveOptArg(IRubyObject[] args, int requiredArgs, int preArgs, int argIndex, boolean acceptsKeywordArgument) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
         RubyHash keywordArguments = extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
@@ -1030,7 +1059,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, String id, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
+        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
@@ -1044,7 +1073,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject[] args, int required, RubySymbol key, boolean acceptsKeywordArgument) {
-        RubyHash keywordArguments = extractKwargsHash(args, required, acceptsKeywordArgument);
+        RubyHash keywordArguments = extractKwargsHash(context, args, required, acceptsKeywordArgument);
 
         if (keywordArguments == null) return UndefinedValue.UNDEFINED;
 
@@ -1056,7 +1085,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
-        RubyHash keywordArguments = extractKwargsHash(args, required, keywordArgumentSupplied);
+        RubyHash keywordArguments = extractKwargsHash(context, args, required, keywordArgumentSupplied);
 
         return keywordArguments == null ? new RubyHash(context.runtime) : keywordArguments;
     }
@@ -2005,7 +2034,7 @@ public class IRRuntimeHelpers {
             return ((RubyHash) target).op_aref(context, keyStr);
         }
 
-        return site.call(context, caller, target, keyStr);
+        return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 
     public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodId) {
