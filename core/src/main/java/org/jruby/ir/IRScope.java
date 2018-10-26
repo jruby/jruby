@@ -360,11 +360,21 @@ public abstract class IRScope implements ParseResult {
         getRootLexicalScope().setFileName(filename);
     }
 
+    @Deprecated
     public String getFileName() {
+        return getFile();
+    }
+
+    public String getFile() {
         return getRootLexicalScope().getFileName();
     }
 
+    @Deprecated
     public int getLineNumber() {
+        return lineNumber;
+    }
+
+    public int getLine() {
         return lineNumber;
     }
 

@@ -495,7 +495,7 @@ public final class Ruby implements Constantizable {
      */
     public IRubyObject evalScriptlet(String script, DynamicScope scope) {
         ThreadContext context = getCurrentContext();
-        Node rootNode = parseEval(script, "<script>", scope, 0);
+        RootNode rootNode = (RootNode) parseEval(script, "<script>", scope, 0);
 
         context.preEvalScriptlet(scope);
 
@@ -519,7 +519,7 @@ public final class Ruby implements Constantizable {
     public IRubyObject executeScript(String script, String filename) {
         byte[] bytes = encodeToBytes(script);
 
-        RootNode root = (RootNode) parseInline(new ByteArrayInputStream(bytes), filename, null);
+        ParseResult root = (ParseResult) parseInline(new ByteArrayInputStream(bytes), filename, null);
         ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
@@ -629,7 +629,7 @@ public final class Ruby implements Constantizable {
     }
 
     public ParseResult parseFromMain(String fileName, InputStream in) {
-        if (config.isInlineScript()) return parseInline(in, fileName, getCurrentContext().getCurrentScope());
+        if (config.isInlineScript()) return (ParseResult) parseInline(in, fileName, getCurrentContext().getCurrentScope());
 
         return parseFileFromMain(fileName, in, getCurrentContext().getCurrentScope());
     }
@@ -866,7 +866,7 @@ public final class Ruby implements Constantizable {
 
     public IRubyObject runInterpreter(ThreadContext context,  Node rootNode, IRubyObject self) {
         assert rootNode != null : "scriptNode is not null";
-        return interpreter.execute(this, rootNode, self);
+        return interpreter.execute(this, (ParseResult) rootNode, self);
     }
 
     public IRubyObject runInterpreter(Node scriptNode) {
@@ -2676,14 +2676,14 @@ public final class Ruby implements Constantizable {
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope, int lineNumber) {
         addLoadParseToStats();
 
-        if (!RubyInstanceConfig.IR_READING) return parseFileAndGetAST(in, file, scope, lineNumber, false);
+        if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
 
         try {
             // Get IR from .ir file
             return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
-            return parseFileAndGetAST(in, file, scope, lineNumber, false);
+            return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
         }
     }
 
@@ -2698,14 +2698,14 @@ public final class Ruby implements Constantizable {
     public ParseResult parseFileFromMain(String file, InputStream in, DynamicScope scope) {
         addLoadParseToStats();
 
-        if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
+        if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
 
         try {
             return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             System.out.println(e);
             e.printStackTrace();
-            return parseFileFromMainAndGetAST(in, file, scope);
+            return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
         }
     }
 
@@ -2945,12 +2945,9 @@ public final class Ruby implements Constantizable {
             ThreadContext.pushBacktrace(context, ROOT_FRAME_NAME, file, 0);
             context.preNodeEval(self);
             ParseResult parseResult = parseFile(scriptName, in, null);
-            RootNode root = (RootNode) parseResult;
 
-            if (wrap) {
-                // toss an anonymous module into the search path
-                wrapRootForLoad((RubyBasicObject) self, root);
-            }
+            // toss an anonymous module into the search path
+            if (wrap) wrapWithModule((RubyBasicObject) self, parseResult);
 
             runInterpreter(context, parseResult, self);
         } finally {
@@ -2993,7 +2990,7 @@ public final class Ruby implements Constantizable {
             RootNode root = (RootNode) parseResult;
 
             if (wrap) {
-                wrapRootForLoad((RubyBasicObject) self, root);
+                wrapWithModule((RubyBasicObject) self, root);
             } else {
                 root.getStaticScope().setModule(getObject());
             }
@@ -3004,11 +3001,11 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void wrapRootForLoad(RubyBasicObject self, RootNode root) {
+    private void wrapWithModule(RubyBasicObject self, ParseResult result) {
         // toss an anonymous module into the search path
         RubyModule wrapper = RubyModule.newModule(this);
         self.extend(new IRubyObject[] {wrapper});
-        StaticScope top = root.getStaticScope();
+        StaticScope top = result.getStaticScope();
         StaticScope newTop = staticScopeFactory.newLocalScope(null);
         top.setPreviousCRefScope(newTop);
         top.setModule(wrapper);
