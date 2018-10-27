@@ -1,0 +1,4 @@
+fails:String#unpack with format 'H' taints returned strings if given a tainted packed string
+fails:String#unpack with format 'H' untrusts returned strings if given a untrusted packed string
+fails:String#unpack with format 'h' taints returned strings if given a tainted packed string
+fails:String#unpack with format 'h' untrusts returned strings if given a untrusted packed string
