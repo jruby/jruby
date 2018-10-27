@@ -48,18 +48,23 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         boolean targetIsIR = cache.method instanceof MixedModeIRMethod || cache.method instanceof InterpretedIRMethod;
         boolean siteIsIR = hostScope.compilable != null;
 
+        AbstractIRMethod targetMethod;
         if (!targetIsIR) {
             // Hope is that this will load ruby version and next inlineCheck use the ruby version instead.
             if (self instanceof RubyFixnum && "times".equals(methodName)) {
-                context.runtime.getIRManager().loadInternalMethod(context, "Fixnum", "times");
-                return;
+                targetIsIR = true;
+                targetMethod = new MixedModeIRMethod(context.runtime.getIRManager().loadInternalMethod(context, self, "times"), cache.method.getVisibility(), cache.method.getImplementationClass());
+            } else {
+                targetMethod = null;
             }
+        } else {
+            targetMethod = (AbstractIRMethod) cache.method;
         }
 
         if (targetIsIR && siteIsIR) {
             if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
 
-            IRMethod scopeToInline = (IRMethod) ((AbstractIRMethod) cache.method).getIRScope();
+            IRMethod scopeToInline = (IRMethod) (targetMethod).getIRScope();
             if (cache.method instanceof InterpretedIRMethod) {
                 hostScope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
             } else { // MixedModelIRMethod

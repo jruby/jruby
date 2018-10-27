@@ -1,4 +1,4 @@
-class Fixnum
+class Integer
   def times
     i = 0
     while i < self do

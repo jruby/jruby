@@ -11,7 +11,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
-import org.jruby.runtime.CallType;
 
 import java.util.ArrayList;
 import java.util.List;

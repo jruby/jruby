@@ -94,6 +94,10 @@ public class IRScriptBody extends IRScope {
 
     @Override
     public String getFileName() {
+        return getFile();
+    }
+
+    public String getFile() {
         return fileName.asJavaString();
     }
 }

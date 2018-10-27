@@ -375,7 +375,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getFile() {
-        return getRootLexicalScope().getFileName();
+        return getRootLexicalScope().getFile();
     }
 
     @Deprecated
@@ -492,6 +492,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG getCFG() {
+        if (getOptimizedInterpreterContext() != null) {
+            return getOptimizedInterpreterContext().getCFG();
+        }
         // A child scope may not have been prepared yet so we advance it to point of have a fresh CFG.
         if (getFullInterpreterContext() == null) prepareFullBuildCommon();
 
@@ -805,7 +808,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFileName() + ':' + getLineNumber() + ']';
+        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFile() + ':' + getLine() + ']';
     }
 
     public String debugOutput() {

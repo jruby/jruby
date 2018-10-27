@@ -1,11 +1,18 @@
 package org.jruby.ir;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.EnumSet;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ast.DefNode;
+import org.jruby.ast.IScopingNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.RootNode;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -27,7 +34,10 @@ import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.util.IGVInstrListener;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.FileResource;
+import org.jruby.util.JRubyFile;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
@@ -302,7 +312,33 @@ public class IRManager {
         return config;
     }
 
-    public boolean loadInternalMethod(ThreadContext context, String type, String method) {
-        return context.runtime.evalScriptlet("require 'jruby/ruby_implementations/" + type + "/" + method + "'").isTrue();
+    // FIXME: needs info for specialized method selection.
+    // FIXME: should allow non-classpath loading for easier debugging and hacking.
+    public IRMethod loadInternalMethod(ThreadContext context, IRubyObject self, String method) {
+        try {
+            RubyModule type = self.getMetaClass();
+            String fileName = "classpath:/jruby/ruby_implementations/" + type + "/" + method + ".rb";
+            FileResource file = JRubyFile.createResourceAsFile(context.runtime, fileName);
+            InputStream stream = file.openInputStream();
+            Node parseResult = context.runtime.parseFile(stream, fileName, null, 0);
+            IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
+            scopeNode.getScope().setModule(type);
+            DefNode defNode = (DefNode) scopeNode.getBodyNode();
+            IRScriptBody script = new IRScriptBody(this, runtime.newSymbol(parseResult.getFile()), ((RootNode) parseResult).getStaticScope());
+            IRModuleBody containingScope;
+            if (scopeNode instanceof ModuleNode) {
+                containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope());
+            } else {
+                containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope());
+            }
+            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method), true, 0, defNode.getScope(), false);
+
+            newMethod.prepareForCompilation();
+
+            return newMethod;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
