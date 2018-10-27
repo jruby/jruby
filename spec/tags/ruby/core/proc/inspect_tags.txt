@@ -1,0 +1,4 @@
+fails:Proc#inspect for a proc created with Proc.new has an ASCII-8BIT encoding
+fails:Proc#inspect for a proc created with lambda has an ASCII-8BIT encoding
+fails:Proc#inspect for a proc created with proc has an ASCII-8BIT encoding
+fails:Proc#inspect for a proc created with UnboundMethod#to_proc has an ASCII-8BIT encoding
