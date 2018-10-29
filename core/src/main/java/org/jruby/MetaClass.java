@@ -33,8 +33,9 @@ package org.jruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
-    /** rb_class_boot (for MetaClasses) (in makeMetaClass(RubyClass))
-     * 
+
+    /**
+     * rb_class_boot for meta classes ({@link #makeMetaClass(RubyClass)})
      */
     public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
         super(runtime, superClass, false);
@@ -43,12 +44,34 @@ public final class MetaClass extends RubyClass {
     }
 
     @Override
+    public final IRubyObject allocate(){
+        throw runtime.newTypeError("can't create instance of virtual class");
+    }
+
+    @Override
     public boolean isSingleton() {
         return true;
     }
 
-    public final IRubyObject allocate(){
-        throw runtime.newTypeError("can't create instance of virtual class");
+    /**
+     * rb_make_metaclass
+     * @param superClass
+     * @return meta-class
+     */
+    @Override
+    public RubyClass makeMetaClass(RubyClass superClass) {
+        MetaClass klass = new MetaClass(runtime, superClass, this); // rb_class_boot
+        setMetaClass(klass);
+
+        klass.setMetaClass(klass);
+        klass.setSuperClass(getSuperClass().getRealClass().getMetaClass());
+
+        return klass;
+    }
+
+    @Override
+    RubyClass initMetaClass(RubyBasicObject target) {
+        return attached == target ? this : super.initMetaClass(target);
     }
 
     public IRubyObject getAttached() {
@@ -59,5 +82,6 @@ public final class MetaClass extends RubyClass {
         this.attached = attached;
     }
 
-    private IRubyObject attached = null;
+    private IRubyObject attached;
+
 }

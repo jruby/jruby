@@ -533,13 +533,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyClass getSingletonClass() {
-        RubyClass klass = getMetaClass();
-
-        if (klass.isSingleton() && ((MetaClass) klass).getAttached() == this) {
-            // no-op
-        } else {
-            klass = makeMetaClass(klass);
-        }
+        RubyClass klass = getMetaClass().initMetaClass(this);
 
         klass.setTaint(isTaint());
         if (isFrozen()) klass.setFrozen(true);
@@ -1040,7 +1034,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             return klass;
         }
 
-        RubyClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), attach);
+        MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), attach);
         clone.flags = klass.flags;
 
         if (this instanceof RubyClass) {
@@ -1049,9 +1043,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             clone.setMetaClass(klass.getSingletonClassClone());
         }
 
-        if (klass.hasVariables()) {
-            clone.syncVariables(klass);
-        }
+        if (klass.hasVariables()) clone.syncVariables(klass);
+
         clone.syncConstants(klass);
 
         klass.cloneMethods(clone);
