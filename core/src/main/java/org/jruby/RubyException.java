@@ -503,10 +503,21 @@ public class RubyException extends RubyObject {
     public List<Variable<Object>> getVariableList() {
         List<Variable<Object>> attrs = super.getVariableList();
 
-        attrs.add(new VariableEntry<Object>("mesg", getMessage()));
+        attrs.add(new VariableEntry<>("mesg", getMessage()));
         IRubyObject backtrace = getBacktrace();
-        attrs.add(new VariableEntry<Object>("bt", backtrace));
+        attrs.add(new VariableEntry<>("bt", backtrace));
 
         return attrs;
     }
+
+    @Override
+    public List<String> getVariableNameList() {
+        List<String> names = super.getVariableNameList();
+
+        names.add("mesg");
+        names.add("bt");
+
+        return names;
+    }
+
 }
