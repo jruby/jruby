@@ -264,14 +264,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         runtime.addToObjectSpace(useObjectSpace, this);
     }
 
-    @Deprecated
-    protected void taint(Ruby runtime) {
-        if (!isTaint()) {
-        	testFrozen();
-            setTaint(true);
-        }
-    }
-
     /** rb_frozen_class_p
      *
      * Helper to test whether this object is frozen, and if it is will
@@ -1341,7 +1333,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void addFinalizer(IRubyObject f) {
-        Finalizer finalizer = (Finalizer)getInternalVariable("__finalizer__");
+        Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
             // since this is the first time we're registering a finalizer, we
             // must also register this object in ObjectSpace, so that future
@@ -1353,7 +1345,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             getRuntime().getObjectSpace().registerObjectId(id, this);
 
             finalizer = new Finalizer(fixnumId);
-            fastSetInternalVariable("__finalizer__", finalizer);
+            setInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
         finalizer.addFinalizer(f);
@@ -1364,7 +1356,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void removeFinalizers() {
-        Finalizer finalizer = (Finalizer)getInternalVariable("__finalizer__");
+        Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer != null) {
             finalizer.removeFinalizers();
             removeInternalVariable("__finalizer__");
@@ -2186,8 +2178,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  programs environment will refuse to accept tainted strings.
      */
     public IRubyObject taint(ThreadContext context) {
-        taint(context.runtime);
+        if (!isTaint()) {
+            testFrozen();
+            setTaint(true);
+        }
         return this;
+    }
+
+    @Deprecated
+    protected final void taint(Ruby runtime) {
+        taint(runtime.getCurrentContext());
     }
 
     /** rb_obj_untaint
