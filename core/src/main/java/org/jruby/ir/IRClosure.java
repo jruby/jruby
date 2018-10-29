@@ -227,7 +227,7 @@ public class IRClosure extends IRScope {
         source = null;
 
         // FIXME: This should be bytelist from param vs being made (see above).
-        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLineNumber(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
+        return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLine(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
     }
 
     public void setSource(IterNode iter) {

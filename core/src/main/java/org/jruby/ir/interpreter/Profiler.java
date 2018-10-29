@@ -250,7 +250,7 @@ public class Profiler {
         for (IRScope s: scopes) {
             long n = scopeThreadPollCounts.get(s).count;
             float p1 =  ((n*1000)/globalThreadPollCount)/10.0f;
-            String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
+            String msg = i + ". " + s + " [file:" + s.getFile() + ":" + s.getLine() + "] = " + n + "; (" + p1 + "%)";
             if (s instanceof IRClosure) {
                 IRMethod m = s.getNearestMethod();
                 //if (m != null) LOG.info(msg + " -- nearest enclosing method: " + m);

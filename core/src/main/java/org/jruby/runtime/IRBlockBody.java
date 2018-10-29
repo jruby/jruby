@@ -25,8 +25,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     /* internal */ IRBlockBody(IRScope closure, Signature signature, ThreadLocal evalType) {
         super(closure.getStaticScope(), signature);
         this.closure = (IRClosure) closure;
-        this.fileName = closure.getFileName();
-        this.lineNumber = closure.getLineNumber();
+        this.fileName = closure.getFile();
+        this.lineNumber = closure.getLine();
         this.evalType = evalType;
     }
 

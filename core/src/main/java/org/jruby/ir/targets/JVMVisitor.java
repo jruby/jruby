@@ -81,23 +81,23 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
-        file = scope.getFileName();
+        file = scope.getFile();
         lastLine = -1;
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         return defineFromBytecode(scope, compileToBytecode(scope, context), jrubyClassLoader);
     }
 
     public byte[] compileToBytecode(IRScope scope, JVMVisitorMethodContext context) {
-        file = scope.getFileName();
+        file = scope.getFile();
         lastLine = -1;
         codegenScope(scope, context);
         return code();
     }
 
     public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
-        file = scope.getFileName();
+        file = scope.getFile();
         lastLine = -1;
-        Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), code);
+        Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
 
         for (Map.Entry<String, IRScope> entry : scopeMap.entrySet()) {
             try {
@@ -321,8 +321,8 @@ public class JVMVisitor extends IRVisitor {
     protected void emitScriptBody(IRScriptBody script) {
         // Note: no index attached because there should be at most one script body per .class
         String name = JavaNameMangler.encodeScopeForBacktrace(script);
-        String clsName = jvm.scriptToClass(script.getFileName());
-        jvm.pushscript(clsName, script.getFileName());
+        String clsName = jvm.scriptToClass(script.getFile());
+        jvm.pushscript(clsName, script.getFile());
 
         emitScope(script, name, signatureFor(script, false), false, true);
 
@@ -337,9 +337,9 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
-        String clsName = jvm.scriptToClass(method.getFileName());
+        String clsName = jvm.scriptToClass(method.getFile());
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
-        jvm.pushscript(clsName, method.getFileName());
+        jvm.pushscript(clsName, method.getFile());
 
         emitWithSignatures(method, context, name);
 
@@ -348,9 +348,9 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
-        String clsName = jvm.scriptToClass(closure.getFileName());
+        String clsName = jvm.scriptToClass(closure.getFile());
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
-        jvm.pushscript(clsName, closure.getFileName());
+        jvm.pushscript(clsName, closure.getFile());
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
@@ -393,8 +393,8 @@ public class JVMVisitor extends IRVisitor {
     protected Handle emitModuleBodyJIT(IRModuleBody method) {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
-        String clsName = jvm.scriptToClass(method.getFileName());
-        jvm.pushscript(clsName, method.getFileName());
+        String clsName = jvm.scriptToClass(method.getFile());
+        jvm.pushscript(clsName, method.getFile());
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);

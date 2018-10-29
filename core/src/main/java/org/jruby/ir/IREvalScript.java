@@ -112,7 +112,7 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public String getFileName() {
+    public String getFile() {
         return fileName;
     }
 }

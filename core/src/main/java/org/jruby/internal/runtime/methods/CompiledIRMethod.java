@@ -198,11 +198,11 @@ public class CompiledIRMethod extends AbstractIRMethod {
     }
 
     public String getFile() {
-        return method.getFileName();
+        return method.getFile();
     }
 
     public int getLine() {
-        return method.getLineNumber();
+        return method.getLine();
     }
 
     @Override
