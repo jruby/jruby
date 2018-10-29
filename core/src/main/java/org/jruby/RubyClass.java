@@ -1050,17 +1050,17 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(context, runtime.getObject(), block, true);
+        return initializeCommon(context, runtime.getObject(), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
-        return initializeCommon(context, (RubyClass) superObject, block, true);
+        return initializeCommon(context, (RubyClass) superObject, block);
     }
 
-    private IRubyObject initializeCommon(ThreadContext context, RubyClass superClazz, Block block, boolean ruby1_9 /*callInheritBeforeSuper*/) {
+    private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
         setSuperClass(superClazz);
         allocator = superClazz.allocator;
         makeMetaClass(superClazz.getMetaClass());
@@ -1069,13 +1069,8 @@ public class RubyClass extends RubyModule {
 
         superClazz.addSubclass(this);
 
-        if (ruby1_9) {
-            inherit(superClazz);
-            super.initialize(context, block);
-        } else {
-            super.initialize(context, block);
-            inherit(superClazz);
-        }
+        inherit(superClazz);
+        super.initialize(context, block);
 
         return this;
     }
