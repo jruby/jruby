@@ -379,8 +379,7 @@ public class RubyClass extends RubyModule {
             this.realClass = null;
             this.variableTableManager = new VariableTableManager(this);
         } else {
-            this.realClass = superClass.realClass;
-            if (realClass != null) {
+            if ((this.realClass = superClass.realClass) != null) {
                 this.variableTableManager = realClass.variableTableManager;
             } else {
                 this.variableTableManager = new VariableTableManager(this);
@@ -486,7 +485,8 @@ public class RubyClass extends RubyModule {
     /**
      * @see #getSingletonClass()
      */
-    RubyClass initMetaClass(RubyBasicObject target) { // replaced after makeMetaClass with MetaClass's initMetaClass
+    RubyClass toSingletonClass(RubyBasicObject target) {
+        // replaced after makeMetaClass with MetaClass's toSingletonClass
         return target.makeMetaClass(this);
     }
 

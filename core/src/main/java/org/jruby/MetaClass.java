@@ -40,7 +40,9 @@ public final class MetaClass extends RubyClass {
     public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
         super(runtime, superClass, false);
         this.attached = attached;
-        setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+        // use same ClassIndex as metaclass, since we're technically still of that type
+        setClassIndex(superClass.getClassIndex());
+        superClass.addSubclass(this);
     }
 
     @Override
@@ -56,22 +58,34 @@ public final class MetaClass extends RubyClass {
     /**
      * rb_make_metaclass
      * @param superClass
-     * @return meta-class
+     * @return singleton-class for this (singleton) class
      */
     @Override
     public RubyClass makeMetaClass(RubyClass superClass) {
-        MetaClass klass = new MetaClass(runtime, superClass, this); // rb_class_boot
+        MetaClass klass = new MetaClass(runtime, getSuperSingletonMetaClass(), this);
         setMetaClass(klass);
 
+        // Foo.singleton_class.singleton_class: #<Class:#<Class:Foo>>
+        // #<Class:#<Class:Foo>>'s singleton_class == #<Class:#<Class:Foo>>
         klass.setMetaClass(klass);
-        klass.setSuperClass(getSuperClass().getRealClass().getMetaClass());
 
         return klass;
     }
 
+    private RubyClass getSuperSingletonMetaClass() {
+        if (attached instanceof RubyClass) {
+            final RubyClass superClass = ((RubyClass) attached).superClass;
+            // #<Class:BasicObject>'s singleton class == Class.singleton_class
+            if (superClass == null) return runtime.getClassClass().getSingletonClass();
+            return superClass.getRealClass().getSingletonClass().getMetaClass();
+        }
+
+        return getSuperClass().getRealClass().getMetaClass(); // NOTE: is this correct?
+    }
+
     @Override
-    RubyClass initMetaClass(RubyBasicObject target) {
-        return attached == target ? this : super.initMetaClass(target);
+    RubyClass toSingletonClass(RubyBasicObject target) {
+        return attached == target ? this : super.toSingletonClass(target);
     }
 
     public IRubyObject getAttached() {
