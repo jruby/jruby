@@ -79,7 +79,7 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getCurrentModule());
-        e.encode(getId());
+        e.encode(getName());
     }
 
     public static InheritanceSearchConstInstr decode(IRReaderDecoder d) {

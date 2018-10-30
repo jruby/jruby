@@ -1104,15 +1104,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             newFile.delete();
         }
 
-        // Check if source file and dest parent are on same filesystem or raise EXDEV
+        // Try atomic move from JDK
         Path oldPath = Paths.get(oldFile.toURI());
         Path destPath = Paths.get(dest.getAbsolutePath());
         try {
-            FileStore oldStore = Files.getFileStore(oldPath);
-            FileStore destStore = Files.getFileStore(destPath.getParent());
-            if (!oldStore.equals(destStore)) {
-                throw runtime.newErrnoEXDEVError("(" + oldFile + ", " + dest + ")");
-            }
+            Files.move(oldPath, destPath, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException ioe) {
             throw Helpers.newIOErrorFromException(runtime, ioe);
         }
@@ -1559,7 +1555,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (entry == null) {
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
             path = new File(path).getCanonicalPath().substring(prefixForNoEntry.length() + 1);
-            entry = jar.getEntry(path.replaceAll("\\\\", "/"));
+            entry = jar.getEntry(StringSupport.replaceAll(path, "\\\\", "/").toString());
         }
         return entry;
     }

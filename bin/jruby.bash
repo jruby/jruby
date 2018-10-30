@@ -281,7 +281,8 @@ do
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
         fi 
-        java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
+        JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
+        java_args=("${java_args[@]}" "-sourcepath" "$JDB_SOURCEPATH")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
         JAVA_VM=-client ;;
@@ -361,6 +362,27 @@ if $cygwin; then
 
 fi
 
+# Allow overriding default JSA file location
+if [ "$JRUBY_JSA" == "" ]; then
+  JRUBY_JSA=${JRUBY_HOME}/lib/jruby.jsa
+fi
+
+# Determine whether to use -classpath or --module-path
+classmod_flag="-classpath"
+if [ -d $JAVA_HOME/jmods ]; then
+  # Use module path instead of classpath
+  classmod_flag="--module-path"
+
+  # Switch to non-boot path since we can't use bootclasspath on 9+
+  NO_BOOTCLASSPATH=1
+
+  # If we have a jruby.jsa file, enable AppCDS
+  if [ -f $JRUBY_JSA ]; then
+    JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
+  fi
+fi
+
+# Run JRuby!
 if [ "$nailgun_client" != "" ]; then
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
     exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
@@ -379,7 +401,7 @@ if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
     JRUBY_OPTS=''
   fi
 
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \

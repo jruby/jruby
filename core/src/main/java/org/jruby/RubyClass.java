@@ -89,11 +89,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.ArraySupport;
-import org.jruby.util.OneShotClassLoader;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.CodegenUtils;
-import org.jruby.util.JavaNameMangler;
+import org.jruby.util.*;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
@@ -1042,17 +1038,17 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(context, runtime.getObject(), block, true);
+        return initializeCommon(context, runtime.getObject(), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
-        return initializeCommon(context, (RubyClass) superObject, block, true);
+        return initializeCommon(context, (RubyClass) superObject, block);
     }
 
-    private IRubyObject initializeCommon(ThreadContext context, RubyClass superClazz, Block block, boolean ruby1_9 /*callInheritBeforeSuper*/) {
+    private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
         setSuperClass(superClazz);
         allocator = superClazz.allocator;
         makeMetaClass(superClazz.getMetaClass());
@@ -1061,13 +1057,8 @@ public class RubyClass extends RubyModule {
 
         superClazz.addSubclass(this);
 
-        if (ruby1_9) {
-            inherit(superClazz);
-            super.initialize(context, block);
-        } else {
-            super.initialize(context, block);
-            inherit(superClazz);
-        }
+        inherit(superClazz);
+        super.initialize(context, block);
 
         return this;
     }
@@ -1422,8 +1413,8 @@ public class RubyClass extends RubyModule {
         final String name = getBaseName() != null ? getName() :
                 ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
 
-        final String javaName = "rubyobj." + name.replaceAll("::", ".");
-        final String javaPath = "rubyobj/" + name.replaceAll("::", "/");
+        final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
+        final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
 
         final Class parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {

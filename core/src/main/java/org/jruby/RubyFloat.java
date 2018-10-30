@@ -446,7 +446,7 @@ public class RubyFloat extends RubyNumeric {
                 mod += y;
             }
             final Ruby runtime = context.runtime;
-            IRubyObject car = dbl2ival(runtime, div);
+            RubyInteger car = dbl2ival(runtime, div);
             RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
             return RubyArray.newArray(runtime, car, cdr);
         default:

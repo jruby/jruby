@@ -1,0 +1,2 @@
+fails:String#unpack with format 'u' taints returned strings if given a tainted packed string
+fails:String#unpack with format 'u' untrusts returned strings if given a untrusted packed string

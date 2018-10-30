@@ -448,7 +448,7 @@ abstract class DateUtils {
     private static final int JC_PERIOD0 = 1461;		/* 365.25 * 4 */
     private static final int GC_PERIOD0 = 146097; /* 365.2425 * 400 */
     private static final int CM_PERIOD0 = 71149239;	/* (lcm 7 1461 146097) */
-    private static final int CM_PERIOD = (0xfffffff / CM_PERIOD0 * CM_PERIOD0);
+    static final int CM_PERIOD = (0xfffffff / CM_PERIOD0 * CM_PERIOD0);
     private static final int CM_PERIOD_JCY = (CM_PERIOD / JC_PERIOD0 * 4);
     private static final int CM_PERIOD_GCY = (CM_PERIOD / GC_PERIOD0 * 400);
 

@@ -31,6 +31,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -45,7 +46,7 @@ import org.jruby.runtime.DynamicScope;
  *
  */
 // TODO: Store BEGIN and END information into this node
-public class RootNode extends Node {
+public class RootNode extends Node implements ParseResult {
     private transient DynamicScope scope;
     private StaticScope staticScope;
     private Node bodyNode;

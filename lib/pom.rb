@@ -30,10 +30,10 @@ default_gems = [
     ImportedGem.new('fileutils', '1.1.0'),
     ImportedGem.new('ipaddr', '1.2.0'),
     ImportedGem.new('jar-dependencies', '${jar-dependencies.version}'),
-    ImportedGem.new('jruby-readline', '1.3.5'),
+    ImportedGem.new('jruby-readline', '1.2.2'),
     ImportedGem.new('jruby-openssl', '0.10.1'),
     ImportedGem.new('json', '${json.version}'),
-    ImportedGem.new('psych', '3.0.2'),
+    ImportedGem.new('psych', '3.0.3'),
     ImportedGem.new('rake-ant', '1.0.4'),
     ImportedGem.new('rdoc', '${rdoc.version}'),
     ImportedGem.new('scanf', '1.0.0'),
@@ -71,7 +71,7 @@ project 'JRuby Lib Setup' do
   # just depends on jruby-core so we are sure the jruby.jar is in place
   jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.1'
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
 
   repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 

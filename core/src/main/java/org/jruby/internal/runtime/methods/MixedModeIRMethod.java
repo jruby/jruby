@@ -30,7 +30,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     public MixedModeIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
-        getStaticScope().determineModule();
 
         // disable JIT if JIT is disabled
         if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT() ||

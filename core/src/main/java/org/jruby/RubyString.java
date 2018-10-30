@@ -136,7 +136,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static final byte[] SCRUB_REPL_UTF16LE = new byte[]{(byte)0xFD, (byte)0xFF};
     private static final byte[] SCRUB_REPL_UTF32BE = new byte[]{(byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFD};
     private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
-    public static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
+    private static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
 
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 

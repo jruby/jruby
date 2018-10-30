@@ -30,12 +30,9 @@
 
 package org.jruby.internal.runtime.methods;
 
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
 import org.jruby.RubyModule;

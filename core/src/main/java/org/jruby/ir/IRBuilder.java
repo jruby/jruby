@@ -1088,6 +1088,7 @@ public class IRBuilder {
                 (argsAry = (ArrayNode) callNode.getArgsNode()).size() == 1 &&
                 argsAry.get(0) instanceof StrNode &&
                 !scope.maybeUsingRefinements() &&
+                receiverNode instanceof HashNode &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
             addInstr(ArrayDerefInstr.create(scope, result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
@@ -1488,7 +1489,7 @@ public class IRBuilder {
 
     private Operand startingSearchScope() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.ScopeFor(nearestModuleBodyDepth);
+        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.INSTANCE;
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
@@ -2057,7 +2058,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.ScopeFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
@@ -2543,15 +2544,18 @@ public class IRBuilder {
         return getLocalVariable(node.getName(), node.getDepth());
     }
 
-    public Operand buildDXStr(Variable result, DXStrNode dstrNode) {
-        Node[] nodePieces = dstrNode.children();
+    public Operand buildDXStr(Variable result, DXStrNode node) {
+        Node[] nodePieces = node.children();
         Operand[] pieces = new Operand[nodePieces.length];
         for (int i = 0; i < pieces.length; i++) {
             pieces[i] = dynamicPiece(nodePieces[i]);
         }
 
+        Variable stringResult = createTemporaryVariable();
         if (result == null) result = createTemporaryVariable();
-        return addResultInstr(new BacktickInstr(result, pieces));
+        boolean debuggingFrozenStringLiteral = manager.getInstanceConfig().isDebuggingFrozenStringLiteral();
+        addInstr(new BuildCompoundStringInstr(stringResult, pieces, node.getEncoding(), false, debuggingFrozenStringLiteral, getFileName(), node.getLine()));
+        return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, result, manager.getRuntime().newSymbol("`"), Self.SELF, new Operand[] { stringResult }, null));
     }
 
     /* ****************************************************************
@@ -3470,7 +3474,7 @@ public class IRBuilder {
 
     private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
@@ -3805,7 +3809,7 @@ public class IRBuilder {
     }
 
     private void addCurrentScopeAndModule() {
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %current_scope
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
@@ -3976,8 +3980,9 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(),
-                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine())}));
+        return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, createTemporaryVariable(),
+                manager.getRuntime().newSymbol("`"), Self.SELF,
+                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine()) }, null));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {

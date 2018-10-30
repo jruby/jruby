@@ -612,7 +612,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"to_a", "values"})
     @Override
     public RubyArray to_a() {
-        return RubyArray.newArrayMayCopy(getRuntime(), values);
+        return getRuntime().newArray(values);
     }
 
     @JRubyMethod

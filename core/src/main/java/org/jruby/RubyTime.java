@@ -93,6 +93,7 @@ public class RubyTime extends RubyObject {
 
     private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
+    public static final int TIME_SCALE = 1000000000;
 
     private DateTime dt;
     private long nsec;
@@ -1196,8 +1197,7 @@ public class RubyTime extends RubyObject {
 
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
-            // However in the case of a single argument, any portion after
-            // the decimal point is honored.
+            // However in the case of a single argument, any portion after the decimal point is honored.
             if (arg instanceof RubyFloat) {
                 // use integral and decimal forms to calculate nanos
                 long seconds = RubyNumeric.float2long((RubyFloat) arg);
@@ -1663,18 +1663,20 @@ public class RubyTime extends RubyObject {
         final DateTimeZone dtz;
         if (gmt) {
             dtz = DateTimeZone.UTC;
-        } else if (args.length == 10 && args[9] instanceof RubyString) {
-            if (utcOffset) {
-                dtz = getTimeZoneFromUtcOffset(context, args[9]);
-                setTzRelative = true;
-            } else {
-                dtz = getTimeZoneFromString(runtime, args[9].toString());
-            }
-        } else if (args.length == 10 && sites(context).respond_to_to_int.respondsTo(context, args[9], args[9])) {
-            IRubyObject offsetInt = sites(context).to_int.call(context, args[9], args[9]);
-            dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
         } else {
-            dtz = getLocalTimeZone(runtime);
+            if (utcOffset) {
+                if (args.length == 10 && args[9] instanceof RubyString) {
+                    dtz = getTimeZoneFromUtcOffset(context, args[9]);
+                    setTzRelative = true;
+                } else if (args.length == 10 && sites(context).respond_to_to_int.respondsTo(context, args[9], args[9])) {
+                    IRubyObject offsetInt = sites(context).to_int.call(context, args[9], args[9]);
+                    dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
+                } else {
+                    dtz = getLocalTimeZone(runtime);
+                }
+            } else {
+                dtz = getLocalTimeZone(runtime);
+            }
         }
 
         if (args.length == 10) {
@@ -1715,7 +1717,6 @@ public class RubyTime extends RubyObject {
         int i_args1 = argToInt(context, args, 1 + 2, 0);
         int i_args2 = argToInt(context, args, 2 + 2, 0);
         int i_args3 = argToInt(context, args, 3 + 2, 0);
-        int i_args4 = argToInt(context, args, 4 + 2, 0);
         //int i_args5 = argToInt(context, args, 5 + 2, 0);
 
         // Validate the times
@@ -1743,6 +1744,9 @@ public class RubyTime extends RubyObject {
             // 1.9 will observe fractional seconds *if* not given usec
             if (args[5] != context.nil && args[6] == context.nil) {
                 double secs = RubyFloat.num2dbl(context, args[5]);
+                if (secs < 0 || secs >= TIME_SCALE) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
                 int int_millis = (int) (secs * 1000) % 1000;
                 instant = chrono.millis().add(instant, int_millis);
                 nanos = ((long) (secs * 1000000000) % 1000000);
@@ -1752,15 +1756,18 @@ public class RubyTime extends RubyObject {
             dt = dt.withZoneRetainFields(dtz);
 
             // If we're at a DST boundary, we need to choose the correct side of the boundary
+            final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
+            final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
+
+            final int offsetBeforeBoundary = dtz.getOffset(beforeDstBoundary);
+            final int offsetAfterBoundary = dtz.getOffset(afterDstBoundary);
+
             if (isDst) {
-                final DateTime beforeDstBoundary = dt.withEarlierOffsetAtOverlap();
-                final DateTime afterDstBoundary = dt.withLaterOffsetAtOverlap();
-
-                final int offsetBeforeBoundary = dtz.getOffset(beforeDstBoundary);
-                final int offsetAfterBoundary = dtz.getOffset(afterDstBoundary);
-
                 // If the time is during DST, we need to pick the time with the highest offset
                 dt = offsetBeforeBoundary > offsetAfterBoundary ? beforeDstBoundary : afterDstBoundary;
+            }
+            else {
+                dt = offsetBeforeBoundary > offsetAfterBoundary ? afterDstBoundary : beforeDstBoundary;
             }
         }
         catch (org.joda.time.IllegalFieldValueException e) {
@@ -1770,15 +1777,29 @@ public class RubyTime extends RubyObject {
         // Ignores usec if 8 args (for compatibility with parse-date) or if not supplied.
         if (args.length != 8 && args[6] != context.nil) {
             if (args[6] instanceof RubyRational) {
-                RubyRational nsec = (RubyRational) ((RubyRational) args[6]).op_mul(context, runtime.newFixnum(1000));
+                RubyRational rat = (RubyRational) args[6];
+                if (rat.isNegative()) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
+                RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1000));
                 long tmpNanos = (long) nsec.getDoubleValue(context);
                 dt = dt.withMillis(dt.getMillis() + (tmpNanos / 1_000_000));
                 nanos = tmpNanos % 1_000_000;
             } else if (args[6] instanceof RubyFloat) {
-                double micros = ((RubyFloat) args[6]).getDoubleValue();
+                RubyFloat flo = (RubyFloat) args[6];
+                if (flo.isNegative()) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
+                double micros = flo.getDoubleValue();
                 dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {
+                int i_args4 = argToInt(context, args, 4 + 2, 0);
+
+                if (i_args4 < 0 || i_args4 >= TIME_SCALE) {
+                    throw runtime.newArgumentError("argument out of range.");
+                }
+
                 int usec = i_args4 % 1000;
                 int msec = i_args4 / 1000;
 

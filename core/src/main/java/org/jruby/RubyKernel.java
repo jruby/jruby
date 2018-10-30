@@ -43,6 +43,16 @@
 
 package org.jruby;
 
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import jnr.constants.platform.Errno;
+import jnr.posix.POSIX;
+
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -77,13 +87,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
-
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -1804,22 +1807,29 @@ public class RubyKernel {
                 // attempt to shut down the JMX server
                 jmxStopped = runtime.getBeanManager().tryShutdownAgent();
 
-                runtime.getPosix().chdir(System.getProperty("user.dir"));
+                final POSIX posix = runtime.getPosix();
+
+                posix.chdir(System.getProperty("user.dir"));
 
                 if (Platform.IS_WINDOWS) {
                     // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
-                    runtime.getPosix().exec(progStr, argv);
+                    posix.exec(progStr, argv);
                 } else {
                     // TODO: other logic surrounding this call? In jnr-posix?
                     @SuppressWarnings("unchecked")
                     final Map<String, String> ENV = (Map<String, String>) runtime.getENV();
-                    ArrayList<String> envStrings = new ArrayList<String>(ENV.size() + 1);
+                    ArrayList<String> envStrings = new ArrayList<>(ENV.size() + 1);
                     for ( Map.Entry<String, String> envEntry : ENV.entrySet() ) {
                         envStrings.add( envEntry.getKey() + '=' + envEntry.getValue() );
                     }
                     envStrings.add(null);
 
-                    runtime.getPosix().execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
+                    int status = posix.execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
+                    if (Platform.IS_WSL && status == -1) { // work-around a bug in Windows Subsystem for Linux
+                        if (posix.errno() == Errno.ENOMEM.intValue()) {
+                            posix.exec(progStr, argv);
+                        }
+                    }
                 }
 
                 // Only here because native exec could not exec (always -1)
