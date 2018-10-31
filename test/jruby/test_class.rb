@@ -338,27 +338,28 @@ class TestClass < Test::Unit::TestCase
     assert_equal klass_name, klass.name
   end
 
-  class Foo
+  class S1
     class << self
+      include Enumerable
       class << self
         def foo; :foo end
       end
       def self.bar; :bar end
     end
+    include Kernel
   end
 
-  class Bar < Foo; end
+  class S2 < S1
+    include Enumerable
+  end
 
   def test_singleton_class_user_class
-    assert_same Foo.singleton_class, Bar.singleton_class.superclass
+    assert_same S1.singleton_class, S2.singleton_class.superclass
 
-    foo_singleton_singleton_class = Foo.singleton_class.singleton_class
-    assert_same foo_singleton_singleton_class, Bar.singleton_class.singleton_class.superclass
+    singleton_singleton_class = S1.singleton_class.singleton_class
+    assert_same singleton_singleton_class, S2.singleton_class.singleton_class.superclass
 
-    puts "Object.singleton_class.singleton_class: #{Object.singleton_class.singleton_class}"
-    puts "foo_singleton_singleton_class.superclass: #{foo_singleton_singleton_class.superclass}"
-
-    assert_same Object.singleton_class.singleton_class, foo_singleton_singleton_class.superclass
+    assert_same Object.singleton_class.singleton_class, singleton_singleton_class.superclass
   end
 
   def test_singleton_class_base_hierarchy
@@ -369,21 +370,27 @@ class TestClass < Test::Unit::TestCase
   end
 
   def test_singleton_class_subclasses
-    classes = ObjectSpace.each_object(Foo.singleton_class.singleton_class).to_a
-    assert_include classes, Foo.singleton_class
-    assert_include classes, Bar.singleton_class
-    assert_equal 2, classes.size
+    classes = ObjectSpace.each_object(S1.singleton_class.singleton_class).to_a
+    assert_include classes, S1.singleton_class
+    assert_include classes, S2.singleton_class
+    assert_equal 3, classes.size, classes.inspect
 
-    classes = ObjectSpace.each_object(Bar.singleton_class.singleton_class).to_a
-    assert_equal [ Bar.singleton_class ], classes
+    classes = ObjectSpace.each_object(S2.singleton_class.singleton_class).to_a
+    assert_equal [ S2.singleton_class ], classes
   end
 
   def test_singleton_class_methods
-    assert_include Foo.singleton_class.methods(false), :foo
-    assert_include Foo.singleton_class.methods(false), :bar
+    methods = S1.singleton_class.methods(false)
+    assert_include methods, :foo
+    assert_include methods, :bar
 
-    assert_include Bar.singleton_class.methods, :foo
-    assert_include Bar.singleton_class.methods, :bar
+    methods = S2.singleton_class.methods
+    #assert_include methods, :foo
+    #assert_include methods, :bar
+
+    methods = Class.new(S1).singleton_class.methods
+    #assert_include methods, :foo
+    #assert_include methods, :bar
   end
 
 end
