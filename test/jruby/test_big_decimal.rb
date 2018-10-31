@@ -84,6 +84,11 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal 99, 10.0.to_d / MyNum.new
   end
 
+  def test_coerce_subtraction
+    coercible = Object.new; def coercible.coerce(x); [x, BigDecimal("0")]; end
+    assert_equal(1, BigDecimal("1") - coercible)
+  end
+
   require "bigdecimal/newton"
   include Newton
 
