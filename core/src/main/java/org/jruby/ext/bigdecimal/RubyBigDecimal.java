@@ -1131,7 +1131,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_minus(ThreadContext context, IRubyObject b) {
-        return subInternal(context, getVpValueWithPrec(context, b, true), b, 0);
+        return subInternal(context, getVpValueWithPrec(context, b, false), b, 0);
     }
 
     @Deprecated
@@ -1150,7 +1150,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
-        if (val == null) return callCoerced(context, sites(context).op_minus, b);
+        if (val == null) return callCoerced(context, sites(context).op_minus, b, true);
         RubyBigDecimal res = subSpecialCases(context, val);
         return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(prec);
     }

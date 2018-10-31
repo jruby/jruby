@@ -772,6 +772,11 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_kind_of(BigDecimal, BigDecimal("3") - 1.quo(3))
   end
 
+  def test_sub_with_coercion
+    coercible = Object.new; def coercible.coerce(x); [x, BigDecimal("0")]; end
+    assert_equal(1, BigDecimal("1") - coercible)
+  end
+
   def test_mult
     x = BigDecimal((2**100).to_s)
     assert_equal(BigDecimal((2**100 * 3).to_s), (x * 3).to_i)
