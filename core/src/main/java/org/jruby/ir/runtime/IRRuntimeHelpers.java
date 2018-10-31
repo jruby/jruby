@@ -555,7 +555,7 @@ public class IRRuntimeHelpers {
             RubyHash kwargs = (RubyHash) maybeKwargs;
 
             if (kwargs.allSymbols()) {
-                args[length - 1] = kwargs;
+                args[length - 1] = kwargs.dupFast(context);
             } else {
                 args = homogenizeKwargs(context, args, kwargs);
             }
