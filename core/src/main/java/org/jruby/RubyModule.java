@@ -1286,7 +1286,7 @@ public class RubyModule extends RubyObject {
             RubyModule c = this;
 
             if (c.isSingleton()) {
-                IRubyObject obj = ((MetaClass)c).getAttached();
+                IRubyObject obj = ((MetaClass) c).getAttached();
 
                 if (obj instanceof RubyModule) {
                     c = (RubyModule) obj;
@@ -1301,8 +1301,7 @@ public class RubyModule extends RubyObject {
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
         if (isSingleton()) {
-            IRubyObject singleton = ((MetaClass)this).getAttached();
-            singleton.callMethod(context, "singleton_method_undefined", runtime.newSymbol(name));
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_undefined", runtime.newSymbol(name));
         } else {
             callMethod(context, "method_undefined", runtime.newSymbol(name));
         }
@@ -1340,7 +1339,7 @@ public class RubyModule extends RubyObject {
 
         if (this instanceof MetaClass) {
             // FIXME: Gross and not quite right. See MRI's rb_frozen_class_p logic
-            ((RubyBasicObject) ((MetaClass) this).getAttached()).testFrozen();
+            ((MetaClass) this).getAttached().testFrozen();
         }
 
         addMethodInternal(id, method);
@@ -1391,8 +1390,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (isSingleton()) {
-            IRubyObject singleton = ((MetaClass)this).getAttached();
-            singleton.callMethod(context, "singleton_method_removed", name);
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_removed", name);
         } else {
             callMethod(context, "method_removed", name);
         }
@@ -2376,17 +2374,10 @@ public class RubyModule extends RubyObject {
             IRubyObject attached = ((MetaClass) this).getAttached();
             RubyString buffer = runtime.newString("#<Class:");
 
-            if (attached != null) { // FIXME: figure out why we getService null sometimes
-                if (attached instanceof RubyClass || attached instanceof RubyModule) {
-                    buffer.cat19(attached.inspect().convertToString());
-                } else {
-                    try {
-                        buffer.cat19((RubyString) attached.anyToString());
-                    } catch (NullPointerException npe) {
-                        npe.printStackTrace();
-                        throw npe;
-                    }
-                }
+            if (attached instanceof RubyModule) {
+                buffer.cat19(attached.inspect().convertToString());
+            } else if (attached != null) {
+                buffer.cat19((RubyString) attached.anyToString());
             }
             buffer.cat19(runtime.newString(">"));
 
@@ -3021,7 +3012,7 @@ public class RubyModule extends RubyObject {
         defineAlias(newSym.idString(), oldSym.idString());
 
         if (isSingleton()) {
-            ((MetaClass)this).getAttached().callMethod(context, "singleton_method_added", newSym);
+            ((MetaClass) this).getAttached().callMethod(context, "singleton_method_added", newSym);
         } else {
             callMethod(context, "method_added", newSym);
         }

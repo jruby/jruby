@@ -1617,7 +1617,7 @@ public class Helpers {
         }
     }
 
-    private static void callSingletonMethodHook(IRubyObject receiver, ThreadContext context, RubySymbol name) {
+    private static void callSingletonMethodHook(RubyBasicObject receiver, ThreadContext context, RubySymbol name) {
         receiver.callMethod(context, "singleton_method_added", name);
     }
 

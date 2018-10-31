@@ -281,7 +281,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             // if real class is Class
             if (realClass == context.runtime.getClassClass()) {
                 // use the attached class's name
-                className = ((RubyClass)metaClass.getAttached()).getName();
+                className = ((RubyClass) metaClass.getAttached()).getName();
             } else {
                 // use the real class name
                 className = realClass.getName();

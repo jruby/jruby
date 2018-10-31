@@ -28,13 +28,13 @@ package org.jruby.runtime.profile.builtin;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig.ProfilingMode;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.IntHashMap.Entry;
 
@@ -183,12 +183,12 @@ public abstract class ProfilePrinter {
         Ruby runtime = module.getRuntime();
 
         if (module instanceof MetaClass) {
-            IRubyObject obj = ((MetaClass) module).getAttached();
+            RubyBasicObject obj = ((MetaClass) module).getAttached();
             if (obj instanceof RubyModule) {
                 return str(runtime, types(runtime, (RubyModule) obj), ".", ids(runtime, id));
             } 
             if (obj instanceof RubyObject) {
-                return str(runtime, types(runtime, ((RubyObject) obj).getType()), "(singleton)#", ids(runtime, id));
+                return str(runtime, types(runtime, obj.getType()), "(singleton)#", ids(runtime, id));
             }
             return str(runtime, "unknown#", ids(runtime, id));
         }
