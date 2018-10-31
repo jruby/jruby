@@ -1916,6 +1916,10 @@ public class RubyHash extends RubyObject implements Map {
         modify();
         IRubyObject key, value;
 
+        int start = this.start;
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+
         key = entries[start * NUMBER_OF_ENTRIES];
         value = entries[(start * NUMBER_OF_ENTRIES) + 1];
 
