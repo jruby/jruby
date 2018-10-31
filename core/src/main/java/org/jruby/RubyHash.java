@@ -1914,12 +1914,16 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "shift")
     public IRubyObject shift(ThreadContext context) {
         modify();
-        IRubyObject key, value, lastKey;
+        IRubyObject key, value;
+
+        int start = this.start;
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+
         key = entries[start * NUMBER_OF_ENTRIES];
         value = entries[(start * NUMBER_OF_ENTRIES) + 1];
 
-        lastKey = entries[end * NUMBER_OF_ENTRIES];
-        if (key != lastKey) {
+        if (getLength() == end || key != entries[end * NUMBER_OF_ENTRIES]) {
             RubyArray result = RubyArray.newArray(context.runtime, key, value);
             internalDeleteEntry(key, value);
             return result;
