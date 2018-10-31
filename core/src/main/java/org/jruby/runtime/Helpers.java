@@ -215,6 +215,8 @@ public class Helpers {
                     return Errno.EMSGSIZE;
                 case "Is a directory":
                     return Errno.EISDIR;
+                case "Invalid cross-device link":
+                    return Errno.EXDEV;
             }
         } else if (t instanceof PortUnreachableException) {
             return Errno.ECONNREFUSED;
