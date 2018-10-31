@@ -121,7 +121,7 @@ public class ThreadService {
      * through ThreadContext instances every time a Java thread enters and exits
      * Ruby space.
      */
-    private final ThreadLocal<SoftReference<ThreadContext>> localContext;
+    private ThreadLocal<SoftReference<ThreadContext>> localContext;
 
     /**
      * The Java thread group into which we register all Ruby threads. This is
@@ -158,6 +158,17 @@ public class ThreadService {
     public void disposeCurrentThread() {
         localContext.set(null);
         rubyThreadMap.remove(Thread.currentThread());
+    }
+
+    public void teardown() {
+        // clear all thread-local context references
+        localContext = new ThreadLocal<SoftReference<ThreadContext>>();
+
+        // clear main context reference
+        mainContext = null;
+
+        // clear thread map
+        rubyThreadMap.clear();
     }
 
     public void initMainThread() {

@@ -3370,8 +3370,6 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        getThreadService().disposeCurrentThread();
-
         getBeanManager().unregisterCompiler();
         getBeanManager().unregisterConfig();
         getBeanManager().unregisterParserStats();
@@ -3387,6 +3385,8 @@ public final class Ruby implements Constantizable {
             ProfileCollection profileCollection = threadService.getMainThread().getContext().getProfileCollection();
             printProfileData(profileCollection);
         }
+
+        getThreadService().teardown();
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);
