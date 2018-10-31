@@ -34,10 +34,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
 
+    @Deprecated
+    public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
+        this(runtime, superClass, (RubyBasicObject) attached);
+    }
+
     /**
      * rb_class_boot for meta classes ({@link #makeMetaClass(RubyClass)})
      */
-    public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
+    MetaClass(Ruby runtime, RubyClass superClass, RubyBasicObject attached) {
         super(runtime, superClass, false);
         this.attached = attached;
         // use same ClassIndex as metaclass, since we're technically still of that type
@@ -89,14 +94,14 @@ public final class MetaClass extends RubyClass {
         return attached == target ? this : super.toSingletonClass(target);
     }
 
-    public IRubyObject getAttached() {
+    public RubyBasicObject getAttached() {
         return attached;
     }
 
-    public void setAttached(IRubyObject attached) {
+    public void setAttached(RubyBasicObject attached) {
         this.attached = attached;
     }
 
-    private IRubyObject attached;
+    private RubyBasicObject attached;
 
 }
