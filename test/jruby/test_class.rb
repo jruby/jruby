@@ -244,7 +244,7 @@ class TestClass < Test::Unit::TestCase
   class SubClass < BaseClass
     define_method(:foo) do
       $foo_calls << SubClass
-      super
+      super()
     end
   end
 
@@ -337,4 +337,53 @@ class TestClass < Test::Unit::TestCase
     Object.const_set klass_name, klass
     assert_equal klass_name, klass.name
   end
+
+  class Foo
+    class << self
+      class << self
+        def foo; :foo end
+      end
+      def self.bar; :bar end
+    end
+  end
+
+  class Bar < Foo; end
+
+  def test_singleton_class_user_class
+    assert_same Foo.singleton_class, Bar.singleton_class.superclass
+
+    foo_singleton_singleton_class = Foo.singleton_class.singleton_class
+    assert_same foo_singleton_singleton_class, Bar.singleton_class.singleton_class.superclass
+
+    puts "Object.singleton_class.singleton_class: #{Object.singleton_class.singleton_class}"
+    puts "foo_singleton_singleton_class.superclass: #{foo_singleton_singleton_class.superclass}"
+
+    assert_same Object.singleton_class.singleton_class, foo_singleton_singleton_class.superclass
+  end
+
+  def test_singleton_class_base_hierarchy
+    assert_same BasicObject.singleton_class.singleton_class, Object.singleton_class.singleton_class.superclass
+    assert_equal '#<Class:Class>', Class.singleton_class.inspect
+    assert_same Class.singleton_class, BasicObject.singleton_class.singleton_class.superclass
+    assert_same Module.singleton_class, BasicObject.singleton_class.singleton_class.superclass.superclass
+  end
+
+  def test_singleton_class_subclasses
+    classes = ObjectSpace.each_object(Foo.singleton_class.singleton_class).to_a
+    assert_include classes, Foo.singleton_class
+    assert_include classes, Bar.singleton_class
+    assert_equal 2, classes.size
+
+    classes = ObjectSpace.each_object(Bar.singleton_class.singleton_class).to_a
+    assert_equal [ Bar.singleton_class ], classes
+  end
+
+  def test_singleton_class_methods
+    assert_include Foo.singleton_class.methods(false), :foo
+    assert_include Foo.singleton_class.methods(false), :bar
+
+    assert_include Bar.singleton_class.methods, :foo
+    assert_include Bar.singleton_class.methods, :bar
+  end
+
 end

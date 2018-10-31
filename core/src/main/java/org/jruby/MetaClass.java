@@ -74,10 +74,11 @@ public final class MetaClass extends RubyClass {
 
     private RubyClass getSuperSingletonMetaClass() {
         if (attached instanceof RubyClass) {
-            final RubyClass superClass = ((RubyClass) attached).superClass;
+            RubyClass superClass = ((RubyClass) attached).getSuperClass();
+            if (superClass != null) superClass = superClass.getRealClass();
             // #<Class:BasicObject>'s singleton class == Class.singleton_class
             if (superClass == null) return runtime.getClassClass().getSingletonClass();
-            return superClass.getRealClass().getSingletonClass().getMetaClass();
+            return superClass.getMetaClass().getSingletonClass();
         }
 
         return getSuperClass().getRealClass().getMetaClass(); // NOTE: is this correct?
