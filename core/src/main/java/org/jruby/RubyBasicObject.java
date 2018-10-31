@@ -994,10 +994,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return rbCloneInternal(context, kwfreeze);
     }
 
-    private IRubyObject rbCloneInternal(ThreadContext context, boolean freeze) {
-        Ruby runtime = context.runtime;
+    private RubyBasicObject rbCloneInternal(ThreadContext context, boolean freeze) {
 
         if (isSpecialObject()) {
+            final Ruby runtime = context.runtime;
             if (!freeze) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
 
             return this;
@@ -1017,7 +1017,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
 
     protected RubyClass getSingletonClassClone() {
-        return getSingletonClassCloneAndAttach(UNDEF);
+        return getSingletonClassCloneAndAttach(null);
     }
 
     /** rb_singleton_class_clone
@@ -1027,7 +1027,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return either a real class, or a clone of the current singleton class
      */
-    protected RubyClass getSingletonClassCloneAndAttach(IRubyObject attach) {
+    protected RubyClass getSingletonClassCloneAndAttach(RubyBasicObject attach) {
         RubyClass klass = getMetaClass();
 
         if (!klass.isSingleton()) {
