@@ -426,37 +426,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().set_default_proc(proc);
     }
 
-    /**
-     * <code>hash_inspect</code> provided for compatibility if in a need to revert to pre 9.2 behaviour
+    /** rb_hash_inspect
      *
-     * <code>MapJavaProxy.class_eval { public alias_method :inspect, :hash_inspect }</code>
-     *
-     * @since 9.2
      */
-    @Deprecated // ... since 9.2 inspect on Java proxies means -> toString
-    @JRubyMethod(name = "hash_inspect", visibility = Visibility.PRIVATE)
-    public IRubyObject hash_inspect(ThreadContext context) {
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect(ThreadContext context) {
         return getOrCreateRubyHashMap().inspect(context);
     }
-
-    @Deprecated // only for binary compatibility
-    public IRubyObject inspect(ThreadContext context) { return super.inspect(context); }
-
-    /**
-     * <code>hash_inspect</code> provided for compatibility if in a need to revert to pre 9.2 behaviour
-     *
-     * <code>MapJavaProxy.class_eval { public alias_method :inspect, :hash_inspect }</code>
-     *
-     * @since 9.2
-     */
-    @Deprecated // ... since 9.2 to_s on Java proxies is aliased toString
-    @JRubyMethod(name = "hash_to_s", visibility = Visibility.PRIVATE)
-    public IRubyObject hash_to_s(ThreadContext context) {
-        return getOrCreateRubyHashMap().to_s(context);
-    }
-
-    @Deprecated // only for binary compatibility
-    public IRubyObject to_s(ThreadContext context) { return super.to_s(); }
 
     /** rb_hash_size
      *
@@ -489,6 +465,14 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         TypeConverter.checkType(context, newProc, context.runtime.getProc());
 
         return (RubyProc) newProc;
+    }
+
+    /** rb_hash_to_s
+     *
+     */
+    @JRubyMethod(name = "to_s")
+    public IRubyObject to_s(ThreadContext context) {
+        return getOrCreateRubyHashMap().to_s(context);
     }
 
     /** rb_hash_rehash

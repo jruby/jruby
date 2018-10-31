@@ -486,12 +486,14 @@ public abstract class Initializer {
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
-            // only add class's methods if it's public or we can set accessible (see JRUBY-4799)
+            // only add class's methods if it's public or we can set accessible
+            // (see JRUBY-4799)
             if (Modifier.isPublic(klass.getModifiers()) || JavaUtil.CAN_SET_ACCESSIBLE) {
                 // for each class, scan declared methods for new signatures
                 try {
-                    // add methods, including static if this is the actual class
-                    addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, false);
+                    // add methods, including static if this is the actual class,
+                    // and replacing child methods with equivalent parent methods
+                    addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
