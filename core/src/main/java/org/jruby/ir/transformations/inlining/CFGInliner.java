@@ -3,6 +3,7 @@ package org.jruby.ir.transformations.inlining;
 import org.jruby.dirgra.Edge;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.*;
@@ -11,12 +12,15 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CFGInliner {
-    private static final boolean debug = true;
+    public static final Logger LOG = LoggerFactory.getLogger(CFGInliner.class);
+    private static final boolean debug = IRManager.IR_INLINER_VERBOSE;
     private final FullInterpreterContext fullInterpreterContext;
     private final CFG cfg;
     private final IRScope hostScope;
@@ -69,62 +73,62 @@ public class CFGInliner {
 
     public BasicBlock findCallsiteBB(CallBase call) {
         long callSiteId = call.getCallSiteId();
-        if (debug) System.out.println("LOOKING FOR CALLSITEID: " + callSiteId);
+        if (debug) LOG.info("LOOKING FOR CALLSITEID: " + callSiteId);
         for (BasicBlock bb: cfg.getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 // Some instrs reuse instrs (like LineNumberInstr) so we need to add call check.
                 if (i instanceof CallBase && ((CallBase) i).getCallSiteId() == callSiteId) {
-                    if (debug) System.out.println("Found it!!!! -- " + call +  ", i: " + i);
+                    if (debug) LOG.info("Found it!!!! -- " + call +  ", i: " + i);
                     return bb;
                 }
             }
         }
 
-        if (debug) System.out.println("Did not find it");
+        if (debug) LOG.info("Did not find it");
         return null;
     }
 
     private void printInlineDebugPrologue(IRScope scopeToInline, CallBase call) {
-        System.out.println("---------------------------------- PROLOGUE (start) --------");
-        System.out.println("Looking for: " + call.getCallSiteId() + ":\n    > " + call + "\n");
+        LOG.info("---------------------------------- PROLOGUE (start) --------");
+        LOG.info("Looking for: " + call.getCallSiteId() + ":\n    > " + call + "\n");
         printInlineCFG(cfg, "host of inline");
-        System.out.println("method to inline cfg:\n" + scopeToInline.getCFG().toStringGraph());
-        System.out.println("method to inline instrs:\n" + scopeToInline.getCFG().toStringInstrs());
-        System.out.println("---------------------------------- PROLOGUE (end) -----------");
+        LOG.info("method to inline cfg:\n" + scopeToInline.getCFG().toStringGraph());
+        LOG.info("method to inline instrs:\n" + scopeToInline.getCFG().toStringInstrs());
+        LOG.info("---------------------------------- PROLOGUE (end) -----------");
     }
 
     private void printInlineFoundBB(BasicBlock bb) {
-        System.out.println("---------------------------------- callBB (start) -----------");
-        System.out.println(bb.toStringInstrs());
-        System.out.println("---------------------------------- callBB (end) -------------");
+        LOG.info("---------------------------------- callBB (start) -----------");
+        LOG.info(bb.toStringInstrs());
+        LOG.info("---------------------------------- callBB (end) -------------");
     }
 
     private void printInlineCannotFindCallsiteBB(CallBase call) {
-        System.out.println("----------------------------------");
-        System.out.println("Did not find BB with call: " + call);
+        LOG.info("----------------------------------");
+        LOG.info("Did not find BB with call: " + call);
         printInlineCFG(cfg, "");
-        System.out.println("----------------------------------");
+        LOG.info("----------------------------------");
     }
 
     private void printInlineCFG(CFG aCFG, String label) {
-        System.out.println(label + " cfg:\n" + aCFG.toStringGraph());
-        System.out.println(label + " instrs:\n" + aCFG.toStringInstrs());
+        LOG.info(label + " cfg:\n" + aCFG.toStringGraph());
+        LOG.info(label + " instrs:\n" + aCFG.toStringInstrs());
     }
 
     private void printInlineEpilogue() {
-        System.out.println("---------------------------------- EPILOGUE (start) --------");
+        LOG.info("---------------------------------- EPILOGUE (start) --------");
         printInlineCFG(cfg, "");
-        System.out.println("---------------------------------- EPILOGUE (end) -----------");
+        LOG.info("---------------------------------- EPILOGUE (end) -----------");
     }
 
     private void printInlineSplitBBs(BasicBlock beforeBB, BasicBlock afterBB) {
-        System.out.println("---------------------------------- SPLIT BB (start) --------");
-        System.out.println("Before:" + beforeBB.getLabel());
-        System.out.println(beforeBB.toStringInstrs());
-        System.out.println("After:" + afterBB.getLabel());
-        System.out.println(afterBB.toStringInstrs());
+        LOG.info("---------------------------------- SPLIT BB (start) --------");
+        LOG.info("Before:" + beforeBB.getLabel());
+        LOG.info(beforeBB.toStringInstrs());
+        LOG.info("After:" + afterBB.getLabel());
+        LOG.info(afterBB.toStringInstrs());
         printInlineCFG(cfg, "");
-        System.out.println("---------------------------------- SPLIT BB (end) -----------");
+        LOG.info("---------------------------------- SPLIT BB (end) -----------");
     }
 
     // Vocabulary:
@@ -319,8 +323,8 @@ public class CFGInliner {
 
         if (debug) printInlineEpilogue();
 /*
-        System.out.println("final cfg   :" + cfg.toStringGraph());
-        System.out.println("final instrs:" + cfg.toStringInstrs());
+        LOG.info("final cfg   :" + cfg.toStringGraph());
+        LOG.info("final instrs:" + cfg.toStringInstrs());
 */
         return null; // success!
     }
