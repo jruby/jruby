@@ -2351,11 +2351,13 @@ public class RubyHash extends RubyObject implements Map {
         try {
             IRubyObject key, value;
             for (int i = start; i < end; i++) {
-              key = entries[i * NUMBER_OF_ENTRIES];
-              value = entries[(i * NUMBER_OF_ENTRIES) + 1];
-              IRubyObject newAssoc = RubyArray.newArray(context.runtime, key, value);
-              if (block.yield(context, newAssoc).isTrue())
-                  return context.tru;
+                key = entries[i * NUMBER_OF_ENTRIES];
+                value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+
+                if (key == null || value == null) continue;
+
+                IRubyObject newAssoc = RubyArray.newArray(context.runtime, key, value);
+                if (block.yield(context, newAssoc).isTrue()) return context.tru;
             }
             return context.fals;
         } finally {
@@ -2370,8 +2372,10 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = start; i < end; i++) {
                 key = entries[i * NUMBER_OF_ENTRIES];
                 value = entries[(i * NUMBER_OF_ENTRIES) + 1];
-                if (block.yieldArray(context, context.runtime.newArray(key, value), null).isTrue())
-                    return context.tru;
+
+                if (key == null || value == null) continue;
+
+                if (block.yieldArray(context, context.runtime.newArray(key, value), null).isTrue()) return context.tru;
             }
             return context.fals;
         } finally {
@@ -2386,6 +2390,9 @@ public class RubyHash extends RubyObject implements Map {
             for (int i = start; i < end; i++) {
                 key = entries[i * NUMBER_OF_ENTRIES];
                 value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+
+                if (key == null || value == null) continue;
+
                 IRubyObject newAssoc = RubyArray.newArray(context.runtime, key, value);
                 if (pattern.callMethod(context, "===", newAssoc).isTrue())
                     return context.tru;
