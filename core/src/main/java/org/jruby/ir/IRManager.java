@@ -324,8 +324,7 @@ public class IRManager {
             RubyModule type = self.getMetaClass();
             String fileName = "classpath:/jruby/ruby_implementations/" + type + "/" + method + ".rb";
             FileResource file = JRubyFile.createResourceAsFile(context.runtime, fileName);
-            InputStream stream = file.openInputStream();
-            Node parseResult = context.runtime.parseFile(stream, fileName, null, 0);
+            Node parseResult = parse(context, file, fileName);
             IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
             scopeNode.getScope().setModule(type);
             DefNode defNode = (DefNode) scopeNode.getBodyNode();
@@ -342,8 +341,14 @@ public class IRManager {
 
             return newMethod;
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // FIXME: More elegantly handle broken internal implementations
             return null;
+        }
+    }
+
+    private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
+        try (InputStream stream = file.openInputStream()) {
+            return context.runtime.parseFile(stream, fileName, null, 0);
         }
     }
 }
