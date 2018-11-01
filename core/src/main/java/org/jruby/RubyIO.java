@@ -2625,22 +2625,26 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // In MRI this is used for all multi-arg puts calls to write. Here, we just do it for two
         if (write.retrieveCache(maybeIO.getMetaClass()).method.getArity() == Arity.ONE_ARGUMENT) {
             Ruby runtime = context.runtime;
-            if (maybeIO != runtime.getGlobalVariables().get("$stderr") && runtime.isVerbose()) {
-                IRubyObject klass = maybeIO.getMetaClass();
-                char sep;
-                if (((RubyClass) klass).isSingleton()) {
-                    klass = maybeIO;
-                    sep = '.';
-                } else {
-                    sep = '#';
-                }
-                runtime.getWarnings().warning(klass.toString() + sep + "write is outdated interface which accepts just one argument");
+            if (runtime.isVerbose() && maybeIO != runtime.getGlobalVariables().get("$stderr")) {
+                warnWrite(runtime, maybeIO);
             }
             write.call(context, maybeIO, maybeIO, arg0);
             write.call(context, maybeIO, maybeIO, arg1);
             return arg0;         /* unused right now */
         }
         return write.call(context, maybeIO, maybeIO, arg0, arg1);
+    }
+
+    private static void warnWrite(final Ruby runtime, IRubyObject maybeIO) {
+        IRubyObject klass = maybeIO.getMetaClass();
+        char sep;
+        if (((RubyClass) klass).isSingleton()) {
+            klass = maybeIO;
+            sep = '.';
+        } else {
+            sep = '#';
+        }
+        runtime.getWarnings().warning(klass.toString() + sep + "write is outdated interface which accepts just one argument");
     }
 
     @JRubyMethod

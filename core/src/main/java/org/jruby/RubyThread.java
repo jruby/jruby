@@ -41,6 +41,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Vector;
 import java.util.WeakHashMap;
@@ -382,6 +383,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public ThreadContext getContext() {
+        WeakReference<ThreadContext> contextRef = this.contextRef;
         return contextRef == null ? null : contextRef.get();
     }
 

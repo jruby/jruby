@@ -205,7 +205,7 @@ class RegularFileResource implements FileResource {
             int fd = posix.open(absolutePath(), modeFlags.getFlags(), perm);
             if (fd < 0) throwFromErrno(posix.errno());
             posix.fcntlInt(fd, Fcntl.F_SETFD, posix.fcntl(fd, Fcntl.F_GETFD) | FcntlLibrary.FD_CLOEXEC);
-            return new NativeDeviceChannel(fd);
+            return new NativeDeviceChannel(fd, true);
         }
 
         if (modeFlags.isCreate()) {

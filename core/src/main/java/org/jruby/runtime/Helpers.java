@@ -217,6 +217,10 @@ public class Helpers {
                 case "Is a directory":
                     return Errno.EISDIR;
             }
+
+            if (errorMessage.endsWith("Invalid cross-device link")) {
+                return Errno.EXDEV;
+            }
         } else if (t instanceof PortUnreachableException) {
             return Errno.ECONNREFUSED;
         }

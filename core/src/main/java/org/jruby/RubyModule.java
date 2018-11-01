@@ -337,7 +337,7 @@ public class RubyModule extends RubyObject {
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(NEEDSIMPL_F, !isClass());
-        generationObject = generation = runtime.getNextModuleGeneration();
+        updateGeneration(runtime);
 
         if (runtime.getInstanceConfig().isProfiling()) {
             cacheEntryFactory = new ProfilingCacheEntryFactory(runtime, NormalCacheEntryFactory);
@@ -1330,7 +1330,6 @@ public class RubyModule extends RubyObject {
         return context.runtime.newBoolean(isSingleton());
     }
 
-    // TODO: Consider a better way of synchronizing
     public void addMethod(String id, DynamicMethod method) {
         testFrozen("class/module");
 
@@ -1341,15 +1340,14 @@ public class RubyModule extends RubyObject {
 
         if (this instanceof MetaClass) {
             // FIXME: Gross and not quite right. See MRI's rb_frozen_class_p logic
-            RubyBasicObject attached = (RubyBasicObject)((MetaClass)this).getAttached();
-            attached.testFrozen();
+            ((RubyBasicObject) ((MetaClass) this).getAttached()).testFrozen();
         }
 
         addMethodInternal(id, method);
     }
 
     public final void addMethodInternal(String name, DynamicMethod method) {
-        synchronized(methodLocation.getMethodsForWrite()) {
+        synchronized (methodLocation.getMethodsForWrite()) {
             putMethod(getRuntime(), name, method);
             invalidateCoreClasses();
             invalidateCacheDescendants();
@@ -1711,7 +1709,11 @@ public class RubyModule extends RubyObject {
     }
 
     public void updateGeneration() {
-        generationObject = generation = getRuntime().getNextModuleGeneration();
+        updateGeneration(getRuntime());
+    }
+
+    private void updateGeneration(final Ruby runtime) {
+        generationObject = generation = runtime.getNextModuleGeneration();
     }
 
     @Deprecated
@@ -2222,7 +2224,7 @@ public class RubyModule extends RubyObject {
         return getBaseName() == null ? getRuntime().getNil() : rubyName();
     }
 
-    protected IRubyObject cloneMethods(RubyModule clone) {
+    protected final IRubyObject cloneMethods(RubyModule clone) {
         Ruby runtime = getRuntime();
         RubyModule realType = this.getNonIncludedClass();
         for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
@@ -2635,7 +2637,7 @@ public class RubyModule extends RubyObject {
     public RubyArray instanceMethods(Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
         RubyArray ary = getRuntime().newArray();
 
-        populateInstanceMethodNames(new HashSet<String>(), ary, visibility, obj, not, includeSuper);
+        populateInstanceMethodNames(new HashSet<>(), ary, visibility, obj, not, includeSuper);
 
         return ary;
     }
@@ -2654,7 +2656,7 @@ public class RubyModule extends RubyObject {
         for (; mod != null; mod = mod.getSuperClass()) {
             mod.addMethodSymbols(runtime, seen, ary, not, visibility);
 
-            if (mod.isIncluded() && !prepended) continue;
+            if (!prepended && mod.isIncluded()) continue;
             if (obj && mod.isSingleton()) continue;
             if (!recur) break;
         }
@@ -2663,8 +2665,7 @@ public class RubyModule extends RubyObject {
     protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
         for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
             String id = entry.getKey();
-            if (!seen.contains(id)) {
-                seen.add(id);
+            if (seen.add(id)) { // false - not added (already seen)
 
                 DynamicMethod method = entry.getValue();
                 if ((!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility)) && !method.isUndefined()) {

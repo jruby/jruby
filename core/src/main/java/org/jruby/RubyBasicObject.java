@@ -264,14 +264,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         runtime.addToObjectSpace(useObjectSpace, this);
     }
 
-    @Deprecated
-    protected void taint(Ruby runtime) {
-        if (!isTaint()) {
-        	testFrozen();
-            setTaint(true);
-        }
-    }
-
     /** rb_frozen_class_p
      *
      * Helper to test whether this object is frozen, and if it is will
@@ -1341,7 +1333,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void addFinalizer(IRubyObject f) {
-        Finalizer finalizer = (Finalizer)getInternalVariable("__finalizer__");
+        Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
             // since this is the first time we're registering a finalizer, we
             // must also register this object in ObjectSpace, so that future
@@ -1353,7 +1345,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             getRuntime().getObjectSpace().registerObjectId(id, this);
 
             finalizer = new Finalizer(fixnumId);
-            fastSetInternalVariable("__finalizer__", finalizer);
+            setInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
         finalizer.addFinalizer(f);
@@ -1364,7 +1356,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void removeFinalizers() {
-        Finalizer finalizer = (Finalizer)getInternalVariable("__finalizer__");
+        Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer != null) {
             finalizer.removeFinalizers();
             removeInternalVariable("__finalizer__");
@@ -1409,15 +1401,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Gets a list of all variables in this object.
      */
-    // TODO: must override in RubyModule to pick up constants
     @Override
     public List<Variable<Object>> getVariableList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<Object>> list = new ArrayList<Variable<Object>>();
+        ArrayList<Variable<Object>> list = new ArrayList<>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null) continue;
-            list.add(new VariableEntry<Object>(entry.getKey(), value));
+            list.add(new VariableEntry<>(entry.getKey(), value));
         }
         return list;
     }
@@ -1425,11 +1416,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Gets a name list of all variables in this object.
      */
-   // TODO: must override in RubyModule to pick up constants
     @Override
-   public List<String> getVariableNameList() {
+    public List<String> getVariableNameList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null) continue;
@@ -1580,7 +1570,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject setInstanceVariable(String name, IRubyObject value) {
         assert value != null;
         ensureInstanceVariablesSettable();
-        return (IRubyObject)variableTableStore(name, value);
+        return (IRubyObject) variableTableStore(name, value);
     }
 
     /**
@@ -1589,22 +1579,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public IRubyObject removeInstanceVariable(String name) {
         ensureInstanceVariablesSettable();
-        return (IRubyObject)variableTableRemove(name);
+        return (IRubyObject) variableTableRemove(name);
     }
 
     /**
      * Gets a list of all variables in this object.
      */
-    // TODO: must override in RubyModule to pick up constants
     @Override
     public List<Variable<IRubyObject>> getInstanceVariableList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>(ivarAccessors.size());
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             final String key = entry.getKey();
             final Object value = entry.getValue().get(this);
             if (!(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
-            list.add(new VariableEntry<IRubyObject>(key, (IRubyObject) value));
+            list.add(new VariableEntry<>(key, (IRubyObject) value));
         }
         return list;
     }
@@ -1612,11 +1601,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Gets a name list of all variables in this object.
      */
-   // TODO: must override in RubyModule to pick up constants
     @Override
-   public List<String> getInstanceVariableNameList() {
+    public List<String> getInstanceVariableNameList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<String>(ivarAccessors.size());
+        ArrayList<String> list = new ArrayList<>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             final String key = entry.getKey();
             final Object value = entry.getValue().get(this);
@@ -1931,9 +1919,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (isImmediate()) {
             // Ruby uses Qnil here, we use "dummy" because we need a class
             return getRuntime().getDummy();
-        } else {
-            return getSingletonClass();
         }
+        return getSingletonClass();
     }
 
     /**
@@ -2191,8 +2178,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  programs environment will refuse to accept tainted strings.
      */
     public IRubyObject taint(ThreadContext context) {
-        taint(context.runtime);
+        if (!isTaint()) {
+            testFrozen();
+            setTaint(true);
+        }
         return this;
+    }
+
+    @Deprecated
+    protected final void taint(Ruby runtime) {
+        taint(runtime.getCurrentContext());
     }
 
     /** rb_obj_untaint

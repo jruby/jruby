@@ -1745,9 +1745,9 @@ public class RubyDate extends RubyObject {
                 RubyString m = (RubyString) match.at(1);
                 hash.fastASet(runtime.newSymbol("hour"), hour = (RubyInteger) m.to_i());
                 m = matchOrNull(context, match, 2);
-                hash.fastASet(runtime.newSymbol("min"), m == null ? context.nil : m.to_i());
+                if (m != null) hash.fastASet(runtime.newSymbol("min"), m.to_i());
                 m = matchOrNull(context, match, 3);
-                hash.fastASet(runtime.newSymbol("sec"), m == null ? context.nil : m.to_i());
+                if (m != null) hash.fastASet(runtime.newSymbol("sec"), m.to_i());
                 m = matchOrNull(context, match, 4);
                 if (m != null) {
                     RubyInteger den = (RubyInteger) RubyFixnum.newFixnum(runtime, 10).op_pow(context, m.length());

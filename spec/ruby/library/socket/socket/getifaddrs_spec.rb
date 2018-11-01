@@ -48,16 +48,18 @@ describe 'Socket.getifaddrs' do
     end
 
     it 'is an Addrinfo' do
-      @addrs.each do |addr|
+      @addrs.all? do |addr|
         addr.should be_an_instance_of(Addrinfo)
-      end
+        true
+      end.should be_true
     end
 
     it 'has an address family' do
-      @addrs.each do |addr|
+      @addrs.all? do |addr|
         addr.afamily.should be_kind_of(Integer)
         addr.afamily.should_not == Socket::AF_UNSPEC
-      end
+        true
+      end.should be_true
     end
   end
 
@@ -68,16 +70,18 @@ describe 'Socket.getifaddrs' do
       end
 
       it 'is an Addrinfo' do
-        @addrs.each do |addr|
+        @addrs.all? do |addr|
           addr.should be_an_instance_of(Addrinfo)
-        end
+          true
+        end.should be_true
       end
 
       it 'has an address family' do
-        @addrs.each do |addr|
+        @addrs.all? do |addr|
           addr.afamily.should be_kind_of(Integer)
           addr.afamily.should_not == Socket::AF_UNSPEC
-        end
+          true
+        end.should be_true
       end
     end
 
@@ -87,22 +91,25 @@ describe 'Socket.getifaddrs' do
       end
 
       it 'is an Addrinfo' do
-        @addrs.each do |addr|
+        @addrs.all? do |addr|
           addr.should be_an_instance_of(Addrinfo)
-        end
+          true
+        end.should be_true
       end
 
       it 'has an address family' do
-        @addrs.each do |addr|
+        @addrs.all? do |addr|
           addr.afamily.should be_kind_of(Integer)
           addr.afamily.should_not == Socket::AF_UNSPEC
-        end
+          true
+        end.should be_true
       end
 
       it 'has an IP address' do
-        @addrs.each do |addr|
+        @addrs.all? do |addr|
           addr.ip_address.should be_an_instance_of(String)
-        end
+          true
+        end.should be_true
       end
     end
   end

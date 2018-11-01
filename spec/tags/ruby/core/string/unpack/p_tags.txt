@@ -1,0 +1,8 @@
+fails:String#unpack with format 'P' round-trips a string through pack and unpack
+fails:String#unpack with format 'P' cannot unpack a string except from the same object that created it, or a duplicate of it
+fails:String#unpack with format 'P' taints the unpacked string
+fails:String#unpack with format 'P' reads as many characters as specified
+fails:String#unpack with format 'P' reads only as far as a NUL character
+fails:String#unpack with format 'p' round-trips a string through pack and unpack
+fails:String#unpack with format 'p' cannot unpack a string except from the same object that created it, or a duplicate of it
+fails:String#unpack with format 'p' taints the unpacked string
