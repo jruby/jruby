@@ -1269,7 +1269,7 @@ describe "A method" do
         def m(a, b = nil, c = nil, d, e: nil, **f)
           [a, b, c, d, e, f]
         end
-    ruby
+      ruby
 
       result = m(1, 2)
       result.should == [1, nil, nil, 2, nil, {}]
