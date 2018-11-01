@@ -403,7 +403,7 @@ public class LoadService {
     }
 
     public boolean autoloadRequire(String requireName) {
-        return smartLoadInternal(requireName, false) != RequireState.CIRCULAR;
+        return runtime.getTopSelf().callMethod(runtime.getCurrentContext(), "require", runtime.newString(requireName)).isTrue();
     }
 
     private enum RequireState {
