@@ -379,8 +379,7 @@ public class RubyClass extends RubyModule {
             this.realClass = null;
             this.variableTableManager = new VariableTableManager(this);
         } else {
-            this.realClass = superClass.realClass;
-            if (realClass != null) {
+            if ((this.realClass = superClass.realClass) != null) {
                 this.variableTableManager = realClass.variableTableManager;
             } else {
                 this.variableTableManager = new VariableTableManager(this);
@@ -483,22 +482,12 @@ public class RubyClass extends RubyModule {
         return clazz;
     }
 
-    /** rb_make_metaclass
-     *
+    /**
+     * @see #getSingletonClass()
      */
-    @Override
-    public RubyClass makeMetaClass(RubyClass superClass) {
-        if (isSingleton()) { // could be pulled down to RubyClass in future
-            MetaClass klass = new MetaClass(runtime, superClass, this); // rb_class_boot
-            setMetaClass(klass);
-
-            klass.setMetaClass(klass);
-            klass.setSuperClass(getSuperClass().getRealClass().getMetaClass());
-
-            return klass;
-        } else {
-            return super.makeMetaClass(superClass);
-        }
+    RubyClass toSingletonClass(RubyBasicObject target) {
+        // replaced after makeMetaClass with MetaClass's toSingletonClass
+        return target.makeMetaClass(this);
     }
 
     public boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
@@ -1282,7 +1271,7 @@ public class RubyClass extends RubyModule {
         if (!(superClass instanceof RubyClass)) {
             throw superClass.getRuntime().newTypeError("superclass must be a Class (" + superClass.getMetaClass() + " given)");
         }
-        if (((RubyClass)superClass).isSingleton()) {
+        if (((RubyClass) superClass).isSingleton()) {
             throw superClass.getRuntime().newTypeError("can't make subclass of virtual class");
         }
         if (superClass == superClass.getRuntime().getClassClass()) {

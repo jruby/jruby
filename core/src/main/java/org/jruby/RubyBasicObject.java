@@ -533,13 +533,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyClass getSingletonClass() {
-        RubyClass klass = getMetaClass();
-
-        if (klass.isSingleton() && ((MetaClass) klass).getAttached() == this) {
-            // no-op
-        } else {
-            klass = makeMetaClass(klass);
-        }
+        RubyClass klass = getMetaClass().toSingletonClass(this);
 
         klass.setTaint(isTaint());
         if (isFrozen()) klass.setFrozen(true);
@@ -557,7 +551,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         MetaClass klass = new MetaClass(getRuntime(), superClass, this); // rb_class_boot
         setMetaClass(klass);
 
-        klass.setMetaClass(superClass.getRealClass().getMetaClass());
+        klass.setMetaClass(superClass.getRealClass().metaClass);
 
         superClass.addSubclass(klass);
 
@@ -1000,10 +994,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return rbCloneInternal(context, kwfreeze);
     }
 
-    private IRubyObject rbCloneInternal(ThreadContext context, boolean freeze) {
-        Ruby runtime = context.runtime;
+    private RubyBasicObject rbCloneInternal(ThreadContext context, boolean freeze) {
 
         if (isSpecialObject()) {
+            final Ruby runtime = context.runtime;
             if (!freeze) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
 
             return this;
@@ -1023,7 +1017,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
 
     protected RubyClass getSingletonClassClone() {
-        return getSingletonClassCloneAndAttach(UNDEF);
+        return getSingletonClassCloneAndAttach(null);
     }
 
     /** rb_singleton_class_clone
@@ -1033,14 +1027,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return either a real class, or a clone of the current singleton class
      */
-    protected RubyClass getSingletonClassCloneAndAttach(IRubyObject attach) {
+    protected RubyClass getSingletonClassCloneAndAttach(RubyBasicObject attach) {
         RubyClass klass = getMetaClass();
 
         if (!klass.isSingleton()) {
             return klass;
         }
 
-        RubyClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), attach);
+        MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), attach);
         clone.flags = klass.flags;
 
         if (this instanceof RubyClass) {
@@ -1049,9 +1043,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             clone.setMetaClass(klass.getSingletonClassClone());
         }
 
-        if (klass.hasVariables()) {
-            clone.syncVariables(klass);
-        }
+        if (klass.hasVariables()) clone.syncVariables(klass);
+
         clone.syncConstants(klass);
 
         klass.cloneMethods(clone);
@@ -2344,9 +2337,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             }
         } else if (all) {
             metaClass.populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
-        } else {
-            // do nothing, leave empty
-        }
+        } // else - do nothing, leave empty
 
         return methods;
     }
