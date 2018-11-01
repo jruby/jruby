@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubySymbol;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -23,11 +24,11 @@ import java.util.Set;
 
 import static org.jruby.ir.IRFlags.*;
 
-public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr {
-    private static long callSiteCounter = 1;
+public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
+    public static long callSiteCounter = 1;
     private static final EnumSet<FrameField> ALL = EnumSet.allOf(FrameField.class);
 
-    public transient final long callSiteId;
+    public transient long callSiteId;
     private final CallType callType;
     protected RubySymbol name;
     protected final transient CallSite callSite;
@@ -45,7 +46,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
-    protected CallBase(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                        boolean potentiallyRefined) {
         super(op, arrayifyOperands(receiver, args, closure));
 
@@ -54,7 +55,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name.idString(), potentiallyRefined);
+        this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined);
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -97,6 +98,14 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return name.idString();
     }
 
+    public long getCallSiteId() {
+        return callSiteId;
+    }
+
+    public void setCallSiteId(long callSiteId) {
+        this.callSiteId = callSiteId;
+    }
+
     public RubySymbol getName() {
         return name;
     }
@@ -113,6 +122,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public Operand getReceiver() {
         return operands[0];
     }
+
+    // CallInstr and descendents have results and this method is obvious.
+    // NoResultCallInstr still provides an impl (returns null) to make processing in JIT simpler.
+    public abstract Variable getResult();
 
     /**
      * This getter is potentially unsafe if you do not know you have >=1 arguments to the call.  It may return
@@ -158,13 +171,18 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return dontInline;
     }
 
-    protected static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
+    protected static CallSite getCallSiteFor(IRScope scope, CallType callType, String name, long callsiteId, boolean hasLiteralClosure, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
         if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
 
         switch (callType) {
-            case NORMAL: return MethodIndex.getCallSite(name);
+            case NORMAL:
+                if (IRManager.IR_INLINER && hasLiteralClosure) {
+                    return MethodIndex.getProfilingCallSite(name, scope, callsiteId);
+                } else {
+                    return MethodIndex.getCallSite(name);
+                }
             case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
             case VARIABLE: return MethodIndex.getVariableCallSite(name);
             case SUPER: return MethodIndex.getSuperCallSite();

@@ -32,7 +32,7 @@ public class Complex extends ImmutableLiteral {
 
     @Override
     public String toString() {
-        return number + "i";
+        return "Complex:" + number + "i";
     }
 
     @Override

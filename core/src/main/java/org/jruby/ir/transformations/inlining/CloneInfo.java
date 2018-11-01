@@ -84,7 +84,7 @@ public abstract class CloneInfo {
      * @return the new Variable
      */
     public Variable getRenamedVariable(Variable variable) {
-        if (variable instanceof Self) getRenamedSelfVariable(variable);
+        if (variable instanceof Self) return getRenamedSelfVariable(variable);
 
         Variable newVariable = variableRenameMap.get(variable);
         if (newVariable == null) {

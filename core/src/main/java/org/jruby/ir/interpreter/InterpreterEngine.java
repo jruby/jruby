@@ -65,6 +65,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.opto.ConstantCache;
 
 /**

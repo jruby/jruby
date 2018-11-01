@@ -51,30 +51,30 @@ public class CallInstr extends CallBase implements ResultInstr {
             boolean hasClosure = closure != null;
 
             if (args.length == 0 && !hasClosure) {
-                return new ZeroOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
+                return new ZeroOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
             } else if (args.length == 1) {
-                if (hasClosure) return new OneOperandArgBlockCallInstr(callType, result, name, receiver, args, closure, isPotentiallyRefined);
-                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
-                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
+                if (hasClosure) return new OneOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, isPotentiallyRefined);
+                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
 
-                return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
+                return new OneOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
             } else if (args.length == 2 && !hasClosure) {
-                return new TwoOperandArgNoBlockCallInstr(callType, result, name, receiver, args, isPotentiallyRefined);
+                return new TwoOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
             }
         }
 
-        return new CallInstr(callType, result, name, receiver, args, closure, isPotentiallyRefined);
+        return new CallInstr(scope, callType, result, name, receiver, args, closure, isPotentiallyRefined);
     }
 
 
-    public CallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
+    public CallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
                      boolean potentiallyRefined) {
-        this(Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
+        this(scope, Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
+    protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
                         Operand closure, boolean potentiallyRefined) {
-        super(op, callType, name, receiver, args, closure, potentiallyRefined);
+        super(scope, op, callType, name, receiver, args, closure, potentiallyRefined);
 
         assert result != null;
 
@@ -125,13 +125,14 @@ public class CallInstr extends CallBase implements ResultInstr {
         this.result = v;
     }
 
+    /* // FIXME: removing results is currently unsupported
     public Instr discardResult() {
         return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
-    }
+    }*/
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+        return new CallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }

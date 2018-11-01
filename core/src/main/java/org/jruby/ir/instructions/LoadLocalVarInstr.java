@@ -69,7 +69,8 @@ public class LoadLocalVarInstr extends OneOperandResultBaseInstr implements Fixe
     }
 
     public static LoadLocalVarInstr decode(IRReaderDecoder d) {
-        return new LoadLocalVarInstr(d.decodeScope(), (TemporaryLocalVariable) d.decodeVariable(), (LocalVariable) d.decodeVariable());
+        TemporaryLocalVariable result = (TemporaryLocalVariable) d.decodeVariable();
+        return new LoadLocalVarInstr(d.decodeScope(), result, (LocalVariable) d.decodeVariable());
     }
 
     @Interp

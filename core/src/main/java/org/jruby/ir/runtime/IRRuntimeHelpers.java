@@ -70,6 +70,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
@@ -1690,6 +1691,10 @@ public class IRRuntimeHelpers {
         return new FunctionalCachingCallSite(name);
     }
 
+    public static ProfilingCachingCallSite newProfilingCachingCallSite(String name, IRScope scope, long callSiteId) {
+        return new ProfilingCachingCallSite(name, scope, callSiteId);
+    }
+
     @JIT
     public static NormalCachingCallSite newNormalCachingCallSite(String name) {
         return new NormalCachingCallSite(name);
@@ -2087,7 +2092,7 @@ public class IRRuntimeHelpers {
     @JIT @Interp
     public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
         // FIXME: Not very efficient to do all this every time
-        return context.runtime.newString(currScope.getIRScope().getFileName());
+        return context.runtime.newString(currScope.getIRScope().getFile());
     }
 
     @JIT

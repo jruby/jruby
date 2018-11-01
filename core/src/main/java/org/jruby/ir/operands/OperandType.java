@@ -44,7 +44,8 @@ public enum OperandType {
     FROZEN_STRING("fstr", (byte) 'z'),
     NULL_BLOCK("noblock", (byte) 'o'),
     FILENAME("file", (byte) 'm'),
-    SYMBOL_PROC("symproc", (byte) 'P')
+    SYMBOL_PROC("symproc", (byte) 'P'),
+    SCOPE("scope", (byte) '#')
     ;
 
     private final String shortName;

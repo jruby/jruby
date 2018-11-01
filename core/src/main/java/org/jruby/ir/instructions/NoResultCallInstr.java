@@ -2,33 +2,44 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
 
 public class NoResultCallInstr extends CallBase {
     // FIXME: Removed results undoes specialized callinstrs.  Audit how often and what and make equalivalent versions here.
-    public static NoResultCallInstr create(CallType callType, RubySymbol name, Operand receiver, Operand[] args,
+    public static NoResultCallInstr create(IRScope scope, CallType callType, RubySymbol name, Operand receiver, Operand[] args,
                                            Operand closure, boolean isPotentiallyRefined) {
         if (closure == null && !containsArgSplat(args) && args.length == 1) {
-            return new OneOperandArgNoBlockNoResultCallInstr(callType, name, receiver, args, null, isPotentiallyRefined);
+            return new OneOperandArgNoBlockNoResultCallInstr(scope, callType, name, receiver, args, null, isPotentiallyRefined);
         }
 
-        return new NoResultCallInstr(Operation.NORESULT_CALL, callType, name, receiver, args, closure, isPotentiallyRefined);
+        return new NoResultCallInstr(scope, Operation.NORESULT_CALL, callType, name, receiver, args, closure, isPotentiallyRefined);
     }
 
-    public NoResultCallInstr(Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args,
+    public NoResultCallInstr(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args,
                              Operand closure, boolean isPotentiallyRefined) {
-        super(op, callType, name, receiver, args, closure, isPotentiallyRefined);
+        super(scope, op, callType, name, receiver, args, closure, isPotentiallyRefined);
+    }
+
+    /**
+     * result and non-result call instructions are processed with the same code so we provide
+     * this method to make that same code simpler.
+     */
+    @Override
+    public Variable getResult() {
+        return null;
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new NoResultCallInstr(getOperation(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
+        return new NoResultCallInstr(ii.getScope(), getOperation(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
@@ -50,7 +61,7 @@ public class NoResultCallInstr extends CallBase {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), name, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
+        return NoResultCallInstr.create(d.getCurrentScope(), CallType.fromOrdinal(callTypeOrdinal), name, receiver, args, closure, d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

@@ -168,7 +168,7 @@ public class InterpreterContext {
     }
 
     public String getFileName() {
-        return scope.getFileName();
+        return scope.getFile();
     }
 
     public RubySymbol getName() {
@@ -223,7 +223,7 @@ public class InterpreterContext {
     public String toString() {
         StringBuilder buf = new StringBuilder();
 
-        buf.append(getFileName()).append(':').append(scope.getLineNumber());
+        buf.append(getFileName()).append(':').append(scope.getLine());
         if (getName() != null) buf.append(' ').append(getName()).append("\n");
 
         if (instructions == null) {

@@ -95,11 +95,11 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     }
 
     public String getFile() {
-        return method.getFileName();
+        return method.getFile();
     }
 
     public int getLine() {
-        return method.getLineNumber();
+        return method.getLine();
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
                         break;
                 }
             }
-            methodData = new MethodData(method.getId(), method.getFileName(), ivarNames);
+            methodData = new MethodData(method.getId(), method.getFile(), ivarNames);
         }
 
         return methodData;

@@ -30,6 +30,10 @@
 
 package org.jruby.ast;
 
+import org.jruby.parser.StaticScope;
+
 public interface IScopingNode {
-    public Colon3Node getCPath();
+    Colon3Node getCPath();
+    StaticScope getScope();
+    Node getBodyNode();
 }

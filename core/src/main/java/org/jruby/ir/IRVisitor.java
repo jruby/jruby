@@ -185,6 +185,7 @@ public abstract class IRVisitor {
     public void ObjectClass(ObjectClass objectclass) { error(objectclass); }
     public void Rational(Rational rational) { error(rational); }
     public void Regexp(Regexp regexp) { error(regexp); }
+    public void Scope(Scope scope) { error(scope); }
     public void ScopeModule(ScopeModule scopemodule) { error(scopemodule); }
     public void Self(Self self) { error(self); }
     public void Splat(Splat splat) { error(splat); }

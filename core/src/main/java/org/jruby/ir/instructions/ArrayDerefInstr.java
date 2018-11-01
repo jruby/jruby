@@ -36,7 +36,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     }
 
     public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0) {
-        super(Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, false);
+        super(scope, Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, false);
 
         key = arg0;
     }

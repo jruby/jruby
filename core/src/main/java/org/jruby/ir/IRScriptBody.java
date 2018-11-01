@@ -92,8 +92,7 @@ public class IRScriptBody extends IRScope {
         this.fileName = getManager().runtime.newSymbol(fileName);
     }
 
-    @Override
-    public String getFileName() {
+    public String getFile() {
         return fileName.asJavaString();
     }
 }

@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.anno.FrameField;
+import org.jruby.ir.IRScope;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -55,6 +56,7 @@ import org.jruby.runtime.callsite.EqCallSite;
 import org.jruby.runtime.callsite.BitAndCallSite;
 import org.jruby.runtime.callsite.BitOrCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.callsite.ShiftLeftCallSite;
 import org.jruby.runtime.callsite.ShiftRightCallSite;
@@ -110,11 +112,28 @@ public class MethodIndex {
         // fast and safe respond_to? call site logic
         if (name.equals("respond_to?")) return new RespondToCallSite();
 
-        // only use fast ops if we're not tracing
-        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED &&
-                !(RubyInstanceConfig.FULL_TRACE_ENABLED)) return getFastFixnumOpsCallSite(name);
+        CallSite callSite = null;
 
-        return new NormalCachingCallSite(name);
+        // only use fast ops if we're not tracing
+        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED && !(RubyInstanceConfig.FULL_TRACE_ENABLED)) {
+            callSite = getFastFixnumOpsCallSite(name);
+        }
+
+        return callSite != null ? callSite : new NormalCachingCallSite(name);
+    }
+
+    public static CallSite getProfilingCallSite(String name, IRScope scope, long callsiteId) {
+        // fast and safe respond_to? call site logic
+        if (name.equals("respond_to?")) return new RespondToCallSite();
+
+        CallSite callSite = null;
+
+        // only use fast ops if we're not tracing
+        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED && !(RubyInstanceConfig.FULL_TRACE_ENABLED)) {
+            callSite = getFastFixnumOpsCallSite(name);
+        }
+
+        return callSite != null ? callSite : new ProfilingCachingCallSite(name, scope, callsiteId);
     }
 
     private static final Map<String, String> FIXNUM_OPS;
@@ -185,7 +204,7 @@ public class MethodIndex {
             case ">>" : return new ShiftRightCallSite();
             case "<<" : return new ShiftLeftCallSite();
         }
-        return new NormalCachingCallSite(name);
+        return null;
     }
 
     public static boolean hasFastFloatOps(String name) {

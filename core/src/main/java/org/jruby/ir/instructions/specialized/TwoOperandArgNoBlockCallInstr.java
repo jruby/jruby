@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions.specialized;
 
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.Instr;
@@ -13,23 +14,20 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * Created by enebo on 6/8/16.
- */
 public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
-    public TwoOperandArgNoBlockCallInstr(CallType callType, Variable result, RubySymbol name, Operand receiver,
+    public TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
-        this(Operation.CALL_2O, callType, result, name, receiver, args, isPotentiallyRefined);
+        this(scope, Operation.CALL_2O, callType, result, name, receiver, args, isPotentiallyRefined);
     }
 
-    public TwoOperandArgNoBlockCallInstr(Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
+    public TwoOperandArgNoBlockCallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
-        super(op, callType, result, name, receiver, args, null, isPotentiallyRefined);
+        super(scope, op, callType, result, name, receiver, args, null, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new TwoOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+        return new TwoOperandArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
     }
 

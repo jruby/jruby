@@ -1,9 +1,12 @@
 package org.jruby.ir.representations;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.dirgra.Edge;
 import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.Site;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.listeners.InstructionsListenerDecorator;
@@ -13,6 +16,7 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class BasicBlock implements ExplicitVertexID, Comparable {
@@ -115,23 +119,42 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return instrs.isEmpty();
     }
 
-    // FIXME: inline branch fixes this by using callsiteID and not ipc.  Temporary change until it is
-    // merged (this is only for inlining and inlining does not work on master currently).
-    public BasicBlock splitAtInstruction(Instr splitPoint, Label newLabel, boolean includeSplitPointInstr) {
+    /**
+     * What site object contains this callsiteId or die trying.
+     * @param callsiteId to be found
+     * @return the Site instance (CallBase or YieldInstr)
+     */
+    public Site siteOf(long callsiteId) {
+        for (Instr instr: instrs) {
+            if (instr instanceof Site && ((Site) instr).getCallSiteId() == callsiteId) return (Site) instr;
+        }
+
+        throw new RuntimeException("siteOf asked for non-existent callsiteId: " + callsiteId);
+    }
+
+    // Adds all instrs after the found instr to a new BB and removes them from the original BB
+    // If includeSpltpointInstr is true it will include that instr in the new BB.
+    public BasicBlock splitAtInstruction(Site splitPoint, Label newLabel, boolean includeSplitPointInstr) {
         BasicBlock newBB = new BasicBlock(cfg, newLabel);
         int idx = 0;
         int numInstrs = instrs.size();
         boolean found = false;
         for (Instr i: instrs) {
-            //if (i.getIPC() == splitPoint.getIPC()) found = true;
+            // FIXME: once found we should not be continually checking for more should be in !found
+            if (i instanceof Site && ((Site) i).getCallSiteId() == splitPoint.getCallSiteId()) found = true;
 
             // Move instructions from split point into the new bb
             if (found) {
-                //if (includeSplitPointInstr || i.getIPC() != splitPoint.getIPC()) newBB.addInstr(i);
+                // FIXME: move includeSplit when found so we can remove consuing site id logic from here...
+                if (includeSplitPointInstr ||
+                        !(i instanceof Site) ||
+                        ((Site) i).getCallSiteId() != splitPoint.getCallSiteId()) newBB.addInstr(i);
             } else {
                 idx++;
             }
         }
+
+        if (!found) throw new RuntimeException("Cound not find split point: " + splitPoint);
 
         // Remove all instructions from current bb that were moved over.
         for (int j = 0; j < numInstrs-idx; j++) {
@@ -141,18 +164,38 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return newBB;
     }
 
+
     public void swallowBB(BasicBlock foodBB) {
         // Gulp!
         this.instrs.addAll(foodBB.instrs);
     }
 
-    // FIXME: Untested in inliner (and we need to replace cloneInstrs(InlineCloneInfo) with this).
     public BasicBlock clone(CloneInfo info, CFG newCFG) {
         BasicBlock newBB = new BasicBlock(newCFG, info.getRenamedLabel(label));
         boolean isClosureClone = info instanceof InlineCloneInfo && ((InlineCloneInfo) info).isClosure();
 
         for (Instr instr: instrs) {
             Instr newInstr = instr.clone(info);
+            // Inlining clones the original CFG/BBs and we want to maintain ipc since it is how
+            // we find which instr we want (we clone original instr and ipc is our identity).
+            //if (info instanceof SimpleCloneInfo && ((SimpleCloneInfo) info).shouldCloneIPC()) {
+            //    newInstr.setIPC(instr.getIPC());
+            //    newInstr.setRPC(instr.getRPC());
+            //}
+
+            // All call-derived types do not clone this field.  Inliner clones original instrs
+            // and we need this preserved to make sure we do not endless inline the same call.
+            if (instr instanceof CallBase && ((CallBase) instr).inliningBlocked()) {
+                ((CallBase) newInstr).blockInlining();
+            }
+
+            // Really icky but when we clone any call instructions we assign a new callsiteid.
+            // If an inline occurs and profiler decides before new inlined host scope has come into
+            // play it will not be able to find the current callsite.  By keeping the same values
+            // the profiler will continue to work.
+            if (instr instanceof Site) {
+                ((Site) newInstr).setCallSiteId(((Site) instr).getCallSiteId());
+            }
 
             if (newInstr != null) {  // inliner may kill off unneeded instr
                 newBB.addInstr(newInstr);
@@ -209,7 +252,15 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     }
 
     public String toStringInstrs() {
-        StringBuilder buf = new StringBuilder(toString()).append('\n');
+        StringBuilder buf = new StringBuilder(toString());
+
+        Collection<Edge<BasicBlock>> outs = cfg.getOutgoingEdges(this);
+        if (!outs.isEmpty()) {
+            for (Edge<BasicBlock> edge : outs) {
+                buf.append(" -" + edge.getType() + "->" + edge.getDestination().getID());
+            }
+        }
+        buf.append('\n');
 
         for (Instr instr : getInstrs()) {
             buf.append('\t').append(instr).append('\n');

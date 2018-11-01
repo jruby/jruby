@@ -83,7 +83,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     @Override
-    public final IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject[] args, Block block) {
         try {
             return call(context, caller, self, args, block);
@@ -181,7 +181,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     @Override
-    public final IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
+    public IRubyObject callIter(ThreadContext context, IRubyObject caller, IRubyObject self,
         IRubyObject arg1, Block block) {
         try {
             return call(context, caller, self, arg1, block);

@@ -475,12 +475,12 @@ public class IRBuilder {
             case REDONODE: return buildRedo((RedoNode) node);
             case REGEXPNODE: return buildRegexp((RegexpNode) node);
             case RESCUEBODYNODE:
-                throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFileName() + ":" + node.getLine());
+                throw new NotCompilableException("rescue body is handled by rescue compilation at: " + scope.getFile() + ":" + node.getLine());
             case RESCUENODE: return buildRescue((RescueNode) node);
             case RETRYNODE: return buildRetry();
             case RETURNNODE: return buildReturn((ReturnNode) node);
             case ROOTNODE:
-                throw new NotCompilableException("Use buildRoot(); Root node at: " + scope.getFileName() + ":" + node.getLine());
+                throw new NotCompilableException("Use buildRoot(); Root node at: " + scope.getFile() + ":" + node.getLine());
             case SCLASSNODE: return buildSClass((SClassNode) node);
             case SELFNODE: return buildSelf();
             case SPLATNODE: return buildSplat((SplatNode) node);
@@ -555,7 +555,7 @@ public class IRBuilder {
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody, scope.getFileName(), node.getLine()));
+        addInstr(new BuildLambdaInstr(lambda, lambdaBody, scope.getFile(), node.getLine()));
         return lambda;
     }
 
@@ -637,7 +637,7 @@ public class IRBuilder {
         }
 
         throw new NotCompilableException("Invalid node for attrassign call args: " + args.getClass().getSimpleName() +
-                ":" + scope.getFileName() + ":" + args.getLine());
+                ":" + scope.getFile() + ":" + args.getLine());
     }
 
     protected Operand[] buildCallArgs(Node args) {
@@ -672,7 +672,7 @@ public class IRBuilder {
         }
 
         throw new NotCompilableException("Invalid node for call args: " + args.getClass().getSimpleName() + ":" +
-                scope.getFileName() + ":" + args.getLine());
+                scope.getFile() + ":" + args.getLine());
     }
 
     public Operand[] setupCallArgs(Node args) {
@@ -899,7 +899,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
         addInstr(new CopyInstr(result, lastArg));
 
         if (attrAssignNode.isLazy()) {
@@ -917,7 +917,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode());
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode());
         args = addArg(args, value);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args, scope.maybeUsingRefinements()));
+        addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args, scope.maybeUsingRefinements()));
         return value;
     }
 
@@ -1057,7 +1057,7 @@ public class IRBuilder {
         String id = name.idString(); // ID Str ok here since it is 7bit check.
         if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFileName(), asString.getPosition().getLine());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getPosition().getLine());
         }
 
         boolean compileLazyLabel = false;
@@ -1091,7 +1091,7 @@ public class IRBuilder {
                 receiverNode instanceof HashNode &&
                 callNode.getIterNode() == null) {
             StrNode keyNode = (StrNode) argsAry.get(0);
-            addInstr(ArrayDerefInstr.create(scope, result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFileName(), keyNode.getLine())));
+            addInstr(ArrayDerefInstr.create(scope, result, receiver, new FrozenString(keyNode.getValue(), keyNode.getCodeRange(), scope.getFile(), keyNode.getLine())));
             return result;
         }
 
@@ -1221,7 +1221,7 @@ public class IRBuilder {
             Node exprNodes = whenNode.getExpressionNodes();
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-            addInstr(new EQQInstr(eqqResult, expression, value, needsSplat));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -1337,7 +1337,7 @@ public class IRBuilder {
                 expression = ((StringLiteral) expression).frozenString;
             }
 
-            addInstr(new EQQInstr(eqqResult, expression, value, false));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, false));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -2047,8 +2047,8 @@ public class IRBuilder {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
-            addInstr(manager.newLineNumber(scope.getLineNumber()));
-            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
+            addInstr(manager.newLineNumber(scope.getLine()));
+            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine()));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -2870,7 +2870,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, NO_ARGS,
+        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, NO_ARGS,
                 forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
@@ -3788,7 +3788,7 @@ public class IRBuilder {
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
         needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
-        addInstr(manager.newLineNumber(scope.getLineNumber()));
+        addInstr(manager.newLineNumber(scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
@@ -3847,9 +3847,9 @@ public class IRBuilder {
 
         int line = strNode.getLine();
 
-        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFileName(), line);
+        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
 
-        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFileName(), line);
+        return new StringLiteral(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
     }
 
     private Operand buildSuperInstr(Operand block, Operand[] args) {
@@ -3857,9 +3857,9 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new InstanceSuperInstr(scope, ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new ClassSuperInstr(scope, ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -3982,7 +3982,7 @@ public class IRBuilder {
     public Operand buildXStr(XStrNode node) {
         return addResultInstr(CallInstr.create(scope, CallType.FUNCTIONAL, createTemporaryVariable(),
                 manager.getRuntime().newSymbol("`"), Self.SELF,
-                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFileName(), node.getLine()) }, null));
+                new Operand[] { new FrozenString(node.getValue(), node.getCodeRange(), scope.getFile(), node.getLine()) }, null));
     }
 
     public Operand buildYield(YieldNode node, Variable result) {
@@ -4162,7 +4162,7 @@ public class IRBuilder {
     }
 
     private String getFileName() {
-        return scope.getFileName();
+        return scope.getFile();
     }
 
     public void initFlipStateVariable(Variable v, Operand initState) {

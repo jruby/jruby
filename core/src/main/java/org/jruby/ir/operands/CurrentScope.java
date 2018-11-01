@@ -5,6 +5,7 @@ import java.util.List;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.DynamicScope;
@@ -30,6 +31,14 @@ public class CurrentScope extends Operand {
 
     @Override
     public Operand cloneForInlining(CloneInfo ii) {
+        if (ii instanceof InlineCloneInfo) {
+            InlineCloneInfo iici = (InlineCloneInfo) ii;
+
+            // inlined method lives somewhere else so we need to save that scope location.
+            if (iici.getHostScope() != iici.getScopeBeingInlined()) {
+                return new Scope(((InlineCloneInfo) ii).getScopeBeingInlined());
+            }
+        }
         return this;
     }
 

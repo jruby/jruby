@@ -87,6 +87,9 @@ public class InlineCloneInfo extends CloneInfo {
     }
 
     public Operand getArg(int index) {
+        // yield 1 -> { |a| } case
+        if (canMapArgsStatically && isClosure && !(yieldArg instanceof Array)) return yieldArg;
+
         return index < getArgsCount() ? (isClosure ? ((Array)yieldArg).get(index) : callArgs[index]) : null;
     }
 
@@ -143,8 +146,26 @@ public class InlineCloneInfo extends CloneInfo {
         return getHostScope().getNewLabel();
     }
 
-    protected Variable getRenamedSelfVariable(Variable self) {
-        return callReceiver;
+    public Variable getRenamedSelfVariable(Variable self) {
+        /* Note: evals make all this weird but our heuristics are such that we should not see the same callsite
+         *   make a monocall across an eval (within an eval is fine).  If we ever cache pre-compiled evals we may
+         *   end up breaking here.
+         *
+         * There are two closure types we will see while inlinine.
+         *   1. A closure attached to the call we are inlining or exists within host scope itself. ( .... inline_me { foo }
+         *         This will have same self as the host scope itself.
+         *   2. A closure in the method we are inlining.
+         *         That will the same self as the inlined methods scope
+         */
+        if (isClosure) {
+            if (getScopeBeingInlined().getNearestTopLocalVariableScope() == getHostScope()) {
+                return self;
+            } else {
+                return callReceiver;
+            }
+        } else { // method scope
+            return callReceiver;
+        }
     }
 
     protected Variable getRenamedVariableSimple(Variable v) {
@@ -184,12 +205,15 @@ public class InlineCloneInfo extends CloneInfo {
     public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, int blockArityValue) {
         Operand yieldInstrArg = yi.getYieldArg();
 
-        if ((yieldInstrArg == UndefinedValue.UNDEFINED) || (blockArityValue == 0)) {
+        if ((yieldInstrArg == UndefinedValue.UNDEFINED) || blockArityValue == 0) {
             yieldArg = new Array(); // Zero-elt array
         } else if (yieldInstrArg instanceof Array) {
             yieldArg = yieldInstrArg;
             // 1:1 arg match
-            if (((Array)yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
+            if (((Array) yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
+        } else if (blockArityValue == 1 && yi.unwrapArray == false) {
+            yieldArg = yieldInstrArg;
+            canMapArgsStatically = true;
         } else {
             // SSS FIXME: The code below is not entirely correct.  We have to process 'yi.getYieldArg()' similar
             // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction

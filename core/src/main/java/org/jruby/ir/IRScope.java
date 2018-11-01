@@ -4,6 +4,8 @@ import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -104,6 +106,9 @@ public abstract class IRScope implements ParseResult {
     /** -X-C full interpretation OR JIT depends on this */
     protected FullInterpreterContext fullInterpreterContext;
 
+    /** Speculatively optimized code */
+    protected FullInterpreterContext optimizedInterpreterContext;
+
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -128,6 +133,10 @@ public abstract class IRScope implements ParseResult {
     private IRManager manager;
 
     private TemporaryVariable yieldClosureVariable;
+
+    private boolean alreadyHasInline;
+    private String inlineFailed;
+    public Compilable compilable;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -366,7 +375,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getFile() {
-        return getRootLexicalScope().getFileName();
+        return getRootLexicalScope().getFile();
     }
 
     @Deprecated
@@ -483,6 +492,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG getCFG() {
+        if (getOptimizedInterpreterContext() != null) {
+            return getOptimizedInterpreterContext().getCFG();
+        }
         // A child scope may not have been prepared yet so we advance it to point of have a fresh CFG.
         if (getFullInterpreterContext() == null) prepareFullBuildCommon();
 
@@ -585,6 +597,7 @@ public abstract class IRScope implements ParseResult {
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
      */
     public synchronized FullInterpreterContext prepareFullBuild() {
+        if (optimizedInterpreterContext != null) return optimizedInterpreterContext;
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -628,6 +641,9 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for compilation (AOT and/or JIT) */
     public synchronized BasicBlock[] prepareForCompilation() {
+        if (optimizedInterpreterContext != null && optimizedInterpreterContext.buildComplete()) {
+            return optimizedInterpreterContext.getLinearizedBBList();
+        }
         // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
         // for any nested closures which got a a fullInterpreterContext but have not run any passes
         // or generated instructions.
@@ -792,7 +808,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFileName() + ':' + getLineNumber() + ']';
+        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFile() + ':' + getLine() + ']';
     }
 
     public String debugOutput() {
@@ -977,6 +993,9 @@ public abstract class IRScope implements ParseResult {
 
     // Generate a new variable for inlined code
     public Variable getNewInlineVariable(ByteList inlinePrefix, Variable v) {
+        // FIXME: This should definitely not be polluting inlined scope with %i_old_var_name but we do want
+        //   a nice understandable temp var name so it is more easy to track.
+        /*
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
             ByteList newName = inlinePrefix.dup();
@@ -984,9 +1003,9 @@ public abstract class IRScope implements ParseResult {
             newName.append(lv.getName().getBytes());
 
             return getLocalVariable(getManager().getRuntime().newSymbol(newName), lv.getScopeDepth());
-        } else {
+        } else {*/
             return createTemporaryVariable();
-        }
+        //}
     }
 
     public int getThreadPollInstrsCount() {
@@ -1071,6 +1090,10 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext;
     }
 
+    public FullInterpreterContext getOptimizedInterpreterContext() {
+        return optimizedInterpreterContext;
+    }
+
     protected void depends(Object obj) {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
                 "up wrong.  Use depends(build()) not depends(build).";
@@ -1108,18 +1131,75 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
-        // Inline
-        new CFGInliner(getCFG()).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
-
-        // Reset state
-        resetState();
-
-        // Re-run opts
-        for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
-            pass.run(this);
-        }
+    private FullInterpreterContext inlineFailed(String reason) {
+        inlineFailed = reason;
+        return null;
     }
+
+    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        alreadyHasInline = true;
+        // FIXME: Tried prepareFullBuild here and for methodToInline and a couple of missing callsiteid errors happened in spec:ruby:fast
+        if (getFullInterpreterContext() == null) return inlineFailed("inline into startup interpreter scope");
+
+        // FIXME: So a potential problem is closures contain local variables in the method being inlined then we will nuke
+        // those scoped variables and the closure cannot see them.  One idea is since for deoptimization we will need to
+        // create a scope restore table we will have a list of all lvars -> temps.  Since this will be a map we depend on
+        // for restoring scope we can probably make an temp variable which will look for values from this table.  Even in
+        // that solution we need access to the temp table from the closure so I am unsure that will work.
+        //
+        // Another solution is to force inline those closures but that only works if the methods they are calling through
+        // are IR methods (or are native but can be substituted with IR methods).
+        //
+        // Note: we can look for scoped methods and make this less conservative.
+        if (!methodToInline.getClosures().isEmpty()) return inlineFailed("inline a method which contains nested closures");
+        FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
+        BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
+        CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
+        RubyModule implClass = compilable.getImplementationClass();
+
+        String error = new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
+
+        return error == null ? newContext : inlineFailed(error);
+    }
+
+    public void inlineMethod(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
+
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        if (newContext == null) {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
+        newContext.generateInstructionsForInterpretation();
+        this.optimizedInterpreterContext = newContext;
+
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+    }
+
+    public void inlineMethodJIT(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
+
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        if (newContext == null) {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
+
+        // We are not running any JIT-specific passes here.
+
+        newContext.linearizeBasicBlocks();
+        this.optimizedInterpreterContext = newContext;
+
+        // FIXME: CompiledIRMethod needs to be supports which may be changing compiled to Mixed with immediate Compiled in it.
+        if (!(compilable instanceof MixedModeIRMethod)) throw new RuntimeException("Do not support anything other than Mixed atm");
+
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+     }
+
 
     /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {
@@ -1252,5 +1332,10 @@ public abstract class IRScope implements ParseResult {
 
     public boolean needsBinding() {
         return reuseParentScope() || !getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+    }
+
+    // FIXME: This should become some heuristic later
+    public boolean inliningAllowed() {
+        return !alreadyHasInline;
     }
 }

@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;

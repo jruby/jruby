@@ -81,23 +81,23 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
-        file = scope.getFileName();
+        file = scope.getFile();
         lastLine = -1;
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         return defineFromBytecode(scope, compileToBytecode(scope, context), jrubyClassLoader);
     }
 
     public byte[] compileToBytecode(IRScope scope, JVMVisitorMethodContext context) {
-        file = scope.getFileName();
+        file = scope.getFile();
         lastLine = -1;
         codegenScope(scope, context);
         return code();
     }
 
     public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
-        file = scope.getFileName();
+        file = scope.getFile();
         lastLine = -1;
-        Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), code);
+        Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
 
         for (Map.Entry<String, IRScope> entry : scopeMap.entrySet()) {
             try {
@@ -133,6 +133,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
+        // We record this name so we can reference the unique scope field name for profiled callsites since we
+        // want the live IRScope instance of the callers scope.
+        String savedScopeName = currentScopeName;
+        currentScopeName = name + "_IRScope";
+
         BasicBlock[] bbs = scope.prepareForCompilation();
 
         if (print && IRRuntimeHelpers.shouldPrintIR(runtime)) {
@@ -148,7 +153,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushmethod(name, scope, signature, specificArity);
 
         // store IRScope in map for insertion into class later
-        String scopeField = name + "_IRScope";
+        String scopeField = currentScopeName;
         if (scopeMap.get(scopeField) == null) {
             scopeMap.put(scopeField, scope);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
@@ -250,6 +255,7 @@ public class JVMVisitor extends IRVisitor {
         }
 
         jvm.popmethod();
+        currentScopeName = savedScopeName;
     }
 
     protected void emitVarargsMethodWrapper(IRScope scope, String variableName, String specificName, Signature variableSignature, Signature specificSignature) {
@@ -315,8 +321,8 @@ public class JVMVisitor extends IRVisitor {
     protected void emitScriptBody(IRScriptBody script) {
         // Note: no index attached because there should be at most one script body per .class
         String name = JavaNameMangler.encodeScopeForBacktrace(script);
-        String clsName = jvm.scriptToClass(script.getFileName());
-        jvm.pushscript(clsName, script.getFileName());
+        String clsName = jvm.scriptToClass(script.getFile());
+        jvm.pushscript(clsName, script.getFile());
 
         emitScope(script, name, signatureFor(script, false), false, true);
 
@@ -331,9 +337,9 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
-        String clsName = jvm.scriptToClass(method.getFileName());
+        String clsName = jvm.scriptToClass(method.getFile());
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
-        jvm.pushscript(clsName, method.getFileName());
+        jvm.pushscript(clsName, method.getFile());
 
         emitWithSignatures(method, context, name);
 
@@ -342,9 +348,9 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
-        String clsName = jvm.scriptToClass(closure.getFileName());
+        String clsName = jvm.scriptToClass(closure.getFile());
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
-        jvm.pushscript(clsName, closure.getFileName());
+        jvm.pushscript(clsName, closure.getFile());
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
@@ -387,8 +393,8 @@ public class JVMVisitor extends IRVisitor {
     protected Handle emitModuleBodyJIT(IRModuleBody method) {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
-        String clsName = jvm.scriptToClass(method.getFileName());
-        jvm.pushscript(clsName, method.getFileName());
+        String clsName = jvm.scriptToClass(method.getFile());
+        jvm.pushscript(clsName, method.getFile());
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
@@ -587,19 +593,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
-        Operand[] callArgs = attrAssignInstr.getCallArgs();
-
-        compileCallCommon(
-                jvmMethod(),
-                attrAssignInstr.getId(),
-                callArgs,
-                attrAssignInstr.getReceiver(),
-                callArgs.length,
-                null,
-                BlockPassType.NONE,
-                attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
-                null,
-                attrAssignInstr.isPotentiallyRefined());
+        compileCallCommon(jvmMethod(), attrAssignInstr);
     }
 
     @Override
@@ -608,7 +602,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine);
+        jvmMethod().invokeArrayDeref(file, lastLine, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -1049,26 +1043,18 @@ public class JVMVisitor extends IRVisitor {
             throw new NotCompilableException("refinements are unsupported in JIT");
         }
 
-        IRBytecodeAdapter m = jvmMethod();
-        String name = callInstr.getId();
-        Operand[] args = callInstr.getCallArgs();
-        Operand receiver = callInstr.getReceiver();
-        int numArgs = args.length;
-        Operand closure = callInstr.getClosureArg(null);
-        BlockPassType blockPassType = BlockPassType.fromIR(callInstr);
-        CallType callType = callInstr.getCallType();
-        Variable result = callInstr.getResult();
-
-        compileCallCommon(m, name, args, receiver, numArgs, closure, blockPassType, callType, result, callInstr.isPotentiallyRefined());
+        compileCallCommon(jvmMethod(), callInstr);
     }
 
-    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, BlockPassType blockPassType, CallType callType, Variable result, boolean isPotentiallyRefined) {
+    private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        Operand[] args = call.getCallArgs();
+        BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
         m.loadSelf(); // caller
-        visit(receiver);
-        int arity = numArgs;
+        visit(call.getReceiver());
+        int arity = args.length;
 
-        if (numArgs == 1 && args[0] instanceof Splat) {
+        if (args.length == 1 && args[0] instanceof Splat) {
             visit(args[0]);
             m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
             arity = -1;
@@ -1082,22 +1068,21 @@ public class JVMVisitor extends IRVisitor {
 
         if (blockPassType.given()) {
             m.loadContext();
-            visit(closure);
+            visit(call.getClosureArg());
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
         }
 
-        switch (callType) {
+        switch (call.getCallType()) {
             case FUNCTIONAL:
-                m.invokeSelf(file, lastLine, name, arity, blockPassType, CallType.FUNCTIONAL, isPotentiallyRefined);
-                break;
             case VARIABLE:
-                m.invokeSelf(file, lastLine, name, arity, blockPassType, CallType.VARIABLE, isPotentiallyRefined);
+                m.invokeSelf(file, lastLine, currentScopeName, call, arity);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, name, arity, blockPassType, isPotentiallyRefined);
+                m.invokeOther(file, lastLine, currentScopeName, call, arity);
                 break;
         }
 
+        Variable result = call.getResult();
         if (result != null) {
             jvmStoreLocal(result);
         } else {
@@ -1326,14 +1311,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void EQQInstr(EQQInstr eqqinstr) {
-        if (!eqqinstr.isSplattedValue() && !(eqqinstr.getArg2() instanceof UndefinedValue)) {
-            // FIXME: eqq for case/when can be refined but we don't handle that
-            compileCallCommon(jvmMethod(), "===", Helpers.arrayOf(eqqinstr.getArg2()), eqqinstr.getArg1(), 1, null, BlockPassType.NONE, CallType.FUNCTIONAL, eqqinstr.getResult(), false);
+        if (!eqqinstr.isSplattedValue() && !(eqqinstr.getArg1() instanceof UndefinedValue)) {
+            compileCallCommon(jvmMethod(), eqqinstr);
         } else {
             jvmMethod().loadContext();
+            visit(eqqinstr.getReceiver());
             visit(eqqinstr.getArg1());
-            visit(eqqinstr.getArg2());
-            jvmMethod().callEqq(eqqinstr.isSplattedValue());
+            jvmMethod().callEqq(eqqinstr);
             jvmStoreLocal(eqqinstr.getResult());
         }
     }
@@ -1511,13 +1495,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void MatchInstr(MatchInstr matchInstr) {
-        compileCallCommon(jvmMethod(), "=~", matchInstr.getCallArgs(), matchInstr.getReceiver(), 1, null, BlockPassType.NONE, CallType.NORMAL, matchInstr.getResult(), false);
+        compileCallCommon(jvmMethod(), matchInstr);
     }
 
     @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
         // SSS FIXME: Unused at this time
-        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
+        //throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
     }
 
     @Override
@@ -1527,21 +1511,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
-        IRBytecodeAdapter m = jvmMethod();
-        String name = noResultCallInstr.getId();
-        Operand[] args = noResultCallInstr.getCallArgs();
-        Operand receiver = noResultCallInstr.getReceiver();
-        int numArgs = args.length;
-        Operand closure = noResultCallInstr.getClosureArg(null);
-        BlockPassType blockPassType = BlockPassType.fromIR(noResultCallInstr);
-        CallType callType = noResultCallInstr.getCallType();
-
-        compileCallCommon(m, name, args, receiver, numArgs, closure, blockPassType, callType, null, noResultCallInstr.isPotentiallyRefined());
+        compileCallCommon(jvmMethod(), noResultCallInstr);
     }
 
     public void oneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFixnumArgNoBlockCallInstr.getId();
         long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
         Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
         Variable result = oneFixnumArgNoBlockCallInstr.getResult();
@@ -1554,7 +1528,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFixnum(file, lastLine, name, fixnum, oneFixnumArgNoBlockCallInstr.getCallType());
+        m.invokeOtherOneFixnum(file, lastLine, oneFixnumArgNoBlockCallInstr, fixnum);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1579,7 +1553,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFloat(file, lastLine, name, flote, oneFloatArgNoBlockCallInstr.getCallType());
+        m.invokeOtherOneFloat(file, lastLine, oneFloatArgNoBlockCallInstr, flote);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -2515,6 +2489,18 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Scope(Scope scope) {
+        IRScope irScope = scope.getScope();
+        String name = JavaNameMangler.encodeScopeForBacktrace(irScope) + '$' + methodIndex++ + "_IRSCope";
+        if (scopeMap.get(name) == null) {
+            scopeMap.put(name, irScope);
+            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, name, ci(IRScope.class), null, null).visitEnd();
+        }
+        jvmAdapter().getstatic(jvm.clsData().clsName, name, ci(IRScope.class));
+        jvmAdapter().invokestatic(p(Helpers.class), "getStaticScope", sig(StaticScope.class, IRScope.class));
+    }
+
+    @Override
     public void ScopeModule(ScopeModule scopemodule) {
         jvmMethod().loadStaticScope();
         jvmAdapter().pushInt(scopemodule.getScopeModuleDepth());
@@ -2635,6 +2621,7 @@ public class JVMVisitor extends IRVisitor {
     private final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;
+    private String currentScopeName;
     private Map<String, IRScope> scopeMap;
     private String file;
     private int lastLine = -1;
