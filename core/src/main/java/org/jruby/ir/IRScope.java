@@ -1167,10 +1167,10 @@ public abstract class IRScope implements ParseResult {
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
         if (newContext == null) {
-            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
         } else {
-            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
         }
         newContext.generateInstructionsForInterpretation();
         this.optimizedInterpreterContext = newContext;
@@ -1183,10 +1183,10 @@ public abstract class IRScope implements ParseResult {
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
         if (newContext == null) {
-            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
         } else {
-            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
         }
 
         // We are not running any JIT-specific passes here.

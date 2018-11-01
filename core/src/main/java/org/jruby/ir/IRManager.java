@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
@@ -47,6 +48,10 @@ public class IRManager {
     public static final String DEFAULT_BUILD_PASSES = "";
     public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,DeadCodeElimination,OptimizeDynScopesPass,OptimizeDelegationPass,AddCallProtocolInstructions,AddMissingInitsPass";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
+    
+    public static boolean IR_INLINER = Options.IR_INLINER.load();
+    public static int IR_INLINER_THRESHOLD = Options.IR_INLINER_THRESHOLD.load();
+    public static boolean IR_INLINER_VERBOSE = Options.IR_INLINER_VERBOSE.load();
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
     private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();

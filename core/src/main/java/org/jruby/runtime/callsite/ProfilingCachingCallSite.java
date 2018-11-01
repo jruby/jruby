@@ -3,11 +3,11 @@ package org.jruby.runtime.callsite;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.Block;
@@ -62,7 +62,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
 
         if (targetIsIR && siteIsIR) {
-            if (RubyInstanceConfig.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
 
             IRMethod scopeToInline = (IRMethod) (targetMethod).getIRScope();
             if (cache.method instanceof InterpretedIRMethod) {
@@ -93,7 +93,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;  // This must be retrieved *once* to avoid racing with other threads.
 
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, args);
         } else {
             totalMonomorphicCalls = 1;
@@ -106,7 +106,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache; // This must be retrieved *once* to avoid racing with other threads.
 
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, args, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -120,7 +120,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName);
         } else {
             totalMonomorphicCalls = 1;
@@ -133,7 +133,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -147,7 +147,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1);
         } else {
             totalMonomorphicCalls = 1;
@@ -160,7 +160,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -174,7 +174,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2);
         } else {
             totalMonomorphicCalls = 1;
@@ -187,7 +187,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
         } else {
             totalMonomorphicCalls = 1;
@@ -201,7 +201,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
         } else {
             totalMonomorphicCalls = 1;
@@ -214,7 +214,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            if ((totalMonomorphicCalls++ % RubyInstanceConfig.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
+            if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
             return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
         } else {
             totalMonomorphicCalls = 1;

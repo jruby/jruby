@@ -1,9 +1,9 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
@@ -14,7 +14,6 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.util.ArraySupport;
 
@@ -179,7 +178,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         switch (callType) {
             case NORMAL:
-                if (RubyInstanceConfig.IR_INLINER && hasLiteralClosure) {
+                if (IRManager.IR_INLINER && hasLiteralClosure) {
                     return MethodIndex.getProfilingCallSite(name, scope, callsiteId);
                 } else {
                     return MethodIndex.getCallSite(name);
