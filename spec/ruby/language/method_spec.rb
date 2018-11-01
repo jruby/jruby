@@ -1281,6 +1281,19 @@ describe "A method" do
       result.should == [1, nil, nil, {foo: :bar}, nil, {}]
     end
   end
+
+  context "assigns keyword arguments from a passed Hash without modifying it" do
+    evaluate <<-ruby do
+        def m(a: nil); a; end
+      ruby
+
+      options = {a: 1}.freeze
+      lambda do
+        m(options).should == 1
+      end.should_not raise_error
+      options.should == {a: 1}
+    end
+  end
 end
 
 describe "A method call with a space between method name and parentheses" do
