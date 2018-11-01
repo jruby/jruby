@@ -88,8 +88,8 @@ public class JavaSupportImpl extends JavaSupport {
     private RubyModule javaModule;
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;
-    private RubyClass objectClass;
     private RubyClass javaObjectClass;
+    private JavaClass objectJavaClass;
     private RubyClass javaClassClass;
     private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
@@ -264,23 +264,12 @@ public class JavaSupportImpl extends JavaSupport {
         return javaProxyConstructorClass = getJavaModule().getClass("JavaProxyConstructor");
     }
 
-    @Override
-    public RubyClass getObjectClass() {
-        RubyClass clazz;
-        if ((clazz = objectClass) != null) return clazz;
-        return objectClass = (RubyClass) getProxyClassFromCache(java.lang.Object.class);
-    }
-
-    private transient JavaClass objectJavaClass;
-
     public JavaClass getObjectJavaClass() {
-        JavaClass clazz;
-        if ((clazz = objectJavaClass) != null) return clazz;
-        return objectJavaClass = getJavaClassFromCache(java.lang.Object.class);
+        return objectJavaClass;
     }
 
     public void setObjectJavaClass(JavaClass objectJavaClass) {
-        assert false; /* no longer used */
+        this.objectJavaClass = objectJavaClass;
     }
 
     public RubyClass getJavaArrayClass() {
