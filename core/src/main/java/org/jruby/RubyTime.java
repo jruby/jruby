@@ -777,7 +777,7 @@ public class RubyTime extends RubyObject {
 
     private String inspectCommon(final DateTimeFormatter formatter, final DateTimeFormatter utcFormatter) {
         DateTimeFormatter simpleDateFormat;
-        if (dt.getZone() == DateTimeZone.UTC) {
+        if (dt.getZone() == DateTimeZone.UTC && !isTzRelative) {
             simpleDateFormat = utcFormatter;
         } else {
             simpleDateFormat = formatter;
