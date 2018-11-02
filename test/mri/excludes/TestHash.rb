@@ -5,7 +5,6 @@ exclude :test_callcc_escape, "needs investigation"
 exclude :test_callcc_iter_level, "needs investigation"
 exclude :test_callcc_reenter, "needs investigation"
 exclude :test_eql, "needs investigation"
-exclude :test_exception_in_rehash, "needs investigation"
 exclude :test_fetch_error, "needs investigation"
 exclude :test_inverse_hash, "needs investigation"
 
