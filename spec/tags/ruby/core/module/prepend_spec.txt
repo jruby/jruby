@@ -1,1 +1,0 @@
-fails:Module#prepend keeps the module in the chain when dupping an intermediate module
