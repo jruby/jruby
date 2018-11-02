@@ -34,6 +34,7 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.ref.WeakReference;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
@@ -1719,7 +1720,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     protected void printReportExceptionWarning() {
         Ruby runtime = getRuntime();
         String name = threadImpl.getReportName();
-        runtime.getErrorStream().println("warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):");
+        try (PrintStream errorStream = runtime.getErrorStream()) {
+            errorStream.println("warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):");
+        }
     }
 
     /**

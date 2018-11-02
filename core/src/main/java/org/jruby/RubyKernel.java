@@ -44,6 +44,7 @@
 package org.jruby;
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -959,7 +960,9 @@ public class RubyKernel {
                 firstElement.getFileName(), firstElement.getLineNumber(),
                 TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
 
-        runtime.getErrorStream().print(msg);
+        try (PrintStream errorStream = runtime.getErrorStream()) {
+            errorStream.print(msg);
+        }
     }
 
     /**

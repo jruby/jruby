@@ -2913,12 +2913,13 @@ public final class Ruby implements Constantizable {
             return;
         }
 
-        PrintStream errorStream = getErrorStream();
-        String backtrace = config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
-        try {
-            errorStream.print(backtrace);
-        } catch (Exception e) {
-            System.err.print(backtrace);
+        try (PrintStream errorStream = getErrorStream()) {
+            String backtrace = config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
+            try {
+                errorStream.print(backtrace);
+            } catch (Exception e) {
+                System.err.print(backtrace);
+            }
         }
     }
 
@@ -2926,8 +2927,7 @@ public final class Ruby implements Constantizable {
         if (t instanceof RaiseException) {
             printError(((RaiseException) t).getException());
         }
-        PrintStream errorStream = getErrorStream();
-        try {
+        try (PrintStream errorStream = getErrorStream()) {
             t.printStackTrace(errorStream);
         } catch (Exception e) {
             t.printStackTrace(System.err);

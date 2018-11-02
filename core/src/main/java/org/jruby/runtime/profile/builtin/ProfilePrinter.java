@@ -103,7 +103,9 @@ public abstract class ProfilePrinter {
     public abstract void printProfile(PrintStream out, boolean first) ;
 
     public void printProfile(RubyIO out) {
-        printProfile(new PrintStream(out.getOutStream()));
+        try (PrintStream profileStream = new PrintStream(out.getOutStream())) {
+            printProfile(profileStream);
+        }
     }
 
     boolean isProfilerInvocation(Invocation inv) {
