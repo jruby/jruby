@@ -992,6 +992,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     private IRubyObject inspectHash(final ThreadContext context) {
         final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
+
+        str.infectBy(this);
+
         str.cat((byte)'{');
 
         visitAll(context, InspectVisitor, str);
