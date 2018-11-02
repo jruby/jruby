@@ -723,7 +723,7 @@ public class RubyHash extends RubyObject implements Map {
                   entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
                   size--;
 
-                  updateStartAndEndPointer(index);
+                  updateStartAndEndPointer();
                   return otherValue;
                 }
             }
@@ -747,7 +747,7 @@ public class RubyHash extends RubyObject implements Map {
               entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
               size--;
 
-              updateStartAndEndPointer(index);
+              updateStartAndEndPointer();
               return otherValue;
             }
         }
@@ -756,15 +756,18 @@ public class RubyHash extends RubyObject implements Map {
         return null;
     }
 
-    private final void updateStartAndEndPointer(final int index) {
-      if (isEmpty()) {
-          start = end = 0;
-      } else {
-          while(entries[start * NUMBER_OF_ENTRIES] == null)
-            start++;
-          while(entries[lastElementsIndex() * NUMBER_OF_ENTRIES] == null && lastElementsIndex() > 0)
-            end--;
-      }
+    private final void updateStartAndEndPointer() {
+        if (isEmpty()) {
+            start = 0;
+            end = 0;
+        } else {
+            while (entries[start * NUMBER_OF_ENTRIES] == null) {
+                start++;
+            }
+            while(entries[lastElementsIndex() * NUMBER_OF_ENTRIES] == null && lastElementsIndex() > 0) {
+                end--;
+            }
+        }
     }
 
     private int lastElementsIndex() {
