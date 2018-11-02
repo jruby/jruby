@@ -1138,6 +1138,8 @@ public class RubyHash extends RubyObject implements Map {
 
             boolean exists = false;
             while(index != EMPTY_BIN) {
+                // Note: otherKey should never be null here as we are filling with new entries and newBins
+                // cannot be non-EMPTY_BIN and not contain a valid newEntry.
                 IRubyObject otherKey = newEntries[index * NUMBER_OF_ENTRIES];
                 int otherHash = newHashes[index];
                 if (internalKeyExist(key, hash, otherKey, otherHash)) {
