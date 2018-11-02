@@ -526,7 +526,7 @@ public class RubyTime extends RubyObject {
     }
 
     public boolean isUTC() {
-        return dt.getZone().getID().equals("UTC");
+        return !isTzRelative && dt.getZone().getID().equals("UTC");
     }
 
     @JRubyMethod(name = {"getgm", "getutc"})
