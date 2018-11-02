@@ -710,15 +710,12 @@ public class RubyHash extends RubyObject implements Map {
     private final IRubyObject internalDeleteOpenAddressing(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
         int bin = bucketIndex(hash, bins.length);
         int index = bins[bin];
-        IRubyObject otherKey, otherValue;
-        int round = 0;
 
-        while (index != EMPTY_BIN) {
-            if (round == bins.length)
-              break;
+        for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
             if (index != DELETED_BIN) {
-                otherKey = entries[index * NUMBER_OF_ENTRIES];
-                otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                IRubyObject otherKey = entries[index * NUMBER_OF_ENTRIES];
+                IRubyObject otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
+
                 if (otherKey != null && matchType.matches(key, value, otherKey, otherValue)) {
                   bins[bin] = DELETED_BIN;
                   hashes[index] = 0;
@@ -732,18 +729,15 @@ public class RubyHash extends RubyObject implements Map {
             }
             bin = secondaryBucketIndex(bin, bins.length);
             index = bins[bin];
-            round++;
         }
 
-        // no entry found
-        return null;
+        return null;  // no entry found
     }
 
     private final IRubyObject internalDeleteLinearSearch(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
-        IRubyObject otherKey, otherValue;
         for(int index = start; index < end; index++) {
-            otherKey = entries[index * NUMBER_OF_ENTRIES];
-            otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
+            IRubyObject otherKey = entries[index * NUMBER_OF_ENTRIES];
+            IRubyObject otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
 
             if (otherKey == null) continue;
 
