@@ -47,10 +47,13 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.HashSites;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -2424,6 +2427,21 @@ public class RubyHash extends RubyObject implements Map {
     final IRubyObject dig(ThreadContext context, IRubyObject[] args, int idx) {
         final IRubyObject val = op_aref( context, args[idx++] );
         return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
+    }
+
+    @JRubyMethod
+    public IRubyObject to_proc(ThreadContext context) {
+        Block block = CallBlock19.newCallClosure(
+                this,
+                this.metaClass,
+                Signature.ONE_ARGUMENT,
+                (context1, args, procBlock) -> {
+                    Arity.checkArgumentCount(context1, args, 1, 1);
+                    return op_aref(context1, args[0]);
+                },
+                context);
+
+        return RubyProc.newProc(context.runtime, block, Block.Type.PROC);
     }
 
     private static class VisitorIOException extends RuntimeException {
