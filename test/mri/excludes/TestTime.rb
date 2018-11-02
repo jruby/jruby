@@ -1,5 +1,4 @@
 exclude :test_at, "MRI uses less precision than JRuby, which causes it to produce incorrect values"
-exclude :test_at_rational, "MRI uses less precision than JRuby, which causes it to produce incorrect values"
 exclude :test_future, "needs investigation"
 exclude :test_marshal_nsec_191, "needs investigation"
 exclude :test_num_exact_error, "error message formatting"
@@ -14,4 +13,3 @@ exclude :test_strftime_seconds_from_epoch, "Integer unification, needs Bignum su
 exclude :test_strftime_too_wide, "needs investigation"
 exclude :test_strftime_year, "Integer unification, needs Bignum support (#4687)"
 exclude :test_utc_or_local, "needs investigation"
-exclude :test_xmlschema, "raising Joda errors recently, #2237"
