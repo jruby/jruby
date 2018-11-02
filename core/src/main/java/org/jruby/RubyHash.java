@@ -1184,6 +1184,7 @@ public class RubyHash extends RubyObject implements Map {
                 IRubyObject otherKey = newEntries[j * NUMBER_OF_ENTRIES];
                 if (internalKeyExist(key, newHash, otherKey, otherHash)) {
                     exists = true;
+                    break;
                 }
             }
 
