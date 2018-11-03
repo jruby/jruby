@@ -1,2 +1,0 @@
-fails:Array#pack with format 'u' returns a tainted string when a pack argument is tainted
-fails:Array#pack with format 'u' returns a untrusted string when a pack argument is untrusted
