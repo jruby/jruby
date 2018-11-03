@@ -1792,7 +1792,7 @@ public class Pack {
                         }
 
                         IRubyObject from = list.eltInternal(idx++);
-                        if(from.isTaint()) taintOutput = true;
+                        if (from.isTaint()) taintOutput = true;
 
                         lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
 
@@ -1998,6 +1998,7 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
+                        if (from.isTaint()) taintOutput = true;
                         encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
                     }
                     break;
@@ -2005,6 +2006,7 @@ public class Pack {
                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
 
                        IRubyObject from = list.eltInternal(idx++);
+                       if (from.isTaint()) taintOutput = true;
                        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
 
                        if (occurrences <= 1) {
