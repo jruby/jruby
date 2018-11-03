@@ -1593,7 +1593,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         m.check();
 
         Ruby runtime = m.getRuntime();
-        if (m.begin == -1) runtime.getNil();
+        if (m.begin == -1) return runtime.getNil();
         return m.str.makeShared(runtime, 0,  m.begin).infectBy(m);
     }
 
