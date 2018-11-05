@@ -311,6 +311,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final void allocFirst(int buckets) {
+        if (buckets <= 0) throw new ArrayIndexOutOfBoundsException("invalid bucket size: " + buckets);
         threshold = INITIAL_THRESHOLD;
         table = new RubyHashEntry[buckets];
     }

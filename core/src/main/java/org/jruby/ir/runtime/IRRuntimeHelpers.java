@@ -1269,7 +1269,8 @@ public class IRRuntimeHelpers {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 
-        RubyHash hash = useSmallHash ? RubyHash.newHash(runtime) : RubyHash.newSmallHash(runtime);
+        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+
         for (int i = 0; i < pairs.length;) {
             if (useSmallHash) {
                 hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);

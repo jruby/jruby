@@ -2039,19 +2039,29 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "to_h")
     public IRubyObject to_h(ThreadContext context) {
+        Ruby runtime = context.runtime;
         int realLength = this.realLength;
-        RubyHash hash = new RubyHash(context.runtime, realLength);
+
+        boolean useSmallHash = realLength <= 10;
+
+        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject elt = eltInternal(i).checkArrayType();
             if (elt == context.nil) {
                 throw context.runtime.newTypeError("wrong element type " + eltInternal(i).getMetaClass().getRealClass() + " at " + i + " (expected array)");
             }
+
             RubyArray ary = (RubyArray)elt;
             if (ary.getLength() != 2) {
                 throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
             }
-            hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
+
+            if (useSmallHash) {
+                hash.fastASetSmall(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
+            } else {
+                hash.fastASet(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
+            }
         }
         return hash;
     }
