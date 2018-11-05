@@ -103,11 +103,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     }
 
     private static final class RubyHashMap extends RubyHash {
+        static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
 
         private final MapJavaProxy receiver;
 
         RubyHashMap(Ruby runtime, MapJavaProxy receiver) {
-            super(runtime, runtime.getHash(), runtime.getNil());
+            super(runtime, runtime.getHash(), runtime.getNil(), EMPTY_TABLE, 0);
             this.receiver = receiver;
         }
 
@@ -176,7 +177,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
+        public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
+            internalPutNoResize(key, value, checkForExisting);
+        }
+
+        @Override
+        protected final IRubyObject internalPutNoResize(IRubyObject key, IRubyObject value, boolean checkForExisting) {
             @SuppressWarnings("unchecked")
             Ruby runtime = getRuntime();
             final Map<Object, Object> map = mapDelegate();
@@ -200,6 +206,11 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
+        protected final void op_asetSmallForString(Ruby runtime, RubyString key, IRubyObject value) {
+            op_asetForString(runtime, key, value);
+        }
+
+        @Override
         public IRubyObject internalGet(IRubyObject key) {
             Object result = mapDelegate().get(key.toJava(Object.class));
             if (result == null) return null;
@@ -213,14 +224,14 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             Object value = map.get(convertedKey);
 
             if (value != null) {
-                return new RubyHashEntry(key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value));
+                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
 
             return NO_ENTRY;
         }
 
         @Override
-        public IRubyObject internalDelete(final IRubyObject key) {
+        public RubyHashEntry internalDelete(final IRubyObject key) {
             final Map map = mapDelegate();
             Object convertedKey = key.toJava(Object.class);
             Object value = map.get(convertedKey);
@@ -228,9 +239,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             if (value != null) {
                 map.remove(convertedKey);
                 setSize( map.size() );
-                return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value);
+                return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
-            return null;
+            return NO_ENTRY;
         }
 
         @Override // NOTE: likely won't be called
