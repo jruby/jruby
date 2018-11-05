@@ -2043,7 +2043,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int realLength = this.realLength;
 
         boolean useSmallHash = realLength <= 10;
-        RubyHash hash = useSmallHash ? RubyHash.newHash(runtime) : RubyHash.newSmallHash(runtime);
+
+        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject elt = eltInternal(i).checkArrayType();
