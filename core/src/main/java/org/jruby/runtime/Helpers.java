@@ -6,6 +6,7 @@ import java.lang.reflect.Array;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -175,12 +176,22 @@ public class Helpers {
     }
 
     public static Errno errnoFromException(Throwable t) {
-        if (t instanceof ClosedChannelException) {
+        try {
+            throw t;
+        } catch (AtomicMoveNotSupportedException amnse) {
+            return Errno.EXDEV;
+        } catch (ClosedChannelException cce) {
             return Errno.EBADF;
+        } catch (PortUnreachableException cce) {
+            return Errno.ECONNREFUSED;
+        } catch (Throwable t2) {
+            // fall through
         }
 
         final String errorMessage = t.getMessage();
-        // TODO: this is kinda gross
+
+        // FIXME: This is gross and turns out to be fragile if the host system has localized error messages.
+        // See https://github.com/jruby/jruby/issues/5415
         if (errorMessage != null) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
@@ -217,12 +228,6 @@ public class Helpers {
                 case "Is a directory":
                     return Errno.EISDIR;
             }
-
-            if (errorMessage.endsWith("Invalid cross-device link")) {
-                return Errno.EXDEV;
-            }
-        } else if (t instanceof PortUnreachableException) {
-            return Errno.ECONNREFUSED;
         }
         return null;
     }
