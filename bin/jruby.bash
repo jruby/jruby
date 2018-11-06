@@ -367,7 +367,7 @@ if [ "$JRUBY_JSA" == "" ]; then
   JRUBY_JSA=${JRUBY_HOME}/lib/jruby.jsa
 fi
 
-# Determine whether to use -classpath or --module-path
+# Determine whether to pass module-related flags
 classmod_flag="-classpath"
 if [ -d $JAVA_HOME/jmods ]; then
   # Use module path instead of classpath
@@ -380,6 +380,9 @@ if [ -d $JAVA_HOME/jmods ]; then
   if [ -f $JRUBY_JSA ]; then
     JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
   fi
+
+  # Add base opens we need for Ruby compatibility
+  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist"
 fi
 
 # Run JRuby!
