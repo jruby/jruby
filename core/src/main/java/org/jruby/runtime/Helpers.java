@@ -6,7 +6,13 @@ import java.lang.reflect.Array;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemLoopException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -175,23 +181,53 @@ public class Helpers {
         return (~(original ^ ~other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
     }
 
+    /**
+     * This method attempts to produce an Errno value for the given exception.
+     *
+     * Many low-level operations wrapped by the JDK will raise IOException or subclasses of it when there's a system-
+     * level error. In most cases, the only way to determine the cause of the IOException is by inspecting its contents,
+     * usually by checking the error message string. This is obviously fragile and breaks on platforms localized to
+     * languages other than English, so we also try as much as possible to detect the cause of the error by its actual
+     * type (if it is indeed a specialized subtype of IOException.
+     *
+     * @param t the exception to convert to an {@link Errno}
+     * @return the resulting {@link Errno} value, or null if none could be determined.
+     */
     public static Errno errnoFromException(Throwable t) {
+        // FIXME: Error-message scrapingis gross and turns out to be fragile if the host system is localized jruby/jruby#5415
+
+        // Try specific exception types by rethrowing and catching.
         try {
             throw t;
         } catch (AtomicMoveNotSupportedException amnse) {
             return Errno.EXDEV;
         } catch (ClosedChannelException cce) {
             return Errno.EBADF;
-        } catch (PortUnreachableException cce) {
+        } catch (PortUnreachableException pue) {
             return Errno.ECONNREFUSED;
+        } catch (FileAlreadyExistsException faee) {
+            return Errno.EEXIST;
+        } catch (FileSystemLoopException fsle) {
+            return Errno.ELOOP;
+        } catch (NoSuchFileException nsfe) {
+            return Errno.ENOENT;
+        } catch (NotDirectoryException nde) {
+            return Errno.ENOTDIR;
+        } catch (AccessDeniedException ade) {
+            return Errno.EACCES;
+        } catch (DirectoryNotEmptyException dnee) {
+            switch (dnee.getMessage()) {
+                case "File exists":
+                    return Errno.EEXIST;
+                case "Directory not empty":
+                    return Errno.ENOTEMPTY;
+            }
         } catch (Throwable t2) {
             // fall through
         }
 
         final String errorMessage = t.getMessage();
 
-        // FIXME: This is gross and turns out to be fragile if the host system has localized error messages.
-        // See https://github.com/jruby/jruby/issues/5415
         if (errorMessage != null) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
