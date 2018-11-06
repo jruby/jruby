@@ -1,5 +1,7 @@
 package org.jruby.runtime;
 
+import java.io.EOFException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 
@@ -199,6 +201,10 @@ public class Helpers {
         // Try specific exception types by rethrowing and catching.
         try {
             throw t;
+        } catch (FileNotFoundException fnfe) {
+            return Errno.ENOENT;
+        } catch (EOFException fnfe) {
+            return Errno.EPIPE;
         } catch (AtomicMoveNotSupportedException amnse) {
             return Errno.EXDEV;
         } catch (ClosedChannelException cce) {
