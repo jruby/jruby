@@ -404,7 +404,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final int MAX_POWER2_FOR_TABLES_WITHOUT_BINS = 3;
     private static final int MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS = 1 << MAX_POWER2_FOR_TABLES_WITHOUT_BINS;
     private static final int MRI_INITIAL_CAPACITY = 8;
-    private final static int NUMBER_OF_ENTRIES = 2;
+    private static final int NUMBER_OF_ENTRIES = 2;
 
     public static final RubyHashEntry NO_ENTRY = new RubyHashEntry();
     private int generation = 0; // generation count for O(1) clears
@@ -486,8 +486,15 @@ public class RubyHash extends RubyObject implements Map {
         final int[] newBins = new int[newCapacity << 1];
         final int[] newHashes = new int[newCapacity];
         Arrays.fill(newBins, EMPTY_BIN);
+
+        IRubyObject[] entries = this.entries;
+        int[] hashes = this.hashes;
+
         System.arraycopy(entries, 0, newEntries, 0, entries.length);
         System.arraycopy(hashes, 0, newHashes, 0, hashes.length);
+
+        int start = this.start;
+        int end = this.end;
 
         for (int i = start; i < end; i++) {
             if (entries[i * NUMBER_OF_ENTRIES] == null) continue;
@@ -502,8 +509,8 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         bins = newBins;
-        hashes = newHashes;
-        entries = newEntries;
+        this.hashes = newHashes;
+        this.entries = newEntries;
     }
 
     // ------------------------------
@@ -575,18 +582,28 @@ public class RubyHash extends RubyObject implements Map {
 
     private final IRubyObject internalPutOpenAdressing(final int hash, int bin, final IRubyObject key, final IRubyObject value) {
         checkIterating();
+
+        int[] bins = this.bins;
+
         int localBin = (bin == EMPTY_BIN) ? bucketIndex(hash, bins.length) : bin;
         int index = bins[localBin];
+
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+
         entries[end * NUMBER_OF_ENTRIES] = key;
         entries[end * NUMBER_OF_ENTRIES + 1] = value;
+
         while(index != EMPTY_BIN && index != DELETED_BIN) {
             localBin = secondaryBucketIndex(localBin, bins.length);
             index = bins[localBin];
         }
+
         bins[localBin] = end;
         hashes[end] = hash;
+
         size++;
-        end++;
+        this.end = end + 1;
 
         // no existing entry
         return null;
@@ -594,11 +611,17 @@ public class RubyHash extends RubyObject implements Map {
 
     private final IRubyObject internalPutLinearSearch(final int hash, final IRubyObject key, final IRubyObject value) {
         checkIterating();
+
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+
         entries[end * NUMBER_OF_ENTRIES] = key;
         entries[end * NUMBER_OF_ENTRIES + 1] = value;
+
         hashes[end] = hash;
+
         size++;
-        end++;
+        this.end = end + 1;
 
         // no existing entry
         return null;
@@ -606,8 +629,12 @@ public class RubyHash extends RubyObject implements Map {
 
     private final IRubyObject internalSetValue(final int index, final IRubyObject value) {
         if (index < 0) return null;
+
+        IRubyObject[] entries = this.entries;
+
         final IRubyObject result = entries[(index * NUMBER_OF_ENTRIES) + 1];
         entries[(index * NUMBER_OF_ENTRIES) + 1] = value;
+
         return result;
     }
 
@@ -625,8 +652,13 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final int internalGetBinOpenAddressing(final int hash, final IRubyObject key) {
+        int[] bins = this.bins;
+
         int bin = bucketIndex(hash, bins.length);
         int index = bins[bin];
+
+        IRubyObject[] entries = this.entries;
+        int[] hashes = this.hashes;
 
         for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
             if (round == bins.length) break;
@@ -646,6 +678,11 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final int internalGetIndexLinearSearch(final int hash, final IRubyObject key) {
+        int start = this.start;
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+        int[] hashes = this.hashes;
+
         for(int i = start; i < end; i++) {
             IRubyObject otherKey = entries[i * NUMBER_OF_ENTRIES];
             if (otherKey == null) continue;
@@ -705,8 +742,13 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final IRubyObject internalDeleteOpenAddressing(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
+        int[] bins = this.bins;
+
         int bin = bucketIndex(hash, bins.length);
         int index = bins[bin];
+
+        IRubyObject[] entries = this.entries;
+        int[] hashes = this.hashes;
 
         for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
             if (index != DELETED_BIN) {
@@ -714,14 +756,14 @@ public class RubyHash extends RubyObject implements Map {
                 IRubyObject otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
 
                 if (otherKey != null && matchType.matches(key, value, otherKey, otherValue)) {
-                  bins[bin] = DELETED_BIN;
-                  hashes[index] = 0;
-                  entries[index * NUMBER_OF_ENTRIES] = null;
-                  entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
-                  size--;
+                    bins[bin] = DELETED_BIN;
+                    hashes[index] = 0;
+                    entries[index * NUMBER_OF_ENTRIES] = null;
+                    entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
+                    size--;
 
-                  updateStartAndEndPointer();
-                  return otherValue;
+                    updateStartAndEndPointer();
+                    return otherValue;
                 }
             }
             bin = secondaryBucketIndex(bin, bins.length);
@@ -732,6 +774,11 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final IRubyObject internalDeleteLinearSearch(final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
+        int start = this.start;
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+        int[] hashes = this.hashes;
+
         for(int index = start; index < end; index++) {
             IRubyObject otherKey = entries[index * NUMBER_OF_ENTRIES];
             IRubyObject otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
@@ -739,13 +786,13 @@ public class RubyHash extends RubyObject implements Map {
             if (otherKey == null) continue;
 
             if (matchType.matches(key, value, otherKey, otherValue)) {
-              hashes[index] = 0;
-              entries[index * NUMBER_OF_ENTRIES] = null;
-              entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
-              size--;
+                hashes[index] = 0;
+                entries[index * NUMBER_OF_ENTRIES] = null;
+                entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
+                size--;
 
-              updateStartAndEndPointer();
-              return otherValue;
+                updateStartAndEndPointer();
+                return otherValue;
             }
         }
 
@@ -758,9 +805,12 @@ public class RubyHash extends RubyObject implements Map {
             start = 0;
             end = 0;
         } else {
+            IRubyObject[] entries = this.entries;
+
             while (entries[start * NUMBER_OF_ENTRIES] == null) {
                 start++;
             }
+
             while(entries[lastElementsIndex() * NUMBER_OF_ENTRIES] == null && lastElementsIndex() > 0) {
                 end--;
             }
@@ -800,6 +850,7 @@ public class RubyHash extends RubyObject implements Map {
     };
 
     private final IRubyObject[] internalCopyTable() {
+        IRubyObject[] entries = this.entries;
         IRubyObject[] newTable = new RubyObject[entries.length];
         System.arraycopy(entries, 0, newTable, 0, entries.length);
         return newTable;
@@ -807,12 +858,14 @@ public class RubyHash extends RubyObject implements Map {
 
     private final int[] internalCopyBins() {
         if(shouldSearchLinear()) return null;
+        int[] bins = this.bins;
         int[] newBins = new int[bins.length];
         System.arraycopy(bins, 0, newBins, 0, bins.length);
         return newBins;
     }
 
     private final int[] internalCopyHashes() {
+        int[] hashes = this.hashes;
         int[] newHashes = new int[hashes.length];
         System.arraycopy(hashes, 0, newHashes, 0, hashes.length);
         return newHashes;
@@ -839,6 +892,10 @@ public class RubyHash extends RubyObject implements Map {
         long count = size;
         int index = 0;
 
+        int start = this.start;
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+
         for (int i = start; i < end && count != 0; i++) {
             if (startGeneration != generation) {
                 startGeneration = generation;
@@ -863,9 +920,14 @@ public class RubyHash extends RubyObject implements Map {
     public <T> boolean allSymbols() {
         int startGeneration = generation;
 
+        int start = this.start;
+        int end = this.end;
+        IRubyObject[] entries = this.entries;
+
         for (int i = start; i < end; i++) {
-            if (startGeneration != generation) {
-                startGeneration = generation;
+            int currentGeneration = generation;
+            if (startGeneration != currentGeneration) {
+                startGeneration = currentGeneration;
                 i = start;
             }
 
@@ -1130,12 +1192,21 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private void rehashOpenAddressing() {
+        IRubyObject[] entries = this.entries;
+
         IRubyObject[] newEntries = new IRubyObject[entries.length];
+        int[] bins = this.bins;
+
+        int[] hashes = this.hashes;
+
         int[] newBins = new int[bins.length];
         int[] newHashes = new int[hashes.length];
         Arrays.fill(newBins, EMPTY_BIN);
 
         int newIndex = 0;
+        int start = this.start;
+        int end = this.end;
+
         for(int i = start; i < end; i++) {
             IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
             if (key == null) continue;
@@ -1169,17 +1240,23 @@ public class RubyHash extends RubyObject implements Map {
             }
         }
 
-        bins = newBins;
-        entries = newEntries;
-        hashes = newHashes;
-        end = size = newIndex;
-        start = 0;
+        this.bins = newBins;
+        this.entries = newEntries;
+        this.hashes = newHashes;
+        this.end = size = newIndex;
+        this.start = 0;
     }
 
     private void rehashLinearSearch() {
+        IRubyObject[] entries = this.entries;
+        int[] hashes = this.hashes;
+
         IRubyObject[] newEntries = new IRubyObject[entries.length];
         int[] newHashes = new int[hashes.length];
         int newIndex = 0;
+
+        int start = this.start;
+        int end = this.end;
 
         for(int i = start; i < end; i++) {
             IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
@@ -1204,10 +1281,10 @@ public class RubyHash extends RubyObject implements Map {
             }
         }
 
-        entries = newEntries;
-        hashes = newHashes;
-        end = size = newIndex;
-        start = 0;
+        this.entries = newEntries;
+        this.hashes = newHashes;
+        this.end = size = newIndex;
+        this.start = 0;
     }
 
     /** rb_hash_to_hash
@@ -1276,6 +1353,7 @@ public class RubyHash extends RubyObject implements Map {
             }
             return;
         } else {
+            int[] bins = this.bins;
             final int oldBinsLength = bins.length;
             int bin = internalGetBinOpenAddressing(hash, key);
             if (internalSetValueByBin(bin, value) != null) return;
@@ -2058,9 +2136,10 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public IRubyObject reject_bangInternal(ThreadContext context, Block block) {
-        int n = size;
+
+        int n = this.size;
         delete_if(context, block);
-        if (n == size) return getRuntime().getNil();
+        if (n == this.size) return getRuntime().getNil();
         return this;
     }
 
@@ -2282,6 +2361,11 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             IRubyObject value, key;
+
+            int start = this.start;
+            int end = this.end;
+            IRubyObject[] entries = this.entries;
+
             for (int i = start; i < end; i++) {
                 value = entries[(i * NUMBER_OF_ENTRIES) + 1];
                 if (value == context.nil) {
@@ -2341,6 +2425,10 @@ public class RubyHash extends RubyObject implements Map {
     private IRubyObject any_p_i(ThreadContext context, Block block) {
         iteratorEntry();
         try {
+            int start = this.start;
+            int end = this.end;
+            IRubyObject[] entries = this.entries;
+
             for (int i = start; i < end; i++) {
                 IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
                 IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
@@ -2359,6 +2447,11 @@ public class RubyHash extends RubyObject implements Map {
     private IRubyObject any_p_i_fast(ThreadContext context, Block block) {
         iteratorEntry();
         try {
+            int start = this.start;
+            int end = this.end;
+            IRubyObject[] entries = this.entries;
+
+
             for (int i = start; i < end; i++) {
                 IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
                 IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
@@ -2376,6 +2469,10 @@ public class RubyHash extends RubyObject implements Map {
     private IRubyObject any_p_p(ThreadContext context, IRubyObject pattern) {
         iteratorEntry();
         try {
+            int start = this.start;
+            int end = this.end;
+            IRubyObject[] entries = this.entries;
+
             for (int i = start; i < end; i++) {
                 IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
                 IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
@@ -2704,6 +2801,7 @@ public class RubyHash extends RubyObject implements Map {
         private void advance(boolean consume) {
             if (!peeking) {
                 do {
+                    IRubyObject[] entries = RubyHash.this.entries;
                     if (startGeneration != RubyHash.this.generation) {
                         startGeneration = RubyHash.this.generation;
                         index = RubyHash.this.start;
