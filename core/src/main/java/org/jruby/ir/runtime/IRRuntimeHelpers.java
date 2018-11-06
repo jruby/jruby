@@ -549,8 +549,8 @@ public class IRRuntimeHelpers {
         final IRubyObject maybeKwargs = toHash(context, args[length - 1]);
 
         if (maybeKwargs != null) {
-            if (maybeKwargs.isNil()) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
-                return ArraySupport.newCopy(args, RubyHash.newSmallHash(context.runtime));
+            if (maybeKwargs == context.nil) { // nil on to_hash is supposed to keep itself as real value so we need to make kwargs hash
+                return ArraySupport.newCopy(args, new RubyHash(context.runtime));
             }
 
             RubyHash kwargs = (RubyHash) maybeKwargs;
@@ -573,7 +573,7 @@ public class IRRuntimeHelpers {
 
         if (visitor.syms == null) {
             // no symbols, use empty kwargs hash
-            visitor.syms = RubyHash.newSmallHash(context.runtime);
+            visitor.syms = new RubyHash(context.runtime);
         }
 
         if (visitor.others != null) { // rest args exists too expand args
@@ -607,11 +607,11 @@ public class IRRuntimeHelpers {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object unused) {
             if (key instanceof RubySymbol) {
-                if (syms == null) syms = RubyHash.newSmallHash(context.runtime);
-                syms.fastASetSmall(key, value);
+                if (syms == null) syms = new RubyHash(context.runtime);
+                syms.fastASet(key, value);
             } else {
-                if (others == null) others = RubyHash.newSmallHash(context.runtime);
-                others.fastASetSmall(key, value);
+                if (others == null) others = new RubyHash(context.runtime);
+                others.fastASet(key, value);
             }
         }
     };
@@ -1087,7 +1087,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject[] args, int required, boolean keywordArgumentSupplied) {
         RubyHash keywordArguments = extractKwargsHash(context, args, required, keywordArgumentSupplied);
 
-        return keywordArguments == null ? RubyHash.newSmallHash(context.runtime) : keywordArguments;
+        return keywordArguments == null ? new RubyHash(context.runtime) : keywordArguments;
     }
 
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
@@ -1267,16 +1267,10 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
         int length = pairs.length / 2;
-        boolean useSmallHash = length <= 10;
 
-        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
-
+        RubyHash hash = new RubyHash(runtime);
         for (int i = 0; i < pairs.length;) {
-            if (useSmallHash) {
-                hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);
-            } else {
-                hash.fastASet(runtime, pairs[i++], pairs[i++], true);
-            }
+            hash.fastASet(runtime, pairs[i++], pairs[i++], true);
 
         }
         return hash;
