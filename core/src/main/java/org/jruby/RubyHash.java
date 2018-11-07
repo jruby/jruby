@@ -274,6 +274,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
+        if (buckets <= 0) buckets = 1; // FIXME: this hash implementation cannot deal with no buckets so we will add a single one (this constructor will go away once open addressing is added back).
         allocFirst(buckets);
     }
 
