@@ -70,11 +70,19 @@ public class RubySignal {
         mSignal.defineAnnotatedMethods(RubySignal.class);
         //registerThreadDumpSignalHandler(runtime);
     }
-    
-    public static Map<String, Integer> list() {
-        Map<String, Integer> signals = new HashMap<>();
+
+    private static final String SIGNAME_PREFIX = "SIG";
+    private static final Map<String, Integer> SIGNAME_MAP;
+    private static final Map<Integer, String> SIGNUM_MAP;
+
+    static {
+        HashMap<String, Integer> signals = new HashMap<>();
+        HashMap<Integer, String> signums = new HashMap<>();
 
         for (Signal s : Signal.values()) {
+            // Skip signals not defined on this platform
+            if (!s.defined()) continue;
+
             String desc = s.description();
             if (!desc.startsWith(SIGNAME_PREFIX)) continue;
 
@@ -90,9 +98,20 @@ public class RubySignal {
             if (signo >= 20000) continue;
 
             signals.put(desc, signo);
+            signums.put(signo, desc);
         }
 
-        return signals;
+        // We always define KILL as 9 on Windows
+        if (Platform.IS_WINDOWS) {
+            signals.put("KILL", 9);
+        }
+
+        SIGNAME_MAP = Collections.unmodifiableMap(signals);
+        SIGNUM_MAP = Collections.unmodifiableMap(signums);
+    }
+    
+    public static Map<String, Integer> list() {
+        return SIGNAME_MAP;
     }
 
     @JRubyMethod(meta = true)
@@ -153,20 +172,16 @@ public class RubySignal {
 
     // MRI: signo2signm
     public static String signo2signm(long no) {
-        for (Signal s : Signal.values()) {
-            if (s.intValue() == no) {
-                return signmWithoutPrefix(s.name());
-            }
-        }
-        return null;
+        return SIGNUM_MAP.get((int) no);
     }
 
     // MRI: signm2signo
     public static long signm2signo(String nm) {
-        for (Signal s : Signal.values()) {
-            if (signmWithoutPrefix(s.name()).equals(nm)) return s.longValue();
-        }
-        return 0;
+        Integer signo = SIGNAME_MAP.get(nm);
+
+        if (signo == null) return 0;
+
+        return signo;
     }
 
     public static String signmWithPrefix(String nm) {
@@ -228,7 +243,5 @@ public class RubySignal {
                 return false;
         }
     }
-
-    private static final String SIGNAME_PREFIX = "SIG";
 
 }
