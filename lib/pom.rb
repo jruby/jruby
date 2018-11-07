@@ -192,17 +192,7 @@ project 'JRuby Lib Setup' do
           FileUtils.chmod_R(0644, f)
         end
 
-        # copy bin files if the gem has any
-        bin = File.join( gems, "#{gem_name}", 'bin' )
-        if File.exists? bin
-          Dir[ File.join( bin, '*' ) ].each do |f|
-            log "copy to bin: #{File.basename( f )}"
-            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
-            FileUtils.mkdir_p( File.dirname( target ) )
-            FileUtils.cp_r( f, target )
-          end
-        end
-
+        # get gemspec
         specfile_wildcard = "#{gem_name}*.gemspec"
         specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
@@ -214,6 +204,18 @@ project 'JRuby Lib Setup' do
         log "copy to specifications/default: #{specname}"
 
         spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
+
+        # copy bin files if the gem has any
+        bin = File.join( gems, "#{gem_name}", spec.bindir || 'bin' )        
+        if File.exists? bin
+          Dir[ File.join( bin, '*' ) ].each do |f|
+            log "copy to bin: #{File.basename( f )}"
+            target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
+            FileUtils.mkdir_p( File.dirname( target ) )
+            FileUtils.cp_r( f, target )
+          end
+        end
+
         File.open( File.join( default_specs, specname ), 'w' ) do |f|
           f.print( spec.to_ruby )
         end
