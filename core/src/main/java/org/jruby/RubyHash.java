@@ -495,7 +495,7 @@ public class RubyHash extends RubyObject implements Map {
         int end = END(startEnd);
 
         for (int i = start; i < end; i++) {
-            if (entries[i * NUMBER_OF_ENTRIES] == null) continue;
+            if (entryKey(entries, i) == null) continue;
 
             int bin = bucketIndex(hashes[i], newBins.length);
             int index = newBins[bin];
@@ -596,8 +596,7 @@ public class RubyHash extends RubyObject implements Map {
         int end = getEnd();
         IRubyObject[] entries = this.entries;
 
-        entries[end * NUMBER_OF_ENTRIES] = key;
-        entries[end * NUMBER_OF_ENTRIES + 1] = value;
+        set(entries, end, key, value);
 
         while(index != EMPTY_BIN && index != DELETED_BIN) {
             localBin = secondaryBucketIndex(localBin, bins.length);
@@ -636,8 +635,7 @@ public class RubyHash extends RubyObject implements Map {
         int end = getEnd();
         IRubyObject[] entries = this.entries;
 
-        entries[end * NUMBER_OF_ENTRIES] = key;
-        entries[end * NUMBER_OF_ENTRIES + 1] = value;
+        set(entries, end, key, value);
 
         hashes[end] = hash;
 
@@ -653,8 +651,8 @@ public class RubyHash extends RubyObject implements Map {
 
         IRubyObject[] entries = this.entries;
 
-        final IRubyObject result = entries[(index * NUMBER_OF_ENTRIES) + 1];
-        entries[(index * NUMBER_OF_ENTRIES) + 1] = value;
+        final IRubyObject result = entryValue(entries, index);
+        entryValue(entries, index, value);
 
         return result;
     }
@@ -669,7 +667,7 @@ public class RubyHash extends RubyObject implements Map {
 
     private final IRubyObject internalGetValue(final int index) {
         if (index < 0) return null;
-        return entries[(index * NUMBER_OF_ENTRIES) + 1];
+        return entryValue(entries, index);
     }
 
     private final int internalGetBinOpenAddressing(final int hash, final IRubyObject key) {
@@ -685,7 +683,7 @@ public class RubyHash extends RubyObject implements Map {
             if (round == bins.length) break;
 
             if (index != DELETED_BIN) {
-                IRubyObject otherKey = entries[index * NUMBER_OF_ENTRIES];
+                IRubyObject otherKey = entryKey(entries, index);
                 int otherHash = hashes[index];
 
                 if (internalKeyExist(key, hash, otherKey, otherHash)) return bin;
@@ -698,6 +696,27 @@ public class RubyHash extends RubyObject implements Map {
         return EMPTY_BIN;
     }
 
+    private static IRubyObject entryKey(IRubyObject[] entries, int index) {
+        return entries[index * NUMBER_OF_ENTRIES];
+    }
+
+    private static IRubyObject entryValue(IRubyObject[] entries, int index) {
+        return entries[index * NUMBER_OF_ENTRIES + 1];
+    }
+
+    private static IRubyObject entryValue(IRubyObject[] entries, int index, IRubyObject value) {
+        return entries[index * NUMBER_OF_ENTRIES + 1] = value;
+    }
+
+    private static void set(IRubyObject[] entries, int index, IRubyObject key, IRubyObject value) {
+        entries[index * NUMBER_OF_ENTRIES] = key;
+        entries[index * NUMBER_OF_ENTRIES + 1] = value;
+    }
+
+    private static void unset(IRubyObject[] entries, int index) {
+        set(entries, index, null, null);
+    }
+
     private final int internalGetIndexLinearSearch(final int hash, final IRubyObject key) {
         long extents = this.extents;
         int start = START(extents);
@@ -706,7 +725,7 @@ public class RubyHash extends RubyObject implements Map {
         int[] hashes = this.hashes;
 
         for(int i = start; i < end; i++) {
-            IRubyObject otherKey = entries[i * NUMBER_OF_ENTRIES];
+            IRubyObject otherKey = entryKey(entries, i);
             if (otherKey == null) continue;
 
             int otherHash = hashes[i];
@@ -774,14 +793,13 @@ public class RubyHash extends RubyObject implements Map {
 
         for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
             if (index != DELETED_BIN) {
-                IRubyObject otherKey = entries[index * NUMBER_OF_ENTRIES];
-                IRubyObject otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                IRubyObject otherKey = entryKey(entries, index);
+                IRubyObject otherValue = entryValue(entries, index);
 
                 if (otherKey != null && matchType.matches(key, value, otherKey, otherValue)) {
                     bins[bin] = DELETED_BIN;
                     hashes[index] = 0;
-                    entries[index * NUMBER_OF_ENTRIES] = null;
-                    entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
+                    unset(entries, index);
                     size--;
 
                     updateStartAndEndPointer();
@@ -803,15 +821,14 @@ public class RubyHash extends RubyObject implements Map {
         int[] hashes = this.hashes;
 
         for(int index = start; index < end; index++) {
-            IRubyObject otherKey = entries[index * NUMBER_OF_ENTRIES];
-            IRubyObject otherValue = entries[(index * NUMBER_OF_ENTRIES) + 1];
+            IRubyObject otherKey = entryKey(entries, index);
+            IRubyObject otherValue = entryValue(entries, index);
 
             if (otherKey == null) continue;
 
             if (matchType.matches(key, value, otherKey, otherValue)) {
                 hashes[index] = 0;
-                entries[index * NUMBER_OF_ENTRIES] = null;
-                entries[(index * NUMBER_OF_ENTRIES) + 1] = null;
+                unset(entries, index);
                 size--;
 
                 updateStartAndEndPointer();
@@ -823,7 +840,7 @@ public class RubyHash extends RubyObject implements Map {
         return null;
     }
 
-    private final void updateStartAndEndPointer() {
+    private void updateStartAndEndPointer() {
         if (isEmpty()) {
             extents = 0;
         } else {
@@ -832,11 +849,11 @@ public class RubyHash extends RubyObject implements Map {
             int start = START(extents);
             int end = END(extents);
 
-            while (entries[start * NUMBER_OF_ENTRIES] == null) {
+            while (entryKey(entries, start) == null) {
                 start++;
             }
 
-            while(entries[(end - 1) * NUMBER_OF_ENTRIES] == null && (end - 1) > 0) {
+            while((end - 1) > 0 && entryKey(entries, end - 1) == null) {
                 end--;
             }
 
@@ -934,8 +951,8 @@ public class RubyHash extends RubyObject implements Map {
                 i = start;
             }
 
-            IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
-            IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+            IRubyObject key = entryKey(entries, i);
+            IRubyObject value = entryValue(entries, i);
 
             if(key == null || value == null) continue;
 
@@ -964,7 +981,7 @@ public class RubyHash extends RubyObject implements Map {
                 i = start;
             }
 
-            IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
+            IRubyObject key = entryKey(entries, i);
             if (key != null && !(key instanceof RubySymbol)) return false;
         }
         return true;
@@ -1242,7 +1259,7 @@ public class RubyHash extends RubyObject implements Map {
         int end = END(extents);
 
         for(int i = start; i < end; i++) {
-            IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
+            IRubyObject key = entryKey(entries, i);
             if (key == null) continue;
 
             int hash = hashValue(key);
@@ -1253,7 +1270,7 @@ public class RubyHash extends RubyObject implements Map {
             while(index != EMPTY_BIN) {
                 // Note: otherKey should never be null here as we are filling with new entries and newBins
                 // cannot be non-EMPTY_BIN and not contain a valid newEntry.
-                IRubyObject otherKey = newEntries[index * NUMBER_OF_ENTRIES];
+                IRubyObject otherKey = entryKey(newEntries, index);
                 int otherHash = newHashes[index];
                 if (internalKeyExist(key, hash, otherKey, otherHash)) {
                     // exists, we do not need to add this key
@@ -1267,8 +1284,7 @@ public class RubyHash extends RubyObject implements Map {
 
             if (!exists) {
                 newBins[bin] = newIndex;
-                newEntries[newIndex * NUMBER_OF_ENTRIES] = key;
-                newEntries[(newIndex * NUMBER_OF_ENTRIES) + 1] = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                set(newEntries, newIndex, key, entryValue(entries, i));
                 newHashes[newIndex] = hash;
                 newIndex++;
             }
@@ -1293,14 +1309,14 @@ public class RubyHash extends RubyObject implements Map {
         int end = END(extents);
 
         for(int i = start; i < end; i++) {
-            IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
+            IRubyObject key = entryKey(entries, i);
             if (key == null) continue;
 
             int newHash = hashValue(key);
             boolean exists = false;
             for(int j = 0; j < i; j++) {
                 int otherHash = hashes[j];
-                IRubyObject otherKey = newEntries[j * NUMBER_OF_ENTRIES];
+                IRubyObject otherKey = entryKey(newEntries, j);
                 if (internalKeyExist(key, newHash, otherKey, otherHash)) {
                     exists = true;
                     break;
@@ -1308,8 +1324,7 @@ public class RubyHash extends RubyObject implements Map {
             }
 
             if (!exists) {
-                newEntries[newIndex * NUMBER_OF_ENTRIES] = key;
-                newEntries[(newIndex * NUMBER_OF_ENTRIES) + 1] = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                set(newEntries, newIndex, key, entryValue(entries, i));
                 newHashes[newIndex] = newHash;
                 newIndex++;
             }
@@ -2024,10 +2039,10 @@ public class RubyHash extends RubyObject implements Map {
         int end = END(extents);
 
         IRubyObject[] entries = this.entries;
-        IRubyObject key = entries[start * NUMBER_OF_ENTRIES];
-        IRubyObject value = entries[(start * NUMBER_OF_ENTRIES) + 1];
+        IRubyObject key = entryKey(entries, start);
+        IRubyObject value = entryValue(entries, start);
 
-        if (getLength() == end || key != entries[end * NUMBER_OF_ENTRIES]) {
+        if (getLength() == end || key != entryKey(entries, end)) {
             RubyArray result = RubyArray.newArray(context.runtime, key, value);
             internalDeleteEntry(key, value);
             return result;
@@ -2402,9 +2417,9 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject[] entries = this.entries;
 
             for (int i = start; i < end; i++) {
-                value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                value = entryValue(entries, i);
                 if (value == context.nil) {
-                    key = entries[(i * NUMBER_OF_ENTRIES)];
+                    key = entryKey(entries, i);
                     internalDelete(key);
                     changed = true;
                 }
@@ -2466,8 +2481,8 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject[] entries = this.entries;
 
             for (int i = start; i < end; i++) {
-                IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
-                IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                IRubyObject key = entryKey(entries, i);
+                IRubyObject value = entryValue(entries, i);
 
                 if (key == null || value == null) continue;
 
@@ -2489,8 +2504,8 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject[] entries = this.entries;
 
             for (int i = start; i < end; i++) {
-                IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
-                IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                IRubyObject key = entryKey(entries, i);
+                IRubyObject value = entryValue(entries, i);
 
                 if (key == null || value == null) continue;
 
@@ -2511,8 +2526,8 @@ public class RubyHash extends RubyObject implements Map {
             IRubyObject[] entries = this.entries;
 
             for (int i = start; i < end; i++) {
-                IRubyObject key = entries[i * NUMBER_OF_ENTRIES];
-                IRubyObject value = entries[(i * NUMBER_OF_ENTRIES) + 1];
+                IRubyObject key = entryKey(entries, i);
+                IRubyObject value = entryValue(entries, i);
 
                 if (key == null || value == null) continue;
 
@@ -2845,14 +2860,14 @@ public class RubyHash extends RubyObject implements Map {
                     if (startGeneration != RubyHash.this.generation) {
                         startGeneration = RubyHash.this.generation;
                         index = getStart();
-                        key = entries[index * NUMBER_OF_ENTRIES];
-                        value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                        key = entryKey(entries, index);
+                        value = entryValue(entries, index);
                         index++;
                         hasNext = RubyHash.this.size > 0;
                     } else {
                         if (index < end) {
-                            key = entries[index * NUMBER_OF_ENTRIES];
-                            value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                            key = entryKey(entries, index);
+                            value = entryValue(entries, index);
                             index++;
                             hasNext = true;
                         } else {
@@ -2860,8 +2875,8 @@ public class RubyHash extends RubyObject implements Map {
                         }
                     }
                     while((key == null || value == null) && index < end && hasNext) {
-                        key = entries[index * NUMBER_OF_ENTRIES];
-                        value = entries[(index * NUMBER_OF_ENTRIES) + 1];
+                        key = entryKey(entries, index);
+                        value = entryValue(entries, index);
                         index++;
                     }
                 } while ((key == null || value == null) && index < size);
