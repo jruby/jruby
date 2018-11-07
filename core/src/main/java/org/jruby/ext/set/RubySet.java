@@ -199,6 +199,7 @@ public class RubySet extends RubyObject implements Set {
     private IRubyObject initWithEnum(final ThreadContext context, final IRubyObject enume, final Block block) {
         if ( enume instanceof RubyArray ) {
             RubyArray ary = (RubyArray) enume;
+            if ( ary.size() == 0 ) return initialize(context, block);
             allocHash(context.runtime, ary.size());
             for ( int i = 0; i < ary.size(); i++ ) {
                 invokeAdd(context, block.yield(context, ary.eltInternal(i)));
@@ -208,6 +209,7 @@ public class RubySet extends RubyObject implements Set {
 
         if ( enume instanceof RubySet ) {
             RubySet set = (RubySet) enume;
+            if ( set.size() == 0 ) return initialize(context, block);
             allocHash(context.runtime, set.size());
             for ( IRubyObject elem : set.elementsOrdered() ) {
                 invokeAdd(context, block.yield(context, elem));
