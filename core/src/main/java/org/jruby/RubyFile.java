@@ -1117,6 +1117,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return RubyFixnum.zero(runtime);
         }
 
+        if (!oldFile.exists() && newFile.exists()) {
+            return RubyFixnum.zero(runtime);
+        }
+
         throw runtime.newErrnoEACCESError(oldNameJavaString + " or " + newNameJavaString);
     }
 
