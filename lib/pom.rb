@@ -171,7 +171,7 @@ project 'JRuby Lib Setup' do
 
         log "copy gem content to #{stdlib_dir}"
         # assume default require_path
-        require_base = File.join( gems, "#{gemname}*", 'lib' )
+        require_base = File.join( gems, "#{gem_name}*", 'lib' )
         require_files = File.join( require_base, '*' )
 
         # copy in new ones and mark writable for future updates (e.g. minitest)
@@ -193,7 +193,7 @@ project 'JRuby Lib Setup' do
         end
 
         # copy bin files if the gem has any
-        bin = File.join( gems, "#{gemname}", 'bin' )
+        bin = File.join( gems, "#{gem_name}", 'bin' )
         if File.exists? bin
           Dir[ File.join( bin, '*' ) ].each do |f|
             log "copy to bin: #{File.basename( f )}"
@@ -203,8 +203,8 @@ project 'JRuby Lib Setup' do
           end
         end
 
-        if g.default_spec
-          specfile_wildcard = "#{gemname}*.gemspec"
+        if true # default_spec was always true for these?
+          specfile_wildcard = "#{gem_name}*.gemspec"
           specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
           unless specfile
@@ -214,7 +214,7 @@ project 'JRuby Lib Setup' do
           specname = File.basename( specfile )
           log "copy to specifications/default: #{specname}"
 
-          spec = Gem::Package.new( Dir[ File.join( cache, "#{gemname}*.gem" ) ].first ).spec
+          spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
           File.open( File.join( default_specs, specname ), 'w' ) do |f|
             f.print( spec.to_ruby )
           end
@@ -300,7 +300,6 @@ project 'JRuby Lib Setup' do
         ]
       end.flatten
       includes incl
-      p incl
       target_path '${jruby.complete.gems}'
     end
 
