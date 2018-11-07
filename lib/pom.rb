@@ -92,7 +92,7 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  default_gemnames = default_gems.collect { |name, _| name }
+  default_gemnames = default_gems.collect(&:first)
 
   plugin :dependency,
     :useRepositoryLayout => true,
@@ -203,21 +203,19 @@ project 'JRuby Lib Setup' do
           end
         end
 
-        if true # default_spec was always true for these?
-          specfile_wildcard = "#{gem_name}*.gemspec"
-          specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
+        specfile_wildcard = "#{gem_name}*.gemspec"
+        specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
-          unless specfile
-            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
-          end
+        unless specfile
+          raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
+        end
 
-          specname = File.basename( specfile )
-          log "copy to specifications/default: #{specname}"
+        specname = File.basename( specfile )
+        log "copy to specifications/default: #{specname}"
 
-          spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
-          File.open( File.join( default_specs, specname ), 'w' ) do |f|
-            f.print( spec.to_ruby )
-          end
+        spec = Gem::Package.new( Dir[ File.join( cache, "#{gem_name}*.gem" ) ].first ).spec
+        File.open( File.join( default_specs, specname ), 'w' ) do |f|
+          f.print( spec.to_ruby )
         end
       end
     end
