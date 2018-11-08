@@ -30,6 +30,17 @@ public class SimpleCloneInfo extends CloneInfo {
         return cloneIPC;
     }
 
+    public Variable getRenamedVariable(Variable variable) {
+        Variable renamed = super.getRenamedVariable(variable);
+
+        // FIXME: I don't understand how this case can possibly exist.  If it does a qualitative comment should be added here.
+        if (variable instanceof LocalVariable && !((LocalVariable) variable).isSameDepth((LocalVariable) renamed)) {
+            return ((LocalVariable) renamed).cloneForDepth(((LocalVariable) variable).getScopeDepth());
+        }
+
+        return renamed;
+    }
+
     protected Label getRenamedLabelSimple(Label l) {
         // In ensure-block-clone mode, no cloning of labels not already pre-renamed and initialized
         // FIXME: IRScope.java:prepareInstructionsForInterpretation/Compilation assumes that
