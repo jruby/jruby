@@ -68,6 +68,9 @@ jobs:
         JRUBY_OPTS=-Xcompile.invokedynamic
     - env: PHASE='-Prake -Dtask=spec:ffi'
     - env: PHASE='-Prake -Dtask=spec:regression'
+    - env:
+      - PHASE='-Prake -Dtask=spec:regression'
+      - JRUBY_OPTS=-Xjit.threshold=0
     - env: PHASE='-Prake -Dtask=spec:jruby'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
