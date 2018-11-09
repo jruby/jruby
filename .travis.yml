@@ -88,6 +88,10 @@ jobs:
       jdk: oraclejdk9
     - name: sequel
       script: tool/sequel-travis.sh
+      addons:
+        postgresql: "9.6"
+      services:
+        - postgresql
 
 script: tool/travis-script.sh
 
