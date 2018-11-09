@@ -578,6 +578,12 @@ public abstract class IRScope implements ParseResult {
 
         for (int i = 0; i < length; i++) {
             newInstructions[i] = instructions[i].clone(cloneInfo);
+
+            // Logically when we move from simple to full we want to keep same callsites in both versions to
+            // have the same callsiteid so we can track their usage logically.
+            if (instructions[i] instanceof Site) {
+                ((Site) newInstructions[i]).setCallSiteId(((Site) instructions[i]).getCallSiteId());
+            }
         }
 
         return newInstructions;
@@ -808,7 +814,12 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public String toString() {
-        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFile() + ':' + getLine() + ']';
+        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFile() + ':' + getLine() + "]<" + toStringCompileForm() + ">";
+    }
+
+    // Looking at way of specific startus/full/optimized
+    public String toStringCompileForm() {
+        return optimizedInterpreterContext != null ? "optimized" : fullInterpreterContext != null ? "full" : "startup";
     }
 
     public String debugOutput() {
