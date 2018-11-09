@@ -5,6 +5,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
@@ -1194,12 +1195,27 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        // FIXME: CompiledIRMethod needs to be supports which may be changing compiled to Mixed with immediate Compiled in it.
-        if (!(compilable instanceof MixedModeIRMethod)) throw new RuntimeException("Do not support anything other than Mixed atm");
-
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
+    public void inlineMethodCompiled(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
+
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        if (newContext == null) {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
+
+        // We are not running any JIT-specific passes here.
+
+        newContext.linearizeBasicBlocks();
+        this.optimizedInterpreterContext = newContext;
+
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+    }
 
     /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {

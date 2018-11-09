@@ -3,11 +3,14 @@ package org.jruby.internal.runtime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.MetaClass;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.JIT;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.PutFieldInstr;
@@ -90,8 +93,25 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         }
     }
 
+    @JIT
     public String getClassName(ThreadContext context) {
-        return null;
+        String className;
+        if (implementationClass.isSingleton()) {
+            MetaClass metaClass = (MetaClass)implementationClass;
+            RubyClass realClass = metaClass.getRealClass();
+            // if real class is Class
+            if (realClass == context.runtime.getClassClass()) {
+                // use the attached class's name
+                className = ((RubyClass) metaClass.getAttached()).getName();
+            } else {
+                // use the real class name
+                className = realClass.getName();
+            }
+        } else {
+            // use the class name
+            className = implementationClass.getName();
+        }
+        return className;
     }
 
     public String getFile() {

@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.MixedModeIRBlockBody;
@@ -150,6 +151,8 @@ public class JITCompiler implements JITCompilerMBean {
             return new MethodJITTask(this, (MixedModeIRMethod) method, method.getClassName(context));
         } else if (method instanceof MixedModeIRBlockBody) {
             return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getClassName(context));
+        } else if (method instanceof CompiledIRMethod) {
+            return new MethodCompiledJITTask(this, (CompiledIRMethod) method, method.getClassName(context));
         }
 
         return new FullBuildTask(this, method);
