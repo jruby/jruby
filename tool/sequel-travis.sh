@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -v
 
 # set up JRuby
 mvn clean package
