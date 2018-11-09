@@ -1242,15 +1242,12 @@ public class RubyProcess {
         if (negative) value = value.substring(1);
 
         // We need the SIG for sure.
-        String signalName = value.startsWith("SIG") ? value : "SIG" + value;
+        String signalName = value.startsWith("SIG") ? value.substring(3) : value;
+        int signalValue = (int) RubySignal.signm2signo(signalName);
 
-        try {
-            int signalValue = Signal.valueOf(signalName).intValue();
-            return negative ? -signalValue : signalValue;
+        if (signalValue == 0) throw runtime.newArgumentError("unsupported name `" + signalName + "'");
 
-        } catch (IllegalArgumentException ex) {
-            throw runtime.newArgumentError("unsupported name `" + signalName + "'");
-        }
+        return negative ? -signalValue : signalValue;
     }
 
     @Deprecated

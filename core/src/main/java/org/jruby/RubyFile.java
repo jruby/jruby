@@ -1109,15 +1109,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Path destPath = Paths.get(dest.getAbsolutePath());
         try {
             Files.move(oldPath, destPath, StandardCopyOption.ATOMIC_MOVE);
+            return RubyFixnum.zero(runtime);
         } catch (IOException ioe) {
             throw Helpers.newIOErrorFromException(runtime, ioe);
         }
-
-        if (oldFile.renameTo(dest)) { // try to rename one more time
-            return RubyFixnum.zero(runtime);
-        }
-
-        throw runtime.newErrnoEACCESError(oldNameJavaString + " or " + newNameJavaString);
     }
 
     @JRubyMethod(required = 1, meta = true)
