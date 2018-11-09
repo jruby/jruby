@@ -12,8 +12,7 @@ psql -c 'create database sequel_test;' -U postgres
 # set up sequel
 git clone https://github.com/jeremyevans/sequel.git
 cd sequel
-echo "gem 'rake'" > Gemfile
-bundle install
+bundle install --gemfile=.travis.gemfile
 
 # run tests
 bundle exec rake spec_travis
