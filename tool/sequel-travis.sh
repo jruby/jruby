@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # set up JRuby
 mvn clean package
 export PATH=`pwd`/bin:$PATH
