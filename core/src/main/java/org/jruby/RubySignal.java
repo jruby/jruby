@@ -35,10 +35,14 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.SignalFacade;
 import org.jruby.util.NoFunctionalitySignalFacade;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @JRubyModule(name="Signal")
 public class RubySignal {
@@ -68,6 +72,11 @@ public class RubySignal {
         RubyModule mSignal = runtime.defineModule("Signal");
         
         mSignal.defineAnnotatedMethods(RubySignal.class);
+
+        // create single-threaded executor to handle signals and at_exit blocks
+        ExecutorService executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
+        mSignal.setInternalVariable("executor", executor);
+
         //registerThreadDumpSignalHandler(runtime);
     }
 

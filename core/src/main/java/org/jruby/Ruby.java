@@ -53,6 +53,9 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.exceptions.Exception;
+import org.jruby.exceptions.LocalJumpError;
+import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.ext.thread.ConditionVariable;
@@ -3301,16 +3304,20 @@ public final class Ruby implements Constantizable {
             context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
         }
 
+        // use signal-handling thread to avoid races with trap(INT) and similar shutdown signals
+        ExecutorService executor = (ExecutorService) getModule("Signal").getInternalVariable("executor");
+
+        int[] _status = {status};
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
-            // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
-            try {
-                proc.call(context, IRubyObject.NULL_ARRAY);
-            } catch (RaiseException rj) {
-                // END { return } can generally be statically determined during build time so we generate the LJE
-                // then.  This if captures the static side of this. See IReturnJump below for dynamic case
-                if (rj.getException() instanceof RubyLocalJumpError) {
-                    RubyLocalJumpError rlje = (RubyLocalJumpError) rj.getException();
+            executor.submit((Runnable) () -> {
+                // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
+                try {
+                    proc.call(context, IRubyObject.NULL_ARRAY);
+                } catch (LocalJumpError lje) {
+                    // END { return } can generally be statically determined during build time so we generate the LJE
+                    // then.  This if captures the static side of this. See IReturnJump below for dynamic case
+                    RubyLocalJumpError rlje = (RubyLocalJumpError) lje.getException();
                     String filename = proc.getBlock().getBinding().filename;
 
                     if (rlje.getReason() == RubyLocalJumpError.Reason.RETURN) {
@@ -3318,30 +3325,36 @@ public final class Ruby implements Constantizable {
                     } else {
                         getWarnings().warn(filename, "break from proc-closure");
                     }
-
-                } else {
-                    RubyException raisedException = rj.getException();
-                    if (!getSystemExit().isInstance(raisedException)) {
-                        status = 1;
-                        printError(raisedException);
-                    } else {
-                        IRubyObject statusObj = raisedException.callMethod(context, "status");
-                        if (statusObj != null && !statusObj.isNil()) {
-                            status = RubyNumeric.fix2int(statusObj);
-                        }
+                } catch (SystemExit se) {
+                    RubySystemExit raisedException = (RubySystemExit) se.getException();
+                    _status[0] = 1;
+                    printError(raisedException);
+                } catch (Exception e) {
+                    IRubyObject statusObj = e.getException().callMethod(context, "status");
+                    if (statusObj != null && !statusObj.isNil()) {
+                        _status[0] = RubyNumeric.fix2int(statusObj);
                     }
                     // Reset $! now that rj has been handled
                     // context.runtime.getGlobalVariables().set("$!", oldExc);
-                }
-            }  catch (IRReturnJump e) {
-                // This capture dynamic returns happening in an end block where it cannot be statically determined
-                // (like within an eval.
+                } catch (IRReturnJump irj) {
+                    // This capture dynamic returns happening in an end block where it cannot be statically determined
+                    // (like within an eval.
 
-                // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
-                // IR treats END blocks are closures and as such we see this special non-local return jump type
-                // bubble this far out as we exec each END proc.
-                getWarnings().warn(proc.getBlock().getBinding().filename, "unexpected return");
+                    // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
+                    // IR treats END blocks are closures and as such we see this special non-local return jump type
+                    // bubble this far out as we exec each END proc.
+                    getWarnings().warn(proc.getBlock().getBinding().filename, "unexpected return");
+                }
+            });
+        }
+
+        try {
+            executor.shutdown();
+            if (!executor.awaitTermination(1, TimeUnit.HOURS)) {
+                throw newRuntimeError("failed to execute at_exit blocks within 1h timeout");
             }
+        } catch (InterruptedException ie) {
+            throw newRuntimeError("interrupted while attempting to execute at_exit blocks");
         }
 
         // Fetches (and unsets) the SIGEXIT handler, if one exists.
