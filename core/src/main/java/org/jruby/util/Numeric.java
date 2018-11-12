@@ -552,7 +552,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() != Long.MIN_VALUE) {
             return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
         }
 
@@ -563,11 +563,8 @@ public class Numeric {
         if (f_zero_p(context, y)) return x;
 
         for (;;) {
-            if (x instanceof RubyFixnum) {
-                if (((RubyFixnum)x).getLongValue() == 0) return y;
-                if (y instanceof RubyFixnum) {
-                    return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
-                }
+            if (x instanceof RubyFixnum && y instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() != Long.MIN_VALUE) {
+                return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
             }
             IRubyObject z = x;
             x = f_mod(context, y, x);
@@ -577,7 +574,7 @@ public class Numeric {
 
     // 'fast' gcd version
     public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() != Long.MIN_VALUE) {
             return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
         }
 
