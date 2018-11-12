@@ -3306,33 +3306,8 @@ public final class Ruby implements Constantizable {
             context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
         }
 
-        // use signal-handling thread to avoid races with trap(INT) and similar shutdown signals
+        // terminate signal-handling thread to avoid races with at_exit
         ExecutorService executor = (ExecutorService) getModule("Signal").getInternalVariable("executor");
-
-        int[] _status = {status};
-        while (!atExitBlocks.empty()) {
-            RubyProc proc = atExitBlocks.pop();
-            executor.submit((Runnable) () -> {
-                // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
-                try {
-                    proc.call(context, IRubyObject.NULL_ARRAY);
-                } catch (RaiseException rj) {
-                    RubyException raisedException = rj.getException();
-                    if (!getSystemExit().isInstance(raisedException)) {
-                        _status[0] = 1;
-                        printError(raisedException);
-                    } else {
-                        IRubyObject statusObj = raisedException.callMethod(context, "status");
-                        if (statusObj != null && !statusObj.isNil()) {
-                            _status[0] = RubyNumeric.fix2int(statusObj);
-                        }
-                    }
-                    // Reset $! now that rj has been handled
-                    // context.runtime.getGlobalVariables().set("$!", oldExc);
-                }
-            });
-        }
-
         try {
             executor.shutdown();
             if (!executor.awaitTermination(1, TimeUnit.HOURS)) {
@@ -3340,6 +3315,27 @@ public final class Ruby implements Constantizable {
             }
         } catch (InterruptedException ie) {
             throw newRuntimeError("interrupted while attempting to execute at_exit blocks");
+        }
+
+        while (!atExitBlocks.empty()) {
+            RubyProc proc = atExitBlocks.pop();
+            // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
+            try {
+                proc.call(context, IRubyObject.NULL_ARRAY);
+            } catch (RaiseException rj) {
+                RubyException raisedException = rj.getException();
+                if (!getSystemExit().isInstance(raisedException)) {
+                    status = 1;
+                    printError(raisedException);
+                } else {
+                    IRubyObject statusObj = raisedException.callMethod(context, "status");
+                    if (statusObj != null && !statusObj.isNil()) {
+                        status = RubyNumeric.fix2int(statusObj);
+                    }
+                }
+                // Reset $! now that rj has been handled
+                // context.runtime.getGlobalVariables().set("$!", oldExc);
+            }
         }
 
         // Fetches (and unsets) the SIGEXIT handler, if one exists.
