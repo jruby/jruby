@@ -933,7 +933,7 @@ public class RubyDate extends RubyObject {
     // Get any fractional day part of the date.
     @JRubyMethod(name = "day_fraction")
     public RubyNumeric day_fraction(ThreadContext context) { // Rational(millis, 86_400_000)
-        long ms = dt.getSecondOfDay() * 1000 + dt.getMillisOfSecond();
+        long ms = dt.getSecondOfDay() * 1000L + dt.getMillisOfSecond();
         if (subMillisDen == 1) {
             return (RubyNumeric) RubyRational.newRationalCanonicalize(context, ms + subMillisNum, DAY_MS);
         }

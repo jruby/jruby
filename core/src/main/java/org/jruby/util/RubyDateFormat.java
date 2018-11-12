@@ -639,8 +639,7 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_MILLISEC:
                 case FORMAT_NANOSEC:
-                    value = dt.getMillisOfSecond() * 1000000;
-                    value += nsec;
+                    value = dt.getMillisOfSecond() * 1000000L + nsec;
                     output = TimeOutputFormatter.formatNumber(value, 9, '0');
 
                     int defaultWidth = (format == FORMAT_NANOSEC) ? 9 : 3;
