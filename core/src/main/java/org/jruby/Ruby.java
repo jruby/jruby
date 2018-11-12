@@ -680,15 +680,15 @@ public final class Ruby implements Constantizable {
             try {
                 script = tryCompile(scriptNode);
                 if (Options.JIT_LOGGING.load()) {
-                    LOG.info("Successfully compiled: {}", scriptNode.getFile());
+                    LOG.info("successfully compiled: {}", scriptNode.getFile());
                 }
             } catch (Throwable e) {
                 if (Options.JIT_LOGGING.load()) {
                     if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        LOG.error("Failed to compile: " + scriptNode.getFile(), e);
+                        LOG.error("failed to compile: " + scriptNode.getFile(), e);
                     }
                     else {
-                        LOG.error("Failed to compile: " + scriptNode.getFile());
+                        LOG.error("failed to compile: " + scriptNode.getFile() + " - " + e);
                     }
                 }
             }
@@ -797,13 +797,15 @@ public final class Ruby implements Constantizable {
         try {
             scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()));
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
-                LOG.info("done compiling target script: " + scriptNode.getFile());
+                LOG.info("done compiling target script: {}", scriptNode.getFile());
             }
         } catch (Exception e) {
             if (Options.JIT_LOGGING.load()) {
-                LOG.error("failed to compile target script '" + scriptNode.getFile() + "'");
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    e.printStackTrace();
+                    LOG.error("failed to compile target script: " + scriptNode.getFile(), e);
+                }
+                else {
+                    LOG.error("failed to compile target script: " + scriptNode.getFile() + " - " + e);
                 }
             }
         }
@@ -822,22 +824,16 @@ public final class Ruby implements Constantizable {
         return tryCompile((RootNode) node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
     }
 
-    private void failForcedCompile(RootNode scriptNode) throws RaiseException {
-        if (config.getCompileMode().shouldPrecompileAll()) {
-            throw newRuntimeError("could not compile and compile mode is 'force': " + scriptNode.getFile());
-        }
-    }
-
     private ScriptAndCode tryCompile(RootNode root, ClassDefiningClassLoader classLoader) {
         try {
             return Compiler.getInstance().execute(this, root, classLoader);
         } catch (NotCompilableException e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
-                    LOG.error("failed to compile target script " + root.getFile() + ": ", e);
+                    LOG.error("failed to compile target script: " + root.getFile(), e);
                 }
                 else {
-                    LOG.error("failed to compile target script " + root.getFile() + ": " + e.getLocalizedMessage());
+                    LOG.error("failed to compile target script: " + root.getFile() + " - " + e.getLocalizedMessage());
                 }
             }
             return null;
@@ -1687,7 +1683,7 @@ public final class Ruby implements Constantizable {
                 // this is currently only here for Android, which seems to have
                 // bugs in its enumeration logic
                 // http://code.google.com/p/android/issues/detail?id=2812
-                LOG.error(e.getMessage(), e);
+                LOG.error(e);
             }
         }
     }
@@ -2702,9 +2698,13 @@ public final class Ruby implements Constantizable {
 
         try {
             return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
-        } catch (IOException e) {
-            System.out.println(e);
-            e.printStackTrace();
+        } catch (IOException ex) {
+            if (config.isVerbose()) {
+                LOG.info(ex);
+            }
+            else {
+                LOG.debug(ex);
+            }
             return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
         }
     }
@@ -3339,7 +3339,8 @@ public final class Ruby implements Constantizable {
 
         if (finalizers != null) {
             synchronized (finalizersMutex) {
-                for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(finalizers.keySet()).iterator(); finalIter.hasNext();) {
+                for (Iterator<Finalizable> finalIter = new ArrayList<>(
+                        finalizers.keySet()).iterator(); finalIter.hasNext();) {
                     Finalizable f = finalIter.next();
                     if (f != null) {
                         try {
@@ -3355,7 +3356,7 @@ public final class Ruby implements Constantizable {
 
         synchronized (internalFinalizersMutex) {
             if (internalFinalizers != null) {
-                for (Iterator<Finalizable> finalIter = new ArrayList<Finalizable>(
+                for (Iterator<Finalizable> finalIter = new ArrayList<>(
                         internalFinalizers.keySet()).iterator(); finalIter.hasNext();) {
                     Finalizable f = finalIter.next();
                     if (f != null) {
@@ -4012,16 +4013,16 @@ public final class Ruby implements Constantizable {
      *
      * @param message the pre-formatted message for the NameError
      * @param name the name that failed
-     * @param origException the original exception, or null
+     * @param exception the original exception, or null
      * @param printWhenVerbose whether to log this exception when verbose mode is enabled
      * @return a new NameError
      */
-    public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
-        if (origException != null) {
+    public RaiseException newNameError(String message, String name, Throwable exception, boolean printWhenVerbose) {
+        if (exception != null) {
             if (printWhenVerbose && isVerbose()) {
-                LOG.error(origException.getMessage(), origException);
+                LOG.error(exception);
             } else if (isDebug()) {
-                LOG.debug(origException.getMessage(), origException);
+                LOG.debug(exception);
             }
         }
 
@@ -4132,8 +4133,8 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getSystemStackError(), message);
     }
 
-    public RaiseException newSystemStackError(String message, StackOverflowError soe) {
-        if ( isDebug() ) LOG.debug(soe);
+    public RaiseException newSystemStackError(String message, StackOverflowError error) {
+        if ( isDebug() ) LOG.debug(error);
         return newRaiseException(getSystemStackError(), message);
     }
 
