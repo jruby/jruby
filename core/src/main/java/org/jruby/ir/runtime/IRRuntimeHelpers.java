@@ -889,6 +889,14 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
+    public static IRubyObject restoreExceptionVar(ThreadContext context, IRubyObject exc, IRubyObject savedExc) {
+        if (exc instanceof IRReturnJump || exc instanceof IRBreakJump) {
+            context.runtime.getGlobalVariables().set("$!", savedExc);
+        }
+        return null;
+    }
+
     public static RubyModule findInstanceMethodContainer(ThreadContext context, DynamicScope currDynScope, IRubyObject self) {
         boolean inBindingEval = currDynScope.inBindingEval();
 
