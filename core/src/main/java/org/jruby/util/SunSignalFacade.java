@@ -48,6 +48,9 @@ import sun.misc.SignalHandler;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
@@ -66,52 +69,72 @@ public class SunSignalFacade implements SignalFacade {
         private final IRubyObject block;
         private final String signal;
         private final BlockCallback blockCallback;
+        private final ExecutorService executor;
 
-        public JRubySignalHandler(Ruby runtime, IRubyObject block, String signal) {
-            this(runtime, block, null, signal);
+        public JRubySignalHandler(Ruby runtime, ExecutorService executor, IRubyObject block, String signal) {
+            this(runtime, executor, block, null, signal);
         }
 
-        public JRubySignalHandler(Ruby runtime, BlockCallback callback, String signal) {
-            this(runtime, null, callback, signal);
+        public JRubySignalHandler(Ruby runtime, ExecutorService executor, BlockCallback callback, String signal) {
+            this(runtime, executor, null, callback, signal);
         }
 
-        private JRubySignalHandler(Ruby runtime, IRubyObject block, BlockCallback callback, String signal) {
+        private JRubySignalHandler(Ruby runtime, ExecutorService executor, IRubyObject block, BlockCallback callback, String signal) {
             this.runtime = runtime;
             this.block = block;
             this.blockCallback = callback;
             this.signal = signal;
+            this.executor = executor;
         }
 
         public void handle(Signal signal) {
-            ThreadContext context = runtime.getCurrentContext();
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
-            try {
-                RubyFixnum signum = runtime.newFixnum(signal.getNumber());
-                if (block != null) {
-                    block.callMethod(context, "call", signum);
-                } else {
-                    blockCallback.call(context, new IRubyObject[] {signum}, Block.NULL_BLOCK);
-                }
-            } catch(RaiseException e) {
+            Callable handler = () -> {
+                ThreadContext context = runtime.getCurrentContext();
+                IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
                 try {
-                    runtime.getThread().callMethod(context, "main")
-                        .callMethod(context, "raise", e.getException());
-                } catch(Exception ignored) {}
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-            } catch (MainExitException mee) {
-                runtime.getThreadService().getMainThread().kill();
-            } finally {
-                Signal.handle(new Signal(this.signal), this);
-            }
+                    RubyFixnum signum = runtime.newFixnum(signal.getNumber());
+                    if (block != null) {
+                        block.callMethod(context, "call", signum);
+                    } else {
+                        blockCallback.call(context, new IRubyObject[]{signum}, Block.NULL_BLOCK);
+                    }
+                } catch (RaiseException e) {
+                    try {
+                        runtime.getThread().callMethod(context, "main")
+                                .callMethod(context, "raise", e.getException());
+                    } catch (Exception ignored) {
+                    }
+                    runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                } catch (MainExitException mee) {
+                    runtime.getThreadService().getMainThread().kill();
+                } finally {
+                    Signal.handle(new Signal(this.signal), this);
+                }
+                return null;
+            };
+
+            executor.submit(handler);
         }
     }
 
     public IRubyObject trap(final IRubyObject recv, IRubyObject blk, IRubyObject sig) {
-        return trap(recv.getRuntime(), new JRubySignalHandler(recv.getRuntime(), blk, sig.toString()));
+        Ruby runtime = recv.getRuntime();
+        return trap(runtime,
+                new JRubySignalHandler(
+                        runtime,
+                        (ExecutorService) recv.getInternalVariables().getInternalVariable("executor"),
+                        blk,
+                        sig.toString()));
     }
         
-    public IRubyObject trap(final Ruby runtime, BlockCallback blk, String sig) {
-        return trap(runtime, new JRubySignalHandler(runtime, blk, sig));
+    public IRubyObject trap(final IRubyObject recv, BlockCallback blk, String sig) {
+        Ruby runtime = recv.getRuntime();
+        return trap(runtime,
+                new JRubySignalHandler(
+                        runtime,
+                        (ExecutorService) recv.getInternalVariables().getInternalVariable("executor"),
+                        blk,
+                        sig));
     }
 
     private IRubyObject trap(final Ruby runtime, final JRubySignalHandler handler) {
