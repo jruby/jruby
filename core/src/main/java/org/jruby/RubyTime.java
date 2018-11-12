@@ -896,7 +896,7 @@ public class RubyTime extends RubyObject {
      * @return nano seconds (only)
      */
     public int getNanos() {
-        return (int) (getTimeInMillis() % 1000) * 1_000_000 + (int) getNSec();
+        return (int) (dt.getMillisOfSecond() * 1_000_000L + getNSec());
     }
 
     /**
