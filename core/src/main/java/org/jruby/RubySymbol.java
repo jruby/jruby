@@ -689,7 +689,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     private static boolean isIdentifier(String s) {
-        if (s == null || s.length() <= 0 || !isIdentStart(s.charAt(0))) return false;
+        if (s.isEmpty() || !isIdentStart(s.charAt(0))) return false;
 
         for (int i = 1; i < s.length(); i++) {
             if (!isIdentChar(s.charAt(i))) return false;
@@ -704,7 +704,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return
      */
     private static boolean isSpecialGlobalName(String s) {
-        if (s == null || s.length() <= 0) return false;
+        if (s.isEmpty()) return false;
 
         int length = s.length();
 
@@ -729,7 +729,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         Ruby runtime = getRuntime();
         int p = symbolBytes.getBegin();
         int end = p + symbolBytes.getRealSize();
-        byte[]bytes = symbolBytes.getUnsafeBytes();
+        byte[] bytes = symbolBytes.getUnsafeBytes();
         Encoding enc = symbolBytes.getEncoding();
 
         while (p < end) {
