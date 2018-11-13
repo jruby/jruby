@@ -1385,7 +1385,7 @@ public class RubyHash extends RubyObject implements Map {
         ++iteratorCount;
     }
 
-    private void iteratorExitSync() {
+    private synchronized void iteratorExitSync() {
         --iteratorCount;
     }
 
