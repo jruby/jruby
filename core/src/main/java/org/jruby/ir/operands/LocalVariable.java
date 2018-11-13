@@ -15,11 +15,28 @@ public class LocalVariable extends Variable implements DepthCloneable {
     protected final int scopeDepth;
     protected final int offset;
     protected final int hcode;
+    // Note that we cannot use (scopeDepth > 0) check to detect this.
+    // When a dyn-scope is eliminated for a leaf scope, depths for all
+    // closure local vars are decremented by 1 => a non-local variable
+    // can have scope depth 0.
+    //
+    // Can only transition in one direction (from true to false)
+    protected final boolean isOuterScopeVar;
 
     public LocalVariable(RubySymbol name, int scopeDepth, int location) {
         super();
         this.name = name;
         this.scopeDepth = scopeDepth;
+        this.isOuterScopeVar = scopeDepth > 0;
+        this.offset = location;
+        this.hcode = (name + ":" + offset).hashCode();
+    }
+
+    public LocalVariable(RubySymbol name, int scopeDepth, int location, boolean isOuterScopeVar) {
+        super();
+        this.name = name;
+        this.scopeDepth = scopeDepth;
+        this.isOuterScopeVar = isOuterScopeVar;
         this.offset = location;
         this.hcode = (name + ":" + offset).hashCode();
     }
@@ -56,7 +73,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
 
     @Override
     public String toString() {
-        return isSelf() ? name.toString() : name + "(" + scopeDepth + ":" + offset + ")";
+        return isSelf() ? name.toString() : name + "(" + scopeDepth + ":" + offset + (isOuterScopeVar ? ":outer=true" : "") + ")";
     }
 
     @Override
@@ -93,7 +110,11 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     public LocalVariable cloneForDepth(int n) {
-        return new LocalVariable(name, n, offset);
+        return n > scopeDepth ? new LocalVariable(name, n, offset) : new LocalVariable(name, n, offset, isOuterScopeVar);
+    }
+
+    public boolean isOuterScopeVar() {
+        return isOuterScopeVar;
     }
 
     @Override

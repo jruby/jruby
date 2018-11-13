@@ -80,7 +80,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
         // Variables that belong to outer scopes should always
         // be considered defined.
         for (Variable v: i.getUsedVariables()) {
-            if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() > 0) {
+            if (v instanceof LocalVariable && ((LocalVariable)v).isOuterScopeVar()) {
                 tmp.set(problem.getDFVar(v));
             }
         }
@@ -100,7 +100,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
             // Find variables which belong to the problem.getScope()
             if (lv.getScopeDepth() == clBaseDepth && !tmp.get(problem.getDFVar(lv))) {
                 // We want lv suitable for initializing in this scope
-                undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
+                undefinedVars.add(!lv.isOuterScopeVar() ? lv : lv.cloneForDepth(0));
                 tmp.set(problem.getDFVar(lv));
             }
         }
@@ -124,7 +124,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
                         // are considered already defined.
                         if (lv.getScopeDepth() < parentScopeDepth && !tmp.get(problem.getDFVar(v))) {
                             // We want lv suitable for initializing in this scope
-                            undefinedVars.add(lv.getScopeDepth() == 0 ? lv : lv.cloneForDepth(0));
+                            undefinedVars.add(!lv.isOuterScopeVar() ? lv : lv.cloneForDepth(0));
                         }
                         tmp.set(problem.getDFVar(lv));
                     } else if (v instanceof TemporaryLocalVariable) {

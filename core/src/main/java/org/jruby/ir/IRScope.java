@@ -1048,7 +1048,7 @@ public abstract class IRScope implements ParseResult {
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
 
-                    if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() == 0) {
+                    if (v instanceof LocalVariable && !((LocalVariable)v).isOuterScopeVar()) {
                         definedLocalVars.add((LocalVariable) v);
                     }
                 }

@@ -32,7 +32,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
     }
 
     private void decrementScopeDepth(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
-         if (varRenameMap.get(v) == null) varRenameMap.put(v, v.cloneForDepth(v.getScopeDepth()-1));
+         if (varRenameMap.get(v) == null) varRenameMap.put(v, v.cloneForDepth(v.getScopeDepth() - 1));
     }
 
     public void eliminateLocalVars(IRScope s) {
