@@ -20,7 +20,7 @@ default_gems = [
     ['fileutils', '1.1.0'],
     ['ipaddr', '1.2.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
-    ['jruby-readline', '1.2.2'],
+    ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.10.1'],
     ['json', '${json.version}'],
     ['psych', '3.0.3'],
