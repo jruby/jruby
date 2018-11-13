@@ -2663,10 +2663,6 @@ public class IRBuilder {
         addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
-        // Emit code to conditionally restore $!
-        Variable ret = createTemporaryVariable();
-        addInstr(new RuntimeHelperCall(ret, RESTORE_EXCEPTION_VAR, new Operand[]{exc, savedGlobalException} ));
-
         // Now emit the ensure body's stashed instructions
         if (ensurerNode != null) {
             ebi.emitBody(this);
