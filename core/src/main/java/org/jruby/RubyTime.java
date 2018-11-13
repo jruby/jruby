@@ -1796,7 +1796,7 @@ public class RubyTime extends RubyObject {
             } else {
                 int i_args4 = argToInt(context, args, 4 + 2, 0);
 
-                if (i_args4 < 0 || i_args4 >= TIME_SCALE) {
+                if (i_args4 < 0 || i_args4 >= TIME_SCALE / 1000) {
                     throw runtime.newArgumentError("argument out of range.");
                 }
 
