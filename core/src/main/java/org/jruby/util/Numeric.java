@@ -514,10 +514,10 @@ public class Numeric {
         if (x == Long.MIN_VALUE) {
             if (y == Long.MIN_VALUE)
                 return x;
-            return 1 << Long.numberOfTrailingZeros(Math.abs(y));
+            return 1L << Long.numberOfTrailingZeros(Math.abs(y));
         }
         if (y == Long.MIN_VALUE) {
-            return 1 << Long.numberOfTrailingZeros(Math.abs(x));
+            return 1L << Long.numberOfTrailingZeros(Math.abs(x));
         }
 
         x = Math.abs(x);
