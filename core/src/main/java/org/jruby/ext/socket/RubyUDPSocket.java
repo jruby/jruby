@@ -44,6 +44,7 @@ import java.net.MulticastSocket;
 import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.net.DatagramPacket;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
@@ -595,7 +596,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
         }
 
-        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position(), false));
+        RubyString result = runtime.newString(new ByteList(buf.array(), 0, ((Buffer) buf).position(), false));
 
         if (tuple != null) {
             tuple.result = result;
@@ -626,8 +627,8 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNRESETError();
         }
 
-        recv.flip();
-        RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit(), false));
+        ((Buffer) recv).flip();
+        RubyString result = runtime.newString(new ByteList(recv.array(), ((Buffer) recv).position(), ((Buffer) recv).limit(), false));
 
         if (tuple != null) {
             tuple.result = result;

@@ -209,7 +209,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     private static byte[] getBytes(final ByteBuffer buffer) {
-        byte[] bytes = new byte[buffer.limit()];
+        byte[] bytes = new byte[((Buffer) buffer).limit()];
         buffer.get(bytes);
         return bytes;
     }
@@ -223,7 +223,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             bytes = getBytes(buffer);
             off = 0;
         }
-        return new ByteList(bytes, off, off + buffer.limit(), enc, false);
+        return new ByteList(bytes, off, off + ((Buffer) buffer).limit(), enc, false);
     }
 
     public static byte[] encodeUTF16(String str) {
@@ -244,7 +244,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static byte[] encode(CharSequence cs, Charset charset) {
         ByteBuffer buffer = charset.encode(CharBuffer.wrap(cs));
-        byte[] bytes = new byte[buffer.limit()];
+        byte[] bytes = new byte[((Buffer) buffer).limit()];
         buffer.get(bytes);
         return bytes;
     }
@@ -259,7 +259,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static byte[] encode(String str, Charset charset) {
         ByteBuffer buffer = charset.encode(str);
-        byte[] bytes = new byte[buffer.limit()];
+        byte[] bytes = new byte[((Buffer) buffer).limit()];
         buffer.get(bytes);
         return bytes;
     }
@@ -303,12 +303,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         public final ByteBuffer encode(String str) {
             ByteBuffer buf = byteBuffer;
             CharBuffer cbuf = charBuffer;
-            buf.clear();
+            ((Buffer) buf).clear();
             cbuf.clear();
             cbuf.put(str);
             cbuf.flip();
             encoder.encode(cbuf, buf, true);
-            buf.flip();
+            ((Buffer) buf).flip();
 
             return buf;
         }
@@ -316,14 +316,14 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         public final ByteBuffer encode(CharSequence str) {
             ByteBuffer buf = byteBuffer;
             CharBuffer cbuf = charBuffer;
-            buf.clear();
+            ((Buffer) buf).clear();
             cbuf.clear();
             // NOTE: doesn't matter is we toString here in terms of speed
             // ... so we "safe" some space at least by not copy-ing char[]
             for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
             cbuf.flip();
             encoder.encode(cbuf, buf, true);
-            buf.flip();
+            ((Buffer) buf).flip();
 
             return buf;
         }
@@ -332,9 +332,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             CharBuffer cbuf = charBuffer;
             ByteBuffer buf = byteBuffer;
             cbuf.clear();
-            buf.clear();
+            ((Buffer) buf).clear();
             buf.put(bytes, start, length);
-            buf.flip();
+            ((Buffer) buf).flip();
             decoder.decode(buf, cbuf, true);
             cbuf.flip();
 

@@ -31,6 +31,7 @@ package org.jruby.util.io;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -47,7 +48,7 @@ public class NullChannel implements WritableByteChannel, ReadableByteChannel {
             throw new EOFException();
         }
         int length = buffer.remaining();
-        buffer.position(buffer.position() + length);
+        buffer.position(((Buffer) buffer).position() + length);
         return length;
     }
 

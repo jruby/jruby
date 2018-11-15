@@ -31,6 +31,7 @@ package org.jruby.ext.ffi.io;
 import org.jruby.Ruby;
 import jnr.posix.LibC;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 
@@ -74,7 +75,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
         }
         int n = libc.read(fd, dst, dst.remaining());
         if (n > 0) {
-            dst.position(dst.position() + n);
+            dst.position(((Buffer) dst).position() + n);
         } else if (n == 0) {
             return -1; // EOF
         }
@@ -95,7 +96,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
         }
         int n = libc.write(fd, src, src.remaining());
         if (n > 0) {
-            src.position(src.position() + n);
+            src.position(((Buffer) src).position() + n);
         }
         return n;
     }

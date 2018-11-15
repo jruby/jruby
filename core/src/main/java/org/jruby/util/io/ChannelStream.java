@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
@@ -117,7 +118,7 @@ public class ChannelStream implements Stream, Finalizable {
         this.descriptor = descriptor;
         this.modes = descriptor.getOriginalModes();
         buffer = ByteBuffer.allocate(BUFSIZE);
-        buffer.flip();
+        ((Buffer) buffer).flip();
         this.reading = true;
         this.autoclose = autoclose;
         runtime.addInternalFinalizer(this);
@@ -202,7 +203,7 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public final boolean writeDataBuffered() {
-        return !reading && buffer.position() > 0;
+        return !reading && ((Buffer) buffer).position() > 0;
     }
 
     @Override
@@ -212,9 +213,9 @@ public class ChannelStream implements Stream, Finalizable {
 
     @Override
     public final int refillBuffer() throws IOException {
-        buffer.clear();
+        ((Buffer) buffer).clear();
         int n = ((ReadableByteChannel) descriptor.getChannel()).read(buffer);
-        buffer.flip();
+        ((Buffer) buffer).flip();
         return n;
     }
 
@@ -242,7 +243,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         // unread back
-        buffer.position(buffer.position() - 1);
+        buffer.position(((Buffer) buffer).position() - 1);
 
         ByteList buf = new ByteList(40);
 
@@ -251,8 +252,8 @@ public class ChannelStream implements Stream, Finalizable {
         LineLoop : while (true) {
             ReadLoop: while (true) {
                 byte[] bytes = buffer.array();
-                int offset = buffer.position();
-                int max = buffer.limit();
+                int offset = ((Buffer) buffer).position();
+                int max = ((Buffer) buffer).limit();
 
                 // iterate over remainder of buffer until we find a match
                 for (int i = offset; i < max; i++) {
@@ -261,9 +262,9 @@ public class ChannelStream implements Stream, Finalizable {
                         // terminate and advance buffer when we find our char
                         buf.append(bytes, offset, i - offset);
                         if (i >= max) {
-                            buffer.clear();
+                            ((Buffer) buffer).clear();
                         } else {
-                            buffer.position(i + 1);
+                            ((Buffer) buffer).position(i + 1);
                         }
                         break ReadLoop;
                     }
@@ -321,7 +322,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         while (!found) {
             final byte[] bytes = buffer.array();
-            final int begin = buffer.arrayOffset() + buffer.position();
+            final int begin = buffer.arrayOffset() + ((Buffer) buffer).position();
             final int end = begin + buffer.remaining();
             int len = 0;
             for (int i = begin; i < end && !found; ++i) {
@@ -366,7 +367,7 @@ public class ChannelStream implements Stream, Finalizable {
 
         while (!found) {
             final byte[] bytes = buffer.array();
-            final int begin = buffer.arrayOffset() + buffer.position();
+            final int begin = buffer.arrayOffset() + ((Buffer) buffer).position();
             final int end = begin + buffer.remaining();
             int len = 0;
             for (int i = begin; i < end && limit-- > 0 && !found; ++i) {
@@ -693,13 +694,13 @@ public class ChannelStream implements Stream, Finalizable {
         if (reading || !modes.isWritable() || buffer.position() == 0) return; // Don't bother
 
         int len = buffer.position();
-        buffer.flip();
+        ((Buffer) buffer).flip();
         int n = descriptor.write(buffer);
 
         if(n != len) {
             // TODO: check the return value here
         }
-        buffer.clear();
+        ((Buffer) buffer).clear();
     }
 
     /**
@@ -707,10 +708,10 @@ public class ChannelStream implements Stream, Finalizable {
      * @throws IOException
      */
     private boolean flushWrite(final boolean block) throws IOException, BadDescriptorException {
-        if (reading || !modes.isWritable() || buffer.position() == 0) return false; // Don't bother
-        int len = buffer.position();
+        if (reading || !modes.isWritable() || ((Buffer) buffer).position() == 0) return false; // Don't bother
+        int len = ((Buffer) buffer).position();
         int nWritten = 0;
-        buffer.flip();
+        ((Buffer) buffer).flip();
 
         // For Sockets, only write as much as will fit.
         if (descriptor.getChannel() instanceof SelectableChannel) {
@@ -735,7 +736,7 @@ public class ChannelStream implements Stream, Finalizable {
             buffer.compact();
             return false;
         }
-        buffer.clear();
+        ((Buffer) buffer).clear();
         return true;
     }
 
@@ -779,7 +780,7 @@ public class ChannelStream implements Stream, Finalizable {
                 pos -= buffer.remaining();
                 return pos - (pos > 0 && hasUngotChars() ? ungotChars.length() : 0);
             } else {
-                return pos + buffer.position();
+                return pos + ((Buffer) buffer).position();
             }
         } else if (descriptor.isNull()) {
             return 0;
@@ -804,8 +805,8 @@ public class ChannelStream implements Stream, Finalizable {
             if (reading) {
                 // for SEEK_CUR, need to adjust for buffered data
                 adj = buffer.remaining();
-                buffer.clear();
-                buffer.flip();
+                ((Buffer) buffer).clear();
+                ((Buffer) buffer).flip();
             } else {
                 flushWrite();
             }
@@ -846,8 +847,8 @@ public class ChannelStream implements Stream, Finalizable {
     private void ensureRead() throws IOException, BadDescriptorException {
         if (reading) return;
         flushWrite();
-        buffer.clear();
-        buffer.flip();
+        ((Buffer) buffer).clear();
+        ((Buffer) buffer).flip();
         reading = true;
     }
 
@@ -868,8 +869,8 @@ public class ChannelStream implements Stream, Finalizable {
         } else {
             // libc flushes writes on any read from the actual file, so we flush here
             flushWrite();
-            buffer.clear();
-            buffer.flip();
+            ((Buffer) buffer).clear();
+            ((Buffer) buffer).flip();
             reading = true;
         }
     }
@@ -882,7 +883,7 @@ public class ChannelStream implements Stream, Finalizable {
             }
         }
         // FIXME: Clearing read buffer here...is this appropriate?
-        buffer.clear();
+        ((Buffer) buffer).clear();
         reading = false;
     }
 
@@ -1193,9 +1194,9 @@ public class ChannelStream implements Stream, Finalizable {
     private void invalidateBuffer() throws IOException, BadDescriptorException {
         if (!reading) flushWrite();
         int posOverrun = buffer.remaining(); // how far ahead we are when reading
-        buffer.clear();
+        ((Buffer) buffer).clear();
         if (reading) {
-            buffer.flip();
+            ((Buffer) buffer).flip();
             // if the read buffer is ahead, back up
             SeekableByteChannel fileChannel = (SeekableByteChannel) descriptor.getChannel();
             if (posOverrun != 0) fileChannel.position(fileChannel.position() - posOverrun);
@@ -1301,7 +1302,7 @@ public class ChannelStream implements Stream, Finalizable {
         // Ruby ignores empty syswrites
         if (buf == null || buf.length() == 0) return 0;
 
-        if (buffer.position() != 0 && !flushWrite(false)) return 0;
+        if (((Buffer) buffer).position() != 0 && !flushWrite(false)) return 0;
 
         if (descriptor.getChannel() instanceof SelectableChannel) {
             SelectableChannel selectableChannel = (SelectableChannel)descriptor.getChannel();
@@ -1439,9 +1440,9 @@ public class ChannelStream implements Stream, Finalizable {
         flushWrite();
 
         // reset buffer
-        buffer.clear();
+        ((Buffer) buffer).clear();
         if (reading) {
-            buffer.flip();
+            ((Buffer) buffer).flip();
         }
 
         this.modes = modes;

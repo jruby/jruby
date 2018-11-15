@@ -29,6 +29,7 @@
 package org.jruby.util;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.ReadableByteChannel;
@@ -98,7 +99,7 @@ public abstract class IOChannel implements Channel {
         ByteList buffer;
 
         if (src.hasArray()) {
-            buffer = new ByteList(src.array(), src.position(), src.remaining(), true);
+            buffer = new ByteList(src.array(), ((Buffer) src).position(), src.remaining(), true);
         } else {
             buffer = new ByteList(src.remaining());
             buffer.append(src, src.remaining());

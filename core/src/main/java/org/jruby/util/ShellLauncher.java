@@ -40,6 +40,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -1484,14 +1485,14 @@ public class ShellLauncher {
         public void run() {
             runtime.getCurrentContext().setEventHooksEnabled(false);
             ByteBuffer buf = ByteBuffer.allocateDirect(1024);
-            buf.clear();
+            ((Buffer) buf).clear();
             try {
                 while (!quit && inChannel.isOpen() && outChannel.isOpen()) {
                     int read = inChannel.read(buf);
                     if (read == -1) break;
-                    buf.flip();
+                    ((Buffer) buf).flip();
                     outChannel.write(buf);
-                    buf.clear();
+                    ((Buffer) buf).clear();
                 }
             } catch (Exception e) {
             } finally {

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -122,7 +123,7 @@ public class ReaderInputStream extends InputStream {
                     eof = true;
                 } else if (cr.isOverflow()) {
                     appendBytes(list, bbuf);
-                    bbuf.clear();
+                    ((Buffer) bbuf).clear();
                 }
             }
         }
@@ -130,11 +131,11 @@ public class ReaderInputStream extends InputStream {
     }
 
     private void appendBytes(List<byte[]> list, ByteBuffer bb) {
-        bb.flip();
-        int length = bb.limit();
+        ((Buffer) bb).flip();
+        int length = ((Buffer) bb).limit();
         totalBytes += length;
         byte[] dst = new byte[length];
-        System.arraycopy(bb.array(), bb.position(), dst, 0, length);
+        System.arraycopy(bb.array(), ((Buffer) bb).position(), dst, 0, length);
         list.add(dst);
     }
 

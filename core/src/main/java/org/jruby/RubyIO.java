@@ -41,6 +41,7 @@ import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -4443,9 +4444,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (n == -1) break;
 
-            buffer.flip();
+            ((Buffer) buffer).flip();
             to.write(buffer);
-            buffer.clear();
+            ((Buffer) buffer).clear();
 
             transferred += n;
             if (length > 0) {

@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +62,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     }
 
     private int offset() {
-        return buf.position() + PROLOGUE_LENGTH;
+        return ((Buffer) buf).position() + PROLOGUE_LENGTH;
     }
 
     /**
@@ -276,8 +277,8 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
             stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
             stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
-            buf.flip();
-            stream.write(buf.array(), buf.position(), buf.limit());
+            ((Buffer) buf).flip();
+            stream.write(buf.array(), ((Buffer) buf).position(), ((Buffer) buf).limit());
             stream.close();
         } catch (IOException e) {
             try { if (stream != null) stream.close(); } catch (IOException e1) {}

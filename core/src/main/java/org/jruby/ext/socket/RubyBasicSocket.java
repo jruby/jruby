@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
@@ -491,7 +492,7 @@ public class RubyBasicSocket extends RubyIO {
 
             if (read == 0) return null;
 
-            return new ByteList(buffer.array(), 0, buffer.position(), false);
+            return new ByteList(buffer.array(), 0, ((Buffer) buffer).position(), false);
         }
         catch (IOException e) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream

@@ -34,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -691,7 +692,7 @@ public class ChannelDescriptor {
         
         ByteBuffer buf = ByteBuffer.allocate(1);
         buf.put((byte)c);
-        buf.flip();
+        ((Buffer) buf).flip();
         
         return internalWrite(buf);
     }

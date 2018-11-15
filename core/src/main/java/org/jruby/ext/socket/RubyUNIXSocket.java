@@ -63,6 +63,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.Channel;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -181,7 +182,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ByteBuffer[] outIov = new ByteBuffer[1];
         outIov[0] = ByteBuffer.allocateDirect(dataBytes.length);
         outIov[0].put(dataBytes);
-        outIov[0].flip();
+        ((Buffer) outIov[0]).flip();
 
         outMessage.setIov(outIov);
 

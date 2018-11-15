@@ -37,6 +37,7 @@
 package org.jruby.util;
 
 import java.math.BigInteger;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -1096,7 +1097,7 @@ public class Pack {
                             if (safeGet(encode) == '\n') {
                                 safeGet(encode); // Possible Checksum Byte
                             } else if (encode.hasRemaining()) {
-                                encode.position(encode.position() - 1);
+                                encode.position(((Buffer) encode).position() - 1);
                             }
                         }
                     }
@@ -1192,7 +1193,7 @@ public class Pack {
                             }
                             if ((s == '=') || c == -1) {
                                 if (s == '=') {
-                                    encode.position(encode.position() - 1);
+                                    encode.position(((Buffer) encode).position() - 1);
                                 }
                                 break;
                             }
@@ -1205,7 +1206,7 @@ public class Pack {
                             }
                             if ((s == '=') || d == -1) {
                                 if (s == '=') {
-                                    encode.position(encode.position() - 1);
+                                    encode.position(((Buffer) encode).position() - 1);
                                 }
                                 break;
                             }
@@ -1298,7 +1299,7 @@ public class Pack {
                      }
 
                      try {
-                         encode.position(encode.position() - occurrences);
+                         encode.position(((Buffer) encode).position() - occurrences);
                      } catch (IllegalArgumentException e) {
                          throw runtime.newArgumentError("in `unpack': X outside of string");
                      }
@@ -1309,7 +1310,7 @@ public class Pack {
                       }
 
                       try {
-                          encode.position(encode.position() + occurrences);
+                          encode.position(((Buffer) encode).position() + occurrences);
                       } catch (IllegalArgumentException e) {
                           throw runtime.newArgumentError("in `unpack': x outside of string");
                       }
@@ -1323,7 +1324,7 @@ public class Pack {
                     long ul = 0;
                     long ulmask = (0xfeL << 56) & 0xffffffff;
                     RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
-                    int pos = encode.position();
+                    int pos = ((Buffer) encode).position();
 
                     while (occurrences > 0 && pos < encode.limit()) {
                         ul <<= 7;

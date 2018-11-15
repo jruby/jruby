@@ -10,6 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
@@ -537,7 +538,7 @@ public class SelectExecutor {
             } finally {
                 ByteBuffer buf = ByteBuffer.allocate(1);
                 buf.put((byte) 0);
-                buf.flip();
+                ((Buffer) buf).flip();
                 pipe.sink().write(buf);
             }
 
