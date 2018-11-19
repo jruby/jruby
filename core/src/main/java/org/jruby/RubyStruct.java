@@ -357,7 +357,7 @@ public class RubyStruct extends RubyObject {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
 
         if (keywordInit.isTrue()) {
-            if (args.length > 1) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+            if (args.length != 1) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
 
             return initialize(context, args[0]);
         } else {
