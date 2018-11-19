@@ -33,6 +33,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 
 public abstract class MethodDescriptor<T> {
+    public static final String IRUBYOBJECT_ARRAY_CLASS_NAME = "[Lorg.jruby.runtime.builtin.IRubyObject;";
     public final boolean isStatic;
     public final boolean hasContext;
     public final boolean hasBlock;
@@ -87,10 +88,10 @@ public abstract class MethodDescriptor<T> {
 
             if (hasBlock) {
                 // args should be before block
-                hasVarArgs = parameterAsString(methodObject, parameterCount - 2).equals("org.jruby.runtime.builtin.IRubyObject[]");
+                hasVarArgs = parameterAsString(methodObject, parameterCount - 2).equals(IRUBYOBJECT_ARRAY_CLASS_NAME);
             } else {
                 // args should be at end
-                hasVarArgs = parameterAsString(methodObject, parameterCount - 1).equals("org.jruby.runtime.builtin.IRubyObject[]");
+                hasVarArgs = parameterAsString(methodObject, parameterCount - 1).equals(IRUBYOBJECT_ARRAY_CLASS_NAME);
             }
         } else {
             if (isStatic && (parameterCount < 1 || !parameterAsString(methodObject, 0).equals("org.jruby.runtime.builtin.IRubyObject"))) {
@@ -98,9 +99,9 @@ public abstract class MethodDescriptor<T> {
             }
 
             if (hasBlock) {
-                hasVarArgs = parameterCount > 1 && parameterAsString(methodObject, parameterCount - 2).equals("org.jruby.runtime.builtin.IRubyObject[]");
+                hasVarArgs = parameterCount > 1 && parameterAsString(methodObject, parameterCount - 2).equals(IRUBYOBJECT_ARRAY_CLASS_NAME);
             } else {
-                hasVarArgs = parameterCount > 0 && parameterAsString(methodObject, parameterCount - 1).equals("org.jruby.runtime.builtin.IRubyObject[]");
+                hasVarArgs = parameterCount > 0 && parameterAsString(methodObject, parameterCount - 1).equals(IRUBYOBJECT_ARRAY_CLASS_NAME);
             }
         }
 
