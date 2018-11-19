@@ -356,22 +356,16 @@ public class RubyStruct extends RubyObject {
 
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
 
-        Ruby runtime = context.runtime;
-        IRubyObject nil = context.nil;
-
         if (keywordInit.isTrue()) {
-            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, args);
-            int argc = maybeKwargs.isNil() ? args.length : args.length - 1;
+            if (args.length != 1) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
 
-            if (argc >= 1) throw runtime.newArgumentError("wrong number of arguments (given " + argc + ", expected 0)");
-
-            setupStructValuesFromHash(context, (RubyHash) maybeKwargs);
+            return initialize(context, args[0]);
         } else {
             System.arraycopy(args, 0, values, 0, args.length);
-            Helpers.fillNil(values, args.length, values.length, runtime);
+            Helpers.fillNil(values, args.length, values.length, context.runtime);
         }
 
-        return nil;
+        return context.nil;
     }
 
     private void setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
@@ -398,11 +392,19 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        IRubyObject nil = context.nil;
-        if (arg0 instanceof RubyHash) {
-            setupStructValuesFromHash(context, (RubyHash) arg0);
+        Ruby runtime = context.runtime;
+
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
+        if (keywordInit.isTrue()) {
+            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
+
+            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
+
+            setupStructValuesFromHash(context, (RubyHash) maybeKwargs);
+
             return context.nil;
         } else {
+            IRubyObject nil = context.nil;
             return initializeInternal(context, 1, arg0, nil, nil);
         }
     }
