@@ -69,6 +69,9 @@ public class RubyStruct extends RubyObject {
     public static final String NO_MEMBER_IN_STRUCT = "no member '%1$s' in struct";
     public static final String IDENTIFIER_NEEDS_TO_BE_CONSTANT = "identifier %1$s needs to be constant";
     public static final String UNINITIALIZED_CONSTANT = "uninitialized constant %1$s";
+    private static final String KEYWORD_INIT_VAR = "__keyword_init__";
+    private static final String SIZE_VAR = "__size__";
+    public static final String MEMBER_VAR = "__member__";
     private final IRubyObject[] values;
 
     /**
@@ -79,7 +82,7 @@ public class RubyStruct extends RubyObject {
     private RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
 
-        int size = RubyNumeric.fix2int(getInternalVariable(rubyClass, "__size__"));
+        int size = RubyNumeric.fix2int(getInternalVariable(rubyClass, SIZE_VAR));
 
         values = new IRubyObject[size];
 
@@ -230,9 +233,9 @@ public class RubyStruct extends RubyObject {
         newStruct.setReifiedClass(RubyStruct.class);
         newStruct.setClassIndex(ClassIndex.STRUCT);
 
-        newStruct.setInternalVariable("__size__", member.length());
-        newStruct.setInternalVariable("__member__", member);
-        newStruct.setInternalVariable("__keyword_init__", keywordInit ? runtime.getTrue() : runtime.getFalse());
+        newStruct.setInternalVariable(SIZE_VAR, member.length());
+        newStruct.setInternalVariable(MEMBER_VAR, member);
+        newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInit ? runtime.getTrue() : runtime.getFalse());
 
         newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
 
@@ -292,7 +295,7 @@ public class RubyStruct extends RubyObject {
 
         @JRubyMethod
         public static IRubyObject inspect(IRubyObject recv) {
-            IRubyObject keywordInit = RubyStruct.getInternalVariable((RubyClass)recv, "__keyword_init__");
+            IRubyObject keywordInit = RubyStruct.getInternalVariable((RubyClass)recv, KEYWORD_INIT_VAR);
             if (!keywordInit.isTrue()) return recv.inspect();
             return recv.inspect().convertToString().catString("(keyword_init: true)");
         }
@@ -354,7 +357,7 @@ public class RubyStruct extends RubyObject {
         modify();
         checkSize(args.length);
 
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
 
         if (keywordInit.isTrue()) {
             if (args.length != 1) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
@@ -394,7 +397,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
         Ruby runtime = context.runtime;
 
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), "__keyword_init__");
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
             IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
 
@@ -411,11 +414,21 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
+        if (keywordInit.isTrue()) {
+            throw context.runtime.newArgumentError("wrong number of arguments (given 2, expected 0)");
+        }
+
         return initializeInternal(context, 2, arg0, arg1, context.nil);
     }
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
+        if (keywordInit.isTrue()) {
+            throw context.runtime.newArgumentError("wrong number of arguments (given 3, expected 0)");
+        }
+
         return initializeInternal(context, 3, arg0, arg1, arg2);
     }
 
@@ -456,7 +469,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private static RubyArray __member__(RubyClass clazz) {
-        RubyArray member = (RubyArray) getInternalVariable(clazz, "__member__");
+        RubyArray member = (RubyArray) getInternalVariable(clazz, MEMBER_VAR);
 
         assert !member.isNil() : "uninitialized struct";
 
