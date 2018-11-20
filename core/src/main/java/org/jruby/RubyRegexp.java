@@ -325,12 +325,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private RubyRegexp(Ruby runtime, ByteList str) {
         this(runtime);
+        assert str != null;
         this.str = str;
         this.pattern = getRegexpFromCache(runtime, str, str.getEncoding(), RegexpOptions.NULL_OPTIONS);
     }
 
     private RubyRegexp(Ruby runtime, ByteList str, RegexpOptions options) {
         this(runtime);
+        assert str != null;
 
         regexpInitialize(str, str.getEncoding(), options);
     }
@@ -388,6 +390,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     static RubyRegexp newRegexp(Ruby runtime, ByteList str, Regex pattern) {
         RubyRegexp regexp = new RubyRegexp(runtime);
+        assert str != null;
         regexp.str = str;
         regexp.options = RegexpOptions.fromJoniOptions(pattern.getOptions());
         regexp.pattern = pattern;
@@ -1028,6 +1031,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (options.isEncodingNone()) setEncodingNone();
 
         pattern = getRegexpFromCache(runtime, unescaped, enc, options);
+        assert bytes != null;
         str = bytes;
         return this;
     }
