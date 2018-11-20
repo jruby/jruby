@@ -54,6 +54,12 @@ jobs:
     - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Ptest'
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - name: sequel
+      script: tool/sequel-travis.sh
+      addons:
+        postgresql: "9.6"
+      services:
+        - postgresql
     - env: PHASE='-Prake -Dtask=test:jruby'
     - env:
       - PHASE='-Prake -Dtask=test:jruby'
@@ -86,12 +92,6 @@ jobs:
       jdk: oraclejdk9
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk9
-    - name: sequel
-      script: tool/sequel-travis.sh
-      addons:
-        postgresql: "9.6"
-      services:
-        - postgresql
 
 script: tool/travis-script.sh
 
