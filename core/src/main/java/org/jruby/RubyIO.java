@@ -4437,15 +4437,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (length > 0 && length < chunkSize) {
                 // last read should limit to remaining length
-                buffer.limit((int)length);
+                bufferLimit(buffer, (int)length);
             }
             long n = from.read(buffer);
 
             if (n == -1) break;
 
-            buffer.flip();
+            flipBuffer(buffer);
             to.write(buffer);
-            buffer.clear();
+            clearBuffer(buffer);
 
             transferred += n;
             if (length > 0) {

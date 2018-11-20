@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.Buffer;
 
 /**
  * Helper that attempts to improve Channels' static helpers.
@@ -175,6 +176,71 @@ public abstract class ChannelHelper {
             }
         }
         return filteredStream;
+    }
+
+    /**
+     * Java 9 introduced overridden methods
+     * java.lang.NoSuchMethodError exceptions are thrown when executing on Java 8
+     * the solution is to cast instances to Buffer before calling the method
+     * https://github.com/jruby/jruby/issues/5450
+     *
+     * @param buffer ByteBuffer or CharBuffer
+     * @return This buffer
+     **/
+    public static Buffer clearBuffer(Buffer buffer) {
+        return buffer.clear();
+    }
+
+    /**
+     * Java 9 introduced overridden methods
+     * java.lang.NoSuchMethodError exceptions are thrown when executing on Java 8
+     * the solution is to cast instances to Buffer before calling the method
+     * https://github.com/jruby/jruby/issues/5450
+     *
+     * @param buffer ByteBuffer or CharBuffer
+     * @return This buffer
+     **/
+    public static Buffer flipBuffer(Buffer buffer) {
+        return buffer.flip();
+    }
+
+    /**
+     * Java 9 introduced overridden methods
+     * java.lang.NoSuchMethodError exceptions are thrown when executing on Java 8
+     * the solution is to cast instances to Buffer before calling the method
+     * https://github.com/jruby/jruby/issues/5450
+     *
+     * @param buffer ByteBuffer or CharBuffer
+     * @return This buffer
+     **/
+    public static Buffer markBuffer(Buffer buffer) {
+        return buffer.mark();
+    }
+
+    /**
+     * Java 9 introduced overridden methods
+     * java.lang.NoSuchMethodError exceptions are thrown when executing on Java 8
+     * the solution is to cast instances to Buffer before calling the method
+     * https://github.com/jruby/jruby/issues/5450
+     *
+     * @param buffer ByteBuffer or CharBuffer
+     * @return This buffer
+     **/
+    public static Buffer bufferPosition(Buffer buffer, int position) {
+        return buffer.position(position);
+    }
+
+    /**
+     * Java 9 introduced overridden methods
+     * java.lang.NoSuchMethodError exceptions are thrown when executing on Java 8
+     * the solution is to cast instances to Buffer before calling the method
+     * https://github.com/jruby/jruby/issues/5450
+     *
+     * @param buffer ByteBuffer or CharBuffer
+     * @return This buffer
+     **/
+    public static Buffer bufferLimit(Buffer buffer, int limit) {
+        return buffer.limit(limit);
     }
 
     private static OutputStream unwrapDripStream(OutputStream stream) {

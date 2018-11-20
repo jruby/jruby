@@ -54,6 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.io.ChannelHelper.*;
 
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -875,9 +876,9 @@ public class Pack {
                 case '@' :
                     try {
                         if (occurrences == IS_STAR) {
-                            encode.position(encodedString.begin() + encode.remaining());
+                            bufferPosition(encode, encodedString.begin() + encode.remaining());
                         } else {
-                            encode.position(encodedString.begin() + occurrences);
+                            bufferPosition(encode, encodedString.begin() + occurrences);
                         }
                     } catch (IllegalArgumentException iae) {
                         throw runtime.newArgumentError("@ outside of string");
@@ -1096,7 +1097,7 @@ public class Pack {
                             if (safeGet(encode) == '\n') {
                                 safeGet(encode); // Possible Checksum Byte
                             } else if (encode.hasRemaining()) {
-                                encode.position(encode.position() - 1);
+                                bufferPosition(encode, encode.position() - 1);
                             }
                         }
                     }
@@ -1192,7 +1193,7 @@ public class Pack {
                             }
                             if ((s == '=') || c == -1) {
                                 if (s == '=') {
-                                    encode.position(encode.position() - 1);
+                                    bufferPosition(encode, encode.position() - 1);
                                 }
                                 break;
                             }
@@ -1205,7 +1206,7 @@ public class Pack {
                             }
                             if ((s == '=') || d == -1) {
                                 if (s == '=') {
-                                    encode.position(encode.position() - 1);
+                                    bufferPosition(encode, encode.position() - 1);
                                 }
                                 break;
                             }
@@ -1243,7 +1244,7 @@ public class Pack {
                                 lElem[index++] = (byte)c;
                             } else {
                                 if (!encode.hasRemaining()) break;
-                                encode.mark();
+                                markBuffer(encode);
                                 int c1 = safeGet(encode);
                                 if (c1 == '\n' || (c1 == '\r' && (c1 = safeGet(encode)) == '\n')) continue;
                                 int d1 = Character.digit(c1, 16);
@@ -1251,7 +1252,7 @@ public class Pack {
                                     encode.reset();
                                     break;
                                 }
-                                encode.mark();
+                                markBuffer(encode);
                                 if (!encode.hasRemaining()) break;
                                 int c2 = safeGet(encode);
                                 int d2 = Character.digit(c2, 16);
@@ -1298,7 +1299,7 @@ public class Pack {
                      }
 
                      try {
-                         encode.position(encode.position() - occurrences);
+                         bufferPosition(encode, encode.position() - occurrences);
                      } catch (IllegalArgumentException e) {
                          throw runtime.newArgumentError("in `unpack': X outside of string");
                      }
@@ -1309,7 +1310,7 @@ public class Pack {
                       }
 
                       try {
-                          encode.position(encode.position() + occurrences);
+                          bufferPosition(encode, encode.position() + occurrences);
                       } catch (IllegalArgumentException e) {
                           throw runtime.newArgumentError("in `unpack': x outside of string");
                       }
@@ -1353,7 +1354,7 @@ public class Pack {
                         }
                     }
                     try {
-                        encode.position(pos);
+                        bufferPosition(encode, pos);
                     } catch (IllegalArgumentException e) {
                         throw runtime.newArgumentError("in `unpack': poorly encoded input");
                     }
