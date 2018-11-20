@@ -552,7 +552,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() != Long.MIN_VALUE) {
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum && isLongMinValue((RubyFixnum) x)) {
             return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
         }
 
@@ -563,7 +563,7 @@ public class Numeric {
         if (f_zero_p(context, y)) return x;
 
         for (;;) {
-            if (x instanceof RubyFixnum && y instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() != Long.MIN_VALUE) {
+            if (x instanceof RubyFixnum && y instanceof RubyFixnum && isLongMinValue((RubyFixnum) x)) {
                 return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
             }
             IRubyObject z = x;
@@ -574,9 +574,8 @@ public class Numeric {
 
     // 'fast' gcd version
     public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum && ((RubyFixnum)x).getLongValue() != Long.MIN_VALUE) {
-            return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
-        }
+        if (x instanceof RubyFixnum && y instanceof RubyFixnum && isLongMinValue((RubyFixnum) x))
+            return RubyFixnum.newFixnum(context.runtime, i_gcd(x.getLongValue(), y.getLongValue()));
 
         BigInteger gcd = x.getBigIntegerValue().gcd(y.getBigIntegerValue());
 
@@ -584,6 +583,16 @@ public class Numeric {
             return RubyFixnum.newFixnum(context.runtime, gcd.longValue());
         }
         return RubyBignum.newBignum(context.runtime, gcd);
+    }
+
+    /**
+     * Check if the Fixnum passed is equal to Long.MAX_VALUE.
+     *
+     * @param x the Fixnum to compare
+     * @return true if it is equal to Long.MAX_VALUE, false otherwise.
+     */
+    protected static boolean isLongMinValue(RubyFixnum x) {
+        return x.getLongValue() != Long.MIN_VALUE;
     }
 
     /** f_lcm
