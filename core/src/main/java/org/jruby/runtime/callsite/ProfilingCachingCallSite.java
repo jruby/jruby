@@ -62,9 +62,10 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         }
 
         if (targetIsIR && siteIsIR) {
-            if (IRManager.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
-
             IRMethod scopeToInline = (IRMethod) (targetMethod).getIRScope();
+
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + scopeToInline + " - " + totalMonomorphicCalls);
+
             AbstractIRMethod hostMethod = (AbstractIRMethod) hostScope.compilable;
             if (hostMethod instanceof InterpretedIRMethod) {
                 hostScope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
