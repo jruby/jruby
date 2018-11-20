@@ -203,7 +203,7 @@ public class Helpers {
             throw t;
         } catch (FileNotFoundException fnfe) {
             return Errno.ENOENT;
-        } catch (EOFException fnfe) {
+        } catch (EOFException eofe) {
             return Errno.EPIPE;
         } catch (AtomicMoveNotSupportedException amnse) {
             return Errno.EXDEV;
