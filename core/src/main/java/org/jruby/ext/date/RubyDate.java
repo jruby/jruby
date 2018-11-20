@@ -713,7 +713,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self) { // sg=ITALY
-        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC).withTimeAtStartOfDay());
+        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, ITALY, 0)).withTimeAtStartOfDay());
     }
 
     @JRubyMethod(meta = true)
