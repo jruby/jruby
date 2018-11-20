@@ -190,7 +190,7 @@ public class Helpers {
      * level error. In most cases, the only way to determine the cause of the IOException is by inspecting its contents,
      * usually by checking the error message string. This is obviously fragile and breaks on platforms localized to
      * languages other than English, so we also try as much as possible to detect the cause of the error by its actual
-     * type (if it is indeed a specialized subtype of IOException.
+     * type (if it is indeed a specialized subtype of IOException).
      *
      * @param t the exception to convert to an {@link Errno}
      * @return the resulting {@link Errno} value, or null if none could be determined.
