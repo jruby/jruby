@@ -45,7 +45,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         if (!hostScope.inliningAllowed()) return;
 
         // CompiledIRMethod* is not supported
-        boolean targetIsIR = cache.method instanceof MixedModeIRMethod || cache.method instanceof InterpretedIRMethod;
+        boolean targetIsIR = cache.method instanceof AbstractIRMethod;
         boolean siteIsIR = hostScope.compilable != null;
 
         AbstractIRMethod targetMethod;
@@ -65,10 +65,13 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + self.getMetaClass().rubyName() + "#" + methodName + " - " + totalMonomorphicCalls);
 
             IRMethod scopeToInline = (IRMethod) (targetMethod).getIRScope();
-            if (cache.method instanceof InterpretedIRMethod) {
+            AbstractIRMethod hostMethod = (AbstractIRMethod) hostScope.compilable;
+            if (hostMethod instanceof InterpretedIRMethod) {
                 hostScope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
-            } else { // MixedModelIRMethod
+            } else if (hostMethod instanceof MixedModeIRMethod) {
                 hostScope.inlineMethodJIT(scopeToInline, callSiteId, cache.token, false);
+            } else {
+                hostScope.inlineMethodCompiled(scopeToInline, callSiteId, cache.token, false);
             }
         }
     }
