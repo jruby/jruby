@@ -249,7 +249,7 @@ public class MarshalStream extends FilterOutputStream {
             if (value instanceof DataType) {
                 Ruby runtime = value.getRuntime();
 
-                throw runtime.newTypeError(str(runtime, "no marshal_dump is defined for class ", types(runtime, value.getMetaClass())));
+                throw runtime.newTypeError(str(runtime, "no _dump_data is defined for class ", types(runtime, value.getMetaClass())));
             }
             ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
 

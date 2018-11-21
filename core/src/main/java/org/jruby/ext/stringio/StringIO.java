@@ -46,6 +46,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
+import org.jruby.runtime.marshal.DataType;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
@@ -61,7 +62,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="StringIO")
-public class StringIO extends RubyObject implements EncodingCapable {
+public class StringIO extends RubyObject implements EncodingCapable, DataType {
     static class StringIOData {
         /**
          * ATTN: the value of internal might be reset to null
