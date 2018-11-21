@@ -196,15 +196,26 @@ public class RubyStruct extends RubyObject {
 
         RubyArray member = runtime.newArray();
 
+        int argc = args.length;
         if (args[args.length - 1] instanceof RubyHash) {
+            argc--;
             RubyHash kwArgs = args[args.length - 1].convertToHash();
             IRubyObject[] rets = ArgsUtil.extractKeywordArgs(runtime.getCurrentContext(), kwArgs, "keyword_init");
             keywordInit = rets[0].isTrue();
         }
 
-        for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
-            if (i == args.length - 1 && args[i] instanceof RubyHash) break;
-            member.append(runtime.newSymbol(args[i].asJavaString()));
+        for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
+            IRubyObject arg = args[i];
+            RubySymbol sym;
+            if (arg instanceof RubySymbol) {
+                sym = (RubySymbol) arg;
+            } else if (arg instanceof RubyString) {
+                sym = runtime.newSymbol(arg.convertToString().getByteList());
+            } else {
+                sym = runtime.newSymbol(arg.asJavaString());
+            }
+
+            member.append(sym);
         }
 
         RubyClass newStruct;

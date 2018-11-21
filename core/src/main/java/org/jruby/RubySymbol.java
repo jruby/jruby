@@ -38,6 +38,7 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -819,8 +820,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return recv.getRuntime().getSymbolTable().all_symbols();
     }
 
-    public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubySymbol result = newSymbol(input.getRuntime(), input.unmarshalString());
+    public static RubySymbol unmarshalFrom(UnmarshalStream input, UnmarshalStream.MarshalState state) throws java.io.IOException {
+        ByteList byteList = input.unmarshalString();
+
+        if (RubyString.scanForCodeRange(byteList) == CR_7BIT) {
+            byteList.setEncoding(USASCIIEncoding.INSTANCE);
+        }
+
+        // consume encoding ivar before making string
+        if (state.isIvarWaiting()) {
+            input.unmarshalInt(); // throw-away, always single ivar of encoding
+            Encoding enc = input.getEncodingFromUnmarshaled(input.unmarshalObject());
+            byteList.setEncoding(enc);
+            state.setIvarWaiting(false);
+        }
+
+        RubySymbol result = newSymbol(input.getRuntime(), byteList);
 
         input.registerLinkTarget(result);
 
@@ -1201,7 +1216,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public boolean shouldMarshalEncoding() {
-        return getMarshalEncoding() != USASCIIEncoding.INSTANCE;
+        Encoding enc = getMarshalEncoding();
+
+        return enc != USASCIIEncoding.INSTANCE && enc != ASCIIEncoding.INSTANCE;
     }
 
     @Override
