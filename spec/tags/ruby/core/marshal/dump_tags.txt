@@ -1,3 +1,6 @@
 fails:Marshal.dump with a Time dumps the zone and the offset
 fails(travis):Marshal.dump with a String dumps a String with instance variables
 fails(travis):Marshal.dump with an Exception dumps the message for the exception
+fails:Marshal.dump with a Symbol dumps a binary encoded Symbol
+fails:Marshal.dump with an Exception dumps an empty Exception
+fails:Marshal.dump with an Exception contains the filename in the backtrace
