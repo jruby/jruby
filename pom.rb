@@ -99,6 +99,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'Bundle-Description' =>  '${bundle.name} ${project.version} OSGi bundle',
               'Bundle-SymbolicName' =>  '${bundle.symbolic_name}'
             } ) do
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
       execute_goals( 'manifest',
                      :phase => 'prepare-package' )
     end
@@ -147,9 +148,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '1.0-beta-2'
-    plugin 'org.apache.felix:maven-bundle-plugin' do
-      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
-    end
   end
 
   plugin( :site,
