@@ -713,13 +713,23 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self) { // sg=ITALY
-        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, ITALY, 0)).withTimeAtStartOfDay());
+        return todayCommon(context, self, ITALY);
     }
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final long start = val2sg(context, sg);
-        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start);
+        return todayCommon(context, self, start);
+    }
+
+    private static RubyDate todayCommon(ThreadContext context, IRubyObject self, long sg) {
+        Ruby runtime = context.runtime;
+
+        DateTimeZone localTimeZone = RubyTime.getLocalTimeZone(runtime);
+        Chronology chronology = getChronology(context, sg, localTimeZone);
+        DateTime dt = new DateTime(chronology).withTimeAtStartOfDay();
+
+        return new RubyDate(runtime, (RubyClass) self, dt);
     }
 
     @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1)
