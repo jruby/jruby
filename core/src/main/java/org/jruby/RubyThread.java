@@ -707,7 +707,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         finalResult = result;
     }
 
-    public synchronized void beDead() {
+    public void beDead() {
         status.set(Status.DEAD);
     }
 
