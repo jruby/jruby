@@ -265,9 +265,9 @@ public class ThreadService {
         return rtList.toArray(new RubyThread[rtList.size()]);
     }
 
-    public synchronized ThreadContext registerNewThread(RubyThread thread) {
+    public ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
-        localContext.set(new SoftReference<ThreadContext>(context));
+        localContext.set(new SoftReference<>(context));
         context.setThread(thread);
         ThreadFiber.initRootFiber(context, thread);
         return context;
