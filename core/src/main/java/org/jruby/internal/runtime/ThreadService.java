@@ -273,12 +273,12 @@ public class ThreadService {
         return context;
     }
 
-    public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
-        rubyThreadMap.put(threadOrFuture, rubyThread);
+    public void associateThread(Object threadOrFuture, RubyThread rubyThread) {
+        rubyThreadMap.put(threadOrFuture, rubyThread); // synchronized
     }
 
-    public synchronized void unregisterThread(RubyThread thread) {
-        rubyThreadMap.remove(Thread.currentThread());
+    public void unregisterThread(RubyThread thread) {
+        rubyThreadMap.remove(Thread.currentThread()); // synchronized
         getCurrentContext().setThread(null);
         localContext.set(null);
     }
