@@ -224,10 +224,7 @@ public class ThreadService {
     }
 
     private SoftReference<ThreadContext> adoptCurrentThread() {
-        Thread current = Thread.currentThread();
-
-        RubyThread.adopt(runtime.getThread(), current);
-
+        RubyThread.adopt(runtime, this, Thread.currentThread());
         return localContext.get();
     }
 
