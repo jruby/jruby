@@ -273,7 +273,7 @@ public class ThreadService {
         ThreadContext context = ThreadContext.newContext(runtime);
         localContext.set(new SoftReference<ThreadContext>(context));
         context.setThread(thread);
-        ThreadFiber.initRootFiber(context); // may be overwritten by fiber
+        ThreadFiber.initRootFiber(context, thread);
         return context;
     }
 

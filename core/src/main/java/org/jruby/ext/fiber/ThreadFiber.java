@@ -31,18 +31,21 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     public ThreadFiber(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
-    
-    public static void initRootFiber(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        
-        ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
 
-        RubyThread currentThread = context.getThread();
+    public static void initRootFiber(ThreadContext context) {
+        initRootFiber(context, context.getThread());
+    }
+
+    public static void initRootFiber(ThreadContext context, RubyThread currentThread) {
+        Ruby runtime = context.runtime;
+
+        ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getFiber());
+
         rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber);
         rootFiber.thread = currentThread;
         context.setRootFiber(rootFiber);
     }
-    
+
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
