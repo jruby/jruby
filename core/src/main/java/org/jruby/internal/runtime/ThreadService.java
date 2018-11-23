@@ -237,7 +237,7 @@ public class ThreadService {
         rubyThreadMap.put(thread, rubyThread);
     }
 
-    public synchronized RubyThread[] getActiveRubyThreads() {
+    public RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
         ArrayList<RubyThread> rtList;
         synchronized(rubyThreadMap) {
