@@ -501,7 +501,7 @@ JAVA
      * from Ruby. Generally not for user comsumption.
      *
      * @param ruby The JRuby instance this object will belong to
-     * @param metaclass The RubyClass representing the Ruby class of this object
+     * @param metaClass The RubyClass representing the Ruby class of this object
      */
     public static IRubyObject __allocate__(Ruby ruby, RubyClass metaClass) {
         return new #{name.to_s}(ruby, metaClass);
