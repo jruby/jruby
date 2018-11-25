@@ -267,9 +267,9 @@ public class ThreadService {
 
     public ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
-        localContext.set(new SoftReference<>(context));
         context.setThread(thread);
         ThreadFiber.initRootFiber(context, thread);
+        localContext.set(new SoftReference<>(context));
         return context;
     }
 
