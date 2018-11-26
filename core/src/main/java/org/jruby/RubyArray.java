@@ -3519,56 +3519,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return ary3;
     }
 
-    /** rb_ary_union_multi
-     *
-     */
-    @JRubyMethod(name = "union", rest = true)
-    public IRubyObject union(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        RubyArray[] arrays = new RubyArray[args.length];
-        RubyArray result;
-
-        int maxSize = realLength;
-        for (int i = 0; i < args.length; i++) {
-            arrays[i] = args[i].convertToArray();
-            maxSize += arrays[i].realLength;
-        }
-        if (maxSize == 0) return newEmptyArray(runtime);
-
-        if (maxSize <= ARRAY_DEFAULT_SIZE) {
-            result = newArray(runtime);
-
-            result.unionInternal(context, this);
-            result.unionInternal(context, arrays);
-
-            return result;
-        }
-
-        RubyHash set = makeHash();
-
-        for (int i = 0; i < arrays.length; i++) {
-            for (int j = 0; j < arrays[i].realLength; j++) {
-                set.fastASet(arrays[i].elt(j), NEVER);
-            }
-        }
-
-        result = set.keys();
-        return result;
-    }
-
-    /** rb_ary_union
-     *
-     */
-    private void unionInternal(ThreadContext context, RubyArray... args) {
-        for (int i = 0; i < args.length; i++) {
-            for (int j = 0; j < args[i].realLength; j++) {
-                IRubyObject elt = args[i].elt(j);
-                if (includes(context, elt)) continue;
-                append(elt);
-            }
-        }
-    }
-
     /** rb_ary_sort
      *
      */
