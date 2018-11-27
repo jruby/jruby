@@ -334,6 +334,25 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
+     * returns whether this scope is contained by the parentScope parameter.
+     * For simplicity a scope is considered to contain itself.
+     *
+     * @param parentScope we want to see if it contains this scope
+     * @return true if this scope is contained by parentScope.
+     */
+    public boolean isScopeContainedBy(IRScope parentScope) {
+        IRScope current = this;
+
+        while (current != null) {
+            if (parentScope == current) return true;
+
+            current = current.getLexicalParent();
+        }
+
+        return false;
+    }
+
+    /**
      * Returns the nearest scope which we can extract a live module from.  If
      * this returns null (like for evals), then it means it cannot be statically
      * determined.
