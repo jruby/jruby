@@ -1,7 +1,5 @@
-require_relative '../fixtures/classes'
-
 platform_is :windows do
-  require 'win32ole'
+  require_relative '../fixtures/classes'
 
   describe "WIN32OLESpecs.new_ole" do
     it "creates a WIN32OLE object from OLE server name" do
@@ -19,7 +17,7 @@ platform_is :windows do
     end
 
     it "raises WIN32OLERuntimeError if invalid string is given" do
-      lambda { WIN32OLESpecs.new_ole('foo') }.should raise_error( WIN32OLERuntimeError )
+      lambda { WIN32OLE.new('foo') }.should raise_error( WIN32OLERuntimeError )
     end
 
   end
