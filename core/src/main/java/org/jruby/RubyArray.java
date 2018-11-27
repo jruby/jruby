@@ -3463,6 +3463,39 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return ary3;
     }
 
+    /** rb_ary_difference_multi
+     *
+     */
+    @JRubyMethod(name = "difference", rest = true)
+    public IRubyObject difference(ThreadContext context, IRubyObject[] args) {
+        boolean[] isHash = new boolean[args.length];
+        RubyArray[] arrays = new RubyArray[args.length];
+        RubyHash[] hashes = new RubyHash[args.length];
+
+        RubyArray diff = newArray(context.runtime);
+
+        for (int i = 0; i < args.length; i++) {
+            arrays[i] = args[i].convertToArray();
+            isHash[i] = (realLength > ARRAY_DEFAULT_SIZE && arrays[i].realLength > ARRAY_DEFAULT_SIZE);
+            if (isHash[i]) hashes[i] = arrays[i].makeHash();
+        }
+
+        for (int i = 0; i < realLength; i++) {
+            IRubyObject elt = elt(i);
+            int j;
+            for (j = 0; j < args.length; j++) {
+                if (isHash[j]) {
+                    if (hashes[j].fastARef(elt) != null) break;
+                } else {
+                    if (arrays[j].includes(context, elt)) break;
+                }
+            }
+            if (j == args.length) diff.append(elt);
+        }
+
+        return diff;
+    }
+
     /** rb_ary_and
      *
      */
