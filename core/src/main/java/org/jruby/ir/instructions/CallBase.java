@@ -46,16 +46,23 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
-    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
-                       boolean potentiallyRefined) {
+    // main constructor
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand closure, boolean potentiallyRefined) {
+        this(scope, op, callType, name, receiver, args, closure, potentiallyRefined, null, callSiteCounter++);
+    }
+
+    // clone constructor
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
         super(op, arrayifyOperands(receiver, args, closure));
 
-        this.callSiteId = callSiteCounter++;
+        this.callSiteId = callSiteId;
         argsCount = args.length;
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined);
+        this.callSite = callSite == null ? getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined) : callSite;
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;

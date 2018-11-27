@@ -26,13 +26,21 @@ public class AttrAssignInstr extends NoResultCallInstr {
         return new AttrAssignInstr(scope, obj, attr, args, isPotentiallyRefined);
     }
 
+    // clone constructor
+    protected AttrAssignInstr(IRScope scope, CallType callType, RubySymbol name, Operand receiver,
+                                Operand[] args, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.ATTR_ASSIGN, callType, name, receiver, args, null, potentiallyRefined, callSite, callSiteId);
+    }
+
+    // normal constructor
     public AttrAssignInstr(IRScope scope, Operand obj, RubySymbol attr, Operand[] args, boolean isPotentiallyRefined) {
         super(scope, Operation.ATTR_ASSIGN, obj instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL, attr, obj, args, null, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new AttrAssignInstr(ii.getScope(), getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
+        return new AttrAssignInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override

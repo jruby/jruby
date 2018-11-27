@@ -579,12 +579,6 @@ public abstract class IRScope implements ParseResult {
 
         for (int i = 0; i < length; i++) {
             newInstructions[i] = instructions[i].clone(cloneInfo);
-
-            // Logically when we move from simple to full we want to keep same callsites in both versions to
-            // have the same callsiteid so we can track their usage logically.
-            if (instructions[i] instanceof Site) {
-                ((Site) newInstructions[i]).setCallSiteId(((Site) instructions[i]).getCallSiteId());
-            }
         }
 
         return newInstructions;

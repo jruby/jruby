@@ -9,12 +9,20 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
+    // clone constructor
+    public ZeroOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                                          Operand[] args, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.CALL_0O, callType, result, name, receiver, args, null, isPotentiallyRefined, callSite, callSiteId);
+    }
+
+    // normal constructor
     public ZeroOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
                                           Operand[] args, boolean isPotentiallyRefined) {
         super(scope, Operation.CALL_0O, callType, result, name, receiver, args, null, isPotentiallyRefined);
@@ -23,7 +31,7 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZeroOperandArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override
