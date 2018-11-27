@@ -5,7 +5,10 @@ import org.jruby.dirgra.Edge;
 import org.jruby.dirgra.ExplicitVertexID;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.JumpInstr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.Site;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.listeners.InstructionsListener;
@@ -221,7 +224,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
             Instr clonedInstr = i.clone(ii);
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
-                if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
+                if (clonedInstr instanceof YieldInstr) {
+                    ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
+                } else if (i instanceof NonlocalReturnInstr && clonedInstr instanceof CopyInstr) {
+                    // non-local returns assign to method return variable but must jump to proper exit point
+                    clonedBB.addInstr(new JumpInstr(ii.getHostScope().getCFG().getExitBB().getLabel()));
+                    // FIXME: enebo...I see no guarantee that this copy will be part of a return?  This behavior is
+                    // masked in any case I can see with optimization to not use a copy but convert non-local to local return.
+                }
             }
         }
 
