@@ -558,7 +558,7 @@ public class RubyModule extends RubyObject {
 
     /**
      * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes which
-     * is properly encoded.
+     * is properly encoded. The returned string is always frozen.
      *
      * @return a properly encoded class name.
      *
@@ -618,6 +618,8 @@ public class RubyModule extends RubyObject {
             fullName.cat19(parent).cat19(colons);
         }
         fullName.cat19(rubyBaseName());
+
+        fullName.setFrozen(true);
 
         if (cache) cachedRubyName = fullName;
 
@@ -2219,7 +2221,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "name")
     public IRubyObject name19() {
-        return getBaseName() == null ? getRuntime().getNil() : rubyName();
+        return getBaseName() == null ? getRuntime().getNil() : rubyName().strDup(getRuntime());
     }
 
     protected final IRubyObject cloneMethods(RubyModule clone) {
