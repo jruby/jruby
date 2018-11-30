@@ -102,7 +102,8 @@ public class InstructionsListenerDecorator implements List<Instr> {
 
         @Override
         public void add(Instr e) {
-            listener.instrChanged(basicBlock, instrs.get(currentIndex +1), e, currentIndex +1 , InstructionsListener.OperationType.ADD);
+            Instr original = currentIndex + 1 > instrs.size() ? instrs.get(currentIndex +1) : null;
+            listener.instrChanged(basicBlock, original, e, currentIndex +1 , InstructionsListener.OperationType.ADD);
             listIterator.add(e);
         }
 
