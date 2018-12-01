@@ -152,6 +152,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
         bigDecimal.defineConstant("NAN", newNaN(runtime));
         bigDecimal.defineConstant("INFINITY", newInfinity(runtime, 1));
+        
+        bigDecimal.setReifiedClass(RubyBigDecimal.class);
 
         return bigDecimal;
     }
