@@ -32,10 +32,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         super(runtime, klass);
     }
 
-    public static void initRootFiber(ThreadContext context) {
-        initRootFiber(context, context.getThread());
-    }
-
     public static void initRootFiber(ThreadContext context, RubyThread currentThread) {
         Ruby runtime = context.runtime;
 
