@@ -920,7 +920,8 @@ public class RubyModule extends RubyObject {
 
         for (module = module.getSuperClass(); module != null && module != klass; module = module.getSuperClass()) {
             module.setFlag(IS_OVERLAID_F, true);
-            c = new IncludedModuleWrapper(cref.getRuntime(), c.getSuperClass(), module);
+            c.setSuperClass(new IncludedModuleWrapper(cref.getRuntime(), c.getSuperClass(), module));
+            c = c.getSuperClass();
             c.refinedClass = klass;
         }
 
