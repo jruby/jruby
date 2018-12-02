@@ -1984,6 +1984,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         // If this thread is sleeping or stopped, wake it
         notify();
+
+        // interrupt lock acquiring if any
+        getNativeThread().interrupt();
     }
 
     public void setInterrupt() {
