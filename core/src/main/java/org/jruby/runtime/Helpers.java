@@ -612,26 +612,26 @@ public class Helpers {
             if (rest < 0) {
                 // no opt, no rest, exact match
                 if (given != required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 }
             } else {
                 // only rest, must be at least required
                 if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 }
             }
         } else {
             if (rest < 0) {
                 // opt but no rest, must be at least required and no more than required + opt
                 if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 } else if (given > (required + opt)) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + (required + opt) + ")");
+                    throw runtime.newArgumentError(given, required + opt);
                 }
             } else {
                 // opt and rest, must be at least required
                 if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 }
             }
         }

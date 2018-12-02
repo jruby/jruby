@@ -371,7 +371,7 @@ public class RubyStruct extends RubyObject {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
 
         if (keywordInit.isTrue()) {
-            if (args.length != 1) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+            if (args.length != 1) throw context.runtime.newArgumentError(args.length, 0);
 
             return initialize(context, args[0]);
         } else {
@@ -412,7 +412,7 @@ public class RubyStruct extends RubyObject {
         if (keywordInit.isTrue()) {
             IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
 
-            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
+            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError(1, 0);
 
             setupStructValuesFromHash(context, (RubyHash) maybeKwargs);
 
@@ -427,7 +427,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given 2, expected 0)");
+            throw context.runtime.newArgumentError(2, 0);
         }
 
         return initializeInternal(context, 2, arg0, arg1, context.nil);
@@ -437,7 +437,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given 3, expected 0)");
+            throw context.runtime.newArgumentError(3, 0);
         }
 
         return initializeInternal(context, 3, arg0, arg1, arg2);

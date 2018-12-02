@@ -112,10 +112,10 @@ public class TestJava extends junit.framework.TestCase {
             assert false;
         }
         catch (RaiseException ex) {
-            assertEquals("(ArgumentError) wrong number of arguments (0 for 1)", ex.getMessage());
+            assertEquals("(ArgumentError) wrong number of arguments (given 0, expected 1)", ex.getMessage());
             assertNull(ex.getCause());
             assertNotNull(ex.getException());
-            assertEquals("wrong number of arguments (0 for 1)", ex.getException().getMessage().toString());
+            assertEquals("wrong number of arguments (given 0, expected 1)", ex.getException().getMessage().toString());
         }
 
         try {
