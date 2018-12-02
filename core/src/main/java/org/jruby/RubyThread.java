@@ -823,7 +823,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (rubyName == null) return runtime.getNil();
 
-        return RubyString.newString(getRuntime(), rubyName);
+        return RubyString.newString(runtime, rubyName);
     }
 
     private boolean pendingInterruptInclude(IRubyObject err) {
@@ -874,9 +874,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static RubyArray list(IRubyObject recv) {
-        RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
+        Ruby runtime = recv.getRuntime();
+        RubyThread[] activeThreads = runtime.getThreadService().getActiveRubyThreads();
 
-        return RubyArray.newArrayMayCopy(recv.getRuntime(), activeThreads);
+        return RubyArray.newArrayMayCopy(runtime, activeThreads);
     }
 
     private void addToCorrectThreadGroup(ThreadContext context) {
