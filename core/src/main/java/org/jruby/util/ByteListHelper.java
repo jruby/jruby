@@ -58,7 +58,9 @@ public class ByteListHelper {
      * @param <T> Return type of visitor
      * @return last T from headVisitor
      */
-    public static <T> T split(ByteList value, ByteList pattern, Visit<ByteList, T> visitor) {
+    public static <T> T split(ByteList value, ByteList pattern, Visit<ByteList, T> bodyVisitor, Visit<ByteList, T> headVisitor) {
+        if (headVisitor == null) headVisitor = bodyVisitor;
+
         Encoding enc = pattern.getEncoding();
         byte[] bytes = value.getUnsafeBytes();
         int begin = value.getBegin();
@@ -76,13 +78,13 @@ public class ByteListHelper {
                 continue;
             }
 
-            current = visitor.call(i, value.makeShared(currentOffset, patternIndex - currentOffset), current);
+            current = bodyVisitor.call(i, value.makeShared(currentOffset, patternIndex - currentOffset), current);
             if (current == null) return null;
 
             currentOffset = patternIndex + pattern.getRealSize();
         }
 
-        return visitor.call(i, value.makeShared(currentOffset, realSize - currentOffset), current);
+        return headVisitor.call(i, value.makeShared(currentOffset, realSize - currentOffset), current);
     }
 }
 
