@@ -212,10 +212,7 @@ public class ThreadService {
     }
 
     private SoftReference<ThreadContext> adoptCurrentThread() {
-        Thread current = Thread.currentThread();
-
-        RubyThread.adopt(runtime.getThread(), current);
-
+        RubyThread.adopt(runtime, this, Thread.currentThread());
         return localContext.get();
     }
 
@@ -228,11 +225,11 @@ public class ThreadService {
         rubyThreadMap.put(thread, rubyThread);
     }
 
-    public synchronized RubyThread[] getActiveRubyThreads() {
+    public RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
-
+        ArrayList<RubyThread> rtList;
         synchronized(rubyThreadMap) {
-            List<RubyThread> rtList = new ArrayList<>(rubyThreadMap.size());
+            rtList = new ArrayList<>(rubyThreadMap.size());
 
             for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
                 Object key = entry.getKey();
@@ -252,25 +249,24 @@ public class ThreadService {
 
                 rtList.add(entry.getValue());
             }
-
-            return rtList.toArray(new RubyThread[rtList.size()]);
         }
+        return rtList.toArray(new RubyThread[rtList.size()]);
     }
 
-    public synchronized ThreadContext registerNewThread(RubyThread thread) {
+    public ThreadContext registerNewThread(RubyThread thread) {
         ThreadContext context = ThreadContext.newContext(runtime);
-        localContext.set(new SoftReference<ThreadContext>(context));
         context.setThread(thread);
-        ThreadFiber.initRootFiber(context); // may be overwritten by fiber
+        ThreadFiber.initRootFiber(context, thread);
+        localContext.set(new SoftReference<>(context));
         return context;
     }
 
-    public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
-        rubyThreadMap.put(threadOrFuture, rubyThread);
+    public void associateThread(Object threadOrFuture, RubyThread rubyThread) {
+        rubyThreadMap.put(threadOrFuture, rubyThread); // synchronized
     }
 
-    public synchronized void unregisterThread(RubyThread thread) {
-        rubyThreadMap.remove(Thread.currentThread());
+    public void unregisterThread(RubyThread thread) {
+        rubyThreadMap.remove(Thread.currentThread()); // synchronized
         getCurrentContext().setThread(null);
         localContext.set(null);
     }
