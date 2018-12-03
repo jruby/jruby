@@ -65,6 +65,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -197,7 +198,7 @@ public class RubyKernel {
     }
 
     static RubyModule getModuleForAutoload(ThreadContext context, IRubyObject recv) {
-        RubyModule target = context.getCurrentStaticScope().getModule();
+        RubyModule target = IRRuntimeHelpers.findInstanceMethodContainer(context, context.getCurrentScope(), recv);
 
         while (target != null && (target.isSingleton() || target.isIncluded())) {
             target = target.getSuperClass();
