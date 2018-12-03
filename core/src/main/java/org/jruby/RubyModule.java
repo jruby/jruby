@@ -3499,23 +3499,11 @@ public class RubyModule extends RubyObject {
     ////////////////// CONSTANT RUBY METHODS ////////////////
     //
 
-    /** rb_mod_const_defined
-     *
+    /**
+     * MRI: rb_mod_const_defined
      */
-    public RubyBoolean const_defined_p(ThreadContext context, IRubyObject symbol) {
-        return const_defined_p19(context, new IRubyObject[]{symbol});
-    }
-
-    private RubyBoolean constantDefined(Ruby runtime, RubySymbol symbol, boolean inherit) {
-        if (symbol.validConstantName()) {
-            return runtime.newBoolean(getConstantSkipAutoload(symbol.idString(), inherit, inherit) != null);
-        }
-
-        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.idString());
-    }
-
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
-    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
+    public RubyBoolean const_defined_p(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         boolean recur = args.length == 1 ? true : args[1].isTrue();
 
@@ -3527,29 +3515,50 @@ public class RubyModule extends RubyObject {
             if (index == 0) {
                 if (segment.realSize() == 0) return runtime.getObject();  // '::Foo...'
                 module = this;
-            } else if (module == null) {
-                module = this; // Bare 'Foo'
             }
 
             RubyModule rubyModule = (RubyModule) module;
 
             RubySymbol symbol = RubySymbol.newConstantSymbol(runtime, fullName, segment);
-            String id1 = symbol.idString();
+            String id = symbol.idString();
 
             IRubyObject obj;
             if (recur && index == 0) { // RTEST(recur) in MRI rb_mod_const_defined
-                obj = rubyModule.getConstantNoConstMissing(id1);
+                obj = rubyModule.getConstantNoConstMissing(id);
             } else {
-                obj = rubyModule.getConstantAt(id1);
+                obj = rubyModule.getConstantAt(id);
             }
 
             if (obj == null) return null;
             if (!(obj instanceof RubyModule)) throw runtime.newTypeError(segment + " does not refer to class/module");
 
             return obj;
+        }, (index, segment, module) -> {
+            if (module == null) {
+                module = this; // Bare 'Foo'
+            }
+
+            RubyModule rubyModule = (RubyModule) module;
+            
+            RubySymbol symbol = RubySymbol.newConstantSymbol(runtime, fullName, segment);
+            String id = symbol.idString();
+
+            if (recur && index == 0) { // RTEST(recur) in MRI rb_mod_const_defined
+                return rubyModule.getConstantNoConstMissing(id);
+            } else {
+                return rubyModule.getConstantAt(id);
+            }
         });
 
         return runtime.newBoolean(value != null);
+    }
+
+    private RubyBoolean constantDefined(Ruby runtime, RubySymbol symbol, boolean inherit) {
+        if (symbol.validConstantName()) {
+            return runtime.newBoolean(getConstantSkipAutoload(symbol.idString(), inherit, inherit) != null);
+        }
+
+        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.idString());
     }
 
     /** rb_mod_const_get
@@ -5179,6 +5188,11 @@ public class RubyModule extends RubyObject {
         public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
             return RubyKernel.autoload_p(context, self, symbol);
         }
+    }
+
+    @Deprecated
+    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject symbol) {
+        return const_defined_p(context, new IRubyObject[]{symbol});
     }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
