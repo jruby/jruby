@@ -1453,19 +1453,36 @@ public class RubyNumeric extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "clone", required = 0, optional = 1)
-    public IRubyObject rbClone(IRubyObject[] args) {
-        if (args.length == 0) return this;
+    @Deprecated
+    public final IRubyObject rbClone(IRubyObject[] args) {
+        ThreadContext context = getRuntime().getCurrentContext();
+        switch (args.length) {
+            case 0: return rbClone(context);
+            case 1: return rbClone(context, args[0]);
+        }
+        throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+    }
 
-        Ruby runtime = args[0].getRuntime();
+    @JRubyMethod(name = "clone")
+    public final IRubyObject rbClone(ThreadContext context) {
+        return this;
+    }
 
-        if (!(args[0] instanceof RubyHash)) {
-            throw runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+    @Override
+    @JRubyMethod(name = "clone")
+    public final IRubyObject rbClone(ThreadContext context, IRubyObject arg) {
+        if (!(arg instanceof RubyHash)) {
+            throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
         }
 
-        IRubyObject[] rets = ArgsUtil.extractKeywordArgs(runtime.getCurrentContext(), args[0].convertToHash(), "freeze");
-        if (!rets[0].isTrue()) throw runtime.newArgumentError("can't unfreeze " + getType());
+        IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) arg, "freeze");
+        if (!rets[0].isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
 
+        return this;
+    }
+
+    @Override
+    public final IRubyObject rbClone() {
         return this;
     }
 

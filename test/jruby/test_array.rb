@@ -93,4 +93,13 @@ class TestArray < Test::Unit::TestCase
     assert_equal(a.sort, a.sort.sort)
   end
 
+  # GH-5483
+  def test_transpose_and_delete
+    arr = [[1, 2], [3, 4], [5, 6]]
+    (res = arr.transpose).delete_at(1)
+    assert_equal [[1, 3, 5]], res
+    (res = arr.transpose).delete_at(2)
+    assert_equal [[1, 3, 5], [2, 4, 6]], res
+  end
+
 end

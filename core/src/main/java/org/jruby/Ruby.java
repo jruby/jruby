@@ -1266,7 +1266,7 @@ public final class Ruby implements Constantizable {
         initRubyPreludes();
 
         // everything booted, so SizedQueue should be available; set up root fiber
-        ThreadFiber.initRootFiber(context);
+        ThreadFiber.initRootFiber(context, context.getThread());
 
         if(config.isProfiling()) {
             // additional twiddling for profiled mode

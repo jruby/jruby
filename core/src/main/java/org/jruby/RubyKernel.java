@@ -1683,10 +1683,7 @@ public class RubyKernel {
 
         // else old JDK logic
         if (args[0] instanceof RubyHash) {
-            RubyHash env = args[0].convertToHash();
-            if (env != null) {
-                runtime.getENV().merge_bang(context, env, Block.NULL_BLOCK);
-            }
+            runtime.getENV().merge_bang(context, (RubyHash) args[0], Block.NULL_BLOCK);
             // drop the first element for calling systemCommon()
             args = ArraySupport.newCopy(args, 1, args.length - 1);
         }
@@ -1775,7 +1772,7 @@ public class RubyKernel {
             }
         }
 
-        if (env != null && !env.isNil()) {
+        if (env != null && env != context.nil) {
             RubyHash envMap = env.convertToHash();
             if (envMap != null) {
                 runtime.getENV().merge_bang(context, envMap, Block.NULL_BLOCK);

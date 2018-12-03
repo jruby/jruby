@@ -1,7 +1,10 @@
 require 'test/unit'
 require 'bigdecimal'
 
+require 'test/jruby/test_helper'
+
 class TestBigDecimal < Test::Unit::TestCase
+  include TestHelper
 
   def test_to_s
     assert_equal("0.0", BigDecimal('0.0').to_s)
@@ -30,7 +33,7 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_can_instantiate_big_decimal
     assert_nothing_raised { BigDecimal("4") }
     assert_nothing_raised { BigDecimal("3.14159") }
-    BigDecimal.new("1")
+    quiet { assert BigDecimal.new("1") }
   end
 
   class X
@@ -40,8 +43,10 @@ class TestBigDecimal < Test::Unit::TestCase
   def test_can_accept_arbitrary_objects_as_arguments
     # as log as the object has a #to_str method...
     x = X.new
-    assert_nothing_raised { BigDecimal.new(x) }
     assert_nothing_raised { BigDecimal(x) }
+    quiet do
+      assert_nothing_raised { BigDecimal.new(x) }
+    end
   end
 
   def test_cmp
@@ -312,7 +317,7 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_infinity
-    assert_equal true, BigDecimal.new("0.0000000001").finite?
+    assert_equal true, BigDecimal("0.0000000001").finite?
 
     assert_equal 1, BigDecimal("Infinity").infinite?
     assert_equal false, BigDecimal("-Infinity").finite?
@@ -338,8 +343,8 @@ class TestBigDecimal < Test::Unit::TestCase
   end
 
   def test_to_f # GH_2650
-    assert_equal(BigDecimal.new("10.91231", 1).to_f, 10.91231)
-    assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
+    assert_equal(BigDecimal("10.91231", 1).to_f, 10.91231)
+    assert_equal(BigDecimal("10.9", 2).to_f, 10.9)
   end
 
   def test_new_

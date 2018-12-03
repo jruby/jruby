@@ -335,9 +335,9 @@ public class RubyException extends RubyObject {
      * @return the converted result
      */
     @Override
-    public Object toJava(Class target) {
-        if (target.isAssignableFrom(RaiseException.class)) {
-            return target.cast(throwable);
+    public <T> T toJava(Class<T> target) {
+        if (target != Object.class && target.isAssignableFrom(RaiseException.class)) {
+            return target.cast(toThrowable());
         }
         return super.toJava(target);
     }

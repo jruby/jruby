@@ -579,16 +579,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public static RubyThread adopt(IRubyObject recv, Thread t) {
-        return adoptThread(recv, t);
+        final Ruby runtime = recv.getRuntime();
+        return adoptThread(runtime, runtime.getThreadService(), (RubyClass) recv, t);
     }
 
-    private static RubyThread adoptThread(final IRubyObject recv, Thread t) {
-        final Ruby runtime = recv.getRuntime();
-        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
+    public static RubyThread adopt(Ruby runtime, ThreadService service, Thread thread) {
+        return adoptThread(runtime, service, runtime.getThread(), thread);
+    }
 
-        rubyThread.threadImpl = new NativeThread(rubyThread, t);
-        ThreadContext context = runtime.getThreadService().registerNewThread(rubyThread);
-        runtime.getThreadService().associateThread(t, rubyThread);
+    private static RubyThread adoptThread(final Ruby runtime, final ThreadService service,
+                                          final RubyClass recv, final Thread thread) {
+        final RubyThread rubyThread = new RubyThread(runtime, recv);
+
+        rubyThread.threadImpl = new NativeThread(rubyThread, thread);
+        ThreadContext context = service.registerNewThread(rubyThread);
+        service.associateThread(thread, rubyThread);
 
         context.preAdoptThread();
 
@@ -702,7 +707,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         finalResult = result;
     }
 
-    public synchronized void beDead() {
+    public void beDead() {
         status.set(Status.DEAD);
     }
 
@@ -823,7 +828,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (rubyName == null) return runtime.getNil();
 
-        return RubyString.newString(getRuntime(), rubyName);
+        return RubyString.newString(runtime, rubyName);
     }
 
     private boolean pendingInterruptInclude(IRubyObject err) {
@@ -874,9 +879,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static RubyArray list(IRubyObject recv) {
-        RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
+        Ruby runtime = recv.getRuntime();
+        RubyThread[] activeThreads = runtime.getThreadService().getActiveRubyThreads();
 
-        return RubyArray.newArrayMayCopy(recv.getRuntime(), activeThreads);
+        return RubyArray.newArrayMayCopy(runtime, activeThreads);
     }
 
     private void addToCorrectThreadGroup(ThreadContext context) {
