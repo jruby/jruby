@@ -86,6 +86,7 @@ import org.objectweb.asm.Type;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(IRRuntimeHelpers.class);
@@ -535,7 +536,7 @@ public class IRRuntimeHelpers {
         if (keywordArgs != null) argsLength -= 1;
 
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
-            Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
+            Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
     }
 

@@ -212,6 +212,7 @@ import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
+import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -1266,7 +1267,7 @@ public final class Ruby implements Constantizable {
         initRubyPreludes();
 
         // everything booted, so SizedQueue should be available; set up root fiber
-        ThreadFiber.initRootFiber(context);
+        ThreadFiber.initRootFiber(context, context.getThread());
 
         if(config.isProfiling()) {
             // additional twiddling for profiled mode
@@ -3611,11 +3612,31 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newArgumentError(int got, int expected) {
-        return newRaiseException(getArgumentError(), "wrong number of arguments (" + got + " for " + expected + ")");
+        return newArgumentError(got, expected, expected);
+    }
+    
+    public RaiseException newArgumentError(int got, int min, int max) {
+        if (min == max) {
+            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
+        } else if (max == UNLIMITED_ARGUMENTS) {
+            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + "+)");
+        } else {
+            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ".." + max + ")");
+        }
     }
 
     public RaiseException newArgumentError(String name, int got, int expected) {
-        return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (" + got + " for " + expected + ")")));
+        return newArgumentError(name, got, expected, expected);
+    }
+
+    public RaiseException newArgumentError(String name, int got, int min, int max) {
+        if (min == max) {
+            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + ")")));
+        } else if (max == UNLIMITED_ARGUMENTS) {
+            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + "+)")));
+        } else {
+            return newRaiseException(getArgumentError(), str(this, "wrong number of arguments calling `", ids(this, name),  ("` (given " + got + ", expected " + min + ".." + max + ")")));
+        }
     }
 
     public RaiseException newErrnoEBADFError() {

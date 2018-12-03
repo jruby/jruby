@@ -1427,7 +1427,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (!args[3].isNil()) {
                     options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
                     if (options.isNil()) {
-                        throw runtime.newArgumentError("wrong number of arguments (4 for 1..3)");
+                        throw runtime.newArgumentError(4, 1, 3);
                     }
                 }
                 vperm(pm, args[2]);

@@ -196,15 +196,26 @@ public class RubyStruct extends RubyObject {
 
         RubyArray member = runtime.newArray();
 
+        int argc = args.length;
         if (args[args.length - 1] instanceof RubyHash) {
+            argc--;
             RubyHash kwArgs = args[args.length - 1].convertToHash();
             IRubyObject[] rets = ArgsUtil.extractKeywordArgs(runtime.getCurrentContext(), kwArgs, "keyword_init");
             keywordInit = rets[0].isTrue();
         }
 
-        for (int i = (name == null && !nilName) ? 0 : 1; i < args.length; i++) {
-            if (i == args.length - 1 && args[i] instanceof RubyHash) break;
-            member.append(runtime.newSymbol(args[i].asJavaString()));
+        for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
+            IRubyObject arg = args[i];
+            RubySymbol sym;
+            if (arg instanceof RubySymbol) {
+                sym = (RubySymbol) arg;
+            } else if (arg instanceof RubyString) {
+                sym = runtime.newSymbol(arg.convertToString().getByteList());
+            } else {
+                sym = runtime.newSymbol(arg.asJavaString());
+            }
+
+            member.append(sym);
         }
 
         RubyClass newStruct;
@@ -360,7 +371,7 @@ public class RubyStruct extends RubyObject {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
 
         if (keywordInit.isTrue()) {
-            if (args.length != 1) throw context.runtime.newArgumentError("wrong number of arguments (given " + args.length + ", expected 0)");
+            if (args.length != 1) throw context.runtime.newArgumentError(args.length, 0);
 
             return initialize(context, args[0]);
         } else {
@@ -401,7 +412,7 @@ public class RubyStruct extends RubyObject {
         if (keywordInit.isTrue()) {
             IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
 
-            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
+            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError(1, 0);
 
             setupStructValuesFromHash(context, (RubyHash) maybeKwargs);
 
@@ -416,7 +427,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given 2, expected 0)");
+            throw context.runtime.newArgumentError(2, 0);
         }
 
         return initializeInternal(context, 2, arg0, arg1, context.nil);
@@ -426,7 +437,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) {
-            throw context.runtime.newArgumentError("wrong number of arguments (given 3, expected 0)");
+            throw context.runtime.newArgumentError(3, 0);
         }
 
         return initializeInternal(context, 3, arg0, arg1, arg2);

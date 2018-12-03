@@ -174,8 +174,7 @@ public class RubyModule extends RubyObject {
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
         // Module methods can always be transplanted
-        if (!originModule.isModule() &&
-                !this.hasModuleInHierarchy(originModule)) {
+        if (!originModule.isModule() && !hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
                 throw context.runtime.newTypeError("can't bind singleton method to a different class");
             } else {
@@ -558,7 +557,7 @@ public class RubyModule extends RubyObject {
 
     /**
      * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes which
-     * is properly encoded.
+     * is properly encoded. The returned string is always frozen.
      *
      * @return a properly encoded class name.
      *
@@ -618,6 +617,8 @@ public class RubyModule extends RubyObject {
             fullName.cat19(parent).cat19(colons);
         }
         fullName.cat19(rubyBaseName());
+
+        fullName.setFrozen(true);
 
         if (cache) cachedRubyName = fullName;
 
@@ -918,7 +919,8 @@ public class RubyModule extends RubyObject {
 
         for (module = module.getSuperClass(); module != null && module != klass; module = module.getSuperClass()) {
             module.setFlag(IS_OVERLAID_F, true);
-            c = new IncludedModuleWrapper(cref.getRuntime(), c.getSuperClass(), module);
+            c.setSuperClass(new IncludedModuleWrapper(cref.getRuntime(), c.getSuperClass(), module));
+            c = c.getSuperClass();
             c.refinedClass = klass;
         }
 
@@ -2219,7 +2221,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "name")
     public IRubyObject name19() {
-        return getBaseName() == null ? getRuntime().getNil() : rubyName();
+        return getBaseName() == null ? getRuntime().getNil() : rubyName().strDup(getRuntime());
     }
 
     protected final IRubyObject cloneMethods(RubyModule clone) {

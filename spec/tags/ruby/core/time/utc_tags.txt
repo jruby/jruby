@@ -1,2 +1,0 @@
-fails:Time#utc on a frozen time does not raise an error if already in UTC
-fails:Time.utc handles real leap seconds

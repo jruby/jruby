@@ -35,7 +35,13 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.isClosure()) {
             if (ii.getHostScope() instanceof IRMethod) {
-                // Treat like inlining of a regular method-return
+                // Lexically contained non-local returns can return directly if the live in the method they are inlining to.
+                if (((InlineCloneInfo) info).getScopeBeingInlined().isScopeContainedBy(ii.getHostScope())) {
+                    return new ReturnInstr(getReturnValue().cloneForInlining(ii));
+                }
+
+                // Treat like inlining of a regular method-return (note: a jump is added to exit so this copy
+                // actually ends up being the methods return value).
                 Variable v = ii.getCallResultVariable();
                 return v == null ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
             }

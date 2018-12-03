@@ -1143,12 +1143,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         Ruby runtime = getRuntime();
 
         int elen = -1;
-        RubyArray[] result = null;
+        IRubyObject[] result = null;
         for (int i = 0; i < alen; i++) {
             RubyArray tmp = elt(i).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
-                result = new RubyArray[elen];
+                result = new IRubyObject[elen];
                 for (int j = 0; j < elen; j++) {
                     result[j] = newBlankArray(runtime, alen);
                 }
@@ -1157,7 +1157,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                         + " should be " + elen + ")");
             }
             for (int j = 0; j < elen; j++) {
-                result[j].store(i, tmp.elt(j));
+                ((RubyArray) result[j]).store(i, tmp.elt(j));
             }
         }
         return new RubyArray(runtime, result);

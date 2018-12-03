@@ -20,7 +20,7 @@ GEM
       leafy-logger (~> 0.6.2)
       leafy-metrics (~> 0.6.2)
     puma (2.13.4-java)
-    rack (1.6.4)
+    rack (1.6.11)
     rack-protection (1.5.5)
       rack
     rake (10.4.2)
@@ -57,4 +57,4 @@ DEPENDENCIES
   torquebox (= 4.0.0.beta2)
 
 BUNDLED WITH
-   1.10.6
+   1.17.1

@@ -334,6 +334,25 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
+     * returns whether this scope is contained by the parentScope parameter.
+     * For simplicity a scope is considered to contain itself.
+     *
+     * @param parentScope we want to see if it contains this scope
+     * @return true if this scope is contained by parentScope.
+     */
+    public boolean isScopeContainedBy(IRScope parentScope) {
+        IRScope current = this;
+
+        while (current != null) {
+            if (parentScope == current) return true;
+
+            current = current.getLexicalParent();
+        }
+
+        return false;
+    }
+
+    /**
      * Returns the nearest scope which we can extract a live module from.  If
      * this returns null (like for evals), then it means it cannot be statically
      * determined.
@@ -579,12 +598,6 @@ public abstract class IRScope implements ParseResult {
 
         for (int i = 0; i < length; i++) {
             newInstructions[i] = instructions[i].clone(cloneInfo);
-
-            // Logically when we move from simple to full we want to keep same callsites in both versions to
-            // have the same callsiteid so we can track their usage logically.
-            if (instructions[i] instanceof Site) {
-                ((Site) newInstructions[i]).setCallSiteId(((Site) instructions[i]).getCallSiteId());
-            }
         }
 
         return newInstructions;

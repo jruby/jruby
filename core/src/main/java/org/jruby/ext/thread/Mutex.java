@@ -41,12 +41,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 /**
  * The "Mutex" class from the 'thread' library.
  */
 @JRubyClass(name = "Mutex")
-public class Mutex extends RubyObject {
+public class Mutex extends RubyObject implements DataType {
     ReentrantLock lock = new ReentrantLock();
 
     @JRubyMethod(name = "new", rest = true, meta = true)

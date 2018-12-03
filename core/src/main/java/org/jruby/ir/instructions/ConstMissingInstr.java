@@ -14,6 +14,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -25,8 +26,17 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
 
     private static final ByteList CONST_MISSING = new ByteList(new byte[] {'c', 'o', 'n', 's', 't', '_', 'm', 'i', 's', 's', 'i', 'n', 'g'});
 
+    // clone constructor
+    private ConstMissingInstr(IRScope scope, Variable result, Operand currentModule, RubySymbol missingConst,
+                                Operand[] args, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.CONST_MISSING, CallType.FUNCTIONAL, result, missingConst, currentModule, args, null,
+                isPotentiallyRefined, callSite, callSiteId);
+
+        this.missingConst = missingConst;
+    }
+
+    // normal constructor
     public ConstMissingInstr(IRScope scope, Variable result, Operand currentModule, RubySymbol missingConst, boolean isPotentiallyRefined) {
-        // FIXME: Missing encoding knowledge of the constant name.
         super(scope, Operation.CONST_MISSING, CallType.FUNCTIONAL, result, missingConst.getRuntime().newSymbol(CONST_MISSING), currentModule,
                 new Operand[]{new Symbol(missingConst)}, null, isPotentiallyRefined);
 
@@ -39,7 +49,8 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ConstMissingInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst, isPotentiallyRefined());
+        return new ConstMissingInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii),
+                missingConst, cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override
