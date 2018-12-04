@@ -288,11 +288,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     public void pushBignum(BigInteger bigint) {
-        String bigintStr = bigint.toString();
-
         loadContext();
-
-        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigintStr);
+        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint);
     }
 
     public void putField(String name) {
