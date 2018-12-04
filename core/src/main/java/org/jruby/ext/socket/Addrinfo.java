@@ -170,9 +170,9 @@ public class Addrinfo extends RubyObject {
         Ruby runtime = context.runtime;
 
         try {
-            IRubyObject _sockaddrAry = TypeConverter.checkArrayType(sockaddr);
+            IRubyObject _sockaddrAry = TypeConverter.checkArrayType(context, sockaddr);
 
-            if (!_sockaddrAry.isNil()) {
+            if (_sockaddrAry != context.nil) {
                 RubyArray sockaddAry = (RubyArray)_sockaddrAry;
 
                 family = sockaddAry.eltOk(0).convertToString();

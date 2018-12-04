@@ -1649,11 +1649,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
-        if (!(value instanceof RubyArray)) {
-            value = RubyArray.aryToAry(value);
-        }
-
-        return value;
+        return value instanceof RubyArray ? value : RubyArray.aryToAry(context, value);
     }
 
     public static int irReqdArgMultipleAsgnIndex(int n,  int preArgsCount, int index, int postArgsCount) {

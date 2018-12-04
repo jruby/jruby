@@ -933,11 +933,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_to_ary
      *
      */
-    public static RubyArray aryToAry(IRubyObject obj) {
-        IRubyObject tmp = TypeConverter.checkArrayType(obj);
+    public static RubyArray aryToAry(ThreadContext context, IRubyObject obj) {
+        IRubyObject tmp = TypeConverter.checkArrayType(context, obj);
+        return tmp != context.nil ? (RubyArray) tmp : newArray(context.runtime, obj);
+    }
 
-        if (!tmp.isNil()) return (RubyArray)tmp;
-        return obj.getRuntime().newArray(obj);
+    @Deprecated
+    public static RubyArray aryToAry(IRubyObject obj) {
+        return aryToAry(obj.getRuntime().getCurrentContext(), obj);
     }
 
     private void splice(final Ruby runtime, int beg, int len, IRubyObject rpl) {
@@ -956,7 +959,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             rplArr = newArray(runtime, rpl);
             rlen = 1;
         } else {
-            rplArr = aryToAry(rpl);
+            rplArr = aryToAry(runtime.getCurrentContext(), rpl);
             rlen = rplArr.realLength;
         }
 
@@ -3124,8 +3127,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                         result.append(elt);
                         continue;
                     }
-                    IRubyObject tmp = TypeConverter.checkArrayType(elt);
-                    if (tmp.isNil()) result.append(elt);
+                    IRubyObject tmp = TypeConverter.checkArrayType(context, elt);
+                    if (tmp == context.nil) result.append(elt);
                     else { // nested array element
                         if (memo == null) {
                             memo = new IdentityHashMap<>(4 + 1);
