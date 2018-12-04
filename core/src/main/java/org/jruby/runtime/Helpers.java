@@ -1584,18 +1584,14 @@ public class Helpers {
 
     @Deprecated // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        return splatToArgumentsCommon(value.getRuntime(), value);
-    }
-
-    private static IRubyObject[] splatToArgumentsCommon(Ruby runtime, IRubyObject value) {
         if (value.isNil()) {
-            return runtime.getSingleNilArray();
+            return value.getRuntime().getSingleNilArray();
         }
 
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            return convertSplatToJavaArray(runtime, value);
+            return convertSplatToJavaArray(value.getRuntime(), value);
         }
         return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
@@ -1624,17 +1620,12 @@ public class Helpers {
     @SuppressWarnings("deprecation") @Deprecated // no longer used
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
-        return argsCatToArgumentsCommon(args, ary);
-    }
-
-    private static IRubyObject[] argsCatToArgumentsCommon(IRubyObject[] args, IRubyObject[] ary) {
         if (ary.length > 0) {
             IRubyObject[] newArgs = new IRubyObject[args.length + ary.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);
             System.arraycopy(ary, 0, newArgs, args.length, ary.length);
-            args = newArgs;
+            return newArgs;
         }
-
         return args;
     }
 
