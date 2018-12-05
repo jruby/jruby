@@ -1932,13 +1932,14 @@ public class RubyKernel {
         final int length = args.length - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
 
-        DynamicMethod method = recv.getMetaClass().searchMethod(name);
+        final RubyClass klass = RubyBasicObject.getMetaClass(recv);
+        DynamicMethod method = klass.searchMethod(name);
 
         if (method.isUndefined() || method.getVisibility() != PUBLIC) {
-            return Helpers.callMethodMissing(context, recv, method.getVisibility(), name, CallType.NORMAL, args, block);
+            return Helpers.callMethodMissing(context, recv, klass, method.getVisibility(), name, CallType.NORMAL, args, block);
         }
 
-        return method.call(context, recv, recv.getMetaClass(), name, args, block);
+        return method.call(context, recv, klass, name, args, block);
     }
 
     /*
