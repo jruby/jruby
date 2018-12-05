@@ -621,13 +621,37 @@ public class RubyStruct extends RubyObject {
         return getRuntime().newArray(values);
     }
 
-    @JRubyMethod
+    @Deprecated
     public RubyHash to_h(ThreadContext context) {
+        return to_h(context, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod
+    public RubyHash to_h(ThreadContext context, Block block) {
         RubyHash hash = RubyHash.newHash(context.runtime);
         RubyArray members = __member__();
 
-        for (int i = 0; i < values.length; i++) {
-            hash.op_aset(context, members.eltOk(i), values[i]);
+        if (block.isGiven()) {
+            for (int i = 0; i < values.length; i++) {
+                IRubyObject elt = block.yieldValues(context, new IRubyObject[]{members.eltOk(i), values[i]});
+                IRubyObject key_value_pair = elt.checkArrayType();
+
+                if (key_value_pair == context.nil) {
+                    throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
+                }
+
+                RubyArray ary = (RubyArray)key_value_pair;
+
+                if (ary.getLength() != 2) {
+                    throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
+                }
+
+                hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
+            }
+        } else {
+            for (int i = 0; i < values.length; i++) {
+                hash.op_aset(context, members.eltOk(i), values[i]);
+            }
         }
 
         return hash;
