@@ -2037,8 +2037,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     	return this;
     }
 
-    @JRubyMethod(name = "to_h")
+    @Deprecated
     public IRubyObject to_h(ThreadContext context) {
+        return to_h(context, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod(name = "to_h")
+    public IRubyObject to_h(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         int realLength = this.realLength;
 
@@ -2047,12 +2052,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
 
         for (int i = 0; i < realLength; i++) {
-            IRubyObject elt = eltInternal(i).checkArrayType();
-            if (elt == context.nil) {
-                throw context.runtime.newTypeError("wrong element type " + eltInternal(i).getMetaClass().getRealClass() + " at " + i + " (expected array)");
+            IRubyObject e = eltInternal(i);
+            IRubyObject elt = block.isGiven() ? block.yield(context, e) : e;
+            IRubyObject key_value_pair = elt.checkArrayType();
+
+            if (key_value_pair == context.nil) {
+                throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " at " + i + " (expected array)");
             }
 
-            RubyArray ary = (RubyArray)elt;
+            RubyArray ary = (RubyArray)key_value_pair;
             if (ary.getLength() != 2) {
                 throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
             }
