@@ -473,12 +473,17 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = "to_h", rest = true)
+    @Deprecated
     public static IRubyObject to_h(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return to_h(context, self, args, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod(name = "to_h", rest = true)
+    public static IRubyObject to_h(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
         final RubyHash result = RubyHash.newHash(runtime);
         Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(self, runtime.getEnumerable(),
-                Signature.OPTIONAL, new PutKeyValueCallback(result), context));
+                Signature.OPTIONAL, new PutKeyValueCallback(result, block), context));
         result.infectBy(self);
         return result;
     }
@@ -2221,30 +2226,46 @@ public class RubyEnumerable {
     public static final class PutKeyValueCallback implements BlockCallback {
 
         private final RubyHash result;
+        private final Block block;
 
         @Deprecated
         public PutKeyValueCallback(Ruby runtime, RubyHash result) {
             this.result = result;
+            this.block = Block.NULL_BLOCK;
+        }
+
+        @Deprecated
+        public PutKeyValueCallback(Ruby runtime, RubyHash result, Block block) {
+            this.result = result;
+            this.block = block;
         }
 
         PutKeyValueCallback(RubyHash result) {
             this.result = result;
+            this.block = Block.NULL_BLOCK;
+        }
+
+        PutKeyValueCallback(RubyHash result, Block block) {
+            this.result = result;
+            this.block = block;
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
             final Ruby runtime = context.runtime;
+            final boolean blockGiven = block.isGiven();
 
             IRubyObject value;
 
             switch (largs.length) {
                 case 0:
-                    value = context.nil;
+                    value = blockGiven ? block.yield(context, context.nil) : context.nil;
                     break;
                 case 1:
-                    value = largs[0];
+                    value = blockGiven ? block.yield(context, largs[0]) : largs[0];
                     break;
                 default:
-                    value = RubyArray.newArrayMayCopy(runtime, largs);
+                    IRubyObject v = RubyArray.newArrayMayCopy(runtime, largs);
+                    value = blockGiven ? block.yield(context, v) : v;
                     break;
             }
 
