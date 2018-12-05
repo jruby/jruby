@@ -49,6 +49,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
@@ -433,9 +434,15 @@ public class RubyGlobal {
             return RubyString.newStringShared(getRuntime(), ENV);
         }
 
+        @Deprecated
+        public RubyHash to_h() {
+            return to_h(getRuntime().getCurrentContext(), Block.NULL_BLOCK);
+        }
+
         @JRubyMethod
-        public RubyHash to_h(){
-            return to_hash();
+        public RubyHash to_h(ThreadContext context, Block block){
+            RubyHash h = to_hash();
+            return block.isGiven() ? h.to_h_block(context, block) : h;
         }
 
     }
