@@ -1288,7 +1288,7 @@ public class IRRuntimeHelpers {
         Ruby runtime = context.runtime;
         RubyHash hash = dupHash.dupFast(context);
         for (int i = 0; i < pairs.length;) {
-            hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+            hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }
         return hash;
     }
