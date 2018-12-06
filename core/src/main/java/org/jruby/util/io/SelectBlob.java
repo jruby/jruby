@@ -47,6 +47,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.jruby.exceptions.RaiseException;
 
+import static org.jruby.util.io.BufferHelper.flipBuffer;
+
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten
  * from an earlier version in JRuby to improve performance and readability.
@@ -559,7 +561,7 @@ public class SelectBlob {
             } finally {
                 ByteBuffer buf = ByteBuffer.allocate(1);
                 buf.put((byte) 0);
-                buf.flip();
+                flipBuffer(buf);
                 pipe.sink().write(buf);
             }
 

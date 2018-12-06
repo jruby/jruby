@@ -29,6 +29,8 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
+import static org.jruby.util.io.BufferHelper.flipBuffer;
+
 // FIXME: Make into a base class at some point to play with different formats
 
 /**
@@ -276,7 +278,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
             stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
             stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
-            buf.flip();
+            flipBuffer(buf);
             stream.write(buf.array(), buf.position(), buf.limit());
             stream.close();
         } catch (IOException e) {

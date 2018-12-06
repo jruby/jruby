@@ -35,6 +35,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
+import static org.jruby.util.io.BufferHelper.positionBuffer;
+
 /**
  *
  * @author headius
@@ -47,7 +49,7 @@ public class NullChannel implements WritableByteChannel, ReadableByteChannel {
             throw new EOFException();
         }
         int length = buffer.remaining();
-        buffer.position(buffer.position() + length);
+        positionBuffer(buffer, buffer.position() + length);
         return length;
     }
 
