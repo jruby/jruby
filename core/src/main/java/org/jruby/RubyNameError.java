@@ -172,7 +172,7 @@ public class RubyNameError extends RubyStandardError {
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, String name) {
         super(runtime, exceptionClass, message);
-        this.name = name == null ? runtime.getNil() : runtime.newString(name);
+        this.name = name == null ? runtime.getNil() : RubySymbol.newSymbol(runtime, name);
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject name) {
