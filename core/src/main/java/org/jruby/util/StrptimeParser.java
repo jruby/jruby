@@ -693,7 +693,8 @@ public class StrptimeParser {
 
                 if (vBig == null) {
                     try {
-                        long tmp = Math.multiplyExact(v, 10);
+                        // Using 10L to avoid binary incompat with Java 8 (jruby/jruby#5451)
+                        long tmp = Math.multiplyExact(v, 10L);
                         tmp = Math.addExact(tmp, toInt(c));
                         v = tmp;
                     }

@@ -66,6 +66,8 @@ import java.nio.channels.Channel;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static org.jruby.util.io.BufferHelper.flipBuffer;
+
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
@@ -181,7 +183,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ByteBuffer[] outIov = new ByteBuffer[1];
         outIov[0] = ByteBuffer.allocateDirect(dataBytes.length);
         outIov[0].put(dataBytes);
-        outIov[0].flip();
+        flipBuffer(outIov[0]);
 
         outMessage.setIov(outIov);
 

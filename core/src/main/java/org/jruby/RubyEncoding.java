@@ -28,7 +28,6 @@ package org.jruby;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -57,6 +56,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
+
+import static org.jruby.util.io.BufferHelper.clearBuffer;
+import static org.jruby.util.io.BufferHelper.flipBuffer;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {
@@ -303,12 +305,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         public final ByteBuffer encode(String str) {
             ByteBuffer buf = byteBuffer;
             CharBuffer cbuf = charBuffer;
-            buf.clear();
-            cbuf.clear();
+            clearBuffer(buf);
+            clearBuffer(cbuf);
             cbuf.put(str);
-            cbuf.flip();
+            flipBuffer(cbuf);
             encoder.encode(cbuf, buf, true);
-            buf.flip();
+            flipBuffer(buf);
 
             return buf;
         }
@@ -316,14 +318,14 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         public final ByteBuffer encode(CharSequence str) {
             ByteBuffer buf = byteBuffer;
             CharBuffer cbuf = charBuffer;
-            buf.clear();
-            cbuf.clear();
+            clearBuffer(buf);
+            clearBuffer(cbuf);
             // NOTE: doesn't matter is we toString here in terms of speed
             // ... so we "safe" some space at least by not copy-ing char[]
             for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
-            cbuf.flip();
+            flipBuffer(cbuf);
             encoder.encode(cbuf, buf, true);
-            buf.flip();
+            flipBuffer(buf);
 
             return buf;
         }
@@ -331,12 +333,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         public final CharBuffer decode(byte[] bytes, int start, int length) {
             CharBuffer cbuf = charBuffer;
             ByteBuffer buf = byteBuffer;
-            cbuf.clear();
-            buf.clear();
+            clearBuffer(cbuf);
+            clearBuffer(buf);
             buf.put(bytes, start, length);
-            buf.flip();
+            flipBuffer(buf);
             decoder.decode(buf, cbuf, true);
-            cbuf.flip();
+            flipBuffer(cbuf);
 
             return cbuf;
         }
