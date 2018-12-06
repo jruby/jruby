@@ -1,1 +1,0 @@
-fails:Module#public_instance_method sets the NameError#name attribute to the name of the missing method

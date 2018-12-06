@@ -31,6 +31,7 @@ import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
@@ -298,8 +299,10 @@ public class Bootstrap {
         return RubyString.newStringShared(context.runtime, byteList);
     }
 
-    public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
-        return RubyArray.newArrayMayCopy(context.runtime, elts);
+    public static IRubyObject array(ThreadContext context, IRubyObject[] ary) {
+        assert ary.length > RubyArraySpecialized.MAX_PACKED_SIZE;
+        // Bootstrap.array() only dispatches here if ^^ holds
+        return RubyArray.newArrayNoCopy(context.runtime, ary);
     }
 
     public static Handle contextValue() {
@@ -381,7 +384,7 @@ public class Bootstrap {
 
     public static IRubyObject hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
-        RubyHash hash = RubyHash.newHash(runtime);
+        RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }

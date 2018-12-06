@@ -1,1 +1,0 @@
-fails(JRUBY-5671):Readline.emacs_editing_mode returns nil
