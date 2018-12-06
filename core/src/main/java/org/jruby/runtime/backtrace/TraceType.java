@@ -3,6 +3,8 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -167,10 +169,10 @@ public class TraceType {
          * Full raw backtraces with all Java frames included.
          */
         RAW {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
-                        BacktraceElement.EMPTY_ARRAY,
+                        stackStream,
+                        Stream.empty(),
                         true,
                         false,
                         false);
@@ -181,9 +183,9 @@ public class TraceType {
          * A backtrace with interpreted frames intact, but don't remove Java frames.
          */
         FULL {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         true,
                         false,
@@ -195,9 +197,9 @@ public class TraceType {
          * A normal Ruby-style backtrace, but which includes any non-org.jruby frames
          */
         INTEGRATED {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         false,
                         false,
@@ -209,9 +211,9 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         NORMAL {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
@@ -223,9 +225,9 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         CALLER {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         false,
                         true,
@@ -240,7 +242,7 @@ public class TraceType {
          * @return
          */
         public BacktraceData getBacktraceData(ThreadContext context) {
-            BacktraceData data = getBacktraceData(context, Thread.currentThread().getStackTrace());
+            BacktraceData data = getBacktraceData(context, Arrays.stream(Thread.currentThread().getStackTrace()));
 
             context.runtime.incrementBacktraceCount();
             if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
@@ -263,7 +265,7 @@ public class TraceType {
                 useGather = INTEGRATED;
             }
 
-            BacktraceData data = useGather.getBacktraceData(context, javaTrace);
+            BacktraceData data = useGather.getBacktraceData(context, Arrays.stream(javaTrace));
 
             context.runtime.incrementBacktraceCount();
             if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
@@ -271,7 +273,7 @@ public class TraceType {
             return data;
         }
 
-        public abstract BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace);
+        public abstract BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> javaTrace);
     }
 
     public enum Format {

@@ -1108,10 +1108,8 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
-        Integer[] ll = levelAndLengthFromArgs(context, level, length, 1);
-        Integer levelInt = ll[0], lengthInt = ll[1];
-
-        return context.createCallerBacktrace(levelInt, lengthInt, Thread.currentThread().getStackTrace());
+        int[] ll = levelAndLengthFromArgs(context, level, length, 1);
+        return context.createCallerBacktrace(ll[0], ll[1], Arrays.stream(Thread.currentThread().getStackTrace()));
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
@@ -1130,18 +1128,17 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
-        Integer[] ll = levelAndLengthFromArgs(context, level, length, 1);
-        Integer levelInt = ll[0], lengthInt = ll[1];
-
-        return context.createCallerLocations(levelInt, lengthInt, Thread.currentThread().getStackTrace());
+        int[] ll = levelAndLengthFromArgs(context, level, length, 1);
+        return context.createCallerLocations(ll[0], ll[1], Arrays.stream(Thread.currentThread().getStackTrace()));
     }
 
     /**
      * Retrieve the level and length from given args, if non-null.
      */
-    static Integer[] levelAndLengthFromArgs(ThreadContext context, IRubyObject _level, IRubyObject _length, int defaultLevel) {
+    static int[] levelAndLengthFromArgs(ThreadContext context, IRubyObject _level, IRubyObject _length, int defaultLevel) {
         int level;
-        Integer length = null;
+        // Suitably large but no chance to overflow int when combined with level
+        int length = 1 << 24;
         if (_length != null) {
             level = RubyNumeric.fix2int(_level);
             length = RubyNumeric.fix2int(_length);
@@ -1160,11 +1157,11 @@ public class RubyKernel {
         if (level < 0) {
             throw context.runtime.newArgumentError("negative level (" + level + ')');
         }
-        if (length != null && length < 0) {
+        if (length < 0) {
             throw context.runtime.newArgumentError("negative size (" + length + ')');
         }
 
-        return new Integer[] {level, length};
+        return new int[] {level, length};
     }
 
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {

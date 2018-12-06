@@ -39,6 +39,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
@@ -1636,10 +1637,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread may have finished
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        Integer levelInt = ll[0], lengthInt = ll[1];
-
-        return myContext.createCallerBacktrace(levelInt, lengthInt, getNativeThread().getStackTrace());
+        int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
+        return myContext.createCallerBacktrace(ll[0], ll[1], Arrays.stream(getNativeThread().getStackTrace()));
     }
 
     @JRubyMethod
@@ -1666,10 +1665,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread may have finished
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        Integer levelInt = ll[0], lengthInt = ll[1];
-
-        return myContext.createCallerLocations(levelInt, lengthInt, getNativeThread().getStackTrace());
+        int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
+        return myContext.createCallerLocations(ll[0], ll[1], Arrays.stream(getNativeThread().getStackTrace()));
     }
 
     @JRubyMethod(name = "report_on_exception=")

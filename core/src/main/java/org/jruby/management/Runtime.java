@@ -32,6 +32,7 @@ package org.jruby.management;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.RubyException;
@@ -104,7 +105,7 @@ public class Runtime implements RuntimeMBean {
         ThreadContext tc = th.getContext();
         if (tc != null) {
             RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
-            exc.setBacktraceData(gather.getBacktraceData(tc, th.getNativeThread().getStackTrace()));
+            exc.setBacktraceData(gather.getBacktraceData(tc, Arrays.stream(th.getNativeThread().getStackTrace())));
             pw.println(Format.MRI.printBacktrace(exc, false));
         } else {
             pw.println("    [no longer alive]");
