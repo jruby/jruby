@@ -34,8 +34,6 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
-import org.jruby.exceptions.RaiseException;
-
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
@@ -211,8 +209,6 @@ public class Addrinfo extends RubyObject {
                 }
 
             } else {
-
-                RubyString sockaddrString = sockaddr.convertToString();
 
                 InetAddress inetAddress;
 
@@ -664,7 +660,7 @@ public class Addrinfo extends RubyObject {
         return SocketUtilsIPV6.getIPV6Address(in.getHostAddress());
     }
 
-    private InetAddress getRubyInetAddress(IRubyObject node) {
+    private static InetAddress getRubyInetAddress(IRubyObject node) {
         try {
             return SocketUtils.getRubyInetAddresses(node.convertToString().getByteList())[0];
         } catch (UnknownHostException uhe) {
