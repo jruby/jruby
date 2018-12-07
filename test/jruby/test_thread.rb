@@ -179,16 +179,18 @@ class TestThread < Test::Unit::TestCase
 
   # JRUBY-2021
   def test_multithreaded_method_definition
-    def run_me
-      sleep 0.1
-      def do_stuff
+    obj = Class.new do
+      def run_me
         sleep 0.1
+        def do_stuff
+          sleep 0.1
+        end
       end
-    end
+    end.new
 
     threads = []
     100.times {
-      threads << Thread.new { run_me }
+      threads << Thread.new { obj.run_me }
     }
     threads.each { |t| t.join }
   end
