@@ -1109,7 +1109,7 @@ public class RubyKernel {
 
     private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
         int[] ll = levelAndLengthFromArgs(context, level, length, 1);
-        return context.createCallerBacktrace(ll[0], ll[1], Arrays.stream(Thread.currentThread().getStackTrace()));
+        return context.createCallerBacktrace(ll[0], ll[1]);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
@@ -1129,7 +1129,7 @@ public class RubyKernel {
 
     private static IRubyObject callerLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
         int[] ll = levelAndLengthFromArgs(context, level, length, 1);
-        return context.createCallerLocations(ll[0], ll[1], Arrays.stream(Thread.currentThread().getStackTrace()));
+        return context.createCallerLocations(ll[0], ll[1]);
     }
 
     /**

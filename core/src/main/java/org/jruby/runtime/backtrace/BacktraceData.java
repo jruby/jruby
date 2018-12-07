@@ -1,5 +1,6 @@
 package org.jruby.runtime.backtrace;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
 import org.jruby.util.JavaNameMangler;
 
@@ -16,13 +17,13 @@ public class BacktraceData implements Serializable {
     public static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
 
     private RubyStackTraceElement[] backtraceElements;
-    private final Stream<StackTraceElement> stackStream;
+    private final Stream<StackWalker.StackFrame> stackStream;
     private final Stream<BacktraceElement> rubyTrace;
     private final boolean fullTrace;
     private final boolean maskNative;
     private final boolean includeNonFiltered;
 
-    public BacktraceData(Stream<StackTraceElement> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
+    public BacktraceData(Stream<StackWalker.StackFrame> stackStream, Stream<BacktraceElement> rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
         this.stackStream = stackStream;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
@@ -67,10 +68,10 @@ public class BacktraceData implements Serializable {
         boolean dupFrame = false; String dupFrameName = null;
 
         // loop over all elements in the Java stack trace
-        Iterator<StackTraceElement> stackIter = stackStream.iterator();
+        Iterator<StackWalker.StackFrame> stackIter = stackStream.iterator();
         Iterator<BacktraceElement> backIter = rubyTrace.iterator();
         while (stackIter.hasNext() && trace.size() < count) {
-            StackTraceElement element = stackIter.next();
+            StackWalker.StackFrame element = stackIter.next();
 
             // skip unnumbered frames
             int line = element.getLineNumber();

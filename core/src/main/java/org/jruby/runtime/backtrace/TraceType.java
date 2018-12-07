@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -19,6 +20,7 @@ import org.jruby.util.log.LoggerFactory;
 public class TraceType {
 
     private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
+    private static final StackWalker WALKER = StackWalker.getInstance();
 
     private final Gather gather;
     private final Format format;
@@ -169,7 +171,7 @@ public class TraceType {
          * Full raw backtraces with all Java frames included.
          */
         RAW {
-            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
                         stackStream,
                         Stream.empty(),
@@ -183,7 +185,7 @@ public class TraceType {
          * A backtrace with interpreted frames intact, but don't remove Java frames.
          */
         FULL {
-            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
@@ -197,7 +199,7 @@ public class TraceType {
          * A normal Ruby-style backtrace, but which includes any non-org.jruby frames
          */
         INTEGRATED {
-            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
@@ -211,7 +213,7 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         NORMAL {
-            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
@@ -225,7 +227,7 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         CALLER {
-            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> stackStream) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
                         stackStream,
                         context.getBacktrace(),
@@ -242,12 +244,15 @@ public class TraceType {
          * @return
          */
         public BacktraceData getBacktraceData(ThreadContext context) {
-            BacktraceData data = getBacktraceData(context, Arrays.stream(Thread.currentThread().getStackTrace()));
+            return WALKER.walk(Thread.currentThread().getStackTrace(), stream -> {
+                BacktraceData data = getBacktraceData(context, stream);
 
-            context.runtime.incrementBacktraceCount();
-            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
+                context.runtime.incrementBacktraceCount();
+                if (RubyInstanceConfig.LOG_BACKTRACES)
+                    logBacktrace(context.runtime, data.getBacktrace(context.runtime));
 
-            return data;
+                return data;
+            });
         }
 
         /**
@@ -259,21 +264,20 @@ public class TraceType {
          * @return
          */
         public BacktraceData getIntegratedBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
-            Gather useGather = this;
+            Gather useGather = this == NORMAL ? INTEGRATED : this;
 
-            if (useGather == NORMAL) {
-                useGather = INTEGRATED;
-            }
+            return WALKER.walk(javaTrace, stream -> {
+                BacktraceData data = useGather.getBacktraceData(context, stream);
 
-            BacktraceData data = useGather.getBacktraceData(context, Arrays.stream(javaTrace));
+                context.runtime.incrementBacktraceCount();
+                if (RubyInstanceConfig.LOG_BACKTRACES)
+                    logBacktrace(context.runtime, data.getBacktrace(context.runtime));
 
-            context.runtime.incrementBacktraceCount();
-            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
-
-            return data;
+                return data;
+            });
         }
 
-        public abstract BacktraceData getBacktraceData(ThreadContext context, Stream<StackTraceElement> javaTrace);
+        public abstract BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> javaTrace);
     }
 
     public enum Format {

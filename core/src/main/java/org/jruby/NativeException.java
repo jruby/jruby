@@ -31,6 +31,7 @@ package org.jruby;
 import java.lang.reflect.Member;
 import java.util.Arrays;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -49,6 +50,7 @@ public class NativeException extends RubyException {
     private final Throwable cause;
     private final String messageAsJavaString;
     public static final String CLASS_NAME = "NativeException";
+    private static final StackWalker WALKER = StackWalker.getInstance();
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         this(runtime, rubyClass, cause, buildMessage(cause));
@@ -86,7 +88,7 @@ public class NativeException extends RubyException {
     public void prepareBacktrace(ThreadContext context) {
         // if it's null, use cause's trace to build a raw stack trace
         if (backtraceData == null) {
-            backtraceData = TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), Arrays.stream(cause.getStackTrace()));
+            backtraceData = WALKER.walk(cause.getStackTrace(), stream -> TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), stream));
         }
     }
 

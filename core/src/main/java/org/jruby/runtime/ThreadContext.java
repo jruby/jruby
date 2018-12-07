@@ -36,6 +36,7 @@
 
 package org.jruby.runtime;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -742,13 +743,28 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
+    private static final StackWalker WALKER;
+
+    static {
+        StackWalker walker = null;
+        try {
+            walker = StackWalker.getInstance();
+        } catch (Throwable t) {
+        }
+        WALKER = walker;
+    }
+
+    public IRubyObject createCallerBacktrace(int level, Integer length) {
+        return WALKER.walk(stream -> createCallerBacktrace(level, length, stream));
+    }
+
     /**
      * Create an Array with backtrace information for Kernel#caller
      * @param level
      * @param length
      * @return an Array with the backtrace
      */
-    public IRubyObject createCallerBacktrace(int level, int length, Stream<StackTraceElement> stackStream) {
+    public IRubyObject createCallerBacktrace(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
         runtime.incrementCallerCount();
 
         RubyStackTraceElement[] fullTrace = getPartialTrace(level, length, stackStream);
@@ -769,6 +785,10 @@ public final class ThreadContext {
         return backTrace;
     }
 
+    public IRubyObject createCallerLocations(int level, Integer length) {
+        return WALKER.walk(stream -> createCallerLocations(level, length, stream));
+    }
+
     /**
      * Create an array containing Thread::Backtrace::Location objects for the
      * requested caller trace level and length.
@@ -777,7 +797,7 @@ public final class ThreadContext {
      * @param length the length of the trace
      * @return an Array with the backtrace locations
      */
-    public IRubyObject createCallerLocations(int level, Integer length, Stream<StackTraceElement> stackStream) {
+    public IRubyObject createCallerLocations(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
         runtime.incrementCallerCount();
 
         RubyStackTraceElement[] fullTrace = getPartialTrace(level, length, stackStream);
@@ -792,12 +812,12 @@ public final class ThreadContext {
         return backTrace;
     }
 
-    private RubyStackTraceElement[] getFullTrace(Integer length, Stream<StackTraceElement> stackStream) {
+    private RubyStackTraceElement[] getFullTrace(Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getBacktrace(runtime);
     }
 
-    private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackTraceElement> stackStream) {
+    private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
     }
@@ -856,13 +876,12 @@ public final class ThreadContext {
     }
 
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
-        Stream<StackTraceElement> stackStream = Arrays.stream(ex.getStackTrace());
-
-        return TraceType.printBacktraceJRuby(null,
-                new BacktraceData(stackStream, Stream.empty(), true, false, false).getBacktraceWithoutRuby(),
-                ex.getClass().getName(),
-                ex.getLocalizedMessage(),
-                color);
+        return WALKER.walk(ex.getStackTrace(), stream ->
+            TraceType.printBacktraceJRuby(null,
+                    new BacktraceData(stream, Stream.empty(), true, false, false).getBacktraceWithoutRuby(),
+                    ex.getClass().getName(),
+                    ex.getLocalizedMessage(),
+                    color));
     }
 
     private Frame pushFrameForBlock(Binding binding) {
