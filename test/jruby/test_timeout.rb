@@ -1,13 +1,14 @@
 require 'test/unit'
-require 'timeout'
-require 'socket'
-require 'net/http'
-
 require 'test/jruby/test_helper'
 
 class TestTimeout < Test::Unit::TestCase
   include TestHelper
-  
+
+  def setup
+    require 'timeout'
+    require 'socket'
+  end
+
   def test_timeout_for_loop
     n = 10000000
     assert_raises(Timeout::Error) do
@@ -62,22 +63,14 @@ class TestTimeout < Test::Unit::TestCase
     begin; client.close; rescue Exception; end
   end
 
-  def foo
-    sleep 5
-  rescue Exception => e
-    @in_foo = e
-    raise e
-  end
-
   # JRUBY-3817
-  def test_net_http_timeout
+  def test_net_http_timeout; require 'net/http'
     assert_raises Net::OpenTimeout do
       http = Net::HTTP.new('8.8.8.8')
-      http.open_timeout = 0.001
+      http.open_timeout = timeout = 0.0005
       http.start do |h|
+        sleep(timeout / 2)
         h.request_get '/index.html'
-        # ensure we timeout even if we're fast
-        sleep(1)
       end
     end
   end
@@ -92,6 +85,13 @@ class TestTimeout < Test::Unit::TestCase
     end
 
     assert ok, "Timeout::Error was not eventually delivered to caller"
+  end
+
+  def foo
+    sleep 2
+  rescue Exception => e
+    @in_foo = e
+    raise e
   end
 
   # JRUBY-3928: Net::HTTP doesn't timeout as expected when using timeout.rb
