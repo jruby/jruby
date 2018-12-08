@@ -64,15 +64,22 @@ class TestTimeout < Test::Unit::TestCase
   end
 
   # JRUBY-3817
-  def test_net_http_timeout; require 'net/http'
+  def test_net_http_timeout
+    require 'net/http'
+    port = 10000 + rand(10000)
+
+    # open but never accept
+    server = TCPServer.new('localhost', port)
+
     assert_raises Net::OpenTimeout do
-      http = Net::HTTP.new('8.8.8.8')
-      http.open_timeout = timeout = 0.0005
+      http = Net::HTTP.new('localhost', port)
+      http.open_timeout = 0.001
       http.start do |h|
-        sleep(timeout / 2)
         h.request_get '/index.html'
       end
     end
+  ensure
+    server.close rescue nil
   end
 
   def test_timeout_raises_anon_class_to_unroll
