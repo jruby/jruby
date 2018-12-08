@@ -12,7 +12,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
@@ -29,7 +28,7 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
-import static org.jruby.util.io.BufferHelper.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 // FIXME: Make into a base class at some point to play with different formats
 

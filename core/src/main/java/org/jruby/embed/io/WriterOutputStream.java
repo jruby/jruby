@@ -40,8 +40,8 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
-import static org.jruby.util.io.BufferHelper.clearBuffer;
-import static org.jruby.util.io.BufferHelper.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 /**
  * A WriterOutputStream converts java.io.Writer to java.io.OutputStream.

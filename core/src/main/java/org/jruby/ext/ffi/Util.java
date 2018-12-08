@@ -42,7 +42,7 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.util.io.BufferHelper.positionBuffer;
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
 /**
  *

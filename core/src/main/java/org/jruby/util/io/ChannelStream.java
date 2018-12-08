@@ -57,10 +57,10 @@ import org.jruby.util.ResourceException;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.util.io.BufferHelper.clearBuffer;
-import static org.jruby.util.io.BufferHelper.flipBuffer;
-import static org.jruby.util.io.BufferHelper.limitBuffer;
-import static org.jruby.util.io.BufferHelper.positionBuffer;
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
 /**
  * This file implements a seekable IO file.

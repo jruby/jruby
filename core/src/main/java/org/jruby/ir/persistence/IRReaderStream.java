@@ -36,7 +36,7 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
-import static org.jruby.util.io.BufferHelper.positionBuffer;
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
 /**
  *

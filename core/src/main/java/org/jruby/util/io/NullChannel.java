@@ -35,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import static org.jruby.util.io.BufferHelper.positionBuffer;
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
 /**
  *

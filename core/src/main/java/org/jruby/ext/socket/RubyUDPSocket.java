@@ -72,7 +72,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Sockaddr;
 
-import static org.jruby.util.io.BufferHelper.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 
 /**

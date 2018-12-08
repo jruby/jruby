@@ -28,9 +28,9 @@
 
 package org.jruby.util;
 
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
-import static org.jruby.util.io.BufferHelper.clearBuffer;
-import static org.jruby.util.io.BufferHelper.flipBuffer;
 
 import java.io.File;
 import java.io.FileInputStream;

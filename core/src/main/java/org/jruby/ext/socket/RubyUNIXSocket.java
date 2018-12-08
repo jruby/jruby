@@ -54,19 +54,17 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.FilenoUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.Channel;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static org.jruby.util.io.BufferHelper.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")

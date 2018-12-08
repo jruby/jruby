@@ -27,7 +27,6 @@
 package org.jruby;
 
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -55,10 +54,9 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.unsafe.UnsafeHolder;
 
-import static org.jruby.util.io.BufferHelper.clearBuffer;
-import static org.jruby.util.io.BufferHelper.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {

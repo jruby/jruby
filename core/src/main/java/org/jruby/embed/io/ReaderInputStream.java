@@ -42,9 +42,9 @@ import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.jruby.util.io.BufferHelper.clearBuffer;
-import static org.jruby.util.io.BufferHelper.flipBuffer;
-import static org.jruby.util.io.BufferHelper.limitBuffer;
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
 
 /**
  * A ReaderInputStream converts java.io.Reader to java.io.InputStream. The

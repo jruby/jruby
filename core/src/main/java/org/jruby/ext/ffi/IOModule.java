@@ -40,7 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
-import static org.jruby.util.io.BufferHelper.limitBuffer;
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
 
 /**
 * FFI specific I/O routines

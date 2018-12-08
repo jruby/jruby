@@ -35,7 +35,6 @@ import org.jruby.RubyIO;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,7 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.jruby.exceptions.RaiseException;
 
-import static org.jruby.util.io.BufferHelper.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten

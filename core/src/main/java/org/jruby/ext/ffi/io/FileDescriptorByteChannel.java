@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 
-import static org.jruby.util.io.BufferHelper.positionBuffer;
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
 /**
  * An implementation of ByteChannel that reads from and writes to a native unix

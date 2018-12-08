@@ -55,9 +55,9 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static com.headius.backport9.buffer.Buffers.markBuffer;
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
 import static org.jruby.util.TypeConverter.toFloat;
-import static org.jruby.util.io.BufferHelper.positionBuffer;
-import static org.jruby.util.io.BufferHelper.markBuffer;
 
 public class Pack {
     private static final byte[] sSp10 = "          ".getBytes();
