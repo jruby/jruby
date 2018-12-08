@@ -32,7 +32,9 @@ package org.jruby.management;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
 import org.jruby.RubyException;
 import org.jruby.RubyThread;
@@ -43,6 +45,8 @@ import org.jruby.runtime.backtrace.TraceType.Gather;
 
 public class Runtime implements RuntimeMBean {
     private final SoftReference<Ruby> ruby;
+
+    private static final StackWalker WALKER = StackWalker.getInstance();
 
     public Runtime(Ruby ruby) {
         this.ruby = new SoftReference<Ruby>(ruby);
@@ -104,7 +108,7 @@ public class Runtime implements RuntimeMBean {
         ThreadContext tc = th.getContext();
         if (tc != null) {
             RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
-            exc.setBacktraceData(gather.getBacktraceData(tc, th.getNativeThread().getStackTrace()));
+            exc.setBacktraceData(WALKER.walk(th.getNativeThread().getStackTrace(), stream -> gather.getBacktraceData(tc, stream)));
             pw.println(Format.MRI.printBacktrace(exc, false));
         } else {
             pw.println("    [no longer alive]");

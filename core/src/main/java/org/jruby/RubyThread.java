@@ -39,6 +39,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
@@ -59,6 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -115,6 +117,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyThread.class);
     // static { LOG.setDebugEnable(true); }
+
+    private static final StackWalker WALKER = StackWalker.getInstance();
 
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl = ThreadLike.DUMMY;
@@ -1636,10 +1640,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread may have finished
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        Integer levelInt = ll[0], lengthInt = ll[1];
-
-        return myContext.createCallerBacktrace(levelInt, lengthInt, getNativeThread().getStackTrace());
+        int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
+        return WALKER.walk(getNativeThread().getStackTrace(), stream -> myContext.createCallerBacktrace(ll[0], ll[1], stream));
     }
 
     @JRubyMethod
@@ -1666,10 +1668,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // nativeThread may have finished
         if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
 
-        Integer[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        Integer levelInt = ll[0], lengthInt = ll[1];
-
-        return myContext.createCallerLocations(levelInt, lengthInt, getNativeThread().getStackTrace());
+        int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
+        return WALKER.walk(getNativeThread().getStackTrace(), stream -> myContext.createCallerLocations(ll[0], ll[1], stream));
     }
 
     @JRubyMethod(name = "report_on_exception=")

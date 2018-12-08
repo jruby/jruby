@@ -36,6 +36,7 @@
 
 package org.jruby.runtime;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -69,11 +70,14 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.jruby.RubyBasicObject.NEVER;
 
@@ -739,16 +743,31 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
+    private static final StackWalker WALKER;
+
+    static {
+        StackWalker walker = null;
+        try {
+            walker = StackWalker.getInstance();
+        } catch (Throwable t) {
+        }
+        WALKER = walker;
+    }
+
+    public IRubyObject createCallerBacktrace(int level, Integer length) {
+        return WALKER.walk(stream -> createCallerBacktrace(level, length, stream));
+    }
+
     /**
      * Create an Array with backtrace information for Kernel#caller
      * @param level
      * @param length
      * @return an Array with the backtrace
      */
-    public IRubyObject createCallerBacktrace(int level, Integer length, StackTraceElement[] stacktrace) {
+    public IRubyObject createCallerBacktrace(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
         runtime.incrementCallerCount();
 
-        RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
+        RubyStackTraceElement[] fullTrace = getPartialTrace(level, length, stackStream);
 
         int traceLength = safeLength(level, length, fullTrace);
 
@@ -766,6 +785,10 @@ public final class ThreadContext {
         return backTrace;
     }
 
+    public IRubyObject createCallerLocations(int level, Integer length) {
+        return WALKER.walk(stream -> createCallerLocations(level, length, stream));
+    }
+
     /**
      * Create an array containing Thread::Backtrace::Location objects for the
      * requested caller trace level and length.
@@ -774,10 +797,10 @@ public final class ThreadContext {
      * @param length the length of the trace
      * @return an Array with the backtrace locations
      */
-    public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {
+    public IRubyObject createCallerLocations(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
         runtime.incrementCallerCount();
 
-        RubyStackTraceElement[] fullTrace = getFullTrace(length, stacktrace);
+        RubyStackTraceElement[] fullTrace = getPartialTrace(level, length, stackStream);
 
         int traceLength = safeLength(level, length, fullTrace);
 
@@ -789,14 +812,19 @@ public final class ThreadContext {
         return backTrace;
     }
 
-    private RubyStackTraceElement[] getFullTrace(Integer length, StackTraceElement[] stacktrace) {
+    private RubyStackTraceElement[] getFullTrace(Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stacktrace).getBacktrace(runtime);
+        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getBacktrace(runtime);
+    }
+
+    private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
+        if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
+        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
         final int baseLength = trace.length - level;
-        return length != null ? Math.min(length, baseLength) : baseLength;
+        return Math.min(length, baseLength);
     }
 
     /**
@@ -827,36 +855,33 @@ public final class ThreadContext {
     }
 
     @Deprecated
-    public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-        return getBacktrace();
-    }
+//    public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
+//        return getBacktrace();
+//    }
 
     /**
      * Create a snapshot Array with current backtrace information.
      * @return the backtrace
      */
-    public BacktraceElement[] getBacktrace() {
+    public Stream<BacktraceElement> getBacktrace() {
         return getBacktrace(0);
     }
 
-    public final BacktraceElement[] getBacktrace(int level) {
-        final int len = backtraceIndex + 1;
-        if ( level < 0 ) level = len + level;
-        BacktraceElement[] newTrace = new BacktraceElement[len - level];
-        System.arraycopy(backtrace, level, newTrace, 0, newTrace.length);
-        return newTrace;
+    public final Stream<BacktraceElement> getBacktrace(int level) {
+        int backtraceIndex = this.backtraceIndex;
+        if ( level < 0 ) level = backtraceIndex + 1 + level;
+        int end = backtraceIndex - level;
+        BacktraceElement[] backtrace = this.backtrace;
+        return IntStream.rangeClosed(0, end).mapToObj(i -> backtrace[backtraceIndex - i]);
     }
 
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
-        StackTraceElement[] javaStackTrace = ex.getStackTrace();
-
-        if (javaStackTrace == null || javaStackTrace.length == 0) return "";
-
-        return TraceType.printBacktraceJRuby(null,
-                new BacktraceData(javaStackTrace, BacktraceElement.EMPTY_ARRAY, true, false, false).getBacktraceWithoutRuby(),
-                ex.getClass().getName(),
-                ex.getLocalizedMessage(),
-                color);
+        return WALKER.walk(ex.getStackTrace(), stream ->
+            TraceType.printBacktraceJRuby(null,
+                    new BacktraceData(stream, Stream.empty(), true, false, false).getBacktraceWithoutRuby(),
+                    ex.getClass().getName(),
+                    ex.getLocalizedMessage(),
+                    color));
     }
 
     private Frame pushFrameForBlock(Binding binding) {
