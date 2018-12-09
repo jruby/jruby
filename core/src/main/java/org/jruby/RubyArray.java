@@ -2648,12 +2648,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "select", alias = "filter")
     public IRubyObject select(ThreadContext context, Block block) {
         return block.isGiven() ? selectCommon(context, block) : enumeratorizeWithSize(context, this, "select", enumLengthFn());
     }
 
-    @JRubyMethod(name = "select!")
+    @JRubyMethod(name = "select!", alias = "filter!")
     public IRubyObject select_bang(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select!", enumLengthFn());
 
