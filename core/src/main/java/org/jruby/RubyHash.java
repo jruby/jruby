@@ -1545,7 +1545,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    @JRubyMethod(name = "select!")
+    @JRubyMethod(name = "select!", alias = "filter!")
     public IRubyObject select_bang(final ThreadContext context, final Block block) {
         if (block.isGiven()) return keep_ifCommon(context, block) ? this : context.nil;
 
@@ -1734,7 +1734,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_select
      *
      */
-    @JRubyMethod(name = "select")
+    @JRubyMethod(name = "select", alias = "filter")
     public IRubyObject select(final ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", enumSizeFn());
