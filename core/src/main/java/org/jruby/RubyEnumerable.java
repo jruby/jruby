@@ -786,7 +786,7 @@ public class RubyEnumerable {
         return selectCommon(context, self, block, "select");
     }
 
-    @JRubyMethod
+    @JRubyMethod(alias = "filter")
     public static IRubyObject find_all(ThreadContext context, IRubyObject self, final Block block) {
         return selectCommon(context, self, block, "find_all");
     }
