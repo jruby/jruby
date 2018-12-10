@@ -54,6 +54,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.FilenoUtil;
@@ -327,7 +328,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
-        ByteList path = _path.convertToString().getByteList();
+        RubyString strPath = unixsockPathValue(runtime, _path);
+        ByteList path = strPath.getByteList();
         String fpath = Helpers.decodeByteList(runtime, path);
 
         int maxSize = 103; // Max size from Darwin, lowest common value we know of
@@ -365,6 +367,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             throw runtime.newIOErrorFromException(ioe);
         }
     }
+
+    // MRI: unixsock_path_value
+    private static RubyString unixsockPathValue(Ruby runtime, IRubyObject path) {
+        return StringSupport.checkEmbeddedNulls(runtime, path.convertToString());
+    }
+
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
         MakeOpenFile();
