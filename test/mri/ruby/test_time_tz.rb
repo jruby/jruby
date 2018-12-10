@@ -84,6 +84,16 @@ class TestTimeTZ < Test::Unit::TestCase
 
   has_right_tz &&= have_tz_offset?("right/America/Los_Angeles")
   has_lisbon_tz &&= have_tz_offset?("Europe/Lisbon")
+  CORRECT_TOKYO_DST_1951 = with_tz("Asia/Tokyo") {
+    if Time.local(1951, 5, 6, 12, 0, 0).dst? # noon, DST
+      if Time.local(1951, 5, 6, 1, 0, 0).dst? # DST with fixed tzdata
+        Time.local(1951, 9, 8, 23, 0, 0).dst? ? "2018f" : "2018e"
+      end
+    end
+  }
+  CORRECT_KIRITIMATI_SKIP_1994 = with_tz("Pacific/Kiritimati") {
+    Time.local(1994, 12, 31, 0, 0, 0).year == 1995
+  }
 
   def time_to_s(t)
     t.to_s
@@ -126,8 +136,9 @@ class TestTimeTZ < Test::Unit::TestCase
 
   def test_asia_tokyo
     with_tz(tz="Asia/Tokyo") {
-      assert_time_constructor(tz, "1951-05-06 03:00:00 +1000", :local, [1951,5,6,2,0,0])
-      assert_time_constructor(tz, "1951-05-06 03:59:59 +1000", :local, [1951,5,6,2,59,59])
+      h = CORRECT_TOKYO_DST_1951 ? 0 : 2
+      assert_time_constructor(tz, "1951-05-06 0#{h+1}:00:00 +1000", :local, [1951,5,6,h,0,0])
+      assert_time_constructor(tz, "1951-05-06 0#{h+1}:59:59 +1000", :local, [1951,5,6,h,59,59])
       assert_time_constructor(tz, "2010-06-10 06:13:28 +0900", :local, [2010,6,10,6,13,28])
     }
   end
@@ -172,9 +183,17 @@ class TestTimeTZ < Test::Unit::TestCase
 
   def test_pacific_kiritimati
     with_tz(tz="Pacific/Kiritimati") {
-      assert_time_constructor(tz, "1994-12-31 23:59:59 -1000", :local, [1994,12,31,23,59,59])
-      assert_time_constructor(tz, "1995-01-02 00:00:00 +1400", :local, [1995,1,1,0,0,0])
-      assert_time_constructor(tz, "1995-01-02 23:59:59 +1400", :local, [1995,1,1,23,59,59])
+      assert_time_constructor(tz, "1994-12-30 00:00:00 -1000", :local, [1994,12,30,0,0,0])
+      assert_time_constructor(tz, "1994-12-30 23:59:59 -1000", :local, [1994,12,30,23,59,59])
+      if CORRECT_KIRITIMATI_SKIP_1994
+        assert_time_constructor(tz, "1995-01-01 00:00:00 +1400", :local, [1994,12,31,0,0,0])
+        assert_time_constructor(tz, "1995-01-01 23:59:59 +1400", :local, [1994,12,31,23,59,59])
+        assert_time_constructor(tz, "1995-01-01 00:00:00 +1400", :local, [1995,1,1,0,0,0])
+      else
+        assert_time_constructor(tz, "1994-12-31 23:59:59 -1000", :local, [1994,12,31,23,59,59])
+        assert_time_constructor(tz, "1995-01-02 00:00:00 +1400", :local, [1995,1,1,0,0,0])
+        assert_time_constructor(tz, "1995-01-02 23:59:59 +1400", :local, [1995,1,1,23,59,59])
+      end
       assert_time_constructor(tz, "1995-01-02 00:00:00 +1400", :local, [1995,1,2,0,0,0])
     }
   end
@@ -329,10 +348,23 @@ America/Managua  Wed Jan  1 05:00:00 1997 UTC = Tue Dec 31 23:00:00 1996 CST isd
 Asia/Singapore  Sun Aug  8 16:30:00 1965 UTC = Mon Aug  9 00:00:00 1965 SGT isdst=0 gmtoff=27000
 Asia/Singapore  Thu Dec 31 16:29:59 1981 UTC = Thu Dec 31 23:59:59 1981 SGT isdst=0 gmtoff=27000
 Asia/Singapore  Thu Dec 31 16:30:00 1981 UTC = Fri Jan  1 00:30:00 1982 SGT isdst=0 gmtoff=28800
+End
+  gen_zdump_test CORRECT_TOKYO_DST_1951 ? <<'End' + (CORRECT_TOKYO_DST_1951 < "2018f" ? <<'2018e' : <<'2018f') : <<'End'
+Asia/Tokyo  Sat May  5 14:59:59 1951 UTC = Sat May  5 23:59:59 1951 JST isdst=0 gmtoff=32400
+Asia/Tokyo  Sat May  5 15:00:00 1951 UTC = Sun May  6 01:00:00 1951 JDT isdst=1 gmtoff=36000
+End
+Asia/Tokyo  Sat Sep  8 13:59:59 1951 UTC = Sat Sep  8 23:59:59 1951 JDT isdst=1 gmtoff=36000
+Asia/Tokyo  Sat Sep  8 14:00:00 1951 UTC = Sat Sep  8 23:00:00 1951 JST isdst=0 gmtoff=32400
+2018e
+Asia/Tokyo  Sat Sep  8 14:59:59 1951 UTC = Sun Sep  9 00:59:59 1951 JDT isdst=1 gmtoff=36000
+Asia/Tokyo  Sat Sep  8 15:00:00 1951 UTC = Sun Sep  9 00:00:00 1951 JST isdst=0 gmtoff=32400
+2018f
 Asia/Tokyo  Sat May  5 16:59:59 1951 UTC = Sun May  6 01:59:59 1951 JST isdst=0 gmtoff=32400
 Asia/Tokyo  Sat May  5 17:00:00 1951 UTC = Sun May  6 03:00:00 1951 JDT isdst=1 gmtoff=36000
 Asia/Tokyo  Fri Sep  7 15:59:59 1951 UTC = Sat Sep  8 01:59:59 1951 JDT isdst=1 gmtoff=36000
 Asia/Tokyo  Fri Sep  7 16:00:00 1951 UTC = Sat Sep  8 01:00:00 1951 JST isdst=0 gmtoff=32400
+End
+  gen_zdump_test <<'End'
 America/St_Johns  Sun Mar 11 03:30:59 2007 UTC = Sun Mar 11 00:00:59 2007 NST isdst=0 gmtoff=-12600
 America/St_Johns  Sun Mar 11 03:31:00 2007 UTC = Sun Mar 11 01:01:00 2007 NDT isdst=1 gmtoff=-9000
 America/St_Johns  Sun Nov  4 02:30:59 2007 UTC = Sun Nov  4 00:00:59 2007 NDT isdst=1 gmtoff=-9000
@@ -349,9 +381,18 @@ Europe/London  Sun Aug 10 00:59:59 1947 UTC = Sun Aug 10 02:59:59 1947 BDST isds
 Europe/London  Sun Aug 10 01:00:00 1947 UTC = Sun Aug 10 02:00:00 1947 BST isdst=1 gmtoff=3600
 Europe/London  Sun Nov  2 01:59:59 1947 UTC = Sun Nov  2 02:59:59 1947 BST isdst=1 gmtoff=3600
 Europe/London  Sun Nov  2 02:00:00 1947 UTC = Sun Nov  2 02:00:00 1947 GMT isdst=0 gmtoff=0
+End
+  if CORRECT_KIRITIMATI_SKIP_1994
+    gen_zdump_test <<'End'
+Pacific/Kiritimati  Sat Dec 31 09:59:59 1994 UTC = Fri Dec 30 23:59:59 1994 LINT isdst=0 gmtoff=-36000
+Pacific/Kiritimati  Sat Dec 31 10:00:00 1994 UTC = Sun Jan  1 00:00:00 1995 LINT isdst=0 gmtoff=50400
+End
+  else
+    gen_zdump_test <<'End'
 Pacific/Kiritimati  Sun Jan  1 09:59:59 1995 UTC = Sat Dec 31 23:59:59 1994 LINT isdst=0 gmtoff=-36000
 Pacific/Kiritimati  Sun Jan  1 10:00:00 1995 UTC = Mon Jan  2 00:00:00 1995 LINT isdst=0 gmtoff=50400
 End
+  end
   gen_zdump_test <<'End' if has_right_tz
 right/America/Los_Angeles  Fri Jun 30 23:59:60 1972 UTC = Fri Jun 30 16:59:60 1972 PDT isdst=1 gmtoff=-25200
 right/America/Los_Angeles  Wed Dec 31 23:59:60 2008 UTC = Wed Dec 31 15:59:60 2008 PST isdst=0 gmtoff=-28800
@@ -399,5 +440,6 @@ End
   gen_variational_zdump_test "lisbon", <<'End' if has_lisbon_tz
 Europe/Lisbon  Mon Jan  1 00:36:31 1912 UTC = Sun Dec 31 23:59:59 1911 LMT isdst=0 gmtoff=-2192
 Europe/Lisbon  Mon Jan  1 00:36:44 1912 UT = Sun Dec 31 23:59:59 1911 LMT isdst=0 gmtoff=-2205
+Europe/Lisbon  Sun Dec 31 23:59:59 1911 UT = Sun Dec 31 23:23:14 1911 LMT isdst=0 gmtoff=-2205
 End
 end

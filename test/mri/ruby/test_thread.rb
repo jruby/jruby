@@ -557,7 +557,9 @@ class TestThread < Test::Unit::TestCase
     assert_equal(3, t.fetch("qux") {x = 3})
     assert_equal(3, x)
 
-    assert_raise(KeyError) {t.fetch(:qux)}
+    e = assert_raise(KeyError) {t.fetch(:qux)}
+    assert_equal(:qux, e.key)
+    assert_equal(t, e.receiver)
   ensure
     t.kill if t
   end
@@ -1184,6 +1186,17 @@ q.pop
     f.close
     assert_not_predicate(status, :signaled?, FailDesc[status, bug9751, output])
     assert_predicate(status, :success?, bug9751)
+  end if Process.respond_to?(:fork)
+
+  def test_fork_while_locked
+    m = Mutex.new
+    thrs = []
+    3.times do |i|
+      thrs << Thread.new { m.synchronize { Process.waitpid2(fork{})[1] } }
+    end
+    thrs.each do |t|
+      assert_predicate t.value, :success?, '[ruby-core:85940] [Bug #14578]'
+    end
   end if Process.respond_to?(:fork)
 
   def test_subclass_no_initialize

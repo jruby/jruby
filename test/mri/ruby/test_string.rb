@@ -970,6 +970,7 @@ CODE
 
   def test_each_grapheme_cluster
     [
+      "\u{0D 0A}",
       "\u{20 200d}",
       "\u{600 600}",
       "\u{600 20}",
@@ -982,11 +983,18 @@ CODE
       "\u{1f469 200d 2764 fe0f 200d 1f469}",
     ].each do |g|
       assert_equal [g], g.each_grapheme_cluster.to_a
+      assert_equal 1, g.each_grapheme_cluster.size
     end
 
-    assert_equal ["\u000A", "\u0308"], "\u{a 308}".each_grapheme_cluster.to_a
-    assert_equal ["\u000D", "\u0308"], "\u{d 308}".each_grapheme_cluster.to_a
-    assert_equal ["a", "b", "c"], "abc".b.each_grapheme_cluster.to_a
+    [
+      ["\u{a 308}", ["\u000A", "\u0308"]],
+      ["\u{d 308}", ["\u000D", "\u0308"]],
+      ["abc", ["a", "b", "c"]],
+    ].each do |str, grapheme_clusters|
+      assert_equal grapheme_clusters, str.each_grapheme_cluster.to_a
+      assert_equal grapheme_clusters.size, str.each_grapheme_cluster.size
+    end
+
     s = ("x"+"\u{10ABCD}"*250000)
     assert_empty(s.each_grapheme_cluster {s.clear})
   end
@@ -1121,6 +1129,10 @@ CODE
     res = []
     S("\r\n").each_line(chomp: true) {|x| res << x}
     assert_equal([S("")], res)
+
+    res = []
+    S("a\n b\n").each_line(" ", chomp: true) {|x| res << x}
+    assert_equal([S("a\n"), S("b\n")], res)
   end
 
   def test_lines
@@ -1528,6 +1540,8 @@ CODE
     assert_nil($~)
 
     assert_equal(3, S("hello hello hello").scan("hello".taint).count(&:tainted?))
+
+    assert_equal(%w[1 2 3], S("a1 a2 a3").scan(/a\K./))
   end
 
   def test_size
@@ -3084,6 +3098,12 @@ CODE
     assert_equal("a", "a".chr)
     assert_equal("\u3042", "\u3042\u3043".chr)
     assert_equal('', ''.chr)
+  end
+
+  def test_substr_code_range
+    data = "\xff" + "a"*200
+    assert_not_predicate(data, :valid_encoding?)
+    assert_predicate(data[100..-1], :valid_encoding?)
   end
 end
 
