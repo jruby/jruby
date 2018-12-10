@@ -557,7 +557,12 @@ class Date
       return to_enum(:step, limit, step)
     end
     da = self
-    op = %w(- <= >=)[step <=> 0]
+    step_cmp = step <=> 0
+    if step_cmp.nil?
+      raise ArgumentError.new("comparison of #{step.class} with 0 failed")
+    end
+    step_cmp = step_cmp > 0 ? 1 : step_cmp < 0 ? -1 : 0
+    op = %w(- <= >=)[step_cmp]
     while da.__send__(op, limit)
       yield da
       da += step
