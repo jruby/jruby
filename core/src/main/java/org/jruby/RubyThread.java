@@ -382,8 +382,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return errorInfo;
     }
 
-    public void setContext(ThreadContext context) {
-        this.contextRef = new WeakReference<ThreadContext>(context);
+    public void setContext(final ThreadContext context) {
+        if (context == null) {
+            WeakReference<ThreadContext> contextRef = this.contextRef;
+            if (contextRef != null) {
+                contextRef.clear();
+                this.contextRef = null;
+            }
+        } else {
+            this.contextRef = new WeakReference<>(context);
+        }
     }
 
     public ThreadContext getContext() {
@@ -906,7 +914,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (originalKey instanceof RubyString) return runtime.newSymbol(((RubyString) originalKey).getByteList());
 
-        throw getRuntime().newTypeError(str(getRuntime(), ids(runtime, originalKey), " is not a symbol nor a string"));
+        throw runtime.newTypeError(str(runtime, ids(runtime, originalKey), " is not a symbol nor a string"));
     }
 
     private synchronized Map<IRubyObject, IRubyObject> getFiberLocals() {
