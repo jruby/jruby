@@ -144,7 +144,7 @@ public class ThreadService {
 
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
-        this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
+        this.localContext = new ThreadLocal<>();
 
         try {
             this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
@@ -202,30 +202,39 @@ public class ThreadService {
      * collected.
      */
     public final ThreadContext getCurrentContext() {
-        SoftReference<ThreadContext> ref;
-        ThreadContext context = null;
+        SoftReference<ThreadContext> ref = localContext.get();
+        ThreadContext context;
+        if (ref != null && (context = ref.get()) != null) {
+            return context; // fast return without loop
+        }
 
-        while (context == null) {
-            // loop until a context is available, to clean up softrefs that might have been collected
-            if ((ref = localContext.get()) == null) {
-                ref = adoptCurrentThread();
-                context = ref.get();
-            } else {
-                context = ref.get();
+        do { // loop until a context is available, to clean up soft-refs that might have been collected
+            if (ref == null) {
+                adoptCurrentThread(); // registerNewThread will localContext.set(...)
+                ref = localContext.get();
             }
+            context = ref.get();
 
             // context is null, wipe out the SoftReference (this could be done with a reference queue)
-            if (context == null) {
-                localContext.set(null);
-            }
-        }
+            if (context == null) localContext.set(null);
+
+            ref = localContext.get();
+        } while (context == null);
 
         return context;
     }
 
-    private SoftReference<ThreadContext> adoptCurrentThread() {
-        RubyThread.adopt(runtime, this, Thread.currentThread());
-        return localContext.get();
+    private RubyThread adoptCurrentThread() {
+        return RubyThread.adopt(runtime, this, Thread.currentThread());
+    }
+
+    public ThreadContext registerNewThread(RubyThread thread) {
+        assert thread.getContext() == null;
+        ThreadContext context = ThreadContext.newContext(runtime);
+        context.setThread(thread);
+        ThreadFiber.initRootFiber(context, thread);
+        localContext.set(new SoftReference<>(context));
+        return context;
     }
 
     public RubyThread getMainThread() {
@@ -265,16 +274,8 @@ public class ThreadService {
         return rtList.toArray(new RubyThread[rtList.size()]);
     }
 
-    public ThreadContext registerNewThread(RubyThread thread) {
-        ThreadContext context = ThreadContext.newContext(runtime);
-        context.setThread(thread);
-        ThreadFiber.initRootFiber(context, thread);
-        localContext.set(new SoftReference<>(context));
-        return context;
-    }
-
-    public void associateThread(Object threadOrFuture, RubyThread rubyThread) {
-        rubyThreadMap.put(threadOrFuture, rubyThread); // synchronized
+    public void associateThread(Thread thread, RubyThread rubyThread) {
+        rubyThreadMap.put(thread, rubyThread); // synchronized
     }
 
     public void unregisterThread(RubyThread thread) {
