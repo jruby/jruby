@@ -42,7 +42,6 @@ import java.nio.channels.Selector;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Vector;
 import java.util.WeakHashMap;
@@ -56,7 +55,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
@@ -138,9 +136,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Whether this thread should report_on_exception when this thread GCs, when it terminates, or never */
     private volatile IRubyObject reportOnException;
 
-    /** Whether this thread's terminating exception has been captured by any code *after* the thread terminated. */
-    private volatile boolean exceptionCaptured;
-
     /** The final value resulting from the thread's execution */
     private volatile IRubyObject finalResult;
 
@@ -175,18 +170,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static final int RUBY_MAX_THREAD_PRIORITY = 3;
 
     /** Thread statuses */
-    public static enum Status {
+    public enum Status {
         RUN, SLEEP, ABORTING, DEAD;
 
         public final ByteList bytes;
 
         Status() {
-            bytes = new ByteList(toString().toLowerCase().getBytes(RubyEncoding.UTF8));
+            bytes = new ByteList(toString().toLowerCase().getBytes(RubyEncoding.UTF8), false);
         }
     }
 
     /** Current status in an atomic reference */
-    private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.RUN);
 
     /** Mail slot for cross-thread events */
     private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue<>();
