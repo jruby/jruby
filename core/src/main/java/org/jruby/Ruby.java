@@ -59,6 +59,7 @@ import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.runtime.IRWrappedLambdaReturnValue;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -3325,6 +3326,15 @@ public final class Ruby implements Constantizable {
                 }
                 // Reset $! now that rj has been handled
                 // context.runtime.getGlobalVariables().set("$!", oldExc);
+            } catch (IRWrappedLambdaReturnValue e) {
+                // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
+                // IR treats END blocks are closures and as such we see this special non-local return jump type
+                // bubble this far out as we exec each END proc.
+                if (e.isReturn()) {
+                    getWarnings().warn("unexpected return");
+                } else {
+                    getWarnings().warn("break from proc-closure");
+                }
             }
         }
 
