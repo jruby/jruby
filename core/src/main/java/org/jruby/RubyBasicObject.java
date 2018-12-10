@@ -2178,6 +2178,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return this;
     }
 
+    /**
+     * Set the object tainted and return it. This version does not check if the object has been frozen or if it is
+     * already tainted.
+     *
+     * @return
+     */
+    IRubyObject tainted() {
+        setTaint(true);
+        return this;
+    }
+
     @Deprecated
     protected final void taint(Ruby runtime) {
         taint(runtime.getCurrentContext());

@@ -94,7 +94,7 @@ public class RubyGlobal {
         String[] argv = runtime.getInstanceConfig().getArgv();
 
         for (String arg : argv) {
-            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
+            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg).tainted());
         }
 
         if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
