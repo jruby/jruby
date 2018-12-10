@@ -279,8 +279,14 @@ public class ThreadService {
 
     public void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread()); // synchronized
-        getCurrentContext().setThread(null);
-        localContext.set(null);
+
+        ThreadContext context = thread.getContext();
+        if (context != null) context.setThread(null);
+        thread.setContext(null); // help GC - clear context-ref
+
+        SoftReference<ThreadContext> ref = localContext.get();
+        if (ref != null) ref.clear(); // help GC
+        localContext.remove();
     }
 
     public long incrementAndGetThreadCount() {
