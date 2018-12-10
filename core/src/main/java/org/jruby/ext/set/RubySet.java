@@ -724,7 +724,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     // Equivalent to Set#keep_if, but returns nil if no changes were made.
-    @JRubyMethod(name = "select!")
+    @JRubyMethod(name = "select!", alias = "filter!")
     public IRubyObject select_bang(final ThreadContext context, Block block) {
         if ( ! block.isGiven() ) {
             return enumeratorizeWithSize(context, this, "select!", enumSize());

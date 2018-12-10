@@ -86,6 +86,7 @@ class Enumerator
       end.__set_inspect :select
     end
     alias_method :find_all, :select
+    alias_method :filter, :select
 
     def reject
       _block_error(:reject) unless block_given?
