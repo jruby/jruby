@@ -66,11 +66,21 @@ class TestTimeout < Test::Unit::TestCase
   # JRUBY-3817
   def test_net_http_timeout
     require 'net/http'
-    port = 10000 + rand(10000)
 
-    # open but never accept
-    server = TCPServer.new('localhost', port)
+    # Try binding to ports until we find one that's not already point
+    while 1
+      port = 10000 + rand(10000)
+      begin
+        server = TCPServer.new('localhost', port)
+        server.close
+        break
+      rescue
+        p $!
+        next
+      end
+    end
 
+    # try to connect to random high port assuming no service there
     assert_raises Net::OpenTimeout do
       http = Net::HTTP.new('localhost', port)
       http.open_timeout = 0.001
