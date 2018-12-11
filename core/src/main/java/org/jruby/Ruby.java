@@ -3330,10 +3330,11 @@ public final class Ruby implements Constantizable {
                 // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
                 // IR treats END blocks are closures and as such we see this special non-local return jump type
                 // bubble this far out as we exec each END proc.
+                String filename = proc.getBlock().getBinding().filename;
                 if (e.isReturn()) {
-                    getWarnings().warn("unexpected return");
+                    getWarnings().warn(filename, "unexpected return");
                 } else {
-                    getWarnings().warn("break from proc-closure");
+                    getWarnings().warn(filename, "break from proc-closure");
                 }
             }
         }
