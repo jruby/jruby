@@ -5811,7 +5811,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 Ruby runtime = getRuntime();
                 ByteList value = getByteList();
                 Encoding enc = value.getEncoding();
-                if (!enc.isUnicode() || isSingleByteOptimizable(RubyString.this, enc)) return rubyLength(runtime);
+                if (!enc.isUnicode()) return rubyLength(runtime);
 
                 Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
                 int beg = value.getBegin();
@@ -5834,7 +5834,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
         RubyString str = this;
         Encoding enc = str.getEncoding();
-        if (!enc.isUnicode() || isSingleByteOptimizable(str, enc)) {
+        if (!enc.isUnicode()) {
             return enumerateChars(context, name, block, wantarray);
         }
 
