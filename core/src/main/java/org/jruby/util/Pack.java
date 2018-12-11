@@ -2070,7 +2070,7 @@ public class Pack {
             }
         }
 
-        RubyString output = context.runtime.newString(result);
+        RubyString output = RubyString.newString(context.runtime, result);
         if (taintOutput) output.setTaint(true);
 
         switch (enc_info) {
@@ -2078,7 +2078,7 @@ public class Pack {
                 output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
-                output.force_encoding(context, context.runtime.getEncodingService().convertEncodingToRubyEncoding(UTF8));
+                output.associateEncoding(UTF8);
                 break;
             default:
                 /* do nothing, keep ASCII-8BIT */
