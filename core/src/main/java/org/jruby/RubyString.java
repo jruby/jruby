@@ -5999,9 +5999,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod
     public RubyArray unpack(ThreadContext context, IRubyObject obj, Block block) {
-        return Pack.unpackWithBlock(context, context.runtime, this.value, stringValue(obj).value, block);
+        return Pack.unpackWithBlock(context, this, stringValue(obj).value, block);
     }
 
+    @Deprecated // not used
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }

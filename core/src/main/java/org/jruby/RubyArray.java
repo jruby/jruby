@@ -4813,9 +4813,9 @@ float_loop:
 
     @JRubyMethod(name = "pack", required = 1)
     public RubyString pack(ThreadContext context, IRubyObject obj) {
-        RubyString iFmt = obj.convertToString();
+        RubyString format = obj.convertToString();
         try {
-            return Pack.pack(context, this, iFmt);
+            return Pack.pack(context, this, format);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }
@@ -4829,7 +4829,7 @@ float_loop:
 
         if (opts != context.nil) {
             buffer = ArgsUtil.extractKeywordArg(context, "buffer", (RubyHash) opts);
-            if (!buffer.isNil() && !(buffer instanceof RubyString)) {
+            if (buffer != context.nil && !(buffer instanceof RubyString)) {
                 throw runtime.newTypeError(str(runtime, "buffer must be String, not ", types(runtime, buffer.getType())));
             }
         }
