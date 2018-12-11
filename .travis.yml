@@ -97,16 +97,18 @@ script: tool/travis-script.sh
 
 notifications:
   irc:
-    channels:
-      - "irc.freenode.org#jruby"
     on_success: change
     on_failure: always
     only:
       branch:
-      - master
-      - jruby-9.1
+        - master
+        - jruby-9.1
     template:
-      - "%{repository} (%{branch}:%{commit} by %{author}): %{message} (%{build_url})"
+      - "%{repository_slug} (%{branch}:%{commit} by %{author}): %{message} \n%{build_url} [%{duration}]"
+    channels:
+      # - "irc.freenode.org#jruby"
+      # note: `travis encrypt -r "jruby/jruby" "irc.freenode.org#jruby"`
+      secure: "2DmwSfKvhnrdcC6LTXHHJ4QlSRXDlVUa9jEjXcdgIIZZm4ghbg/mmLjD6bv/ueCC8idQrYyuXRLeKIdaIss64q/lbbaj5VVV1p91fkZ3H+AhgHRPviboEm2bweSmjSWr7luXg4qifoL7YcXEtXw0YKGmub8WSZj4uPZbm5ce2l8="
 
 services:
   - redis-server
