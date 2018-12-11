@@ -209,9 +209,9 @@ class Enumerator
     end
 
     def uniq
-      hash = {}
       if block_given?
         Lazy.new(self) do |yielder, obj|
+          hash = yielder.backports_memo ||= {}
           ret = yield(*obj)
           next if hash.key? ret
           hash[ret] = obj
@@ -219,6 +219,7 @@ class Enumerator
         end
       else
         Lazy.new(self) do |yielder, obj|
+          hash = yielder.backports_memo ||= {}
           next if hash.key? obj
           hash[obj] = obj unless hash.key? obj
           yielder << obj
