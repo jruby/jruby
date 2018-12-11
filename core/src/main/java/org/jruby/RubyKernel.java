@@ -1292,7 +1292,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(module = true)
+    @JRubyMethod(module = true, alias = "then")
     public static IRubyObject yield_self(ThreadContext context, IRubyObject recv, Block block) {
         if (block.isGiven()) {
             return block.yield(context, recv);
