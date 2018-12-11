@@ -1964,10 +1964,12 @@ public final class StringSupport {
 
         if (subptr != pend) {
             if (chomp) {
-                pend = chomp_newline(strBytes, subptr, pend, enc);
-            } else if (pend - subptr >= rslen &&
-                    ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
-                pend -= rslen;
+                if (rsnewline) {
+                    pend = chomp_newline(strBytes, subptr, pend, enc);
+                } else if (pend - subptr >= rslen &&
+                        ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
+                    pend -= rslen;
+                }
             }
             line = str.substr(runtime, subptr - ptr, pend - subptr);
             if (wantarray) ary.append(line);
