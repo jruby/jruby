@@ -179,7 +179,7 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod
     public IRubyObject full_message(ThreadContext context) {
-        return RubyString.newString(context.runtime, TraceType.Format.MRI.printBacktrace(this, false));
+        return RubyString.newString(context.runtime, TraceType.Format.MRI.printBacktrace(this, TraceType.Order.DOWN, false));
     }
 
     @JRubyMethod
@@ -187,7 +187,7 @@ public class RubyException extends RubyObject {
         Ruby runtime = context.runtime;
         IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
         boolean highlight = false;
-        boolean reverse = false;
+        TraceType.Order order = TraceType.Order.DOWN;
 
         if (!optArg.isNil()) {
             IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
@@ -202,16 +202,15 @@ public class RubyException extends RubyObject {
             IRubyObject vOrder = highlightOrder[1];
             if (vOrder != UNDEF) {
                 vOrder = TypeConverter.checkID(vOrder);
-                if (vOrder == runtime.newSymbol("bottom")) reverse = true;
-                else if (vOrder == runtime.newSymbol("top")) reverse = false;
+                if (vOrder == runtime.newSymbol("down")) order = TraceType.Order.DOWN;
+                else if (vOrder == runtime.newSymbol("top")) order = TraceType.Order.TOP;
                 else {
                     throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
                 }
             }
         }
 
-        // TODO: reverse
-        return RubyString.newString(runtime, TraceType.Format.MRI.printBacktrace(this, highlight));
+        return RubyString.newString(runtime, TraceType.Format.MRI.printBacktrace(this, order, highlight));
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)

@@ -3,7 +3,6 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.stream.Stream;
 
 import com.headius.backport9.stack.StackWalker;
@@ -69,8 +68,12 @@ public class TraceType {
         return gather.getIntegratedBacktraceData(context, javaTrace);
     }
 
-    public String printBacktrace(RubyException exception, boolean console) {
-        return format.printBacktrace(exception, console);
+    public String printBacktrace(RubyException exception, boolean highlight) {
+        return format.printBacktrace(exception, Order.DOWN, highlight);
+    }
+
+    public String printBacktrace(RubyException exception, Order order, boolean highlight) {
+        return format.printBacktrace(exception, order, highlight);
     }
 
     public static void logBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
@@ -80,7 +83,7 @@ public class TraceType {
 
         buffer.append("Backtrace generated:\n");
 
-        renderBacktraceJRuby(runtime, trace, buffer, false);
+        renderBacktraceJRuby(runtime, trace, buffer, Order.TOP, false);
 
         LOG.info(buffer.toString());
     }
@@ -98,7 +101,7 @@ public class TraceType {
 
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
-        System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
+        System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, Order.TOP, runtime.getPosix().isatty(FileDescriptor.err)));
     }
 
     public static void logCaller(RubyArray trace) {
@@ -132,7 +135,7 @@ public class TraceType {
 
         buffer.append(message);
 
-        renderBacktraceMRI(trace, "  ", buffer, false);
+        renderBacktraceMRI(trace, "  ", buffer, Order.TOP, false);
 
         return buffer;
     }
@@ -282,15 +285,15 @@ public class TraceType {
 
     public enum Format {
         /**
-         * Formatting like C Ruby
+         * Formatting like C Ruby pre-2.5
          */
         MRI {
-            public String printBacktrace(RubyException exception, boolean console) {
-                return printBacktraceMRI(exception, console);
+            public String printBacktrace(RubyException exception, Order order, boolean highlight) {
+                return printBacktraceMRI(exception, order, highlight);
             }
 
-            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
-                renderBacktraceMRI(elts, buffer, color);
+            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, Order order, boolean highlight) {
+                renderBacktraceMRI(elts, buffer, order, highlight);
             }
         },
 
@@ -298,20 +301,22 @@ public class TraceType {
          * New JRuby formatting
          */
         JRUBY {
-            public String printBacktrace(RubyException exception, boolean console) {
-                return printBacktraceJRuby(exception, console);
+            public String printBacktrace(RubyException exception, Order order, boolean highlight) {
+                return printBacktraceJRuby(exception, order, highlight);
             }
 
-            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
-                renderBacktraceJRuby(null, elts, buffer, color);
+            public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, Order order, boolean highlight) {
+                renderBacktraceJRuby(null, elts, buffer, order, highlight);
             }
         };
 
-        public abstract String printBacktrace(RubyException exception, boolean console);
-        public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
+        public abstract String printBacktrace(RubyException exception, Order order, boolean highlight);
+        public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, Order order, boolean highlight);
     }
 
-    protected static String printBacktraceMRI(RubyException exception, boolean console) {
+    public enum Order { TOP, DOWN }
+
+    protected static String printBacktraceMRI(RubyException exception, Order order, boolean highlight) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
 
@@ -395,16 +400,16 @@ public class TraceType {
 
         buffer.append(type).append(": ").append(message).append('\n');
 
-        renderBacktraceJRuby(runtime, frames, buffer, color);
+        renderBacktraceJRuby(runtime, frames, buffer, Order.TOP, color);
 
         return buffer.toString();
     }
 
-    protected static String printBacktraceJRuby(RubyException exception, boolean console) {
+    protected static String printBacktraceJRuby(RubyException exception, Order order, boolean console) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
 
-        boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
+        boolean highlight = console && runtime.getInstanceConfig().getBacktraceColor();
 
         // exception line
         String message;
@@ -418,10 +423,10 @@ public class TraceType {
         }
         String type = exception.getMetaClass().getName();
 
-        return printBacktraceJRuby(exception.getRuntime(), exception.getBacktraceElements(), type, message, color);
+        return printBacktraceJRuby(exception.getRuntime(), exception.getBacktraceElements(), type, message, highlight);
     }
 
-    private static void renderBacktraceJRuby(Ruby runtime, RubyStackTraceElement[] frames, StringBuilder buffer, boolean color) {
+    private static void renderBacktraceJRuby(Ruby runtime, RubyStackTraceElement[] frames, StringBuilder buffer, Order order, boolean highlight) {
         // find longest method name
         int longestMethod = 0;
         for (RubyStackTraceElement frame : frames) {
@@ -431,7 +436,7 @@ public class TraceType {
         // backtrace lines
         boolean first = true;
         for (RubyStackTraceElement frame : frames) {
-            if (color) {
+            if (highlight) {
                 if (first) {
                     buffer.append(FIRST_COLOR);
                 } else if (frame.isBinding() || frame.getFileName().equals("(eval)")) {
@@ -456,7 +461,7 @@ public class TraceType {
                     .append(':')
                     .append(frame.getLineNumber());
 
-            if (color) {
+            if (highlight) {
                 buffer.append(CLEAR_COLOR);
             }
 
@@ -465,15 +470,27 @@ public class TraceType {
         }
     }
 
-    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, boolean color) {
-        renderBacktraceMRI(trace, "", buffer, color);
+    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, Order order, boolean highlight) {
+        renderBacktraceMRI(trace, "", buffer, order, highlight);
     }
 
-    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, String linePrefix, StringBuilder buffer, boolean color) {
+    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, String linePrefix, StringBuilder buffer, Order order, boolean highlight) {
         for (int i = 0; i < trace.length; i++) {
-            RubyStackTraceElement element = trace[i];
+            RubyStackTraceElement element;
+
+            if (order == Order.TOP) {
+                element = trace[i];
+                buffer.append(linePrefix);
+            } else {
+                element = trace[trace.length - 1 - i];
+                buffer
+                        .append(linePrefix)
+                        .append(trace.length - i)
+                        .append(": ")
+                        .append(linePrefix);
+            }
+
             buffer
-                    .append(linePrefix)
                     .append(element.getFileName())
                     .append(':')
                     .append(element.getLineNumber())

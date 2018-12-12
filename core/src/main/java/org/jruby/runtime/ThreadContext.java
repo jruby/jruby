@@ -46,7 +46,6 @@ import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
@@ -70,7 +69,6 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Locale;
@@ -740,7 +738,7 @@ public final class ThreadContext {
     public void renderCurrentBacktrace(StringBuilder sb) {
         TraceType traceType = runtime.getInstanceConfig().getTraceType();
         BacktraceData backtraceData = traceType.getBacktrace(this);
-        traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
+        traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, TraceType.Order.TOP, false);
     }
 
     private static final StackWalker WALKER;

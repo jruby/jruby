@@ -32,7 +32,6 @@ package org.jruby.management;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.SoftReference;
-import java.util.Arrays;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
@@ -40,6 +39,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Format;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 
@@ -109,7 +109,7 @@ public class Runtime implements RuntimeMBean {
         if (tc != null) {
             RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
             exc.setBacktraceData(WALKER.walk(th.getNativeThread().getStackTrace(), stream -> gather.getBacktraceData(tc, stream)));
-            pw.println(Format.MRI.printBacktrace(exc, false));
+            pw.println(Format.MRI.printBacktrace(exc, TraceType.Order.TOP, false));
         } else {
             pw.println("    [no longer alive]");
         }
@@ -127,7 +127,7 @@ public class Runtime implements RuntimeMBean {
                 try {
                     result[0] = ruby.get().evalScriptlet(code).toString();
                 } catch (RaiseException re) {
-                    result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException(), false);
+                    result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException(), TraceType.Order.TOP, false);
                     // ruby.get().getGlobalVariables().set("$!", oldExc); // Restore $!
                 } catch (Throwable t) {
                     StringWriter sw = new StringWriter();
