@@ -5711,6 +5711,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int i = 0; i < len; i += n) {
                     n = StringSupport.encFastMBCLen(ptrBytes, ptr + i, ptr + len, enc);
                     IRubyObject substr = str.substr(runtime, i, n);
+                    substr.infectBy(str);
                     if (wantarray) ary[a++] = substr;
                     else block.yield(context, substr);
                 }
@@ -5719,6 +5720,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int i = 0; i < len; i += n) {
                     n = StringSupport.length(enc, ptrBytes, ptr + i, ptr + len);
                     IRubyObject substr = str.substr(runtime, i, n);
+                    substr.infectBy(str);
                     if (wantarray) ary[a++] = substr;
                     else block.yield(context, substr);
                 }
@@ -5863,6 +5865,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             int len = matcher.match(ptr, end, Option.DEFAULT);
             if (len <= 0) break;
             RubyString result = newStringShared(runtime, ptrBytes, ptr, len, enc);
+            result.infectBy(str);
             if (wantarray) ary.append(result);
             else block.yield(context, result);
             ptr += len;
