@@ -155,14 +155,9 @@ public class ThreadService {
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
     }
 
-    public void disposeCurrentThread() {
-        localContext.set(null);
-        rubyThreadMap.remove(Thread.currentThread());
-    }
-
     public void teardown() {
         // clear all thread-local context references
-        localContext = new ThreadLocal<SoftReference<ThreadContext>>();
+        localContext = new ThreadLocal<>();
 
         // clear main context reference
         mainContext = null;
@@ -175,7 +170,7 @@ public class ThreadService {
         this.mainContext = ThreadContext.newContext(runtime);
 
         // Must be called from main thread (it is currently, but this bothers me)
-        localContext.set(new SoftReference<ThreadContext>(mainContext));
+        localContext.set(new SoftReference<>(mainContext));
     }
 
     /**
@@ -274,15 +269,31 @@ public class ThreadService {
     }
 
     public void unregisterThread(RubyThread thread) {
-        rubyThreadMap.remove(Thread.currentThread()); // synchronized
+        // NOTE: previously assumed thread.getNativeThread() == Thread.currentThread()
+        unregisterThreadImpl(thread.getContext(), thread.getNativeThread());
+    }
 
-        ThreadContext context = thread.getContext();
-        if (context != null) context.setThread(null);
-        thread.setContext(null); // help GC - clear context-ref
+    public void unregisterCurrentThread(ThreadContext context) {
+        unregisterThreadImpl(context, Thread.currentThread());
+    }
+
+    private void unregisterThreadImpl(ThreadContext context, Thread nativeThread) {
+        rubyThreadMap.remove(nativeThread); // synchronized
+
+        if (context != null) {
+            RubyThread thread = context.getThread();
+            context.setThread(null);
+            if (thread != null) thread.setContext(null); // help GC - clear context-ref
+        }
 
         SoftReference<ThreadContext> ref = localContext.get();
         if (ref != null) ref.clear(); // help GC
         localContext.remove();
+    }
+
+    @Deprecated // use unregisterCurrentThread
+    public void disposeCurrentThread() {
+        unregisterCurrentThread(getCurrentContext());
     }
 
     public long incrementAndGetThreadCount() {
