@@ -6,6 +6,7 @@ recover from such situation.
 ]
 
 exclude :test_errinfo_encoding_in_debug, "parser issue with Japanese encodings (https://github.com/jruby/jruby/issues/3679)"
+exclude :test_full_message, "work in process to support highlighting and reverse trace (jruby/jruby#5510)"
 exclude /test_machine_stackoverflow/, reason
 exclude :test_machine_stackoverflow_by_define_method, reason
 exclude :test_multibyte_and_newline, "Exception messages always go through Java String for us"
