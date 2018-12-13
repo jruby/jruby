@@ -2491,7 +2491,7 @@ public final class StringSupport {
         else {
             return h + 256;
         }
-        return h;
+        return ((byte)h) & 0xff;
     }
 
     private static int rb_memsearch_qs_utf8(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
