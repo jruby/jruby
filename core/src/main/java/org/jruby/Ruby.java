@@ -3399,7 +3399,13 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
+        // tear down thread references
         getThreadService().teardown();
+
+        // shut down executors
+        getJITCompiler().shutdown();
+        getExecutor().shutdown();
+        getFiberExecutor().shutdown();
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);

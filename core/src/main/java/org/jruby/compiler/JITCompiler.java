@@ -139,11 +139,27 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public void tearDown() {
+        shutdown();
+    }
+
+    /**
+     * Shut down this JIT compiler and its resources. No more JIT jobs will be submitted for optimization.
+     */
+    public void shutdown() {
         try {
             executor.shutdown();
         } catch (SecurityException se) {
             // ignore, can't shut down executor
         }
+    }
+
+    /**
+     * Return the shutdown status of the JIT compiler.
+     *
+     * @return true if already shut down, false otherwise
+     */
+    public boolean isShutdown() {
+        return executor.isShutdown();
     }
 
     public Runnable getTaskFor(ThreadContext context, Compilable method) {
