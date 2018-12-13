@@ -378,14 +378,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void setContext(final ThreadContext context) {
-        if (context == null) {
-            WeakReference<ThreadContext> contextRef = this.contextRef;
-            if (contextRef != null) {
-                contextRef.clear();
-                this.contextRef = null;
-            }
-        } else {
-            this.contextRef = new WeakReference<>(context);
+        this.contextRef = new WeakReference<>(context);
+    }
+
+    public void clearContext() {
+        WeakReference<ThreadContext> contextRef = this.contextRef;
+        if (contextRef != null) {
+            contextRef.clear();
+            this.contextRef = null;
         }
     }
 

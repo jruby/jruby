@@ -283,7 +283,7 @@ public class ThreadService {
         if (context != null) {
             RubyThread thread = context.getThread();
             context.setThread(null);
-            if (thread != null) thread.setContext(null); // help GC - clear context-ref
+            if (thread != null) thread.clearContext(); // help GC - clear context-ref
         }
 
         SoftReference<ThreadContext> ref = localContext.get();
