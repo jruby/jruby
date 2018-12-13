@@ -1258,7 +1258,7 @@ public class RubyKernel {
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         boolean kwargs = false;
-        int uplevel = -1;
+        int uplevel = 0;
 
         if (args.length > 1) {
             IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
@@ -1266,6 +1266,10 @@ public class RubyKernel {
                 kwargs = true;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, WARN_VALID_KEYS);
                 uplevel = rets[0] == UNDEF ? 0 : RubyNumeric.num2int(rets[0]);
+
+                if (uplevel < 0) {
+                    throw context.runtime.newArgumentError("negative level (" + uplevel + ")");
+                }
             }
         }
 
