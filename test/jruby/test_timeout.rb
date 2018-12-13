@@ -67,26 +67,29 @@ class TestTimeout < Test::Unit::TestCase
   def test_net_http_timeout
     require 'net/http'
 
-    # Try binding to ports until we find one that's not already point
-    while 1
+    # Try binding to ports until we find one that's not already open
+    server = nil
+    port = 0
+    1000.times do
       port = 10000 + rand(10000)
       begin
-        server = TCPServer.new('localhost', port)
-        server.close
+        server = Socket.new(:INET, :STREAM)
+        server.bind(Addrinfo.tcp("127.0.0.1", port))
         break
       rescue
         p $!
+        server = nil
         next
       end
     end
 
-    # try to connect to random high port assuming no service there
+    fail "could not find an open port" unless server
+
+    http = Net::HTTP.new('127.0.0.1', port)
+    http.open_timeout = 0.001
+
     assert_raises Net::OpenTimeout do
-      http = Net::HTTP.new('localhost', port)
-      http.open_timeout = 0.001
-      http.start do |h|
-        h.request_get '/index.html'
-      end
+      http.start {}
     end
   ensure
     server.close rescue nil
