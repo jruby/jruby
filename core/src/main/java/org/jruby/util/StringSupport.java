@@ -2472,21 +2472,22 @@ public final class StringSupport {
         }
         else if (h < 0xE0) {
             h *= mix;
-            h += xBytes[x + 1];
+            h += xBytes[x + 1] & 0xff;
         }
         else if (h < 0xF0) {
             h *= mix;
-            h += xBytes[x + 1];
+            h += xBytes[x + 1] & 0xff;
             h *= mix;
-            h += xBytes[x + 2];
+            h += xBytes[x + 2] & 0xff;
+
         }
         else if (h < 0xF5) {
             h *= mix;
-            h += xBytes[x + 1];
+            h += xBytes[x + 1] & 0xff;
             h *= mix;
-            h += xBytes[x + 2];
+            h += xBytes[x + 2] & 0xff;
             h *= mix;
-            h += xBytes[x + 3];
+            h += xBytes[x + 3] & 0xff;
         }
         else {
             return h + 256;
