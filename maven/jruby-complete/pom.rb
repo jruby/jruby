@@ -82,7 +82,13 @@ project 'JRuby Complete' do
                    :failOnError => false )
   end
 
-  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+  execute 'remove module-info.class from jar', :phase => 'package' do |ctx|
+    `zip -d #{ctx.basedir}/target/jruby-complete-*.jar module-info.class`
+  end
+
+  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' ) do
+    execute_goals( :artifacts, phase: :verify)
+  end
 
   ['sonatype-oss-release', 'snapshots'].each do |name|
     profile name do
