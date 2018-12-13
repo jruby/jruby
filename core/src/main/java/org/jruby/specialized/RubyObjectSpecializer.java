@@ -95,32 +95,6 @@ public class RubyObjectSpecializer {
                 }
 
                 try {
-//                    MethodHandle allocatorHandle = LOOKUP
-//                            .findConstructor(specialized, MethodType.methodType(void.class, Ruby.class, RubyClass.class))
-//                            .asType(MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class));
-
-                    // LMF version not working currently
-//                    MethodType invokeType = MethodType.methodType(specialized, Ruby.class, RubyClass.class);
-//                    MethodType smaType = MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class);
-//                    CallSite allocatorSite = LambdaMetafactory.metafactory(
-//                            LOOKUP,
-//                            "allocate",
-//                            MethodType.methodType(ObjectAllocator.class),
-//                            smaType,
-//                            allocatorHandle,
-//                            invokeType);
-//
-//                    ObjectAllocator allocator = (ObjectAllocator) allocatorSite.dynamicInvoker().invokeExact();
-
-//                    ObjectAllocator allocator = (runtime, klazz) -> {
-//                        try {
-//                            return (IRubyObject) allocatorHandle.invokeExact(runtime, klazz);
-//                        } catch (Throwable t) {
-//                            Helpers.throwException(t);
-//                            return null;
-//                        }
-//                    };
-
                     ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].newInstance();
 
                     SPECIALIZED_CLASSES.put(size, cna = new ClassAndAllocator(specialized, allocator));
