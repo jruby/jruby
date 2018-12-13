@@ -37,6 +37,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
@@ -78,7 +79,9 @@ public class RubyObjectSpecializer {
     }
 
     public static ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
-        int size = foundVariables.size();
+        // Limit size of reified objects
+        int size = Math.min(foundVariables.size(), Options.REIFY_VARIABLES_MAX.load());
+
         ClassAndAllocator cna = getClassForSize(size);
 
         if (cna == null) {
