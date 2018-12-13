@@ -39,6 +39,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.ISO8859_1Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -1203,13 +1204,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return str.hashCode();
     }
 
-    private static int javaStringHashCode(ByteList iso8859) {
+    // This should be identical to iso8859.toString().hashCode().
+    public static int javaStringHashCode(ByteList iso8859) {
         int h = 0;
-        int length = iso8859.length();
-        if (length > 0) {
-            byte val[] = iso8859.getUnsafeBytes();
-            int begin = iso8859.begin();
-            h = new String(val, begin, length, RubyEncoding.ISO).hashCode();
+        int begin = iso8859.begin();
+        int end = begin + iso8859.realSize();
+        byte[] bytes = iso8859.unsafeBytes();
+        for (int i = begin; i < end; i++) {
+            int v = bytes[i] & 0xFF;
+            h = 31 * h + v;
         }
         return h;
     }
