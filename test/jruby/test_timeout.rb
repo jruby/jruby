@@ -77,7 +77,6 @@ class TestTimeout < Test::Unit::TestCase
         server.bind(Addrinfo.tcp("127.0.0.1", port))
         break
       rescue
-        p $!
         server = nil
         next
       end
