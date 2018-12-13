@@ -4384,7 +4384,9 @@ public class RubyModule extends RubyObject {
         if (entry == null) return null;
 
         if (entry.hidden && !includePrivate) {
-            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
+            RubyModule recv = this;
+            if (recv.isIncluded()) recv = recv.getNonIncludedClass();
+            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", recv, name);
         }
         if (entry.deprecated) {
             final Ruby runtime = getRuntime();

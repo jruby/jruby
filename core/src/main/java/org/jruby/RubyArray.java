@@ -4669,6 +4669,21 @@ float_loop:
                 } else {
                     break float_loop;
                 }
+
+                if (Double.isNaN(f)) continue;
+                if (Double.isNaN(x)) {
+                    f = x;
+                    continue;
+                }
+                if (Double.isInfinite(x)) {
+                    if (Double.isInfinite(f) && Math.signum(x) != Math.signum(f))
+                        f = Double.NaN;
+                    else
+                        f = x;
+                    continue;
+                }
+                if (Double.isInfinite(f)) continue;
+
                 t = f + x;
                 if (Math.abs(f) >= Math.abs(x)) {
                     c += ((f - t) + x);

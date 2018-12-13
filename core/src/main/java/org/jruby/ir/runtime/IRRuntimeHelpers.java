@@ -202,7 +202,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block block) throws RuntimeException {
         // Wrap the return value in an exception object and push it through the break exception
         // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
-        if (inLambda(block.type)) throw new IRWrappedLambdaReturnValue(breakValue);
+        if (inLambda(block.type)) throw new IRWrappedLambdaReturnValue(breakValue, true);
 
         IRScopeType scopeType = ensureScopeIsClosure(context, dynScope);
 
@@ -1168,13 +1168,14 @@ public class IRRuntimeHelpers {
         if (splatMap != null && splatMap.length > 0) {
             int count = 0;
             for (int i = 0; i < splatMap.length; i++) {
-                count += splatMap[i] ? ((RubyArray)args[i]).size() : 1;
+                // make sure arg is still an array (zsuper can get have any args changed before it is called).
+                count += splatMap[i] && args[i] instanceof RubyArray ? ((RubyArray)args[i]).size() : 1;
             }
 
             IRubyObject[] newArgs = new IRubyObject[count];
             int actualOffset = 0;
             for (int i = 0; i < splatMap.length; i++) {
-                if (splatMap[i]) {
+                if (splatMap[i] && args[i] instanceof RubyArray) {
                     RubyArray ary = (RubyArray) args[i];
                     for (int j = 0; j < ary.size(); j++) {
                         newArgs[actualOffset++] = ary.eltOk(j);

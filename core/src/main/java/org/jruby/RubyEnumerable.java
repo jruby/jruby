@@ -1007,6 +1007,21 @@ public class RubyEnumerable {
             return lhs.callMethod(ctx, "+", rhs);
         }
 
+        Ruby runtime = ctx.runtime;
+
+        if (Double.isNaN(f)) return lhs;
+        if (Double.isNaN(x)) {
+            return lhs;
+        }
+        if (Double.isInfinite(x)) {
+            if (Double.isInfinite(f) && Math.signum(x) != Math.signum(f)) {
+                return new RubyFloat(runtime, RubyFloat.NAN);
+            } else {
+                return rhs;
+            }
+        }
+        if (Double.isInfinite(f)) return lhs;
+
         // Kahan's compensated summation algorithm
         t = f + x;
         if (Math.abs(f) >= Math.abs(x)) {
@@ -1016,7 +1031,7 @@ public class RubyEnumerable {
         }
         f = t;
 
-        return new RubyFloat(ctx.runtime, f);
+        return new RubyFloat(runtime, f);
     }
 
     public static IRubyObject injectCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {

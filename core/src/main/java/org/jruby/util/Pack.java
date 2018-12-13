@@ -491,13 +491,15 @@ public class Pack {
      * encodes a String in base64 or its uuencode variant.
      * appends the result of the encoding in a StringBuffer
      * @param io2Append The StringBuffer which should receive the result
-     * @param i2Encode The String to encode
-     * @param iLength The max number of characters to encode
-     * @param iType the type of encoding required (this is the same type as used by the pack method)
+     * @param charsToEncode The String to encode
+     * @param startIndex
+     * @param length The max number of characters to encode
+     * @param charCount
+     * @param encodingType the type of encoding required (this is the same type as used by the pack method)
      * @param tailLf true if the traililng "\n" is needed
      * @return the io2Append buffer
      **/
-    private static ByteList encodes(Ruby runtime, ByteList io2Append,byte[]charsToEncode, int startIndex, int length, int charCount, byte encodingType, boolean tailLf) {
+    private static ByteList encodes(Ruby runtime, ByteList io2Append,byte[] charsToEncode, int startIndex, int length, int charCount, byte encodingType, boolean tailLf) {
         charCount = charCount < length ? charCount : length;
 
         io2Append.ensure(charCount * 4 / 3 + 6);
@@ -550,7 +552,7 @@ public class Pack {
     }
 
     /**
-     * @see #unpackWithBlock(ThreadContext, RubyString, ByteList, Block)
+     * @see Pack#unpackWithBlock(ThreadContext, Ruby, ByteList, ByteList, Block)
      * @param context
      * @param encoded
      * @param formatString
