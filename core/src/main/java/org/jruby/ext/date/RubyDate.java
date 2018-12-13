@@ -1213,6 +1213,7 @@ public class RubyDate extends RubyObject {
 
         RubyNumeric subDiff = subMillisDiff(context, that);
         if ( ! subDiff.isZero() ) { // diff += diff_sub;
+            subDiff = subDiff.convertToRational().op_div(context, RubyFixnum.newFixnum(context.runtime, DAY_MS));  // #5493
             return (RubyNumeric) diffMillis.op_plus(context, subDiff);
         }
         return diffMillis;
