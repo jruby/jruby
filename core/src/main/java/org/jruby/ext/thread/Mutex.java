@@ -28,10 +28,13 @@
 
 package org.jruby.ext.thread;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
 import org.jruby.RubyTime;
@@ -48,7 +51,7 @@ import org.jruby.runtime.marshal.DataType;
  */
 @JRubyClass(name = "Mutex")
 public class Mutex extends RubyObject implements DataType {
-    ReentrantLock lock = new ReentrantLock();
+    final ReentrantLock lock = new ReentrantLock();
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -122,7 +125,7 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context) {
-        long beg = System.currentTimeMillis();
+        final long start = System.nanoTime();
         try {
             unlock(context);
             context.getThread().sleep(0);
@@ -131,12 +134,13 @@ public class Mutex extends RubyObject implements DataType {
         } finally {
             lock(context);
         }
-        return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+
+        return toSeconds(context, System.nanoTime() - start);
     }
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
-        final long beg = System.currentTimeMillis();
+        final long start = System.nanoTime();
         double t = RubyTime.convertTimeInterval(context, timeout);
 
         unlock(context);
@@ -155,7 +159,11 @@ public class Mutex extends RubyObject implements DataType {
             lock(context);
         }
 
-        return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        return toSeconds(context, System.nanoTime() - start);
+    }
+
+    private static RubyFixnum toSeconds(final ThreadContext context, final long nanos) {
+        return context.runtime.newFixnum(TimeUnit.NANOSECONDS.toSeconds(nanos));
     }
 
     @JRubyMethod
