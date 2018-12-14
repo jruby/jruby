@@ -104,7 +104,7 @@ notifications:
         - master
         - jruby-9.1
     template:
-      - "%{repository_slug} (%{branch}:%{commit} by %{author}): %{message} \n%{build_url} [%{duration}]"
+      - "%{repository_slug} (%{branch}:%{commit} by %{author}): %{message} %{build_url} [%{duration}]"
     channels:
       # - "irc.freenode.org#jruby"
       # note: `travis encrypt -r "jruby/jruby" "irc.freenode.org#jruby"`
