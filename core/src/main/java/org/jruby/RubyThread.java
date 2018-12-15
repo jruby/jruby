@@ -340,7 +340,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private int pendingInterruptCheckMask(ThreadContext context, IRubyObject err) {
-        List<IRubyObject> ancestors = err.getMetaClass().getAncestorList();
+        if (interruptMaskStack.isEmpty()) return INTERRUPT_NONE; // fast return
+
+        List<IRubyObject> ancestors = getMetaClass(err).getAncestorList();
         int ancestorsLen = ancestors.size();
 
         List<RubyHash> maskStack = interruptMaskStack;
