@@ -39,21 +39,15 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -161,7 +155,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     //private volatile boolean handleInterrupt = true;
 
     /** Stack of interrupt masks active for this thread */
-    private final List<RubyHash> interruptMaskStack = Collections.synchronizedList(new ArrayList<RubyHash>());
+    private final Vector<RubyHash> interruptMaskStack = new Vector<>(4);
 
     /** Thread-local tuple used for sleeping (semaphore, millis, nanos) */
     private final SleepTask2 sleepTask = new SleepTask2();
@@ -193,7 +187,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile Object unblockArg;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
-    private final List<Lock> heldLocks = new Vector<Lock>();
+    private final List<Lock> heldLocks = new Vector<>();
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
@@ -340,16 +334,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private int pendingInterruptCheckMask(ThreadContext context, IRubyObject err) {
-        if (interruptMaskStack.isEmpty()) return INTERRUPT_NONE; // fast return
+        int idx = interruptMaskStack.size();
+        if (idx == 0) return INTERRUPT_NONE; // fast return
 
         List<IRubyObject> ancestors = getMetaClass(err).getAncestorList();
-        int ancestorsLen = ancestors.size();
+        final int ancestorsLen = ancestors.size();
 
-        List<RubyHash> maskStack = interruptMaskStack;
-        int maskStackLen = maskStack.size();
-
-        for (int i = 0; i < maskStackLen; i++) {
-            RubyHash mask = maskStack.get(maskStackLen - (i + 1));
+        while (--idx >= 0) {
+            RubyHash mask = interruptMaskStack.get(idx);
 
             for (int j = 0; j < ancestorsLen; j++) {
                 IRubyObject klass = ancestors.get(j);
@@ -657,10 +649,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    private static void copyInterrupts(ThreadContext context, List<RubyHash> sourceStack, List<RubyHash> targetStack) {
+    private static final RubyHash[] NULL_ARRAY = new RubyHash[0];
+
+    private static void copyInterrupts(ThreadContext context, Vector<RubyHash> sourceStack, Vector<RubyHash> targetStack) {
         // We do this in a loop so we can use synchronized collections but not deadlock inside addAll.
         // See https://github.com/jruby/jruby/issues/5520
-        for (RubyHash h : sourceStack) {
+        for (RubyHash h : sourceStack.toArray(NULL_ARRAY)) {
             targetStack.add(h.dupFast(context));
         }
     }
