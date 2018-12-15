@@ -645,13 +645,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return this;
         }
         catch (OutOfMemoryError oome) {
-            if (oome.getMessage().equals("unable to create new native thread")) {
+            if ("unable to create new native thread".equals(oome.getMessage())) {
                 throw runtime.newThreadError(oome.getMessage());
             }
             throw oome;
         }
         catch (SecurityException ex) {
-          throw runtime.newThreadError(ex.getMessage());
+            throw runtime.newThreadError(ex.getMessage());
         }
     }
 
@@ -756,23 +756,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         mask.visitAll(context, HandleInterruptVisitor, null);
 
-        RubyThread th = context.getThread();
-        th.interruptMaskStack.add(mask);
-        if (th.pendingInterruptQueue.isEmpty()) {
-            th.pendingInterruptQueueChecked = false;
-            th.setInterrupt();
+        final RubyThread thread = context.getThread();
+        thread.interruptMaskStack.add(mask);
+        if (thread.pendingInterruptQueue.isEmpty()) {
+            thread.pendingInterruptQueueChecked = false;
+            thread.setInterrupt();
         }
 
         try {
             // check for any interrupts that should fire with new masks
-            th.pollThreadEvents();
+            thread.pollThreadEvents();
 
             return block.call(context);
         } finally {
-            th.interruptMaskStack.remove(th.interruptMaskStack.size() - 1);
-            th.setInterrupt();
+            thread.interruptMaskStack.remove(thread.interruptMaskStack.size() - 1);
+            thread.setInterrupt();
 
-            th.pollThreadEvents(context);
+            thread.pollThreadEvents(context);
         }
     }
 
