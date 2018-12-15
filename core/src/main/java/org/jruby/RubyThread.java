@@ -257,9 +257,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                 if (err == UNDEF) {
                     // no error
-                } else if (err == RubyFixnum.zero(runtime) ||
-                        err == RubyFixnum.one(runtime) ||
-                        err == RubyFixnum.two(runtime)) {
+                } else if (err instanceof RubyFixnum && (((RubyFixnum) err).getLongValue() == 0 ||
+                        ((RubyFixnum) err).getLongValue() == 1 ||
+                        ((RubyFixnum) err).getLongValue() == 2)) {
                     toKill();
                 } else {
                     afterBlockingCall();
