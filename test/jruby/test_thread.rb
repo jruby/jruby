@@ -419,9 +419,9 @@ class TestThread < Test::Unit::TestCase
     def count; @mutex.synchronize { @count } end
 
     def wait(timeout = nil)
-      Timeout::timeout timeout do
-        @mutex.synchronize { @conditional.wait @mutex if @count > 0 }
-        true
+      @mutex.synchronize do
+        return :nowait if @count == 0
+        @conditional.wait @mutex, timeout
       end
     end
   end
@@ -436,8 +436,6 @@ class TestThread < Test::Unit::TestCase
   private :wait_for_latch
 
   def test_count_down_latch
-    require 'timeout'
-
     (ENV['TIMES'] || 10_000).to_i.times do |i|
       print '*' if $VERBOSE
       assert wait_for_latch # should not raise
