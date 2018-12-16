@@ -335,20 +335,20 @@ class TestThread < Test::Unit::TestCase
     go = false
     ret = []
     t = Thread.new do
-      10000.times do
+      10_000.times do
         Thread.pass until go
         sleep
         ret << 'ok'
       end
     end
-    10000.times do
+    10_000.times do
       go = true
       Thread.pass until t.status == 'sleep'
       go = false
       t.wakeup
     end
     t.join
-    assert_equal(10000, ret.size)
+    assert_equal(10_000, ret.size)
   end
 
   def test_inspect_and_to_s
@@ -400,6 +400,48 @@ class TestThread < Test::Unit::TestCase
       assert ! Thread.current.inspect.index('@foo')
       assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current) if defined? JRUBY_VERSION
     end.join
+  end
+
+  CountDownLatch = Class.new do
+    def initialize(count)
+      @count = count
+      @mutex = Mutex.new
+      @conditional = ConditionVariable.new
+    end
+
+    def countdown!
+      @mutex.synchronize do
+        @count -= 1 if @count > 0
+        @conditional.broadcast if @count == 0
+      end
+    end
+
+    def count; @mutex.synchronize { @count } end
+
+    def wait(timeout = nil)
+      Timeout::timeout timeout do
+        @mutex.synchronize { @conditional.wait @mutex if @count > 0 }
+        true
+      end
+    end
+  end
+
+  def wait_for_latch(count = 5, timeout = 1.0)
+    latch = CountDownLatch.new count
+    count.times do
+      Thread.new { latch.countdown! }
+    end
+    latch.wait(timeout)
+  end
+  private :wait_for_latch
+
+  def test_count_down_latch
+    require 'timeout'
+
+    (ENV['TIMES'] || 10_000).to_i.times do |i|
+      print '*' if $VERBOSE
+      assert wait_for_latch # should not raise
+    end
   end
 
   private
