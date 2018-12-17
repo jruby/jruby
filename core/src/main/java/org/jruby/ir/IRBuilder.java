@@ -3490,6 +3490,7 @@ public class IRBuilder {
 
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
                 Signature.from(postExeNode), CommonByteLists._END_, true);
+        endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
 
@@ -3755,15 +3756,21 @@ public class IRBuilder {
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
-            // Closures return behavior has several cases (which depend on runtime state):
-            // 1. closure in method (return). !method (error) except if in define_method (return)
-            // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
-            // 3. migrated closure (LJE) [dynamic]
-            // 4. eval/for (return) [static]
-            boolean definedWithinMethod = scope.getNearestMethod() != null;
-            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
-            addInstr(new NonlocalReturnInstr(retVal,
-                    definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+            if (scope.isWithinEND()) {
+                // ENDs do not allow returns
+                addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
+            } else {
+                // Closures return behavior has several cases (which depend on runtime state):
+                // 1. closure in method (return). !method (error) except if in define_method (return)
+                // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
+                // 3. migrated closure (LJE) [dynamic]
+                // 4. eval/for (return) [static]
+                boolean definedWithinMethod = scope.getNearestMethod() != null;
+                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
+                    addInstr(new CheckForLJEInstr(definedWithinMethod));
+                addInstr(new NonlocalReturnInstr(retVal,
+                        definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+            }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
