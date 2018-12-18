@@ -73,8 +73,9 @@ class TestTimeout < Test::Unit::TestCase
     1000.times do
       port = 10000 + rand(10000)
       begin
-        server = Socket.new(:INET, :STREAM)
+        server = ServerSocket.new(:INET, :STREAM)
         server.bind(Addrinfo.tcp("127.0.0.1", port))
+        server.listen(1)
         break
       rescue
         server = nil
