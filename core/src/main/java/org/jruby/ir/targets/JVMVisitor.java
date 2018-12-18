@@ -1940,10 +1940,10 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 jvmMethod().loadContext();
-                jvmLoadLocal(DYNAMIC_SCOPE);
+                jvmAdapter().getstatic(jvm.clsData().clsName, currentScopeName, ci(IRScope.class));
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmMethod().loadSelfBlock();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleBreakAndReturnsInLambdas", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Object.class, Block.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "handleBreakAndReturnsInLambdas", sig(IRubyObject.class, ThreadContext.class, IRScope.class, Object.class, Block.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_BACKREF:

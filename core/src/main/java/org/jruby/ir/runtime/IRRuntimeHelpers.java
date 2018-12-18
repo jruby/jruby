@@ -237,13 +237,13 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, DynamicScope dynScope, Object exc, Block block) throws RuntimeException {
+    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, IRScope scope, Object exc, Block block) throws RuntimeException {
         if (exc instanceof IRWrappedLambdaReturnValue) {
             // Wrap the return value in an exception object and push it through the nonlocal return exception
             // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
-        } else if (exc instanceof IRReturnJump && dynScope != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope().getIRScope())) {
-            if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+        } else if (exc instanceof IRReturnJump &&  inReturnScope(block.type, (IRReturnJump) exc, scope)) {
+            if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + scope);
             return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
             // Propagate the exception
