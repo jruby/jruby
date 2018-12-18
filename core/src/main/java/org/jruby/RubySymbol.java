@@ -828,17 +828,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             byteList.setEncoding(USASCIIEncoding.INSTANCE);
         }
 
+        // Need symbol to register before encoding, so this is a little leaky
+        RubySymbol result = newSymbol(input.getRuntime(), byteList);
+
+        input.registerLinkTarget(result);
+
         // consume encoding ivar before making string
         if (state.isIvarWaiting()) {
             input.unmarshalInt(); // throw-away, always single ivar of encoding
             Encoding enc = input.getEncodingFromUnmarshaled(input.unmarshalObject());
-            byteList.setEncoding(enc);
+            result.getBytes().setEncoding(enc);
             state.setIvarWaiting(false);
         }
-
-        RubySymbol result = newSymbol(input.getRuntime(), byteList);
-
-        input.registerLinkTarget(result);
 
         return result;
     }
