@@ -4482,13 +4482,11 @@ public class RubyModule extends RubyObject {
      * @return the id for this valid constant name.
      */
     protected final String validateConstant(IRubyObject name) {
-        RubySymbol symbol = RubySymbol.retrieveIDSymbol(name);
-
-        if (!symbol.validConstantName()) {
-            throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), symbol.idString());
-        }
-
-        return symbol.idString();
+        return RubySymbol.retrieveIDSymbol(name, (sym, newSym) -> {
+            if (!sym.validConstantName()) {
+                throw getRuntime().newNameError(str(getRuntime(), "wrong constant name ", name), sym.idString());
+            }
+        }).idString();
     }
 
     // FIXME: This should really be working with symbol segments (errorName is FQN).
