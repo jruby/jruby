@@ -75,7 +75,6 @@ class TestTimeout < Test::Unit::TestCase
       begin
         server = ServerSocket.new(:INET, :STREAM)
         server.bind(Addrinfo.tcp("127.0.0.1", port))
-        server.listen(1)
         break
       rescue
         server = nil
