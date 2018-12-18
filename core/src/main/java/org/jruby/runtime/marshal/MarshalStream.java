@@ -147,10 +147,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
-        ByteList sym;
-        if (value instanceof RubySymbol && cache.isSymbolRegistered(sym = ((RubySymbol) value).getBytes())) {
-            cache.writeSymbolLink(this, sym);
-        } else if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
+        if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
             cache.writeLink(this, value);
         } else {
             value.getMetaClass().smartDump(this, value);
