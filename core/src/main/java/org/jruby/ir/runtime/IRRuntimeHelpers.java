@@ -242,7 +242,7 @@ public class IRRuntimeHelpers {
             // Wrap the return value in an exception object and push it through the nonlocal return exception
             // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
-        } else if (exc instanceof IRReturnJump &&  block != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope())) {
+        } else if (exc instanceof IRReturnJump && dynScope.getStaticScope() != null &&  block != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope())) {
             if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
             return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
