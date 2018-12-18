@@ -995,10 +995,47 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @JRubyMethod
+    @Deprecated
     public RubyHash to_h(ThreadContext context) {
+        return to_h(context, Block.NULL_BLOCK);
+    }
+
+    @JRubyMethod
+    public RubyHash to_h(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
+        if (block.isGiven()) return to_h_block(context, block);
         return getType() == runtime.getHash() ? this : newHash(runtime).replace(context, this);
+    }
+
+    private static class TransformKeysAndValuesVisitor extends VisitorWithState<RubyHash> {
+        private final Block block;
+
+        public TransformKeysAndValuesVisitor(Block block) {
+            this.block = block;
+        }
+
+        @Override
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyHash result) {
+            IRubyObject elt = block.yieldArray(context, context.runtime.newArray(key, value), null);
+            IRubyObject key_value_pair = elt.checkArrayType();
+
+            if (key_value_pair == context.nil) {
+                throw context.runtime.newTypeError("wrong element type " + elt.getMetaClass().getRealClass() + " (expected array)");
+            }
+
+            RubyArray ary = (RubyArray)key_value_pair;
+            if (ary.getLength() != 2) {
+                throw context.runtime.newArgumentError("element has wrong array length " + "(expected 2, was " + ary.getLength() + ")");
+            }
+
+            result.fastASet(ary.eltInternal(0), ary.eltInternal(1));
+        }
+    }
+
+    protected RubyHash to_h_block(ThreadContext context, Block block) {
+        RubyHash result = newHash(context.runtime);
+        visitAll(context, new TransformKeysAndValuesVisitor(block), result);
+        return result;
     }
 
     @Override
