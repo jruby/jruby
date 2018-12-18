@@ -111,6 +111,10 @@ public class PopenExecutor {
             prog = (RubyString)prog.strDup(runtime).prepend(context, RubyString.newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
             eargp.chdir_dir = null;
             eargp.chdir_given_clear();
+
+            // create new pgroup to prevent orphaned processes when the parent is killed
+            eargp.attributes.add(SpawnAttribute.pgroup(0));
+            eargp.attributes.add(SpawnAttribute.flags((short)SpawnAttribute.SETPGROUP));
         }
 
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
