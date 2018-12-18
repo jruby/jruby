@@ -634,7 +634,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             runtime.getThreadService().associateThread(thread, this);
 
             // copy parent thread's interrupt masks
-            interruptMaskStack.addAll(context.getThread().interruptMaskStack);
+            copyInterrupts(context, context.getThread().interruptMaskStack, this.interruptMaskStack);
 
             threadImpl.start();
 
@@ -652,6 +652,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
         catch (SecurityException ex) {
           throw runtime.newThreadError(ex.getMessage());
+        }
+    }
+
+    private static void copyInterrupts(ThreadContext context, List<RubyHash> sourceStack, List<RubyHash> targetStack) {
+        // We do this in a loop so we can use synchronized collections but not deadlock inside addAll.
+        // See https://github.com/jruby/jruby/issues/5520
+        for (RubyHash h : sourceStack) {
+            targetStack.add(h.dupFast(context));
         }
     }
 
