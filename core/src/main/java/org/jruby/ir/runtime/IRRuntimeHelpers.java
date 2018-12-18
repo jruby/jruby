@@ -231,9 +231,9 @@ public class IRRuntimeHelpers {
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
-    private static boolean inReturnScope(Block.Type blockType, IRReturnJump exception, StaticScope scope) {
+    private static boolean inReturnScope(Block.Type blockType, IRReturnJump exception, IRScope scope) {
         // blockType == null is any non-block scope but in this case it is always a method based on how we emit instrs.
-        return (blockType == null || inLambda(blockType)) && scope != null && exception.methodToReturnFrom == scope.getIRScope();
+        return (blockType == null || inLambda(blockType)) && exception.methodToReturnFrom == scope;
     }
 
     @JIT
@@ -242,7 +242,7 @@ public class IRRuntimeHelpers {
             // Wrap the return value in an exception object and push it through the nonlocal return exception
             // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
-        } else if (exc instanceof IRReturnJump && dynScope.getStaticScope() != null &&  block != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope())) {
+        } else if (exc instanceof IRReturnJump && dynScope != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope().getIRScope())) {
             if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
             return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {
