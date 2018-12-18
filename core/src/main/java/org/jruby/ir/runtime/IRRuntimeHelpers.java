@@ -154,7 +154,6 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject initiateNonLocalReturn(DynamicScope dynScope, Block block, IRubyObject returnValue) {
         if (block != null && inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
-        //new Exception().printStackTrace();
 
         StaticScope returnScope = dynScope.getStaticScope();
         StaticScope returnToScope = getContainingLambda(dynScope);
