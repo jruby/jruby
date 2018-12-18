@@ -494,8 +494,8 @@ public class UnmarshalStream extends InputStream {
                 throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
             }
             enc = entry.getEncoding();
-
         }
+
         return enc;
     }
 

@@ -837,6 +837,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         if (state.isIvarWaiting()) {
             input.unmarshalInt(); // throw-away, always single ivar of encoding
             Encoding enc = input.getEncodingFromUnmarshaled(input.unmarshalObject());
+            if (enc == null) throw new RuntimeException("BUG: No encoding found in marshal stream");
             result.getBytes().setEncoding(enc);
             state.setIvarWaiting(false);
         }
