@@ -3011,13 +3011,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     protected String validateInstanceVariable(IRubyObject name) {
-        RubySymbol symbol = RubySymbol.retrieveIDSymbol(name);
-
-        if (!symbol.validInstanceVariableName()) {
-            throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
-        }
-
-        return symbol.idString();
+        return RubySymbol.retrieveIDSymbol(name, (sym, newSym) -> {
+            if (!sym.validInstanceVariableName()) {
+                throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
+            }
+        }).idString();
     }
 
     /**

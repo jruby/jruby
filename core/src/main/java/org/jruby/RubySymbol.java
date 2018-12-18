@@ -214,6 +214,23 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     /**
+     * Retrieve an ID symbol but call the handler before any new symbol is added to the symbol table.
+     * This can be used for verifying the symbol is valid.
+     *
+     * @param name to get symbol table entry for (it may be a symbol already)
+     * @return the symbol table entry.
+     */
+    public static RubySymbol retrieveIDSymbol(IRubyObject name, ObjBooleanConsumer<RubySymbol> handler) {
+        if (name instanceof RubySymbol) {
+            RubySymbol sym = (RubySymbol) name;
+            handler.accept(sym, false);
+            return sym;
+        }
+
+        return newIDSymbol(name.getRuntime(), name.convertToString().getByteList(), handler);
+    }
+
+    /**
      * RubySymbol is created by passing in a String and bytes are extracted from that.  We will
      * pass in encoding of that string after construction but before use so it does not forget
      * what it is.
@@ -326,6 +343,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return runtime.getSymbolTable().getSymbol(bytes, true);
     }
 
+    public static RubySymbol newHardSymbol(Ruby runtime, ByteList bytes, ObjBooleanConsumer<RubySymbol> handler) {
+        return runtime.getSymbolTable().getSymbol(bytes, handler, true);
+    }
+
     public static RubySymbol newHardSymbol(Ruby runtime, String name) {
         return runtime.getSymbolTable().getSymbol(name, true);
     }
@@ -355,6 +376,17 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     public static RubySymbol newIDSymbol(Ruby runtime, ByteList bytes) {
         return newHardSymbol(runtime, bytes);
+    }
+
+    /**
+     * Generic identifier symbol creation (or retrieval) method that invokes a handler before storing new symbols.
+     *
+     * @param runtime of this Ruby instance.
+     * @param bytes to be made into a symbol (or to help retreive existing symbol)
+     * @return a new or existing symbol
+     */
+    public static RubySymbol newIDSymbol(Ruby runtime, ByteList bytes, ObjBooleanConsumer<RubySymbol> handler) {
+        return newHardSymbol(runtime, bytes, handler);
     }
 
     /**
