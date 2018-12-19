@@ -118,7 +118,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             case HANDLE_NONLOCAL_RETURN:
                 return IRRuntimeHelpers.handleNonlocalReturn(currDynScope.getStaticScope().getIRScope(), arg1);
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
-                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, currDynScope.getStaticScope().getIRScope(), arg1, block);
+                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, currDynScope, arg1, block);
             case IS_DEFINED_CALL:
                 return IRRuntimeHelpers.isDefinedCall(
                         context,
