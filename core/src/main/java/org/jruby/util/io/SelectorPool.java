@@ -30,6 +30,7 @@
 package org.jruby.util.io;
 
 import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
@@ -85,19 +86,23 @@ public class SelectorPool {
      * @param selector the selector to put back
      */
     public void put(Selector selector) {
-        for (SelectionKey key : selector.keys()) {
-            if (key != null) {
-                key.cancel();
-            }
-        }
-
         try {
-            selector.selectNow();
-        } catch (Exception e) {
-            //ignore
-        }
+            for (SelectionKey key : selector.keys()) {
+                if (key != null) {
+                    key.cancel();
+                }
+            }
 
-        returnToPool(selector);
+            try {
+                selector.selectNow();
+            } catch (Exception e) {
+                //ignore
+            }
+
+            returnToPool(selector);
+        } catch (ClosedSelectorException cse) {
+            // ignore; this one is not usable and we'll just create a new one the next time
+        }
     }
     
     /**
