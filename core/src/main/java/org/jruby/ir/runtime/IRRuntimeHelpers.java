@@ -182,7 +182,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject handleNonlocalReturn(IRScope scope, Object rjExc) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(DynamicScope dynScope, Object rjExc) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null; // Unreachable
@@ -190,8 +190,8 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // If we are in the method scope we are supposed to return from, stop p<ropagating.
-            if (rj.methodToReturnFrom == scope) {
-                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + scope);
+            if (rj.methodToReturnFrom == dynScope.getStaticScope().getIRScope()) {
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
                 return (IRubyObject) rj.returnValue;
             }
 
