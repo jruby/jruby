@@ -659,6 +659,14 @@ public class RubyDir extends RubyObject implements Closeable {
 // ----- Ruby Instance Methods -------------------------------------------------
 
     /**
+     * Returns an array containing all of the filenames except for "." and "..".
+     */
+    @JRubyMethod(name = "children")
+    public IRubyObject children(ThreadContext context) {
+        return childrenCommon(context, this, path, context.nil);
+    }
+
+    /**
      * Closes the directory stream.
      */
     @JRubyMethod(name = "close")
