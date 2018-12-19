@@ -303,6 +303,14 @@ public abstract class IRScope implements ParseResult {
         return staticScope;
     }
 
+    public boolean isWithinEND() {
+        for (IRScope current = this; current != null && current instanceof IRClosure; current = current.getLexicalParent()) {
+            if (((IRClosure) current).isEND()) return true;
+        }
+
+        return false;
+    }
+
     public IRMethod getNearestMethod() {
         IRScope current = this;
 

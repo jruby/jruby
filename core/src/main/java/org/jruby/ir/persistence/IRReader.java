@@ -86,6 +86,10 @@ public class IRReader implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
+        boolean isEND = false;
+        if (type == IRScopeType.CLOSURE) {
+            isEND = decoder.decodeBoolean();
+        }
         Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
@@ -101,6 +105,10 @@ public class IRReader implements IRPersistenceValues {
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
         IRScope scope = createScope(manager, type, manager.runtime.newSymbol(name), line, parent, signature, staticScope);
+
+        if (scope instanceof IRClosure && isEND) {
+            ((IRClosure) scope).setIsEND();
+        }
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
