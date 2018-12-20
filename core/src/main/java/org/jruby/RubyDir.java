@@ -745,6 +745,16 @@ public class RubyDir extends RubyObject implements Closeable {
         return each_child(context, context.runtime.getDefaultEncoding(), block);
     }
 
+    @JRubyMethod(name = "each_child")
+    public IRubyObject rb_each_child(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            each_child(context, block);
+            return context.nil;
+        }
+
+        return enumeratorize(context.runtime, children(context), "each");
+    }
+
     @Override
     @JRubyMethod
     public IRubyObject inspect() {
