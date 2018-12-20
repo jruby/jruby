@@ -89,13 +89,20 @@ public class Mutex extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject lock(ThreadContext context) {
         RubyThread thread = context.getThread();
-        try {
-            thread.enterSleep();
-            checkRelocking(context);
-            thread.lock(lock);
-        } finally {
-            thread.exitSleep();
+
+        checkRelocking(context);
+
+        // try locking without sleep status to avoid looking like blocking
+        if (!thread.tryLock(lock)) {
+            // failed to acquire, proceed to sleep and block
+            try {
+                thread.enterSleep();
+                thread.lock(lock);
+            } finally {
+                thread.exitSleep();
+            }
         }
+
         return this;
     }
 
