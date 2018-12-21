@@ -1182,6 +1182,6 @@ $stderr = $stdout; raise "\x82\xa0"') do |outs, errs, status|
       end
       raise Bug14566
     end;
-    assert_in_out_err([], code, [], /Bug14566/, success: false, timeout: 1)
+    assert_in_out_err([], code, [], /Bug14566/, success: false, timeout: 10)
   end
 end
