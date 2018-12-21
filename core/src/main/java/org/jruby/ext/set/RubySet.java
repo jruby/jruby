@@ -627,7 +627,7 @@ public class RubySet extends RubyObject implements Set {
 
     protected void addImplSet(final ThreadContext context, final RubySet set) {
         // NOTE: MRI cheats - does not call Set#add thus we do not care ...
-        hash.merge_bang(context, set.hash, Block.NULL_BLOCK);
+        hash.merge_bang(context, new IRubyObject[]{set.hash}, Block.NULL_BLOCK);
     }
 
     /**

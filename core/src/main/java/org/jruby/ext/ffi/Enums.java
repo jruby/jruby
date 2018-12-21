@@ -97,7 +97,7 @@ public final class Enums extends RubyObject {
             if (tag != null && !tag.isNil())
                 taggedEnums.fastASet(tag, item);
         }
-        symbolMap.merge_bang(context, ((Enum)item).symbol_map(context), Block.NULL_BLOCK);
+        symbolMap.merge_bang(context, new IRubyObject[]{((Enum)item).symbol_map(context)}, Block.NULL_BLOCK);
         return item;
     }
 
