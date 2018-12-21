@@ -44,14 +44,14 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
 import org.jruby.RubyRuntimeAdapter;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -120,12 +120,11 @@ public class JRubyEngine extends BSFEngineImpl {
         for (int i = 0, size = someDeclaredBeans.size(); i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) someDeclaredBeans.elementAt(i);
             runtime.getGlobalVariables().define(
-                    GlobalVariable.variableName(bean.name),
                     new BeanGlobalVariable(runtime, bean),
-                    org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL);
+                    GlobalVariable.Scope.GLOBAL);
         }
 
-        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)), org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().defineReadonly("$bsf", JavaUtil.convertJavaToRuby(runtime, new BSFFunctions(manager, this), BSFFunctions.class), GlobalVariable.Scope.GLOBAL);
     }
     
     private List getClassPath(BSFManager manager) {
@@ -135,14 +134,13 @@ public class JRubyEngine extends BSFEngineImpl {
     @Override
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
         runtime.getGlobalVariables().define(
-                GlobalVariable.variableName(bean.name),
                 new BeanGlobalVariable(runtime, bean),
-                org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL);
+                GlobalVariable.Scope.GLOBAL);
     }
 
     @Override
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
-        runtime.getGlobalVariables().set(GlobalVariable.variableName(bean.name), runtime.getNil());
+        runtime.getGlobalVariables().set(GlobalSite.variableName(bean.name), runtime.getNil());
     }
 
     public void handleException(BSFException bsfExcptn) {
@@ -159,43 +157,17 @@ public class JRubyEngine extends BSFEngineImpl {
     	if (exception instanceof RaiseException) runtime.printError(((RaiseException) exception).getException());
     }
 
-    private static class BeanGlobalVariable implements IAccessor {
-        private final Ruby runtime;
+    private static class BeanGlobalVariable extends GlobalSite {
         private final BSFDeclaredBean bean;
 
         public BeanGlobalVariable(Ruby runtime, BSFDeclaredBean bean) {
-            this.runtime = runtime;
+            super(runtime, variableName(bean.name), JavaUtil.convertJavaToRuby(runtime, bean.bean, bean.type));
             this.bean = bean;
         }
 
-        public IRubyObject getValue() {
-            IRubyObject result = JavaUtil.convertJavaToRuby(runtime, bean.bean, bean.type);
-            
-            return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
-        }
-
-        public IRubyObject setValue(IRubyObject value) {
-            bean.bean = value.toJava(Object.class);
-            return value;
-        }
-    }
-
-    private static class FunctionsGlobalVariable implements IAccessor {
-        private final Ruby runtime;
-        private final BSFFunctions functions;
-
-        public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
-            this.runtime = runtime;
-            this.functions = functions;
-        }
-
-        public IRubyObject getValue() {
-            IRubyObject result = JavaUtil.convertJavaToRuby(runtime, functions, BSFFunctions.class);
-
-            return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
-        }
-
-        public IRubyObject setValue(IRubyObject value) {
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            bean.bean = value.toJava(bean.type);
             return value;
         }
     }

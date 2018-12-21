@@ -14,7 +14,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,44 +30,42 @@
 
 package org.jruby.internal.runtime;
 
+import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
-import org.jruby.runtime.IAccessor;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.opto.Invalidator;
-import org.jruby.runtime.opto.OptoFactory;
-import org.jruby.util.cli.Options;
 
 /**
- * 
  * @author jpetersen
  */
 public final class GlobalVariable {
-    public enum Scope { GLOBAL, THREAD, FRAME }
-    private IAccessor accessor;
+    public enum Scope {GLOBAL, THREAD, FRAME}
+
+    private GlobalSite accessor;
     private ArrayList<IRubyObject> traces = null;
     private boolean tracing;
-    private Invalidator invalidator = OptoFactory.newGlobalInvalidator(Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load());
     private final Scope scope;
 
-    public GlobalVariable(IAccessor accessor, Scope scope) {
+    public GlobalVariable(GlobalSite accessor, Scope scope) {
         this.accessor = accessor;
         this.scope = scope;
     }
-    
+
     public static GlobalVariable newUndefined(Ruby runtime, String name) {
-        GlobalVariable variable = new GlobalVariable(null, Scope.GLOBAL);
-        variable.setAccessor(new UndefinedAccessor(runtime, variable, name));
-        return variable;
+        GlobalSite accessor = new UndefinedAccessor(runtime, name);
+
+        return new GlobalVariable(accessor, Scope.GLOBAL);
     }
 
-    public IAccessor getAccessor() {
+    public GlobalSite getAccessor() {
         return accessor;
     }
-    
+
     public Scope getScope() {
         return scope;
     }
@@ -95,37 +93,30 @@ public final class GlobalVariable {
         traces = null;
     }
 
-    public void setAccessor(IAccessor accessor) {
+    public void setAccessor(GlobalSite accessor) {
         this.accessor = accessor;
     }
+
     public boolean isTracing() {
         return tracing;
     }
-    
+
     public void trace(IRubyObject value) {
         if (traces == null) return;
-        
+
         ThreadContext context = value.getRuntime().getCurrentContext();
-        
+
         if (context.isWithinTrace()) return;
-        
+
         try {
             context.setWithinTrace(true);
 
             for (int i = 0; i < traces.size(); i++) {
-                ((RubyProc)traces.get(i)).call(context, new IRubyObject[] {value});
+                ((RubyProc) traces.get(i)).call(context, new IRubyObject[]{value});
             }
         } finally {
             context.setWithinTrace(false);
         }
-    }
-    
-    public Invalidator getInvalidator() {
-        return invalidator;
-    }
-    
-    public void invalidate() {
-        invalidator.invalidate();
     }
 
 }

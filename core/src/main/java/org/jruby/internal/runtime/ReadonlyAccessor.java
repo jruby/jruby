@@ -29,32 +29,32 @@
 
 package org.jruby.internal.runtime;
 
-import org.jruby.runtime.IAccessor;
+import org.jruby.Ruby;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.util.function.Supplier;
+
 /**
- * 
- * @author jpetersen
+ * A GlobalSite that can't be updated.
  */
-public class ReadonlyAccessor implements IAccessor {
-    private String name;
-    private IAccessor accessor;
-
-    public ReadonlyAccessor(String name, IAccessor accessor) {
-        assert name != null;
-        assert accessor != null;
-
-        this.name = name;
-        this.accessor = accessor;
+public class ReadonlyAccessor extends GlobalSite {
+    public ReadonlyAccessor(Ruby runtime, String name, CallSite value) {
+        super(runtime, name, value.dynamicInvoker());
     }
 
-    public IRubyObject getValue() {
-        return accessor.getValue();
+    public ReadonlyAccessor(Ruby runtime, String name, Supplier<IRubyObject> supplier) {
+        super(runtime, name, supplier);
     }
 
-    public IRubyObject setValue(IRubyObject newValue) {
-        assert newValue != null;
+    public ReadonlyAccessor(Ruby runtime, String name, IRubyObject value) {
+        super(runtime, name, value);
+    }
 
-        throw newValue.getRuntime().newNameError(name + " is a read-only variable", name);
+    @Override
+    public IRubyObject set(IRubyObject ignored) {
+        throw runtime.newNameError(name + " is a read-only variable", name);
     }
 }

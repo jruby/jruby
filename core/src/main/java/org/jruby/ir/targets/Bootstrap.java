@@ -1097,58 +1097,28 @@ public class Bootstrap {
 
     public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
-        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
 
-        if (site.failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
-                variable.getScope() != GlobalVariable.Scope.GLOBAL ||
-                RubyGlobal.UNCACHED_GLOBALS.contains(site.name())) {
+        org.jruby.runtime.GlobalSite variable = runtime.getGlobalVariables().getVariable(site.name()).getAccessor();
 
-            // use uncached logic forever
-            if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") uncacheable or rebound > " + Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() + " times, reverting to simple lookup");
+        site.setTarget(dropArguments(variable.dynamicInvoker(), 0, ThreadContext.class));
 
-            MethodHandle uncached = lookup().findStatic(Bootstrap.class, "getGlobalUncached", methodType(IRubyObject.class, GlobalVariable.class));
-            uncached = uncached.bindTo(variable);
-            uncached = dropArguments(uncached, 0, ThreadContext.class);
-            site.setTarget(uncached);
-            return (IRubyObject)uncached.invokeWithArguments(context);
-        }
-
-        Invalidator invalidator = variable.getInvalidator();
-        IRubyObject value = variable.getAccessor().getValue();
-
-        MethodHandle target = constant(IRubyObject.class, value);
-        target = dropArguments(target, 0, ThreadContext.class);
-        MethodHandle fallback = lookup().findStatic(Bootstrap.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
-        fallback = fallback.bindTo(site);
-
-        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
-
-        site.setTarget(target);
-
-//        if (Options.INVOKEDYNAMIC_LOG_GLOBALS.load()) LOG.info("global " + site.name() + " (" + site.file() + ":" + site.line() + ") cached");
-
-        return value;
-    }
-
-    public static IRubyObject getGlobalUncached(GlobalVariable variable) throws Throwable {
-        return variable.getAccessor().getValue();
+        return variable.get();
     }
 
     public static void setGlobalFallback(GlobalSite site, IRubyObject value, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
         GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name());
-        MethodHandle uncached = lookup().findStatic(Bootstrap.class, "setGlobalUncached", methodType(void.class, GlobalVariable.class, IRubyObject.class));
+        MethodHandle uncached = lookup().findStatic(Bootstrap.class, "setGlobal", methodType(void.class, GlobalVariable.class, IRubyObject.class));
         uncached = uncached.bindTo(variable);
         uncached = dropArguments(uncached, 1, ThreadContext.class);
         site.setTarget(uncached);
         uncached.invokeWithArguments(value, context);
     }
 
-    public static void setGlobalUncached(GlobalVariable variable, IRubyObject value) throws Throwable {
+    public static void setGlobal(GlobalVariable variable, IRubyObject value) throws Throwable {
         // FIXME: duplicated logic from GlobalVariables.set
-        variable.getAccessor().setValue(value);
+        variable.getAccessor().set(value);
         variable.trace(value);
-        variable.invalidate();
     }
 
     public static Handle prepareBlock() {

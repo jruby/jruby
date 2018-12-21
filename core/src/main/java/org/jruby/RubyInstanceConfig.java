@@ -34,6 +34,7 @@ import jnr.posix.util.Platform;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.ClassesLoader;
@@ -1605,7 +1606,18 @@ public class RubyInstanceConfig {
     // Support classes, etc.
     ////////////////////////////////////////////////////////////////////////////
 
-    public enum Verbosity { NIL, FALSE, TRUE }
+    public enum Verbosity {
+        NIL, FALSE, TRUE;
+
+        IRubyObject toRuby(Ruby runtime) {
+            switch (this) {
+                case NIL: return runtime.getNil();
+                case TRUE: return runtime.getTrue();
+                case FALSE: return runtime.getFalse();
+            }
+            return null; // not reached
+        }
+    }
 
     public static interface LoadServiceCreator {
         LoadService create(Ruby runtime);

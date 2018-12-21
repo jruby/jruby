@@ -32,15 +32,18 @@
 
 package org.jruby.internal.runtime;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -55,20 +58,48 @@ public class GlobalVariables {
         this.runtime = runtime;
     }
 
-    public void define(String name, IAccessor accessor, GlobalVariable.Scope scope) {
-        assert name != null;
+    public void define(GlobalSite accessor, GlobalVariable.Scope scope) {
         assert accessor != null;
-        assert name.startsWith("$");
+
+        globalVariables.put(accessor.name(), new GlobalVariable(accessor, scope));
+    }
+
+    public void define(String name, GlobalSite accessor, GlobalVariable.Scope scope) {
+        assert accessor != null;
 
         globalVariables.put(name, new GlobalVariable(accessor, scope));
     }
 
-    public void defineReadonly(String name, IAccessor accessor, GlobalVariable.Scope scope) {
+    public void define(String name, IRubyObject value, GlobalVariable.Scope scope) {
+        assert name != null;
+        assert value != null;
+        assert name.startsWith("$");
+
+        globalVariables.put(name, new GlobalVariable(new GlobalSite(runtime, name, value), scope));
+    }
+
+    public void defineReadonly(GlobalSite accessor, GlobalVariable.Scope scope) {
+        assert accessor != null;
+
+        String name = accessor.name();
+
+        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(runtime, name, accessor), scope));
+    }
+
+    public void defineReadonly(String name, Supplier<IRubyObject> accessor, GlobalVariable.Scope scope) {
         assert name != null;
         assert accessor != null;
         assert name.startsWith("$");
 
-        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(name, accessor), scope));
+        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(runtime, name, accessor), scope));
+    }
+
+    public void defineReadonly(String name, IRubyObject value, GlobalVariable.Scope scope) {
+        assert name != null;
+        assert value != null;
+        assert name.startsWith("$");
+
+        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(runtime, name, value), scope));
     }
 
     public boolean isDefined(String name) {
@@ -76,7 +107,14 @@ public class GlobalVariables {
         assert name.startsWith("$");
 
         GlobalVariable variable = globalVariables.get(name);
-        return variable != null && !(variable.getAccessor() instanceof UndefinedAccessor);
+
+        if (variable == null) return false;
+
+        if (variable.getAccessor() instanceof UndefinedAccessor) {
+            return variable.getAccessor().isDefined();
+        }
+
+        return true;
     }
 
     /**
@@ -104,13 +142,9 @@ public class GlobalVariables {
 	    assert name != null;
 	    assert name.startsWith("$");
 
-	    GlobalVariable variable = globalVariables.get(name);
-	    if (variable != null) return variable.getAccessor().getValue();
+	    GlobalVariable variable = getVariable(name);
 
-	    if (runtime.isVerbose()) {
-	        runtime.getWarnings().warning(ID.GLOBAL_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
-	    }
-		return runtime.getNil();
+	    return variable.getAccessor().get();
 	}
 
     public GlobalVariable getVariable(String name) {
@@ -123,14 +157,17 @@ public class GlobalVariables {
         return createIfNotDefined(name);
     }
 
+    public MethodHandle getVariableInvoker(String name) {
+        return getVariable(name).getAccessor().dynamicInvoker();
+    }
+
     public IRubyObject set(String name, IRubyObject value) {
         assert name != null;
         assert name.startsWith("$");
 
         GlobalVariable variable = createIfNotDefined(name);
-        IRubyObject result = variable.getAccessor().setValue(value);
+        IRubyObject result = variable.getAccessor().set(value);
         variable.trace(value);
-        variable.invalidate();
         return result;
     }
 
