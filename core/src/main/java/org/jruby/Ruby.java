@@ -173,6 +173,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2946,12 +2947,23 @@ public final class Ruby implements Constantizable {
     public void printError(Throwable t) {
         if (t instanceof RaiseException) {
             printError(((RaiseException) t).getException());
+            return;
         }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream errorStream = getErrorStream();
+
+        t.printStackTrace(new PrintStream(baos));
+
         try {
-            t.printStackTrace(errorStream);
+            errorStream.write(baos.toByteArray());
         } catch (Exception e) {
-            t.printStackTrace(System.err);
+            try {
+                System.err.write(baos.toByteArray());
+            } catch (IOException ioe) {
+                ioe.initCause(e);
+                throw new RuntimeException("BUG: could not write exception trace", ioe);
+            }
         }
     }
 
