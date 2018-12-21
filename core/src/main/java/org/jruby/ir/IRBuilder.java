@@ -3679,9 +3679,8 @@ public class IRBuilder {
                 Node [] exceptionNodes = ((ListNode) exceptionList).children();
                 Operand[] exceptionTypes = new Operand[exceptionNodes.length];
                 for (int i = 0; i < exceptionNodes.length; i++) {
-                    exceptionTypes[i] = build(exceptionNodes[i]);
+                    outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
-                outputExceptionCheck(new Array(exceptionTypes), exc, caughtLabel);
             } else if (exceptionList instanceof SplatNode) { // splatnode, catch
                 outputExceptionCheck(build(((SplatNode)exceptionList).getValue()), exc, caughtLabel);
             } else { // argscat/argspush
