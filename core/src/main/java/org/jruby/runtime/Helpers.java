@@ -61,6 +61,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
+import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -105,24 +106,49 @@ public class Helpers {
         return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
 
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, args, block);
+    }
+
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, args, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, args, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, arg0, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, arg0, arg1, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, arg2, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, arg0, arg1, arg2, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, arg2, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, block);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType) {
@@ -140,7 +166,7 @@ public class Helpers {
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         if (name.equals("method_missing")) {
             return selectInternalMM(runtime, visibility, callType);
@@ -304,9 +330,8 @@ public class Helpers {
         int n = rubyArray.getLength();
         if (preArgsCount + postArgsCount >= n) {
             return RubyArray.newEmptyArray(context.runtime);
-        } else {
-            return (RubyArray)rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
         }
+        return (RubyArray)rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
     }
 
     public static Class[] getStaticMethodParams(Class target, int args) {
@@ -462,32 +487,32 @@ public class Helpers {
     * MRI: rb_funcallv_public
     */
     public static IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
-        return self.getMetaClass().invokePublic(context, self, name, arg);
+        return getMetaClass(self).invokePublic(context, self, name, arg);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
-        return self.getMetaClass().finvokeChecked(context, self, name);
+        return getMetaClass(self).finvokeChecked(context, self, name);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
-        return self.getMetaClass().finvokeChecked(context, self, sites);
+        return getMetaClass(self).finvokeChecked(context, self, sites);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
-        return self.getMetaClass().finvokeChecked(context, self, name, args);
+        return getMetaClass(self).finvokeChecked(context, self, name, args);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
-        return self.getMetaClass().finvokeChecked(context, self, sites, arg0);
+        return getMetaClass(self).finvokeChecked(context, self, sites, arg0);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
-        return self.getMetaClass().finvokeChecked(context, self, sites, args);
+        return getMetaClass(self).finvokeChecked(context, self, sites, args);
     }
 
     /**
@@ -505,11 +530,12 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = findImplementerIfNecessary(selfClass, klass).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, args, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, args, block);
         }
         return method.call(context, self, superClass, name, args, block);
     }
@@ -517,11 +543,12 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = findImplementerIfNecessary(selfClass, klass).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, block);
         }
         return method.call(context, self, superClass, name, arg0, block);
     }
@@ -531,11 +558,12 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, block);
         }
         return method.call(context, self, superClass, name, block);
     }
@@ -545,11 +573,12 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, block);
         }
         return method.call(context, self, superClass, name, arg0, block);
     }
@@ -559,11 +588,12 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, arg1, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, arg1, block);
         }
         return method.call(context, self, superClass, name, arg0, arg1, block);
     }
@@ -573,15 +603,17 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, arg1, arg2, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, arg1, arg2, block);
         }
         return method.call(context, self, superClass, name, arg0, arg1, arg2, block);
     }
 
+    @Deprecated
     public static RubyArray ensureRubyArray(IRubyObject value) {
         return ensureRubyArray(value.getRuntime(), value);
     }
@@ -1505,6 +1537,7 @@ public class Helpers {
         return TypeConverter.rb_Array(context, value);
     }
 
+    @Deprecated // not used
     public static IRubyObject aryToAry(IRubyObject value) {
         return aryToAry(value.getRuntime().getCurrentContext(), value);
     }
@@ -1584,18 +1617,14 @@ public class Helpers {
 
     @Deprecated // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        return splatToArgumentsCommon(value.getRuntime(), value);
-    }
-
-    private static IRubyObject[] splatToArgumentsCommon(Ruby runtime, IRubyObject value) {
         if (value.isNil()) {
-            return runtime.getSingleNilArray();
+            return value.getRuntime().getSingleNilArray();
         }
 
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            return convertSplatToJavaArray(runtime, value);
+            return convertSplatToJavaArray(value.getRuntime(), value);
         }
         return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
@@ -1624,17 +1653,12 @@ public class Helpers {
     @SuppressWarnings("deprecation") @Deprecated // no longer used
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
-        return argsCatToArgumentsCommon(args, ary);
-    }
-
-    private static IRubyObject[] argsCatToArgumentsCommon(IRubyObject[] args, IRubyObject[] ary) {
         if (ary.length > 0) {
             IRubyObject[] newArgs = new IRubyObject[args.length + ary.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);
             System.arraycopy(ary, 0, newArgs, args.length, ary.length);
-            args = newArgs;
+            return newArgs;
         }
-
         return args;
     }
 

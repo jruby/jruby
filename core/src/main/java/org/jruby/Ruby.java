@@ -59,6 +59,8 @@ import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.ir.runtime.IRWrappedLambdaReturnValue;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -171,6 +173,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -858,7 +861,25 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-        return interpreter.execute(this, parseResult, self);
+        try {
+            return interpreter.execute(this, parseResult, self);
+        } catch (IRReturnJump ex) {
+            /* We happen to not push script scope as a dynamic scope or at least we seem to get rid of it.
+             * This will capture any return which says it should return to a script scope as the reasonable
+             * exit point.  We still raise when jump off point is anything else since that is a bug.
+             */
+            if (!ex.methodToReturnFrom.isScriptScope()) {
+                System.err.println("Unexpected 'return' escaped the runtime from " + ex.returnScope + " to " + ex.methodToReturnFrom);
+                System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(ex, false));
+                Throwable t = ex;
+                while ((t = t.getCause()) != null) {
+                    System.err.println("Caused by:");
+                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
+                }
+            }
+        }
+
+        return context.nil;
    }
 
     public IRubyObject runInterpreter(ThreadContext context,  Node rootNode, IRubyObject self) {
@@ -2926,12 +2947,23 @@ public final class Ruby implements Constantizable {
     public void printError(Throwable t) {
         if (t instanceof RaiseException) {
             printError(((RaiseException) t).getException());
+            return;
         }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream errorStream = getErrorStream();
+
+        t.printStackTrace(new PrintStream(baos));
+
         try {
-            t.printStackTrace(errorStream);
+            errorStream.write(baos.toByteArray());
         } catch (Exception e) {
-            t.printStackTrace(System.err);
+            try {
+                System.err.write(baos.toByteArray());
+            } catch (IOException ioe) {
+                ioe.initCause(e);
+                throw new RuntimeException("BUG: could not write exception trace", ioe);
+            }
         }
     }
 
@@ -3313,18 +3345,40 @@ public final class Ruby implements Constantizable {
             try {
                 proc.call(context, IRubyObject.NULL_ARRAY);
             } catch (RaiseException rj) {
-                RubyException raisedException = rj.getException();
-                if (!getSystemExit().isInstance(raisedException)) {
-                    status = 1;
-                    printError(raisedException);
-                } else {
-                    IRubyObject statusObj = raisedException.callMethod(context, "status");
-                    if (statusObj != null && !statusObj.isNil()) {
-                        status = RubyNumeric.fix2int(statusObj);
+                // END { return } can generally be statically determined during build time so we generate the LJE
+                // then.  This if captures the static side of this. See IReturnJump below for dynamic case
+                if (rj.getException() instanceof RubyLocalJumpError) {
+                    RubyLocalJumpError rlje = (RubyLocalJumpError) rj.getException();
+                    String filename = proc.getBlock().getBinding().filename;
+
+                    if (rlje.getReason() == RubyLocalJumpError.Reason.RETURN) {
+                        getWarnings().warn(filename, "unexpected return");
+                    } else {
+                        getWarnings().warn(filename, "break from proc-closure");
                     }
+
+                } else {
+                    RubyException raisedException = rj.getException();
+                    if (!getSystemExit().isInstance(raisedException)) {
+                        status = 1;
+                        printError(raisedException);
+                    } else {
+                        IRubyObject statusObj = raisedException.callMethod(context, "status");
+                        if (statusObj != null && !statusObj.isNil()) {
+                            status = RubyNumeric.fix2int(statusObj);
+                        }
+                    }
+                    // Reset $! now that rj has been handled
+                    // context.runtime.getGlobalVariables().set("$!", oldExc);
                 }
-                // Reset $! now that rj has been handled
-                // context.runtime.getGlobalVariables().set("$!", oldExc);
+            }  catch (IRReturnJump e) {
+                // This capture dynamic returns happening in an end block where it cannot be statically determined
+                // (like within an eval.
+
+                // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
+                // IR treats END blocks are closures and as such we see this special non-local return jump type
+                // bubble this far out as we exec each END proc.
+                getWarnings().warn(proc.getBlock().getBinding().filename, "unexpected return");
             }
         }
 
@@ -3388,7 +3442,13 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
+        // tear down thread references
         getThreadService().teardown();
+
+        // shut down executors
+        getJITCompiler().shutdown();
+        getExecutor().shutdown();
+        getFiberExecutor().shutdown();
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);

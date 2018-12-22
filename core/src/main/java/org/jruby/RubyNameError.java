@@ -101,8 +101,6 @@ public class RubyNameError extends RubyStandardError {
             return to_str(context);
         }
 
-
-
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
             if (message == null) return context.nil;
@@ -112,11 +110,11 @@ public class RubyNameError extends RubyStandardError {
             RubyString description = null;
             boolean singleton = false;
 
-            if (object.isNil()) {
+            if (object == context.nil) {
                 description = RubyNil.inspect(runtime); // "nil"
-            } else if (object instanceof RubyBoolean && object.isTrue()) {
+            } else if (object == context.tru) {
                 description = RubyString.newStringShared(runtime, RubyBoolean.TRUE_BYTES); // "true"
-            } else if (object instanceof RubyBoolean && !object.isTrue()) {
+            } else if (object == context.fals) {
                 description = RubyString.newStringShared(runtime, RubyBoolean.FALSE_BYTES); // "false"
             } else {
                 try {
@@ -172,7 +170,7 @@ public class RubyNameError extends RubyStandardError {
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, String name) {
         super(runtime, exceptionClass, message);
-        this.name = name == null ? runtime.getNil() : runtime.newString(name);
+        this.name = name == null ? runtime.getNil() : RubySymbol.newSymbol(runtime, name);
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message, IRubyObject name) {
@@ -223,12 +221,10 @@ public class RubyNameError extends RubyStandardError {
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if ( args.length > 0 ) this.message = args[0];
+        if (args.length > 0) this.message = args[0];
         if (message instanceof RubyNameErrorMessage) this.receiver = ((RubyNameErrorMessage) message).object;
-        if ( args.length > 1 ) this.name = args[1];
-        else this.name = getRuntime().getNil();
-        super.initialize(NULL_ARRAY, block); // message already set
-        return this;
+        this.name = args.length > 1 ? args[1] : getRuntime().getNil();
+        return super.initialize(NULL_ARRAY, block); // message already set
     }
 
     @JRubyMethod

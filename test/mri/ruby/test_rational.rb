@@ -42,7 +42,9 @@ class Rational_Test < Test::Unit::TestCase
   end
 
   def test_hash
-    assert_kind_of(Integer, Rational(1,2).hash)
+    h = Rational(1,2).hash
+    assert_kind_of(Integer, h)
+    assert_nothing_raised {h.to_s}
 
     h = {}
     h[Rational(0)] = 0
@@ -108,6 +110,10 @@ class Rational_Test < Test::Unit::TestCase
     assert_equal(Rational(3),Rational('3'))
     assert_equal(Rational(1),Rational('3.0','3.0'))
     assert_equal(Rational(1),Rational('3/3','3/3'))
+    assert_equal(Rational(111, 10), Rational('1.11e+1'))
+    assert_equal(Rational(111, 10), Rational('1.11e1'))
+    assert_equal(Rational(111, 100), Rational('1.11e0'))
+    assert_equal(Rational(111, 1000), Rational('1.11e-1'))
     assert_raise(TypeError){Rational(nil)}
     assert_raise(ArgumentError){Rational('')}
     assert_raise_with_message(ArgumentError, /\u{221a 2668}/) {

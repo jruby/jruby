@@ -54,6 +54,8 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+
 /**
  * ChannelDescriptor provides an abstraction similar to the concept of a
  * "file descriptor" on any POSIX system. In our case, it's a numbered object
@@ -691,8 +693,8 @@ public class ChannelDescriptor {
         
         ByteBuffer buf = ByteBuffer.allocate(1);
         buf.put((byte)c);
-        buf.flip();
-        
+        flipBuffer(buf);
+
         return internalWrite(buf);
     }
 

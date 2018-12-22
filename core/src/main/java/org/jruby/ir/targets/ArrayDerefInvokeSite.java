@@ -76,7 +76,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
             args[0] = ((RubyString) args[0]).strDup(context.runtime);
 
             if (methodMissing(entry, caller)) {
-                return callMethodMissing(entry, callType, context, self, methodName, args, block);
+                return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
             }
 
             mh = getHandle(self, selfClass, method);
@@ -107,7 +107,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, name, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
         }
 
         cache = entry;

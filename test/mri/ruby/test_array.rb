@@ -534,6 +534,8 @@ class TestArray < Test::Unit::TestCase
     # Enumerable#collect without block returns an Enumerator.
     #assert_equal([1, 2, 3], @cls[1, 2, 3].collect)
     assert_kind_of Enumerator, @cls[1, 2, 3].collect
+
+    assert_equal([[1, 2, 3]], [[1, 2, 3]].collect(&->(a, b, c) {[a, b, c]}))
   end
 
   # also update map!
@@ -1631,6 +1633,12 @@ class TestArray < Test::Unit::TestCase
                  ary.min(2) {|a,b| a.length <=> b.length })
     assert_equal([13, 14], [20, 32, 32, 21, 30, 25, 29, 13, 14].min(2))
     assert_equal([2, 4, 6, 7], [2, 4, 8, 6, 7].min(4))
+
+    class << (obj = Object.new)
+      def <=>(x) 1 <=> x end
+      def coerce(x) [x, 1] end
+    end
+    assert_same(obj, [obj, 1.0].min)
   end
 
   def test_max
@@ -1646,6 +1654,12 @@ class TestArray < Test::Unit::TestCase
     assert_equal(%w[albatross horse],
                  ary.max(2) {|a,b| a.length <=> b.length })
     assert_equal([3, 2], [0, 0, 0, 0, 0, 0, 1, 3, 2].max(2))
+
+    class << (obj = Object.new)
+      def <=>(x) 1 <=> x end
+      def coerce(x) [x, 1] end
+    end
+    assert_same(obj, [obj, 1.0].max)
   end
 
   def test_uniq
@@ -2944,6 +2958,13 @@ class TestArray < Test::Unit::TestCase
     assert_float_equal(large_number+(small_number*10), [large_number/1r, *[small_number]*10].sum)
     assert_float_equal(large_number+(small_number*11), [small_number, large_number/1r, *[small_number]*10].sum)
     assert_float_equal(small_number, [large_number, small_number, -large_number].sum)
+    assert_equal(+Float::INFINITY, [+Float::INFINITY].sum)
+    assert_equal(+Float::INFINITY, [0.0, +Float::INFINITY].sum)
+    assert_equal(+Float::INFINITY, [+Float::INFINITY, 0.0].sum)
+    assert_equal(-Float::INFINITY, [-Float::INFINITY].sum)
+    assert_equal(-Float::INFINITY, [0.0, -Float::INFINITY].sum)
+    assert_equal(-Float::INFINITY, [-Float::INFINITY, 0.0].sum)
+    assert_predicate([-Float::INFINITY, Float::INFINITY].sum, :nan?)
 
     assert_equal("abc", ["a", "b", "c"].sum(""))
     assert_equal([1, [2], 3], [[1], [[2]], [3]].sum([]))

@@ -391,6 +391,39 @@ describe "Process.spawn" do
     end
   end
 
+  # chdir
+
+  platform_is_not :windows do
+    context "chdir" do
+      def child_pids(pid)
+        `pgrep -P #{pid}`.each_line.map { |p| p.strip.to_i }
+      end
+
+      it "does not create extra process without chdir" do
+        child_pids(Process.spawn("cat")).size.should == 0
+      end
+
+      it "kills extra chdir processes" do
+        pid = Dir.chdir("/tmp") { Process.spawn("cat") }
+
+        children = child_pids(pid)
+        children.size.should == 1
+
+        Process.kill("TERM", pid)
+        Process.wait(pid, Process::WNOHANG)
+
+        # wait a bit for children to die
+        sleep(1)
+
+        children.each do |child|
+          lambda do
+            Process.kill("TERM", child)
+          end.should raise_error(Errno::ESRCH)
+        end
+      end
+    end
+  end
+
   # :umask
 
   it "uses the current umask by default" do

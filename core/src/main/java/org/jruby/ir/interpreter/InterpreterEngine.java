@@ -447,7 +447,7 @@ public class InterpreterEngine {
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block, rv);
+                return IRRuntimeHelpers.initiateNonLocalReturn(currDynScope, block, rv);
             }
             case RETURN_OR_RETHROW_SAVED_EXC: {
                 IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);

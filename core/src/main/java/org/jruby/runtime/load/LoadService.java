@@ -68,6 +68,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;

@@ -107,11 +107,10 @@ public class RaiseException extends JumpException {
     }
 
     private boolean requiresBacktrace(ThreadContext context) {
-        IRubyObject debugMode;
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         return context.exceptionRequiresBacktrace ||
-                ((debugMode = context.runtime.getGlobalVariables().get("$DEBUG")) != null && debugMode.isTrue()) ||
-                ! context.runtime.getStandardError().isInstance(exception);
+                ! context.runtime.getStandardError().isInstance(exception) ||
+                context.runtime.isDebug();
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {

@@ -194,6 +194,8 @@ public class Options {
     public static final Option<Boolean> LOG_BACKTRACES = bool(DEBUG, "log.backtraces", false, "Log every time an exception backtrace is generated.");
     public static final Option<Boolean> LOG_CALLERS = bool(DEBUG, "log.callers", false, "Log every time a Kernel#caller backtrace is generated.");
     public static final Option<Boolean> LOG_WARNINGS = bool(DEBUG, "log.warnings", false, "Log every time a built-in warning backtrace is generated.");
+    public static final Option<Boolean> LOG_SINGLETONS = bool(DEBUG, "log.singletons", false, "Log every time a singleton class is created.");
+    public static final Option<Boolean> LOG_SINGLETONS_VERBOSE = bool(DEBUG, "log.singletons.verbose", false, "Log a stack trace every time a singleton class is created.");
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[]{"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");

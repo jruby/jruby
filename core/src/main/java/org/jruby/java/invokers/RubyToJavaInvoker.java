@@ -34,7 +34,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
-import com.headius.modulator.Modulator;
+import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -349,7 +349,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 !Ruby.isSecurityRestricted() &&
                 Options.JI_SETACCESSIBLE.load() &&
                 accessible instanceof Member) {
-            try { Modulator.trySetAccessible(accessible); }
+            try { Modules.trySetAccessible(accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);

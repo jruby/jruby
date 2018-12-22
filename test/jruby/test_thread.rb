@@ -79,6 +79,7 @@ class TestThread < Test::Unit::TestCase
     t = Thread.new {
       thread_foo()
     }
+    t.report_on_exception = false # quiet for testing
     begin
       t.join
     rescue RuntimeError => error
@@ -106,6 +107,7 @@ class TestThread < Test::Unit::TestCase
         Thread.pass
       end
     }
+    t.report_on_exception = false # quiet for testing
     t.raise("Die")
     begin
       t.join
@@ -119,6 +121,7 @@ class TestThread < Test::Unit::TestCase
     set = false
     begin
       t = Thread.new { e = 2; set = true; sleep(100); e = 3 }
+      t.report_on_exception = false # quiet for testing
       while !set
         sleep(1)
       end
@@ -130,9 +133,12 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_thread_value
+    old_report, Thread.report_on_exception = Thread.report_on_exception, false
     assert_raise(ArgumentError) { Thread.new { }.value(100) }
     assert_equal(2, Thread.new { 2 }.value)
     assert_raise(RuntimeError) { Thread.new { raise "foo" }.value }
+  ensure
+    Thread.report_on_exception = old_report
   end
 
   class MyThread < Thread
@@ -179,16 +185,18 @@ class TestThread < Test::Unit::TestCase
 
   # JRUBY-2021
   def test_multithreaded_method_definition
-    def run_me
-      sleep 0.1
-      def do_stuff
+    obj = Class.new do
+      def run_me
         sleep 0.1
+        def do_stuff
+          sleep 0.1
+        end
       end
-    end
+    end.new
 
     threads = []
     100.times {
-      threads << Thread.new { run_me }
+      threads << Thread.new { obj.run_me }
     }
     threads.each { |t| t.join }
   end
@@ -210,6 +218,7 @@ class TestThread < Test::Unit::TestCase
     t = Thread.new {
       tcps.accept
     }
+    t.report_on_exception = false # quiet for testing
 
     Thread.pass until t.status == "sleep"
     ex = Exception.new

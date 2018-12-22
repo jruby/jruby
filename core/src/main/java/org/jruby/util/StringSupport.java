@@ -1964,10 +1964,12 @@ public final class StringSupport {
 
         if (subptr != pend) {
             if (chomp) {
-                pend = chomp_newline(strBytes, subptr, pend, enc);
-            } else if (pend - subptr >= rslen &&
-                    ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
-                pend -= rslen;
+                if (rsnewline) {
+                    pend = chomp_newline(strBytes, subptr, pend, enc);
+                } else if (pend - subptr >= rslen &&
+                        ByteList.memcmp(strBytes, pend - rslen, rsbytes, rsptr, rslen) == 0) {
+                    pend -= rslen;
+                }
             }
             line = str.substr(runtime, subptr - ptr, pend - subptr);
             if (wantarray) ary.append(line);
@@ -2470,26 +2472,27 @@ public final class StringSupport {
         }
         else if (h < 0xE0) {
             h *= mix;
-            h += xBytes[x + 1];
+            h += xBytes[x + 1] & 0xff;
         }
         else if (h < 0xF0) {
             h *= mix;
-            h += xBytes[x + 1];
+            h += xBytes[x + 1] & 0xff;
             h *= mix;
-            h += xBytes[x + 2];
+            h += xBytes[x + 2] & 0xff;
+
         }
         else if (h < 0xF5) {
             h *= mix;
-            h += xBytes[x + 1];
+            h += xBytes[x + 1] & 0xff;
             h *= mix;
-            h += xBytes[x + 2];
+            h += xBytes[x + 2] & 0xff;
             h *= mix;
-            h += xBytes[x + 3];
+            h += xBytes[x + 3] & 0xff;
         }
         else {
             return h + 256;
         }
-        return h;
+        return ((byte)h) & 0xff;
     }
 
     private static int rb_memsearch_qs_utf8(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {

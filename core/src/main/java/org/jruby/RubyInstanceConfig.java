@@ -1889,7 +1889,9 @@ public class RubyInstanceConfig {
             case "9" :
                 return Opcodes.V9;
             case "10" :
-                return Opcodes.V9; // TODO: switch when `V10 = 54` added
+                return Opcodes.V10;
+            case "11" :
+                return Opcodes.V11;
         }
     }
 

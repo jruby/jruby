@@ -101,6 +101,9 @@ import org.jruby.util.io.PosixShim;
 import org.jruby.util.io.SelectExecutor;
 import org.jruby.util.io.STDIO;
 
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -4437,15 +4440,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (length > 0 && length < chunkSize) {
                 // last read should limit to remaining length
-                buffer.limit((int)length);
+                limitBuffer(buffer, (int)length);
             }
             long n = from.read(buffer);
 
             if (n == -1) break;
 
-            buffer.flip();
+            flipBuffer(buffer);
             to.write(buffer);
-            buffer.clear();
+            clearBuffer(buffer);
 
             transferred += n;
             if (length > 0) {

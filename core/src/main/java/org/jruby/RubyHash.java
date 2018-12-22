@@ -1552,10 +1552,14 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject transform_keys_bang(final ThreadContext context, final Block block) {
         if (block.isGiven()) {
             testFrozen("Hash");
-            RubyArray keys = keys(context);
-            Arrays.stream(keys.toJavaArrayMaybeUnsafe()).forEach((key) -> {
-                op_aset(context, block.yield(context, key), delete(context, key));
-            });
+            RubyArray pairs = (RubyArray) flatten(context);
+            clear();
+            for (int i = 0; i < pairs.size(); i += 2) {
+                IRubyObject key = pairs.eltOk(i);
+                IRubyObject newKey = block.yield(context, key);
+                IRubyObject value = pairs.eltOk(i + 1);
+                op_aset(context, newKey, value);
+            }
             return this;
         }
 

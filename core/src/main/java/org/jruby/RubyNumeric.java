@@ -565,7 +565,7 @@ public class RubyNumeric extends RubyObject {
                 if (recur) {
                     throw context.runtime.newNameError(str(context.runtime, "recursive call to ", ids(context.runtime, site.methodName)), site.methodName);
                 }
-                return x.getMetaClass().finvokeChecked(context, x, site, obj);
+                return getMetaClass(x).finvokeChecked(context, x, site, obj);
             }
         }, site, y, site.methodName, true);
         if (ret == null) {

@@ -1352,21 +1352,55 @@ class TestModule < Test::Unit::TestCase
     assert_raise(ArgumentError, bug8540) { c.new.send :foo= }
   end
 
-  def test_private_constant
+  def test_private_constant_in_class
     c = Class.new
     c.const_set(:FOO, "foo")
     assert_equal("foo", c::FOO)
     c.private_constant(:FOO)
-    assert_raise(NameError) { c::FOO }
+    e = assert_raise(NameError) {c::FOO}
+    assert_equal(c, e.receiver)
+    assert_equal(:FOO, e.name)
     assert_equal("foo", c.class_eval("FOO"))
     assert_equal("foo", c.const_get("FOO"))
     $VERBOSE, verbose = nil, $VERBOSE
     c.const_set(:FOO, "foo")
     $VERBOSE = verbose
-    assert_raise(NameError) { c::FOO }
-    assert_raise_with_message(NameError, /#{c}::FOO/) do
+    e = assert_raise(NameError) {c::FOO}
+    assert_equal(c, e.receiver)
+    assert_equal(:FOO, e.name)
+    e = assert_raise_with_message(NameError, /#{c}::FOO/) do
       Class.new(c)::FOO
     end
+    assert_equal(c, e.receiver)
+    assert_equal(:FOO, e.name)
+  end
+
+  def test_private_constant_in_module
+    m = Module.new
+    m.const_set(:FOO, "foo")
+    assert_equal("foo", m::FOO)
+    m.private_constant(:FOO)
+    e = assert_raise(NameError) {m::FOO}
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
+    assert_equal("foo", m.class_eval("FOO"))
+    assert_equal("foo", m.const_get("FOO"))
+    $VERBOSE, verbose = nil, $VERBOSE
+    m.const_set(:FOO, "foo")
+    $VERBOSE = verbose
+    e = assert_raise(NameError) {m::FOO}
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
+    e = assert_raise(NameError, /#{m}::FOO/) do
+      Module.new {include m}::FOO
+    end
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
+    e = assert_raise(NameError, /#{m}::FOO/) do
+      Class.new {include m}::FOO
+    end
+    assert_equal(m, e.receiver)
+    assert_equal(:FOO, e.name)
   end
 
   def test_private_constant2
@@ -1874,6 +1908,25 @@ class TestModule < Test::Unit::TestCase
 
   def test_prepend_module_with_no_args
     assert_raise(ArgumentError) { Module.new { prepend } }
+  end
+
+  def test_prepend_private_super
+    wrapper = Module.new do
+      def wrapped
+        super + 1
+      end
+    end
+
+    klass = Class.new do
+      prepend wrapper
+
+      def wrapped
+        1
+      end
+      private :wrapped
+    end
+
+    assert_equal(2, klass.new.wrapped)
   end
 
   def test_class_variables

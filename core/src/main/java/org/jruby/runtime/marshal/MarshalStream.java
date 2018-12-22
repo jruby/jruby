@@ -48,7 +48,6 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -57,7 +56,6 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.IncludedModuleWrapper;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,6 +64,7 @@ import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
+import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -148,10 +147,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
-        ByteList sym;
-        if (value instanceof RubySymbol && cache.isSymbolRegistered(sym = ((RubySymbol) value).getBytes())) {
-            cache.writeSymbolLink(this, sym);
-        } else if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
+        if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
             cache.writeLink(this, value);
         } else {
             value.getMetaClass().smartDump(this, value);
@@ -184,17 +180,18 @@ public class MarshalStream extends FilterOutputStream {
                         variables = null;
                     }
                 }
-                RubyClass type = value.getMetaClass();
+                final RubyClass meta = getMetaClass(value);
+                RubyClass type = meta;
                 switch(nativeClassIndex) {
                 case STRING:
                 case REGEXP:
                 case ARRAY:
                 case HASH:
-                    type = dumpExtended(type);
+                    type = dumpExtended(meta);
                     break;
                 }
 
-                if (nativeClassIndex != value.getMetaClass().getClassIndex() &&
+                if (nativeClassIndex != meta.getClassIndex() &&
                         nativeClassIndex != ClassIndex.STRUCT &&
                         nativeClassIndex != ClassIndex.FIXNUM &&
                         nativeClassIndex != ClassIndex.BIGNUM) {
@@ -249,7 +246,7 @@ public class MarshalStream extends FilterOutputStream {
             if (value instanceof DataType) {
                 Ruby runtime = value.getRuntime();
 
-                throw runtime.newTypeError(str(runtime, "no _dump_data is defined for class ", types(runtime, value.getMetaClass())));
+                throw runtime.newTypeError(str(runtime, "no _dump_data is defined for class ", types(runtime, getMetaClass(value))));
             }
             ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
 
@@ -309,8 +306,9 @@ public class MarshalStream extends FilterOutputStream {
                 return;
             case OBJECT:
             case BASICOBJECT:
-                dumpDefaultObjectHeader(value.getMetaClass());
-                value.getMetaClass().getRealClass().marshal(value, this);
+                final RubyClass type = getMetaClass(value);
+                dumpDefaultObjectHeader(type);
+                type.getRealClass().marshal(value, this);
                 return;
             case REGEXP:
                 write('/');
@@ -350,16 +348,16 @@ public class MarshalStream extends FilterOutputStream {
     private void userNewCommon(IRubyObject value, DynamicMethod method) throws IOException {
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
-        RubyClass metaclass = value.getMetaClass().getRealClass();
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, metaclass.getName()).getBytes());
+        final RubyClass klass = getMetaClass(value);
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
 
         IRubyObject marshaled;
         if (method != null) {
-            marshaled = method.call(runtime.getCurrentContext(), value, value.getMetaClass(), "marshal_dump");
+            marshaled = method.call(runtime.getCurrentContext(), value, klass, "marshal_dump");
         } else {
             marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump");
         }
-        if (marshaled.getMetaClass() == value.getMetaClass()) {
+        if (marshaled.getMetaClass() == klass) {
             throw runtime.newRuntimeError("marshal_dump returned same class instance");
         }
         dumpObject(marshaled);
@@ -375,10 +373,10 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userCommon(IRubyObject value, DynamicMethod method) throws IOException {
         RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
-
+        final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
         if (method != null) {
-            dumpResult = method.call(runtime.getCurrentContext(), value, value.getMetaClass(), "_dump", depthLimitFixnum);
+            dumpResult = method.call(runtime.getCurrentContext(), value, klass, "_dump", depthLimitFixnum);
         } else {
             dumpResult = value.callMethod(runtime.getCurrentContext(), "_dump", depthLimitFixnum);
         }
@@ -399,9 +397,8 @@ public class MarshalStream extends FilterOutputStream {
         }
 
         write(TYPE_USERDEF);
-        RubyClass metaclass = value.getMetaClass().getRealClass();
 
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, metaclass.getName()).getBytes());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
 
         writeString(marshaled.getByteList());
 

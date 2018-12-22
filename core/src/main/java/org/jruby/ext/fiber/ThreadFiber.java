@@ -60,14 +60,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     @JRubyMethod(rest = true)
     public IRubyObject resume(ThreadContext context, IRubyObject[] values) {
         Ruby runtime = context.runtime;
-        
+
+        final FiberData data = this.data;
         if (data.prev != null || data.transferred) throw runtime.newFiberError("double resume");
         
         if (!alive()) throw runtime.newFiberError("dead fiber called");
         
         FiberData currentFiberData = context.getFiber().data;
         
-        if (this.data == currentFiberData) {
+        if (data == currentFiberData) {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
@@ -161,14 +162,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     @JRubyMethod(rest = true)
     public IRubyObject __transfer__(ThreadContext context, IRubyObject[] values) {
         Ruby runtime = context.runtime;
-        
+
+        final FiberData data = this.data;
         if (data.prev != null) throw runtime.newFiberError("double resume");
         
         if (!alive()) throw runtime.newFiberError("dead fiber called");
         
         FiberData currentFiberData = context.getFiber().data;
         
-        if (this.data == currentFiberData) {
+        if (data == currentFiberData) {
             switch (values.length) {
                 case 0: return context.nil;
                 case 1: return values[0];
@@ -285,7 +287,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         } finally {
                             // Ensure we do everything for shutdown now
                             data.queue.shutdown();
-                            runtime.getThreadService().disposeCurrentThread();
+                            runtime.getThreadService().unregisterCurrentThread(context);
                             ThreadFiber tf = data.fiber.get();
                             if (tf != null) tf.thread = null;
                         }
@@ -327,11 +329,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         }
         
-        while (fiberThread.get() == null) {Thread.yield();}
+        while (fiberThread.get() == null) { Thread.yield(); }
         
         return fiberThread.get();
     }
-    
+
+    @Override
     protected void finalize() throws Throwable {
         try {
             FiberData data = this.data;

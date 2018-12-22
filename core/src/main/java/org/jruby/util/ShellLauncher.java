@@ -28,6 +28,8 @@
 
 package org.jruby.util;
 
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
 
 import java.io.File;
@@ -1484,14 +1486,14 @@ public class ShellLauncher {
         public void run() {
             runtime.getCurrentContext().setEventHooksEnabled(false);
             ByteBuffer buf = ByteBuffer.allocateDirect(1024);
-            buf.clear();
+            clearBuffer(buf);
             try {
                 while (!quit && inChannel.isOpen() && outChannel.isOpen()) {
                     int read = inChannel.read(buf);
                     if (read == -1) break;
-                    buf.flip();
+                    flipBuffer(buf);
                     outChannel.write(buf);
-                    buf.clear();
+                    clearBuffer(buf);
                 }
             } catch (Exception e) {
             } finally {

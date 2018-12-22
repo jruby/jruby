@@ -231,7 +231,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, args, block);
+            return callMethodMissing(context, self, selfType, method, args, block);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, args, block);
@@ -243,7 +243,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, args);
+            return callMethodMissing(context, self, selfType, method, args);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, args);
@@ -255,7 +255,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method);
+            return callMethodMissing(context, self, selfType, method);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName);
@@ -267,7 +267,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, block);
+            return callMethodMissing(context, self, selfType, method, block);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, block);
@@ -278,7 +278,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg);
+            return callMethodMissing(context, self, selfType, method, arg);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, arg);
@@ -290,7 +290,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg, block);
+            return callMethodMissing(context, self, selfType, method, arg, block);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, arg, block);
@@ -301,7 +301,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg1, arg2);
+            return callMethodMissing(context, self, selfType, method, arg1, arg2);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, arg1, arg2);
@@ -313,7 +313,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg1, arg2, block);
+            return callMethodMissing(context, self, selfType, method, arg1, arg2, block);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, arg1, arg2, block);
@@ -326,7 +326,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg1, arg2, arg3);
+            return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
@@ -339,7 +339,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg1, arg2, arg3, block);
+            return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3, block);
         } else {
             cache = entry;
             return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);

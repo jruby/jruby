@@ -1,6 +1,6 @@
 package org.jruby.util.io;
 
-import com.headius.modulator.Modulator;
+import com.headius.backport9.modules.Modules;
 import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -137,7 +137,7 @@ public class FilenoUtil {
                 selChImpl = Class.forName("sun.nio.ch.SelChImpl");
                 try {
                     getFD = selChImpl.getMethod("getFD");
-                    if (!Modulator.trySetAccessible(getFD)) {
+                    if (!Modules.trySetAccessible(getFD)) {
                         getFD = null;
                     }
                 } catch (Exception e) {
@@ -156,7 +156,7 @@ public class FilenoUtil {
                 fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
                 try {
                     fd = fileChannelImpl.getDeclaredField("fd");
-                    if (!Modulator.trySetAccessible(fd)) {
+                    if (!Modules.trySetAccessible(fd)) {
                         fd = null;
                     }
                 } catch (Exception e) {
@@ -172,7 +172,7 @@ public class FilenoUtil {
             Field ffd;
             try {
                 ffd = FileDescriptor.class.getDeclaredField("fd");
-                if (!Modulator.trySetAccessible(ffd)) {
+                if (!Modules.trySetAccessible(ffd)) {
                     ffd = null;
                 }
             } catch (Exception e) {

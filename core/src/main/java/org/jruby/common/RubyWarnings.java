@@ -143,6 +143,17 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(id, file, line - 1, message);
     }
 
+    public void warn(String filename, String message) {
+        if (!runtime.warningsEnabled()) return;
+
+        StringBuilder buffer = new StringBuilder(100);
+
+        buffer.append(filename).append(": ").append(message).append('\n');
+        RubyString errorString = runtime.newString(buffer.toString());
+
+        writeWarningDyncall(runtime.getCurrentContext(), errorString);
+    }
+
     public void warnOnce(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;

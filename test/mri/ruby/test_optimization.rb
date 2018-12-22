@@ -689,7 +689,7 @@ class TestRubyOptimization < Test::Unit::TestCase
   end
 
   def test_clear_unreachable_keyword_args
-    assert_separately [], <<-END
+    assert_separately [], <<-END, timeout: 15
       script =  <<-EOS
         if true
         else
@@ -703,10 +703,26 @@ class TestRubyOptimization < Test::Unit::TestCase
     END
   end
 
+  def test_callinfo_unreachable_path
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      iseq = RubyVM::InstructionSequence.compile("if false; foo(bar: :baz); else :ok end")
+      bin = iseq.to_binary
+      iseq = RubyVM::InstructionSequence.load_from_binary(bin)
+      assert_instance_of(RubyVM::InstructionSequence, iseq)
+      assert_equal(:ok, iseq.eval)
+    end;
+  end
+
   def test_side_effect_in_popped_splat
     bug = '[ruby-core:84340] [Bug #14201]'
     eval("{**(bug = nil; {})};42")
     assert_nil(bug)
+
+    bug = '[ruby-core:85486] [Bug #14459]'
+    h = {}
+    assert_equal(bug, eval('{ok: 42, **h}; bug'))
+    assert_equal(:ok, eval('{ok: bug = :ok, **h}; bug'))
   end
 
   def test_overwritten_blockparam
@@ -717,5 +733,31 @@ class TestRubyOptimization < Test::Unit::TestCase
       :ng
     end
     assert_equal(:ok, obj.a())
+  end
+
+  def test_unconditional_branch_to_leave_block
+    assert_valid_syntax("#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
+      tap {true || tap {}}
+    end;
+  end
+
+  def test_jump_elimination_with_optimized_out_block
+    x = Object.new
+    def x.bug(obj)
+      if obj || obj
+        obj = obj
+      else
+        raise "[ruby-core:87830] [Bug #14897]"
+      end
+      obj
+    end
+    assert_equal(:ok, x.bug(:ok))
+  end
+
+  def test_peephole_jump_after_newarray
+    i = 0
+    %w(1) || 2 while (i += 1) < 100
+    assert_equal(100, i)
   end
 end

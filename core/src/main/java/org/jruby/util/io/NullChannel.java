@@ -35,6 +35,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
+
 /**
  *
  * @author headius
@@ -47,7 +49,7 @@ public class NullChannel implements WritableByteChannel, ReadableByteChannel {
             throw new EOFException();
         }
         int length = buffer.remaining();
-        buffer.position(buffer.position() + length);
+        positionBuffer(buffer, buffer.position() + length);
         return length;
     }
 

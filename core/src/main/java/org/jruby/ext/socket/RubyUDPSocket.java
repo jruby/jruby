@@ -72,6 +72,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Sockaddr;
 
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+
 
 /**
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
@@ -626,7 +628,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNRESETError();
         }
 
-        recv.flip();
+        flipBuffer(recv);
         RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit(), false));
 
         if (tuple != null) {

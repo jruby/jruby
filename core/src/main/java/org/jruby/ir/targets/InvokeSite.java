@@ -159,7 +159,7 @@ public abstract class InvokeSite extends MutableCallSite {
             } else {
                 logMethodMissing();
             }
-            return callMethodMissing(entry, callType, context, self, methodName, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
         }
 
         MethodHandle mh = getHandle(self, selfClass, method);
@@ -215,7 +215,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, name, args, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
         }
 
         cache = entry;
@@ -245,7 +245,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, name, arg0, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
@@ -268,7 +268,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, name, arg0, arg1, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
         }
 
         cache = entry;
@@ -291,7 +291,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, name, arg0, arg1, arg2, block);
+            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
         cache = entry;
@@ -692,7 +692,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
     public static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         context.callThreadPoll();
-        return ((RubyBasicObject) self).getMetaClass();
+        return RubyBasicObject.getMetaClass(self);
     }
 
     @Override
@@ -710,31 +710,35 @@ public abstract class InvokeSite extends MutableCallSite {
     /**
      * Variable arity method_missing invocation. Arity zero also passes through here.
      */
-    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject[] args, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, args, block);
+    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self,
+                                         RubyClass selfClass, String name, IRubyObject[] args, Block block) {
+        return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, args, block);
     }
 
     /**
      * Arity one method_missing invocation
      */
-    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, block);
+    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self,
+                                         RubyClass selfClass, String name, IRubyObject arg0, Block block) {
+        return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, arg0, block);
     }
 
 
     /**
      * Arity two method_missing invocation
      */
-    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, block);
+    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self,
+                                         RubyClass selfClass, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, arg0, arg1, block);
     }
 
 
     /**
      * Arity three method_missing invocation
      */
-    public IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return Helpers.selectMethodMissing(context, self, entry.method.getVisibility(), name, callType).call(context, self, self.getMetaClass(), name, arg0, arg1, arg2, block);
+    public static IRubyObject callMethodMissing(CacheEntry entry, CallType callType, ThreadContext context, IRubyObject self,
+                                         RubyClass selfClass, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return Helpers.callMethodMissing(context, self, selfClass, entry.method.getVisibility(), name, callType, arg0, arg1, arg2, block);
     }
 
     private static String logMethod(DynamicMethod method) {
@@ -743,7 +747,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
     @JIT
     public static boolean testMetaclass(RubyClass metaclass, IRubyObject self) {
-        return metaclass == ((RubyBasicObject) self).getMetaClass();
+        return metaclass == RubyBasicObject.getMetaClass(self);
     }
 
     @JIT

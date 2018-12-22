@@ -40,6 +40,9 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+
 /**
  * A WriterOutputStream converts java.io.Writer to java.io.OutputStream.
  *
@@ -203,12 +206,12 @@ public class WriterOutputStream extends OutputStream {
 
     private void byte2char(ByteBuffer bytes, CharBuffer chars) throws IOException {
         decoder.reset();
-        chars.clear();
+        clearBuffer(chars);
         CoderResult result = decoder.decode(bytes, chars, true);
         if (result.isError() || result.isOverflow()) {
             throw new IOException(result.toString());
         } else if (result.isUnderflow()) {
-            chars.flip();
+            flipBuffer(chars);
         }
     }
 }
