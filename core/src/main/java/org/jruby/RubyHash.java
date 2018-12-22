@@ -1923,17 +1923,25 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
+    @Deprecated
+    public RubyHash merge_bang(ThreadContext context, IRubyObject other, Block block) {
+        return merge_bang(context, new IRubyObject[]{other}, block);
+    }
+
     /** rb_hash_update
      *
      */
-    @JRubyMethod(name = {"merge!", "update"}, required = 1)
-    public RubyHash merge_bang(ThreadContext context, IRubyObject other, Block block) {
+    @JRubyMethod(name = {"merge!", "update"}, rest = true)
+    public RubyHash merge_bang(ThreadContext context, IRubyObject[] others, Block block) {
         modify();
-        final RubyHash otherHash = other.convertToHash();
 
-        if (otherHash.empty_p().isTrue()) return this;
+        if (others.length == 0) return this;
 
-        otherHash.visitAll(context, new MergeVisitor(this), block);
+        for (int i = 0; i < others.length; i++) {
+            final RubyHash otherHash = others[i].convertToHash();
+            if (otherHash.empty_p().isTrue()) continue;
+            otherHash.visitAll(context, new MergeVisitor(this), block);
+        }
 
         return this;
     }
@@ -1960,12 +1968,17 @@ public class RubyHash extends RubyObject implements Map {
         return merge_bang(context, other, block);
     }
 
+    @Deprecated
+    public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
+        return merge(context, new IRubyObject[]{other}, block);
+    }
+
     /** rb_hash_merge
      *
      */
-    @JRubyMethod
-    public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
-        return ((RubyHash)dup()).merge_bang(context, other, block);
+    @JRubyMethod(rest = true)
+    public RubyHash merge(ThreadContext context, IRubyObject[] others, Block block) {
+        return ((RubyHash)dup()).merge_bang(context, others, block);
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
