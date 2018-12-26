@@ -1177,6 +1177,18 @@ arg             : lhs '=' arg_rhs {
                     boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
                     $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), support.makeNullNil($3), true, isLiteral);
                 }
+                | arg tDOT2 {
+                    value_expr(lexer, $1);
+
+                    boolean isLiteral = $1 instanceof FixnumNode;
+                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, false, isLiteral);
+                }
+                | arg tDOT3 {
+                    value_expr(lexer, $1);
+
+                    boolean isLiteral = $1 instanceof FixnumNode;
+                    $$ = new DotNode(support.getPosition($1), support.makeNullNil($1), NilImplicitNode.NIL, true, isLiteral);
+                }
                 | arg tPLUS arg {
                     $$ = support.getOperatorCallNode($1, $2, $3, lexer.getPosition());
                 }

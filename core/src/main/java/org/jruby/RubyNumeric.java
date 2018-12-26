@@ -1056,7 +1056,7 @@ public class RubyNumeric extends RubyObject {
                     desc,
                     block);
         } else if (this instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            floatStep(context, runtime, this, to, step, false, block);
+            floatStep(context, runtime, this, to, step, false, false, block);
         } else {
             duckStep(context, this, to, step, inf, desc, block);
         }
@@ -1096,9 +1096,9 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, Block block) {
+    static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, boolean allowEndless, Block block) {
         double beg = num2dbl(context, from);
-        double end = num2dbl(context, to);
+        double end = allowEndless && to.isNil() ? RubyFloat.INFINITY : num2dbl(context, to);
         double unit = num2dbl(context, step);
 
         double n = floatStepSize(beg, end, unit, excl);
