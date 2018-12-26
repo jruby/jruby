@@ -87,6 +87,7 @@ public class RubyRange extends RubyObject {
     private IRubyObject begin;
     private IRubyObject end;
     private boolean isExclusive;
+    private boolean isEndless;
     private boolean isInited = false;
 
     public static RubyClass createRangeClass(Ruby runtime) {
@@ -146,7 +147,7 @@ public class RubyRange extends RubyObject {
 
     final long[] begLen(long len, int err) {
         long beg = RubyNumeric.num2long(this.begin);
-        long end = RubyNumeric.num2long(this.end);
+        long end = isEndless ? -1: RubyNumeric.num2long(this.end);
 
         if (beg < 0) {
             beg += len;
@@ -198,7 +199,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen1(long len, long beg) {
-        long end = RubyNumeric.num2long(this.end);
+        long end = isEndless ? -1 : RubyNumeric.num2long(this.end);
 
         if (end < 0) {
             end += len;
@@ -216,7 +217,7 @@ public class RubyRange extends RubyObject {
 
     final int[] begLenInt(int len, int err) {
         int beg = RubyNumeric.num2int(this.begin);
-        int end = RubyNumeric.num2int(this.end);
+        int end = isEndless ? -1 : RubyNumeric.num2int(this.end);
 
         if (beg < 0) {
             beg += len;
@@ -243,7 +244,7 @@ public class RubyRange extends RubyObject {
         if (end < 0) {
             end += len;
         }
-        if (!isExclusive) {
+        if (!isExclusive || isEndless) {
             end++;
         }
         len = end - beg;
@@ -255,7 +256,7 @@ public class RubyRange extends RubyObject {
     }
 
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
-        if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
+        if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum) && !end.isNil()) {
             IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
             if (result.isNil()) {
                 throw context.runtime.newArgumentError("bad value for range");
@@ -265,6 +266,7 @@ public class RubyRange extends RubyObject {
         this.begin = begin;
         this.end = end;
         this.isExclusive = isExclusive;
+        this.isEndless = end.isNil();
         this.isInited = true;
     }
 
@@ -339,7 +341,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(name = "inspect")
     public RubyString inspect(final ThreadContext context) {
         RubyString i1 = inspectValue(context, begin).strDup(context.runtime);
-        RubyString i2 = inspectValue(context, end);
+        RubyString i2 = isEndless ? RubyString.newEmptyString(context.runtime): inspectValue(context, end);
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         i1.infectBy(i2);
@@ -507,14 +509,20 @@ public class RubyRange extends RubyObject {
         if (!block.isGiven()) {
             return enumeratorizeWithSize(context, this, "each", enumSizeFn(context));
         }
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
+        if (begin instanceof RubyFixnum && isEndless) {
+            ((RubyFixnum) begin).step(context, new IRubyObject[]{}, block);
+        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, block);
         } else if (begin instanceof RubySymbol && end instanceof RubySymbol) {
             begin.asString().uptoCommon(context, end.asString(), isExclusive, block, true);
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
-                ((RubyString) tmp).uptoCommon(context, end, isExclusive, block);
+                if (isEndless) {
+                    ((RubyString) tmp).uptoEndless(context, block);
+                } else {
+                    ((RubyString) tmp).uptoCommon(context, end, isExclusive, block);
+                }
             } else {
                 if (!discreteObject(context, begin)) {
                     throw context.runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());
@@ -579,10 +587,12 @@ public class RubyRange extends RubyObject {
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
         Ruby runtime = context.runtime;
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
+        if (begin instanceof RubyFixnum && isEndless && step instanceof RubyFixnum) {
+            ((RubyFixnum) begin).step(context, new IRubyObject[]{end, step}, block);
+        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
             fixnumStep(context, runtime, ((RubyFixnum) step).getLongValue(), block);
         } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
-            RubyNumeric.floatStep(context, runtime, begin, end, step, isExclusive, block);
+            RubyNumeric.floatStep(context, runtime, begin, end, step, isExclusive, isEndless, block);
         } else if (begin instanceof RubyNumeric
                 || !TypeConverter.checkIntegerType(runtime, begin, "to_int").isNil()
                 || !TypeConverter.checkIntegerType(runtime, end, "to_int").isNil()) {
@@ -592,7 +602,11 @@ public class RubyRange extends RubyObject {
             if (!tmp.isNil()) {
                 StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
                 Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Signature.ONE_ARGUMENT, callback, context);
-                ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
+                if (isEndless) {
+                    ((RubyString) tmp).uptoEndless(context, blockCallback);
+                } else {
+                    ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
+                }
             } else {
                 if (!begin.respondsTo("succ")) {
                     throw runtime.newTypeError("can't iterate from " + begin.getMetaClass().getName());

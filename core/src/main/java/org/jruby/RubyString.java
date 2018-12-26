@@ -3885,6 +3885,49 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    final IRubyObject uptoEndless(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        StringSites sites = sites(context);
+        CallSite succ = sites.succ;
+
+        boolean isAscii = scanForCodeRange() == CR_7BIT;
+        RubyString current = strDup(context.runtime);
+
+        if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[value.getBegin()])) {
+            IRubyObject b = stringToInum(10);
+            RubyArray argsArr = RubyArray.newArray(runtime, RubyFixnum.newFixnum(runtime, value.length()), context.nil);
+            ByteList to;
+
+            if (b instanceof RubyFixnum) {
+                long bl = RubyNumeric.fix2long(b);
+
+                while (bl < RubyFixnum.MAX) {
+                    argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
+                    to = new ByteList(value.length() + 5);
+                    Sprintf.sprintf(to, "%.*d", argsArr);
+                    current = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
+                    block.yield(context, current);
+                    bl++;
+                }
+
+                argsArr.eltSetOk(1, RubyFixnum.newFixnum(runtime, bl));
+                to = new ByteList(value.length() + 5);
+                Sprintf.sprintf(to, "%.*d", argsArr);
+                current = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
+            }
+        }
+
+        while (true) {
+            IRubyObject next = succ.call(context, current, current);
+            block.yield(context, current);
+            if (next == null) break;
+            current = next.convertToString();
+            if (current.getByteList().length() == 0) break;
+        }
+
+        return this;
+    }
+
     @Deprecated
     public final RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
         return include_p(context, obj);
