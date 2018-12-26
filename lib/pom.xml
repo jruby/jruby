@@ -12,11 +12,7 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-<<<<<<< HEAD
     <version>9.3.0.0-SNAPSHOT</version>
-=======
-    <version>9.2.6.0-SNAPSHOT</version>
->>>>>>> master
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -32,11 +28,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-<<<<<<< HEAD
       <version>9.3.0.0-SNAPSHOT</version>
-=======
-      <version>9.2.6.0-SNAPSHOT</version>
->>>>>>> master
       <scope>test</scope>
     </dependency>
     <dependency>
