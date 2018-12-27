@@ -1645,7 +1645,7 @@ public class RubyInstanceConfig {
     /**
      * The version to use for generated classes. Set to current JVM version by default
      */
-    public static final int JAVA_VERSION = initGlobalJavaVersion();
+    public static final int JAVA_VERSION = initJavaBytecodeVersion();
 
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -1877,7 +1877,7 @@ public class RubyInstanceConfig {
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
 
-    private static int initGlobalJavaVersion() {
+    private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
             case "1.6" :
