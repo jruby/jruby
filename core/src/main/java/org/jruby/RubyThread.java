@@ -1147,8 +1147,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // We need this loop in order to be able to "unblock" the
             // join call without actually calling interrupt.
             long start = System.currentTimeMillis();
-            while(true) {
-                currentThread.pollThreadEvents();
+            while (true) {
+                currentThread.pollThreadEvents(context);
                 threadImpl.join(timeToWait);
                 if (!threadImpl.isAlive()) {
                     break;
@@ -1167,15 +1167,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             currentThread.exitSleep();
         }
 
-        if (exitingException != null) {
-            if (exitingException instanceof RaiseException) {
-                RaiseException raiseException = (RaiseException) exitingException;
+        final Throwable exception = this.exitingException;
+        if (exception != null) {
+            if (exception instanceof RaiseException) {
                 // Set $! in the current thread before exiting
-                runtime.getGlobalVariables().set("$!", (IRubyObject) raiseException.getException());
+                runtime.getGlobalVariables().set("$!", ((RaiseException) exception).getException());
             } else {
-                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exitingException));
+                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
             }
-            Helpers.throwException(exitingException);
+            Helpers.throwException(exception);
         }
 
         // check events before leaving
@@ -1189,20 +1189,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod
-    public IRubyObject value() {
-        join(getRuntime().getCurrentContext(), NULL_ARRAY);
+    public IRubyObject value(ThreadContext context) {
+        join(context, NULL_ARRAY);
         synchronized (this) {
             return finalResult;
         }
     }
 
+    @Deprecated
+    public IRubyObject value() {
+        return value(getRuntime().getCurrentContext());
+    }
+
     @JRubyMethod
     public IRubyObject group() {
-        if (threadGroup == null) {
-            return getRuntime().getNil();
-        }
-
-        return threadGroup;
+        final RubyThreadGroup group = this.threadGroup;
+        return group == null ? getRuntime().getNil() : group;
     }
 
     void setThreadGroup(RubyThreadGroup rubyThreadGroup) {
@@ -1352,7 +1354,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @return this thread
      */
     public final IRubyObject raise(IRubyObject exception) {
-        return raise(new IRubyObject[]{exception}, Block.NULL_BLOCK);
+        ThreadContext context = getRuntime().getCurrentContext();
+        return genericRaise(context, context.getThread(), exception);
     }
 
     /**
@@ -1364,35 +1367,38 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @return this thread
      */
     public final IRubyObject raise(IRubyObject exception, RubyString message) {
-        return raise(new IRubyObject[]{exception, message}, Block.NULL_BLOCK);
+        ThreadContext context = getRuntime().getCurrentContext();
+        return genericRaise(context, context.getThread(), exception, message);
     }
 
     @JRubyMethod(optional = 3)
-    public IRubyObject raise(IRubyObject[] args, Block block) {
-        Ruby runtime = getRuntime();
-
-        RubyThread currentThread = runtime.getCurrentContext().getThread();
-
-        return genericRaise(runtime, args, currentThread);
+    public IRubyObject raise(ThreadContext context, IRubyObject[] args, Block block) {
+        return genericRaise(context, context.getThread(), args);
     }
 
-    public IRubyObject genericRaise(Ruby runtime, IRubyObject[] args, RubyThread currentThread) {
-        if (!isAlive()) return runtime.getNil();
+    @Deprecated
+    public IRubyObject raise(IRubyObject[] args, Block block) {
+        return raise(getRuntime().getCurrentContext(), args, block);
+    }
+
+    private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
+        if (!isAlive()) return context.nil;
 
         if (currentThread == this) {
-            RubyKernel.raise(runtime.getCurrentContext(), runtime.getKernel(), args, Block.NULL_BLOCK);
+            RubyKernel.raise(context, context.runtime.getKernel(), args, Block.NULL_BLOCK);
             // should not reach here
         }
 
-        IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
+        IRubyObject exception = prepareRaiseException(context, args, Block.NULL_BLOCK);
 
         pendingInterruptEnqueue(exception);
         interrupt();
 
-        return runtime.getNil();
+        return context.nil;
     }
 
-    private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
+    private IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.runtime;
         if (args.length == 0) {
             if (errorInfo.isNil()) {
                 // We force RaiseException here to populate backtrace
@@ -1401,7 +1407,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return errorInfo;
         }
 
-        final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject arg = args[0];
 
         IRubyObject tmp;
@@ -2067,7 +2072,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             boolean ready = blockingIO.await();
 
             // check for thread events, in case we've been woken up to die
-            pollThreadEvents();
+            pollThreadEvents(context);
             return ready;
         } catch (IOException ioe) {
             throw context.runtime.newRuntimeError("Error with selector: " + ioe);
@@ -2232,9 +2237,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     @Deprecated
     public void internalRaise(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
-
-        genericRaise(runtime, args, runtime.getCurrentContext().getThread());
+        ThreadContext context = getRuntime().getCurrentContext();
+        genericRaise(context, context.getThread(), args);
     }
 
     @Deprecated
