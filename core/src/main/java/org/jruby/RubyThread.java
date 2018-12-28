@@ -348,14 +348,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 IRubyObject sym;
 
                 if (!(sym = mask.op_aref(context, klass)).isNil()) {
-                    String symStr = sym.toString();
-                    switch (symStr) {
-                        case "immediate": return INTERRUPT_IMMEDIATE;
-                        case "on_blocking": return INTERRUPT_ON_BLOCKING;
-                        case "never": return INTERRUPT_NEVER;
-                        default:
-                            throw context.runtime.newThreadError("unknown mask signature");
-                    }
+                    return checkInterruptMask(context, sym);
                 }
             }
         }
@@ -772,20 +765,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    private static final RubyHash.VisitorWithState HandleInterruptVisitor = new RubyHash.VisitorWithState() {
+    private static final RubyHash.VisitorWithState HandleInterruptVisitor = new RubyHash.VisitorWithState<Void>() {
         @Override
-        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Object state) {
-            if (value instanceof RubySymbol) {
-                RubySymbol sym = (RubySymbol) value;
-                switch (sym.idString()) {
-                    case "immediate" : return;
-                    case "on_blocking" : return;
-                    case "never" : return;
-                    default : throw key.getRuntime().newArgumentError("unknown mask signature");
-                }
-            }
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Void state) {
+            checkInterruptMask(context, value);
         }
     };
+
+    private static int checkInterruptMask(final ThreadContext context, final IRubyObject sym) {
+        if (sym instanceof RubySymbol) {
+            switch (((RubySymbol) sym).idString()) {
+                case "immediate": return INTERRUPT_IMMEDIATE;
+                case "on_blocking": return INTERRUPT_ON_BLOCKING;
+                case "never": return INTERRUPT_NEVER;
+            }
+        }
+        throw context.runtime.newArgumentError("unknown mask signature");
+    }
 
     @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
