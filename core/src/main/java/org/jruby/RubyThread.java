@@ -796,21 +796,24 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
         if (pendingInterruptQueue.isEmpty()) {
             return context.fals;
-        } else {
-            if (args.length == 1) {
-                IRubyObject err = args[0];
-                if (!(err instanceof RubyModule)) {
-                    throw context.runtime.newTypeError("class or module required for rescue clause");
-                }
-                if (pendingInterruptInclude(err)) {
-                    return context.tru;
-                } else {
-                    return context.fals;
-                }
-            } else {
-                return context.tru;
-            }
         }
+        if (args.length == 1) {
+            IRubyObject err = args[0];
+            if (!(err instanceof RubyModule)) {
+                throw context.runtime.newTypeError("class or module required for rescue clause");
+            }
+            return pendingInterruptInclude((RubyModule) err) ? context.tru : context.fals;
+        }
+        return context.tru;
+    }
+
+    private boolean pendingInterruptInclude(RubyModule err) {
+        Iterator<IRubyObject> iterator = pendingInterruptQueue.iterator();
+        while (iterator.hasNext()) {
+            RubyModule e = (RubyModule) iterator.next();
+            if (e.isKindOfModule(err)) return true;
+        }
+        return false;
     }
 
     @JRubyMethod(name = "name=", required = 1)
@@ -840,17 +843,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (rubyName == null) return runtime.getNil();
 
         return RubyString.newString(runtime, rubyName);
-    }
-
-    private boolean pendingInterruptInclude(IRubyObject err) {
-        Iterator<IRubyObject> iterator = pendingInterruptQueue.iterator();
-        while (iterator.hasNext()) {
-            IRubyObject e = iterator.next();
-            if (((RubyModule)e).op_le(err).isTrue()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
