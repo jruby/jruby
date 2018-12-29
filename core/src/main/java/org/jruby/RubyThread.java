@@ -267,7 +267,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     } else {
                         args = Helpers.arrayOf(err);
                     }
-                    RubyKernel.raise(context, runtime.getKernel(), args, Block.NULL_BLOCK);
+                    RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
                 }
             }
 
@@ -1367,8 +1367,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!isAlive()) return context.nil;
 
         if (currentThread == this) {
-            RubyKernel.raise(context, context.runtime.getKernel(), args, Block.NULL_BLOCK);
-            // should not reach here
+            RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
+            assert false; // should not reach here
         }
 
         IRubyObject exception = prepareRaiseException(context, args, Block.NULL_BLOCK);
