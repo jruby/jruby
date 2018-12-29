@@ -74,7 +74,7 @@ public class Mutex extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = "locked?")
-    public synchronized RubyBoolean locked_p(ThreadContext context) {
+    public RubyBoolean locked_p(ThreadContext context) {
         return context.runtime.newBoolean(lock.isLocked());
     }
 
@@ -107,13 +107,12 @@ public class Mutex extends RubyObject implements DataType {
     }
 
     @JRubyMethod
-    public synchronized IRubyObject unlock(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    public IRubyObject unlock(ThreadContext context) {
         if (!lock.isLocked()) {
-            throw runtime.newThreadError("Mutex is not locked");
+            throw context.runtime.newThreadError("Mutex is not locked");
         }
         if (!lock.isHeldByCurrentThread()) {
-            throw runtime.newThreadError("Mutex is not owned by calling thread");
+            throw context.runtime.newThreadError("Mutex is not owned by calling thread");
         }
 
         boolean hasQueued = lock.hasQueuedThreads();

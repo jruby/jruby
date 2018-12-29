@@ -2674,7 +2674,7 @@ public class OpenFile implements Finalizable {
 
                 // raise will also wake the thread from selection
                 RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed in another thread"), Block.NULL_BLOCK);
-                thread.raise(Helpers.arrayOf(exception), Block.NULL_BLOCK);
+                thread.raise(exception);
             }
         }
     }
