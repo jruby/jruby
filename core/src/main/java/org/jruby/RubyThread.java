@@ -1463,30 +1463,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public IRubyObject status() {
-        return status(getRuntime());
+    public IRubyObject status() { // not used
+        return status(getRuntime().getCurrentContext());
     }
+
     @JRubyMethod
     public IRubyObject status(ThreadContext context) {
-        return status(context.runtime);
-    }
-
-    private synchronized IRubyObject status(Ruby runtime) {
-        Status status;
-
-        if (threadImpl.isAlive()) {
-            status = this.status.get();
-
-            if (status == Status.DEAD) {
-                return runtime.getFalse();
-            }
-
-            return runtime.getThreadStatus(status);
-        } else if (exitingException != null) {
-            return runtime.getNil();
-        } else {
-            return runtime.getFalse();
+        final Status status = this.status.get();
+        if (threadImpl.isAlive() && status != Status.DEAD) { // isAlive()
+            return context.runtime.getThreadStatus(status);
         }
+
+        return exitingException != null ? context.nil : context.fals;
     }
 
     @Deprecated
