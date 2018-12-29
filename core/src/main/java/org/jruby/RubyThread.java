@@ -1110,13 +1110,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 if (threadImpl.isAlive()) {
                     return context.nil;
                 } else {
-                   return this;
+                    return this;
                 }
             }
         }
 
         if (isCurrent()) {
-            throw runtime.newThreadError("thread " + identityString() + " tried to join itself");
+            throw runtime.newThreadError("Target thread must not be current thread");
         }
 
         RubyThread currentThread = context.getThread();

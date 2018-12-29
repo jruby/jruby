@@ -96,8 +96,8 @@ class TestThread < Test::Unit::TestCase
     rescue ThreadError => error
       e = error
     end
-    assert(! e.nil?)
-    assert_match(/thread [0-9a-z]+ tried to join itself/, e.message)
+    assert(e.is_a?(ThreadError))
+    assert_match(/must not be current thread/, e.message)
   end
 
   def test_raise
@@ -400,7 +400,7 @@ class TestThread < Test::Unit::TestCase
       assert ! Thread.current.inspect.index('@foo')
       assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current) if defined? JRUBY_VERSION
     end.join
-  end
+  end if defined? JRUBY_VERSION
 
   CountDownLatch = Class.new do
     def initialize(count)
