@@ -1,0 +1,1 @@
+fails:IO#dup always sets the close-on-exec flag for the new IO object
