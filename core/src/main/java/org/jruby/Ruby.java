@@ -2930,13 +2930,11 @@ public final class Ruby implements Constantizable {
      * MRI: eval.c - error_print()
      *
      */
-    public void printError(RubyException excp) {
-        if (excp == null || excp.isNil()) {
-            return;
-        }
+    public void printError(final RubyException ex) {
+        if (ex == null) return;
 
         PrintStream errorStream = getErrorStream();
-        String backtrace = config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
+        String backtrace = config.getTraceType().printBacktrace(ex, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
         try {
             errorStream.print(backtrace);
         } catch (Exception e) {
@@ -2944,16 +2942,16 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    public void printError(Throwable t) {
-        if (t instanceof RaiseException) {
-            printError(((RaiseException) t).getException());
+    public void printError(final Throwable ex) {
+        if (ex instanceof RaiseException) {
+            printError(((RaiseException) ex).getException());
             return;
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream errorStream = getErrorStream();
 
-        t.printStackTrace(new PrintStream(baos));
+        ex.printStackTrace(new PrintStream(baos));
 
         try {
             errorStream.write(baos.toByteArray());
@@ -5354,8 +5352,8 @@ public final class Ruby implements Constantizable {
     /** Used to find the ProfilingService implementation to use. If profiling is disabled it's null */
     private final ProfilingServiceLookup profilingServiceLookup;
 
-    private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
-    private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
+    private final EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<>(DefinedMessage.class);
+    private final EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<>(RubyThread.Status.class);
 
     public interface ObjectSpacer {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
