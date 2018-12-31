@@ -1718,7 +1718,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (state.isNil()) {
             reportOnException = state;
         } else {
-            reportOnException = context.runtime.newBoolean(state.isTrue());
+            reportOnException = state.isTrue() ? context.tru : context.fals;
         }
         return this;
     }
@@ -1779,7 +1779,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             Helpers.throwException(throwable);
         }
 
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
 
         assert isCurrent();
 
@@ -1792,10 +1792,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             rubyException = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
         }
 
+        boolean report;
         if (runtime.getSystemExit().isInstance(rubyException)) {
             runtime.getThreadService().getMainThread().raise(rubyException);
-        } else if (abortOnException(runtime) || reportOnException.isTrue()) {
-            if (reportOnException.isTrue()) {
+        } else if ((report = reportOnException.isTrue()) || abortOnException(runtime)) {
+            if (report) {
                 printReportExceptionWarning();
                 runtime.printError(throwable);
             }
