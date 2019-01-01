@@ -9,6 +9,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class BasicCompilerPassListener implements CompilerPassListener {
     private static final Logger LOG = LoggerFactory.getLogger(BasicCompilerPassListener.class);
@@ -21,14 +22,14 @@ public class BasicCompilerPassListener implements CompilerPassListener {
 
     @Override
     public void startExecute(CompilerPass pass, IRScope scope, boolean childScope) {
-        times.put(pass, new Long(System.currentTimeMillis()));
+        times.put(pass, new Long(System.nanoTime()));
         LOG.info("Starting " + pass.getLabel() + " on scope " + scope);
     }
 
     @Override
     public void endExecute(CompilerPass pass, IRScope scope, Object data, boolean childScope) {
         Long startTime = times.get(pass);
-        long timeTaken = startTime != null ? System.currentTimeMillis() - startTime.longValue() : -1;
+        long timeTaken = startTime != null ? TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) : -1;
 
         CFG c = scope.getCFG();
 
@@ -41,7 +42,7 @@ public class BasicCompilerPassListener implements CompilerPassListener {
         }
 
 
-        if (startTime > 0) {
+        if (timeTaken > 0) {
             LOG.info("Finished " + pass.getLabel() + " on scope in " + timeTaken + "ms.");
         } else { // Not really sure we should allow same pass to be run twice in same pass order run...too defensive?
             LOG.info("Finished " + pass.getLabel() + " on scope " + scope);
