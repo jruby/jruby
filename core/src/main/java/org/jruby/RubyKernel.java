@@ -49,6 +49,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import jnr.constants.platform.Errno;
@@ -668,35 +669,35 @@ public class RubyKernel {
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        long milliseconds;
+        long millis;
 
         if (args.length == 0) {
             // Zero sleeps forever
-            milliseconds = 0;
+            millis = 0;
         }
         else {
-            milliseconds = (long) ( RubyTime.convertTimeInterval(context, args[0]) * 1000 );
+            millis = (long) ( RubyTime.convertTimeInterval(context, args[0]) * 1000 );
             // Explicit zero in MRI returns immediately
-            if ( milliseconds == 0 ) return context.runtime.newFixnum(0);
+            if ( millis == 0 ) return context.runtime.newFixnum(0);
         }
 
-        final long startTime = System.currentTimeMillis();
+        final long start = System.nanoTime();
         final RubyThread rubyThread = context.getThread();
 
         try {
             // Spurious wakeup-loop
             do {
-                long loopStartTime = System.currentTimeMillis();
+                long loopStart = System.nanoTime();
 
-                if (!rubyThread.sleep(milliseconds)) break;
+                if (!rubyThread.sleep(millis)) break;
 
-                milliseconds -= (System.currentTimeMillis() - loopStartTime);
-            } while (milliseconds > 0);
+                millis -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - loopStart);
+            } while (millis > 0);
         } catch (InterruptedException ie) {
             // ignore; sleep gets interrupted
         }
 
-        return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
+        return context.runtime.newFixnum(Math.round(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) / 1000.0));
     }
 
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.

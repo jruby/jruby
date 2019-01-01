@@ -1128,14 +1128,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // We need this loop in order to be able to "unblock" the
             // join call without actually calling interrupt.
-            long start = System.currentTimeMillis();
+            final long start = System.nanoTime();
             while (true) {
                 currentThread.pollThreadEvents(context);
                 threadImpl.join(timeToWait);
                 if (!threadImpl.isAlive()) {
                     break;
                 }
-                if (System.currentTimeMillis() - start > timeoutMillis) {
+                if (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) > timeoutMillis) {
                     break;
                 }
             }
@@ -1532,7 +1532,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @Override
         public Long run(ThreadContext context, Object data) throws InterruptedException {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
 
             try {
                 if (millis == 0) {
@@ -1541,7 +1541,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
                 }
 
-                return System.currentTimeMillis() - start;
+                return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
             } finally {
                 semaphore.drainPermits();
             }
