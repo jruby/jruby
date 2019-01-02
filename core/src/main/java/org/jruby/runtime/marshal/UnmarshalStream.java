@@ -33,37 +33,23 @@
 
 package org.jruby.runtime.marshal;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBignum;
-import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyHash;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
-import org.jruby.RubyStruct;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marshal format.

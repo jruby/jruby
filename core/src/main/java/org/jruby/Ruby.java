@@ -61,6 +61,7 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.ir.runtime.IRWrappedLambdaReturnValue;
+import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -164,6 +165,9 @@ import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.ClassValueCalculator;
+import org.jruby.util.collections.MapBasedClassValue;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.func.Function1;
 import org.jruby.util.io.FilenoUtil;
@@ -181,10 +185,13 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1596,6 +1603,18 @@ public final class Ruby implements Constantizable {
     public IRubyObject[] getNilPrefilledArray() {
         return nilPrefilledArray;
     }
+
+//    java.lang.VerifyError:
+//      Verifier rejected class org.jruby.Ruby:
+//        void org.jruby.Ruby.initExceptions() failed to verify:
+//          void org.jruby.Ruby.initExceptions():
+//            [0x3] Call site #85 bootstrap method argument 1 is not a referenceVerifier
+//
+//      rejected class org.jruby.Ruby:
+//        org.jruby.RubyString org.jruby.Ruby.freezeAndDedupString(org.jruby.RubyString) failed to verify:
+//          org.jruby.RubyString org.jruby.Ruby.freezeAndDedupString(org.jruby.RubyString):
+//            [0x4D] Call site #122 bootstrap method argument 1 is not a reference
+//              (declaration of 'org.jruby.Ruby' appears in /data/app/no.datek.nettbuss.operator-eID6aQQkiYbp5im5WTClMw==/split_lib_dependencies_apk.apk!classes2.dex)
 
     private void initExceptions() {
         ifAllowed("StandardError",          (ruby) -> standardError = RubyStandardError.define(ruby, exceptionClass));
@@ -3662,7 +3681,7 @@ public final class Ruby implements Constantizable {
     public RaiseException newArgumentError(int got, int expected) {
         return newArgumentError(got, expected, expected);
     }
-    
+
     public RaiseException newArgumentError(int got, int min, int max) {
         if (min == max) {
             return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
@@ -5403,12 +5422,12 @@ public final class Ruby implements Constantizable {
      */
     private MethodHandle nullToNil;
 
-    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
+    public final org.jruby.util.collections.ClassValue<TypePopulator> POPULATORS = new MapBasedClassValue<TypePopulator>(new ClassValueCalculator<TypePopulator>() {
         @Override
-        protected TypePopulator computeValue(Class<?> type) {
+        public TypePopulator computeValue(Class<?> type) {
             return RubyModule.loadPopulatorFor(type);
         }
-    };
+    });
 
     public final JavaSites sites = new JavaSites();
 

@@ -1896,10 +1896,12 @@ public class Helpers {
         throw runtime.newTypeError(str(runtime, ids(runtime, maybeModule), " is not a class/module"));
     }
 
+    @JIT
     public static IRubyObject getGlobalVariable(Ruby runtime, String name) {
         return runtime.getGlobalVariables().get(name);
     }
 
+    @JIT
     public static IRubyObject setGlobalVariable(IRubyObject value, Ruby runtime, String name) {
         return runtime.getGlobalVariables().set(name, value);
     }

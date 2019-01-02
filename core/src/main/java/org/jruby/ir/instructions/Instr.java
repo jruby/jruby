@@ -16,6 +16,9 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.ClassValueCalculator;
+import org.jruby.util.collections.MapBasedClassValue;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.lang.reflect.Field;
@@ -92,9 +95,9 @@ public abstract class Instr {
     /**
      * A ClassValue wrapping an array of dumpable Field references for a given Instr type.
      */
-    private static final ClassValue<Field[]> dumpableFields = new ClassValue<Field[]>() {
+    private static final org.jruby.util.collections.ClassValue<Field[]> dumpableFields = new MapBasedClassValue<Field[]>(new ClassValueCalculator<Field[]>() {
         @Override
-        protected Field[] computeValue(Class type) {
+        public Field[] computeValue(Class type) {
             try {
                 Class cls = type;
                 ArrayList<Field> list = new ArrayList<>();
@@ -120,7 +123,7 @@ public abstract class Instr {
                 return EMPTY_FIELD_ARRAY;
             }
         }
-    };
+    });
 
     public Field[] dumpableFields() {
         return dumpableFields.get(getClass());

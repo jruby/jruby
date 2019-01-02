@@ -8,6 +8,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScope;
@@ -27,6 +28,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.MathLinker;
+import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
@@ -196,6 +198,21 @@ public class Bootstrap {
                 .collect(2, IRubyObject[].class)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "kwargsHash");
         CallSite site = new ConstantCallSite(handle);
+        return site;
+    }
+
+    public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = names[1];
+        VariableSite site = new VariableSite(type, varName, "noname", 0);
+        MethodHandle handle;
+
+        handle = lookup.findStatic(Bootstrap.class, operation, type.insertParameterTypes(0, VariableSite.class));
+
+        handle = handle.bindTo(site);
+        site.setTarget(handle.asType(site.type()));
+
         return site;
     }
 
@@ -513,7 +530,7 @@ public class Bootstrap {
     private static MethodHandle createAttrReaderHandle(InvokeSite site, IRubyObject self, RubyClass cls, VariableAccessor accessor) {
         MethodHandle nativeTarget;
 
-        MethodHandle filter = cls.getClassRuntime().getNullToNilHandle();
+        MethodHandle filter = (MethodHandle) cls.getClassRuntime().getNullToNilHandle();
 
         MethodHandle getValue;
 
