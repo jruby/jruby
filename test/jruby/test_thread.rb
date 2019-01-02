@@ -441,7 +441,7 @@ class TestThread < Test::Unit::TestCase
     end
   end
 
-  def wait_for_latch(count = 5, timeout = 1.0)
+  def wait_for_latch(count = 5, timeout = 1.5)
     latch = CountDownLatch.new count
     count.times do
       Thread.new { latch.countdown! }
