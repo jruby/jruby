@@ -1103,7 +1103,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
             // MRI behavior: value given in seconds; converted to Float; less
             // than or equal to zero returns immediately; returns nil
-            timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
+            timeoutMillis = (long) (1000 * RubyNumeric.num2dbl(args[0]));
             if (timeoutMillis <= 0) {
             // TODO: not sure that we should skip calling join() altogether.
             // Thread.join() has some implications for Java Memory Model, etc.
