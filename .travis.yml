@@ -9,8 +9,8 @@ git:
   depth: 10
 
 cache:
- directories:
-   - $HOME/.m2
+  directories:
+    - $HOME/.m2
 
 before_install:
   - unset _JAVA_OPTIONS
