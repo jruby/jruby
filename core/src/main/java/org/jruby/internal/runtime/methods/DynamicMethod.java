@@ -75,7 +75,7 @@ public abstract class DynamicMethod {
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Version {
-        int version = 0;
+        public int version() default 0;
     }
 
     /**
