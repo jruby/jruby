@@ -185,7 +185,7 @@ public class StaticScope implements Serializable {
         if (constructor == null) constructor = acquireConstructor();
 
         try {
-            return (DynamicScope) constructor.invokeExact(this, parent);
+            return (DynamicScope) constructor.invoke(this, parent);
         } catch (Throwable e) {
             Helpers.throwException(e);
             return null; // not reached
