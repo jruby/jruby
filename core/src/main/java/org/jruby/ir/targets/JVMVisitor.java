@@ -1038,11 +1038,6 @@ public class JVMVisitor extends IRVisitor {
             return;
         }
 
-        // JIT does not support refinements yet
-        if (callInstr.getCallSite() instanceof RefinedCachingCallSite) {
-            throw new NotCompilableException("refinements are unsupported in JIT");
-        }
-
         compileCallCommon(jvmMethod(), callInstr);
     }
 

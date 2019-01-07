@@ -85,7 +85,7 @@ public abstract class IRBytecodeAdapter {
         boolean profiled = false;
         if (call.isPotentiallyRefined()) {
             siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, IRScope.class, String.class, String.class);
+            signature = sig(siteClass, String.class, IRScope.class, String.class);
             method.getstatic(className, scopeFieldName, ci(IRScope.class));
             method.ldc(callType.name());
         } else {
