@@ -181,7 +181,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     protected static CallSite getCallSiteFor(IRScope scope, CallType callType, String name, long callsiteId, boolean hasLiteralClosure, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
-        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
+        if (potentiallyRefined) return new RefinedCachingCallSite(name, scope.getStaticScope(), callType);
 
         switch (callType) {
             case NORMAL:

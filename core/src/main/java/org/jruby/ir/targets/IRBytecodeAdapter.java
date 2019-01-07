@@ -17,6 +17,7 @@ import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -84,7 +85,8 @@ public abstract class IRBytecodeAdapter {
         boolean profiled = false;
         if (call.isPotentiallyRefined()) {
             siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, String.class);
+            signature = sig(siteClass, IRScope.class, String.class, String.class);
+            method.getstatic(className, scopeFieldName, ci(IRScope.class));
             method.ldc(callType.name());
         } else {
             switch (callType) {
