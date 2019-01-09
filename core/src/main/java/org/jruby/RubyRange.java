@@ -475,6 +475,8 @@ public class RubyRange extends RubyObject {
     public IRubyObject to_a(ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
 
+        if (isEndless) throw runtime.newRangeError("cannot convert endless range to an array");
+
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long lim = ((RubyFixnum) end).getLongValue();
             if (!isExclusive) {
