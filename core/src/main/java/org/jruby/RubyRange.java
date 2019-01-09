@@ -789,7 +789,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject max(ThreadContext context, Block block) {
         boolean isNumeric = end instanceof RubyNumeric;
 
-        if (isEndless) return context.nil;
+        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
 
         if (block.isGiven() || (isExclusive && !isNumeric)) {
             return Helpers.invokeSuper(context, this, block);
@@ -830,6 +830,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
+        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
         return Helpers.invokeSuper(context, this, arg, block);
     }
 
@@ -872,6 +873,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject last(ThreadContext context) {
+        if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
         return end;
     }
 
@@ -882,6 +884,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject arg) {
+        if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
         return ((RubyArray) RubyKernel.new_array(context, this, this)).last(arg);
     }
 
