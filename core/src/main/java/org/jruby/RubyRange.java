@@ -890,6 +890,9 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
         }
+
+        if (isEndless) return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
+
         return context.nil;
     }
 
