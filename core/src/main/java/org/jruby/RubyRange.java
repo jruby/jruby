@@ -475,6 +475,8 @@ public class RubyRange extends RubyObject {
     public IRubyObject to_a(ThreadContext context, final Block block) {
         final Ruby runtime = context.runtime;
 
+        if (isEndless) throw runtime.newRangeError("cannot convert endless range to an array");
+
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long lim = ((RubyFixnum) end).getLongValue();
             if (!isExclusive) {
@@ -763,6 +765,7 @@ public class RubyRange extends RubyObject {
         if (rangeLe(context, begin, obj) == null) {
             return context.fals; // obj < start...end
         }
+        if (isEndless) return context.tru;
         return context.runtime.newBoolean(isExclusive
                 ? // begin <= obj < end || begin <= obj <= end
                 rangeLt(context, obj, end) != null : rangeLe(context, obj, end) != null);
@@ -774,7 +777,7 @@ public class RubyRange extends RubyObject {
             return Helpers.invokeSuper(context, this, block);
         }
 
-        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
         if (cmp > 0 || (cmp == 0 && isExclusive)) {
             return context.nil;
         }
@@ -785,6 +788,8 @@ public class RubyRange extends RubyObject {
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, Block block) {
         boolean isNumeric = end instanceof RubyNumeric;
+
+        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
 
         if (block.isGiven() || (isExclusive && !isNumeric)) {
             return Helpers.invokeSuper(context, this, block);
@@ -818,11 +823,14 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
+        if (isEndless && block.isGiven()) throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
+        if (isEndless) return first(context, arg);
         return Helpers.invokeSuper(context, this, arg, block);
     }
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
+        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
         return Helpers.invokeSuper(context, this, arg, block);
     }
 
@@ -865,6 +873,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject last(ThreadContext context) {
+        if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
         return end;
     }
 
@@ -875,6 +884,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject arg) {
+        if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
         return ((RubyArray) RubyKernel.new_array(context, this, this)).last(arg);
     }
 
@@ -883,6 +893,9 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
         }
+
+        if (isEndless) return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
+
         return context.nil;
     }
 
