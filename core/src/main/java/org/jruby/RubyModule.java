@@ -80,11 +80,12 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.RefinedMarker;
+import org.jruby.internal.runtime.methods.RefinedWrapper;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.Initializer;
@@ -714,8 +715,11 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "refine", required = 1, reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject target, Block block) {
         if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
+
         if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
+
         if (!(target instanceof RubyModule)) throw context.runtime.newTypeError("wrong argument type " + target.getType() + "(expected Class or Module)");
+
         if (refinements == Collections.EMPTY_MAP) refinements = new IdentityHashMap<>();
         if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = new IdentityHashMap<>();
 
@@ -816,7 +820,7 @@ public class RubyModule extends RubyObject {
         activatedRefinements.put(moduleToRefine, iclass);
     }
 
-    @JRubyMethod(name = "using", required = 1, frame = true, reads = SCOPE)
+    @JRubyMethod(name = "using", required = 1, reads = {SELF, SCOPE})
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
         // FIXME: This is a lame test and I am unsure it works with JIT'd bodies...
@@ -1344,6 +1348,17 @@ public class RubyModule extends RubyObject {
             ((MetaClass) this).getAttached().testFrozen();
         }
 
+        if (isRefinement()) {
+            CacheEntry cache = refinedClass.searchWithCache(id);
+
+            // create refined entry on target class
+            if (cache.method.isUndefined()) {
+                refinedClass.addMethodInternal(id, new RefinedMarker(refinedClass, method.getVisibility(), id));
+            } else {
+                refinedClass.addMethodInternal(id, new RefinedWrapper(cache.method));
+            }
+        }
+
         addMethodInternal(id, method);
     }
 
@@ -1417,11 +1432,13 @@ public class RubyModule extends RubyObject {
      * Search for the named method in this class and in superclasses, and if found return the CacheEntry representing
      * the method and this class's serial number.
      *
+     * MRI: method_entry_get
+     *
      * @param name the method name
      * @return the CacheEntry corresponding to the method and this class's serial number
      */
     public CacheEntry searchWithCache(String name) {
-        return searchWithCache(name, true);
+        return searchWithCacheAndRefinements(name, true, null);
     }
 
     /**
@@ -1433,7 +1450,9 @@ public class RubyModule extends RubyObject {
      * @return the method or UndefinedMethod
      */
     public DynamicMethod searchWithRefinements(String name, StaticScope refinedScope) {
-        DynamicMethod method = searchMethodWithRefinementsInner(name, refinedScope);
+        CacheEntry entry = searchWithCacheAndRefinements(name, true, refinedScope);
+
+        DynamicMethod method = entry.method;
 
         if (method instanceof CacheableMethod) {
             method = ((CacheableMethod) method).getMethodForCaching();
@@ -1449,32 +1468,88 @@ public class RubyModule extends RubyObject {
     /**
      * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
      *
+     * MRI: method_entry_get
+     *
      * @param id The name of the method to search for
      * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
      * @return The method, or UndefinedMethod if not found
      */
     public final CacheEntry searchWithCache(String id, boolean cacheUndef) {
         final CacheEntry entry = cacheHit(id);
-        return entry != null ? entry : searchWithCacheMiss(id, cacheUndef);
+        return entry != null ? entry : searchWithCacheMiss(getRuntime(), id, cacheUndef);
+    }
+
+    // MRI: method_entry_resolve_refinement
+    private final CacheEntry searchWithCacheAndRefinements(String id, boolean cacheUndef, StaticScope refinedScope) {
+        CacheEntry entry = searchWithCache(id, cacheUndef);
+
+        if (entry.method.isRefined()) {
+            RubyModule overlay;
+            if (refinedScope != null && (overlay = refinedScope.getOverlayModuleForRead()) != null) {
+                // any refined target with scope available
+                entry = resolveRefinedMethod(overlay.refinements, entry, id, cacheUndef);
+
+                if (entry.method.isUndefined()) return CacheEntry.NULL_CACHE;
+
+                return entry;
+
+            } else {
+                // MRI: refined_method_original_method_entry
+                return resolveRefinedMethod(null, entry, id, cacheUndef);
+            }
+        }
+
+        return entry;
+    }
+
+    // MRI: refined_method_original_method_entry
+    private CacheEntry refinedMethodOriginalMethodEntry(Map<RubyModule, RubyModule> refinements, String id, boolean cacheUndef, CacheEntry entry, CacheEntry origEntry) {
+        RubyModule superClass;
+        if (entry.method instanceof RefinedWrapper) {
+            // wrapper, return original
+            return origEntry;
+        } else if ((superClass = entry.method.getDefinedClass().getSuperClass()) == null) {
+            // marker with no scope and no super, no method
+            return CacheEntry.NULL_CACHE;
+        } else {
+            // marker with no scope available, find super method
+            return resolveRefinedMethod(refinements, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
+        }
     }
 
     /**
      * Search through this module and supermodules for method definitions after {@link RubyModule#cacheHit(String)}
      * failed to return a result. Cache superclass definitions in this class.
+     *
+     * MRI: method_entry_get_without_cache
      * 
      * @param id The name of the method to search for
      * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
      * @return The method, or UndefinedMethod if not found
      */
-    private CacheEntry searchWithCacheMiss(final String id, final boolean cacheUndef) {
+    private CacheEntry searchWithCacheMiss(Ruby runtime, final String id, final boolean cacheUndef) {
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
         final int token = generation;
+
         DynamicMethod method = searchMethodInner(id);
+
         if (method instanceof CacheableMethod) {
             method = ((CacheableMethod) method).getMethodForCaching();
         }
-        return method != null ? addToCache(id, method, token) : cacheUndef ? addToCache(id, UndefinedMethod.getInstance(), token) : cacheEntryFactory.newCacheEntry(id, method, token);
+
+        boolean cache;
+
+        if (method == null) {
+            method = UndefinedMethod.getInstance();
+            cache = cacheUndef;
+        } else if (runtime.isBooting()) {
+            cache = false;
+        } else {
+            cache = true;
+        }
+
+        return cache ? addToCache(id, method, token) : cacheEntryFactory.newCacheEntry(id, method, token);
     }
 
     @Deprecated
@@ -1629,13 +1704,15 @@ public class RubyModule extends RubyObject {
         return cacheEntryFactory.hasCacheEntryFactory(SynchronizedCacheEntryFactory.class);
     }
 
-    private CacheEntry addToCache(String id, DynamicMethod method, int token) {
+    protected CacheEntry addToCache(String id, DynamicMethod method, int token) {
         CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, token);
+
         methodLocation.getCachedMethodsForWrite().put(id, entry);
 
         return entry;
     }
 
+    // MRI: search_method
     public DynamicMethod searchMethodInner(String id) {
         // This flattens some of the recursion that would be otherwise be necessary.
         // Used to recurse up the class hierarchy which got messy with prepend.
@@ -1649,21 +1726,33 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    public DynamicMethod searchMethodWithRefinementsInner(String name, StaticScope refinedScope) {
-        // This flattens some of the recursion that would be otherwise be necessary.
-        // Used to recurse up the class hierarchy which got messy with prepend.
-        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+    // MRI: resolve_refined_method
+    public CacheEntry resolveRefinedMethod(Map<RubyModule, RubyModule> refinements, CacheEntry entry, String id, boolean cacheUndef) {
+        if (entry != null && entry.method.isRefined()) {
             // Check for refinements in the given scope
-            DynamicMethod method = IRRuntimeHelpers.getRefinedMethodForClass(refinedScope, getNonIncludedClass(), name);
-            if (method != null && !method.isNull()) return method;
+            RubyModule refinement = findRefinement(refinements, entry.method.getDefinedClass());
 
-            // Only recurs if module is an IncludedModuleWrapper.
-            // This way only the recursion needs to be handled differently on
-            // IncludedModuleWrapper.
-            method = module.searchMethodCommon(name);
-            if (method != null) return method.isNull() ? null : method;
+            if (refinement == null) {
+                return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, entry, entry);
+            } else {
+                CacheEntry tmpEntry = refinement.searchWithCache(id);
+                if (tmpEntry.method.isRefined()) {
+                    return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, tmpEntry, entry);
+                }
+
+                return tmpEntry;
+            }
         }
-        return null;
+
+        return entry;
+    }
+
+    // MRI: find_refinement
+    private static RubyModule findRefinement(Map<RubyModule, RubyModule> refinements, RubyModule target) {
+        if (refinements == null) {
+            return null;
+        }
+        return refinements.get(target);
     }
 
     // The local method resolution logic. Overridden in IncludedModuleWrapper for recursion.
