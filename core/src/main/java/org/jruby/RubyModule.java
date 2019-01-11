@@ -770,8 +770,10 @@ public class RubyModule extends RubyObject {
     private void yieldRefineBlock(ThreadContext context, RubyModule refinement, Block block) {
         block.setEvalType(EvalType.MODULE_EVAL);
         block.getBinding().setSelf(refinement);
-        RubyModule overlayModule = block.getBody().getStaticScope().getOverlayModuleForWrite(context);
+
+        RubyModule overlayModule = block.getBinding().getDynamicScope().getStaticScope().getOverlayModuleForWrite(context);
         usingModule(context, overlayModule, this);
+
         block.yieldSpecific(context);
     }
 
