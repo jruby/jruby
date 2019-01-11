@@ -826,7 +826,7 @@ public class RubyModule extends RubyObject {
         activatedRefinements.put(moduleToRefine, iclass);
     }
 
-    @JRubyMethod(name = "using", required = 1, reads = {SELF, SCOPE})
+    @JRubyMethod(name = "using", required = 1, visibility = PRIVATE, reads = {SELF, SCOPE})
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
         // FIXME: This is a lame test and I am unsure it works with JIT'd bodies...

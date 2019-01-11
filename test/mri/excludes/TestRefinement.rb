@@ -1,7 +1,6 @@
 exclude :test_call_refined_method_in_duplicate_module, "needs investigation"
 exclude :test_case_dispatch_is_aware_of_refinements, "needs investigation"
 exclude :test_include_into_refinement, "needs investigation"
-exclude :test_main_using_is_private, "needs investigation"
 exclude :test_prepend_into_refinement, "needs investigation"
 exclude :test_refine_mutual_recursion, "needs investigation"
 exclude :test_send_should_use_refinements, "needs investigation"
