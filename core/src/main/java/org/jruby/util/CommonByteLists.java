@@ -27,4 +27,5 @@ public class CommonByteLists {
     public static final ByteList SINGLE_QUOTE = new ByteList(new byte[] {'\''});
     public static final ByteList STAR = new ByteList(new byte[] {'*'});
     public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
+    public static final ByteList REFINE_METHOD = new ByteList(new byte[] {'r', 'e', 'f', 'i', 'n', 'e'});
 }

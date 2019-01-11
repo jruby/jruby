@@ -737,7 +737,7 @@ public class RubyModule extends RubyObject {
             addActivatedRefinement(context, moduleToRefine, refinement);
         }
 
-        // Executes the block supplied with the defined method definitions using the refinment as it's module.
+        // Executes the block supplied with the defined method definitions using the refinement as it's module.
         yieldRefineBlock(context, refinement, block);
 
         return refinement;
@@ -770,6 +770,8 @@ public class RubyModule extends RubyObject {
     private void yieldRefineBlock(ThreadContext context, RubyModule refinement, Block block) {
         block.setEvalType(EvalType.MODULE_EVAL);
         block.getBinding().setSelf(refinement);
+        RubyModule overlayModule = block.getBody().getStaticScope().getOverlayModuleForWrite(context);
+        usingModule(context, overlayModule, this);
         block.yieldSpecific(context);
     }
 
@@ -842,7 +844,7 @@ public class RubyModule extends RubyObject {
 
     // mri: rb_using_module
     public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
-        if (!(refinedModule instanceof RubyModule))throw context.runtime.newTypeError(refinedModule, context.runtime.getModule());
+        if (!(refinedModule instanceof RubyModule)) throw context.runtime.newTypeError(refinedModule, context.runtime.getModule());
 
         usingModuleRecursive(cref, (RubyModule) refinedModule);
     }
