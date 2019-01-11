@@ -53,7 +53,7 @@ public class PrependedModule extends IncludedModule {
             DynamicMethod method = entry.getValue();
             method.setImplementationClass(this);
             method.setDefinedClass(origin);
-            if (!moveRefinedMethod(entry.getKey(), method, origin)) {
+            if (moveRefinedMethod(entry.getKey(), method, origin)) {
                 methods.remove(entry.getKey());
             }
         }
