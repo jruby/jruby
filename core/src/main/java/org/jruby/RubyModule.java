@@ -2471,7 +2471,7 @@ public class RubyModule extends RubyObject {
     @Override
     public RubyString to_s() {
         Ruby runtime = getRuntime();
-        if(isSingleton()){
+        if (isSingleton()) {
             IRubyObject attached = ((MetaClass) this).getAttached();
             RubyString buffer = runtime.newString("#<Class:");
 
@@ -2480,7 +2480,20 @@ public class RubyModule extends RubyObject {
             } else if (attached != null) {
                 buffer.cat19((RubyString) attached.anyToString());
             }
-            buffer.cat19(runtime.newString(">"));
+            buffer.cat('>', buffer.getEncoding());
+
+            return buffer;
+        }
+
+        RubyModule refinedClass = this.refinedClass;
+
+        if (refinedClass != null) {
+            RubyString buffer = runtime.newString("#<refinement:");
+
+            buffer.cat19(refinedClass.inspect().convertToString());
+            buffer.cat('@', buffer.getEncoding());
+            buffer.cat19((definedAt.inspect().convertToString()));
+            buffer.cat('>', buffer.getEncoding());
 
             return buffer;
         }
