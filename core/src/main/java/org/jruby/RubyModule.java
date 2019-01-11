@@ -926,15 +926,15 @@ public class RubyModule extends RubyObject {
         cref.refinements.put(klass, iclass);
     }
 
-    private static Map<RubyModule, RubyModule> newRefinementsMap(Map<RubyModule, RubyModule> refinements) {
+    public static Map<RubyModule, RubyModule> newRefinementsMap(Map<RubyModule, RubyModule> refinements) {
         return Collections.synchronizedMap(new IdentityHashMap<>(refinements));
     }
 
-    private static Map<RubyModule, RubyModule> newRefinementsMap() {
+    public static Map<RubyModule, RubyModule> newRefinementsMap() {
         return Collections.synchronizedMap(new IdentityHashMap<>());
     }
 
-    private static Map<RubyModule, IncludedModule> newActivatedRefinementsMap() {
+    public static Map<RubyModule, IncludedModule> newActivatedRefinementsMap() {
         return Collections.synchronizedMap(new IdentityHashMap<>());
     }
 
@@ -1494,6 +1494,7 @@ public class RubyModule extends RubyObject {
 
         if (entry.method.isRefined()) {
             // FIXME: We walk up scopes to look for refinements, while MRI seems to copy from parent to child on push
+            // CON: Walk improved to only walk up to nearest refined scope, since methods/classes/modules will copy parent's
             for (; refinedScope != null; refinedScope = refinedScope.getEnclosingScope()) {
                 // any refined target with scope available
                 RubyModule overlay = refinedScope.getOverlayModuleForRead();
@@ -1502,7 +1503,7 @@ public class RubyModule extends RubyObject {
 
                 entry = resolveRefinedMethod(overlay.refinements, entry, id, cacheUndef);
 
-                if (entry.method.isUndefined()) continue;
+                if (entry.method.isUndefined()) break;
 
                 return entry;
             }
@@ -5033,6 +5034,11 @@ public class RubyModule extends RubyObject {
 
     public Map<RubyModule, RubyModule> getRefinements() {
         return refinements;
+    }
+
+    public Map<RubyModule, RubyModule> getRefinementsForWrite() {
+        Map<RubyModule, RubyModule> refinements = this.refinements;
+        return !refinements.isEmpty() ? refinements : (this.refinements = newRefinementsMap());
     }
 
     public void setRefinements(Map<RubyModule, RubyModule> refinements) {
