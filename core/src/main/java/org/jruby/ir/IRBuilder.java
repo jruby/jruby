@@ -32,7 +32,6 @@ import java.util.*;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
-import static org.jruby.ir.operands.CurrentScope.*;
 import static org.jruby.ir.operands.ScopeModule.*;
 
 // This class converts an AST into a bunch of IR instructions
@@ -2706,9 +2705,9 @@ public class IRBuilder {
             block = setupCallClosure(fcallNode.getIterNode());
             callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block, kwargs);
         } else {
-            Operand[] args         = setupCallArgs(callArgsNode);
-            block        = setupCallClosure(fcallNode.getIterNode());
-            determineIfMaybeUsingMethod(fcallNode.getName(), args);
+            Operand[] args = setupCallArgs(callArgsNode);
+            determineIfMaybeRefined(fcallNode.getName(), args);
+            block = setupCallClosure(fcallNode.getIterNode());
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
@@ -2747,11 +2746,16 @@ public class IRBuilder {
     }
 
     // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeUsingMethod(RubySymbol methodName, Operand[] args) {
+    private void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (CommonByteLists.USING_METHOD.equals(methodName.getBytes()) && !(outerScope instanceof IRMethod) && args.length == 1) {
+        if (!(outerScope instanceof IRMethod) && args.length == 1
+                && (
+                CommonByteLists.USING_METHOD.equals(methodName.getBytes())
+                        // FIXME: This sets the bit for the whole module, but really only the refine block needs it
+                        || CommonByteLists.REFINE_METHOD.equals(methodName.getBytes())
+        )) {
             scope.setIsMaybeUsingRefinements();
         }
     }
