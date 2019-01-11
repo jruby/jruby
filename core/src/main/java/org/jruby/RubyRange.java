@@ -706,6 +706,12 @@ public class RubyRange extends RubyObject {
     // framed for invokeSuper
     @JRubyMethod(name = {"include?", "member?"}, frame = true)
     public IRubyObject include_p(ThreadContext context, final IRubyObject obj) {
+        IRubyObject result = includeCommon(context, obj);
+        if (result != UNDEF) return result;
+        return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+    }
+
+    private IRubyObject includeCommon(ThreadContext context, final IRubyObject obj) {
         final Ruby runtime = context.runtime;
 
         boolean iterable = begin instanceof RubyNumeric || end instanceof RubyNumeric ||
@@ -738,7 +744,7 @@ public class RubyRange extends RubyObject {
             }
         }
 
-        return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+        return UNDEF;
     }
 
     private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
@@ -757,7 +763,9 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "===")
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
-        return callMethod(context, "include?", obj);
+        IRubyObject result = includeCommon(context, obj);
+        if (result != UNDEF) return result;
+        return callMethod(context, "cover?", obj);
     }
 
     @JRubyMethod(name = "cover?")
