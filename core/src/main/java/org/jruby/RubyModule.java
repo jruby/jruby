@@ -70,6 +70,7 @@ import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
+import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
@@ -771,7 +772,7 @@ public class RubyModule extends RubyObject {
         block.setEvalType(EvalType.MODULE_EVAL);
         block.getBinding().setSelf(refinement);
 
-        RubyModule overlayModule = block.getBinding().getDynamicScope().getStaticScope().getOverlayModuleForWrite(context);
+        RubyModule overlayModule = block.getBody().getStaticScope().getOverlayModuleForWrite(context);
         usingModule(context, overlayModule, this);
 
         block.yieldSpecific(context);
@@ -1898,6 +1899,10 @@ public class RubyModule extends RubyObject {
         if (id.equals(oldName)) return;
 
         putMethod(getRuntime(), id, new AliasMethod(this, method, oldName));
+
+        if (isRefinement()) {
+            addRefinedMethodEntry(id, method);
+        }
     }
 
     public synchronized void defineAliases(List<String> aliases, String oldId) {
@@ -2113,16 +2118,20 @@ public class RubyModule extends RubyObject {
     }
 
     private DynamicMethod deepMethodSearch(String id, Ruby runtime) {
-        DynamicMethod method = searchMethod(id);
-
-        if (method.isUndefined() && isModule()) method = runtime.getObject().searchMethod(id);
-
-        if (method.isUndefined()) {
-            RubySymbol name = runtime.newSymbol(id);
-            throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), id);
+        CacheEntry orig = searchWithCache(id);
+        if (orig.method.isRefined()) {
+            orig = resolveRefinedMethod(null, orig, id, true);
         }
 
-        return method;
+        if (orig.method.isUndefined() || orig.method.isRefined()) {
+            if (!isModule()
+                    || (orig = runtime.getObject().searchWithCache(id)).method.isUndefined()) {
+                RubySymbol name = runtime.newSymbol(id);
+                throw runtime.newNameError(undefinedMethodMessage(runtime, name, rubyName(), isModule()), id);
+            }
+        }
+
+        return orig.method;
     }
 
     public static String undefinedMethodMessage(Ruby runtime, IRubyObject name, IRubyObject modName, boolean isModule) {
