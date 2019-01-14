@@ -58,7 +58,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import jnr.ffi.annotations.In;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.AnnotationBinder;
@@ -155,6 +154,7 @@ public class RubyModule extends RubyObject {
     public static final int REFINED_MODULE_F = ObjectFlags.REFINED_MODULE_F;
     public static final int IS_OVERLAID_F = ObjectFlags.IS_OVERLAID_F;
     public static final int OMOD_SHARED = ObjectFlags.OMOD_SHARED;
+    public static final int INCLUDED_INTO_REFINEMENT = ObjectFlags.INCLUDED_INTO_REFINEMENT;
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -1358,17 +1358,22 @@ public class RubyModule extends RubyObject {
         }
 
         if (isRefinement()) {
-            CacheEntry cache = refinedClass.searchWithCache(id);
-
             // create refined entry on target class
-            if (cache.method.isUndefined()) {
-                refinedClass.addMethodInternal(id, new RefinedMarker(refinedClass, method.getVisibility(), id));
-            } else {
-                cache.method.setRefined(true);
-            }
+            addRefinedMethodEntry(id, method);
         }
 
         addMethodInternal(id, method);
+    }
+
+    // MRI: add_refined_method_entry
+    private void addRefinedMethodEntry(String id, DynamicMethod method) {
+        DynamicMethod orig = refinedClass.searchMethodCommon(id);
+
+        if (orig == null) {
+            refinedClass.addMethodInternal(id, new RefinedMarker(refinedClass, method.getVisibility(), id));
+        } else {
+            orig.setRefined(true);
+        }
     }
 
     public final void addMethodInternal(String name, DynamicMethod method) {
@@ -3388,6 +3393,12 @@ public class RubyModule extends RubyObject {
 
         insertAbove.setSuperClass(wrapper);
         insertAbove = insertAbove.getSuperClass();
+
+        if (isRefinement()) {
+            moduleToInclude.getMethods().forEach((name, method) -> addRefinedMethodEntry(name, method));
+            wrapper.setFlag(INCLUDED_INTO_REFINEMENT, true);
+        }
+
         return insertAbove;
     }
 
@@ -5016,7 +5027,11 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean isRefinement() {
-        return (flags & REFINED_MODULE_F) == REFINED_MODULE_F;
+        return getFlag(REFINED_MODULE_F);
+    }
+
+    public boolean isIncludedIntoRefinement() {
+        return getFlag(INCLUDED_INTO_REFINEMENT);
     }
 
     /**
