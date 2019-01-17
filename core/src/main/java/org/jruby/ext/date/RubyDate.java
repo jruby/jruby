@@ -78,6 +78,7 @@ public class RubyDate extends RubyObject {
 
     static final Logger LOG = LoggerFactory.getLogger(RubyDate.class);
 
+    static final GJChronology CHRONO_ITALY = GJChronology.getInstance();
     static final GJChronology CHRONO_ITALY_UTC = GJChronology.getInstance(DateTimeZone.UTC);
 
     // The Julian Day Number of the Day of Calendar Reform for Italy
@@ -713,7 +714,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self) { // sg=ITALY
-        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, ITALY, 0)).withTimeAtStartOfDay());
+        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY).withTimeAtStartOfDay());
     }
 
     @JRubyMethod(meta = true)
