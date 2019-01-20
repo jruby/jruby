@@ -45,33 +45,46 @@ describe "Enumerable#to_h" do
   end
 
   ruby_version_is "2.6" do
-    it "converts [key, value] pairs returned by the block to a hash" do
-      enum = EnumerableSpecs::EachDefiner.new(:a, :b)
-      i = 0
-      enum.to_h {|k| [k, i += 1]}.should == { a: 1, b: 2 }
-    end
+    context "with block" do
+      before do
+        @enum = EnumerableSpecs::EachDefiner.new(:a, :b)
+      end
 
-    it "converts the block's result to an array using to_ary" do
-      pair = mock('to_ary')
-      pair.should_receive(:to_ary).exactly(3).times.and_return([:b, 2])
-      enum = EnumerableSpecs::EachDefiner.new(1, 2, 3)
-      enum.to_h { pair }.should == { b: 2 }
-    end
+      it "converts [key, value] pairs returned by the block to a hash" do
+        @enum.to_h { |k| [k, k.to_s] }.should == { a: 'a', b: 'b' }
+      end
 
-    it "stops calling the block after the first wrong result" do
-      enum = EnumerableSpecs::EachDefiner.new([:ok, 1], [:not_ok], :not_called)
-      called = 0
-      lambda {
-        enum.to_h { |x| called += 1; x }
-      }.should raise_error(ArgumentError)
-      called.should == 2
-    end
+      it "raises ArgumentError if block returns longer or shorter array" do
+        -> do
+          @enum.to_h { |k| [k, k.to_s, 1] }
+        end.should raise_error(ArgumentError, /element has wrong array length/)
 
-    it "doesn't convert the block's result to an array using to_a" do
-      pair = mock('to_a')
-      pair.should_not_receive(:to_a)
-      enum = EnumerableSpecs::EachDefiner.new(1, 2, 3)
-      lambda { enum.to_h { pair } }.should raise_error(TypeError)
+        -> do
+          @enum.to_h { |k| [k] }
+        end.should raise_error(ArgumentError, /element has wrong array length/)
+      end
+
+      it "raises TypeError if block returns something other than Array" do
+        -> do
+          @enum.to_h { |k| "not-array" }
+        end.should raise_error(TypeError, /wrong element type String/)
+      end
+
+      it "coerces returned pair to Array with #to_ary" do
+        x = mock('x')
+        x.stub!(:to_ary).and_return([:b, 'b'])
+
+        @enum.to_h { |k| x }.should == { :b => 'b' }
+      end
+
+      it "does not coerce returned pair to Array with #to_a" do
+        x = mock('x')
+        x.stub!(:to_a).and_return([:b, 'b'])
+
+        -> do
+          @enum.to_h { |k| x }
+        end.should raise_error(TypeError, /wrong element type MockObject/)
+      end
     end
   end
 end
