@@ -402,6 +402,21 @@ class TestThread < Test::Unit::TestCase
     end.join
   end if defined? JRUBY_VERSION
 
+  def test_status_after_raise
+    (ENV['STATUS_TIMES'] || ENV['TIMES'] || 1000).to_i.times do
+      t = Thread.new {
+        Thread.current.report_on_exception = false
+        raise('die')
+      }
+      Thread.current
+
+      Thread.pass while t.alive?
+
+      assert_equal(nil, t.status)
+      assert_predicate(t, :stop?)
+    end
+  end
+
   CountDownLatch = Class.new do
     def initialize(count)
       @count = count
@@ -436,7 +451,7 @@ class TestThread < Test::Unit::TestCase
   private :wait_for_latch
 
   def test_count_down_latch
-    (ENV['TIMES'] || 10_000).to_i.times do |i|
+    (ENV['COUNT_DOWN_LATCH_TIMES'] || ENV['TIMES'] || 10_000).to_i.times do |i|
       print '*' if $VERBOSE
       assert wait_for_latch # should not raise
     end
