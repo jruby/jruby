@@ -3441,7 +3441,7 @@ public final class Ruby implements Constantizable {
         }
 
         // tear down thread references
-        getThreadService().teardown();
+        getThreadService().tearDown();
 
         // shut down executors
         getJITCompiler().shutdown();

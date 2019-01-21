@@ -155,15 +155,27 @@ public class ThreadService {
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
     }
 
+    @Deprecated
     public void teardown() {
-        // clear all thread-local context references
-        localContext = new ThreadLocal<>();
+        tearDown();
+    }
 
+    /**
+     * @see Ruby#tearDown(boolean)
+     */
+    public void tearDown() {
         // clear main context reference
         mainContext = null;
 
+        // clear all thread-local context references
+        localContext = new ThreadLocal<>();
+
         // clear thread map
         rubyThreadMap.clear();
+    }
+
+    public void exceptionRaised(RubyThread thread, Throwable ex) {
+        if (mainContext != null) thread.exceptionRaised(ex); // only propagate if runtime hasn't shutdown
     }
 
     public void initMainThread() {

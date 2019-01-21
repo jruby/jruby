@@ -109,7 +109,7 @@ public class RubyRunnable implements ThreadedRunnable {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();
             } catch (Throwable t) {
-                rubyThread.exceptionRaised(t);
+                runtime.getThreadService().exceptionRaised(rubyThread, t);
             } finally {
                 rubyThread.dispose();
 
