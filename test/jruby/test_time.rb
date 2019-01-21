@@ -46,6 +46,21 @@ class TestTime < Test::Unit::TestCase
     assert_false t1 == t2
   end
 
+  def test_usec_as_rational
+    # 8.123456 is known to fail with Rational.to_f
+    sec = 8 + Rational(123456, 1_000_000)
+    t1 = Time.utc(2019,1,18,19,37, sec)
+    assert_equal 8, t1.sec
+    assert_equal 123456000, t1.nsec
+  end
+
+  def test_nsec_as_rational
+    sec = 8 + Rational(123456789, 1_000_000_000)
+    t1 = Time.utc(2019,1,18,19,37, sec)
+    assert_equal 8, t1.sec
+    assert_equal 123456789, t1.nsec
+  end
+
   def test_large_add # GH-1779
     t = Time.local(2000, 1, 1) + (400 * 366 * 24 * 60 * 60)
     assert_equal 2400, t.year
