@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyModule;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
@@ -215,7 +216,18 @@ public class RbConfigLibrary implements Library {
 
         rbConfig.defineAnnotatedMethods(RbConfigLibrary.class);
 
+        normalizedHome = getNormalizedHome(runtime);
+
+        // Ruby installed directory.
+        rbConfig.setConstant("TOPDIR", RubyString.newString(runtime, normalizedHome));
+        RubyString destDir = RubyString.newEmptyString(runtime);
+        // DESTDIR on make install.
+        rbConfig.setConstant("DESTDIR", destDir);
+
+        // The hash configurations stored.
         final RubyHash CONFIG = new RubyHash(runtime, 48);
+
+        CONFIG.fastASetCheckString(runtime, runtime.newString("DESTDIR"), destDir);
 
         String[] versionParts;
         versionParts = Constants.RUBY_VERSION.split("\\.");
@@ -227,8 +239,6 @@ public class RbConfigLibrary implements Library {
         // Rubygems is too specific on host cpu so until we have real need lets default to universal
         //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
         setConfig(context, CONFIG, "arch", "universal-java" + System.getProperty("java.specification.version"));
-
-        normalizedHome = getNormalizedHome(runtime);
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
