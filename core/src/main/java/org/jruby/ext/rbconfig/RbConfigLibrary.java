@@ -42,13 +42,10 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -486,18 +483,6 @@ public class RbConfigLibrary implements Library {
     // TODO: note lack of command.com support for Win 9x...
     public static String jrubyShell() {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
-    }
-
-    @JRubyMethod(name = "ruby", meta = true)
-    public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");
-
-        IRubyObject bindir            = configHash.op_aref(context, runtime.newString("bindir"));
-        IRubyObject ruby_install_name = configHash.op_aref(context, runtime.newString("ruby_install_name"));
-        IRubyObject exeext            = configHash.op_aref(context, runtime.newString("EXEEXT"));
-
-        return Helpers.invoke(context, runtime.getClass("File"), "join", bindir, ruby_install_name.callMethod(context, "+", exeext));
     }
 
     private static String getRubyEnv(RubyHash envHash, String var, String default_value) {
