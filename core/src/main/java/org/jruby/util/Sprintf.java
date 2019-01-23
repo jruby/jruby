@@ -1570,13 +1570,6 @@ public class Sprintf {
             bytes[0] = '1';
             return nDigits + 1;
         }
-        // round half to even
-        if (roundPos + 1 < nDigits && bytes[roundPos + 1] == '5') {
-            if ((bytes[roundPos] - '0') % 2 == 0) {
-                // round down
-                return nDigits;
-            }
-        }
         bytes[roundPos] += 1;
         
         while (bytes[roundPos] > '9') {
