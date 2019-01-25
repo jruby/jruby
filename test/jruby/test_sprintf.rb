@@ -1,14 +1,7 @@
 require 'test/unit'
 
-# Test that core class methods are correctly raising errors for incorrect call
-# arities.
+# Test Case based on https://github.com/jruby/jruby/issues/5556
 class TestFormat < Test::Unit::TestCase
-  # Test Case based on https://github.com/jruby/jruby/issues/5556
-#  def test_sprintf_one
-#    n = 97.65625
-#    s = format("%.1f", n).to_s
-#    assert(s === "97.7", "Test failed, value of #{s} did not match '97.7'.")
-#  end
   
   def test_sprintf_one
     n = 97.65625
