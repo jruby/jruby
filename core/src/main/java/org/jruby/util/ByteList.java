@@ -438,17 +438,17 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * stream then throw an IOException.
      *
      * @param input the stream to read bytes from
-     * @param length how many byte to try and read
+     * @param len how many bytes to try reading
      * @return this instance
      * @throws IOException when no bytes are read
      */
-    public ByteList append(InputStream input, int length) throws IOException {
-        grow(length);
+    public ByteList append(InputStream input, int len) throws IOException {
+        grow(len);
         int read = 0;
         int n;
         int start = begin + realSize;
-        while (read < length) {
-            n = input.read(bytes, start + read, length - read);
+        while (read < len) {
+            n = input.read(bytes, start + read, len - read);
             if (n == -1) {
                 if (read == 0) throw new java.io.EOFException();
                 break;
@@ -564,15 +564,12 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return realSize == 0;
     }
 
-    // ENEBO: Wow...what happens if newLength < realSize...nasty shrinkage?
     /**
-     * grow the bytelist to be newLength in size.
+     * Set the byte container length.
      *
      * @param newLength
      */
     public void length(int newLength) {
-//        assert newLength >= realSize : "newLength is too small";
-
         grow(newLength - realSize);
         realSize = newLength;
     }
