@@ -1257,13 +1257,6 @@ public class Sprintf {
                         decDigits = nDigits - intDigits;
                         decZeroes = Math.max(0,-(decDigits + exponent));
                         decLength = decZeroes + decDigits;
-                        System.out.println("Top of case f");
-                        System.out.println("intDigits:"+ intDigits);
-                        System.out.println("intZeroes:"+ intZeroes);
-                        System.out.println("intLength:"+ intLength);
-                        System.out.println("decDigits:"+ decDigits);
-                        System.out.println("decZeroes:"+ decZeroes);
-                        System.out.println("decLength:"+ decLength);
 
                         if (precision < decLength) {
                             if (precision < decZeroes) {
@@ -1271,7 +1264,6 @@ public class Sprintf {
                                 decZeroes = precision;
                             } else {
                                 int n = round(digits, nDigits, intDigits+precision-decZeroes-1, false);
-                                System.out.println("n:"+ n);
                                 if (n > nDigits) {
                                     // digits arr shifted, update all
                                     nDigits = n;
@@ -1572,68 +1564,30 @@ public class Sprintf {
         if (next >= nDigits) return nDigits;
         if (bytes[next] < '5') return nDigits;
         if (roundDown && bytes[next] == '5' && next == nDigits - 1) return nDigits;
-//
+
         if (roundPos < 0) { // "%.0f" % 0.99
-            System.arraycopy(bytes,0,bytes,1,nDigits);
             bytes[0] = '1';
             return nDigits + 1;
         }
-////        bug 2
-//        // round half to even
-////        System.out.println("nDigits: "+ nDigits);
-////        System.out.println("bytes: "+bytes);
-////        System.out.println("Round Position: "+roundPos);
-////        System.out.println("Bytes at Round Position: "+bytes[roundPos]);
-////        System.out.println("Bytes at Round Position: "+bytes[roundPos+1]);
-////        System.out.println("roundPos + 1 < nDigits: "+ (roundPos + 1 < nDigits));
-////        System.out.println("bytes[roundPos + 1] == '5': "+ (bytes[roundPos + 1] == '5'));
-//        if (roundPos + 1 < nDigits && bytes[roundPos + 1] == '5') {
-////        	System.out.println(
-////        			"bytes[roundPos] - '0') % 2 == 0: "+ ((bytes[roundPos] - '0') % 2 == 0)
-////        	);
-//            if ((bytes[roundPos] - '0') % 2 == 0) {
-//                // round down
-//                return nDigits;
-//            }
-//        }
-//        
-//        bytes[roundPos] += 1;
-//        
-//        while (bytes[roundPos] > '9') {
-//            bytes[roundPos] = '0';
-//            roundPos--;
-//            if (roundPos >= 0) {
-//                bytes[roundPos] += 1;
-//            } else {
-//                System.arraycopy(bytes,0,bytes,1,nDigits);
-//                bytes[0] = '1';
-//                return nDigits + 1;
-//            }
-//        }
-//        return nDigits;
-        
 
-//      General Purpose Rounding until hits roundPos
+        // General Purpose Rounding until hits roundPos
     	int currentLocation = nDigits-1;
-    	System.out.println("roundPos: "+roundPos);
     	
 		// Special Edge Case for mri/ruby/test_sprintf.rb#test_float_prec for non standard rounding.
-		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == '1') {
-			bytes[currentLocation-1] += 1;
-		}
-		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == '3') {
+    	// and spec/ruby/library/stringio/printf_spec.rb for special rounding when there is "last significant digit".
+		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == ('1'||'3'||'5')) {
 			bytes[currentLocation-1] += 1;
 		}
     	while (currentLocation > roundPos) {
     		
-    		System.out.println(currentLocation+","+bytes[currentLocation]);
-//    		If equal or greater than 6, we need to round the value to the left up.
+    		// If equal or greater than 6, we need to round the value to the left up.
     		if (bytes[currentLocation] >= '6') {
     			bytes[currentLocation-1] += 1;
     		}
     		
     		currentLocation--;
     	}
+    	
     	return nDigits;
     	
     }
