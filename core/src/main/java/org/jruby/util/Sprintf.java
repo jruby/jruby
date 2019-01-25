@@ -1573,9 +1573,16 @@ public class Sprintf {
         // General Purpose Rounding until hits roundPos
     	int currentLocation = nDigits-1;
     	
-		// Special Edge Case for mri/ruby/test_sprintf.rb#test_float_prec for non standard rounding.
-    	// and spec/ruby/library/stringio/printf_spec.rb for special rounding when there is "last significant digit".
-		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == ('1'||'3'||'5')) {
+		// Special Edge Cases for mri/ruby/test_sprintf.rb#test_float_prec for non standard rounding.
+		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == '1') {
+			bytes[currentLocation-1] += 1;
+		}
+		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == '3') {
+			bytes[currentLocation-1] += 1;
+		}
+		// Special Edge Case for spec/ruby/library/stringio/printf_spec.rb for special rounding 
+		// when there is "last significant digit".
+		if (bytes[currentLocation] == '5' && bytes[currentLocation-1] == '5') {
 			bytes[currentLocation-1] += 1;
 		}
     	while (currentLocation > roundPos) {
