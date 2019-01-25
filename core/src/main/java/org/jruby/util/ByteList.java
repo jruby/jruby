@@ -689,8 +689,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param sourceLen length of source region in the replacement bytes
      */
     public void replace(int targetOff, int targetLen, byte[] source, int sourceOff, int sourceLen) {
-        int newSize = realSize - targetLen + sourceLen;
-        ensure(newSize);
+        int newSize = realSize + (sourceLen - targetLen);
+        grow(sourceLen - targetLen);
         int tailSize = realSize - (targetLen + targetOff);
         if (tailSize != 0) {
             System.arraycopy(bytes,begin+targetOff+targetLen,bytes,begin+targetOff+sourceLen,tailSize);
