@@ -253,11 +253,15 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param b is byte to be appended
      * @param len is number of times to repeat the append
      */
-    // FIXME: Innefficient impl since we know the len up front.
     public void fill(int b, int len) {
-        for ( ; --len >= 0; ) {
-            append(b);
+        if (len <= 0) return; // Sprintf assumes < 0 to work
+
+        grow(len);
+        int newSize = realSize + len;
+        for (int i = begin + realSize; --len >= 0; i++) {
+            bytes[i] = (byte) b;
         }
+        realSize = newSize;
         invalidate();
     }
 
