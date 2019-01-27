@@ -254,15 +254,33 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param b is byte to be appended
      * @param len is number of times to repeat the append
      */
-    public void fill(int b, int len) {
-        if (len <= 0) return; // Sprintf assumes < 0 to work
+    public void fill(final int b, final int len) {
+        int i;
+        switch (len) {
+            case 0: return;
+            case 1:
+                grow(1);
+                i = begin + realSize;
+                bytes[i] = (byte) b;
+                break;
+            case 2:
+                grow(2);
+                i = begin + realSize;
+                bytes[i] = (byte) b; bytes[i + 1] = (byte) b;
+                break;
+            case 3:
+                grow(3);
+                i = begin + realSize;
+                bytes[i] = (byte) b; bytes[i + 1] = (byte) b; bytes[i + 2] = (byte) b;
+                break;
+            default:
+                if (len < 0) return; // TODO: Sprintf assumes < 0 to work (likely should not)
 
-        grow(len);
-        int newSize = realSize + len;
-        for (int i = begin + realSize; --len >= 0; i++) {
-            bytes[i] = (byte) b;
+                grow(len);
+                i = begin + realSize;
+                for (int s = len; --s >= 0; i++) bytes[i] = (byte) b;
         }
-        realSize = newSize;
+        realSize += len;
         invalidate();
     }
 
