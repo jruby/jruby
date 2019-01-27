@@ -429,8 +429,55 @@ public class Sprintf {
                     }
                     break;
 
+                case ' ':
+                    flags |= FLAG_SPACE;
+                    offset++;
+                    break;
+
+                case '+':
+                    flags |= FLAG_PLUS;
+                    offset++;
+                    break;
+
+                case '-':
+                    flags |= FLAG_MINUS;
+                    offset++;
+                    break;
+
+                case '#':
+                    flags |= FLAG_SHARP;
+                    offset++;
+                    break;
+
+                case '0':
+                    flags |= FLAG_ZERO;
+                    offset++;
+                    break;
+
+                case '1': case '2': case '3': case '4':
+                case '5': case '6': case '7': case '8': case '9':
+                    // MRI doesn't flag it as an error if width is given multiple
+                    // times as a number (but it does for *)
+                    number = 0;
+                    { // MRI: GETNUM macro
+                        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
+                            number = extendWidth(args, number, fchar);
+                        }
+                        checkOffset(args, offset, length, ERR_MALFORMED_NUM);
+                    }
+                    if (fchar == '$') {
+                        if (args.nextObject != null) {
+                            raiseArgumentError(args,"value given twice - " + number + "$");
+                        }
+                        args.nextObject = args.getPositionArg(number);
+                        offset++;
+                    } else {
+                        width = number;
+                        flags |= FLAG_WIDTH;
+                    }
+                    break;
+
                 case '<': {
-                    // Ruby 1.9 named args
                     int nameStart = ++offset;
                     int nameEnd = nameStart;
 
@@ -453,7 +500,6 @@ public class Sprintf {
                 }
 
                 case '{': {
-                    // Ruby 1.9 named replacement
                     int nameStart = ++offset;
                     int nameEnd = nameStart;
 
@@ -473,49 +519,6 @@ public class Sprintf {
 
                     break;
                 }
-
-                case ' ':
-                    flags |= FLAG_SPACE;
-                    offset++;
-                    break;
-                case '0':
-                    flags |= FLAG_ZERO;
-                    offset++;
-                    break;
-                case '+':
-                    flags |= FLAG_PLUS;
-                    offset++;
-                    break;
-                case '-':
-                    flags |= FLAG_MINUS;
-                    offset++;
-                    break;
-                case '#':
-                    flags |= FLAG_SHARP;
-                    offset++;
-                    break;
-                case '1':case '2':case '3':case '4':case '5':
-                case '6':case '7':case '8':case '9':
-                    // MRI doesn't flag it as an error if width is given multiple
-                    // times as a number (but it does for *)
-                    number = 0;
-                    { // MRI: GETNUM macro
-                        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args, number, fchar);
-                        }
-                        checkOffset(args, offset, length, ERR_MALFORMED_NUM);
-                    }
-                    if (fchar == '$') {
-                        if (args.nextObject != null) {
-                            raiseArgumentError(args,"value given twice - " + number + "$");
-                        }
-                        args.nextObject = args.getPositionArg(number);
-                        offset++;
-                    } else {
-                        width = number;
-                        flags |= FLAG_WIDTH;
-                    }
-                    break;
 
                 case '*':
                     if ((flags & FLAG_WIDTH) != 0) {
@@ -593,7 +596,7 @@ public class Sprintf {
                     offset--;
                 case '%':
                     if (flags != FLAG_NONE) {
-                        raiseArgumentError(args,ERR_ILLEGAL_FORMAT_CHAR);
+                        raiseArgumentError(args, ERR_ILLEGAL_FORMAT_CHAR);
                     }
                     buf.append('%');
                     offset++;
@@ -680,14 +683,14 @@ public class Sprintf {
                     if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
                         width -= strLen;
                         if ((flags & FLAG_MINUS) != 0) {
-                            buf.append(bytes.getUnsafeBytes(),bytes.begin(),len);
-                            buf.fill(' ',width);
+                            buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                            buf.fill(' ', width);
                         } else {
-                            buf.fill(' ',width);
-                            buf.append(bytes.getUnsafeBytes(),bytes.begin(),len);
+                            buf.fill(' ', width);
+                            buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
                         }
                     } else {
-                        buf.append(bytes.getUnsafeBytes(),bytes.begin(),len);
+                        buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
                     }
                     offset++;
                     incomplete = false;
@@ -844,7 +847,7 @@ public class Sprintf {
                         width -= precision;
                     }
                     if ((flags & FLAG_MINUS) == 0) {
-                        buf.fill(' ',width);
+                        buf.fill(' ', width);
                         width = 0;
                     }
                     if (signChar != 0) buf.append(signChar);
@@ -858,13 +861,13 @@ public class Sprintf {
                                 buf.fill('0', precision - len);
                             }
                         } else if (leadChar == '.') {
-                            buf.fill(leadChar,precision-len);
+                            buf.fill(leadChar, precision - len);
                             buf.append(PREFIX_NEGATIVE);
                         } else if (!usePrefixForZero) {
                             buf.append(PREFIX_NEGATIVE);
-                            buf.fill(leadChar,precision - len - 1);
+                            buf.fill(leadChar, precision - len - 1);
                         } else {
-                            buf.fill(leadChar,precision-len+1); // the 1 is for the stripped sign char
+                            buf.fill(leadChar, precision - len + 1); // the 1 is for the stripped sign char
                         }
                     } else if (leadChar != 0) {
                         if (((flags & (FLAG_PRECISION | FLAG_ZERO)) == 0 && usePrefixForZero) ||
@@ -873,7 +876,7 @@ public class Sprintf {
                         }
                         if (leadChar != '.') buf.append(leadChar);
                     }
-                    buf.append(bytes,first,numlen);
+                    buf.append(bytes, first, numlen);
 
                     if (width > 0) buf.fill(' ',width);
                     if (len < precision && fchar == 'd' && negative &&
