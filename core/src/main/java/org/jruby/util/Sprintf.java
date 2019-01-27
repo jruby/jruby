@@ -897,20 +897,20 @@ public class Sprintf {
                 case 'g': {
                     arg = args.getArg();
 
-                    double dval = RubyKernel.new_float(runtime.getFloat(), arg).getDoubleValue();
-                    boolean nan = dval != dval;
-                    boolean inf = dval == Double.POSITIVE_INFINITY || dval == Double.NEGATIVE_INFINITY;
-                    boolean negative = dval < 0.0d || (dval == 0.0d && Double.doubleToLongBits(dval) == Double.doubleToLongBits(-0.0));
+                    double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
+                    boolean isnan = fval != fval;
+                    boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
+                    boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
 
                     byte[] digits;
                     int nDigits = 0;
                     int exponent = 0;
 
                     int len = 0;
-                    byte signChar;
+                    byte sign;
 
-                    if (nan || inf) {
-                        if (nan) {
+                    if (isnan || isinf) {
+                        if (isnan) {
                             digits = NAN_VALUE;
                             len = NAN_VALUE.length;
                         } else {
@@ -918,16 +918,16 @@ public class Sprintf {
                             len = INFINITY_VALUE.length;
                         }
                         if (negative) {
-                            signChar = '-';
+                            sign = '-';
                             width--;
                         } else if ((flags & FLAG_PLUS) != 0) {
-                            signChar = '+';
+                            sign = '+';
                             width--;
                         } else if ((flags & FLAG_SPACE) != 0) {
-                            signChar = ' ';
+                            sign = ' ';
                             width--;
                         } else {
-                            signChar = 0;
+                            sign = 0;
                         }
                         width -= len;
 
@@ -935,7 +935,7 @@ public class Sprintf {
                             buf.fill(' ', width);
                             width = 0;
                         }
-                        if (signChar != 0) buf.append(signChar);
+                        if (sign != 0) buf.append(sign);
 
                         buf.append(digits);
                         if (width > 0) buf.fill(' ', width);
@@ -947,7 +947,7 @@ public class Sprintf {
 
                     NumberFormat nf = getNumberFormat(args.locale);
                     nf.setMaximumFractionDigits(Integer.MAX_VALUE);
-                    String str = nf.format(dval);
+                    String str = nf.format(fval);
 
                     // grrr, arghh, want to subclass sun.misc.FloatingDecimal, but can't,
                     // so we must do all this (the next 70 lines of code), which has already
@@ -956,7 +956,7 @@ public class Sprintf {
                     digits = new byte[strlen];
                     int nTrailingZeroes = 0;
                     int i = negative ? 1 : 0;
-                    int decPos = 0;
+                    int decPos;
                     byte ival;
                 int_loop:
                     for ( ; i < strlen ; ) {
@@ -1033,16 +1033,16 @@ public class Sprintf {
                     byte expChar;
 
                     if (negative) {
-                        signChar = '-';
+                        sign = '-';
                         width--;
                     } else if ((flags & FLAG_PLUS) != 0) {
-                        signChar = '+';
+                        sign = '+';
                         width--;
                     } else if ((flags & FLAG_SPACE) != 0) {
-                        signChar = ' ';
+                        sign = ' ';
                         width--;
                     } else {
-                        signChar = 0;
+                        sign = 0;
                     }
                     if ((flags & FLAG_PRECISION) == 0) {
                         precision = 6;
@@ -1139,14 +1139,14 @@ public class Sprintf {
                             width -= len;
 
                             if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
-                                buf.fill(' ',width);
+                                buf.fill(' ', width);
                                 width = 0;
                             }
-                            if (signChar != 0) {
-                                buf.append(signChar);
+                            if (sign != 0) {
+                                buf.append(sign);
                             }
                             if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                                buf.fill('0',width);
+                                buf.fill('0', width);
                                 width = 0;
                             }
 
@@ -1215,8 +1215,8 @@ public class Sprintf {
                                 buf.fill(' ',width);
                                 width = 0;
                             }
-                            if (signChar != 0) {
-                                buf.append(signChar);
+                            if (sign != 0) {
+                                buf.append(sign);
                             }
                             if (width > 0 && (flags & FLAG_MINUS) == 0) {
                                 buf.fill('0',width);
@@ -1296,14 +1296,14 @@ public class Sprintf {
                         width -= len;
 
                         if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
-                            buf.fill(' ',width);
+                            buf.fill(' ', width);
                             width = 0;
                         }
-                        if (signChar != 0) {
-                            buf.append(signChar);
+                        if (sign != 0) {
+                            buf.append(sign);
                         }
                         if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                            buf.fill('0',width);
+                            buf.fill('0', width);
                             width = 0;
                         }
                         // now some data...
@@ -1380,14 +1380,14 @@ public class Sprintf {
                         width -= len;
 
                         if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
-                            buf.fill(' ',width);
+                            buf.fill(' ', width);
                             width = 0;
                         }
-                        if (signChar != 0) {
-                            buf.append(signChar);
+                        if (sign != 0) {
+                            buf.append(sign);
                         }
                         if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                            buf.fill('0',width);
+                            buf.fill('0', width);
                             width = 0;
                         }
                         // now some data...
