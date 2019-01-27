@@ -1076,16 +1076,13 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Grow the ByteList by increaseRequested bytes.  A value <0 will be a no-op.
+     * Grow the ByteList by increaseRequested bytes.
      *
      * @param increaseRequested number of bytes to grow
      */
     private void grow(int increaseRequested) {
-        if (increaseRequested < 0) return;
-
         // new available size
-        int newSize = realSize + increaseRequested;
-
+        int newSize = realSize + increaseRequested; // increase <= 0 -> no-op
         // only recopy if bytes does not have enough room *after* the begin index
         if (newSize > bytes.length - begin) {
             byte[] newBytes = new byte[newSize + (newSize >> 1)];
