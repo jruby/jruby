@@ -708,23 +708,25 @@ public class Sprintf {
                     arg = args.getArg();
 
                     ClassIndex type = arg.getMetaClass().getClassIndex();
-                    if (type != ClassIndex.INTEGER) {
-                        switch(type) {
-                        case FLOAT:
-                            arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
-                            break;
-                        case STRING:
-                            arg = ((RubyString) arg).stringToInum(0, true);
-                            break;
-                        default:
-                            if (arg.respondsTo("to_int")) {
-                                arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_int", true);
-                            } else {
-                                arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_i", true);
-                            }
-                            break;
+                    switch(type) {
+                    case INTEGER: // no-op
+                        break;
+                    case FLOAT:
+                        arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
+                        type = ClassIndex.INTEGER;
+                        break;
+                    case STRING:
+                        arg = ((RubyString) arg).stringToInum(0, true);
+                        type = ClassIndex.INTEGER;
+                        break;
+                    default:
+                        if (arg.respondsTo("to_int")) {
+                            arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_int", true);
+                        } else {
+                            arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_i", true);
                         }
                         type = arg.getMetaClass().getClassIndex();
+                        break;
                     }
                     byte[] bytes;
                     int first = 0;
