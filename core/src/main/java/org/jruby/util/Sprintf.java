@@ -371,7 +371,6 @@ public class Sprintf {
 
         int offset;
         int length;
-        int start;
         int mark;
         Encoding encoding;
 
@@ -386,7 +385,7 @@ public class Sprintf {
             length = begin + list.length();
             encoding = list.getEncoding();
         } else {
-            format = stringToBytes(charFormat, false);
+            format = stringToBytes(charFormat);
             offset = 0;
             length = charFormat.length();
             encoding = UTF8Encoding.INSTANCE;
@@ -394,12 +393,12 @@ public class Sprintf {
 
         while (offset < length) {
             ByteList name = null;
-            start = offset;
+            final int start = offset;
             for ( ; offset < length && format[offset] != '%'; offset++) {}
 
             if (offset > start) {
-                buf.append(format,start,offset-start);
-                start = offset;
+                buf.append(format, start, offset - start);
+                // start = offset;
             }
             if (offset++ >= length) break;
 
@@ -1570,7 +1569,7 @@ public class Sprintf {
         if (bytes[nextPos] < '5') return nDigits;
 
         if (roundPos < 0) { // "%.0f" % 0.99
-            System.arraycopy(bytes,0,bytes,1,nDigits);
+            System.arraycopy(bytes, 0, bytes, 1, nDigits);
             bytes[0] = '1';
             return nDigits + 1;
         }
@@ -1689,13 +1688,13 @@ public class Sprintf {
         // add to the corresponding positive power of 32 for the result.
         // meaningful? no. conformant? yes. I just write the code...
         BigInteger nPower32 = shift > 0 ? BIG_64.shiftLeft(32 * shift) : BIG_64;
-        return stringToBytes(nPower32.add(bigval).toString(),false);
+        return stringToBytes(nPower32.add(bigval).toString());
     }
 
     private static byte[] stringToBytes(CharSequence s, boolean upper) {
-        int len = s.length();
-        byte[] bytes = new byte[len];
         if (upper) {
+            int len = s.length();
+            byte[] bytes = new byte[len];
             for (int i = len; --i >= 0; ) {
                 int b = (byte)((int)s.charAt(i) & (int)0xff);
                 if (b >= 'a' && b <= 'z') {
@@ -1704,11 +1703,13 @@ public class Sprintf {
                     bytes[i] = (byte)b;
                 }
             }
-        } else {
-            for (int i = len; --i >= 0; ) {
-                bytes[i] = (byte)((int)s.charAt(i) & (int)0xff);
-            }
+            return bytes;
         }
-        return bytes;
+        return stringToBytes(s);
     }
+
+    private static byte[] stringToBytes(CharSequence s) {
+        return ByteList.plain(s);
+    }
+
 }
