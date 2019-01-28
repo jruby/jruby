@@ -450,7 +450,7 @@ public class Sprintf {
                     number = 0;
                     { // MRI: GETNUM macro
                         for (; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args, number, fchar);
+                            number = extendWidth(args, number, fchar, "width too big");
                         }
                         checkOffset(args, offset, length, ERR_MALFORMED_NUM);
                     }
@@ -514,7 +514,7 @@ public class Sprintf {
                         raiseArgumentError(args,"width given twice");
                     }
                     flags |= FLAG_WIDTH;
-                    int[] p_width = GETASTER(args, format, offset, length);
+                    int[] p_width = GETASTER(args, format, offset, length, true);
                     offset = p_width[0]; width = p_width[1];
                     if (width < 0) {
                         flags |= FLAG_MINUS;
@@ -532,7 +532,7 @@ public class Sprintf {
                     checkOffset(args, ++offset, length, ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
-                        int[] p_prec = GETASTER(args, format, offset, length);
+                        int[] p_prec = GETASTER(args, format, offset, length, false);
                         offset = p_prec[0]; precision = p_prec[1];
                         if (precision < 0) {
                             flags &= ~FLAG_PRECISION;
@@ -540,7 +540,7 @@ public class Sprintf {
                     } else {
                         number = 0;
                         for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args, number, fchar);
+                            number = extendWidth(args, number, fchar, "width too big");
                         }
                         checkOffset(args, offset, length, ERR_MALFORMED_DOT_NUM);
                         precision = number;
@@ -1574,13 +1574,15 @@ public class Sprintf {
         }
     }
 
-    private static int[] GETASTER(final Args args, final byte[] format, int offset, final int length) {
+    private static int[] GETASTER(final Args args, final byte[] format, int offset, final int length,
+                                  final boolean width) {
         checkOffset(args, ++offset, length, ERR_MALFORMED_STAR_NUM);
 
         final int mark = offset;
         int number = 0; byte fchar = '\0';
+        final String errMessage = width ? "width too big" : "prec too big";
         for (; offset < length && isDigit(fchar = format[offset]); offset++) {
-            number = extendWidth(args, number, fchar);
+            number = extendWidth(args, number, fchar, errMessage);
         }
         checkOffset(args, offset, length, ERR_MALFORMED_STAR_NUM);
 
@@ -1595,9 +1597,9 @@ public class Sprintf {
         return new int[] { offset, args.intValue(tmp) }; // [ offset, prec/width ]
     }
 
-    private static int extendWidth(Args args, int oldWidth, byte newChar) {
+    private static int extendWidth(Args args, int oldWidth, byte newChar, final String errMessage) {
         int newWidth = oldWidth * 10 + (newChar - '0');
-        if (newWidth / 10 != oldWidth) raiseArgumentError(args,"width too big");
+        if (newWidth / 10 != oldWidth) raiseArgumentError(args,errMessage);
         return newWidth;
     }
 
