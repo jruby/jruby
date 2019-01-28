@@ -197,13 +197,13 @@ public class Sprintf {
 
         // MRI: GETARG
         private IRubyObject getArg() {
+            final IRubyObject nextObject = this.nextObject;
             if (nextObject != null) {
                 // This is different in MRI.  The do a retry and avoid part of the for loop
                 // which resets nextvalue.  We do not do that so we null out here since we
                 // cannot get same value twice.
-                IRubyObject result = nextObject;
-                nextObject = null;
-                return result;
+                this.nextObject = null;
+                return nextObject;
             }
 
             return getNextArg();
@@ -514,26 +514,8 @@ public class Sprintf {
                         raiseArgumentError(args,"width given twice");
                     }
                     flags |= FLAG_WIDTH;
-                    // TODO: factor this chunk as in MRI/YARV GETASTER
-                    checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
-                    mark = offset;
-                    // GETASTER
-                    number = 0;
-                    for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
-                        number = extendWidth(args,number,fchar);
-                    }
-                    checkOffset(args,offset,length,ERR_MALFORMED_STAR_NUM);
-
-                    IRubyObject tmp;
-                    if (fchar == '$') {
-                        tmp = args.getPositionArg(number);
-                        offset++;
-                    } else {
-                        tmp = args.getNextArg();
-                        offset = mark;
-                    }
-
-                    width = args.intValue(tmp);
+                    int[] p_width = GETASTER(args, format, offset, length);
+                    offset = p_width[0]; width = p_width[1];
                     if (width < 0) {
                         flags |= FLAG_MINUS;
                         width = -width;
@@ -547,36 +529,20 @@ public class Sprintf {
                         raiseArgumentError(args,"precision given twice");
                     }
                     flags |= FLAG_PRECISION;
-                    checkOffset(args,++offset,length,ERR_MALFORMED_DOT_NUM);
+                    checkOffset(args, ++offset, length, ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
-                        checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
-                        mark = offset;
-                        // GETASTER
-                        number = 0;
-                        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args, number, fchar);
-                        }
-                        checkOffset(args, offset, length, ERR_MALFORMED_STAR_NUM);
-
-                        if (fchar == '$') {
-                            tmp = args.getPositionArg(number);
-                            offset++;
-                        } else {
-                            tmp = args.getNextArg();
-                            offset = mark;
-                        }
-
-                        precision = args.intValue(tmp);
+                        int[] p_prec = GETASTER(args, format, offset, length);
+                        offset = p_prec[0]; precision = p_prec[1];
                         if (precision < 0) {
                             flags &= ~FLAG_PRECISION;
                         }
                     } else {
                         number = 0;
                         for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args,number,fchar);
+                            number = extendWidth(args, number, fchar);
                         }
-                        checkOffset(args,offset,length,ERR_MALFORMED_DOT_NUM);
+                        checkOffset(args, offset, length, ERR_MALFORMED_DOT_NUM);
                         precision = number;
                     }
                     break;
@@ -596,18 +562,18 @@ public class Sprintf {
                     arg = args.getArg();
 
                     int c; int n;
-                    tmp = arg.checkStringType();
+                    IRubyObject tmp = arg.checkStringType();
                     if (!tmp.isNil()) {
-                        if (((RubyString)tmp).strLength() != 1) {
+                        if (((RubyString) tmp).strLength() != 1) {
                             throw runtime.newArgumentError("%c requires a character");
                         }
-                        ByteList bl = ((RubyString)tmp).getByteList();
+                        ByteList bl = ((RubyString) tmp).getByteList();
                         c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
                         n = StringSupport.codeLength(bl.getEncoding(), c);
                     }
                     else {
                         // unsigned bits
-                        c = (int)arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
+                        c = (int) arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
                         } catch (EncodingException e) {
@@ -1291,23 +1257,23 @@ public class Sprintf {
                             width -= len;
 
                             if (width > 0 && (flags & (FLAG_ZERO|FLAG_MINUS)) == 0) {
-                                buf.fill(' ',width);
+                                buf.fill(' ', width);
                                 width = 0;
                             }
                             if (sign != 0) {
                                 buf.append(sign);
                             }
                             if (width > 0 && (flags & FLAG_MINUS) == 0) {
-                                buf.fill('0',width);
+                                buf.fill('0', width);
                                 width = 0;
                             }
                             // now some data...
                             if (intLength > 0){
                                 if (intDigits > 0) { // s/b true, since intLength > 0
-                                    buf.append(digits,0,intDigits);
+                                    buf.append(digits, 0, intDigits);
                                 }
                                 if (intZeroes > 0) {
-                                    buf.fill('0',intZeroes);
+                                    buf.fill('0', intZeroes);
                                 }
                             } else {
                                 // always need at least a 0
@@ -1318,18 +1284,18 @@ public class Sprintf {
                             }
                             if (decLength > 0) {
                                 if (decZeroes > 0) {
-                                    buf.fill('0',decZeroes);
+                                    buf.fill('0', decZeroes);
                                     precision -= decZeroes;
                                 }
                                 if (decDigits > 0) {
-                                    buf.append(digits,intDigits,decDigits);
+                                    buf.append(digits, intDigits, decDigits);
                                     precision -= decDigits;
                                 }
                                 if ((flags & FLAG_SHARP) != 0 && precision > 0) {
-                                    buf.fill('0',precision);
+                                    buf.fill('0', precision);
                                 }
                             }
-                            if ((flags & FLAG_SHARP) != 0 && precision > 0) buf.fill('0',precision);
+                            if ((flags & FLAG_SHARP) != 0 && precision > 0) buf.fill('0', precision);
                             if (width > 0) buf.fill(' ', width);
                         }
                         break;
@@ -1388,10 +1354,10 @@ public class Sprintf {
                         // now some data...
                         if (intLength > 0){
                             if (intDigits > 0) { // s/b true, since intLength > 0
-                                buf.append(digits,0,intDigits);
+                                buf.append(digits, 0, intDigits);
                             }
                             if (intZeroes > 0) {
-                                buf.fill('0',intZeroes);
+                                buf.fill('0', intZeroes);
                             }
                         } else {
                             // always need at least a 0
@@ -1402,16 +1368,16 @@ public class Sprintf {
                         }
                         if (precision > 0) {
                             if (decZeroes > 0) {
-                                buf.fill('0',decZeroes);
+                                buf.fill('0', decZeroes);
                                 precision -= decZeroes;
                             }
                             if (decDigits > 0) {
-                                buf.append(digits,intDigits,decDigits);
+                                buf.append(digits, intDigits, decDigits);
                                 precision -= decDigits;
                             }
                             // fill up the rest with zeroes
                             if (precision > 0) {
-                                buf.fill('0',precision);
+                                buf.fill('0', precision);
                             }
                         }
                         if (width > 0) {
@@ -1477,7 +1443,7 @@ public class Sprintf {
                                 buf.append(digits,1,decDigits);
                                 precision -= decDigits;
                             }
-                            if (precision > 0) buf.fill('0',precision);
+                            if (precision > 0) buf.fill('0', precision);
 
                         } else if ((flags & FLAG_SHARP) != 0) {
                             buf.append(args.getDecimalSeparator());
@@ -1604,8 +1570,29 @@ public class Sprintf {
 
     private static void checkOffset(Args args, int offset, int length, String message) {
         if (offset >= length) {
-            raiseArgumentError(args,message);
+            raiseArgumentError(args, message);
         }
+    }
+
+    private static int[] GETASTER(final Args args, final byte[] format, int offset, final int length) {
+        checkOffset(args, ++offset, length, ERR_MALFORMED_STAR_NUM);
+
+        final int mark = offset;
+        int number = 0; byte fchar = '\0';
+        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
+            number = extendWidth(args, number, fchar);
+        }
+        checkOffset(args, offset, length, ERR_MALFORMED_STAR_NUM);
+
+        IRubyObject tmp;
+        if (fchar == '$') {
+            tmp = args.getPositionArg(number);
+            offset++;
+        } else {
+            tmp = args.getNextArg();
+            offset = mark;
+        }
+        return new int[] { offset, args.intValue(tmp) }; // [ offset, prec/width ]
     }
 
     private static int extendWidth(Args args, int oldWidth, byte newChar) {
