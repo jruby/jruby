@@ -38,20 +38,10 @@ import java.util.Map;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyBignum;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
-import org.jruby.RubyKernel;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
@@ -889,9 +879,99 @@ public class Sprintf {
                     incomplete = false;
                     break;
                 }
+
+                case 'f': {
+                    arg = args.getArg();
+                    RubyInteger num, den;
+                    byte sign = (flags & FLAG_PLUS) != 0 ? (byte) 1 : (byte) 0; int zero = 0;
+
+                    if (arg instanceof RubyInteger) {
+                        den = RubyFixnum.one(runtime);
+                        num = (RubyInteger) arg;
+                    }
+                    else if (arg instanceof RubyRational) {
+                        den = ((RubyRational) arg).getDenominator();
+                        num = ((RubyRational) arg).getNumerator();
+                    }
+                    else {
+                        args.nextObject = arg;
+                        // goto float_value;
+                        num = null; den = null;
+                    }
+
+                    if (num != null) { // else -> goto float_value;
+                        if ((flags & FLAG_PRECISION) == 0) precision = 6; // default_float_precision;
+
+                        ThreadContext context = runtime.getCurrentContext();
+
+                        if (num.isNegative()) {
+                            num = (RubyInteger) num.op_uminus(context);
+                            sign = -1;
+                        }
+
+                        if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) {
+                            num = (RubyInteger) num.op_mul(context, Numeric.int_pow(context, 10, precision));
+                            num = (RubyInteger) num.op_plus(context, den.idiv(context, 2));
+                            num = (RubyInteger) num.idiv(context, den);
+                        }
+                        else if (precision >= 0) {
+                            zero = precision;
+                        }
+
+                        RubyString val = num.to_s();
+                        int len = val.length() + zero;
+                        if (precision >= len) len = precision + 1; // integer part 0
+                        if (sign != 0 || (flags & FLAG_SPACE) != 0) ++len;
+                        if (precision > 0) ++len; // period
+                        int fill = width > len ? width - len : 0;
+
+                        // CHECK(fill + len)
+                        buf.ensure(buf.length() + fill + len);
+                        if (fill > 0 && (flags & (FLAG_MINUS|FLAG_ZERO)) == 0) {
+                            buf.fill(' ', fill);
+                        }
+                        if (sign != 0 || (flags & FLAG_SPACE) != 0) {
+                            buf.append(sign > 0 ? '+' : sign < 0 ? '-' : ' ');
+                        }
+                        if (fill > 0 && (flags & (FLAG_MINUS|FLAG_ZERO)) == FLAG_ZERO) {
+                            buf.fill('0', fill);
+                        }
+                        len = val.length() + zero;
+                        // t = RSTRING_PTR(val);
+                        if (len > precision) {
+                            // PUSH_(t, len - prec) :
+                            buf.append(val.getByteList(), 0, len - precision);
+                        }
+                        else {
+                            buf.append('0');
+                        }
+                        if (precision > 0) {
+                            buf.append('.');
+                        }
+                        if (zero > 0) {
+                            buf.fill('0', zero);
+                        }
+                        else if (precision > len) {
+                            buf.fill('0', precision - len);
+                            // PUSH_(t, len) :
+                            buf.append(val.getByteList(), 0, len);
+                        }
+                        else if (precision > 0) {
+                            // PUSH_(t + len - prec, prec) :
+                            buf.append(val.getByteList(), len - precision, precision);
+                        }
+                        if (fill > 0 && (flags & FLAG_MINUS) != 0) {
+                            buf.fill(' ', fill);
+                        }
+
+                        offset++;
+                        incomplete = false;
+                        break;
+                    }
+                }
+
                 case 'E':
                 case 'e':
-                case 'f':
                 case 'G':
                 case 'g': {
                     arg = args.getArg();
