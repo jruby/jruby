@@ -448,22 +448,23 @@ public class Sprintf {
                     // MRI doesn't flag it as an error if width is given multiple
                     // times as a number (but it does for *)
                     number = 0;
-                    { // MRI: GETNUM macro
-                        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args, number, fchar, "width too big");
-                        }
-                        checkOffset(args, offset, length, ERR_MALFORMED_NUM);
+                    // GETNUM(n, width) :
+                    for (; offset < length && isDigit(fchar = format[offset]); offset++) {
+                        number = extendWidth(args, number, fchar, "width too big");
                     }
+                    checkOffset(args, offset, length, ERR_MALFORMED_NUM);
+                    //
                     if (fchar == '$') {
                         if (args.nextObject != null) {
                             raiseArgumentError(args,"value given twice - " + number + "$");
                         }
                         args.nextObject = args.getPositionArg(number);
                         offset++;
-                    } else {
-                        width = number;
-                        flags |= FLAG_WIDTH;
+                        break;
                     }
+                    // CHECK_FOR_WIDTH(flags);
+                    width = number;
+                    flags |= FLAG_WIDTH;
                     break;
 
                 case '<': {
@@ -537,14 +538,17 @@ public class Sprintf {
                         if (precision < 0) {
                             flags &= ~FLAG_PRECISION;
                         }
-                    } else {
-                        number = 0;
-                        for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args, number, fchar, "width too big");
-                        }
-                        checkOffset(args, offset, length, ERR_MALFORMED_DOT_NUM);
-                        precision = number;
+                        break;
                     }
+
+                    // GETNUM(prec, precision) :
+                    number = 0;
+                    for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
+                        number = extendWidth(args, number, fchar, "width too big");
+                    }
+                    checkOffset(args, offset, length, ERR_MALFORMED_DOT_NUM);
+                    precision = number;
+                    //
                     break;
 
                 case '\n':
