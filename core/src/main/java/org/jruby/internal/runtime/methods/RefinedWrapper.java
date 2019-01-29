@@ -38,9 +38,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * A DynamicMethod wrapper that performs timed profiling for each call.
  */
-public class RefinedMarker extends DynamicMethod {
-    public RefinedMarker(RubyModule implementationClass, Visibility visibility, String name) {
+public class RefinedWrapper extends DynamicMethod {
+    private final DynamicMethod wrapped;
+
+    public RefinedWrapper(RubyModule implementationClass, Visibility visibility, String name, DynamicMethod wrapped) {
         super(implementationClass, visibility, name);
+
+        if (wrapped.isRefined()) throw new RuntimeException("BLAH");
+
+        this.wrapped = wrapped;
     }
 
     @Override
@@ -48,9 +54,13 @@ public class RefinedMarker extends DynamicMethod {
         return true;
     }
 
+    public DynamicMethod getWrapped() {
+        return wrapped;
+    }
+
     @Override
     public DynamicMethod dup() {
-        return new RefinedMarker(getImplementationClass(), getVisibility(), getName());
+        return new RefinedWrapper(getImplementationClass(), getVisibility(), getName(), wrapped);
     }
 
     @Override

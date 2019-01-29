@@ -83,6 +83,7 @@ import org.jruby.internal.runtime.methods.NativeCallMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
+import org.jruby.internal.runtime.methods.RefinedWrapper;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
@@ -504,7 +505,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod oldMethod = methodLocation.getMethodsForWrite().put(id, method);
 
         if (oldMethod != null && oldMethod.isRefined()) {
-            method.setRefined(true);
+            method = new RefinedWrapper(oldMethod.getImplementationClass(), method.getVisibility(), id, method);
         }
 
         runtime.addProfiledMethod(id, method);
@@ -1366,14 +1367,17 @@ public class RubyModule extends RubyObject {
         addMethodInternal(id, method);
     }
 
-    // MRI: add_refined_method_entry
+    // MRI: rb_add_refined_method_entry
     private void addRefinedMethodEntry(String id, DynamicMethod method) {
         DynamicMethod orig = refinedClass.searchMethodCommon(id);
 
         if (orig == null) {
             refinedClass.addMethodInternal(id, new RefinedMarker(refinedClass, method.getVisibility(), id));
         } else {
-            orig.setRefined(true);
+            if (orig.isRefined()) {
+                return;
+            }
+            refinedClass.addMethodInternal(id, new RefinedWrapper(refinedClass, method.getVisibility(), id, orig));
         }
     }
 
@@ -1532,13 +1536,12 @@ public class RubyModule extends RubyObject {
                 // marker with no scope available, find super method
                 return resolveRefinedMethod(refinements, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
             }
-        } else {
+        } else if (entry.method instanceof RefinedWrapper){
             // original without refined flag
-            // FIXME: somewhat inefficient since it has to clone the method and it no longer appears refined in caches
-            DynamicMethod method = entry.method.dup();
-            method.setRefined(false);
-            return new CacheEntry(method, entry.token);
+            return new CacheEntry(((RefinedWrapper) entry.method).getWrapped(), entry.token);
         }
+
+        return entry;
     }
 
     /**

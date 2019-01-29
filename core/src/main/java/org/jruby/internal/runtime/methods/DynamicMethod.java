@@ -540,15 +540,7 @@ public abstract class DynamicMethod {
     }
 
     public boolean isRefined() {
-        return (flags & REFINED_FLAG) == REFINED_FLAG;
-    }
-
-    public void setRefined(boolean refined) {
-        if (refined) {
-            flags |= REFINED_FLAG;
-        } else {
-            flags &= ~REFINED_FLAG;
-        }
+        return false;
     }
 
     @Deprecated
