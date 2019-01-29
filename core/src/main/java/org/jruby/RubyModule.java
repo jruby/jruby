@@ -1533,8 +1533,11 @@ public class RubyModule extends RubyObject {
                 return resolveRefinedMethod(refinements, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
             }
         } else {
-            // refined original
-            return entry;
+            // original without refined flag
+            // FIXME: somewhat inefficient since it has to clone the method and it no longer appears refined in caches
+            DynamicMethod method = entry.method.dup();
+            method.setRefined(false);
+            return new CacheEntry(method, entry.token);
         }
     }
 
