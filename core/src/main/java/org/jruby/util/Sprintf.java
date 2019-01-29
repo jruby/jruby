@@ -1559,24 +1559,39 @@ public class Sprintf {
         return skip;
     }
 
-    private static int round(byte[] bytes, int nDigits, int roundPos, boolean roundDown) {
-        int next = roundPos + 1;
-        if (next >= nDigits) return nDigits;
-        if (bytes[next] < '5') return nDigits;
-        if (roundDown && bytes[next] == '5' && next == nDigits - 1) return nDigits;
+    private static int round(byte[] bytes, final int nDigits, int roundPos, boolean roundDown) {
+        final int nextPos = roundPos + 1;
+        if (nextPos >= nDigits) return nDigits;
+        if (bytes[nextPos] < '5') return nDigits;
 
         if (roundPos < 0) { // "%.0f" % 0.99
             System.arraycopy(bytes,0,bytes,1,nDigits);
             bytes[0] = '1';
             return nDigits + 1;
         }
-        // round half to even
-        if (roundPos + 1 < nDigits && bytes[roundPos + 1] == '5') {
-            if ((bytes[roundPos] - '0') % 2 == 0) {
-                // round down
-                return nDigits;
+
+        if (bytes[nextPos] == '5') {
+            if (nextPos == nDigits - 1) {
+                if (roundDown || (bytes[roundPos] - '0') % 2 == 0) {
+                    return nDigits; // round down (half-to-even)
+                }
+            }
+            // we only need to apply half-to-even rounding
+            // if we're at last pos (^^ above) 0.25 -> 0.2
+            // or all that is left are zeros 0.2500 -> 0.2 but 0.2501 -> 0.3
+            int i = nextPos;
+            while (++i < nDigits) {
+                if (bytes[i] != '0') {
+                    break;
+                }
+            }
+            if (i == nDigits - 1 && (bytes[i] == '0')) {
+                if ((bytes[roundPos] - '0') % 2 == 0) {
+                    return nDigits; // round down (half-to-even)
+                }
             }
         }
+
         bytes[roundPos] += 1;
         
         while (bytes[roundPos] > '9') {
@@ -1585,7 +1600,7 @@ public class Sprintf {
             if (roundPos >= 0) {
                 bytes[roundPos] += 1;
             } else {
-                System.arraycopy(bytes,0,bytes,1,nDigits);
+                System.arraycopy(bytes, 0, bytes, 1, nDigits);
                 bytes[0] = '1';
                 return nDigits + 1;
             }
