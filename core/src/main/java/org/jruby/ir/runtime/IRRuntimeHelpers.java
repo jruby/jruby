@@ -528,7 +528,30 @@ public class IRRuntimeHelpers {
         } else if (value instanceof RubyProc) {
             block = ((RubyProc) value).getBlock();
         } else if (value instanceof RubyMethod) {
-            block = ((RubyProc)((RubyMethod)value).to_proc(context)).getBlock();
+            block = ((RubyProc) ((RubyMethod) value).to_proc(context)).getBlock();
+        } else if (value instanceof RubySymbol) {
+            block = ((RubyProc) ((RubySymbol) value).to_proc(context)).getBlock();
+        } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
+            block = Block.NULL_BLOCK;
+        } else if (value instanceof IRubyObject) {
+            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc", true)).getBlock();
+        } else {
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
+        }
+        return block;
+    }
+
+    @JIT
+    public static Block getRefinedBlockFromObject(ThreadContext context, StaticScope scope, Object value) {
+        Block block;
+        if (value instanceof Block) {
+            block = (Block) value;
+        } else if (value instanceof RubyProc) {
+            block = ((RubyProc) value).getBlock();
+        } else if (value instanceof RubyMethod) {
+            block = ((RubyProc) ((RubyMethod) value).to_proc(context)).getBlock();
+        } else if (value instanceof RubySymbol) {
+            block = ((RubyProc) ((RubySymbol) value).toRefinedProc(context, scope)).getBlock();
         } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
             block = Block.NULL_BLOCK;
         } else if (value instanceof IRubyObject) {

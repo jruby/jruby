@@ -1076,8 +1076,13 @@ public class JVMVisitor extends IRVisitor {
 
         if (blockPassType.given()) {
             m.loadContext();
+            if (call.isPotentiallyRefined()) m.loadStaticScope();
             visit(call.getClosureArg());
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            if (call.isPotentiallyRefined()) {
+                m.invokeIRHelper("getRefinedBlockFromObject", sig(Block.class, ThreadContext.class, StaticScope.class, Object.class));
+            } else {
+                m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            }
         }
 
         switch (call.getCallType()) {
@@ -1431,8 +1436,13 @@ public class JVMVisitor extends IRVisitor {
         boolean hasClosure = closure != null;
         if (hasClosure) {
             m.loadContext();
+            if (instr.isPotentiallyRefined()) m.loadStaticScope();
             visit(closure);
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            if (instr.isPotentiallyRefined()) {
+                m.invokeIRHelper("getRefinedBlockFromObject", sig(Block.class, ThreadContext.class, StaticScope.class, Object.class));
+            } else {
+                m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            }
         }
 
         switch (operation) {

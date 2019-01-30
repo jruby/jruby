@@ -573,6 +573,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public Block prepareBlock(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         if (getClosureArg() == null) return Block.NULL_BLOCK;
 
-        return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        if (potentiallyRefined) {
+            return IRRuntimeHelpers.getRefinedBlockFromObject(context, currScope, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        } else {
+            return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        }
     }
 }
