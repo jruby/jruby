@@ -499,6 +499,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
         final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
+        setIsTzRelative(true);
         return adjustTimeZone(context.runtime, zone);
     }
 
@@ -549,7 +550,9 @@ public class RubyTime extends RubyObject {
             return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
         }
         DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
-        return newTime(context.runtime, dt.withZone(dtz), nsec);
+        RubyTime time = newTime(context.runtime, dt.withZone(dtz), nsec);
+        time.setIsTzRelative(true);
+        return time;
     }
 
     @Deprecated
