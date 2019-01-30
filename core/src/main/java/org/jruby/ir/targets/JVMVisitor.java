@@ -26,7 +26,6 @@ import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
@@ -592,18 +591,32 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
-        compileCallCommon(jvmMethod(), attrAssignInstr);
-    }
-
-    @Override
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine, arrayderefinstr);
+        jvmMethod().invokeArrayDeref(file, lastLine, currentScopeName, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
+    }
+
+    @Override
+    public void AsStringInstr(AsStringInstr asstring) {
+        if (asstring.isPotentiallyRefined()) {
+            jvmMethod().loadContext();
+            jvmMethod().loadSelf();
+            visit(asstring.getReceiver());
+            jvmMethod().invokeAsString(file, lastLine, currentScopeName, asstring);
+            jvmStoreLocal(asstring.getResult());
+        } else {
+            visit(asstring.getReceiver());
+            jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        }
+    }
+
+    @Override
+    public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
+        compileCallCommon(jvmMethod(), attrAssignInstr);
     }
 
     @Override
@@ -2284,12 +2297,6 @@ public class JVMVisitor extends IRVisitor {
         }
 
         jvmMethod().array(array.getElts().length);
-    }
-
-    @Override
-    public void AsString(AsString asstring) {
-        visit(asstring.getSource());
-        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
     }
 
     @Override

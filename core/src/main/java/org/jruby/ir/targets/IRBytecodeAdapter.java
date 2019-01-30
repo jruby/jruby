@@ -403,7 +403,16 @@ public abstract class IRBytecodeAdapter {
      * @param file
      * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line, CallBase call);
+    public abstract void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
+
+    /**
+     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
+     *
+     * Stack required: context, self, target
+     * @param file
+     * @param line
+     */
+    public abstract void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.

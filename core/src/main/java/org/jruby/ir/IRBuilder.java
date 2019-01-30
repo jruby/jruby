@@ -2683,7 +2683,11 @@ public class IRBuilder {
     }
 
     public Operand buildEvStr(EvStrNode node) {
-        return new AsString(build(node.getBody()));
+        TemporaryVariable result = createTemporaryVariable();
+
+        addInstr(new AsStringInstr(scope, result, build(node.getBody()), scope.maybeUsingRefinements()));
+
+        return result;
     }
 
     public Operand buildFalse() {

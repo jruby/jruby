@@ -220,6 +220,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(this);
             case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
+            case AS_STRING: return AsStringInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
             case B_SWITCH: return BSwitchInstr.decode(this);
@@ -462,7 +463,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         switch (type) {
             case ARRAY: return Array.decode(this);
-            case AS_STRING: return AsString.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
             case COMPLEX: return Complex.decode(this);

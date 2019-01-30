@@ -15,7 +15,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Complex;
@@ -285,7 +284,6 @@ public class IRDumper extends IRVisitor {
             visit(o);
         }
     }
-    public void AsString(AsString asstring) { visit(asstring.getSource()); }
     public void Bignum(Bignum bignum) { print(bignum.value); }
     public void Boolean(org.jruby.ir.operands.Boolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }

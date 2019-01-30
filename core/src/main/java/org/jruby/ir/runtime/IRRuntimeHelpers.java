@@ -2071,6 +2071,20 @@ public class IRRuntimeHelpers {
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 
+    /**
+     * asString using a given call site
+     */
+    @JIT
+    public static IRubyObject asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
+        IRubyObject str = site.call(context, caller, target);
+
+        if (!(str instanceof RubyString)) return target.anyToString();
+
+        if (target.isTaint()) str.setTaint(true);
+
+        return str;
+    }
+
     @JIT
     public static RubyArray newArray(ThreadContext context) {
         return RubyArray.newEmptyArray(context.runtime);
