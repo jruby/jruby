@@ -1,5 +1,3 @@
 fails:Module#refine makes available all refinements from the same module
 fails:Module#refine for methods accessed indirectly is honored by Kernel#send
 fails:Module#refine for methods accessed indirectly is honored by BasicObject#__send__
-fails:Module#refine for methods accessed indirectly is honored by Symbol#to_proc
-fails:Module#refine for methods accessed indirectly is honored by string interpolation
