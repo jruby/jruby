@@ -499,6 +499,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
         final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
+        setIsTzRelative(true);
         return adjustTimeZone(context.runtime, zone);
     }
 
@@ -549,7 +550,9 @@ public class RubyTime extends RubyObject {
             return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
         }
         DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
-        return newTime(context.runtime, dt.withZone(dtz), nsec);
+        RubyTime time = newTime(context.runtime, dt.withZone(dtz), nsec);
+        time.setIsTzRelative(true);
+        return time;
     }
 
     @Deprecated
@@ -1743,13 +1746,26 @@ public class RubyTime extends RubyObject {
 
             // 1.9 will observe fractional seconds *if* not given usec
             if (args[5] != context.nil && args[6] == context.nil) {
-                double secs = RubyFloat.num2dbl(context, args[5]);
-                if (secs < 0 || secs >= TIME_SCALE) {
-                    throw runtime.newArgumentError("argument out of range.");
+                if (args[5] instanceof RubyRational) {
+                    RubyRational rat = (RubyRational) args[5];
+                    if (rat.isNegative()) {
+                        throw runtime.newArgumentError("argument out of range.");
+                    }
+                    RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1_000_000_000));
+                    long full_nanos = nsec.getLongValue();
+                    long millis = full_nanos / 1_000_000;
+
+                    nanos = full_nanos - millis * 1_000_000;
+                    instant = chrono.millis().add(instant, millis % 1000);
+                } else {
+                    double secs = RubyFloat.num2dbl(context, args[5]);
+                    if (secs < 0 || secs >= TIME_SCALE) {
+                        throw runtime.newArgumentError("argument out of range.");
+                    }
+                    int int_millis = (int) (secs * 1000) % 1000;
+                    instant = chrono.millis().add(instant, int_millis);
+                    nanos = ((long) (secs * 1000000000) % 1000000);
                 }
-                int int_millis = (int) (secs * 1000) % 1000;
-                instant = chrono.millis().add(instant, int_millis);
-                nanos = ((long) (secs * 1000000000) % 1000000);
             }
 
             dt = dt.withMillis(instant);
