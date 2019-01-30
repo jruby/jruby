@@ -1220,7 +1220,7 @@ public class IRBuilder {
             Node exprNodes = whenNode.getExpressionNodes();
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -1336,7 +1336,7 @@ public class IRBuilder {
                 expression = ((StringLiteral) expression).frozenString;
             }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, false));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider

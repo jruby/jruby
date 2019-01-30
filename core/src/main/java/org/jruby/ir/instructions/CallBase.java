@@ -89,7 +89,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         }
 
         if (hasClosure) e.encode(getClosureArg(null));
-
     }
 
     // FIXME: Convert this to some Signature/Arity method
