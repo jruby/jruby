@@ -1416,9 +1416,17 @@ public class RubyModule extends RubyObject {
         // are adding we are not using a IncludedModule.
         Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
         synchronized (methodsForWrite) {
-            DynamicMethod method = methodsForWrite.remove(id);
-            if (method == null) {
+            DynamicMethod method = methodsForWrite.get(id);
+            if (method == null ||
+                    method.isUndefined() ||
+                    method instanceof RefinedMarker) {
                 throw context.runtime.newNameError(str(context.runtime, "method '", name, "' not defined in ", rubyName()), id);
+            }
+
+            method = methodsForWrite.remove(id);
+
+            if (method.isRefined()) {
+                methodsForWrite.put(id, new RefinedMarker(method.getImplementationClass(), method.getVisibility(), id));
             }
 
             invalidateCoreClasses();
