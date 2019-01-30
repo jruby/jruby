@@ -611,6 +611,7 @@ public class JVMVisitor extends IRVisitor {
         } else {
             visit(asstring.getReceiver());
             jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+            jvmStoreLocal(asstring.getResult());
         }
     }
 
