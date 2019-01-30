@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'time'
 
 class TestTime < Test::Unit::TestCase
 
@@ -86,6 +87,12 @@ class TestTime < Test::Unit::TestCase
     assert_equal 59, time.sec
     assert_equal Time.now.zone, time.zone
     assert_equal 999999999, time.nsec
+  end
+
+  def test_parse_and_change
+    t = Time.parse '2003-07-16t15:28:11.2233+01:00'
+    t1 = time_change t, usec: 223000
+    assert_equal '2003-07-16 14:28:11 UTC', t1.dup.utc.to_s
   end
 
   @@tz = ENV['TZ']
