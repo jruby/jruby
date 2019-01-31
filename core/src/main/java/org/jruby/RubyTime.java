@@ -983,7 +983,10 @@ public class RubyTime extends RubyObject {
     public IRubyObject zone() {
         if (isTzRelative) return getRuntime().getNil();
 
-        RubyString zone = getRuntime().newString(getZoneName());
+        String zoneName = getZoneName();
+        if ("".equals(zoneName)) return getRuntime().getNil();
+
+        RubyString zone = getRuntime().newString(zoneName);
         if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
         return zone;
     }
