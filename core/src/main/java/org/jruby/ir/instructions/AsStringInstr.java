@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -23,11 +24,33 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
     public static final ByteList TO_S = new ByteList(new byte[] {'t', 'o', '_', 's'});
 
     public AsStringInstr(IRScope scope, Variable result, Operand source, boolean isPotentiallyRefined) {
-        super(scope, Operation.AS_STRING, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol(TO_S), source, Operand.EMPTY_ARRAY, isPotentiallyRefined);
+        super(
+                scope,
+                Operation.AS_STRING,
+                CallType.FUNCTIONAL,
+                result,
+                scope.getManager().getRuntime().newSymbol(TO_S),
+                nonNull(source),
+                Operand.EMPTY_ARRAY,
+                isPotentiallyRefined);
     }
 
     private AsStringInstr(IRScope scope, Variable result, Operand source, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.AS_STRING, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol(TO_S), source, Operand.EMPTY_ARRAY, isPotentiallyRefined, callSite, callSiteId);
+        super(
+                scope,
+                Operation.AS_STRING,
+                CallType.FUNCTIONAL,
+                result,
+                scope.getManager().getRuntime().newSymbol(TO_S),
+                nonNull(source),
+                Operand.EMPTY_ARRAY,
+                isPotentiallyRefined,
+                callSite,
+                callSiteId);
+    }
+
+    private static Operand nonNull(Operand source) {
+        return source == null ? StringLiteral.EMPTY_STRING : source;
     }
 
     @Override
