@@ -776,7 +776,7 @@ public class RubyModule extends RubyObject {
         block.getBinding().setSelf(refinement);
 
         RubyModule overlayModule = block.getBody().getStaticScope().getOverlayModuleForWrite(context);
-        usingModule(context, overlayModule, this);
+        overlayModule.refinements = refinements;
 
         block.yieldSpecific(context);
     }
@@ -1521,11 +1521,11 @@ public class RubyModule extends RubyObject {
 
                 if (overlay == null) continue;
 
-                entry = resolveRefinedMethod(overlay.refinements, entry, id, cacheUndef);
+                CacheEntry maybeEntry = resolveRefinedMethod(overlay.refinements, entry, id, cacheUndef);
 
-                if (entry.method.isUndefined()) break;
+                if (maybeEntry.method.isUndefined()) continue;
 
-                return entry;
+                return maybeEntry;
             }
 
             // MRI: refined_method_original_method_entry
