@@ -93,6 +93,14 @@ class TestTime < Test::Unit::TestCase
     t = Time.parse '2003-07-16t15:28:11.2233+01:00'
     t1 = time_change t, usec: 223000
     assert_equal '2003-07-16 14:28:11 UTC', t1.dup.utc.to_s
+
+    t2 = t.clone
+    t3 = time_change t2, usec: 223000
+    assert_equal '2003-07-16 14:28:11 UTC', t3.dup.utc.to_s
+
+    t4 = t1.clone
+    t5 = time_change t4, usec: 223000
+    assert_equal '2003-07-16 14:28:11 UTC', t5.dup.utc.to_s
   end
 
   @@tz = ENV['TZ']

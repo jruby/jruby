@@ -115,12 +115,6 @@ public class RubyTime extends RubyObject {
 
     private static final ByteList TZ_STRING = ByteList.create("TZ");
 
-    private boolean isTzRelative = false; // true if and only if #new is called with a numeric offset (e.g., "+03:00")
-
-    private void setIsTzRelative(boolean tzRelative) {
-        isTzRelative = tzRelative;
-    }
-
     @Override
     public ClassIndex getNativeClassIndex() {
         return ClassIndex.TIME;
@@ -499,7 +493,6 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
         final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
-        setIsTzRelative(true);
         return adjustTimeZone(context.runtime, zone);
     }
 
@@ -527,7 +520,7 @@ public class RubyTime extends RubyObject {
     }
 
     public boolean isUTC() {
-        return !isTzRelative && dt.getZone().getID().equals("UTC");
+        return dt.getZone().getID().equals("UTC") || "UTC".equals(getRubyTimeZoneNameOrNull(dt));
     }
 
     @JRubyMethod(name = {"getgm", "getutc"})
@@ -550,9 +543,7 @@ public class RubyTime extends RubyObject {
             return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
         }
         DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
-        RubyTime time = newTime(context.runtime, dt.withZone(dtz), nsec);
-        time.setIsTzRelative(true);
-        return time;
+        return newTime(context.runtime, dt.withZone(dtz), nsec);
     }
 
     @Deprecated
@@ -780,13 +771,14 @@ public class RubyTime extends RubyObject {
 
     private String inspectCommon(final DateTimeFormatter formatter, final DateTimeFormatter utcFormatter) {
         DateTimeFormatter simpleDateFormat;
-        if (dt.getZone() == DateTimeZone.UTC && !isTzRelative) {
+        String zoneName = getRubyTimeZoneNameOrNull(dt);
+        if (dt.getZone() == DateTimeZone.UTC && zoneName != null) {
             simpleDateFormat = utcFormatter;
         } else {
             simpleDateFormat = formatter;
         }
 
-        if (isTzRelative) {
+        if (zoneName == null) {
             // display format needs to invert the UTC offset if this object was
             // created with a specific offset in the 7-arg form of #new
             DateTimeZone dtz = dt.getZone();
@@ -981,33 +973,37 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject zone() {
-        if (isTzRelative) return getRuntime().getNil();
+        Ruby runtime = getRuntime();
+        String zoneName = getRubyTimeZoneNameOrNull(runtime, dt);
+        if (zoneName == null) return runtime.getNil();
 
-        RubyString zone = getRuntime().newString(getZoneName());
+        RubyString zone = getRuntime().newString(zoneName);
         if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
         return zone;
     }
 
-    public String getZoneName() {
-        return getRubyTimeZoneName(getRuntime(), dt);
+    public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
+        String zone = getRubyTimeZoneNameOrNull(runtime, dt);
+        if (zone == null) zone = "";
+        return zone;
     }
 
-	public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
-        final String tz = getEnvTimeZone(runtime);
-        return RubyTime.getRubyTimeZoneName(tz == null ? "" : tz, dt);
-	}
-
-	public static String getRubyTimeZoneName(String envTZ, DateTime dt) {
-        switch (envTZ) { // Some TZ values need to be overriden for Time#zone
-            case "Etc/UCT":
-            case "UCT":
-                return "UCT";
-            case "MET":
-                return inDaylighTime(dt) ? "MEST" : "MET"; // needs to be overriden
+    private static String getRubyTimeZoneNameOrNull(Ruby runtime, DateTime dt) {
+        final String envTZ = getEnvTimeZone(runtime);
+        if (envTZ != null) {
+            switch (envTZ) { // Some TZ values need to be overriden for Time#zone
+                case "Etc/UCT":
+                case "UCT":
+                    return "UCT";
+                case "MET":
+                    return inDaylighTime(dt) ? "MEST" : "MET"; // needs to be overriden
+            }
         }
+        return getRubyTimeZoneNameOrNull(dt);
+    }
 
+    private static String getRubyTimeZoneNameOrNull(DateTime dt) {
         String zone = dt.getZone().getShortName(dt.getMillis());
-
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(zone);
 
         if (offsetMatcher.matches()) {
@@ -1016,14 +1012,10 @@ public class RubyTime extends RubyObject {
             } else {
                 // try non-localized time zone name
                 zone = dt.getZone().getNameKey(dt.getMillis());
-                if (zone == null) {
-                    zone = "";
-                }
             }
         }
-
         return zone;
-	}
+    }
 
 	private static boolean inDaylighTime(final DateTime dt) {
         return dt.getZone().toTimeZone().inDaylightTime(dt.toDate());
@@ -1660,7 +1652,6 @@ public class RubyTime extends RubyObject {
         Ruby runtime = context.runtime;
         int len = ARG_SIZE;
         boolean isDst = false;
-        boolean setTzRelative = false;
         long nanos = 0;
 
         final DateTimeZone dtz;
@@ -1670,7 +1661,6 @@ public class RubyTime extends RubyObject {
             if (utcOffset) {
                 if (args.length == 10 && args[9] instanceof RubyString) {
                     dtz = getTimeZoneFromUtcOffset(context, args[9]);
-                    setTzRelative = true;
                 } else if (args.length == 10 && sites(context).respond_to_to_int.respondsTo(context, args[9], args[9])) {
                     IRubyObject offsetInt = sites(context).to_int.call(context, args[9], args[9]);
                     dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
@@ -1831,8 +1821,6 @@ public class RubyTime extends RubyObject {
         this.dt = dt;
 
         if (nanos != 0) this.setNSec(nanos);
-
-        this.setIsTzRelative(setTzRelative);
 
         return this;
     }
