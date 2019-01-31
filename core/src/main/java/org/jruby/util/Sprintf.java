@@ -354,18 +354,14 @@ public class Sprintf {
         return rubySprintfToBuffer(buf, charFormat, args, true);
     }
 
-    private static boolean rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args, boolean usePrefixForZero) {
-        Ruby runtime = args.runtime;
+    private static boolean rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
+                                               final Args args, final boolean usePrefixForZero) {
+        final Ruby runtime = args.runtime;
         boolean tainted = false;
         final byte[] format;
+        final Encoding encoding;
 
-        int offset;
-        int length;
-        int mark;
-        Encoding encoding;
-
-        // used for RubyString functions to manage encoding, etc
-        RubyString wrapper = RubyString.newString(runtime, buf);
+        int offset, length, mark;
 
         if (charFormat instanceof ByteList) {
             ByteList list = (ByteList)charFormat;
@@ -522,7 +518,6 @@ public class Sprintf {
                         width = -width;
                         if (width < 0) throw runtime.newArgumentError("width too big");
                     }
-
                     break;
 
                 case '.':
@@ -617,7 +612,7 @@ public class Sprintf {
                     }
                     RubyString strArg = arg.asString();
                     ByteList bytes = strArg.getByteList();
-                    Encoding enc = wrapper.checkEncoding(strArg);
+                    Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
                     int len = bytes.length();
                     int strLen = strArg.strLength();
 

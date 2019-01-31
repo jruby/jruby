@@ -269,13 +269,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return cr;
     }
 
-    public static int scanForCodeRange(ByteList byteList) {
-        Encoding enc = byteList.getEncoding();
+    public static int scanForCodeRange(final ByteList bytes) {
+        Encoding enc = bytes.getEncoding();
         if (enc.minLength() > 1 && enc.isDummy()) {
             return CR_BROKEN;
-        } else {
-            return codeRangeScan(EncodingUtils.getActualEncoding(enc, byteList), byteList);
         }
+        return codeRangeScan(EncodingUtils.getActualEncoding(enc, bytes), bytes);
     }
 
     final boolean singleByteOptimizable() {
@@ -316,6 +315,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Encoding enc = StringSupport.areCompatible(this, other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
                 value.getEncoding() + " and " + other.getByteList().getEncoding());
+        return enc;
+    }
+
+    public static Encoding checkEncoding(final Ruby runtime, ByteList str1, ByteList str2) {
+        Encoding enc = StringSupport.areCompatible(str1, str2);
+        if (enc == null) {
+            throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                    str1.getEncoding() + " and " + str2.getEncoding());
+        }
         return enc;
     }
 
