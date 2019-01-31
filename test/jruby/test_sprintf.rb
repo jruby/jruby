@@ -49,5 +49,18 @@ class TestFormat < Test::Unit::TestCase
     assert_equal("解0", sprintf("%.2s", "解0析"))
     assert_equal("解Šu", sprintf("%.3s", "解Šuš"))
   end
+
+  def test_nil_arg
+    begin
+      sprintf("%b", nil)
+      fail("expected to raise")
+    rescue TypeError => e
+      assert_equal("can't convert nil into Integer", e.message)
+    end
+    assert_raises(TypeError) { "%b" % nil }
+    assert_raises(TypeError) { "%i" % nil }
+    assert_raises(TypeError) { "%x" % nil }
+    assert_equal('', "%s" % nil)
+  end
 end
 

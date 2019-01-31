@@ -670,11 +670,7 @@ public class Sprintf {
                         type = ClassIndex.INTEGER;
                         break;
                     default:
-                        if (arg.respondsTo("to_int")) {
-                            arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_int", true);
-                        } else {
-                            arg = TypeConverter.convertToType(arg, runtime.getInteger(), "to_i", true);
-                        }
+                        arg = TypeConverter.convertToInteger(runtime.getCurrentContext(), arg, 0);
                         type = arg.getMetaClass().getClassIndex();
                         break;
                     }

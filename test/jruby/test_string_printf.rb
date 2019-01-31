@@ -21,11 +21,10 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("0b..1011", "%#b" % -5)
     assert_equal("+101", "%+b" % 5)
     assert_equal("101  ", "%-5b" % 5)
-    assert_equal("0", "%b" % nil)
-    assert_raises(TypeError) {"%b" % {'A' => 1}}
-    assert_raises(ArgumentError) {"%b" % "a"}
-    assert_raises(TypeError) {"%b" % true}
-    assert_raises(TypeError) {"%b" % [[1, 2]]}
+    assert_raises(TypeError) { "%b" % {'A' => 1} }
+    assert_raises(ArgumentError) { "%b" % "a" }
+    assert_raises(TypeError) { "%b" % true }
+    assert_raises(TypeError) { "%b" % [[1, 2]] }
   end
 
   ##### char (%c) #####
