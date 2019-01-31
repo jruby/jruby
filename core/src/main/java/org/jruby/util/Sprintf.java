@@ -657,52 +657,51 @@ public class Sprintf {
                 case 'u': {
                     arg = args.getArg();
 
-                    ClassIndex type = arg.getMetaClass().getClassIndex();
-                    switch(type) {
+                    switch (arg.getMetaClass().getClassIndex()) {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
                         arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
-                        type = ClassIndex.INTEGER;
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
-                        type = ClassIndex.INTEGER;
                         break;
                     default:
                         arg = TypeConverter.convertToInteger(runtime.getCurrentContext(), arg, 0);
-                        type = arg.getMetaClass().getClassIndex();
+                        if (!(arg instanceof RubyInteger)) { // NOTE: likely redundant
+                            throw runtime.newTypeError(arg, runtime.getInteger());
+                        }
                         break;
                     }
                     byte[] bytes;
                     int first = 0;
-                    byte[] prefix = null;
-                    boolean sign;
-                    boolean negative;
+                    final boolean sign, negative;
                     byte signChar = 0;
                     byte leadChar = 0;
-                    int base;
 
-                    // 'd' and 'i' are the same
-                    if (fchar == 'i') fchar = 'd';
-
-                    // 'u' with space or plus flags is same as 'd'
-                    if (fchar == 'u' && (flags & (FLAG_SPACE | FLAG_PLUS)) != 0) {
-                        fchar = 'd';
+                    switch (fchar) {
+                    case 'd':
+                    case 'i':
+                        fchar = 'd'; // 'd' and 'i' are the same
+                        sign = true; break;
+                    case 'u':
+                        if ((flags & (FLAG_PLUS|FLAG_SPACE)) != 0) fchar = 'd';
+                        sign = true; break;
+                    case 'o': case 'x': case 'X': case 'b': case 'B':
+                        sign = (flags & (FLAG_PLUS|FLAG_SPACE)) != 0; break;
+                    default:
+                        sign = false; break;
                     }
-                    sign = (fchar == 'd' || (flags & (FLAG_SPACE | FLAG_PLUS)) != 0);
 
+                    final int base;
                     switch (fchar) {
                     case 'o':
                         base = 8; break;
-                    case 'x':
-                    case 'X':
+                    case 'x': case 'X':
                         base = 16; break;
-                    case 'b':
-                    case 'B':
+                    case 'b': case 'B':
                         base = 2; break;
-                    case 'u':
-                    case 'd':
+                    // case 'u': case 'd': case 'i':
                     default:
                         base = 10; break;
                     }
@@ -710,27 +709,27 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (type == ClassIndex.INTEGER) {
-                        if (arg instanceof RubyFixnum) {
-                            negative = ((RubyFixnum) arg).getLongValue() < 0;
-                            zero = ((RubyFixnum) arg).getLongValue() == 0;
-                            if (negative && fchar == 'u') {
-                                bytes = getUnsignedNegativeBytes((RubyFixnum) arg);
-                            } else {
-                                bytes = getFixnumBytes((RubyFixnum) arg, base, sign, fchar == 'X');
-                            }
+                    if (arg instanceof RubyFixnum) {
+                        final long v = ((RubyFixnum) arg).getLongValue();
+                        negative = v < 0;
+                        zero = v == 0;
+                        if (negative && fchar == 'u') {
+                            bytes = getUnsignedNegativeBytes(v);
                         } else {
-                            negative = ((RubyBignum) arg).getValue().signum() < 0;
-                            zero = ((RubyBignum) arg).getValue().equals(BigInteger.ZERO);
-                            if (negative && fchar == 'u' && usePrefixForZero) {
-                                bytes = getUnsignedNegativeBytes((RubyBignum) arg);
-                            } else {
-                                bytes = getBignumBytes((RubyBignum) arg, base, sign, fchar == 'X');
-                            }
+                            bytes = getFixnumBytes(v, base, sign, fchar == 'X');
                         }
                     } else {
-                        throw runtime.newTypeError(arg, runtime.getInteger());
+                        final BigInteger v = ((RubyBignum) arg).getValue();
+                        negative = v.signum() < 0;
+                        zero = v.signum() == 0;
+                        if (negative && fchar == 'u' && usePrefixForZero) {
+                            bytes = getUnsignedNegativeBytes(v);
+                        } else {
+                            bytes = getBignumBytes(v, base, sign, fchar == 'X');
+                        }
                     }
+                    //
+                    byte[] prefix = null;
                     if ((flags & FLAG_SHARP) != 0) {
                         if (!zero || usePrefixForZero) {
                             switch (fchar) {
@@ -740,8 +739,8 @@ public class Sprintf {
                             case 'b': prefix = PREFIX_BINARY_LC; break;
                             case 'B': prefix = PREFIX_BINARY_UC; break;
                             }
+                            if (prefix != null) width -= prefix.length;
                         }
-                        if (prefix != null) width -= prefix.length;
                     }
                     int len = 0;
                     if (sign) {
@@ -764,7 +763,7 @@ public class Sprintf {
                         } else {
                             if ((flags & (FLAG_PRECISION | FLAG_ZERO)) == 0) len += 2; // ..
 
-                            first = skipSignBits(bytes,base);
+                            first = skipSignBits(bytes, base);
                             switch(fchar) {
                             case 'b':
                             case 'B':
@@ -1675,83 +1674,67 @@ public class Sprintf {
         return nDigits;
     }
 
-    private static byte[] getFixnumBytes(RubyFixnum arg, int base, boolean sign, boolean upper) {
-        long val = arg.getLongValue();
-
+    private static byte[] getFixnumBytes(final long val, int base, boolean sign, boolean upper) {
         // limit the length of negatives if possible (also faster)
         if (val >= Integer.MIN_VALUE && val <= Integer.MAX_VALUE) {
             if (sign) {
-                return ConvertBytes.intToByteArray((int)val,base,upper);
-            } else {
-                switch(base) {
-                case 2:  return ConvertBytes.intToBinaryBytes((int)val);
-                case 8:  return ConvertBytes.intToOctalBytes((int)val);
+                return ConvertBytes.intToByteArray((int) val, base, upper);
+            }
+            switch (base) {
+                case 2:  return ConvertBytes.intToBinaryBytes((int) val);
+                case 8:  return ConvertBytes.intToOctalBytes((int) val);
                 case 10:
-                default: return ConvertBytes.intToCharBytes((int)val);
-                case 16: return ConvertBytes.intToHexBytes((int)val,upper);
-                }
+                default: return ConvertBytes.intToCharBytes((int) val);
+                case 16: return ConvertBytes.intToHexBytes((int) val, upper);
             }
         } else {
             if (sign) {
                 return ConvertBytes.longToByteArray(val,base,upper);
-            } else {
-                switch(base) {
+            }
+            switch (base) {
                 case 2:  return ConvertBytes.longToBinaryBytes(val);
                 case 8:  return ConvertBytes.longToOctalBytes(val);
                 case 10:
                 default: return ConvertBytes.longToCharBytes(val);
-                case 16: return ConvertBytes.longToHexBytes(val,upper);
-                }
+                case 16: return ConvertBytes.longToHexBytes(val, upper);
             }
         }
     }
 
-    private static byte[] getBignumBytes(RubyBignum arg, int base, boolean sign, boolean upper) {
-        BigInteger val = arg.getValue();
+    private static byte[] getBignumBytes(final BigInteger val, int base, boolean sign, boolean upper) {
         if (sign || base == 10 || val.signum() >= 0) {
             return stringToBytes(val.toString(base),upper);
         }
-
         // negative values
-        byte[] bytes = val.toByteArray();
-        switch(base) {
-        case 2:  return ConvertBytes.twosComplementToBinaryBytes(bytes);
-        case 8:  return ConvertBytes.twosComplementToOctalBytes(bytes);
-        case 16: return ConvertBytes.twosComplementToHexBytes(bytes,upper);
-        default: return stringToBytes(val.toString(base),upper);
+        switch (base) {
+            case 2:  return ConvertBytes.twosComplementToBinaryBytes(val.toByteArray());
+            case 8:  return ConvertBytes.twosComplementToOctalBytes(val.toByteArray());
+            case 16: return ConvertBytes.twosComplementToHexBytes(val.toByteArray(), upper);
+            default: return stringToBytes(val.toString(base), upper);
         }
     }
 
-    private static byte[] getUnsignedNegativeBytes(RubyInteger arg) {
+    private static byte[] getUnsignedNegativeBytes(final long val) {
         // calculation for negatives when %u specified
         // for values >= Integer.MIN_VALUE * 2, MRI uses (the equivalent of)
         //   long neg_u = (((long)Integer.MAX_VALUE + 1) << 1) + val
         // for smaller values, BigInteger math is required to conform to MRI's
         // result.
-        long longval;
-        BigInteger bigval;
-
-        if (arg instanceof RubyFixnum) {
-            // relatively cheap test for 32-bit values
-            longval = ((RubyFixnum)arg).getLongValue();
-            if (longval >= Long.MIN_VALUE << 1) {
-                return ConvertBytes.longToCharBytes(((Long.MAX_VALUE + 1L) << 1) + longval);
-            }
-            // no such luck...
-            bigval = BigInteger.valueOf(longval);
-        } else {
-            bigval = ((RubyBignum)arg).getValue();
+        // relatively cheap test for 32-bit values
+        if (val >= Long.MIN_VALUE << 1) {
+            return ConvertBytes.longToCharBytes(((Long.MAX_VALUE + 1L) << 1) + val);
         }
-        // ok, now it gets expensive...
+        return getUnsignedNegativeBytes(BigInteger.valueOf(val));
+    }
+
+    private static byte[] getUnsignedNegativeBytes(final BigInteger val) {
         int shift = 0;
         // go through negated powers of 32 until we find one small enough
-        for (BigInteger minus = BIG_MINUS_64 ;
-                bigval.compareTo(minus) < 0 ;
-                minus = minus.shiftLeft(32), shift++) {}
+        for (BigInteger minus = BIG_MINUS_64; val.compareTo(minus) < 0 ; minus = minus.shiftLeft(32), shift++) {}
         // add to the corresponding positive power of 32 for the result.
         // meaningful? no. conformant? yes. I just write the code...
         BigInteger nPower32 = shift > 0 ? BIG_64.shiftLeft(32 * shift) : BIG_64;
-        return stringToBytes(nPower32.add(bigval).toString());
+        return stringToBytes(nPower32.add(val).toString());
     }
 
     private static byte[] stringToBytes(CharSequence s, boolean upper) {
