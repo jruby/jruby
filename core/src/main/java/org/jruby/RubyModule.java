@@ -2803,18 +2803,16 @@ public class RubyModule extends RubyObject {
     }
 
     protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
-        for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
-            String id = entry.getKey();
-            if (seen.add(id)) { // false - not added (already seen)
+        getMethods().forEach((id, method) -> {
+            if (method instanceof RefinedMarker) return;
 
-                DynamicMethod method = entry.getValue();
+            if (seen.add(id)) { // false - not added (already seen)
                 if ((!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility))
-                        && !method.isUndefined()
-                        && !(method instanceof RefinedMarker)) {
+                        && !method.isUndefined()) {
                     ary.append(runtime.newSymbol(id));
                 }
             }
-        }
+        });
     }
 
     public RubyArray instance_methods(IRubyObject[] args) {
