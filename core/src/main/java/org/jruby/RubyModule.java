@@ -770,6 +770,8 @@ public class RubyModule extends RubyObject {
     }
 
     private void yieldRefineBlock(ThreadContext context, RubyModule refinement, Block block) {
+        block = block.cloneBlockAndFrame();
+
         block.setEvalType(EvalType.MODULE_EVAL);
         block.getBinding().setSelf(refinement);
 
