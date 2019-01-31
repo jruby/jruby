@@ -943,7 +943,10 @@ public class Sprintf {
                 case 'E':
                 case 'e':
                 case 'G':
-                case 'g': {
+                case 'g':
+                //case 'a':
+                //case 'A':
+                float_value: {
                     arg = args.getArg();
 
                     double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
@@ -1457,12 +1460,12 @@ public class Sprintf {
 
                         if (width > 0) buf.fill(' ', width);
                         break;
-                    } // switch (format char E,e,f,G,g)
+                    } // switch (format char E,e,f,G,g,a,A)
 
                     offset++;
                     incomplete = false;
                     break;
-                } // block (case E,e,f,G,g)
+                } // block (case E,e,f,G,g,a,A)
                 } // switch (each format char in spec)
             } // for (each format spec)
 
@@ -1480,7 +1483,7 @@ public class Sprintf {
 
         // MRI behavior: validate only the unnumbered arguments
         if (args.positionIndex >= 0 && args.nextIndex < args.length) {
-            if (args.runtime.getDebug().isTrue()) {
+            if (args.runtime.isDebug()) {
                 args.raiseArgumentError("too many arguments for format string");
             } else if (args.runtime.isVerbose()) {
                 args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
