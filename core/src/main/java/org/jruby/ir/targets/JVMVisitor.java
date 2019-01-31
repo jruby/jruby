@@ -1742,33 +1742,36 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) {
-        visit(putclassvariableinstr.getValue());
-        visit(putclassvariableinstr.getTarget());
 
         // don't understand this logic; duplicated from interpreter
         if (putclassvariableinstr.getValue() instanceof CurrentScope) {
+            visit(putclassvariableinstr.getTarget());
+            visit(putclassvariableinstr.getValue());
             jvmAdapter().pop2();
             return;
         }
 
         // hmm.
+        jvmMethod().loadContext();
+        jvmMethod().loadSelf();
+        visit(putclassvariableinstr.getTarget());
         jvmAdapter().checkcast(p(RubyModule.class));
-        jvmAdapter().swap();
+        visit(putclassvariableinstr.getValue());
         jvmAdapter().ldc(putclassvariableinstr.getId());
-        jvmAdapter().swap();
-        jvmAdapter().invokevirtual(p(RubyModule.class), "setClassVar", sig(IRubyObject.class, String.class, IRubyObject.class));
+        jvmMethod().invokeIRHelper("putClassVariable", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
         jvmAdapter().pop();
     }
 
     @Override
     public void PutConstInstr(PutConstInstr putconstinstr) {
         IRBytecodeAdapter m = jvmMethod();
+        m.loadContext();
+        m.loadSelf();
         visit(putconstinstr.getTarget());
         m.adapter.checkcast(p(RubyModule.class));
         m.adapter.ldc(putconstinstr.getId());
         visit(putconstinstr.getValue());
-        m.adapter.invokevirtual(p(RubyModule.class), "setConstant", sig(IRubyObject.class, String.class, IRubyObject.class));
-        m.adapter.pop();
+        m.invokeIRHelper("putConst", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
     }
 
     @Override

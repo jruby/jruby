@@ -505,7 +505,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod oldMethod = methodLocation.getMethodsForWrite().put(id, method);
 
         if (oldMethod != null && oldMethod.isRefined()) {
-            method = new RefinedWrapper(oldMethod.getImplementationClass(), method.getVisibility(), id, method);
+            methodLocation.getMethodsForWrite().put(id, new RefinedWrapper(method.getImplementationClass(), method.getVisibility(), id, method));
         }
 
         runtime.addProfiledMethod(id, method);
