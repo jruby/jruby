@@ -1,6 +1,6 @@
 exclude :test_call_refined_method_in_duplicate_module, "needs investigation"
-exclude :test_include_into_refinement, "needs investigation"
-exclude :test_prepend_into_refinement, "needs investigation"
+exclude :test_include_into_refinement, "zsuper in module issue #5585"
+exclude :test_prepend_into_refinement, "zsuper in module issue #5585"
 exclude :test_send_should_use_refinements, "needs investigation"
 exclude :test_super_to_module, "needs investigation"
 exclude :test_symbol_proc, "needs investigation"

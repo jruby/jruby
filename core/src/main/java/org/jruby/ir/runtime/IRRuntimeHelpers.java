@@ -1177,7 +1177,16 @@ public class IRRuntimeHelpers {
         String methodName = context.getCurrentFrame().getName();
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+
         RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
+
+        // FIXME: this happens when a module method is executed with a frame klazz that does not actually include the
+        //        module, as in refine(A) { include B } where B has methods that should super to A. This case fails
+        //        some other tests as well, so it is not specific to refinements.
+        if (implMod == null) {
+            throw context.runtime.newTypeError("BUG: could not find superclass method due to truncated class hierarchy (jruby/jruby#5585)");
+        }
+
         RubyClass superClass = implMod.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
