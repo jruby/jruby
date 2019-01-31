@@ -1231,10 +1231,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "%", required = 1)
     public RubyString op_format(ThreadContext context, IRubyObject arg) {
-        return opFormatCommon(context, arg);
-    }
-
-    private RubyString opFormatCommon(ThreadContext context, IRubyObject arg) {
         IRubyObject tmp;
         if (arg instanceof RubyHash) {
             tmp = arg;
