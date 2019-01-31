@@ -604,51 +604,47 @@ public class Sprintf {
                     break;
                 }
                 case 'p':
-                case 's': {
+                case 's': { // format_s:
                     arg = args.getArg();
 
                     if (fchar == 'p') {
                         arg = arg.callMethod(runtime.getCurrentContext(), "inspect");
                     }
-                    RubyString strArg = arg.asString();
-                    ByteList bytes = strArg.getByteList();
-                    Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
-                    int len = bytes.length();
-                    int strLen = strArg.strLength();
-
+                    RubyString str = arg.asString();
                     if (arg.isTaint()) tainted = true;
-
-                    if ((flags & FLAG_PRECISION) != 0 && precision < len) {
-                        // TODO: precision is not considering actual character length
-                        // See below as well.
-                        len = precision;
-                        strLen = precision;
-                    }
-                    // TODO: adjust length so it won't fall in the middle
-                    // of a multi-byte character. MRI's sprintf.c uses tables
-                    // in a modified version of regex.c, which assume some
-                    // particular  encoding for a given installation/application.
-                    // (See regex.c#re_mbcinit in ruby-1.8.5-p12)
-                    //
-                    // This is only an issue if the user specifies a precision
-                    // that causes the string to be truncated. The same issue
-                    // would arise taking a substring of a ByteList-backed RubyString.
-
-                    if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
-                        width -= strLen;
-                        if ((flags & FLAG_MINUS) != 0) {
-                            buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
-                            buf.fill(' ', width);
-                        } else {
-                            buf.fill(' ', width);
-                            buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                    ByteList bytes = str.getByteList();
+                    int len = bytes.length();
+                    Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
+                    if ((flags & (FLAG_PRECISION|FLAG_WIDTH)) != 0) {
+                        int strLen = str.strLength();
+                        if ((flags & FLAG_PRECISION) != 0 && precision < strLen) {
+                            strLen = precision;
+                            len = StringSupport.nth(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.getRealSize(), precision);
+                            if (len == -1) len = 0; // we might return -1 but MRI's rb_enc_nth does 0 for not-found
                         }
-                    } else {
-                        buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                        /* need to adjust multi-byte string pos */
+                        if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
+                            width -= strLen;
+                            if ((flags & FLAG_MINUS) == 0) {
+                                buf.fill(' ', width);
+                                width = 0;
+                            }
+                            buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                            if ((flags & FLAG_MINUS) != 0) {
+                                buf.fill(' ', width);
+                            }
+                            buf.setEncoding(enc);
+
+                            offset++;
+                            incomplete = false;
+                            break;
+                        }
                     }
+                    buf.append(bytes.getUnsafeBytes(), bytes.begin(), len);
+                    buf.setEncoding(enc);
+
                     offset++;
                     incomplete = false;
-                    buf.setEncoding(enc);
                     break;
                 }
                 case 'd':

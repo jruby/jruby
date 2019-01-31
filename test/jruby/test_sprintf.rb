@@ -1,3 +1,4 @@
+# coding: UTF-8
 require 'test/unit'
 
 # Test that core class methods are correctly raising errors for incorrect call
@@ -35,6 +36,18 @@ class TestFormat < Test::Unit::TestCase
 
     assert_equal("28.554", "%.3f" % 28.5535)
     assert_equal("97.7X", "%.1fX" % 97.65625)
+  end
+
+  def test_string
+    assert_equal("š0", sprintf("%s", "š0"))
+    assert_equal("", sprintf("%.0s", "foš"))
+    assert_equal("š", sprintf("%.2s", "š"))
+    assert_equal("0", sprintf("%.2s", "0"))
+
+    assert_equal("fo", sprintf("%.2s", "foooo!"))
+
+    assert_equal("解0", sprintf("%.2s", "解0析"))
+    assert_equal("解Šu", sprintf("%.3s", "解Šuš"))
   end
 end
 
