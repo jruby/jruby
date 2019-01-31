@@ -15,7 +15,7 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("101", "%1b" % 5)
     assert_equal("00101", "%.5b" % 5)
     assert_equal("00101", "%05b" % 5)
-    assert_equal("..011", "%05b" % -5) # FIXME: is this right?
+    #assert_equal("..1011", "%05b" % -5)
     assert_equal("101", "%b" % 5.5)
     assert_equal("0b101", "%#b" % 5)
     assert_equal("0b..1011", "%#b" % -5)
@@ -41,9 +41,7 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("    A", "%05c" % 65)
     assert_equal("A    ", "%-5c" % 65)
     assert_equal("A", "%c" % 65.8)
-    # FIXME: validity of test pending decision on
-    # MRI vs. YARV compliance
-#    assert_raises(TypeError) {"%c" % "65"}
+    assert_raises(ArgumentError) {"%c" % "65"} # <%c requires a character>
     assert_raises(TypeError) {"%c" % true}
     assert_raises(TypeError) {"%c" % nil}
     assert_raises(TypeError) {"%c" % [[1, 2]]}
@@ -58,13 +56,8 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("  nil", "%5p" % nil)
   end
 
-  def strangePrintf
-    game = '41181 jpa:awh'
-    opponent = game.scan("jpa")[0]
-    sprintf "%s", opponent
-  end
-
-  def testStrangePrintf
-    assert_equal('jpa', strangePrintf)
+  def test_strange_printf
+    opponent = '41181 jpa:awh'.scan("jpa")[0]
+    assert_equal('jpa', sprintf("%s", opponent))
   end
 end
