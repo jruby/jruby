@@ -16,6 +16,7 @@ class TestStringPrintf < Test::Unit::TestCase
     assert_equal("00101", "%.5b" % 5)
     assert_equal("00101", "%05b" % 5)
     #assert_equal("..1011", "%05b" % -5)
+    assert_equal("..1011", "%5b" % -5)
     assert_equal("101", "%b" % 5.5)
     assert_equal("0b101", "%#b" % 5)
     assert_equal("0b..1011", "%#b" % -5)
