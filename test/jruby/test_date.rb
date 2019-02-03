@@ -633,8 +633,8 @@ class TestDate < Test::Unit::TestCase
     assert_equal(3, time2.year)
     assert_equal(31, time2.day)
     assert_equal(0, time2.utc_offset)
-    assert_equal(time.zone, time2.zone) if defined? JRUBY_VERSION
-    # MRI: bug? <"UTC"> expected but was <nil>
+    assert_equal(false, time2.utc?)
+    assert_equal(nil, time2.zone)
   end
 
   def test_to_date

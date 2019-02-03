@@ -115,6 +115,22 @@ class TestTime < Test::Unit::TestCase
     @@tz.nil? ? ENV.delete('TZ') : ENV['TZ'] = @@tz
   end
 
+  def test_preserve_relative_tz
+    time =  Time.new(2000, 1, 1, 0, 0, 0, 0)
+    assert_false time.utc?
+    assert_false time.clone.utc?
+    assert_false time.succ.utc?
+    assert_false time.succ.utc?
+    assert_false (time + 1).utc?
+    assert_false (time - 1).utc?
+  end
+
+  def test_relative_tz_to_non_relative
+    time =  Time.new(2000, 1, 1, 0, 0, 0, 0)
+    assert_false time.utc?
+    assert_true time.clone.utc.utc?
+  end
+
   def time_change(time, options) # from ActiveSupport
     new_year  = options.fetch(:year, time.year)
     new_month = options.fetch(:month, time.month)
