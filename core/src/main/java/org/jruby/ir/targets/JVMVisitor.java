@@ -1751,15 +1751,13 @@ public class JVMVisitor extends IRVisitor {
             return;
         }
 
-        // hmm.
         jvmMethod().loadContext();
         jvmMethod().loadSelf();
         visit(putclassvariableinstr.getTarget());
         jvmAdapter().checkcast(p(RubyModule.class));
-        visit(putclassvariableinstr.getValue());
         jvmAdapter().ldc(putclassvariableinstr.getId());
+        visit(putclassvariableinstr.getValue());
         jvmMethod().invokeIRHelper("putClassVariable", sig(void.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-        jvmAdapter().pop();
     }
 
     @Override
