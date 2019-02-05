@@ -10,7 +10,8 @@
 # For documentation, see class Pathname.
 #
 
-require 'pathname.so'
+# Load built-in pathname library
+org.jruby.ext.pathname.PathnameLibrary.new.load(JRuby.runtime, false)
 
 class Pathname
 

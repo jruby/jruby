@@ -55,7 +55,7 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public void load(Ruby runtime, boolean wrap) {
         RubyModule JRuby = runtime.getOrCreateModule("JRuby");
         RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
@@ -252,12 +252,12 @@ public class JRubyUtilLibrary implements Library {
      * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
      */
     @JRubyMethod(module = true)
+    @Deprecated
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
-        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
 
-        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+        runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
 
-        return runtime.newArrayNoCopy(names);
+        return runtime.newEmptyArray();
     }
 }

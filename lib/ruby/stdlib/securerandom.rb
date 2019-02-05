@@ -1,7 +1,8 @@
 # -*- coding: us-ascii -*-
 # frozen_string_literal: true
 
-require 'securerandom.jar'
+# Load built-in securerandom library
+org.jruby.ext.securerandom.SecureRandomLibrary.new.load(JRuby.runtime, false)
 
 # == Secure random number generator interface.
 #

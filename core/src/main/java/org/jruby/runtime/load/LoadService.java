@@ -60,7 +60,6 @@ import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyKernel;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.JumpException;
@@ -68,7 +67,6 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -186,7 +184,6 @@ public class LoadService {
     protected StringArraySet loadedFeatures;
     protected RubyArray loadedFeaturesDup;
     private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
-    protected final Map<String, Library> builtinLibraries = new HashMap<>(36);
 
     protected final Map<String, JarFile> jarFiles = new HashMap<>();
 
@@ -284,9 +281,8 @@ public class LoadService {
     }
 
     // MRI: rb_provide, roughly
-    public void provide(String library) {
-        addBuiltinLibrary(library, Library.DUMMY);
-        addLoadedFeature(library, library);
+    public void provide(String shortName, String fullName) {
+        addLoadedFeature(shortName, fullName);
     }
 
     protected boolean isFeatureInIndex(String shortName) {
@@ -625,21 +621,6 @@ public class LoadService {
 
     public IRubyObject getLoadedFeatures() {
         return loadedFeatures;
-    }
-
-    public void addBuiltinLibrary(String name, Library library) {
-        builtinLibraries.put(name, library);
-    }
-
-    public void removeBuiltinLibrary(String name) {
-        builtinLibraries.remove(name);
-    }
-
-    /**
-     * Get a list of all libraries JRuby considers "built-in".
-     */
-    public List<String> getBuiltinLibraries() {
-        return builtinLibraries.keySet().stream().collect(Collectors.toList());
     }
 
     public void removeInternalLoadedFeature(String name) {
@@ -1656,4 +1637,22 @@ public class LoadService {
     protected String getFileName(JRubyFile file, String namePlusSuffix) {
         return file.getAbsolutePath();
     }
+
+    @Deprecated
+    public void addBuiltinLibrary(String name, Library library) {
+        builtinLibraries.put(name, library);
+    }
+
+    @Deprecated
+    public void removeBuiltinLibrary(String name) {
+        builtinLibraries.remove(name);
+    }
+
+    @Deprecated
+    public List<String> getBuiltinLibraries() {
+        return builtinLibraries.keySet().stream().collect(Collectors.toList());
+    }
+
+    @Deprecated
+    protected final Map<String, Library> builtinLibraries = new HashMap<>(36);
 }

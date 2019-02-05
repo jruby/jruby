@@ -134,7 +134,6 @@ public class SelectorPool {
     }
 
     private synchronized void returnToPool(Selector selector) {
-        openSelectors.remove(selector);
         if (selector.isOpen()) {
             SelectorProvider provider = selector.provider();
             List<Selector> providerPool = pool.get(provider);

@@ -10,7 +10,8 @@
 #
 
 if RUBY_ENGINE == 'jruby'
-  require 'ripper.jar'
+  # Load built-in ripper library
+  org.jruby.ext.ripper.RipperLibrary.new.load(JRuby.runtime, false)
 else
   require 'ripper.so'
 end

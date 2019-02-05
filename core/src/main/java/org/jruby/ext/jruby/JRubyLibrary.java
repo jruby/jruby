@@ -62,8 +62,6 @@ import java.io.ByteArrayInputStream;
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
-        runtime.getLoadService().require("java");
-
         // load Ruby parts of the 'jruby' library
         runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
 

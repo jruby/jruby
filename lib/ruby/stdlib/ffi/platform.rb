@@ -1,4 +1,5 @@
-require 'ffi-internal.so'
+# Load built-in ffi-internal library
+org.jruby.ext.ffi.FFIService.new.load(JRuby.runtime, false)
 
 module FFI
   module Platform

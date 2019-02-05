@@ -162,7 +162,9 @@
 # DateTime instance will use the time zone offset of this
 # instance.
 
-require 'date.jar'
+# Load built-in date library
+org.jruby.ext.date.DateLibrary.new.load(JRuby.runtime, false)
+
 require 'date/format'
 
 # Class representing a date.
