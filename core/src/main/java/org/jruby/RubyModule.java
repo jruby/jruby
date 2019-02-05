@@ -1548,7 +1548,7 @@ public class RubyModule extends RubyObject {
             }
         } else if (entry.method instanceof RefinedWrapper){
             // original without refined flag
-            return new CacheEntry(((RefinedWrapper) entry.method).getWrapped(), entry.token);
+            return new CacheEntry(((RefinedWrapper) entry.method).getWrapped(), entry.sourceModule, entry.token);
         }
 
         return entry;
@@ -1569,24 +1569,18 @@ public class RubyModule extends RubyObject {
         // update with an earlier serial number, which would just flush anyway
         final int token = generation;
 
-        DynamicMethod method = searchMethodInner(id);
+        CacheEntry methodEntry = searchMethodEntryInner(id);
 
-        if (method instanceof CacheableMethod) {
-            method = ((CacheableMethod) method).getMethodForCaching();
+        if (methodEntry == null) {
+            if (cacheUndef) {
+                return addToCache(id, UndefinedMethod.getInstance(), this, token);
+            }
+            return cacheEntryFactory.newCacheEntry(id, UndefinedMethod.getInstance(), methodEntry.sourceModule, token);
+        } else if (!runtime.isBooting()) {
+            addToCache(id, methodEntry);
         }
 
-        boolean cache;
-
-        if (method == null) {
-            method = UndefinedMethod.getInstance();
-            cache = cacheUndef;
-        } else if (runtime.isBooting()) {
-            cache = false;
-        } else {
-            cache = true;
-        }
-
-        return cache ? addToCache(id, method, token) : cacheEntryFactory.newCacheEntry(id, method, token);
+        return methodEntry;
     }
 
     @Deprecated
@@ -1640,7 +1634,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected static abstract class CacheEntryFactory {
-        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, int token);
+        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token);
 
         /**
          * Test all WrapperCacheEntryFactory instances in the chain for assignability
@@ -1686,8 +1680,8 @@ public class RubyModule extends RubyObject {
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
         @Override
-        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
-            return new CacheEntry(method, token);
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token) {
+            return new CacheEntry(method, sourceModule, token);
         }
     };
 
@@ -1696,13 +1690,13 @@ public class RubyModule extends RubyObject {
             super(previous);
         }
         @Override
-        public CacheEntry newCacheEntry(String id,DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
             }
             // delegate up the chain
-            CacheEntry delegated = previous.newCacheEntry(id, method, token);
-            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, sourceModule, token);
+            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.sourceModule, delegated.token);
         }
     }
 
@@ -1720,13 +1714,13 @@ public class RubyModule extends RubyObject {
         }
 
         @Override
-        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token) {
             if (method.isUndefined()) return new CacheEntry(method, token);
 
-            CacheEntry delegated = previous.newCacheEntry(id, method, token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, sourceModule, token);
             DynamicMethod enhancedMethod = getMethodEnhancer().enhance(id, delegated.method);
 
-            return new CacheEntry(enhancedMethod, delegated.token);
+            return new CacheEntry(enhancedMethod, delegated.sourceModule, delegated.token);
         }
     }
 
@@ -1741,9 +1735,15 @@ public class RubyModule extends RubyObject {
         return cacheEntryFactory.hasCacheEntryFactory(SynchronizedCacheEntryFactory.class);
     }
 
-    protected CacheEntry addToCache(String id, DynamicMethod method, int token) {
-        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, token);
+    protected CacheEntry addToCache(String id, DynamicMethod method, RubyModule sourceModule, int token) {
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, sourceModule, token);
 
+        methodLocation.getCachedMethodsForWrite().put(id, entry);
+
+        return entry;
+    }
+
+    protected CacheEntry addToCache(String id, CacheEntry entry) {
         methodLocation.getCachedMethodsForWrite().put(id, entry);
 
         return entry;
@@ -1759,6 +1759,20 @@ public class RubyModule extends RubyObject {
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(id);
             if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
+
+    public CacheEntry searchMethodEntryInner(String id) {
+        int token = generation;
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            DynamicMethod method = module.searchMethodCommon(id);
+            if (method != null) return method.isNull() ? null : new CacheEntry(method, module, token);
         }
         return null;
     }
@@ -5065,7 +5079,7 @@ public class RubyModule extends RubyObject {
      * @return
      */
     public boolean isMethodBuiltin(String methodName) {
-        DynamicMethod method = searchMethodInner(methodName);
+        DynamicMethod method = searchMethod(methodName);
 
         return method != null && method.isBuiltin();
     }
