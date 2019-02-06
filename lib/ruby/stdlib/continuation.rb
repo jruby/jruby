@@ -2,7 +2,7 @@
 # in-scope, one-shot restore using catch/throw.
 class Continuation
   class << self
-    undef new
+    undef new if defined?(Continuation.new)
   end
 
   def initialize
