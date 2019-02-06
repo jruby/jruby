@@ -2223,13 +2223,6 @@ public final class Ruby implements Constantizable {
         this.defaultThreadGroup = defaultThreadGroup;
     }
 
-    public RubyClass getContinuation() {
-        return continuationClass;
-    }
-    void setContinuation(RubyClass continuationClass) {
-        this.continuationClass = continuationClass;
-    }
-
     public RubyClass getStructClass() {
         return structClass;
     }
@@ -5097,7 +5090,7 @@ public final class Ruby implements Constantizable {
             procClass, bindingClass, methodClass, unboundMethodClass,
             matchDataClass, regexpClass, timeClass, bignumClass, dirClass,
             fileClass, fileStatClass, ioClass, threadClass, threadGroupClass,
-            continuationClass, structClass, tmsStruct, passwdStruct,
+            structClass, tmsStruct, passwdStruct,
             groupStruct, procStatusClass, exceptionClass, runtimeError, frozenError, ioError,
             scriptError, nameError, nameErrorMessage, noMethodError, signalException,
             rangeError, dummyClass, systemExit, localJumpError, nativeException,
