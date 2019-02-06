@@ -2722,6 +2722,8 @@ public class IRBuilder {
             }
 
             callInstr = CallInstr.create(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block);
+
+            if (CommonByteLists.PROC.equals(fcallNode.getName().getBytes())) callInstr.setProcNew(true);
         }
 
         determineIfWeNeedLineNumber(fcallNode); // buildOperand for fcall was papered over by args operand building so we check once more.
