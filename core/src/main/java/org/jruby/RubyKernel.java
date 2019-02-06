@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
@@ -60,6 +59,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
+import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -1180,13 +1180,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject rbCatch19Common(ThreadContext context, IRubyObject tag, Block block) {
-        RubyContinuation rbContinuation = new RubyContinuation(context.runtime, tag);
-        try {
-            context.pushCatch(rbContinuation.getContinuation());
-            return rbContinuation.enter(context, tag, block);
-        } finally {
-            context.popCatch();
-        }
+        return new CatchThrow(tag).enter(context, tag, block);
     }
 
     public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
@@ -1213,7 +1207,7 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         runtime.getGlobalVariables().set("$!", context.nil);
 
-        RubyContinuation.Continuation continuation = context.getActiveCatch(tag);
+        CatchThrow continuation = context.getActiveCatch(tag);
 
         if (continuation != null) {
             continuation.args = arg == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { arg };

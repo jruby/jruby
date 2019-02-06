@@ -1588,9 +1588,21 @@ public final class Ruby implements Constantizable {
             RubyEnumerator.defineEnumerator(this);
         }
 
+        initContinuation();
+
         TracePoint.createTracePointClass(this);
 
         RubyWarnings.createWarningModule(this);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void initContinuation() {
+        // Bare-bones class for backward compatibility
+        if (profile.allowClass("Continuation")) {
+            // Some third-party code (racc's cparse ext, at least) uses RubyContinuation directly, so we need this.
+            // Most functionality lives in continuation.rb now.
+            RubyContinuation.createContinuation(this);
+        }
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
