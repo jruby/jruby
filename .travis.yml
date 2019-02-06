@@ -51,9 +51,9 @@ jobs:
     - env: PHASE='-Prake -Dtask=test:mri:extra'
     - env: PHASE='-Prake -Dtask=test:mri:stdlib'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-    - env: COMMAND=test/check_versions.sh
+#    - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Ptest'
-    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+#    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - name: sequel
       script: tool/sequel-travis.sh
       addons:
@@ -83,15 +83,15 @@ jobs:
     - env: PHASE='-Pdist'
     - env: PHASE='-Pjruby-jars'
     - env: PHASE='-Pmain'
-    - env: PHASE='-Pcomplete'
-    - env: PHASE='-Posgi'
+#    - env: PHASE='-Pcomplete'
+#    - env: PHASE='-Posgi'
     - env: PHASE='-Pj2ee'
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain'
       jdk: oraclejdk9
-    - env: PHASE='-Pcomplete'
-      jdk: oraclejdk9
+#    - env: PHASE='-Pcomplete'
+#      jdk: oraclejdk9
 
 script: tool/travis-script.sh
 
