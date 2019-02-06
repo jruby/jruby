@@ -92,6 +92,12 @@ jobs:
       jdk: oraclejdk9
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk9
+  allow_failures:
+    - env: COMMAND=test/check_versions.sh
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Posgi'
+    - env: PHASE='-Pcomplete'
 
 script: tool/travis-script.sh
 
