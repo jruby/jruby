@@ -2459,10 +2459,18 @@ public class Helpers {
      * @return the decoded string
      */
     public static String byteListToString(final ByteList bytes) {
-        final Charset charset = EncodingUtils.charsetForEncoding(bytes.getEncoding());
+        final Encoding encoding = bytes.getEncoding();
+
+        if (encoding == UTF8Encoding.INSTANCE || encoding == USASCIIEncoding.INSTANCE) {
+            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+        }
+
+        final Charset charset = EncodingUtils.charsetForEncoding(encoding);
+
         if ( charset != null ) {
             return new String(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), charset);
         }
+
         return bytes.toString();
     }
 
