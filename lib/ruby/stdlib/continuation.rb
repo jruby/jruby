@@ -1,5 +1,5 @@
-# Unimplemented stubs
-
+# This is a partial implementation of Continuation that only supports
+# in-scope, one-shot restore using catch/throw.
 class Continuation
   class << self
     undef new

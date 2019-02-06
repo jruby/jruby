@@ -1,7 +1,7 @@
 # frozen_string_literal: false
 
 # Load built-in digest library
-org.jruby.ext.digest.DigestLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.digest.DigestLibrary")
 
 module Digest
   # A mutex for Digest().

@@ -163,7 +163,7 @@
 # instance.
 
 # Load built-in date library
-org.jruby.ext.date.DateLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.date.DateLibrary")
 
 require 'date/format'
 

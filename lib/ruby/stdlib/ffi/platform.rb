@@ -1,5 +1,5 @@
 # Load built-in ffi-internal library
-org.jruby.ext.ffi.FFIService.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.ffi.FFIService")
 
 module FFI
   module Platform

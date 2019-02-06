@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 # Load built-in securerandom library
-org.jruby.ext.securerandom.SecureRandomLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.securerandom.SecureRandomLibrary")
 
 # == Secure random number generator interface.
 #

@@ -11,7 +11,7 @@
 #
 
 # Load built-in pathname library
-org.jruby.ext.pathname.PathnameLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.pathname.PathnameLibrary")
 
 class Pathname
 

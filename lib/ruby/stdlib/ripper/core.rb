@@ -11,7 +11,7 @@
 
 if RUBY_ENGINE == 'jruby'
   # Load built-in ripper library
-  org.jruby.ext.ripper.RipperLibrary.new.load(JRuby.runtime, false)
+  JRuby::Util.load_ext("org.jruby.ext.ripper.RipperLibrary")
 else
   require 'ripper.so'
 end

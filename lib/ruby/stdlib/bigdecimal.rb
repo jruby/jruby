@@ -1,2 +1,2 @@
 # Load built-in bigdecimal library
-org.jruby.ext.bigdecimal.BigDecimalLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.bigdecimal.BigDecimalLibrary")

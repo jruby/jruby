@@ -1,2 +1,2 @@
 # Load built-in strscan library
-org.jruby.ext.strscan.StringScannerLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.strscan.StringScannerLibrary")

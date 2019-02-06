@@ -1,2 +1,2 @@
 # Load built-in rbconfig library
-org.jruby.ext.rbconfig.RbConfigLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.rbconfig.RbConfigLibrary")

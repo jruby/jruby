@@ -7,7 +7,7 @@ require 'tmpdir'
 require 'thread' # Unused; here for compatibility
 
 # Load built-in tempfile library
-org.jruby.ext.tempfile.TempfileLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.tempfile.TempfileLibrary")
 
 class Tempfile
   include Dir::Tmpname

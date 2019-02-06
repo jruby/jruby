@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Load built-in socket library
-org.jruby.ext.socket.SocketLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.socket.SocketLibrary")
 
 require 'io/wait'
 

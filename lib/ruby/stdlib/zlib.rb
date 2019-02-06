@@ -1,5 +1,5 @@
 # Load built-in zlib library
-org.jruby.ext.zlib.ZlibLibrary.new.load(JRuby.runtime, false)
+JRuby::Util.load_ext("org.jruby.ext.zlib.ZlibLibrary")
 
 require 'stringio'
 
