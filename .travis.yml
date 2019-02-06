@@ -1,7 +1,5 @@
 language: java
 
-sudo: false
-
 dist: trusty
 
 # don't need more than one level for our builds
