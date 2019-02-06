@@ -49,6 +49,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
@@ -59,7 +60,6 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
-import org.jruby.exceptions.CatchThrowException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -1180,22 +1180,10 @@ public class RubyKernel {
     }
 
     private static IRubyObject rbCatch19Common(ThreadContext context, IRubyObject tag, Block block) {
-        CatchThrowException catchThrow = new CatchThrowException(tag);
-        context.pushCatch(catchThrow);
+        RubyContinuation rbContinuation = new RubyContinuation(context.runtime, tag);
         try {
-            return block.yield(context, tag);
-        } catch (CatchThrowException c) {
-            if (c == catchThrow) {
-                if (catchThrow.args.length == 0) {
-                    return context.nil;
-                } else if (catchThrow.args.length == 1) {
-                    return catchThrow.args[0];
-                } else {
-                    return RubyArray.newArrayMayCopy(context.runtime, catchThrow.args);
-                }
-            } else {
-                throw c;
-            }
+            context.pushCatch(rbContinuation.getContinuation());
+            return rbContinuation.enter(context, tag, block);
         } finally {
             context.popCatch();
         }
@@ -1225,11 +1213,11 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         runtime.getGlobalVariables().set("$!", context.nil);
 
-        CatchThrowException catchThrow = context.getActiveCatch(tag);
+        RubyContinuation.Continuation continuation = context.getActiveCatch(tag);
 
-        if (catchThrow != null) {
-            catchThrow.args = arg == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { arg };
-            throw catchThrow;
+        if (continuation != null) {
+            continuation.args = arg == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { arg };
+            throw continuation;
         }
 
         // No catch active for this throw

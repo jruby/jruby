@@ -56,12 +56,12 @@ import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyContinuation;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
-import org.jruby.exceptions.CatchThrowException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -899,7 +899,7 @@ public class LoadService {
         catch (JumpException ex) {
             throw ex;
         }
-        catch (CatchThrowException ex) {
+        catch (RubyContinuation.Continuation ex) {
             throw ex;
         }
         catch (Throwable ex) {

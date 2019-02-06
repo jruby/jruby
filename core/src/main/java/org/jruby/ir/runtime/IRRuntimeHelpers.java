@@ -354,7 +354,7 @@ public class IRRuntimeHelpers {
 
     public static Object unwrapRubyException(Object excObj) {
         // Unrescuable:
-        //   IRBreakJump, IRReturnJump, ThreadKill, Continuation, MainExitException, etc.
+        //   IRBreakJump, IRReturnJump, ThreadKill, RubyContinuation, MainExitException, etc.
         //   These cannot be rescued -- only run ensure blocks
         if (excObj instanceof Unrescuable) {
             Helpers.throwException((Throwable)excObj);

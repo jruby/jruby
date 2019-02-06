@@ -42,10 +42,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.exceptions.CatchThrowException;
+import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
@@ -69,6 +70,7 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Locale;
@@ -121,8 +123,8 @@ public final class ThreadContext {
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
 
-    private static final CatchThrowException[] EMPTY_CATCHTARGET_STACK = new CatchThrowException[0];
-    private CatchThrowException[] catchStack = EMPTY_CATCHTARGET_STACK;
+    private static final Continuation[] EMPTY_CATCHTARGET_STACK = new Continuation[0];
+    private Continuation[] catchStack = EMPTY_CATCHTARGET_STACK;
     private int catchIndex = -1;
 
     private boolean isProfiling = false;
@@ -388,13 +390,13 @@ public final class ThreadContext {
     private void expandCatchStack() {
         int newSize = catchStack.length * 2;
         if (newSize == 0) newSize = 1;
-        CatchThrowException[] newCatchStack = new CatchThrowException[newSize];
+        Continuation[] newCatchStack = new Continuation[newSize];
 
         System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
         catchStack = newCatchStack;
     }
 
-    public void pushCatch(CatchThrowException catchTarget) {
+    public void pushCatch(Continuation catchTarget) {
         int index = ++catchIndex;
         if (index == catchStack.length) {
             expandCatchStack();
@@ -407,15 +409,15 @@ public final class ThreadContext {
     }
 
     /**
-     * Find the active CatchThrowException for the given tag. Must be called with an
+     * Find the active Continuation for the given tag. Must be called with an
      * interned string.
      *
      * @param tag The interned string to search for
      * @return The continuation associated with this tag
      */
-    public CatchThrowException getActiveCatch(Object tag) {
+    public Continuation getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
-            CatchThrowException c = catchStack[i];
+            Continuation c = catchStack[i];
             if (c.tag == tag) return c;
         }
 
