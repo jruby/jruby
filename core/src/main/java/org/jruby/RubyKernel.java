@@ -1387,12 +1387,8 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE, reads = BLOCK)
+    @JRubyMethod(name = "proc", module = true, visibility = PRIVATE)
     public static RubyProc proc(ThreadContext context, IRubyObject recv, Block block) {
-        if (!block.isGiven()) { // No passed in block, lets check next outer frame for one.
-            block = context.getCurrentFrame().getBlock();
-        }
-
         return context.runtime.newProc(Block.Type.PROC, block);
     }
 

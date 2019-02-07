@@ -24,7 +24,6 @@ public class CommonByteLists {
     public static final ByteList NEW_METHOD = NEW;
     public static final ByteList NOT_IMPLEMENTED_ERROR = new ByteList(new byte[] {'N', 'o', 't', 'I', 'm', 'p', 'l', 'e', 'm', 'e', 'n', 't', 'e', 'd', 'E', 'r', 'r', 'o', 'r'});
     public static final ByteList OR_OR = new ByteList(new byte[] {'|', '|'});
-    public static final ByteList PROC = new ByteList(new byte[] {'p', 'r', 'o', 'c'});
     public static final ByteList SINGLE_QUOTE = new ByteList(new byte[] {'\''});
     public static final ByteList STAR = new ByteList(new byte[] {'*'});
     public static final ByteList USING_METHOD = new ByteList(new byte[] {'u', 's', 'i', 'n', 'g'});
