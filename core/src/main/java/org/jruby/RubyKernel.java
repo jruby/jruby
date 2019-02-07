@@ -1913,7 +1913,7 @@ public class RubyKernel {
     @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
-        final String __FILE__ = context.gatherCallerBacktrace()[1].getFileName();
+        final String __FILE__ = context.getSingleBacktrace().getFileName();
         RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(context.runtime, __FILE__), null, false, true);
         return RubyString.newString(context.runtime, RubyFile.dirname(context, path.asJavaString()));
     }

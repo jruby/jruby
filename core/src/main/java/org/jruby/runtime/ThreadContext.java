@@ -827,22 +827,20 @@ public final class ThreadContext {
     }
 
     /**
-     * Create an Array with backtrace information for a built-in warning
-     * @param runtime
-     * @return an Array with the backtrace
+     * Return a single RubyStackTraceElement representing the nearest Ruby stack trace element.
+     *
+     * Used for warnings and Kernel#__dir__.
+     *
+     * @return the nearest stack trace element
      */
-    public RubyStackTraceElement[] createWarningBacktrace(Ruby runtime) {
+    public RubyStackTraceElement getSingleBacktrace() {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = gatherCallerBacktrace();
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(0, 1, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
-        return trace;
-    }
-
-    public RubyStackTraceElement[] gatherCallerBacktrace() {
-        return Gather.CALLER.getBacktraceData(this).getBacktrace(runtime);
+        return trace.length == 0 ? null : trace[0];
     }
 
     public boolean isEventHooksEnabled() {
