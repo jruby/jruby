@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * A method or operator call.
@@ -46,17 +45,14 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
     private final Node receiverNode;
     private Node argsNode;
-    protected Node iterNode;
+    private Node iterNode;
     private RubySymbol name;
     private final boolean isLazy;
 
-    public CallNode(ISourcePosition position, Node receiverNode, RubySymbol name, Node argsNode,
-                    Node iterNode, boolean isLazy) {
-        super(position, receiverNode.containsVariableAssignment() ||
+    public CallNode(int line, Node receiverNode, RubySymbol name, Node argsNode, Node iterNode, boolean isLazy) {
+        super(line, receiverNode.containsVariableAssignment() ||
                 argsNode != null && argsNode.containsVariableAssignment() ||
                 iterNode != null && iterNode.containsVariableAssignment());
-
-        assert receiverNode != null : "receiverNode is not null";
 
         this.name = name;
         this.receiverNode = receiverNode;

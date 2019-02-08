@@ -1137,7 +1137,7 @@ public class IRBuilder {
 
     private void determineIfProcNew(Node receiverNode, RubySymbol name, CallInstr callInstr) {
         // This is to support the ugly Proc.new with no block, which must see caller's frame
-        if (CommonByteLists.NEW_METHOD.equals(name.getBytes()) &&
+        if (CommonByteLists.NEW_METHOD.equal(name.getBytes()) &&
                 receiverNode instanceof ConstNode && ((ConstNode)receiverNode).getName().idString().equals("Proc")) {
             callInstr.setProcNew(true);
         }
@@ -2711,7 +2711,7 @@ public class IRBuilder {
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
-            if (CommonByteLists.DEFINE_METHOD_METHOD.equals(fcallNode.getName().getBytes()) && block instanceof WrappedIRClosure) {
+            if (CommonByteLists.DEFINE_METHOD_METHOD.equal(fcallNode.getName().getBytes()) && block instanceof WrappedIRClosure) {
                 IRClosure closure = ((WrappedIRClosure) block).getClosure();
 
                 // To convert to a method we need its variable scoping to appear like a normal method.
@@ -2752,9 +2752,9 @@ public class IRBuilder {
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
         if (!(outerScope instanceof IRMethod) && args.length == 1
                 && (
-                CommonByteLists.USING_METHOD.equals(methodName.getBytes())
+                CommonByteLists.USING_METHOD.equal(methodName.getBytes())
                         // FIXME: This sets the bit for the whole module, but really only the refine block needs it
-                        || CommonByteLists.REFINE_METHOD.equals(methodName.getBytes())
+                        || CommonByteLists.REFINE_METHOD.equal(methodName.getBytes())
         )) {
             scope.setIsMaybeUsingRefinements();
         }
@@ -3248,7 +3248,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -3259,7 +3259,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {v2}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -3276,7 +3276,7 @@ public class IRBuilder {
             addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorSymbolName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableSymbolNameAsgn(), v1, new Operand[] {setValue}, null));
+            addInstr(CallInstr.create(scope, callType, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
             if (!opAsgnNode.isLazy()) return setValue;
@@ -3337,7 +3337,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
-        addInstr(CallInstr.create(scope, result, node.getSymbolOperator(), lhs, new Operand[] { rhs }, null));
+        addInstr(CallInstr.create(scope, result, node.getOperator(), lhs, new Operand[] { rhs }, null));
         return addResultInstr(new CopyInstr(createTemporaryVariable(), putConstantAssignment(node, result)));
     }
 
@@ -3434,7 +3434,7 @@ public class IRBuilder {
         Variable elt = createTemporaryVariable();
         addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
-        RubySymbol operation = opElementAsgnNode.getOperatorSymbolName();
+        RubySymbol operation = opElementAsgnNode.getOperatorName();
         addInstr(CallInstr.create(scope, callType, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array

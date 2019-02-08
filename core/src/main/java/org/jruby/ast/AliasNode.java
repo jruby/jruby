@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** Represents an alias statement (<code>alias newName oldName</code>).
  */
@@ -43,8 +42,8 @@ public class AliasNode extends Node {
     private Node oldName;
     private Node newName;
 
-    public AliasNode(ISourcePosition position, Node newName, Node oldName) {
-        super(position, newName.containsVariableAssignment() || oldName.containsVariableAssignment());
+    public AliasNode(int line, Node newName, Node oldName) {
+        super(line, newName.containsVariableAssignment() || oldName.containsVariableAssignment());
         this.oldName = oldName;
         this.newName = newName;
     }

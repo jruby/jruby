@@ -37,16 +37,15 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a '::' constant access or method call (Java::JavaClass).
  */
 public abstract class Colon2Node extends Colon3Node implements INameNode {
-    protected final Node leftNode;
+    private final Node leftNode;
 
-    public Colon2Node(ISourcePosition position, Node leftNode, RubySymbol name) {
-        super(position, name, leftNode != null && leftNode.containsVariableAssignment);
+    public Colon2Node(int line, Node leftNode, RubySymbol name) {
+        super(line, name, leftNode != null && leftNode.containsVariableAssignment);
         this.leftNode = leftNode;
     }
 

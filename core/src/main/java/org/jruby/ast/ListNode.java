@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * All Nodes which have a list representation inherit this.  This is also used
@@ -51,18 +50,18 @@ public class ListNode extends Node implements Iterable<Node> {
     /**
      * Create a new ListNode.
      * 
-     * @param position where list is
+     * @param line where list is
      * @param firstNode first element of the list
      */
-    public ListNode(ISourcePosition position, Node firstNode) {
-        super(position, firstNode != null && firstNode.containsVariableAssignment);
+    public ListNode(int line, Node firstNode) {
+        super(line, firstNode != null && firstNode.containsVariableAssignment);
         
         list = new Node[INITIAL_SIZE];
         addInternal(firstNode);
     }
     
-    public ListNode(ISourcePosition position) {
-        super(position, false);
+    public ListNode(int line) {
+        super(line, false);
         
         list = EMPTY;
     }
@@ -71,7 +70,7 @@ public class ListNode extends Node implements Iterable<Node> {
         return NodeType.LISTNODE;
     }
 
-    protected void growList(int mustBeDelta) {
+    private void growList(int mustBeDelta) {
         int newSize = list.length * 2;
         // Fairly arbitrary to scale 1.5 here but this means we are adding a lot so I think
         // we can taper the multiplier
@@ -82,13 +81,13 @@ public class ListNode extends Node implements Iterable<Node> {
         list = newList;
     }
 
-    protected void addInternal(Node node) {
+    private void addInternal(Node node) {
         if (size >= list.length) growList(1);
 
         list[size++] = node;
     }
 
-    protected void addAllInternal(ListNode other) {
+    private void addAllInternal(ListNode other) {
         if (size + other.size() >= list.length) growList(other.size);
 
         System.arraycopy(other.list, 0, list, size, other.size);
@@ -105,8 +104,6 @@ public class ListNode extends Node implements Iterable<Node> {
 
         if (node.containsVariableAssignment()) containsVariableAssignment = true;
         addInternal(node);
-
-        if (getPosition() == null) setPosition(node.getPosition());
 
         return this;
     }
@@ -126,8 +123,6 @@ public class ListNode extends Node implements Iterable<Node> {
         if (other != null && other.size() > 0) {
             if (other.containsVariableAssignment()) containsVariableAssignment = true;
             addAllInternal(other);
-
-            if (getPosition() == null) setPosition(other.getPosition());
         }
         return this;
     }

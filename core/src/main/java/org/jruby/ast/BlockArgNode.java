@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	An explicit block argument (&amp;my_block) in parameter list.
@@ -46,14 +45,14 @@ public class BlockArgNode extends Node implements INameNode {
     private final int count;
     private RubySymbol name;
 
-    public BlockArgNode(ISourcePosition position, int count, RubySymbol name) {
-        super(position, false);
+    public BlockArgNode(int line, int count, RubySymbol name) {
+        super(line, false);
         this.count = count;
         this.name = name;
     }
 
     public BlockArgNode(ArgumentNode argNode) {
-        this(argNode.getPosition(), argNode.getIndex(), argNode.getName());
+        this(argNode.getLine(), argNode.getIndex(), argNode.getName());
     }
 
     public NodeType getNodeType() {

@@ -38,16 +38,15 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
  * method definition node.
  */
 public class DefnNode extends MethodDefNode implements INameNode {
-    public DefnNode(ISourcePosition position, RubySymbol name, ArgsNode argsNode,
+    public DefnNode(int line, RubySymbol name, ArgsNode argsNode,
                     StaticScope scope, Node bodyNode, int endLine) {
-        super(position, name, argsNode, scope, bodyNode, endLine);
+        super(line, name, argsNode, scope, bodyNode, endLine);
     }
 
     public NodeType getNodeType() {

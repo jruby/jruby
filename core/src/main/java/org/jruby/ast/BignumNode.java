@@ -37,7 +37,6 @@ import java.math.BigInteger;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a big integer literal.
@@ -45,8 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class BignumNode extends NumericNode implements SideEffectFree {
     private BigInteger value;
 
-    public BignumNode(ISourcePosition position, BigInteger value) {
-        super(position);
+    public BignumNode(int line, BigInteger value) {
+        super(line);
         this.value = value;
     }
 
@@ -60,7 +59,7 @@ public class BignumNode extends NumericNode implements SideEffectFree {
 
     @Override
     public NumericNode negate() {
-        return new BignumNode(getPosition(), value.negate());
+        return new BignumNode(getLine(), value.negate());
     }
 
     /**

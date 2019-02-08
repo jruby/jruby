@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
@@ -46,12 +45,12 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class Colon3Node extends Node implements INameNode {
     protected RubySymbol name;
 
-    public Colon3Node(ISourcePosition position, RubySymbol name) {
-        this(position, name, false);
+    public Colon3Node(int line, RubySymbol name) {
+        this(line, name, false);
     }
 
-    protected Colon3Node(ISourcePosition position, RubySymbol name, boolean containsAssignment) {
-        super(position, containsAssignment);
+    protected Colon3Node(int line, RubySymbol name, boolean containsAssignment) {
+        super(line, containsAssignment);
         this.name = name;
     }
 

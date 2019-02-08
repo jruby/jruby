@@ -36,8 +36,6 @@ import java.util.List;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
 /**
@@ -51,11 +49,10 @@ public class OpAsgnNode extends Node {
     private final RubySymbol variableNameAsgn;
     private final boolean isLazy;
 
-    public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, RubySymbol variableName,
+    public OpAsgnNode(int line, Node receiverNode, Node valueNode, RubySymbol variableName,
                       RubySymbol operatorName, boolean isLazy) {
-        super(position, receiverNode.containsVariableAssignment());
+        super(line, receiverNode.containsVariableAssignment());
 
-        assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
 
         this.receiverNode = receiverNode;
@@ -76,18 +73,6 @@ public class OpAsgnNode extends Node {
      **/
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitOpAsgnNode(this);
-    }
-
-    /**
-     * Gets the methodName.
-     * @return Returns a String
-     */
-    public String getOperatorName() {
-        return operatorName.asJavaString();
-    }
-
-    public ByteList getOperatorByteName() {
-        return operatorName.getBytes();
     }
 
     public RubySymbol getOperatorSymbolName() {
@@ -118,31 +103,11 @@ public class OpAsgnNode extends Node {
         return valueNode;
     }
 
-    /**
-     * Gets the varibaleName.
-     * @return Returns a String
-     */
-    public String getVariableName() {
-        return variableName.asJavaString();
-    }
-
-    public ByteList getVariableByteName() {
-        return variableName.getBytes();
-    }
-
-    public RubySymbol getVariableSymbolName() {
+    public RubySymbol getVariableName() {
         return variableName;
     }
-    
-    public String getVariableNameAsgn() {
-        return variableNameAsgn.asJavaString();
-    }
 
-    public ByteList getVariableByteNameAsgn() {
-        return variableNameAsgn.getBytes();
-    }
-
-    public RubySymbol getVariableSymbolNameAsgn() {
+    public RubySymbol getVariableNameAsgn() {
         return variableNameAsgn;
     }
     

@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a yield statement.
@@ -45,11 +44,11 @@ public class YieldNode extends Node {
     /**
      * Construct a new YieldNode.
      *
-     * @param position position of the node in the source
+     * @param line position of the node in the source
      * @param argsNode the arguments to the yield (null == no args)
      */
-    public YieldNode(ISourcePosition position, Node argsNode) {
-        super(position, argsNode != null && argsNode.containsVariableAssignment());
+    public YieldNode(int line, Node argsNode) {
+        super(line, argsNode != null && argsNode.containsVariableAssignment());
         
         this.argsNode = argsNode;
     }

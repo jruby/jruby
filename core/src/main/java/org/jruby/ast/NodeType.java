@@ -103,10 +103,4 @@ public enum NodeType {
             return false;
         }
     }
-
-    private final String simpleName = name().substring(0, name().length() - 4).toLowerCase();
-
-    public String simpleName() {
-        return simpleName;
-    }
 }

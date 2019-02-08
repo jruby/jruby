@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -31,7 +32,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
@@ -41,8 +41,8 @@ public class MultipleAsgnNode extends AssignableNode {
     private final Node rest;
     private final ListNode post;
 
-    public MultipleAsgnNode(ISourcePosition position, ListNode pre, Node rest, ListNode post) {
-        super(position);
+    public MultipleAsgnNode(int line, ListNode pre, Node rest, ListNode post) {
+        super(line);
         this.pre = pre;
         this.rest = rest;
         this.post = post;

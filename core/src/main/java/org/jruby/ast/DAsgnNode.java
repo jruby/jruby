@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * An assignment to a dynamic variable (e.g. block scope local variable).
@@ -50,8 +49,8 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
     // is what index in the right scope to set the value.
     private int location;
 
-    public DAsgnNode(ISourcePosition position, RubySymbol name, int location, Node valueNode) {
-        super(position, valueNode, true);
+    public DAsgnNode(int line, RubySymbol name, int location, Node valueNode) {
+        super(line, valueNode, true);
         this.name = name;
         this.location = location;
     }

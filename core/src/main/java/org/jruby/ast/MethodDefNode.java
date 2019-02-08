@@ -31,7 +31,6 @@ package org.jruby.ast;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -44,9 +43,9 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
     protected final Node bodyNode;
     protected final int endLine;
 
-    public MethodDefNode(ISourcePosition position, RubySymbol name, ArgsNode argsNode,
+    public MethodDefNode(int line, RubySymbol name, ArgsNode argsNode,
                          StaticScope scope, Node bodyNode, int endLine) {
-        super(position, bodyNode.containsVariableAssignment());
+        super(line, bodyNode.containsVariableAssignment());
 
         this.name = name;
         this.argsNode = argsNode;

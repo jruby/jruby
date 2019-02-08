@@ -37,7 +37,6 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.util.KeyValuePair;
 
 /**
@@ -48,14 +47,14 @@ public class HashNode extends Node implements ILiteralNode {
     private final List<KeyValuePair<Node,Node>> pairs;
     private boolean hasOnlySymbolKeys = true;
 
-    public HashNode(ISourcePosition position) {
-        super(position, false);
+    public HashNode(int line) {
+        super(line, false);
 
-        pairs = new ArrayList<KeyValuePair<Node,Node>>();
+        pairs = new ArrayList<>();
     }
     
-    public HashNode(ISourcePosition position, KeyValuePair<Node,Node> pair) {
-        this(position);
+    public HashNode(int line, KeyValuePair<Node,Node> pair) {
+        this(line);
 
         add(pair);
     }
@@ -101,7 +100,7 @@ public class HashNode extends Node implements ILiteralNode {
     }
 
     public List<Node> childNodes() {
-        List<Node> children = new ArrayList<Node>();
+        List<Node> children = new ArrayList<>();
 
         for (KeyValuePair<Node,Node> pair: pairs) {
             children.add(pair.getKey());

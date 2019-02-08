@@ -6,7 +6,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *
@@ -15,8 +14,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class KeywordArgNode extends Node {
     private AssignableNode assignable;
 
-    public KeywordArgNode(ISourcePosition position, AssignableNode assignable) {
-        super(position, true);
+    public KeywordArgNode(int line, AssignableNode assignable) {
+        super(line, true);
         this.assignable = assignable;
     }
 

@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents an instance variable assignment.
@@ -50,8 +49,8 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
      * @param name the name of the instance variable
      * @param valueNode the value of the variable
      **/
-    public InstAsgnNode(ISourcePosition position, RubySymbol name, Node valueNode) {
-        super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
+    public InstAsgnNode(int line, RubySymbol name, Node valueNode) {
+        super(line, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;
     }

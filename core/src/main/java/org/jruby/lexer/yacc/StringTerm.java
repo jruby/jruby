@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -76,7 +77,6 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_QWORDS) != 0) {
             flags |= STR_FUNC_TERM;
             lexer.pushback(0);
-            lexer.getPosition();
             return ' ';
         }
 
@@ -86,7 +86,7 @@ public class StringTerm extends StrTerm {
             RegexpOptions options = lexer.parseRegexpFlags();
             ByteList regexpBytelist = ByteList.create("");
             lexer.setState(EXPR_END | EXPR_ENDARG);
-            lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
+            lexer.setValue(new RegexpNode(lexer.getRubySourceline(), regexpBytelist, options));
             return RubyParser.tREGEXP_END;
         }
 
@@ -128,7 +128,6 @@ public class StringTerm extends StrTerm {
 
         if (spaceSeen) {
             lexer.pushback(c);
-            lexer.getPosition();
             return ' ';
         }
         

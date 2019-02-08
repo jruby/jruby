@@ -35,14 +35,13 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents a 'redo'
  */
 public class RedoNode extends Node implements NonLocalControlFlowNode {
-    public RedoNode(ISourcePosition position) {
-        super(position, false);
+    public RedoNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {
@@ -51,10 +50,6 @@ public class RedoNode extends Node implements NonLocalControlFlowNode {
 
     public Node getValueNode() {
         return null; // Needed for non local control flow node marker
-    }
-
-    public boolean hasValue() {
-        return false; // Redo never allows a value
     }
 
     /**

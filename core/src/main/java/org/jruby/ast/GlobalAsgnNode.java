@@ -39,7 +39,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Represents an assignment to a global variable.
@@ -47,8 +46,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class GlobalAsgnNode extends AssignableNode implements INameNode {
     private RubySymbol name;
 
-    public GlobalAsgnNode(ISourcePosition position, RubySymbol name, Node valueNode) {
-        super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
+    public GlobalAsgnNode(int line, RubySymbol name, Node valueNode) {
+        super(line, valueNode, valueNode != null && valueNode.containsVariableAssignment());
 
         this.name = name;
     }

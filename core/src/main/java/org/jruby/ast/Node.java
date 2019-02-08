@@ -41,13 +41,11 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.ISourcePositionHolder;
 
 /**
  * Base class for all Nodes in the AST
  */
-public abstract class Node implements ISourcePositionHolder, ISourcePosition {
+public abstract class Node {
     // We define an actual list to get around bug in java integration (1387115)
     static final List<Node> EMPTY_LIST = new ArrayList<>();
 
@@ -61,8 +59,8 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
     protected boolean containsVariableAssignment;
     protected boolean newline;
 
-    public Node(ISourcePosition position, boolean containsAssignment) {
-        this.line = position.getLine();
+    public Node(int line, boolean containsAssignment) {
+        this.line = line;
         this.containsVariableAssignment = containsAssignment;
     }
 
@@ -74,25 +72,14 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
         return newline;
     }
 
-    /**
-     * Location of this node within the source
-     */
-    public ISourcePosition getPosition() {
-        return this;
-    }
-
     public int getLine() {
         return line;
     }
 
-    public String getFile() {
-        return null;
+    public void setLine(int line) {
+        this.line = line;
     }
 
-    public void setPosition(ISourcePosition position) {
-        this.line = position.getLine();
-    }
-    
     public abstract <T> T accept(NodeVisitor<T> visitor);
     public abstract List<Node> childNodes();
 
@@ -149,7 +136,7 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
 
         if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
-        builder.append(" ").append(getPosition().getLine());
+        builder.append(" ").append(getLine());
 
         if (!childNodes().isEmpty() && indent) builder.append("\n");
 

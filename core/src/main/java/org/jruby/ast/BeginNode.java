@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Begin/End block.  A Begin ... End block without rescue.
@@ -43,10 +42,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class BeginNode extends Node {
     private final Node bodyNode;
 
-    public BeginNode(ISourcePosition position, Node bodyNode) {
-        super(position, bodyNode.containsVariableAssignment());
-        
-        assert bodyNode != null : "bodyNode is not null";
+    public BeginNode(int line, Node bodyNode) {
+        super(line, bodyNode.containsVariableAssignment());
         
         this.bodyNode = bodyNode;
     }

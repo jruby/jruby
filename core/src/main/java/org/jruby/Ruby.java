@@ -60,10 +60,8 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.runtime.IRReturnJump;
-import org.jruby.ir.runtime.IRWrappedLambdaReturnValue;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
@@ -722,7 +720,7 @@ public final class Ruby implements Constantizable {
 
     // Modifies incoming source for -n, -p, and -F
     private RootNode addGetsLoop(RootNode oldRoot, boolean printing, boolean processLineEndings, boolean split) {
-        ISourcePosition pos = oldRoot.getPosition();
+        int pos = oldRoot.getLine();
         BlockNode newBody = new BlockNode(pos);
         RubySymbol dollarSlash = newSymbol(CommonByteLists.DOLLAR_SLASH);
         newBody.add(new GlobalAsgnNode(pos, dollarSlash, new StrNode(pos, ((RubyString) globalVariables.get("$/")).getByteList())));

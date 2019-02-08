@@ -33,8 +33,6 @@ import java.util.List;
 
 import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.ext.coverage.CoverageData;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 
@@ -51,27 +49,20 @@ public class RootNode extends Node implements ParseResult {
     private StaticScope staticScope;
     private Node bodyNode;
     private String file;
-    private int endPosition;
     private boolean needsCodeCoverage;
 
-    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file) {
-        this(position, scope, bodyNode, file, -1, false);
+    public RootNode(int line, DynamicScope scope, Node bodyNode, String file) {
+        this(line, scope, bodyNode, file, false);
     }
 
-    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file, int endPosition, boolean needsCodeCoverage) {
-        super(position, bodyNode.containsVariableAssignment());
+    public RootNode(int line, DynamicScope scope, Node bodyNode, String file, boolean needsCodeCoverage) {
+        super(line, bodyNode.containsVariableAssignment());
         
         this.scope = scope;
         this.staticScope = scope.getStaticScope();
         this.bodyNode = bodyNode;
         this.file = file;
-        this.endPosition = endPosition;
         this.needsCodeCoverage = needsCodeCoverage;
-    }
-
-    @Deprecated
-    public RootNode(ISourcePosition position, DynamicScope scope, Node bodyNode, String file, int endPosition) {
-        this(position, scope, bodyNode, file, endPosition, false);
     }
 
     public NodeType getNodeType() {
@@ -121,14 +112,6 @@ public class RootNode extends Node implements ParseResult {
 
     public List<Node> childNodes() {
         return createList(bodyNode);
-    }
-
-    public boolean hasEndPosition() {
-        return endPosition != -1;
-    }
-
-    public int getEndPosition() {
-        return endPosition;
     }
 
     // Is coverage enabled and is this a valid source file for coverage to apply?

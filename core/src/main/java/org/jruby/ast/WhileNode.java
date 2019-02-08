@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a while statement. This could be the both versions:
@@ -52,15 +51,14 @@ public class WhileNode extends Node {
     private final Node bodyNode;
     private final boolean evaluateAtStart;
     
-    public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
-        this(position, conditionNode, bodyNode, true);
+    public WhileNode(int line, Node conditionNode, Node bodyNode) {
+        this(line, conditionNode, bodyNode, true);
     }
 
-    public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
+    public WhileNode(int line, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
-        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
+        super(line, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
-        assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";
         
         this.conditionNode = conditionNode;

@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents a float literal.
@@ -44,8 +43,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFree {
     private double value;
 
-    public FloatNode(ISourcePosition position, double value) {
-        super(position);
+    public FloatNode(int line, double value) {
+        super(line);
         this.value = value;
     }
 
@@ -59,7 +58,7 @@ public class FloatNode extends NumericNode implements ILiteralNode, SideEffectFr
 
     @Override
     public NumericNode negate() {
-        return new FloatNode(getPosition(), -value);
+        return new FloatNode(getLine(), -value);
     }
 
     /**

@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /** 
  * Represents an integer literal.
@@ -44,8 +43,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectFree {
     private long value;
 
-    public FixnumNode(ISourcePosition position, long value) {
-        super(position);
+    public FixnumNode(int line, long value) {
+        super(line);
         this.value = value;
     }
 
@@ -59,7 +58,7 @@ public class FixnumNode extends NumericNode implements ILiteralNode, SideEffectF
 
     @Override
     public NumericNode negate() {
-        return new FixnumNode(getPosition(), -value);
+        return new FixnumNode(getLine(), -value);
     }
 
     /**

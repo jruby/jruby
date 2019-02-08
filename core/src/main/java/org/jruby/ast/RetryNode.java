@@ -40,8 +40,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Represents a 'retry' statement.
  */
 public class RetryNode extends Node implements NonLocalControlFlowNode {
-    public RetryNode(ISourcePosition position) {
-        super(position, false);
+    public RetryNode(int line) {
+        super(line, false);
     }
 
     public NodeType getNodeType() {
@@ -50,10 +50,6 @@ public class RetryNode extends Node implements NonLocalControlFlowNode {
 
     public Node getValueNode() {
         return null; // Needed for non local control flow node marker
-    }
-
-    public boolean hasValue() {
-        return false; // Retry never allows a value
     }
 
     /**

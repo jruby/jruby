@@ -1083,7 +1083,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         }
 
         private static boolean isSymbolMatch(ByteList bytes, int hash, SymbolEntry entry) {
-            return hash == entry.hash && bytes.equals(entry.bytes);
+            return hash == entry.hash && bytes.equal(entry.bytes);
         }
 
         private RubySymbol createSymbol(final String name, final ByteList value, final int hash, boolean hard) {

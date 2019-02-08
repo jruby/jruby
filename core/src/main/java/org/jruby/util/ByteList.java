@@ -924,8 +924,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof ByteList) return equal((ByteList)other);
-        return false;
+        return other instanceof ByteList && equal((ByteList) other);
     }
 
     /**

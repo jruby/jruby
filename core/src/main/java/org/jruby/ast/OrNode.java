@@ -35,7 +35,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * represents '||' (or) statements
@@ -44,11 +43,8 @@ public class OrNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
     private final Node secondNode;
 
-    public OrNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
-        
-        assert firstNode != null : "firstNode is not null";
-        assert secondNode != null : "secondNode is not null";
+    public OrNode(int line, Node firstNode, Node secondNode) {
+        super(line, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
         
         this.firstNode = firstNode;
         this.secondNode = secondNode;

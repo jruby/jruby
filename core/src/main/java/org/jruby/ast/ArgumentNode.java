@@ -34,7 +34,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  * Simple Node for named entities.  Things like the name of a method will make a node
@@ -45,8 +44,8 @@ public class ArgumentNode extends Node implements INameNode {
     private RubySymbol identifier;
     private int location;
 
-    public ArgumentNode(ISourcePosition position, RubySymbol identifier, int location) {
-        super(position, false);
+    public ArgumentNode(int line, RubySymbol identifier, int location) {
+        super(line, false);
 
         this.identifier = identifier;
         this.location = location; // All variables should be depth 0 in this case

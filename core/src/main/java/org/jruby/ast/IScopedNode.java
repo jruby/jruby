@@ -7,10 +7,10 @@ public interface IScopedNode {
     /**
      * How many scopes down we should look for this variable
      */
-    public int getDepth();
+    int getDepth();
 
     /**
      * Which index (or slot) this variable is located at in the scope it is stored in.
      */
-    public int getIndex();
+    int getIndex();
 }

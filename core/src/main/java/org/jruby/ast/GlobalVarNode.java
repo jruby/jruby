@@ -37,7 +37,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.lexer.yacc.ISourcePosition;
 
 /**
  *	access to a global variable.
@@ -45,8 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 public class GlobalVarNode extends Node implements INameNode, SideEffectFree {
     private RubySymbol name;
 
-    public GlobalVarNode(ISourcePosition position, RubySymbol name) {
-        super(position, false);
+    public GlobalVarNode(int line, RubySymbol name) {
+        super(line, false);
         this.name = name;
     }
 
