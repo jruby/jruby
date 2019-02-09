@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
@@ -2203,12 +2202,15 @@ public class RubyKernel {
 
     @JRubyMethod(name = "nil?")
     public static IRubyObject nil_p(ThreadContext context, IRubyObject self) {
-        return ((RubyBasicObject)self).nil_p(context);
+        return ((RubyBasicObject) self).nil_p(context);
     }
 
     @JRubyMethod(name = "=~", required = 1, writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return ((RubyBasicObject)self).op_match19(context, arg);
+        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
+            "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
+                "; it always returns nil");
+        return ((RubyBasicObject) self).op_match(context, arg);
     }
 
     @Deprecated
@@ -2218,7 +2220,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "!~", required = 1, writes = FrameField.BACKREF)
     public static IRubyObject op_not_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return ((RubyBasicObject)self).op_not_match(context, arg);
+        return ((RubyBasicObject) self).op_not_match(context, arg);
     }
 
     @JRubyMethod(name = "instance_variable_defined?", required = 1)

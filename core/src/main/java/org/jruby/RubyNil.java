@@ -127,7 +127,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static RubyFixnum to_i(ThreadContext context, IRubyObject recv) {
-        return RubyFixnum.zero(recv.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
     
     /**
@@ -174,6 +174,12 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     static RubyString inspect(Ruby runtime) {
         return RubyString.newStringShared(runtime, runtime.getString(), nil);
+    }
+
+    @Override
+    @JRubyMethod(name = "=~", required = 1)
+    public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
+        return this; // nil
     }
 
     /** nil_and

@@ -2780,21 +2780,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.fals;
     }
 
-    /** rb_obj_pattern_match
-     *
-     *  call-seq:
-     *     obj =~ other  => false
-     *
-     *  Pattern Match---Overridden by descendents (notably
-     *  <code>Regexp</code> and <code>String</code>) to provide meaningful
-     *  pattern-match semantics.
-     */
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
-        return context.fals;
+        return context.nil;
     }
 
+    @Deprecated
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
-        return context.nil;
+        return op_match(context, arg);
     }
 
     /**
