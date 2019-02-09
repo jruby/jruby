@@ -200,7 +200,13 @@ public class RubyNil extends RubyObject implements Constantizable {
         return context.runtime.newBoolean(obj.isTrue());
     }
 
+    @Override
     @JRubyMethod(name = "nil?")
+    public IRubyObject nil_p(ThreadContext context) {
+        return context.tru;
+    }
+
+    @Deprecated
     public IRubyObject nil_p() {
         return getRuntime().getTrue();
     }
