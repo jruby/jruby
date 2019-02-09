@@ -2106,34 +2106,6 @@ public class Helpers {
         return scopeOffsets;
     }
 
-    @Deprecated // not-used
-    public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
-        IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
-        updateScopeWithCaptures(context, decodeCaptureOffsets(scopeOffsets), match);
-        return match;
-    }
-
-    public static void updateScopeWithCaptures(ThreadContext context, int[] scopeOffsets, IRubyObject result) {
-        Ruby runtime = context.runtime;
-        if (result.isNil()) { // match2 directly calls match so we know we can count on result
-            IRubyObject nil = runtime.getNil();
-
-            for (int i = 0; i < scopeOffsets.length; i++) {
-                // SSS FIXME: This is not doing the offset/depth extraction as in the else case
-                context.getCurrentScope().setValue(nil, scopeOffsets[i], 0);
-            }
-        } else {
-            RubyMatchData matchData = (RubyMatchData)context.getBackRef();
-            // FIXME: Mass assignment is possible since we know they are all locals in the same
-            //   scope that are also contiguous
-            IRubyObject[] namedValues = matchData.getNamedBackrefValues(runtime);
-
-            for (int i = 0; i < scopeOffsets.length; i++) {
-                context.getCurrentScope().setValue(namedValues[i], scopeOffsets[i] & 0xffff, scopeOffsets[i] >> 16);
-            }
-        }
-    }
-
     @Deprecated
     public static RubyArray argsPush(ThreadContext context, RubyArray first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(second);
