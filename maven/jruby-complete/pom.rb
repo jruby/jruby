@@ -10,8 +10,10 @@ project 'JRuby Complete' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
 
-  plugin_repository( :id => 'rubygems-releases',
-                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
+
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+
+  plugin_repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
