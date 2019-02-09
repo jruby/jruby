@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -81,11 +82,6 @@ public class SyntaxException extends RuntimeException {
     private int line;
     private PID pid;
 
-    @Deprecated
-    public SyntaxException(PID pid, ISourcePosition position, String lastLine, String message, Object... data) {
-        this(pid, position.getFile(), position.getLine(), lastLine, message, data);
-    }
-
     public SyntaxException(PID pid, String file, int line, String lastLine, String message, Object... data) {
         super(prepareMessage(message, lastLine));
 
@@ -102,11 +98,6 @@ public class SyntaxException extends RuntimeException {
         }
         
         return message;
-    }
-
-    @Deprecated
-    public ISourcePosition getPosition() {
-        return new SimpleSourcePosition(file, line);
     }
 
     public String getFile() {

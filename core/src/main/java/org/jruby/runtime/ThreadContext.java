@@ -46,19 +46,16 @@ import org.jruby.RubyContinuation.Continuation;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -70,7 +67,6 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Locale;
@@ -680,12 +676,6 @@ public final class ThreadContext {
         BacktraceElement b = backtrace[backtraceIndex];
         b.filename = file;
         b.line = line;
-    }
-
-    public void setFileAndLine(ISourcePosition position) {
-        BacktraceElement b = backtrace[backtraceIndex];
-        b.filename = position.getFile();
-        b.line = position.getLine();
     }
 
     public Visibility getCurrentVisibility() {

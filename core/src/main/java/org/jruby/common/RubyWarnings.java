@@ -35,7 +35,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -77,17 +76,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     @Override
     public boolean isVerbose() {
         return runtime.isVerbose();
-    }
-
-    /**
-     * Prints a warning, unless $VERBOSE is nil.
-     */
-    @Override
-    @Deprecated
-    public void warn(ID id, ISourcePosition position, String message) {
-        if (!runtime.warningsEnabled()) return;
-
-        warn(id, position.getFile(), position.getLine(), message);
     }
 
     /**
@@ -194,15 +182,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
 
         runtime.getWarnings().warning(id, file, line, message);
-    }
-
-    /**
-     * Prints a warning, only in verbose mode.
-     */
-    @Override
-    @Deprecated
-    public void warning(ID id, ISourcePosition position, String message) {
-        warning(id, position.getFile(), position.getLine(), message);
     }
 
     /**

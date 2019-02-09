@@ -38,7 +38,6 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -67,11 +66,6 @@ public class RubyProc extends RubyObject implements DataType {
         super(runtime, rubyClass);
 
         this.type = type;
-    }
-
-    @Deprecated
-    protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
-        this(runtime, rubyClass, type, sourcePosition.getFile(), sourcePosition.getLine());
     }
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, String file, int line) {
@@ -112,14 +106,6 @@ public class RubyProc extends RubyObject implements DataType {
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
-        proc.setup(block);
-
-        return proc;
-    }
-
-    @Deprecated
-    public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
-        RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
         proc.setup(block);
 
         return proc;

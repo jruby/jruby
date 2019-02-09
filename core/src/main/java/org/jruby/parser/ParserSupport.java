@@ -51,8 +51,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
@@ -1204,17 +1202,6 @@ public class ParserSupport {
 
     public int line(Node start) {
         return start != null ? start.getLine() : lexer.getRubySourceline();
-    }
-
-    // FIXME: Replace this with file/line version and stop using ISourcePosition
-    @Deprecated
-    public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warnings.warn(id, lexer.getFile(), position.getLine(), message);
-    }
-
-    // FIXME: Replace this with file/line version and stop using ISourcePosition
-    public void warning(ID id, ISourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, lexer.getFile(), position.getLine(), message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
