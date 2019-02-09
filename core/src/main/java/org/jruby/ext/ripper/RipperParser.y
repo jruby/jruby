@@ -118,8 +118,8 @@ public class RipperParser extends RipperParserBase {
 %token <IRubyObject> tRATIONAL
 %token <IRubyObject>  tREGEXP_END
 /* RIPPER-ONY TOKENS { */
-%token <IRubyObject> tIGNORED_NL, tCOMMENT, tEMBDOC_BEG, tEMBDOC, tEMBDOC_END
-%token <IRubyObject> tSP, tHEREDOC_BEG, tHEREDOC_END
+%token <IRubyObject> tIGNORED_NL tCOMMENT tEMBDOC_BEG tEMBDOC tEMBDOC_END
+%token <IRubyObject> tSP tHEREDOC_BEG tHEREDOC_END
 /* } RIPPER-ONY TOKENS */
 %type <IRubyObject> f_rest_arg 
 %type <IRubyObject> singleton strings string string1 xstring regexp
@@ -144,11 +144,11 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> lhs none args
 %type <IRubyObject> qword_list word_list
 %type <RubyArray> f_arg f_optarg
-%type <IRubyObject> f_marg_list, symbol_list
-%type <IRubyObject> qsym_list, symbols, qsymbols
-%type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
-%type <IRubyObject> f_kw, f_block_kw
-%type <RubyArray> f_block_kwarg, f_kwarg
+%type <IRubyObject> f_marg_list symbol_list
+%type <IRubyObject> qsym_list symbols qsymbols
+%type <ArgsTailHolder> opt_args_tail opt_block_args_tail block_args_tail args_tail
+%type <IRubyObject> f_kw f_block_kw
+%type <RubyArray> f_block_kwarg f_kwarg
 %type <IRubyObject> assoc_list
 %type <RubyArray> assocs
 %type <IRubyObject> assoc 
@@ -180,7 +180,7 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> call_op call_op2
 %type <IRubyObject> f_arg_asgn
 %type <IRubyObject> fcall
-%token <IRubyObject> tLABEL_END, tSTRING_DEND
+%token <IRubyObject> tLABEL_END
 
 %type <IRubyObject> do then
 %type <IRubyObject> program

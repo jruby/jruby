@@ -295,6 +295,8 @@ do
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
+     --record)
+        java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=disk=false,filename=jruby-flight-record-$$.jfr") ;;
      --ng-server)
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER

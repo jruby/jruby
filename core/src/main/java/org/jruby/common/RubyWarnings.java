@@ -127,16 +127,16 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
+        RubyStackTraceElement stack = runtime.getCurrentContext().getSingleBacktrace();
         String file;
         int line;
 
-        if (stack.length == 0) {
+        if (stack == null) {
             file = "(unknown)";
             line = 0;
         } else {
-            file = stack[0].getFileName();
-            line = stack[0].getLineNumber();
+            file = stack.getFileName();
+            line = stack.getLineNumber();
         }
 
         // 1 is subtracted here because getRubyStackTrace is 1-indexed.
@@ -181,16 +181,16 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     private static void writeWarning(Ruby runtime, ID id, String message) {
-        RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
+        RubyStackTraceElement stack = runtime.getCurrentContext().getSingleBacktrace();
         String file;
         int line;
 
-        if (stack.length == 0) {
+        if (stack == null) {
             file = "(unknown)";
             line = -1;
         } else {
-            file = stack[0].getFileName();
-            line = stack[0].getLineNumber();
+            file = stack.getFileName();
+            line = stack.getLineNumber();
         }
 
         runtime.getWarnings().warning(id, file, line, message);
@@ -228,12 +228,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
         writeWarningToError(runtime.getCurrentContext(), str);
         return context.nil;
-    }
-
-    private static RubyStackTraceElement[] getRubyStackTrace(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        RubyStackTraceElement[] stack = context.createWarningBacktrace(runtime);
-        return stack;
     }
 
     private static JavaSites.WarningSites sites(ThreadContext context) {

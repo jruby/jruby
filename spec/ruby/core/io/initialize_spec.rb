@@ -13,9 +13,9 @@ describe "IO#initialize" do
     rm_r @name
   end
 
-  # http://ci.rvm.jp/results/trunk-mjit@silicon-docker/1469621
-  # http://ci.rvm.jp/results/trunk-mjit@silicon-docker/1454818
-  without_feature :mjit do # with RubyVM::MJIT.enabled?, this randomly fails for now
+  # File descriptor numbers are not predictable in multi-threaded code;
+  # MJIT will be opening/closing files the background
+  without_feature :mjit do
     it "reassociates the IO instance with the new descriptor when passed a Fixnum" do
       fd = new_fd @name, "r:utf-8"
       @io.send :initialize, fd, 'r'
@@ -23,16 +23,16 @@ describe "IO#initialize" do
       # initialize has closed the old descriptor
       lambda { IO.for_fd(@fd).close }.should raise_error(Errno::EBADF)
     end
-  end
 
-  it "calls #to_int to coerce the object passed as an fd" do
-    obj = mock('fileno')
-    fd = new_fd @name, "r:utf-8"
-    obj.should_receive(:to_int).and_return(fd)
-    @io.send :initialize, obj, 'r'
-    @io.fileno.should == fd
-    # initialize has closed the old descriptor
-    lambda { IO.for_fd(@fd).close }.should raise_error(Errno::EBADF)
+    it "calls #to_int to coerce the object passed as an fd" do
+      obj = mock('fileno')
+      fd = new_fd @name, "r:utf-8"
+      obj.should_receive(:to_int).and_return(fd)
+      @io.send :initialize, obj, 'r'
+      @io.fileno.should == fd
+      # initialize has closed the old descriptor
+      lambda { IO.for_fd(@fd).close }.should raise_error(Errno::EBADF)
+    end
   end
 
   it "raises a TypeError when passed an IO" do

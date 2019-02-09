@@ -444,7 +444,7 @@ public class RubyDateTime extends RubyDate {
                 dt.getMillisOfSecond(), RubyTime.getTimeZone(runtime, this.off)
         );
 
-        RubyTime time = new RubyTime(runtime, runtime.getTime(), dt);
+        RubyTime time = new RubyTime(runtime, runtime.getTime(), dt, true);
         if (subMillisNum != 0) {
             RubyNumeric usec = (RubyNumeric)
                     subMillis(runtime).op_mul(context, RubyFixnum.newFixnum(runtime, 1_000_000));

@@ -90,7 +90,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     jar( 'junit:junit:4.12',
          :scope => 'test' )
 
-    plugin( 'org.apache.felix:maven-bundle-plugin:2.4.0',
+    plugin( 'org.apache.felix:maven-bundle-plugin:3.5.0',
             'instructions' => {
               'Export-Package' =>  'org.jruby.*;version=${project.version}',
               'Import-Package' =>  '!org.jruby.*, *;resolution:=optional',

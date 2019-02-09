@@ -8,18 +8,29 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.Security;
 
-import static org.jruby.RubyInstanceConfig.JAVA_VERSION;
-
 public abstract class SecurityHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(SecurityHelper.class);
     private static boolean attempted = false;
 
+    private static final boolean JAVA9;
+    static {
+        boolean versionClassFound;
+        try {
+            Class.forName("java.lang.Runtime.Version");
+            versionClassFound = true;
+        }
+        catch (Exception notFound) {
+            versionClassFound = false;
+        }
+        JAVA9 = versionClassFound;
+    }
+
     // attempt to enable unlimited-strength crypto on OracleJDK
     public static void checkCryptoRestrictions(final Ruby runtime) {
         if ( ! attempted ) {
             attempted = true;
-            if ( JAVA_VERSION >= 53 ) {
+            if ( JAVA9 ) {
                 setNonRestrictedJava9();
             }
             else {

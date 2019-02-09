@@ -538,7 +538,7 @@ describe "File.open" do
             io.read.should == "ruby"
             Dir["#{dir}/*"].should == []
           end
-        rescue Errno::EOPNOTSUPP, Errno::EINVAL
+        rescue Errno::EOPNOTSUPP, Errno::EINVAL, Errno::EISDIR
           # EOPNOTSUPP: no support from the filesystem
           # EINVAL: presumably bug in glibc
           1.should == 1
@@ -638,6 +638,33 @@ describe "File.open" do
     end
   end
 
+  ruby_version_is "2.6" do
+    context "'x' flag" do
+      before :each do
+        @xfile = tmp("x-flag")
+        rm_r @xfile
+      end
+
+      after :each do
+        rm_r @xfile
+      end
+
+      it "does nothing if the file doesn't exist" do
+        File.open(@xfile, "wx") { |f| f.write("content") }
+        File.read(@xfile).should == "content"
+      end
+
+      it "throws a Errno::EEXIST error if the file exists" do
+        touch @xfile
+        lambda { File.open(@xfile, "wx") }.should raise_error(Errno::EEXIST)
+      end
+
+      it "can't be used with 'r' and 'a' flags" do
+        lambda { File.open(@xfile, "rx") }.should raise_error(ArgumentError, 'invalid access mode rx')
+        lambda { File.open(@xfile, "ax") }.should raise_error(ArgumentError, 'invalid access mode ax')
+      end
+    end
+  end
 end
 
 describe "File.open when passed a file descriptor" do

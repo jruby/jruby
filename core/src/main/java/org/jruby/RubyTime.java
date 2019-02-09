@@ -354,6 +354,12 @@ public class RubyTime extends RubyObject {
         this.dt = dt;
     }
 
+    public RubyTime(Ruby runtime, RubyClass rubyClass, DateTime dt, boolean tzRelative) {
+        super(runtime, rubyClass);
+        this.dt = dt;
+        setIsTzRelative(tzRelative);
+    }
+
     private static final ObjectAllocator TIME_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -473,18 +479,21 @@ public class RubyTime extends RubyObject {
         // We can just use dt, since it is immutable
         dt = originalTime.dt;
         nsec = originalTime.nsec;
+        isTzRelative = originalTime.isTzRelative;
 
         return this;
     }
 
     @JRubyMethod
     public RubyTime succ() {
-        return newTime(getRuntime(), dt.plusSeconds(1));
+        RubyTime time = newTime(getRuntime(), dt.plusSeconds(1));
+        time.setIsTzRelative(isTzRelative);
+        return time;
     }
 
     @JRubyMethod(name = {"gmtime", "utc"})
     public RubyTime gmtime() {
-        return adjustTimeZone(getRuntime(), DateTimeZone.UTC);
+        return adjustTimeZone(getRuntime(), DateTimeZone.UTC, false);
     }
 
     public final RubyTime localtime() {
@@ -493,21 +502,23 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context) {
-        return adjustTimeZone(context.runtime, getLocalTimeZone(context.runtime));
+        return adjustTimeZone(context.runtime, getLocalTimeZone(context.runtime), false);
     }
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
         final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
-        return adjustTimeZone(context.runtime, zone);
+        return adjustTimeZone(context.runtime, zone, true);
     }
 
-    private RubyTime adjustTimeZone(Ruby runtime, final DateTimeZone zone) {
-        if (zone.equals(dt.getZone())) return this;
+    private RubyTime adjustTimeZone(Ruby runtime, final DateTimeZone zone, boolean isTzRelative) {
+        boolean zoneOk = zone.equals(dt.getZone());
+        if (zoneOk && isTzRelative == this.isTzRelative) return this;
         if (isFrozen()) {
             throw runtime.newFrozenError("Time", true);
         }
-        dt = dt.withZone(zone);
+        if (!zoneOk) dt = dt.withZone(zone);
+        setIsTzRelative(isTzRelative);
         return this;
     }
 
@@ -549,7 +560,9 @@ public class RubyTime extends RubyObject {
             return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
         }
         DateTimeZone dtz = getTimeZoneFromUtcOffset(context, arg);
-        return newTime(context.runtime, dt.withZone(dtz), nsec);
+        RubyTime time = newTime(context.runtime, dt.withZone(dtz), nsec);
+        time.setIsTzRelative(true);
+        return time;
     }
 
     @Deprecated
@@ -672,6 +685,7 @@ public class RubyTime extends RubyObject {
         RubyTime newTime = new RubyTime(runtime, getMetaClass());
         newTime.dt = new DateTime(newMillisPart, dt.getZone());
         newTime.setNSec(newNanosPart);
+        newTime.setIsTzRelative(isTzRelative);
 
         return newTime;
     }
@@ -717,6 +731,7 @@ public class RubyTime extends RubyObject {
         RubyTime newTime = new RubyTime(runtime, getMetaClass());
         newTime.dt = new DateTime(time, dt.getZone());
         newTime.setNSec(nano);
+        newTime.setIsTzRelative(isTzRelative);
 
         return newTime;
     }
@@ -980,7 +995,10 @@ public class RubyTime extends RubyObject {
     public IRubyObject zone() {
         if (isTzRelative) return getRuntime().getNil();
 
-        RubyString zone = getRuntime().newString(getZoneName());
+        String zoneName = getZoneName();
+        if ("".equals(zoneName)) return getRuntime().getNil();
+
+        RubyString zone = getRuntime().newString(zoneName);
         if (zone.isAsciiOnly()) zone.setEncoding(USASCIIEncoding.INSTANCE);
         return zone;
     }
@@ -1671,6 +1689,7 @@ public class RubyTime extends RubyObject {
                 } else if (args.length == 10 && sites(context).respond_to_to_int.respondsTo(context, args[9], args[9])) {
                     IRubyObject offsetInt = sites(context).to_int.call(context, args[9], args[9]);
                     dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
+                    setTzRelative = true;
                 } else {
                     dtz = getLocalTimeZone(runtime);
                 }
@@ -1743,13 +1762,26 @@ public class RubyTime extends RubyObject {
 
             // 1.9 will observe fractional seconds *if* not given usec
             if (args[5] != context.nil && args[6] == context.nil) {
-                double secs = RubyFloat.num2dbl(context, args[5]);
-                if (secs < 0 || secs >= TIME_SCALE) {
-                    throw runtime.newArgumentError("argument out of range.");
+                if (args[5] instanceof RubyRational) {
+                    RubyRational rat = (RubyRational) args[5];
+                    if (rat.isNegative()) {
+                        throw runtime.newArgumentError("argument out of range.");
+                    }
+                    RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1_000_000_000));
+                    long full_nanos = nsec.getLongValue();
+                    long millis = full_nanos / 1_000_000;
+
+                    nanos = full_nanos - millis * 1_000_000;
+                    instant = chrono.millis().add(instant, millis % 1000);
+                } else {
+                    double secs = RubyFloat.num2dbl(context, args[5]);
+                    if (secs < 0 || secs >= TIME_SCALE) {
+                        throw runtime.newArgumentError("argument out of range.");
+                    }
+                    int int_millis = (int) (secs * 1000) % 1000;
+                    instant = chrono.millis().add(instant, int_millis);
+                    nanos = ((long) (secs * 1000000000) % 1000000);
                 }
-                int int_millis = (int) (secs * 1000) % 1000;
-                instant = chrono.millis().add(instant, int_millis);
-                nanos = ((long) (secs * 1000000000) % 1000000);
             }
 
             dt = dt.withMillis(instant);
