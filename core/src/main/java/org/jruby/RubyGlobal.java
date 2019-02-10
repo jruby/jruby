@@ -189,7 +189,7 @@ public class RubyGlobal {
         }
 
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
-        IRubyObject verboseValue = null;
+        IRubyObject verboseValue;
         if (verbose == RubyInstanceConfig.Verbosity.NIL) {
             verboseValue = runtime.getNil();
         } else if(verbose == RubyInstanceConfig.Verbosity.TRUE) {
