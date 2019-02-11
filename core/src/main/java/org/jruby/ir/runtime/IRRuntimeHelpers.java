@@ -65,6 +65,7 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
@@ -527,7 +528,30 @@ public class IRRuntimeHelpers {
         } else if (value instanceof RubyProc) {
             block = ((RubyProc) value).getBlock();
         } else if (value instanceof RubyMethod) {
-            block = ((RubyProc)((RubyMethod)value).to_proc(context)).getBlock();
+            block = ((RubyProc) ((RubyMethod) value).to_proc(context)).getBlock();
+        } else if (value instanceof RubySymbol) {
+            block = ((RubyProc) ((RubySymbol) value).to_proc(context)).getBlock();
+        } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
+            block = Block.NULL_BLOCK;
+        } else if (value instanceof IRubyObject) {
+            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc", true)).getBlock();
+        } else {
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
+        }
+        return block;
+    }
+
+    @JIT
+    public static Block getRefinedBlockFromObject(ThreadContext context, StaticScope scope, Object value) {
+        Block block;
+        if (value instanceof Block) {
+            block = (Block) value;
+        } else if (value instanceof RubyProc) {
+            block = ((RubyProc) value).getBlock();
+        } else if (value instanceof RubyMethod) {
+            block = ((RubyProc) ((RubyMethod) value).to_proc(context)).getBlock();
+        } else if (value instanceof RubySymbol) {
+            block = ((RubyProc) ((RubySymbol) value).toRefinedProc(context, scope)).getBlock();
         } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
             block = Block.NULL_BLOCK;
         } else if (value instanceof IRubyObject) {
@@ -1153,7 +1177,16 @@ public class IRRuntimeHelpers {
         String methodName = context.getCurrentFrame().getName();
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+
         RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
+
+        // FIXME: this happens when a module method is executed with a frame klazz that does not actually include the
+        //        module, as in refine(A) { include B } where B has methods that should super to A. This case fails
+        //        some other tests as well, so it is not specific to refinements.
+        if (implMod == null) {
+            throw context.runtime.newTypeError("BUG: could not find superclass method due to truncated class hierarchy (jruby/jruby#5585)");
+        }
+
         RubyClass superClass = implMod.getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
@@ -1387,6 +1420,9 @@ public class IRRuntimeHelpers {
         StaticScope metaClassScope = metaClassBody.getStaticScope();
 
         metaClassScope.setModule(singletonClass);
+
+        metaClassBody.captureParentRefinements(runtime.getCurrentContext());
+
         return singletonClass;
     }
 
@@ -1412,6 +1448,9 @@ public class IRRuntimeHelpers {
 
         RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(irModule.getId());
         irModule.getStaticScope().setModule(newRubyModule);
+
+        irModule.captureParentRefinements(context);
+
         return newRubyModule;
     }
 
@@ -1452,6 +1491,9 @@ public class IRRuntimeHelpers {
         }
 
         irClassBody.getStaticScope().setModule(newRubyClass);
+
+        irClassBody.captureParentRefinements(runtime.getCurrentContext());
+
         return newRubyClass;
     }
 
@@ -1459,6 +1501,8 @@ public class IRRuntimeHelpers {
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
         RubySymbol methodName = method.getName();
         RubyClass rubyClass = checkClassForDef(context, method, obj);
+
+        method.captureParentRefinements(context);
 
         DynamicMethod newMethod;
         if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
@@ -1476,6 +1520,8 @@ public class IRRuntimeHelpers {
         RubySymbol methodName = method.getName();
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
+        method.captureParentRefinements(context);
+
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(methodName.idString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
         if (!rubyClass.isRefinement()) {
@@ -1487,6 +1533,8 @@ public class IRRuntimeHelpers {
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
+
+        method.captureParentRefinements(context);
 
         rubyClass.addMethod(method.getId(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
 
@@ -1512,6 +1560,8 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, methodName, currVisibility);
 
+        method.captureParentRefinements(context);
+
         DynamicMethod newMethod;
         if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
@@ -1531,6 +1581,8 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
+        method.captureParentRefinements(context);
+
         DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
@@ -1545,6 +1597,8 @@ public class IRRuntimeHelpers {
 
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
+
+        method.captureParentRefinements(context);
 
         DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
 
@@ -1718,8 +1772,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, String callType) {
-        return new RefinedCachingCallSite(name, CallType.valueOf(callType));
+    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, IRScope scope, String callType) {
+        return new RefinedCachingCallSite(name, scope, CallType.valueOf(callType));
     }
 
     @JIT
@@ -2049,41 +2103,18 @@ public class IRRuntimeHelpers {
         return site.call(context, caller, target, keyStr.strDup(context.runtime));
     }
 
-    public static DynamicMethod getRefinedMethodForClass(StaticScope refinedScope, RubyModule target, String methodId) {
-        Map<RubyModule, RubyModule> refinements;
-        RubyModule refinement;
-        DynamicMethod method = null;
-        RubyModule overlay;
+    /**
+     * asString using a given call site
+     */
+    @JIT
+    public static IRubyObject asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
+        IRubyObject str = site.call(context, caller, target);
 
-        while (true) {
-            if (refinedScope == null) break;
+        if (!(str instanceof RubyString)) return target.anyToString();
 
-            overlay = refinedScope.getOverlayModuleForRead();
+        if (target.isTaint()) str.setTaint(true);
 
-            if (overlay != null) {
-
-                refinements = overlay.getRefinements();
-
-                if (!refinements.isEmpty()) {
-
-                    refinement = refinements.get(target);
-
-                    if (refinement != null) {
-
-                        DynamicMethod maybeMethod = refinement.searchMethod(methodId);
-
-                        if (!maybeMethod.isUndefined()) {
-                            method = maybeMethod;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            refinedScope = refinedScope.getEnclosingScope();
-        }
-
-        return method;
+        return str;
     }
 
     @JIT
@@ -2115,6 +2146,26 @@ public class IRRuntimeHelpers {
 
             context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
         }
+    }
+
+    public static void warnSetConstInRefinement(ThreadContext context, IRubyObject self) {
+        if (self instanceof RubyModule && ((RubyModule) self).isRefinement()) {
+            context.runtime.getWarnings().warn("not defined at the refinement, but at the outer class/module");
+        }
+    }
+
+    @JIT
+    public static void putConst(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
+        warnSetConstInRefinement(context, self);
+
+        module.setConstant(id, value);
+    }
+
+    @JIT
+    public static void putClassVariable(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
+        warnSetConstInRefinement(context, self);
+
+        module.setClassVar(id, value);
     }
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {

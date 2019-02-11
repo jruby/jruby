@@ -5,8 +5,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -28,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1385,5 +1384,28 @@ public abstract class IRScope implements ParseResult {
     // FIXME: This should become some heuristic later
     public boolean inliningAllowed() {
         return !alreadyHasInline;
+    }
+
+    /**
+     * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.
+     *
+     * @param context
+     */
+    public void captureParentRefinements(ThreadContext context) {
+        if (maybeUsingRefinements()) {
+            for (IRScope cur = this.getLexicalParent(); cur != null; cur = cur.getLexicalParent()) {
+                RubyModule overlay = cur.staticScope.getOverlayModuleForRead();
+                if (overlay != null && !overlay.getRefinements().isEmpty()) {
+                    // capture current refinements at definition time
+                    RubyModule myOverlay = staticScope.getOverlayModuleForWrite(context);
+
+                    // FIXME: MRI does a copy-on-write thing here with the overlay
+                    myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
+
+                    // only search until we find an overlay
+                    break;
+                }
+            }
+        }
     }
 }

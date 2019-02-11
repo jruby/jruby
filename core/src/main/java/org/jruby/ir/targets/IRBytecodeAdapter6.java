@@ -389,7 +389,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void invokeArrayDeref(String file, int line, CallBase call) {
+    public void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call) {
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyString.class));
         String methodName = getUniqueSiteName(call.getId());
         SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
@@ -401,8 +401,30 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         adapter2.aloadMany(0, 1, 2, 3);
-        cacheCallSite(adapter2, getClassData().clsName, methodName, call.getId(), call);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, scopeFieldName, call);
         adapter2.invokestatic(p(IRRuntimeHelpers.class), "callOptimizedAref", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyString.class, CallSite.class));
+        adapter2.areturn();
+        adapter2.end();
+
+        // now call it
+        adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
+    }
+
+    @Override
+    public void invokeAsString(String file, int line, String scopeFieldName, CallBase call) {
+        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
+        String methodName = getUniqueSiteName(call.getId());
+        SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
+                adapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                methodName,
+                incomingSig,
+                null,
+                null);
+
+        adapter2.aloadMany(0, 1, 2);
+        cacheCallSite(adapter2, getClassData().clsName, methodName, scopeFieldName, call);
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "asString", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
         adapter2.areturn();
         adapter2.end();
 

@@ -17,6 +17,7 @@ import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -84,7 +85,8 @@ public abstract class IRBytecodeAdapter {
         boolean profiled = false;
         if (call.isPotentiallyRefined()) {
             siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, String.class);
+            signature = sig(siteClass, String.class, IRScope.class, String.class);
+            method.getstatic(className, scopeFieldName, ci(IRScope.class));
             method.ldc(callType.name());
         } else {
             switch (callType) {
@@ -401,7 +403,16 @@ public abstract class IRBytecodeAdapter {
      * @param file
      * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line, CallBase call);
+    public abstract void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
+
+    /**
+     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
+     *
+     * Stack required: context, self, target
+     * @param file
+     * @param line
+     */
+    public abstract void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.

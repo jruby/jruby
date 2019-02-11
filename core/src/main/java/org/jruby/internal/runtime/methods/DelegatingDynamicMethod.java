@@ -195,9 +195,7 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public DynamicMethod dup() {
-        return new ProfilingDynamicMethod(delegate.dup());
-    }
+    public abstract DynamicMethod dup();
 
     @Override
     /**

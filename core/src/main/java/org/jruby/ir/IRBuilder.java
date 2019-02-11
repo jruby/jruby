@@ -1220,7 +1220,7 @@ public class IRBuilder {
             Node exprNodes = whenNode.getExpressionNodes();
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -1336,7 +1336,7 @@ public class IRBuilder {
                 expression = ((StringLiteral) expression).frozenString;
             }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, false));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -2683,7 +2683,11 @@ public class IRBuilder {
     }
 
     public Operand buildEvStr(EvStrNode node) {
-        return new AsString(build(node.getBody()));
+        TemporaryVariable result = createTemporaryVariable();
+
+        addInstr(new AsStringInstr(scope, result, build(node.getBody()), scope.maybeUsingRefinements()));
+
+        return result;
     }
 
     public Operand buildFalse() {
@@ -2738,7 +2742,7 @@ public class IRBuilder {
                 return build(node);
             case BLOCKPASSNODE:
                 Node bodyNode = ((BlockPassNode)node).getBodyNode();
-                return bodyNode instanceof SymbolNode ?
+                return bodyNode instanceof SymbolNode && !scope.maybeUsingRefinements() ?
                         new SymbolProc(((SymbolNode)bodyNode).getName()) : build(bodyNode);
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
