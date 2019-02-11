@@ -1,4 +1,6 @@
-require 'zlib.jar'
+# Load built-in zlib library
+JRuby::Util.load_ext("org.jruby.ext.zlib.ZlibLibrary")
+
 require 'stringio'
 
 module Zlib

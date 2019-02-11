@@ -17,6 +17,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.util.KeyValuePair;
 
@@ -72,8 +73,19 @@ public class CallInstr extends CallBase implements ResultInstr {
         this(scope, Operation.CALL, callType, result, name, receiver, args, closure, potentiallyRefined);
     }
 
-    protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
-                        Operand closure, boolean potentiallyRefined) {
+    // clone constructor
+    protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                                Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, op, callType, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+
+        assert result != null;
+
+        this.result = result;
+    }
+
+    // normal constructor
+    protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                        Operand[] args, Operand closure, boolean potentiallyRefined) {
         super(scope, op, callType, name, receiver, args, closure, potentiallyRefined);
 
         assert result != null;
@@ -132,9 +144,10 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
+        return new CallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined(),
+                getCallSite(), getCallSiteId());
     }
 
     @Override

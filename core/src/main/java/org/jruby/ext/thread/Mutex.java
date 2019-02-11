@@ -41,12 +41,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 /**
  * The "Mutex" class from the 'thread' library.
  */
 @JRubyClass(name = "Mutex")
-public class Mutex extends RubyObject {
+public class Mutex extends RubyObject implements DataType {
     ReentrantLock lock = new ReentrantLock();
 
     @JRubyMethod(name = "new", rest = true, meta = true)
@@ -73,7 +74,7 @@ public class Mutex extends RubyObject {
     }
 
     @JRubyMethod(name = "locked?")
-    public synchronized RubyBoolean locked_p(ThreadContext context) {
+    public RubyBoolean locked_p(ThreadContext context) {
         return context.runtime.newBoolean(lock.isLocked());
     }
 
@@ -88,24 +89,30 @@ public class Mutex extends RubyObject {
     @JRubyMethod
     public IRubyObject lock(ThreadContext context) {
         RubyThread thread = context.getThread();
-        try {
-            thread.enterSleep();
-            checkRelocking(context);
-            thread.lock(lock);
-        } finally {
-            thread.exitSleep();
+
+        checkRelocking(context);
+
+        // try locking without sleep status to avoid looking like blocking
+        if (!thread.tryLock(lock)) {
+            // failed to acquire, proceed to sleep and block
+            try {
+                thread.enterSleep();
+                thread.lock(lock);
+            } finally {
+                thread.exitSleep();
+            }
         }
+
         return this;
     }
 
     @JRubyMethod
-    public synchronized IRubyObject unlock(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    public IRubyObject unlock(ThreadContext context) {
         if (!lock.isLocked()) {
-            throw runtime.newThreadError("Mutex is not locked");
+            throw context.runtime.newThreadError("Mutex is not locked");
         }
         if (!lock.isHeldByCurrentThread()) {
-            throw runtime.newThreadError("Mutex is not owned by calling thread");
+            throw context.runtime.newThreadError("Mutex is not owned by calling thread");
         }
 
         boolean hasQueued = lock.hasQueuedThreads();

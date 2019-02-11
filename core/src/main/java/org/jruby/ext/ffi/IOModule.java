@@ -40,6 +40,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
+
 /**
 * FFI specific I/O routines
  */
@@ -77,7 +79,7 @@ public class IOModule {
 
             if (count < buffer.remaining()) {
                 buffer = buffer.duplicate();
-                buffer.limit(count);
+                limitBuffer(buffer, count);
             }
 
             // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now

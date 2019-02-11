@@ -1,0 +1,1 @@
+fails:Thread.exclusive blocks the caller if another thread is also in an exclusive block

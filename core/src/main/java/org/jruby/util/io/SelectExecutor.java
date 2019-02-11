@@ -23,6 +23,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+
 /**
  * Created by headius on 6/3/14.
  */
@@ -537,7 +539,7 @@ public class SelectExecutor {
             } finally {
                 ByteBuffer buf = ByteBuffer.allocate(1);
                 buf.put((byte) 0);
-                buf.flip();
+                flipBuffer(buf);
                 pipe.sink().write(buf);
             }
 

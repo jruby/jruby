@@ -6,7 +6,8 @@ require 'delegate' # Unused; here for compatibility
 require 'tmpdir'
 require 'thread' # Unused; here for compatibility
 
-require 'tempfile.jar'
+# Load built-in tempfile library
+JRuby::Util.load_ext("org.jruby.ext.tempfile.TempfileLibrary")
 
 class Tempfile
   include Dir::Tmpname

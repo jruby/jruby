@@ -42,6 +42,8 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
+
 /**
  *
  */
@@ -159,7 +161,7 @@ public final class Util {
 
     public static final ByteBuffer slice(ByteBuffer buf, int offset) {
         ByteBuffer tmp = buf.duplicate();
-        tmp.position((int) offset);
+        positionBuffer(tmp, offset);
         return tmp.slice();
     }
 

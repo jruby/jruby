@@ -3454,17 +3454,6 @@ __END__
     end
   end
 
-  def test_readpartial_bad_args
-    IO.pipe do |r, w|
-      w.write '.'
-      buf = String.new
-      assert_raise(ArgumentError) { r.readpartial(1, buf, exception: false) }
-      assert_raise(TypeError) { r.readpartial(1, exception: false) }
-      assert_equal [[r],[],[]], IO.select([r], nil, nil, 1)
-      assert_equal '.', r.readpartial(1)
-    end
-  end
-
   def test_sysread_unlocktmp_ensure
     bug8669 = '[ruby-core:56121] [Bug #8669]'
 
@@ -3753,4 +3742,21 @@ __END__
       con.close
     end
   end if Socket.const_defined?(:MSG_OOB)
+
+  def test_select_leak
+    assert_no_memory_leak([], <<-"end;", <<-"end;", rss: true, timeout: 240)
+      r, w = IO.pipe
+      rset = [r]
+      wset = [w]
+      Thread.new { IO.select(rset, wset, nil, 0) }.join
+    end;
+      20_000.times do
+        th = Thread.new { IO.select(rset, wset) }
+        Thread.pass until th.stop?
+        th.kill
+        th.join
+        GC.start
+      end
+    end;
+  end
 end

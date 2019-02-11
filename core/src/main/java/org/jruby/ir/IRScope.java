@@ -5,6 +5,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
@@ -302,6 +303,14 @@ public abstract class IRScope implements ParseResult {
         return staticScope;
     }
 
+    public boolean isWithinEND() {
+        for (IRScope current = this; current != null && current instanceof IRClosure; current = current.getLexicalParent()) {
+            if (((IRClosure) current).isEND()) return true;
+        }
+
+        return false;
+    }
+
     public IRMethod getNearestMethod() {
         IRScope current = this;
 
@@ -330,6 +339,25 @@ public abstract class IRScope implements ParseResult {
         }
 
         return current;
+    }
+
+    /**
+     * returns whether this scope is contained by the parentScope parameter.
+     * For simplicity a scope is considered to contain itself.
+     *
+     * @param parentScope we want to see if it contains this scope
+     * @return true if this scope is contained by parentScope.
+     */
+    public boolean isScopeContainedBy(IRScope parentScope) {
+        IRScope current = this;
+
+        while (current != null) {
+            if (parentScope == current) return true;
+
+            current = current.getLexicalParent();
+        }
+
+        return false;
     }
 
     /**
@@ -578,12 +606,6 @@ public abstract class IRScope implements ParseResult {
 
         for (int i = 0; i < length; i++) {
             newInstructions[i] = instructions[i].clone(cloneInfo);
-
-            // Logically when we move from simple to full we want to keep same callsites in both versions to
-            // have the same callsiteid so we can track their usage logically.
-            if (instructions[i] instanceof Site) {
-                ((Site) newInstructions[i]).setCallSiteId(((Site) instructions[i]).getCallSiteId());
-            }
         }
 
         return newInstructions;
@@ -1205,12 +1227,27 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        // FIXME: CompiledIRMethod needs to be supports which may be changing compiled to Mixed with immediate Compiled in it.
-        if (!(compilable instanceof MixedModeIRMethod)) throw new RuntimeException("Do not support anything other than Mixed atm");
-
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
+    public void inlineMethodCompiled(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
+
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        if (newContext == null) {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
+
+        // We are not running any JIT-specific passes here.
+
+        newContext.linearizeBasicBlocks();
+        this.optimizedInterpreterContext = newContext;
+
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+    }
 
     /** Record a begin block.  Only eval and script body scopes support this */
     public void recordBeginBlock(IRClosure beginBlockClosure) {

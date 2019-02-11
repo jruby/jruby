@@ -131,6 +131,12 @@ public class RubyComplex extends RubyNumeric {
         this.flags |= FROZEN_F;
     }
 
+
+    @Override
+    public ClassIndex getNativeClassIndex() {
+        return ClassIndex.COMPLEX;
+    }
+
     /** rb_complex_raw
      * 
      */

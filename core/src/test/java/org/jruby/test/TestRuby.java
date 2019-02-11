@@ -184,4 +184,14 @@ public class TestRuby extends TestRubyBase {
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
     }
+
+    public void testTeardownExecutors() {
+        Ruby ruby = Ruby.newInstance();
+
+        ruby.tearDown(false);
+
+        assertTrue(ruby.getExecutor().isShutdown());
+        assertTrue(ruby.getFiberExecutor().isShutdown());
+        assertTrue(ruby.getJITCompiler().isShutdown());
+    }
 }

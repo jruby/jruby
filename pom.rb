@@ -66,14 +66,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby.plugins.version' => '1.0.10',
 
               'json.version' => '2.1.0',
-              'rspec.version' => '3.6.0',
-              'rspec-core.version' => '3.6.0',
-              'rspec-expectations.version' => '3.6.0',
-              'rspec-mocks.version' => '3.6.0',
-              'rspec-support.version' => '3.6.0',
+              'rspec.version' => '3.7.0',
+              'rspec-core.version' => '3.7.0',
+              'rspec-expectations.version' => '3.7.0',
+              'rspec-mocks.version' => '3.7.0',
+              'rspec-support.version' => '3.7.0',
               'minitest.version' => '5.10.3',
-              'test-unit.version' => '3.2.7',
-              'power_assert.version' => '1.1.1',
+              'test-unit.version' => '3.2.8',
+              'power_assert.version' => '1.1.3',
 
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
@@ -90,7 +90,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     jar( 'junit:junit:4.12',
          :scope => 'test' )
 
-    plugin( 'org.apache.felix:maven-bundle-plugin:2.4.0',
+    plugin( 'org.apache.felix:maven-bundle-plugin:3.5.0',
             'instructions' => {
               'Export-Package' =>  'org.jruby.*;version=${project.version}',
               'Import-Package' =>  '!org.jruby.*, *;resolution:=optional',
@@ -99,6 +99,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'Bundle-Description' =>  '${bundle.name} ${project.version} OSGi bundle',
               'Bundle-SymbolicName' =>  '${bundle.symbolic_name}'
             } ) do
+      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
       execute_goals( 'manifest',
                      :phase => 'prepare-package' )
     end
@@ -147,9 +148,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '1.0-beta-2'
-    plugin 'org.apache.felix:maven-bundle-plugin' do
-      dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '3.5.0')
-    end
   end
 
   plugin( :site,

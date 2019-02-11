@@ -271,19 +271,19 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
         RubyArray list = RubyArray.newArray(context.runtime);
+        RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
-            RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
             while (en.hasMoreElements()) {
-                NetworkInterface ni = en.nextElement();
+                NetworkInterface iface = en.nextElement();
                 // create interface link layer ifaddr
-                list.append(new Ifaddr(context.runtime, Ifaddr, ni));
-                for ( InterfaceAddress ia :  ni.getInterfaceAddresses() ) {
-                    list.append(new Ifaddr(context.runtime, Ifaddr, ni, ia));
+                list.append(new Ifaddr(context.runtime, Ifaddr, iface));
+                for ( InterfaceAddress iaddr : iface.getInterfaceAddresses() ) {
+                    list.append(new Ifaddr(context.runtime, Ifaddr, iface, iaddr));
                 }
             }
         }
-        catch (Exception ex) {
+        catch (SocketException|RuntimeException ex) {
             if ( ex instanceof RaiseException ) throw (RaiseException) ex;
             throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }

@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'socket'
-require 'thread'
 require 'test/jruby/test_helper'
 require 'ipaddr'
 
@@ -9,14 +8,6 @@ class IfaddrTest < Test::Unit::TestCase
 
   # def test_create_with_interface_address ; end
   # def test_create_with_interface ; end
-
-  def getifaddrs
-    begin
-      @ifaddrs ||= Socket.getifaddrs
-    rescue NotImplementedError
-      @ifaddrs = []  
-    end
-  end
     
   def test_addr 
     getifaddrs.each { |ifaddr| assert_instance_of(Addrinfo, ifaddr.addr) }
@@ -28,10 +19,11 @@ class IfaddrTest < Test::Unit::TestCase
       # - ipv4 address except loopback
       # - packet address except on loopback inteface (00:00:00:00:00:00)
       # TODO: (gf) deal with point-to-point interfaces
-      if ( ifaddr.addr.ipv4? && ! ifaddr.addr.ipv4_loopback? ) || ( ifaddr.addr.afamily == Socket::AF_UNSPEC && ! ifaddr.addr.to_sockaddr.end_with?( "\x00\x00\x00\x00\x00\x00" ) )
+      if ( ifaddr.addr.ipv4? && ! ifaddr.addr.ipv4_loopback? ) ||
+         ( ifaddr.addr.afamily == Socket::AF_UNSPEC && ! ifaddr.addr.to_sockaddr.end_with?( "\x00\x00\x00\x00\x00\x00" ) )
         assert_instance_of(Addrinfo, ifaddr.broadaddr)
       else
-        # assert_equal(nil, ifaddr.broadaddr) # Travis-CI point-to-point interfaces fail here
+        #assert_equal(nil, ifaddr.broadaddr) # Travis-CI point-to-point interfaces fail here
       end
     end
   end
@@ -56,8 +48,9 @@ class IfaddrTest < Test::Unit::TestCase
   def test_ifindex
     getifaddrs.each do |ifaddr|
       assert_instance_of(Integer, ifaddr.ifindex)
-      # TODO: (gf) this passes in an interactive Travis-CI VM, but fails under a Travis-CI build job
+      # NOTE: doesn't hold with NetworkManager e.g. docker0 (same under MRI)
       # assert(ifaddr.ifindex <= getifaddrs.size) # is in expected range
+      assert(ifaddr.ifindex > 0) # lo == 1
     end
   end
 
@@ -78,6 +71,16 @@ class IfaddrTest < Test::Unit::TestCase
       else
         assert_equal(nil, ifaddr.netmask)
       end
+    end
+  end
+
+  private
+
+  def getifaddrs
+    begin
+      @ifaddrs ||= Socket.getifaddrs
+    rescue NotImplementedError
+      @ifaddrs = []
     end
   end
 

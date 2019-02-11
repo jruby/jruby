@@ -11,14 +11,14 @@ class TestSignal < Test::Unit::TestCase
       Process.kill :INT, Process.pid
       10.times do
         break if 2 == x
-        sleep EnvUtil.apply_timeout_scale(0.1)
+        sleep 0.1
       end
       assert_equal 2, x
 
       Signal.trap(:INT) { raise "Interrupt" }
       assert_raise_with_message(RuntimeError, /Interrupt/) {
         Process.kill :INT, Process.pid
-        sleep EnvUtil.apply_timeout_scale(1)
+        sleep 0.1
       }
     ensure
       Signal.trap :INT, oldtrap if oldtrap

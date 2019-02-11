@@ -79,6 +79,7 @@ class TestThread < Test::Unit::TestCase
     t = Thread.new {
       thread_foo()
     }
+    t.report_on_exception = false # quiet for testing
     begin
       t.join
     rescue RuntimeError => error
@@ -95,8 +96,8 @@ class TestThread < Test::Unit::TestCase
     rescue ThreadError => error
       e = error
     end
-    assert(! e.nil?)
-    assert_match(/thread [0-9a-z]+ tried to join itself/, e.message)
+    assert(e.is_a?(ThreadError))
+    assert_match(/must not be current thread/, e.message)
   end
 
   def test_raise
@@ -106,6 +107,7 @@ class TestThread < Test::Unit::TestCase
         Thread.pass
       end
     }
+    t.report_on_exception = false # quiet for testing
     t.raise("Die")
     begin
       t.join
@@ -119,6 +121,7 @@ class TestThread < Test::Unit::TestCase
     set = false
     begin
       t = Thread.new { e = 2; set = true; sleep(100); e = 3 }
+      t.report_on_exception = false # quiet for testing
       while !set
         sleep(1)
       end
@@ -130,9 +133,12 @@ class TestThread < Test::Unit::TestCase
   end
 
   def test_thread_value
+    old_report, Thread.report_on_exception = Thread.report_on_exception, false
     assert_raise(ArgumentError) { Thread.new { }.value(100) }
     assert_equal(2, Thread.new { 2 }.value)
     assert_raise(RuntimeError) { Thread.new { raise "foo" }.value }
+  ensure
+    Thread.report_on_exception = old_report
   end
 
   class MyThread < Thread
@@ -179,16 +185,18 @@ class TestThread < Test::Unit::TestCase
 
   # JRUBY-2021
   def test_multithreaded_method_definition
-    def run_me
-      sleep 0.1
-      def do_stuff
+    obj = Class.new do
+      def run_me
         sleep 0.1
+        def do_stuff
+          sleep 0.1
+        end
       end
-    end
+    end.new
 
     threads = []
     100.times {
-      threads << Thread.new { run_me }
+      threads << Thread.new { obj.run_me }
     }
     threads.each { |t| t.join }
   end
@@ -210,6 +218,7 @@ class TestThread < Test::Unit::TestCase
     t = Thread.new {
       tcps.accept
     }
+    t.report_on_exception = false # quiet for testing
 
     Thread.pass until t.status == "sleep"
     ex = Exception.new
@@ -326,20 +335,20 @@ class TestThread < Test::Unit::TestCase
     go = false
     ret = []
     t = Thread.new do
-      10000.times do
+      10_000.times do
         Thread.pass until go
         sleep
         ret << 'ok'
       end
     end
-    10000.times do
+    10_000.times do
       go = true
       Thread.pass until t.status == 'sleep'
       go = false
       t.wakeup
     end
     t.join
-    assert_equal(10000, ret.size)
+    assert_equal(10_000, ret.size)
   end
 
   def test_inspect_and_to_s
@@ -391,6 +400,61 @@ class TestThread < Test::Unit::TestCase
       assert ! Thread.current.inspect.index('@foo')
       assert_equal 'user-set-native-thread-name', native_thread_name(Thread.current) if defined? JRUBY_VERSION
     end.join
+  end if defined? JRUBY_VERSION
+
+  def test_status_after_raise
+    (ENV['STATUS_TIMES'] || ENV['TIMES'] || 1000).to_i.times do
+      t = Thread.new {
+        Thread.current.report_on_exception = false
+        raise('die')
+      }
+      Thread.current
+
+      Thread.pass while t.alive?
+
+      assert_equal(nil, t.status)
+      assert_predicate(t, :stop?)
+    end
+  end
+
+  CountDownLatch = Class.new do
+    def initialize(count)
+      @count = count
+      @mutex = Mutex.new
+      @conditional = ConditionVariable.new
+    end
+
+    def countdown!
+      @mutex.synchronize do
+        @count -= 1 if @count > 0
+        @conditional.broadcast if @count == 0
+      end
+    end
+
+    def count; @mutex.synchronize { @count } end
+
+    def wait(timeout = nil)
+      @mutex.synchronize do
+        return :nowait if @count == 0
+        @conditional.wait @mutex, timeout
+      end
+    end
+  end
+
+  def wait_for_latch(count = 5, timeout = 1.0)
+    latch = CountDownLatch.new count
+    count.times do
+      Thread.new { latch.countdown! }
+    end
+    latch.wait(timeout)
+  end
+  private :wait_for_latch
+
+  def test_count_down_latch
+    (ENV['COUNT_DOWN_LATCH_TIMES'] || ENV['TIMES'] || 10_000).to_i.times do |i|
+      print '*' if $VERBOSE
+      assert wait_for_latch # should not raise
+    end
   end
 
   private

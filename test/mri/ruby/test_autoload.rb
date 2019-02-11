@@ -245,6 +245,72 @@ p Foo::Bar
     assert_ruby_status([script], '', '[ruby-core:81016] [Bug #13526]')
   end
 
+  def test_autoload_private_constant
+    Dir.mktmpdir('autoload') do |tmpdir|
+      File.write(tmpdir+"/zzz.rb", "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        class AutoloadTest
+          ZZZ = :ZZZ
+          private_constant :ZZZ
+        end
+      end;
+      assert_separately(%W[-I #{tmpdir}], "#{<<-"begin;"}\n#{<<-'end;'}")
+      bug = '[ruby-core:85516] [Bug #14469]'
+      begin;
+        class AutoloadTest
+          autoload :ZZZ, "zzz.rb"
+        end
+        assert_raise(NameError, bug) {AutoloadTest::ZZZ}
+      end;
+    end
+  end
+
+  def test_autoload_deprecate_constant
+    Dir.mktmpdir('autoload') do |tmpdir|
+      File.write(tmpdir+"/zzz.rb", "#{<<~"begin;"}\n#{<<~'end;'}")
+      begin;
+        class AutoloadTest
+          ZZZ = :ZZZ
+          deprecate_constant :ZZZ
+        end
+      end;
+      assert_separately(%W[-I #{tmpdir}], "#{<<-"begin;"}\n#{<<-'end;'}")
+      bug = '[ruby-core:85516] [Bug #14469]'
+      begin;
+        class AutoloadTest
+          autoload :ZZZ, "zzz.rb"
+        end
+        assert_warning(/ZZZ is deprecated/, bug) {AutoloadTest::ZZZ}
+      end;
+    end
+  end
+
+  def test_autoload_fork
+    EnvUtil.default_warning do
+      Tempfile.create(['autoload', '.rb']) {|file|
+        file.puts 'sleep 0.3; class AutoloadTest; end'
+        file.close
+        add_autoload(file.path)
+        begin
+          thrs = []
+          3.times do
+            thrs << Thread.new { AutoloadTest; nil }
+            thrs << Thread.new { fork { AutoloadTest } }
+          end
+          thrs.each(&:join)
+          thrs.each do |th|
+            pid = th.value or next
+            _, status = Process.waitpid2(pid)
+            assert_predicate status, :success?
+          end
+        ensure
+          remove_autoload_constant
+          assert_nil $!, '[ruby-core:86410] [Bug #14634]'
+        end
+      }
+    end
+  end if Process.respond_to?(:fork)
+
   def add_autoload(path)
     (@autoload_paths ||= []) << path
     ::Object.class_eval {autoload(:AutoloadTest, path)}

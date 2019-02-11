@@ -32,7 +32,6 @@ import java.util.*;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
-import static org.jruby.ir.operands.CurrentScope.*;
 import static org.jruby.ir.operands.ScopeModule.*;
 
 // This class converts an AST into a bunch of IR instructions
@@ -1057,7 +1056,7 @@ public class IRBuilder {
         String id = name.idString(); // ID Str ok here since it is 7bit check.
         if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getPosition().getLine());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getLine());
         }
 
         boolean compileLazyLabel = false;
@@ -1278,7 +1277,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + caseNode.getPosition());
+            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -2706,9 +2705,9 @@ public class IRBuilder {
             block = setupCallClosure(fcallNode.getIterNode());
             callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block, kwargs);
         } else {
-            Operand[] args         = setupCallArgs(callArgsNode);
-            block        = setupCallClosure(fcallNode.getIterNode());
-            determineIfMaybeUsingMethod(fcallNode.getName(), args);
+            Operand[] args = setupCallArgs(callArgsNode);
+            determineIfMaybeRefined(fcallNode.getName(), args);
+            block = setupCallClosure(fcallNode.getIterNode());
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
@@ -2747,11 +2746,16 @@ public class IRBuilder {
     }
 
     // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeUsingMethod(RubySymbol methodName, Operand[] args) {
+    private void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (CommonByteLists.USING_METHOD.equals(methodName.getBytes()) && !(outerScope instanceof IRMethod) && args.length == 1) {
+        if (!(outerScope instanceof IRMethod) && args.length == 1
+                && (
+                CommonByteLists.USING_METHOD.equals(methodName.getBytes())
+                        // FIXME: This sets the bit for the whole module, but really only the refine block needs it
+                        || CommonByteLists.REFINE_METHOD.equals(methodName.getBytes())
+        )) {
             scope.setIsMaybeUsingRefinements();
         }
     }
@@ -3490,6 +3494,7 @@ public class IRBuilder {
 
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
                 Signature.from(postExeNode), CommonByteLists._END_, true);
+        endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
 
@@ -3678,9 +3683,8 @@ public class IRBuilder {
                 Node [] exceptionNodes = ((ListNode) exceptionList).children();
                 Operand[] exceptionTypes = new Operand[exceptionNodes.length];
                 for (int i = 0; i < exceptionNodes.length; i++) {
-                    exceptionTypes[i] = build(exceptionNodes[i]);
+                    outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
-                outputExceptionCheck(new Array(exceptionTypes), exc, caughtLabel);
             } else if (exceptionList instanceof SplatNode) { // splatnode, catch
                 outputExceptionCheck(build(((SplatNode)exceptionList).getValue()), exc, caughtLabel);
             } else { // argscat/argspush
@@ -3755,15 +3759,21 @@ public class IRBuilder {
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
-            // Closures return behavior has several cases (which depend on runtime state):
-            // 1. closure in method (return). !method (error) except if in define_method (return)
-            // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
-            // 3. migrated closure (LJE) [dynamic]
-            // 4. eval/for (return) [static]
-            boolean definedWithinMethod = scope.getNearestMethod() != null;
-            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
-            addInstr(new NonlocalReturnInstr(retVal,
-                    definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+            if (scope.isWithinEND()) {
+                // ENDs do not allow returns
+                addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
+            } else {
+                // Closures return behavior has several cases (which depend on runtime state):
+                // 1. closure in method (return). !method (error) except if in define_method (return)
+                // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
+                // 3. migrated closure (LJE) [dynamic]
+                // 4. eval/for (return) [static]
+                boolean definedWithinMethod = scope.getNearestMethod() != null;
+                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
+                    addInstr(new CheckForLJEInstr(definedWithinMethod));
+                addInstr(new NonlocalReturnInstr(retVal,
+                        definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+            }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 

@@ -276,26 +276,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
     }
 
-    public String getClassName(ThreadContext context) {
-        String className;
-        if (implementationClass.isSingleton()) {
-            MetaClass metaClass = (MetaClass)implementationClass;
-            RubyClass realClass = metaClass.getRealClass();
-            // if real class is Class
-            if (realClass == context.runtime.getClassClass()) {
-                // use the attached class's name
-                className = ((RubyClass) metaClass.getAttached()).getName();
-            } else {
-                // use the real class name
-                className = realClass.getName();
-            }
-        } else {
-            // use the class name
-            className = implementationClass.getName();
-        }
-        return className;
-    }
-
     @Override
     public DynamicMethod dup() {
         MixedModeIRMethod x = (MixedModeIRMethod) super.dup();

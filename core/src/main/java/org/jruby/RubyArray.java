@@ -933,11 +933,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_to_ary
      *
      */
-    public static RubyArray aryToAry(IRubyObject obj) {
-        IRubyObject tmp = TypeConverter.checkArrayType(obj);
+    public static RubyArray aryToAry(ThreadContext context, IRubyObject obj) {
+        IRubyObject tmp = TypeConverter.checkArrayType(context, obj);
+        return tmp != context.nil ? (RubyArray) tmp : newArray(context.runtime, obj);
+    }
 
-        if (!tmp.isNil()) return (RubyArray)tmp;
-        return obj.getRuntime().newArray(obj);
+    @Deprecated
+    public static RubyArray aryToAry(IRubyObject obj) {
+        return aryToAry(obj.getRuntime().getCurrentContext(), obj);
     }
 
     private void splice(final Ruby runtime, int beg, int len, IRubyObject rpl) {
@@ -956,7 +959,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             rplArr = newArray(runtime, rpl);
             rlen = 1;
         } else {
-            rplArr = aryToAry(rpl);
+            rplArr = aryToAry(runtime.getCurrentContext(), rpl);
             rlen = rplArr.realLength;
         }
 
@@ -1143,12 +1146,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         Ruby runtime = getRuntime();
 
         int elen = -1;
-        RubyArray[] result = null;
+        IRubyObject[] result = null;
         for (int i = 0; i < alen; i++) {
             RubyArray tmp = elt(i).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
-                result = new RubyArray[elen];
+                result = new IRubyObject[elen];
                 for (int j = 0; j < elen; j++) {
                     result[j] = newBlankArray(runtime, alen);
                 }
@@ -1157,7 +1160,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                         + " should be " + elen + ")");
             }
             for (int j = 0; j < elen; j++) {
-                result[j].store(i, tmp.elt(j));
+                ((RubyArray) result[j]).store(i, tmp.elt(j));
             }
         }
         return new RubyArray(runtime, result);
@@ -3124,8 +3127,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                         result.append(elt);
                         continue;
                     }
-                    IRubyObject tmp = TypeConverter.checkArrayType(elt);
-                    if (tmp.isNil()) result.append(elt);
+                    IRubyObject tmp = TypeConverter.checkArrayType(context, elt);
+                    if (tmp == context.nil) result.append(elt);
                     else { // nested array element
                         if (memo == null) {
                             memo = new IdentityHashMap<>(4 + 1);
@@ -4666,6 +4669,21 @@ float_loop:
                 } else {
                     break float_loop;
                 }
+
+                if (Double.isNaN(f)) continue;
+                if (Double.isNaN(x)) {
+                    f = x;
+                    continue;
+                }
+                if (Double.isInfinite(x)) {
+                    if (Double.isInfinite(f) && Math.signum(x) != Math.signum(f))
+                        f = Double.NaN;
+                    else
+                        f = x;
+                    continue;
+                }
+                if (Double.isInfinite(f)) continue;
+
                 t = f + x;
                 if (Math.abs(f) >= Math.abs(x)) {
                     c += ((f - t) + x);
@@ -4810,9 +4828,9 @@ float_loop:
 
     @JRubyMethod(name = "pack", required = 1)
     public RubyString pack(ThreadContext context, IRubyObject obj) {
-        RubyString iFmt = obj.convertToString();
+        RubyString format = obj.convertToString();
         try {
-            return Pack.pack(context, this, iFmt);
+            return Pack.pack(context, this, format);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }
@@ -4826,7 +4844,7 @@ float_loop:
 
         if (opts != context.nil) {
             buffer = ArgsUtil.extractKeywordArg(context, "buffer", (RubyHash) opts);
-            if (!buffer.isNil() && !(buffer instanceof RubyString)) {
+            if (buffer != context.nil && !(buffer instanceof RubyString)) {
                 throw runtime.newTypeError(str(runtime, "buffer must be String, not ", types(runtime, buffer.getType())));
             }
         }

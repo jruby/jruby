@@ -43,8 +43,8 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-enxio:0.19', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.20', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.45', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.11', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.49', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.12', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.1.9'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
@@ -74,6 +74,7 @@ project 'JRuby Core' do
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
   jar 'com.headius:modulator:1.0'
+  jar 'com.headius:backport9:1.1'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',

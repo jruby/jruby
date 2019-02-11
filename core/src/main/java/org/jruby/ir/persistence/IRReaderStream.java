@@ -36,6 +36,8 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
+
 /**
  *
  * @author enebo
@@ -191,7 +193,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
         currentScope = scope;
         vars = new HashMap<>();
-        buf.position(offset);
+        positionBuffer(buf, offset);
 
         int numberOfInstructions = decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
@@ -452,7 +454,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public void seek(int headersOffset) {
-        buf.position(headersOffset);
+        positionBuffer(buf, headersOffset);
     }
 
     public Operand decode(OperandType type) {

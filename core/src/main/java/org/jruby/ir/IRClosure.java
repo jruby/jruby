@@ -34,6 +34,7 @@ public class IRClosure extends IRScope {
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
     private boolean isBeginEndBlock;
+    private boolean isEND;         // Does this represent and END { } closure?
 
     private Signature signature;
 
@@ -77,6 +78,7 @@ public class IRClosure extends IRScope {
             boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
             this.body = shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) : new InterpretedIRBlockBody(c, c.getSignature());
         }
+        isEND = c.isEND;
 
         this.signature = c.signature;
     }
@@ -139,6 +141,14 @@ public class IRClosure extends IRScope {
         }
 
         return interpreterContext;
+    }
+
+    public void setIsEND() {
+        isEND = true;
+    }
+
+    public boolean isEND() {
+        return isEND;
     }
 
     public void setBeginEndBlock() {

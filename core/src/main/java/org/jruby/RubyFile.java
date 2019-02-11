@@ -1427,7 +1427,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (!args[3].isNil()) {
                     options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
                     if (options.isNil()) {
-                        throw runtime.newArgumentError("wrong number of arguments (4 for 1..3)");
+                        throw runtime.newArgumentError(4, 1, 3);
                     }
                 }
                 vperm(pm, args[2]);
@@ -1475,7 +1475,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
-        if (path instanceof RubyString) return (RubyString) path;
+        if (path instanceof RubyString) return StringSupport.checkEmbeddedNulls(context.runtime, path);
 
         FileSites sites = sites(context);
         if (sites.respond_to_to_path.respondsTo(context, path, path, true)) path = sites.to_path.call(context, path, path);
@@ -1486,6 +1486,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
     // mri: file_path_convert
     private static RubyString filePathConvert(ThreadContext context, RubyString path) {
+        StringSupport.checkEmbeddedNulls(context.runtime, path.convertToString());
+
         if (!Platform.IS_WINDOWS) {
             Ruby runtime = context.getRuntime();
             EncodingService encodingService = runtime.getEncodingService();

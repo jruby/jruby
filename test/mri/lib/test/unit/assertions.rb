@@ -515,23 +515,11 @@ EOT
         $VERBOSE = verbose
       end
 
-      def check_syntax(src, filename, line)
-        if defined? RubyVM::InstructionSequence
-          RubyVM::InstructionSequence.compile(src, filename, filename, line)
-        else
-          src = <<-WRAPPED
-#{src}
-            BEGIN { throw :tag, :ok }
-          WRAPPED
-          assert_equal(:ok, catch(:tag) { eval(src, binding, filename, line)})
-        end
-      end
-
       def assert_valid_syntax(code, *args)
         prepare_syntax_check(code, *args) do |src, fname, line, mesg|
           yield if defined?(yield)
           assert_nothing_raised(SyntaxError, mesg) do
-            check_syntax(src, fname, line)
+            assert_equal(:ok, syntax_check(src, fname, line), mesg)
           end
         end
       end
@@ -540,7 +528,7 @@ EOT
         prepare_syntax_check(code, *args) do |src, fname, line, mesg|
           yield if defined?(yield)
           e = assert_raise(SyntaxError, mesg) do
-            check_syntax(src, fname, line)
+            syntax_check(src, fname, line)
           end
           assert_match(error, e.message, mesg)
           e
@@ -595,8 +583,6 @@ EOT
 
       def assert_in_out_err(args, test_stdin = "", test_stdout = [], test_stderr = [], message = nil,
                             success: nil, **opt)
-        args = Array(args).dup
-        args.insert((Hash === args[0] ? 1 : 0), '--disable=gems')
         stdout, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, true, true, **opt)
         if signo = status.termsig
           EnvUtil.diagnostic_reports(Signal.signame(signo), status.pid, Time.now)

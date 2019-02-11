@@ -6,3 +6,5 @@ fails:Marshal.restore for a Module loads an old module
 fails:Marshal.restore for a wrapped C pointer loads
 fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _load_data
 fails:Marshal.restore when a class does not exist in the namespace raises an ArgumentError
+fails:Marshal.restore for a Symbol loads a binary encoded Symbol
+fails:Marshal.restore for an Object raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class

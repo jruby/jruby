@@ -309,7 +309,7 @@ public class RubyBasicSocket extends RubyIO {
                         throw runtime.newErrnoEINVALError("setsockopt(2)");
                     }
                 } else {
-                    socketType.setSocketOption(channel, opt, asNumber(val));
+                    socketType.setSocketOption(channel, opt, asNumber(context, val));
                 }
 
                 break;
@@ -318,7 +318,7 @@ public class RubyBasicSocket extends RubyIO {
                 int intLevel = (int)_level.convertToInteger().getLongValue();
                 int intOpt = (int)_opt.convertToInteger().getLongValue();
                 if (IPPROTO_TCP.intValue() == intLevel && TCP_NODELAY.intValue() == intOpt) {
-                    socketType.setTcpNoDelay(channel, asBoolean(val));
+                    socketType.setTcpNoDelay(channel, asBoolean(context, val));
 
                 } else if (IPPROTO_IP.intValue() == intLevel) {
                     if (MulticastStateManager.IP_ADD_MEMBERSHIP == intOpt) {
@@ -684,29 +684,27 @@ public class RubyBasicSocket extends RubyIO {
         return ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals;
     }
 
-    private static int asNumber(IRubyObject val) {
+    private static int asNumber(ThreadContext context, IRubyObject val) {
         if ( val instanceof RubyNumeric ) {
             return RubyNumeric.fix2int(val);
         }
         if ( val instanceof RubyBoolean ) {
             return val.isTrue() ? 1 : 0;
         }
-        return stringAsNumber(val);
+        return stringAsNumber(context, val);
     }
 
-    private static int stringAsNumber(IRubyObject val) {
-        final Ruby runtime = val.getRuntime();
-        ByteList str = val.convertToString().getByteList();
-        IRubyObject res = Pack.unpack(runtime, str, FORMAT_SMALL_I).entry(0);
+    private static int stringAsNumber(ThreadContext context, IRubyObject val) {
+        IRubyObject res = Pack.unpack(context, val.convertToString(), FORMAT_SMALL_I).entry(0);
 
-        if ( res.isNil() ) throw runtime.newErrnoEINVALError();
+        if (res == context.nil) throw context.runtime.newErrnoEINVALError();
 
         return RubyNumeric.fix2int(res);
     }
 
-    protected boolean asBoolean(IRubyObject val) {
+    protected boolean asBoolean(ThreadContext context, IRubyObject val) {
         if ( val instanceof RubyString ) {
-            return stringAsNumber(val) != 0;
+            return stringAsNumber(context, val) != 0;
         }
         if ( val instanceof RubyNumeric ) {
             return RubyNumeric.fix2int(val) != 0;

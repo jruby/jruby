@@ -16,6 +16,13 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
+    // clone constructor
+    protected ClassSuperInstr(IRScope scope, Variable result, Operand receiver, RubySymbol name, Operand[] args,
+                              Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, potentiallyRefined, callSite, callSiteId);
+    }
+
+    // normal constructor
     public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args, Operand closure,
                            boolean isPotentiallyRefined) {
         super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
@@ -27,8 +34,9 @@ public class ClassSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), name,
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+        return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii),
+                name, cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static ClassSuperInstr decode(IRReaderDecoder d) {

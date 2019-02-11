@@ -253,12 +253,12 @@ public class RubyParser {
 %type <Node> lhs none args
 %type <ListNode> qword_list word_list
 %type <ListNode> f_arg f_optarg
-%type <ListNode> f_marg_list, symbol_list
-%type <ListNode> qsym_list, symbols, qsymbols
+%type <ListNode> f_marg_list symbol_list
+%type <ListNode> qsym_list symbols qsymbols
    // FIXME: These are node until a better understanding of underlying type
-%type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
-%type <Node> f_kw, f_block_kw
-%type <ListNode> f_block_kwarg, f_kwarg
+%type <ArgsTailHolder> opt_args_tail opt_block_args_tail block_args_tail args_tail
+%type <Node> f_kw f_block_kw
+%type <ListNode> f_block_kwarg f_kwarg
 %type <HashNode> assoc_list
 %type <HashNode> assocs
 %type <KeyValuePair> assoc
@@ -290,7 +290,7 @@ public class RubyParser {
 %type <ByteList> call_op call_op2
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
-%token <ByteList> tLABEL_END, tSTRING_DEND
+%token <ByteList> tLABEL_END
 %type <ISourcePosition> k_return k_class k_module
 
 /*

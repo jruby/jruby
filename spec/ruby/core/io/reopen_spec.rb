@@ -145,17 +145,33 @@ describe "IO#reopen with a String" do
     File.read(@other_name).should == "new data"
   end
 
-  it "closes the file descriptor obtained by opening the new file" do
+  # File descriptor numbers are not predictable in multi-threaded code;
+  # MJIT will be opening/closing files the background
+  without_feature :mjit do
+    it "closes the file descriptor obtained by opening the new file" do
+      @io = new_io @name, "w"
+
+      @other_io = File.open @other_name, "w"
+      max = @other_io.fileno
+      @other_io.close
+
+      @io.reopen @other_name
+
+      @other_io = File.open @other_name, "w"
+      @other_io.fileno.should == max
+    end
+  end
+
+  it "always resets the close-on-exec flag to true on non-STDIO objects" do
     @io = new_io @name, "w"
 
-    @other_io = File.open @other_name, "w"
-    max = @other_io.fileno
-    @other_io.close
-
+    @io.close_on_exec = true
     @io.reopen @other_name
+    @io.close_on_exec?.should == true
 
-    @other_io = File.open @other_name, "w"
-    @other_io.fileno.should == max
+    @io.close_on_exec = false
+    @io.reopen @other_name
+    @io.close_on_exec?.should == true
   end
 
   it "creates the file if it doesn't exist if the IO is opened in write mode" do
@@ -288,6 +304,18 @@ describe "IO#reopen with an IO" do
     @io.flush
     File.read(@name).should == ""
     File.read(@other_name).should == "io data"
+  end
+
+  it "always resets the close-on-exec flag to true on non-STDIO objects" do
+    @other_io.close_on_exec = true
+    @io.close_on_exec = true
+    @io.reopen @other_io
+    @io.close_on_exec?.should == true
+
+    @other_io.close_on_exec = false
+    @io.close_on_exec = false
+    @io.reopen @other_io
+    @io.close_on_exec?.should == true
   end
 
   it "may change the class of the instance" do

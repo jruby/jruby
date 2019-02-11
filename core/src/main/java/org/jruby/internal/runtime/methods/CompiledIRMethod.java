@@ -1,28 +1,26 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 
-import com.headius.invokebinder.Binder;
+import org.jruby.MetaClass;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CompiledIRMethod extends AbstractIRMethod {
-    private final MethodHandle variable;
+public class CompiledIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod>  {
+    private MethodHandle variable;
 
-    private final MethodHandle specific;
+    private MethodHandle specific;
     private final int specificArity;
 
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
@@ -45,6 +43,8 @@ public class CompiledIRMethod extends AbstractIRMethod {
         assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
+
+        method.compilable = this;
     }
 
     public MethodHandle getHandleFor(int arity) {
@@ -55,8 +55,22 @@ public class CompiledIRMethod extends AbstractIRMethod {
         return null;
     }
 
+    public void setVariable(MethodHandle variable) {
+        this.variable = variable;
+    }
+
+    public void setSpecific(MethodHandle specific) {
+        this.specific = specific;
+    }
+
+
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return ((IRMethod)method).getArgumentDescriptors();
+    }
+
+    @Override
+    public void completeBuild(DynamicMethod buildResult) {
+        // unused but part of compilable interface.  jit task uses setVariable and setSpecific to update code.
     }
 
     @Override

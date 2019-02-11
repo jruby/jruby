@@ -27,15 +27,14 @@
 package org.jruby.compiler;
 
 import org.jruby.Ruby;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
 
 public class MethodJITClassGenerator extends JITClassGenerator {
-    public MethodJITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
+    public MethodJITClassGenerator(String className, String methodName, String key, Ruby ruby, AbstractIRMethod method, JVMVisitor visitor) {
         super(className, methodName, key, ruby, visitor);
         this.method = method;
     }
@@ -79,5 +78,5 @@ public class MethodJITClassGenerator extends JITClassGenerator {
     public String toString() {
         return methodName + "() at " + method.getFile() + ':' + method.getLine();
     }
-    private final MixedModeIRMethod method;
+    private final AbstractIRMethod method;
 }

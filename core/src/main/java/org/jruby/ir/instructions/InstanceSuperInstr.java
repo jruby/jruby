@@ -13,12 +13,21 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InstanceSuperInstr extends CallInstr {
+    // clone constructor
+    protected InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
+                                 Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure,
+                isPotentiallyRefined, callSite, callSiteId);
+    }
+
+    // normal constructor
     public InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
                               Operand closure, boolean isPotentiallyRefined) {
         super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
@@ -30,8 +39,10 @@ public class InstanceSuperInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new InstanceSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii), getName(),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+        return new InstanceSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()),
+                getDefiningModule().cloneForInlining(ii), getName(), cloneCallArgs(ii),
+                getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static InstanceSuperInstr decode(IRReaderDecoder d) {

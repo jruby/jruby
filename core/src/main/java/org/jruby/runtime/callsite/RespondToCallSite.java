@@ -7,6 +7,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
+import static org.jruby.RubyBasicObject.getMetaClass;
+
 public class RespondToCallSite extends NormalCachingCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
     private final String respondToName;
@@ -56,7 +58,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name) { 
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = name.asJavaString();
@@ -68,7 +70,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject name, IRubyObject bool) {
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = name.asJavaString();
@@ -79,7 +81,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self) {
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = respondToName;
@@ -90,7 +92,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
     }
 
     public boolean respondsTo(ThreadContext context, IRubyObject caller, IRubyObject self, boolean includePrivate) {
-        RubyClass klass = self.getMetaClass();
+        RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
             String strName = respondToName;
@@ -113,7 +115,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg);
+            return callMethodMissing(context, self, selfType, method, arg);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
@@ -139,7 +141,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
-            return callMethodMissing(context, self, method, arg0, arg1);
+            return callMethodMissing(context, self, selfType, method, arg0, arg1);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one

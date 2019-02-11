@@ -12,6 +12,7 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -23,6 +24,16 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     // treating the array as a single value.
     private boolean splattedValue;
 
+    // clone constructor
+    protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, CallSite callSite,
+                       long callSiteID) {
+        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="),
+                v1, new Operand[] { v2 }, null, false, callSite, callSiteID);
+
+        this.splattedValue = splattedValue;
+    }
+
+    // normal constructor
     public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue) {
         super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, false);
 
@@ -42,7 +53,8 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), getArg1().cloneForInlining(ii), isSplattedValue());
+        return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii),
+                getArg1().cloneForInlining(ii), isSplattedValue(), getCallSite(), getCallSiteId());
     }
 
     @Override
