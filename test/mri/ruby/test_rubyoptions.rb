@@ -8,7 +8,7 @@ require_relative '../lib/jit_support'
 
 class TestRubyOptions < Test::Unit::TestCase
   NO_JIT_DESCRIPTION =
-    if RubyVM::MJIT.enabled? # checking -DMJIT_FORCE_ENABLE
+    if defined?(RubyVM::MJIT.enabled?) && RubyVM::MJIT.enabled? # checking -DMJIT_FORCE_ENABLE
       RUBY_DESCRIPTION.sub(/\+JIT /, '')
     else
       RUBY_DESCRIPTION
