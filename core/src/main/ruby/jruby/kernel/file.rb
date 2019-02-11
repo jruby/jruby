@@ -1,6 +1,6 @@
 # Windows symlink support borrowed from djberg96/win32-file and ffi-win32-extensions
 
-if org.jruby.platform.Platform::IS_WINDOWS
+if JRuby::Util::ON_WINDOWS
 
   begin
     require 'ffi'
