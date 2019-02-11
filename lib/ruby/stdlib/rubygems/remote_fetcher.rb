@@ -71,13 +71,10 @@ class Gem::RemoteFetcher
   #        HTTP_PROXY_PASS)
   # * <tt>:no_proxy</tt>: ignore environment variables and _don't_ use a proxy
   #
-  # +dns+: An object to use for DNS resolution of the API endpoint.
-  #        By default, use Resolv::DNS.
-  #
   # +headers+: A set of additional HTTP headers to be sent to the server when
   #            fetching the gem.
 
-  def initialize(proxy=nil, dns=Resolv::DNS.new, headers={})
+  def initialize(proxy=nil, dns=nil, headers={})
     require 'net/http'
     require 'stringio'
     require 'time'
@@ -90,32 +87,7 @@ class Gem::RemoteFetcher
     @pool_lock = Mutex.new
     @cert_files = Gem::Request.get_cert_files
 
-    @dns = dns
     @headers = headers
-  end
-
-  ##
-  # Given a source at +uri+, calculate what hostname to actually
-  # connect to query the data for it.
-
-  def api_endpoint(uri)
-    host = uri.host
-
-    begin
-      res = @dns.getresource "_rubygems._tcp.#{host}",
-                             Resolv::DNS::Resource::IN::SRV
-    rescue Resolv::ResolvError => e
-      verbose "Getting SRV record failed: #{e}"
-      uri
-    else
-      target = res.target.to_s.strip
-
-      if URI("http://" + target).host.end_with?(".#{host}")
-        return URI.parse "#{uri.scheme}://#{target}#{uri.path}"
-      end
-
-      uri
-    end
   end
 
   ##
@@ -125,7 +97,7 @@ class Gem::RemoteFetcher
   # Should probably be integrated with #download below, but that will be a
   # larger, more encompassing effort. -erikh
 
-  def download_to_cache dependency
+  def download_to_cache(dependency)
     found, _ = Gem::SpecFetcher.fetcher.spec_for_dependency dependency
 
     return if found.empty?
@@ -142,9 +114,9 @@ class Gem::RemoteFetcher
 
   def download(spec, source_uri, install_dir = Gem.dir)
     cache_dir =
-      if Dir.pwd == install_dir then # see fetch_command
+      if Dir.pwd == install_dir  # see fetch_command
         install_dir
-      elsif File.writable? install_dir then
+      elsif File.writable? install_dir
         File.join install_dir, "cache"
       else
         File.join Gem.user_dir, "cache"
@@ -164,9 +136,7 @@ class Gem::RemoteFetcher
       begin
         source_uri = URI.parse(source_uri)
       rescue
-        source_uri = URI.parse(URI.const_defined?(:DEFAULT_PARSER) ?
-                               URI::DEFAULT_PARSER.escape(source_uri.to_s) :
-                               URI.escape(source_uri.to_s))
+        source_uri = URI.parse(URI::DEFAULT_PARSER.escape(source_uri.to_s))
       end
     end
 
@@ -179,7 +149,7 @@ class Gem::RemoteFetcher
     # REFACTOR: be sure to clean up fake fetcher when you do this... cleaner
     case scheme
     when 'http', 'https', 's3' then
-      unless File.exist? local_gem_path then
+      unless File.exist? local_gem_path
         begin
           verbose "Downloading gem #{gem_file_name}"
 
@@ -213,7 +183,7 @@ class Gem::RemoteFetcher
       verbose "Using local gem #{local_gem_path}"
     when nil then # TODO test for local overriding cache
       source_path = if Gem.win_platform? && source_uri.scheme &&
-                       !source_uri.path.include?(':') then
+                       !source_uri.path.include?(':')
                       "#{source_uri.scheme}:#{source_uri.path}"
                     else
                       source_uri.path
@@ -239,14 +209,14 @@ class Gem::RemoteFetcher
   ##
   # File Fetcher. Dispatched by +fetch_path+. Use it instead.
 
-  def fetch_file uri, *_
+  def fetch_file(uri, *_)
     Gem.read_binary correct_for_windows_path uri.path
   end
 
   ##
   # HTTP Fetcher. Dispatched by +fetch_path+. Use it instead.
 
-  def fetch_http uri, last_modified = nil, head = false, depth = 0
+  def fetch_http(uri, last_modified = nil, head = false, depth = 0)
     fetch_type = head ? Net::HTTP::Head : Net::HTTP::Get
     response   = request uri, fetch_type, last_modified do |req|
       headers.each { |k,v| req.add_field(k,v) }
@@ -293,7 +263,7 @@ class Gem::RemoteFetcher
 
     if data and !head and uri.to_s =~ /\.gz$/
       begin
-        data = Gem.gunzip data
+        data = Gem::Util.gunzip data
       rescue Zlib::GzipFile::Error
         raise FetchError.new("server did not return a valid file", uri.to_s)
       end
@@ -304,7 +274,8 @@ class Gem::RemoteFetcher
     raise
   rescue Timeout::Error
     raise UnknownHostError.new('timed out', uri.to_s)
-  rescue IOError, SocketError, SystemCallError => e
+  rescue IOError, SocketError, SystemCallError,
+    *(OpenSSL::SSL::SSLError if defined?(OpenSSL)) => e
     if e.message =~ /getaddrinfo/
       raise UnknownHostError.new('no such name', uri.to_s)
     else
@@ -321,7 +292,7 @@ class Gem::RemoteFetcher
   # Downloads +uri+ to +path+ if necessary. If no path is given, it just
   # passes the data.
 
-  def cache_update_path uri, path = nil, update = true
+  def cache_update_path(uri, path = nil, update = true)
     mtime = path && File.stat(path).mtime rescue nil
 
     data = fetch_path(uri, mtime)
@@ -386,17 +357,15 @@ class Gem::RemoteFetcher
     require 'base64'
     require 'openssl'
 
-    unless uri.user && uri.password
-      raise FetchError.new("credentials needed in s3 source, like s3://key:secret@bucket-name/", uri.to_s)
-    end
+    id, secret = s3_source_auth uri
 
     expiration ||= s3_expiration
     canonical_path = "/#{uri.host}#{uri.path}"
     payload = "GET\n\n\n#{expiration}\n#{canonical_path}"
-    digest = OpenSSL::HMAC.digest('sha1', uri.password, payload)
+    digest = OpenSSL::HMAC.digest('sha1', secret, payload)
     # URI.escape is deprecated, and there isn't yet a replacement that does quite what we want
     signature = Base64.encode64(digest).gsub("\n", '').gsub(/[\+\/=]/) { |c| BASE64_URI_TRANSLATE[c] }
-    URI.parse("https://#{uri.host}.s3.amazonaws.com#{uri.path}?AWSAccessKeyId=#{uri.user}&Expires=#{expiration}&Signature=#{signature}")
+    URI.parse("https://#{uri.host}.s3.amazonaws.com#{uri.path}?AWSAccessKeyId=#{id}&Expires=#{expiration}&Signature=#{signature}")
   end
 
   def s3_expiration
@@ -407,13 +376,30 @@ class Gem::RemoteFetcher
 
   private
 
-  def proxy_for proxy, uri
+  def proxy_for(proxy, uri)
     Gem::Request.proxy_uri(proxy || Gem::Request.get_proxy_from_env(uri.scheme))
   end
 
-  def pools_for proxy
+  def pools_for(proxy)
     @pool_lock.synchronize do
       @pools[proxy] ||= Gem::Request::ConnectionPools.new proxy, @cert_files
     end
+  end
+
+  def s3_source_auth(uri)
+    return [uri.user, uri.password] if uri.user && uri.password
+
+    s3_source = Gem.configuration[:s3_source] || Gem.configuration['s3_source']
+    host = uri.host
+    raise FetchError.new("no s3_source key exists in .gemrc", "s3://#{host}") unless s3_source
+
+    auth = s3_source[host] || s3_source[host.to_sym]
+    raise FetchError.new("no key for host #{host} in s3_source in .gemrc", "s3://#{host}") unless auth
+
+    id = auth[:id] || auth['id']
+    secret = auth[:secret] || auth['secret']
+    raise FetchError.new("s3_source for #{host} missing id or secret", "s3://#{host}") unless id and secret
+
+    [id, secret]
   end
 end

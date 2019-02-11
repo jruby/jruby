@@ -45,6 +45,7 @@ class Gem::CommandManager
     :fetch,
     :generate_index,
     :help,
+    :info,
     :install,
     :list,
     :lock,
@@ -68,7 +69,11 @@ class Gem::CommandManager
     :update,
     :which,
     :yank,
-  ]
+  ].freeze
+
+  ALIAS_COMMANDS = {
+    'i' => 'install'
+  }.freeze
 
   ##
   # Return the authoritative instance of the command manager.
@@ -150,7 +155,7 @@ class Gem::CommandManager
   end
 
   def process_args(args, build_args=nil)
-    if args.empty? then
+    if args.empty?
       say Gem::Command::HELP
       terminate_interaction 1
     end
@@ -173,16 +178,23 @@ class Gem::CommandManager
   end
 
   def find_command(cmd_name)
+    cmd_name = find_alias_command cmd_name
+
     possibilities = find_command_possibilities cmd_name
 
-    if possibilities.size > 1 then
+    if possibilities.size > 1
       raise Gem::CommandLineError,
             "Ambiguous command #{cmd_name} matches [#{possibilities.join(', ')}]"
-    elsif possibilities.empty? then
+    elsif possibilities.empty?
       raise Gem::CommandLineError, "Unknown command #{cmd_name}"
     end
 
     self[possibilities.first]
+  end
+
+  def find_alias_command(cmd_name)
+    alias_name = ALIAS_COMMANDS[cmd_name]
+    alias_name ? alias_name : cmd_name
   end
 
   def find_command_possibilities(cmd_name)
@@ -218,4 +230,3 @@ class Gem::CommandManager
   end
 
 end
-

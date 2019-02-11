@@ -4,6 +4,8 @@
 # Each exception needs a brief description and the scenarios where it is
 # likely to be raised
 
+require 'rubygems/deprecate'
+
 ##
 # Base exception class for RubyGems.  All exception raised by RubyGems are a
 # subclass of this one.
@@ -11,10 +13,12 @@ class Gem::Exception < RuntimeError
 
   ##
   #--
-  # TODO: remove in RubyGems 3, nobody sets this
+  # TODO: remove in RubyGems 4, nobody sets this
 
   attr_accessor :source_exception # :nodoc:
 
+  extend Gem::Deprecate
+  deprecate :source_exception, :none, 2018, 12
 end
 
 class Gem::CommandLineError < Gem::Exception; end
@@ -32,7 +36,7 @@ class Gem::DependencyResolutionError < Gem::DependencyError
 
   attr_reader :conflict
 
-  def initialize conflict
+  def initialize(conflict)
     @conflict = conflict
     a, b = conflicting_dependencies
 
@@ -52,6 +56,13 @@ class Gem::GemNotInHomeException < Gem::Exception
   attr_accessor :spec
 end
 
+###
+# Raised when removing a gem with the uninstall command fails
+
+class Gem::UninstallError < Gem::Exception
+  attr_accessor :spec
+end
+
 class Gem::DocumentError < Gem::Exception; end
 
 ##
@@ -66,7 +77,7 @@ class Gem::FilePermissionError < Gem::Exception
 
   attr_reader :directory
 
-  def initialize directory
+  def initialize(directory)
     @directory = directory
 
     super "You don't have write permissions for the #{directory} directory."
@@ -126,7 +137,7 @@ class Gem::ImpossibleDependenciesError < Gem::Exception
   attr_reader :conflicts
   attr_reader :request
 
-  def initialize request, conflicts
+  def initialize(request, conflicts)
     @request   = request
     @conflicts = conflicts
 
@@ -238,7 +249,7 @@ class Gem::UnsatisfiableDependencyError < Gem::DependencyError
   # Creates a new UnsatisfiableDependencyError for the unsatisfiable
   # Gem::Resolver::DependencyRequest +dep+
 
-  def initialize dep, platform_mismatch=nil
+  def initialize(dep, platform_mismatch=nil)
     if platform_mismatch and !platform_mismatch.empty?
       plats = platform_mismatch.map { |x| x.platform.to_s }.sort.uniq
       super "Unable to resolve dependency: No match for '#{dep}' on this platform. Found: #{plats.join(', ')}"
