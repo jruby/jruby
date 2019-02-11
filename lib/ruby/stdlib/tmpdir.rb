@@ -7,7 +7,7 @@
 
 require 'fileutils'
 begin
-  require 'etc.so'
+  require 'etc'
 rescue LoadError # rescue LoadError for miniruby
 end
 

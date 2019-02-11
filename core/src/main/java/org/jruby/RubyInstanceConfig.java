@@ -1738,13 +1738,6 @@ public class RubyInstanceConfig {
     public static final int FIBER_POOL_TTL = Options.FIBER_THREADPOOL_TTL.load();
 
     /**
-     * Enable use of the native Java version of the 'net/protocol' library.
-     *
-     * Set with the <tt>jruby.native.net.protocol</tt> system property.
-     */
-    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
-
-    /**
      * Enable tracing of method calls.
      *
      * Set with the <tt>jruby.debug.fullTrace</tt> system property.
@@ -2034,4 +2027,12 @@ public class RubyInstanceConfig {
     @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
     }
+
+    /**
+     * Enable use of the native Java version of the 'net/protocol' library.
+     *
+     * Set with the <tt>jruby.native.net.protocol</tt> system property.
+     */
+    @Deprecated
+    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
 }
