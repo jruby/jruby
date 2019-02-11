@@ -254,15 +254,33 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param b is byte to be appended
      * @param len is number of times to repeat the append
      */
-    public void fill(int b, int len) {
-        if (len <= 0) return; // Sprintf assumes < 0 to work
+    public void fill(final int b, final int len) {
+        int i;
+        switch (len) {
+            case 0: return;
+            case 1:
+                grow(1);
+                i = begin + realSize;
+                bytes[i] = (byte) b;
+                break;
+            case 2:
+                grow(2);
+                i = begin + realSize;
+                bytes[i] = (byte) b; bytes[i + 1] = (byte) b;
+                break;
+            case 3:
+                grow(3);
+                i = begin + realSize;
+                bytes[i] = (byte) b; bytes[i + 1] = (byte) b; bytes[i + 2] = (byte) b;
+                break;
+            default:
+                if (len < 0) return; // TODO: Sprintf assumes < 0 to work (likely should not)
 
-        grow(len);
-        int newSize = realSize + len;
-        for (int i = begin + realSize; --len >= 0; i++) {
-            bytes[i] = (byte) b;
+                grow(len);
+                i = begin + realSize;
+                for (int s = len; --s >= 0; i++) bytes[i] = (byte) b;
         }
-        realSize = newSize;
+        realSize += len;
         invalidate();
     }
 
@@ -1076,16 +1094,13 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Grow the ByteList by increaseRequested bytes.  A value <0 will be a no-op.
+     * Grow the ByteList by increaseRequested bytes.
      *
      * @param increaseRequested number of bytes to grow
      */
     private void grow(int increaseRequested) {
-        if (increaseRequested < 0) return;
-
         // new available size
-        int newSize = realSize + increaseRequested;
-
+        int newSize = realSize + increaseRequested; // increase <= 0 -> no-op
         // only recopy if bytes does not have enough room *after* the begin index
         if (newSize > bytes.length - begin) {
             byte[] newBytes = new byte[newSize + (newSize >> 1)];

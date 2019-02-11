@@ -402,7 +402,7 @@ public class RubyKernel {
 
     private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
 
-    static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
+    public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         if (object instanceof RubyInteger){
             return new_float(runtime, (RubyInteger) object);
         }
