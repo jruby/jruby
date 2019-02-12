@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.headius.backport9.stack.StackWalker;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 
@@ -850,14 +851,15 @@ public class RubyKernel {
 
         // semi extract_raise_opts :
         IRubyObject cause = null;
-        if ( argc > 0 ) {
+        if (argc > 0) {
             IRubyObject last = args[argc - 1];
-            if ( last instanceof RubyHash ) {
-                RubyHash opt = (RubyHash) last; RubySymbol key;
-                if ( ! opt.isEmpty() && ( opt.has_key_p( context, key = runtime.newSymbol("cause") ) == runtime.getTrue() ) ) {
+            if (last instanceof RubyHash) {
+                RubyHash opt = (RubyHash) last;
+                RubySymbol key;
+                if (!opt.isEmpty() && (opt.has_key_p(context, key = runtime.newSymbol("cause")) == runtime.getTrue())) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
                     forceCause = true;
-                    if ( opt.isEmpty() && --argc == 0 ) { // more opts will be passed along
+                    if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
                         throw runtime.newArgumentError("only cause is given with no arguments");
                     }
                 }
@@ -894,7 +896,7 @@ public class RubyKernel {
                 break;
             default:
                 RubyException exception = convertToException(context, args[0], args[1]);
-                exception.forceBacktrace(args[2]);
+                exception.setBacktrace(args[2]);
                 raise = exception.toThrowable();
                 break;
         }
@@ -1223,7 +1225,7 @@ public class RubyKernel {
         return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).toThrowable();
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject _message) {
         if (_message instanceof RubyArray) {
             RubyArray messageArray = _message.convertToArray();
@@ -1249,7 +1251,7 @@ public class RubyKernel {
 
     public static final String[] WARN_VALID_KEYS = { "uplevel" };
 
-    @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, rest = true, visibility = PRIVATE, omit = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         boolean kwargs = false;
         int uplevel = 0;
@@ -1271,7 +1273,7 @@ public class RubyKernel {
         int numberOfMessages = kwargs ? args.length - 1 : args.length;
 
         if (kwargs) {
-            RubyStackTraceElement element = context.runtime.getInstanceConfig().getTraceType().getBacktraceElement(context, uplevel);
+            RubyStackTraceElement element = context.getSingleBacktrace(uplevel);
 
             RubyString baseMessage = context.runtime.newString();
             baseMessage.catString(element.getFileName() + ':' + element.getLineNumber() + ": warning: ");

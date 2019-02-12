@@ -99,7 +99,6 @@ import org.jruby.embed.Extension;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.JRubyPOSIXHandler;
-import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.fiber.ThreadFiber;
@@ -144,7 +143,6 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.CompiledScriptLoader;
-import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
@@ -4314,7 +4312,7 @@ public final class Ruby implements Constantizable {
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
 
         if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            ex.forceBacktrace(disabledBacktrace());
+            ex.setBacktrace(disabledBacktrace());
         }
 
         return ex.toThrowable();

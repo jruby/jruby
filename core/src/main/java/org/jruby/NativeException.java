@@ -84,14 +84,6 @@ public class NativeException extends RubyException {
         return exceptionClass;
     }
 
-    @Override
-    public void prepareBacktrace(ThreadContext context) {
-        // if it's null, use cause's trace to build a raw stack trace
-        if (backtraceData == null) {
-            backtraceData = WALKER.walk(cause.getStackTrace(), stream -> TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), stream));
-        }
-    }
-
     @JRubyMethod
     public final IRubyObject cause() {
         return Java.getInstance(getRuntime(), getCause());
