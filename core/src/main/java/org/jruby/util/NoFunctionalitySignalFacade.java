@@ -40,8 +40,8 @@ public class NoFunctionalitySignalFacade implements SignalFacade {
         return recv.getRuntime().getNil();
     }
 
-    public IRubyObject trap(IRubyObject recv, BlockCallback block, String sig) {
-        return recv.getRuntime().getNil();
+    public IRubyObject trap(Ruby runtime, BlockCallback block, String sig) {
+        return runtime.getNil();
     }
 
     public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
