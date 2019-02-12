@@ -835,7 +835,7 @@ public final class ThreadContext {
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
-        return trace.length == 0 ? null : trace[0];
+        return trace.length == 0 ? null : trace[trace.length - 1];
     }
 
     /**

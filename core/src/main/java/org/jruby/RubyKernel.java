@@ -1223,7 +1223,7 @@ public class RubyKernel {
         return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).toThrowable();
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject _message) {
         if (_message instanceof RubyArray) {
             RubyArray messageArray = _message.convertToArray();
@@ -1248,9 +1248,8 @@ public class RubyKernel {
     }
 
     public static final String[] WARN_VALID_KEYS = { "uplevel" };
-    private static final StackWalker WALKER = StackWalker.getInstance();
 
-    @JRubyMethod(module = true, rest = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, rest = true, visibility = PRIVATE, omit = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         boolean kwargs = false;
         int uplevel = 0;
