@@ -53,7 +53,6 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.exceptions.Exception;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyLibrary;
@@ -3335,7 +3334,7 @@ public final class Ruby implements Constantizable {
                 if (statusObj != null && !statusObj.isNil()) {
                     status = RubyNumeric.fix2int(statusObj);
                 }
-            } catch (Exception e) {
+            } catch (RaiseException e) {
                 status = 1;
                 printError(e.getException());
             } catch (IRReturnJump irj) {
