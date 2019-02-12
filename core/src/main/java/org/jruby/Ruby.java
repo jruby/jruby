@@ -3301,17 +3301,6 @@ public final class Ruby implements Constantizable {
             context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
         }
 
-        // terminate signal-handling thread to avoid races with at_exit
-        ExecutorService executor = (ExecutorService) getModule("Signal").getInternalVariable("executor");
-        try {
-            executor.shutdown();
-            if (!executor.awaitTermination(1, TimeUnit.HOURS)) {
-                throw newRuntimeError("failed to execute at_exit blocks within 1h timeout");
-            }
-        } catch (InterruptedException ie) {
-            throw newRuntimeError("interrupted while attempting to execute at_exit blocks");
-        }
-
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
             // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
