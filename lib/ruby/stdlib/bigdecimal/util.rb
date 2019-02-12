@@ -5,6 +5,9 @@
 # and provides BigDecimal#to_d and BigDecimal#to_digits.
 #++
 
+require 'bigdecimal'
+# No native bigdecimal/util in JRuby
+require 'bigdecimal/util.so' unless RUBY_ENGINE == 'jruby'
 
 class Integer < Numeric
   # call-seq:
@@ -42,8 +45,8 @@ class Float < Numeric
   #
   # See also BigDecimal::new.
   #
-  def to_d(precision=nil)
-    BigDecimal(self, precision || Float::DIG)
+  def to_d(precision=Float::DIG)
+    BigDecimal(self, precision)
   end
 end
 
@@ -64,11 +67,13 @@ class String
   #
   # See also BigDecimal::new.
   #
-  def to_d
-    begin
-      BigDecimal(self)
-    rescue ArgumentError
-      BigDecimal(0)
+  if RUBY_ENGINE == 'jruby' # No native bigdecimal/util in JRuby
+    def to_d
+      begin
+        BigDecimal(self)
+      rescue ArgumentError
+        BigDecimal(0)
+      end
     end
   end
 end
@@ -130,5 +135,22 @@ class Rational < Numeric
   #
   def to_d(precision)
     BigDecimal(self, precision)
+  end
+end
+
+
+class NilClass
+  # call-seq:
+  #     nil.to_d -> bigdecimal
+  #
+  # Returns nil represented as a BigDecimal.
+  #
+  #     require 'bigdecimal'
+  #     require 'bigdecimal/util'
+  #
+  #     nil.to_d   # => 0.0
+  #
+  def to_d
+    BigDecimal(0)
   end
 end

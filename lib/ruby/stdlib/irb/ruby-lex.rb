@@ -11,8 +11,8 @@
 #
 
 require "e2mmap"
-require "irb/slex"
-require "irb/ruby-token"
+require_relative "slex"
+require_relative "ruby-token"
 
 # :stopdoc:
 class RubyLex

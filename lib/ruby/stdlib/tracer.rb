@@ -60,6 +60,7 @@
 # by Keiju ISHITSUKA(keiju@ishitsuka.com)
 #
 class Tracer
+
   class << self
     # display additional debug information (defaults to false)
     attr_accessor :verbose

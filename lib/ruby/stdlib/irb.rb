@@ -19,6 +19,8 @@ require "irb/ruby-lex"
 require "irb/input-method"
 require "irb/locale"
 
+require "irb/version"
+
 # IRB stands for "interactive Ruby" and is a tool to interactively execute Ruby
 # expressions read from the standard input.
 #
@@ -354,9 +356,7 @@ module IRB
   def IRB.version
     if v = @CONF[:VERSION] then return v end
 
-    require "irb/version"
-    rv = @RELEASE_VERSION.sub(/\.0/, "")
-    @CONF[:VERSION] = format("irb %s(%s)", rv, @LAST_UPDATE_DATE)
+    @CONF[:VERSION] = format("irb %s (%s)", @RELEASE_VERSION, @LAST_UPDATE_DATE)
   end
 
   # The current IRB::Context of the session, see IRB.conf
@@ -439,6 +439,8 @@ module IRB
 
     # Evaluates input for this session.
     def eval_input
+      exc = nil
+
       @scanner.set_prompt do
         |ltype, indent, continue, line_no|
         if ltype
@@ -488,52 +490,74 @@ module IRB
         signal_status(:IN_EVAL) do
           begin
             line.untaint
-            @context.evaluate(line, line_no)
+            @context.evaluate(line, line_no, exception: exc)
             output_value if @context.echo?
-            exc = nil
           rescue Interrupt => exc
           rescue SystemExit, SignalException
             raise
           rescue Exception => exc
+          else
+            exc = nil
+            next
           end
-          if exc
-            if exc.backtrace && exc.backtrace[0] =~ /irb(2)?(\/.*|-.*|\.rb)?:/ && exc.class.to_s !~ /^IRB/ &&
-                !(SyntaxError === exc)
-              irb_bug = true
-            else
-              irb_bug = false
-            end
+          handle_exception(exc)
+        end
+      end
+    end
 
-            messages = []
-            lasts = []
-            levels = 0
-            if exc.backtrace
-              count = 0
-              exc.backtrace.each do |m|
-                m = @context.workspace.filter_backtrace(m) or next unless irb_bug
-                m = sprintf("%9d: from %s", (count += 1), m)
-                if messages.size < @context.back_trace_limit
-                  messages.push(m)
-                elsif lasts.size < @context.back_trace_limit
-                  lasts.push(m).shift
-                  levels += 1
-                end
-              end
-            end
-            attr = STDOUT.tty? ? ATTR_TTY : ATTR_PLAIN
-            print "#{attr[1]}Traceback#{attr[]} (most recent call last):\n"
-            unless lasts.empty?
-              puts lasts.reverse
-              printf "... %d levels...\n", levels if levels > 0
-            end
-            puts messages.reverse
-            messages = exc.to_s.split(/\n/)
-            print "#{attr[1]}#{exc.class} (#{attr[4]}#{messages.shift}#{attr[0, 1]})#{attr[]}\n"
-            puts messages.map {|s| "#{attr[1]}#{s}#{attr[]}\n"}
-            print "Maybe IRB bug!\n" if irb_bug
+    def handle_exception(exc)
+      if exc.backtrace && exc.backtrace[0] =~ /irb(2)?(\/.*|-.*|\.rb)?:/ && exc.class.to_s !~ /^IRB/ &&
+         !(SyntaxError === exc)
+        irb_bug = true
+      else
+        irb_bug = false
+      end
+
+      if STDOUT.tty?
+        attr = ATTR_TTY
+        print "#{attr[1]}Traceback#{attr[]} (most recent call last):\n"
+      else
+        attr = ATTR_PLAIN
+      end
+      messages = []
+      lasts = []
+      levels = 0
+      if exc.backtrace
+        count = 0
+        exc.backtrace.each do |m|
+          m = @context.workspace.filter_backtrace(m) or next unless irb_bug
+          count += 1
+          if attr == ATTR_TTY
+            m = sprintf("%9d: from %s", count, m)
+          else
+            m = "\tfrom #{m}"
+          end
+          if messages.size < @context.back_trace_limit
+            messages.push(m)
+          elsif lasts.size < @context.back_trace_limit
+            lasts.push(m).shift
+            levels += 1
           end
         end
       end
+      if attr == ATTR_TTY
+        unless lasts.empty?
+          puts lasts.reverse
+          printf "... %d levels...\n", levels if levels > 0
+        end
+        puts messages.reverse
+      end
+      m = exc.to_s.split(/\n/)
+      print "#{attr[1]}#{exc.class} (#{attr[4]}#{m.shift}#{attr[0, 1]})#{attr[]}\n"
+      puts m.map {|s| "#{attr[1]}#{s}#{attr[]}\n"}
+      if attr == ATTR_PLAIN
+        puts messages
+        unless lasts.empty?
+          puts lasts
+          printf "... %d levels...\n", levels if levels > 0
+        end
+      end
+      print "Maybe IRB bug!\n" if irb_bug
     end
 
     # Evaluates the given block using the given +path+ as the Context#irb_path
@@ -708,7 +732,63 @@ module IRB
 end
 
 class Binding
-  # :nodoc:
+  # Opens an IRB session where +binding.irb+ is called which allows for
+  # interactive debugging. You can call any methods or variables available in
+  # the current scope, and mutate state if you need to.
+  #
+  #
+  # Given a Ruby file called +potato.rb+ containing the following code:
+  #
+  #     class Potato
+  #       def initialize
+  #         @cooked = false
+  #         binding.irb
+  #         puts "Cooked potato: #{@cooked}"
+  #       end
+  #     end
+  #
+  #     Potato.new
+  #
+  # Running +ruby potato.rb+ will open an IRB session where +binding.irb+ is
+  # called, and you will see the following:
+  #
+  #     $ ruby potato.rb
+  #
+  #     From: potato.rb @ line 4 :
+  #
+  #         1: class Potato
+  #         2:   def initialize
+  #         3:     @cooked = false
+  #      => 4:     binding.irb
+  #         5:     puts "Cooked potato: #{@cooked}"
+  #         6:   end
+  #         7: end
+  #         8:
+  #         9: Potato.new
+  #
+  #     irb(#<Potato:0x00007feea1916670>):001:0>
+  #
+  # You can type any valid Ruby code and it will be evaluated in the current
+  # context. This allows you to debug without having to run your code repeatedly:
+  #
+  #     irb(#<Potato:0x00007feea1916670>):001:0> @cooked
+  #     => false
+  #     irb(#<Potato:0x00007feea1916670>):002:0> self.class
+  #     => Potato
+  #     irb(#<Potato:0x00007feea1916670>):003:0> caller.first
+  #     => ".../2.5.1/lib/ruby/2.5.0/irb/workspace.rb:85:in `eval'"
+  #     irb(#<Potato:0x00007feea1916670>):004:0> @cooked = true
+  #     => true
+  #
+  # You can exit the IRB session with the `exit` command. Note that exiting will
+  # resume execution where +binding.irb+ had paused it, as you can see from the
+  # output printed to standard output in this example:
+  #
+  #     irb(#<Potato:0x00007feea1916670>):005:0> exit
+  #     Cooked potato: true
+  #
+  #
+  # See IRB@IRB+Usage for more information.
   def irb
     IRB.setup(eval("__FILE__"), argv: [])
     workspace = IRB::WorkSpace.new(self)

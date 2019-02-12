@@ -71,7 +71,7 @@ EOF
           end
         end
       end
-      eval("_=nil", @binding)
+      @binding.local_variable_set(:_, nil)
     end
 
     # The Binding of this workspace
@@ -83,6 +83,14 @@ EOF
     # Evaluate the given +statements+ within the  context of this workspace.
     def evaluate(context, statements, file = __FILE__, line = __LINE__)
       eval(statements, @binding, file, line)
+    end
+
+    def local_variable_set(name, value)
+      @binding.local_variable_set(name, value)
+    end
+
+    def local_variable_get(name)
+      @binding.local_variable_get(name)
     end
 
     # error message manipulator
@@ -108,7 +116,7 @@ EOF
     end
 
     def code_around_binding
-      file, pos = @binding.eval('[__FILE__, __LINE__]')
+      file, pos = @binding.source_location
 
       unless defined?(::SCRIPT_LINES__[file]) && lines = ::SCRIPT_LINES__[file]
         begin

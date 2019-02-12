@@ -9,8 +9,8 @@
 #
 #
 #
-require 'irb/src_encoding'
-require 'irb/magic-file'
+require_relative 'src_encoding'
+require_relative 'magic-file'
 
 module IRB
   STDIN_FILE_NAME = "(line)" # :nodoc:

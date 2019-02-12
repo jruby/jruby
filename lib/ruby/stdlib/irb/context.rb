@@ -9,9 +9,10 @@
 #
 #
 #
-require "irb/workspace"
-require "irb/inspector"
-require "irb/output-method"
+require_relative "workspace"
+require_relative "inspector"
+require_relative "input-method"
+require_relative "output-method"
 
 module IRB
   # A class that wraps the current state of the irb session, including the
@@ -261,7 +262,7 @@ module IRB
     # to #last_value.
     def set_last_value(value)
       @last_value = value
-      @workspace.evaluate self, "_ = IRB.CurrentContext.last_value"
+      @workspace.local_variable_set :_, value
     end
 
     # Sets the +mode+ of the prompt in this context.
@@ -375,8 +376,12 @@ module IRB
       @debug_level > 0
     end
 
-    def evaluate(line, line_no) # :nodoc:
+    def evaluate(line, line_no, exception: nil) # :nodoc:
       @line_no = line_no
+      if exception
+        line = "begin ::Kernel.raise _; rescue _.class; #{line}; end"
+        @workspace.local_variable_set(:_, exception)
+      end
       set_last_value(@workspace.evaluate(self, line, irb_path, line_no))
     end
 

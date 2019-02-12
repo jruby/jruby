@@ -109,7 +109,7 @@ require 'monitor'
 # 3. Create a logger for the specified file.
 #
 #      file = File.open('foo.log', File::WRONLY | File::APPEND)
-#      # To create new (and to remove old) logfile, add File::CREAT like:
+#      # To create new logfile, add File::CREAT like:
 #      # file = File.open('foo.log', File::WRONLY | File::APPEND | File::CREAT)
 #      logger = Logger.new(file)
 #
@@ -224,7 +224,7 @@ require 'monitor'
 #   })
 #
 class Logger
-  VERSION = "1.2.7"
+  VERSION = "1.3.0"
   _, name, rev = %w$Id$
   if name
     name = name.chomp(",v")
@@ -479,9 +479,7 @@ class Logger
   # device exists, return +nil+.
   #
   def <<(msg)
-    unless @logdev.nil?
-      @logdev.write(msg)
-    end
+    @logdev&.write(msg)
   end
 
   #
@@ -568,7 +566,7 @@ class Logger
   # Close the logging device.
   #
   def close
-    @logdev.close if @logdev
+    @logdev&.close
   end
 
 private
