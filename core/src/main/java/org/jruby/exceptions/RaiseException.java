@@ -42,6 +42,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -103,12 +104,17 @@ public class RaiseException extends JumpException {
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
         context.runtime.incrementExceptionCount();
+        
         doSetLastError(context);
         doCallEventHook(context);
 
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
-        backtrace = backtrace == null ? exception.callMethod("backtrace") : backtrace;
+        if (backtrace == null) {
+            backtrace = sites(context).backtrace.call(context, exception, exception);
+        } else {
+            exception.setBacktrace(backtrace);
+        }
 
         if (backtrace.isNil()) {
             // No backtrace provided or overridden, capture at this point in stack
@@ -194,5 +200,9 @@ public class RaiseException extends JumpException {
     @Deprecated
     protected final void setException(RubyException newException, boolean unused) {
         this.exception = newException;
+    }
+
+    private static JavaSites.RaiseExceptionSites sites(ThreadContext context) {
+        return context.sites.RaiseException;
     }
 }
