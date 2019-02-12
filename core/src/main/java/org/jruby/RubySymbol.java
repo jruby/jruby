@@ -44,11 +44,13 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.Helpers;
@@ -57,6 +59,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -728,6 +731,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return RubyProc.newProc(context.runtime,
                                 new Block(body, Binding.DUMMY),
                                 Block.Type.PROC);
+    }
+
+    public IRubyObject toRefinedProc(ThreadContext context, StaticScope scope) {
+        BlockBody body = new SymbolProcBody(context.runtime, symbol, scope);
+
+        return RubyProc.newProc(context.runtime,
+                new Block(body, Binding.DUMMY),
+                Block.Type.PROC);
     }
 
     private static boolean isIdentStart(char c) {
@@ -1408,6 +1419,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         public SymbolProcBody(Ruby runtime, String symbol) {
             super(runtime.getStaticScopeFactory().getDummyScope(), Signature.OPTIONAL);
             this.site = MethodIndex.getFunctionalCallSite(symbol);
+        }
+
+        public SymbolProcBody(Ruby runtime, String symbol, StaticScope scope) {
+            super(scope, Signature.OPTIONAL);
+            this.site = new RefinedCachingCallSite(symbol, scope, CallType.FUNCTIONAL);
         }
 
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {

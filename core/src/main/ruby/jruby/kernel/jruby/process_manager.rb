@@ -13,7 +13,7 @@ module JRuby
 
       config = LaunchConfig.new(JRuby.runtime, [command], false)
 
-      use_shell = JRuby::Util::ON_WINDOWS ? config.should_run_in_shell : false
+      use_shell = org.jruby.platform.Platform::IS_WINDOWS ? config.should_run_in_shell : false
       use_shell |= ShellLauncher.should_use_shell(command)
 
       if use_shell

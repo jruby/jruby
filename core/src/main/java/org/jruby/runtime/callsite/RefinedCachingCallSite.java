@@ -2,20 +2,30 @@ package org.jruby.runtime.callsite;
 
 import org.jruby.RubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RefinedCachingCallSite extends CachingCallSite {
-    public RefinedCachingCallSite(String methodName, CallType callType) {
+    private final StaticScope scope;
+
+    public RefinedCachingCallSite(String methodName, StaticScope scope, CallType callType) {
         super(methodName, callType);
+
+        this.scope = scope;
+    }
+
+    public RefinedCachingCallSite(String methodName, IRScope scope, CallType callType) {
+        this(methodName, scope.getStaticScope(), callType);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, args);
@@ -26,7 +36,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, args, block);
@@ -37,7 +47,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method);
@@ -48,7 +58,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, block);
@@ -59,7 +69,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0);
@@ -70,7 +80,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, block);
@@ -81,7 +91,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1);
@@ -92,7 +102,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, block);
@@ -103,7 +113,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2);
@@ -114,7 +124,7 @@ public class RefinedCachingCallSite extends CachingCallSite {
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         RubyClass selfType = getClass(self);
-        DynamicMethod method = selfType.searchWithRefinements(methodName, context.getCurrentStaticScope());
+        DynamicMethod method = selfType.searchWithRefinements(methodName, scope);
 
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1, arg2, block);

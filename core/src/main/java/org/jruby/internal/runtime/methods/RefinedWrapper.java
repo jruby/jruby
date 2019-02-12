@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -11,8 +12,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ * Copyright (C) 2010 Charles Oliver Nutter <headius@headius.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -26,22 +27,44 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.ext.net.protocol;
+package org.jruby.internal.runtime.methods;
 
-import java.io.IOException;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.load.Library;
+import org.jruby.RubyModule;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
+ * A DynamicMethod wrapper that performs timed profiling for each call.
  */
-public class NetProtocolBufferedIOLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
-        runtime.getLoadService().removeBuiltinLibrary("net/protocol.rb");
-        runtime.getLoadService().removeInternalLoadedFeature("net/protocol.rb");
-        runtime.getLoadService().require("net/protocol");
+public class RefinedWrapper extends DynamicMethod {
+    private final DynamicMethod wrapped;
 
-        NetProtocolBufferedIO.create(runtime);
+    public RefinedWrapper(RubyModule implementationClass, Visibility visibility, String name, DynamicMethod wrapped) {
+        super(implementationClass, visibility, name);
+
+        if (wrapped.isRefined()) throw new RuntimeException("BLAH");
+
+        this.wrapped = wrapped;
     }
-}// NetProtocolBufferedIOLibrary
+
+    @Override
+    public boolean isRefined() {
+        return true;
+    }
+
+    public DynamicMethod getWrapped() {
+        return wrapped;
+    }
+
+    @Override
+    public DynamicMethod dup() {
+        return new RefinedWrapper(getImplementationClass(), getVisibility(), getName(), wrapped);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        throw new RuntimeException("BUG: refined marker called as method");
+    }
+}

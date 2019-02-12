@@ -25,17 +25,17 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     private boolean splattedValue;
 
     // clone constructor
-    protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, CallSite callSite,
+    protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined, CallSite callSite,
                        long callSiteID) {
         super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="),
-                v1, new Operand[] { v2 }, null, false, callSite, callSiteID);
+                v1, new Operand[] { v2 }, null, isPotentiallyRefined, callSite, callSiteID);
 
         this.splattedValue = splattedValue;
     }
 
     // normal constructor
-    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue) {
-        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, false);
+    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined) {
+        super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1, new Operand[] { v2 }, null, isPotentiallyRefined);
 
         assert result != null: "EQQInstr result is null";
 
@@ -54,7 +54,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii),
-                getArg1().cloneForInlining(ii), isSplattedValue(), getCallSite(), getCallSiteId());
+                getArg1().cloneForInlining(ii), isSplattedValue(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new EQQInstr(d.getCurrentScope(),result, receiver, arg1, d.decodeBoolean());
+        return new EQQInstr(d.getCurrentScope(), result, receiver, arg1, d.decodeBoolean(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

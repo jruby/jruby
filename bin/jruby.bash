@@ -296,7 +296,7 @@ do
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
      --record)
-        java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=disk=false,filename=jruby-flight-record-$$.jfr") ;;
+        java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
      --ng-server)
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER
