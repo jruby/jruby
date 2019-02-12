@@ -853,14 +853,15 @@ public class RubyKernel {
         IRubyObject cause = null;
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, args);
         if (!maybeOpts.isNil()) {
-            argc--;
             RubyHash opt = (RubyHash) maybeOpts;
             cause = opt.delete(context, runtime.newSymbol("cause"));
 
             if (!cause.isNil()) {
                 forceCause = true;
 
-                if (argc == 0) throw runtime.newArgumentError("only cause is given with no arguments");
+                if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
+                    throw runtime.newArgumentError("only cause is given with no arguments");
+                }
             }
         }
 
