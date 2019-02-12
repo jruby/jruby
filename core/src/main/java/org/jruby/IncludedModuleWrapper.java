@@ -187,6 +187,16 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
+    protected Map<String, Autoload> getAutoloadMap() {
+        return origin.getAutoloadMap();
+    }
+
+    @Override
+    protected synchronized Map<String, Autoload> getAutoloadMapForWrite() {
+        return origin.getAutoloadMapForWrite();
+    }
+
+    @Override
     @Deprecated
     public List<String> getStoredConstantNameList() {
         return origin.getStoredConstantNameList();
