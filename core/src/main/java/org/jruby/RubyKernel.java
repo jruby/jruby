@@ -851,16 +851,17 @@ public class RubyKernel {
 
         // semi extract_raise_opts :
         IRubyObject cause = null;
-        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(runtime, args);
-        if (!maybeOpts.isNil()) {
-            RubyHash opt = (RubyHash) maybeOpts;
-            cause = opt.delete(context, runtime.newSymbol("cause"));
-
-            if (!cause.isNil()) {
-                forceCause = true;
-
-                if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
-                    throw runtime.newArgumentError("only cause is given with no arguments");
+        if (argc > 0) {
+            IRubyObject last = args[argc - 1];
+            if (last instanceof RubyHash) {
+                RubyHash opt = (RubyHash) last;
+                RubySymbol key;
+                if (!opt.isEmpty() && (opt.has_key_p(context, key = runtime.newSymbol("cause")) == runtime.getTrue())) {
+                    cause = opt.delete(context, key, Block.NULL_BLOCK);
+                    forceCause = true;
+                    if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
+                        throw runtime.newArgumentError("only cause is given with no arguments");
+                    }
                 }
             }
         }
