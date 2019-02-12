@@ -19,7 +19,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     @gda.instance_variable_set :@vendor_set, @vendor_set
   end
 
-  def with_engine_version name, version
+  def with_engine_version(name, version)
     engine               = RUBY_ENGINE if Object.const_defined? :RUBY_ENGINE
     engine_version_const = "#{Gem.ruby_engine.upcase}_VERSION"
     engine_version       = Object.const_get engine_version_const
@@ -627,11 +627,7 @@ end
       assert_equal [dep('a'), dep('b')], @set.dependencies
       io
     end
-    tf.close! if tf.respond_to? :close!
-  end
-
-  def test_name_typo
-    assert_same @GDA, Gem::RequestSet::GemDepedencyAPI
+    tf.close!
   end
 
   def test_pin_gem_source
@@ -828,4 +824,3 @@ end
   end
 
 end
-

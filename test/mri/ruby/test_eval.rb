@@ -320,20 +320,6 @@ class TestEval < Test::Unit::TestCase
     end
     assert(!bad)
 
-    if false
-      # Ruby 2.0 doesn't see Proc as Binding
-      x = proc{}
-      eval "i4 = 1", x
-      assert_equal(1, eval("i4", x))
-      x = proc{proc{}}.call
-      eval "i4 = 22", x
-      assert_equal(22, eval("i4", x))
-      t = []
-      x = proc{proc{}}.call
-      eval "(0..9).each{|i5| t[i5] = proc{i5*2}}", x
-      assert_equal(8, t[4].call)
-    end
-
     x = binding
     eval "i = 1", x
     assert_equal(1, eval("i", x))
@@ -360,27 +346,6 @@ class TestEval < Test::Unit::TestCase
       assert_equal(eval("foo22"), eval("foo22", p))
       assert_equal(55, eval("foo22"))
     }.call
-
-    if false
-      # Ruby 2.0 doesn't see Proc as Binding
-      p1 = proc{i7 = 0; proc{i7}}.call
-      assert_equal(0, p1.call)
-      eval "i7=5", p1
-      assert_equal(5, p1.call)
-      assert(!defined?(i7))
-    end
-
-    if false
-      # Ruby 2.0 doesn't see Proc as Binding
-      p1 = proc{i7 = 0; proc{i7}}.call
-      i7 = nil
-      assert_equal(0, p1.call)
-      eval "i7=1", p1
-      assert_equal(1, p1.call)
-      eval "i7=5", p1
-      assert_equal(5, p1.call)
-      assert_nil(i7)
-    end
   end
 
   def test_nil_instance_eval_cvar
@@ -501,6 +466,12 @@ class TestEval < Test::Unit::TestCase
            o.method(:bar).source_location[0]
 
     assert_same a, b
+  end
+
+  def test_eval_location_binding
+    assert_warning(/__FILE__ in eval/) do
+      assert_equal(__FILE__, eval("__FILE__", binding))
+    end
   end
 
   def test_fstring_instance_eval

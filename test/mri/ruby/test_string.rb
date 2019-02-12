@@ -202,7 +202,9 @@ CODE
     assert_equal("fobar", s)
 
     assert_raise(ArgumentError) { "foo"[1, 2, 3] = "" }
+  end
 
+  def test_ASET_limits
     assert_raise(IndexError) {"foo"[RbConfig::LIMITS["LONG_MIN"]] = "l"}
   end
 
@@ -659,7 +661,9 @@ CODE
       assert_raise(ArgumentError) {S("mypassword".encode(enc)).crypt(S("aa"))}
     end
 
-    @cls == String and assert_no_memory_leak([], 's = ""', <<~'end;') # do
+    @cls == String and
+      assert_no_memory_leak([], 's = ""', "#{<<~"begin;"}\n#{<<~'end;'}")
+    begin;
       1000.times { s.crypt(-"..").clear  }
     end;
   end
@@ -812,6 +816,9 @@ CODE
     assert_raise(RuntimeError) { S('"\xA"').undump }
     assert_raise(RuntimeError) { S('"\\"').undump }
     assert_raise(RuntimeError) { S(%("\0")).undump }
+    assert_raise_with_message(RuntimeError, /invalid/) {
+      '"\\u{007F}".xxxxxx'.undump
+    }
   end
 
   def test_dup
@@ -982,15 +989,19 @@ CODE
     ].each do |g|
       assert_equal [g], g.each_grapheme_cluster.to_a
       assert_equal 1, g.each_grapheme_cluster.size
+      assert_predicate g.dup.taint.each_grapheme_cluster.to_a[0], :tainted?
     end
 
     [
-      ["\u{a 308}", ["\u000A", "\u0308"]],
-      ["\u{d 308}", ["\u000D", "\u0308"]],
+      ["\u{a 324}", ["\u000A", "\u0324"]],
+      ["\u{d 324}", ["\u000D", "\u0324"]],
       ["abc", ["a", "b", "c"]],
     ].each do |str, grapheme_clusters|
       assert_equal grapheme_clusters, str.each_grapheme_cluster.to_a
       assert_equal grapheme_clusters.size, str.each_grapheme_cluster.size
+      str.dup.taint.each_grapheme_cluster do |g|
+        assert_predicate g, :tainted?
+      end
     end
 
     s = ("x"+"\u{10ABCD}"*250000)
@@ -1011,10 +1022,11 @@ CODE
       "\u{1f469 200d 2764 fe0f 200d 1f469}",
     ].each do |g|
       assert_equal [g], g.grapheme_clusters
+      assert_predicate g.dup.taint.grapheme_clusters[0], :tainted?
     end
 
-    assert_equal ["\u000A", "\u0308"], "\u{a 308}".grapheme_clusters
-    assert_equal ["\u000D", "\u0308"], "\u{d 308}".grapheme_clusters
+    assert_equal ["\u000A", "\u0324"], "\u{a 324}".grapheme_clusters
+    assert_equal ["\u000D", "\u0324"], "\u{d 324}".grapheme_clusters
     assert_equal ["a", "b", "c"], "abc".b.grapheme_clusters
 
     if ENUMERATOR_WANTARRAY
@@ -1024,12 +1036,14 @@ CODE
     else
       warning = /passing a block to String#grapheme_clusters is deprecated/
       assert_warning(warning) {
-        s = "ABC".b
+        s = "ABC".b.taint
         res = []
         assert_same s, s.grapheme_clusters {|x| res << x }
+        assert_equal(3, res.size)
         assert_equal("A", res[0])
         assert_equal("B", res[1])
         assert_equal("C", res[2])
+        res.each {|g| assert_predicate(g, :tainted?)}
       }
     end
   end
@@ -1707,8 +1721,46 @@ CODE
     assert_equal([S("a"), S(""), S("b"), S("c"), S("")], S("a||b|c|").split(S('|'), -1))
 
     assert_equal([], "".split(//, 1))
+  ensure
+    $; = fs
+  end
 
-    assert_equal("[2, 3]", [1,2,3].slice!(1,10000).inspect, "moved from btest/knownbug")
+  def test_split_with_block
+    fs, $; = $;, nil
+    result = []; S(" a   b\t c ").split {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c")], result)
+    result = []; S(" a   b\t c ").split(S(" ")) {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c")], result)
+
+    result = []; S(" a | b | c ").split(S("|")) {|s| result << s}
+    assert_equal([S(" a "), S(" b "), S(" c ")], result)
+
+    result = []; S("aXXbXXcXX").split(/X./) {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c")], result)
+
+    result = []; S("abc").split(//) {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c")], result)
+
+    result = []; S("a|b|c").split(S('|'), 1) {|s| result << s}
+    assert_equal([S("a|b|c")], result)
+
+    result = []; S("a|b|c").split(S('|'), 2) {|s| result << s}
+    assert_equal([S("a"), S("b|c")], result)
+    result = []; S("a|b|c").split(S('|'), 3) {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c")], result)
+
+    result = []; S("a|b|c|").split(S('|'), -1) {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c"), S("")], result)
+    result = []; S("a|b|c||").split(S('|'), -1) {|s| result << s}
+    assert_equal([S("a"), S("b"), S("c"), S(""), S("")], result)
+
+    result = []; S("a||b|c|").split(S('|')) {|s| result << s}
+    assert_equal([S("a"), S(""), S("b"), S("c")], result)
+    result = []; S("a||b|c|").split(S('|'), -1) {|s| result << s}
+    assert_equal([S("a"), S(""), S("b"), S("c"), S("")], result)
+
+    result = []; "".split(//, 1) {|s| result << s}
+    assert_equal([], result)
   ensure
     $; = fs
   end
@@ -1771,6 +1823,7 @@ CODE
     s.split("b", 1).map(&:upcase!)
     assert_equal("abc", s)
   end
+
   def test_squeeze
     assert_equal(S("abc"), S("aaabbbbccc").squeeze)
     assert_equal(S("aa bb cc"), S("aa   bb      cc").squeeze(S(" ")))

@@ -621,9 +621,9 @@ if defined? Zlib
         gz.close
 
         sio = StringIO.new(s)
-        Zlib::GzipReader.new(sio) do |f|
-          assert_raise(NoMethodError) { f.path }
-        end
+        gz = Zlib::GzipReader.new(sio)
+        assert_raise(NoMethodError) { gz.path }
+        gz.close
       }
     end
   end
@@ -1081,6 +1081,23 @@ if defined? Zlib
         assert_nothing_raised { w.close }
       }
     end
+
+    def test_zlib_writer_buffered_write
+      bug15356 = '[ruby-core:90346] [Bug #15356]'.freeze
+      fixes = 'r61631 (commit a55abcc0ca6f628fc05304f81e5a044d65ab4a68)'.freeze
+      ary = []
+      def ary.write(*args)
+        self.concat(args)
+      end
+      gz = Zlib::GzipWriter.new(ary)
+      gz.write(bug15356)
+      gz.write("\n")
+      gz.write(fixes)
+      gz.close
+      assert_not_predicate ary, :empty?
+      exp = [ bug15356, fixes ]
+      assert_equal exp, Zlib.gunzip(ary.join('')).split("\n")
+    end
   end
 
   class TestZlib < Test::Unit::TestCase
@@ -1188,7 +1205,9 @@ if defined? Zlib
     def test_gunzip
       src = %w[1f8b08000000000000034bcbcf07002165738c03000000].pack("H*")
       assert_equal 'foo', Zlib.gunzip(src.freeze)
+    end
 
+    def test_gunzip_errors
       src = %w[1f8b08000000000000034bcbcf07002165738c03000001].pack("H*")
       assert_raise(Zlib::GzipFile::LengthError){ Zlib.gunzip(src) }
 

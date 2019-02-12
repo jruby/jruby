@@ -38,6 +38,8 @@ class TestTempfile < Test::Unit::TestCase
     assert_nothing_raised(SecurityError, bug3733) {
       proc {$SAFE = 1; File.expand_path(Dir.tmpdir)}.call
     }
+  ensure
+    $SAFE = 0
   end
 
   def test_saves_in_given_directory
@@ -359,7 +361,7 @@ puts Tempfile.new('foo').path
     f.close
     assert_file.exist?(path)
   ensure
-    f.close if f && !f.closed?
+    f&.close
     File.unlink path if path
   end
 
@@ -389,13 +391,18 @@ puts Tempfile.new('foo').path
     actual = Dir.glob(TRAVERSAL_PATH + '*').count
     assert_equal expect, actual
   ensure
-    t.close!
+    t&.close!
   end
 
   def test_create_traversal_dir
     expect = Dir.glob(TRAVERSAL_PATH + '*').count
-    Tempfile.create(TRAVERSAL_PATH + 'foo')
+    t = Tempfile.create(TRAVERSAL_PATH + 'foo')
     actual = Dir.glob(TRAVERSAL_PATH + '*').count
     assert_equal expect, actual
+  ensure
+    if t
+      t.close
+      File.unlink(t.path)
+    end
   end
 end

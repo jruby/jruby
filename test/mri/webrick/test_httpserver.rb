@@ -253,6 +253,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
       server.virtual_host(WEBrick::HTTPServer.new(vhost_config))
 
       Thread.pass while server.status != :Running
+      sleep 1 if RubyVM::MJIT.enabled? # server.status behaves unexpectedly with --jit-wait
       assert_equal(1, started, log.call)
       assert_equal(0, stopped, log.call)
       assert_equal(0, accepted, log.call)
@@ -273,6 +274,38 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
     }
     assert_equal(started, 1)
     assert_equal(stopped, 1)
+  end
+
+  class CustomRequest < ::WEBrick::HTTPRequest; end
+  class CustomResponse < ::WEBrick::HTTPResponse; end
+  class CustomServer < ::WEBrick::HTTPServer
+    def create_request(config)
+      CustomRequest.new(config)
+    end
+
+    def create_response(config)
+      CustomResponse.new(config)
+    end
+  end
+
+  def test_custom_server_request_and_response
+    config = { :ServerName => "localhost" }
+    TestWEBrick.start_server(CustomServer, config){|server, addr, port, log|
+      server.mount_proc("/", lambda {|req, res|
+        assert_kind_of(CustomRequest, req)
+        assert_kind_of(CustomResponse, res)
+        res.body = "via custom response"
+      })
+      Thread.pass while server.status != :Running
+
+      Net::HTTP.start(addr, port) do |http|
+        req = Net::HTTP::Get.new("/")
+        http.request(req){|res|
+          assert_equal("via custom response", res.body)
+        }
+        server.shutdown
+      end
+    }
   end
 
   # This class is needed by test_response_io_with_chunked_set method
@@ -435,7 +468,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
     http.request(req) { |res| assert_equal('404', res.code) }
     exp = %Q(ERROR `/notexist\\n/foo' not found.\n)
     assert_equal 1, log_ary.size
-    assert log_ary[0].include?(exp)
+    assert_include log_ary[0], exp
   ensure
     s&.shutdown
     th&.join
@@ -444,7 +477,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
   def test_gigantic_request_header
     log_tester = lambda {|log, access_log|
       assert_equal 1, log.size
-      assert log[0].include?('ERROR headers too large')
+      assert_include log[0], 'ERROR headers too large'
     }
     TestWEBrick.start_httpserver({}, log_tester){|server, addr, port, log|
       server.mount('/', WEBrick::HTTPServlet::FileHandler, __FILE__)
@@ -461,7 +494,7 @@ class TestWEBrickHTTPServer < Test::Unit::TestCase
   def test_eof_in_chunk
     log_tester = lambda do |log, access_log|
       assert_equal 1, log.size
-      assert log[0].include?('ERROR bad chunk data size')
+      assert_include log[0], 'ERROR bad chunk data size'
     end
     TestWEBrick.start_httpserver({}, log_tester){|server, addr, port, log|
       server.mount_proc('/', ->(req, res) { res.body = req.body })

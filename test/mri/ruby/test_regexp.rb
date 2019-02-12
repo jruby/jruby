@@ -90,6 +90,11 @@ class TestRegexp < Test::Unit::TestCase
     rescue ArgumentError
       :ok
     end
+    re = Regexp.union(/\//, "")
+    re2 = eval(re.inspect)
+    assert_equal(re.to_s, re2.to_s)
+    assert_equal(re.source, re2.source)
+    assert_equal(re, re2)
   end
 
   def test_word_boundary
@@ -209,6 +214,12 @@ class TestRegexp < Test::Unit::TestCase
   def test_assign_named_capture_to_reserved_word
     /(?<nil>.)/ =~ "a"
     assert_not_include(local_variables, :nil, "[ruby-dev:32675]")
+  end
+
+  def test_assign_named_capture_to_const
+    %W[C \u{1d402}].each do |name|
+      assert_equal(:ok, Class.new.class_eval("#{name} = :ok; /(?<#{name}>.*)/ =~ 'ng'; #{name}"))
+    end
   end
 
   def test_assign_named_capture_trace
@@ -515,6 +526,8 @@ class TestRegexp < Test::Unit::TestCase
     s = ".........."
     5.times { s.sub!(".", "") }
     assert_equal(".....", s)
+
+    assert_equal("\\\u{3042}", Regexp.new("\\\u{3042}").source)
   end
 
   def test_equal
@@ -948,13 +961,15 @@ class TestRegexp < Test::Unit::TestCase
     assert_match /\A\X\z/, "\u{600 20}"
     assert_match /\A\X\z/, "\u{261d 1F3FB}"
     assert_match /\A\X\z/, "\u{1f600}"
-    assert_match /\A\X\z/, "\u{20 308}"
-    assert_match /\A\X\X\z/, "\u{a 308}"
-    assert_match /\A\X\X\z/, "\u{d 308}"
+    assert_match /\A\X\z/, "\u{20 324}"
+    assert_match /\A\X\X\z/, "\u{a 324}"
+    assert_match /\A\X\X\z/, "\u{d 324}"
     assert_match /\A\X\z/, "\u{1F477 1F3FF 200D 2640 FE0F}"
     assert_match /\A\X\z/, "\u{1F468 200D 1F393}"
     assert_match /\A\X\z/, "\u{1F46F 200D 2642 FE0F}"
     assert_match /\A\X\z/, "\u{1f469 200d 2764 fe0f 200d 1f469}"
+
+    assert_warning('') {/\X/ =~ "\u{a0}"}
   end
 
   def test_backward

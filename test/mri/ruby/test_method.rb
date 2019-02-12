@@ -1040,4 +1040,55 @@ class TestMethod < Test::Unit::TestCase
     assert_operator(0.method(:<), :===, 5)
     assert_not_operator(0.method(:<), :===, -5)
   end
+
+  def test_compose_with_method
+    c = Class.new {
+      def f(x) x * 2 end
+      def g(x) x + 1 end
+    }
+    f = c.new.method(:f)
+    g = c.new.method(:g)
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(6, (g >> f).call(2))
+  end
+
+  def test_compose_with_proc
+    c = Class.new {
+      def f(x) x * 2 end
+    }
+    f = c.new.method(:f)
+    g = proc {|x| x + 1}
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(6, (g >> f).call(2))
+  end
+
+  def test_compose_with_callable
+    c = Class.new {
+      def f(x) x * 2 end
+    }
+    c2 = Class.new {
+      def call(x) x + 1 end
+    }
+    f = c.new.method(:f)
+    g = c2.new
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(5, (f >> g).call(2))
+  end
+
+  def test_compose_with_noncallable
+    c = Class.new {
+      def f(x) x * 2 end
+    }
+    f = c.new.method(:f)
+
+    assert_raise(NoMethodError) {
+      (f << 5).call(2)
+    }
+    assert_raise(NoMethodError) {
+      (f >> 5).call(2)
+    }
+  end
 end

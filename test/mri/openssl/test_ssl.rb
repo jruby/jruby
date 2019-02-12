@@ -526,8 +526,12 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       assert_equal(true,  OpenSSL::SSL.verify_certificate_identity(cert, "www.example.com\0.evil.com"))
       assert_equal(false, OpenSSL::SSL.verify_certificate_identity(cert, '192.168.7.255'))
       assert_equal(true,  OpenSSL::SSL.verify_certificate_identity(cert, '192.168.7.1'))
-      assert_equal(false, OpenSSL::SSL.verify_certificate_identity(cert, '13::17'))
+      assert_equal(true,  OpenSSL::SSL.verify_certificate_identity(cert, '13::17'))
+      assert_equal(false,  OpenSSL::SSL.verify_certificate_identity(cert, '13::18'))
       assert_equal(true,  OpenSSL::SSL.verify_certificate_identity(cert, '13:0:0:0:0:0:0:17'))
+      assert_equal(false,  OpenSSL::SSL.verify_certificate_identity(cert, '44:0:0:0:0:0:0:17'))
+      assert_equal(true,  OpenSSL::SSL.verify_certificate_identity(cert, '0013:0000:0000:0000:0000:0000:0000:0017'))
+      assert_equal(false,  OpenSSL::SSL.verify_certificate_identity(cert, '1313:0000:0000:0000:0000:0000:0000:0017'))
     end
   end
 

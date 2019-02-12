@@ -9,10 +9,11 @@ require 'unicode_normalize/normalize'
 class TestUnicodeNormalize < Test::Unit::TestCase
 
   UNICODE_VERSION = RbConfig::CONFIG['UNICODE_VERSION']
-  UNICODE_DATA_PATH = "../enc/unicode/data/#{UNICODE_VERSION}"
+  path = File.expand_path("../enc/unicode/data/#{UNICODE_VERSION}", __dir__)
+  UNICODE_DATA_PATH = File.directory?("#{path}/ucd") ? "#{path}/ucd" : path
 
   def self.expand_filename(basename)
-    File.expand_path("#{UNICODE_DATA_PATH}/#{basename}.txt", __dir__)
+    File.expand_path("#{basename}.txt", UNICODE_DATA_PATH)
   end
 end
 
@@ -145,7 +146,9 @@ class TestUnicodeNormalize
   generate_test_check_false :NFC, :NFKC, :nfkc
   generate_test_check_false :NFD, :NFKC, :nfkc
   generate_test_check_false :NFKD, :NFKC, :nfkc
+end
 
+class TestUnicodeNormalize
   def test_non_UTF_8
     assert_equal "\u1E0A".encode('UTF-16BE'), "D\u0307".encode('UTF-16BE').unicode_normalize(:nfc)
     assert_equal true, "\u1E0A".encode('UTF-16BE').unicode_normalized?(:nfc)
@@ -162,6 +165,13 @@ class TestUnicodeNormalize
 
   def test_partial_jamo_decompose
     assert_equal "\u1100\u1161\u11A8", "\uAC00\u11A8".unicode_normalize(:nfd)
+  end
+
+  # preventive tests for (non-)bug #14934
+  def test_no_trailing_jamo
+    assert_equal "\u1100\u1176\u11a8", "\u1100\u1176\u11a8".unicode_normalize(:nfc)
+    assert_equal "\uae30\u11a7",       "\u1100\u1175\u11a7".unicode_normalize(:nfc)
+    assert_equal "\uae30\u11c3",       "\u1100\u1175\u11c3".unicode_normalize(:nfc)
   end
 
   def test_hangul_plus_accents

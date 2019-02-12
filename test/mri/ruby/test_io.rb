@@ -49,8 +49,8 @@ class TestIO < Test::Unit::TestCase
     end
     flunk("timeout") unless wt.join(10) && rt.join(10)
   ensure
-    w.close unless !w || w.closed?
-    r.close unless !r || r.closed?
+    w&.close
+    r&.close
     (wt.kill; wt.join) if wt
     (rt.kill; rt.join) if rt
     raise we if we
@@ -62,8 +62,8 @@ class TestIO < Test::Unit::TestCase
     begin
       yield r, w
     ensure
-      r.close unless r.closed?
-      w.close unless w.closed?
+      r.close
+      w.close
     end
   end
 
@@ -84,12 +84,17 @@ class TestIO < Test::Unit::TestCase
     }
   end
 
-  def trapping_usr1
-    @usr1_rcvd  = 0
-    trap(:USR1) { @usr1_rcvd += 1 }
-    yield
+  def trapping_usr2
+    @usr2_rcvd  = 0
+    r, w = IO.pipe
+    trap(:USR2) do
+      w.write([@usr2_rcvd += 1].pack('L'))
+    end
+    yield r
   ensure
-    trap(:USR1, "DEFAULT")
+    trap(:USR2, "DEFAULT")
+    w&.close
+    r&.close
   end
 
   def test_pipe
@@ -543,6 +548,9 @@ class TestIO < Test::Unit::TestCase
 
   if have_nonblock?
     def test_copy_stream_no_busy_wait
+      skip "MJIT has busy wait on GC. This sometimes fails with --jit." if RubyVM::MJIT.enabled?
+      skip "multiple threads already active" if Thread.list.size > 1
+
       msg = 'r58534 [ruby-core:80969] [Backport #13533]'
       IO.pipe do |r,w|
         r.nonblock = true
@@ -564,7 +572,6 @@ class TestIO < Test::Unit::TestCase
               w2.nonblock = true
             rescue Errno::EBADF
               skip "nonblocking IO for pipe is not implemented"
-              break
             end
             s = w2.syswrite("a" * 100000)
             t = Thread.new { sleep 0.1; r2.read }
@@ -630,7 +637,7 @@ class TestIO < Test::Unit::TestCase
           assert_equal(bigcontent[30, 40], File.read("bigdst"))
           assert_equal(0, f.pos)
         rescue NotImplementedError
-          #skip "pread(2) is not implemtented."
+          #skip "pread(2) is not implemented."
         end
       }
     }
@@ -862,20 +869,21 @@ class TestIO < Test::Unit::TestCase
         rescue Errno::EBADF
           skip "nonblocking IO for pipe is not implemented"
         end
-        trapping_usr1 do
+        trapping_usr2 do |rd|
           nr = 30
           begin
             pid = fork do
               s1.close
               IO.select([s2])
-              Process.kill(:USR1, Process.ppid)
-              s2.read
+              Process.kill(:USR2, Process.ppid)
+              buf = String.new(capacity: 16384)
+              nil while s2.read(16384, buf)
             end
             s2.close
             nr.times do
               assert_equal megacontent.bytesize, IO.copy_stream("megasrc", s1)
             end
-            assert_equal(1, @usr1_rcvd)
+            assert_equal(1, rd.read(4).unpack1('L'))
           ensure
             s1.close
             _, status = Process.waitpid2(pid) if pid
@@ -1179,10 +1187,11 @@ class TestIO < Test::Unit::TestCase
 
   def test_copy_stream_to_duplex_io
     result = IO.pipe {|a,w|
-      Thread.start {w.puts "yes"; w.close}
+      th = Thread.start {w.puts "yes"; w.close}
       IO.popen([EnvUtil.rubybin, '-pe$_="#$.:#$_"'], "r+") {|b|
         IO.copy_stream(a, b)
         b.close_write
+        assert_join_threads([th])
         b.read
       }
     }
@@ -1195,7 +1204,7 @@ class TestIO < Test::Unit::TestCase
     opts = {}
     if defined?(Process::RLIMIT_NPROC)
       lim = Process.getrlimit(Process::RLIMIT_NPROC)[1]
-      opts[:rlimit_nproc] = [lim, 1024].min
+      opts[:rlimit_nproc] = [lim, 2048].min
     end
     f = IO.popen([ruby] + args, 'r+', opts)
     pid = f.pid
@@ -1281,6 +1290,13 @@ class TestIO < Test::Unit::TestCase
     assert_predicate(status, :success?)
     assert_equal("foo\n", out)
     assert_empty(err)
+  end
+
+  def test_write_no_args
+    IO.pipe do |r, w|
+      assert_equal 0, w.write, '[ruby-core:86285] [Bug #14338]'
+      assert_equal :wait_readable, r.read_nonblock(1, exception: false)
+    end
   end
 
   def test_write_non_writable
@@ -1848,7 +1864,6 @@ class TestIO < Test::Unit::TestCase
 
   def test_pos
     make_tempfile {|t|
-
       open(t.path, IO::RDWR|IO::CREAT|IO::TRUNC, 0600) do |f|
         f.write "Hello"
         assert_equal(5, f.pos)
@@ -2131,6 +2146,10 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_autoclose_true_closed_by_finalizer
+    # http://ci.rvm.jp/results/trunk-mjit@silicon-docker/1465760
+    # http://ci.rvm.jp/results/trunk-mjit@silicon-docker/1469765
+    skip 'this randomly fails with MJIT' if RubyVM::MJIT.enabled?
+
     feature2250 = '[ruby-core:26222]'
     pre = 'ft2250'
     t = Tempfile.new(pre)
@@ -2146,7 +2165,7 @@ class TestIO < Test::Unit::TestCase
       assert_raise(Errno::EBADF, feature2250) {t.close}
     end
   ensure
-    t.close!
+    t&.close!
   end
 
   def test_autoclose_false_closed_by_finalizer
@@ -2186,10 +2205,10 @@ class TestIO < Test::Unit::TestCase
 
   def test_read_command
     assert_equal("foo\n", IO.read("|echo foo"))
-    assert_warn(/invoke external command/) do
+    assert_raise(Errno::ENOENT, Errno::EINVAL) do
       File.read("|#{EnvUtil.rubybin} -e puts")
     end
-    assert_warn(/invoke external command/) do
+    assert_raise(Errno::ENOENT, Errno::EINVAL) do
       File.binread("|#{EnvUtil.rubybin} -e puts")
     end
     assert_raise(Errno::ENOENT, Errno::EINVAL) do
@@ -2241,13 +2260,13 @@ class TestIO < Test::Unit::TestCase
 
   def test_reopen_inherit
     mkcdtmpdir {
-      system(EnvUtil.rubybin, '-e', <<"End")
+      system(EnvUtil.rubybin, '-e', <<-"End")
         f = open("out", "w")
         STDOUT.reopen(f)
         STDERR.reopen(f)
         system(#{EnvUtil.rubybin.dump}, '-e', 'STDOUT.print "out"')
         system(#{EnvUtil.rubybin.dump}, '-e', 'STDERR.print "err"')
-End
+      End
       assert_equal("outerr", File.read("out"))
     }
   end
@@ -2308,7 +2327,7 @@ End
       t
     end
   ensure
-    t.close(true) if t and block_given?
+    t&.close(true) if block_given?
   end
 
   def test_reopen_encoding
@@ -2534,7 +2553,8 @@ End
 
     assert_in_out_err([], "$> = $stderr\nputs 'foo'", [], %w(foo))
 
-    assert_separately(%w[-Eutf-8], <<-"end;") #    do
+    assert_separately(%w[-Eutf-8], "#{<<~"begin;"}\n#{<<~"end;"}")
+    begin;
       alias $\u{6a19 6e96 51fa 529b} $stdout
       x = eval("class X\u{307b 3052}; self; end".encode("euc-jp"))
       assert_raise_with_message(TypeError, /\\$\u{6a19 6e96 51fa 529b} must.*, X\u{307b 3052} given/) do
@@ -2547,7 +2567,6 @@ End
     return unless defined?(Fcntl::F_GETFL)
 
     make_tempfile {|t|
-
       fd = IO.sysopen(t.path, "w")
       assert_kind_of(Integer, fd)
       %w[r r+ w+ a+].each do |mode|
@@ -2665,7 +2684,7 @@ __END__
     end;
     10.times.map do
       Thread.start do
-        assert_in_out_err([], src) {|stdout, stderr|
+        assert_in_out_err([], src, timeout: 20) {|stdout, stderr|
           assert_no_match(/hi.*hi/, stderr.join, bug3585)
         }
       end
@@ -2673,7 +2692,6 @@ __END__
   end
 
   def test_flush_in_finalizer1
-    require 'tempfile'
     bug3910 = '[ruby-dev:42341]'
     tmp = Tempfile.open("bug3910") {|t|
       path = t.path
@@ -2699,7 +2717,6 @@ __END__
   end
 
   def test_flush_in_finalizer2
-    require 'tempfile'
     bug3910 = '[ruby-dev:42341]'
     Tempfile.open("bug3910") {|t|
       path = t.path
@@ -2833,7 +2850,7 @@ __END__
   end
 
   def test_fcntl_lock_linux
-    pad=0
+    pad = 0
     Tempfile.create(self.class.name) do |f|
       r, w = IO.pipe
       pid = fork do
@@ -3142,7 +3159,7 @@ __END__
         f.ioctl(tiocgwinsz, winsize)
       }
     ensure
-      f.close if f
+      f&.close
     end
   end if /^(?:i.?86|x86_64)-linux/ =~ RUBY_PLATFORM
 
@@ -3238,17 +3255,12 @@ __END__
 
       assert_equal 100, buf.bytesize
 
-      begin
+      msg = /can't modify string; temporarily locked/
+      assert_raise_with_message(RuntimeError, msg) do
         buf.replace("")
-      rescue RuntimeError => e
-        assert_match(/can't modify string; temporarily locked/, e.message)
-        Thread.pass
-      end until buf.empty?
-
-      assert_empty(buf, bug6099)
+      end
       assert_predicate(th, :alive?)
       w.write(data)
-      Thread.pass while th.alive?
       th.join
     end
     assert_equal(data, buf, bug6099)
@@ -3535,8 +3547,17 @@ __END__
     end
   end if File::BINARY != 0
 
+  def test_exclusive_mode
+    make_tempfile do |t|
+      assert_raise(Errno::EEXIST){ open(t.path, 'wx'){} }
+      assert_raise(ArgumentError){ open(t.path, 'rx'){} }
+      assert_raise(ArgumentError){ open(t.path, 'ax'){} }
+    end
+  end
+
   def test_race_gets_and_close
-    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}")
+    opt = { signal: :ABRT, timeout: 200 }
+    assert_separately([], "#{<<-"begin;"}\n#{<<-"end;"}", opt)
     bug13076 = '[ruby-core:78845] [Bug #13076]'
     begin;
       10.times do |i|
@@ -3558,9 +3579,9 @@ __END__
           w.close
           r.close
         end
-        assert_nothing_raised(IOError, bug13076) {
-          t.each(&:join)
-        }
+        t.each do |th|
+          assert_same(th, th.join(2), bug13076)
+        end
       end
     end;
   end
@@ -3683,6 +3704,7 @@ __END__
     end
 
     def test_write_no_garbage
+      skip "multiple threads already active" if Thread.list.size > 1
       res = {}
       ObjectSpace.count_objects(res) # creates strings on first call
       [ 'foo'.b, '*' * 24 ].each do |buf|
@@ -3743,20 +3765,81 @@ __END__
     end
   end if Socket.const_defined?(:MSG_OOB)
 
+  def test_recycled_fd_close
+    dot = -'.'
+    IO.pipe do |sig_rd, sig_wr|
+      noex = Thread.new do # everything right and never see exceptions :)
+        until sig_rd.wait_readable(0)
+          IO.pipe do |r, w|
+            th = Thread.new { r.read(1) }
+            w.write(dot)
+
+            assert_same th, th.join(15), '"good" reader timeout'
+            assert_equal(dot, th.value)
+          end
+        end
+        sig_rd.read(4)
+      end
+      1000.times do |i| # stupid things and make exceptions:
+        IO.pipe do |r,w|
+          th = Thread.new do
+            begin
+              while r.gets
+              end
+            rescue IOError => e
+              e
+            end
+          end
+          Thread.pass until th.stop?
+
+          r.close
+          assert_same th, th.join(30), '"bad" reader timeout'
+          assert_match(/stream closed/, th.value.message)
+        end
+      end
+      sig_wr.write 'done'
+      assert_same noex, noex.join(20), '"good" writer timeout'
+      assert_equal 'done', noex.value ,'r63216'
+    end
+  end
+
   def test_select_leak
-    assert_no_memory_leak([], <<-"end;", <<-"end;", rss: true, timeout: 240)
+    # avoid malloc arena explosion from glibc and jemalloc:
+    env = {
+      'MALLOC_ARENA_MAX' => '1',
+      'MALLOC_ARENA_TEST' => '1',
+      'MALLOC_CONF' => 'narenas:1',
+    }
+    assert_no_memory_leak([env], <<-"end;", <<-"end;", rss: true, timeout: 60)
       r, w = IO.pipe
       rset = [r]
       wset = [w]
+      exc = StandardError.new(-"select used to leak on exception")
+      exc.set_backtrace([])
       Thread.new { IO.select(rset, wset, nil, 0) }.join
     end;
-      20_000.times do
-        th = Thread.new { IO.select(rset, wset) }
-        Thread.pass until th.stop?
-        th.kill
-        th.join
-        GC.start
+      th = Thread.new do
+        Thread.handle_interrupt(StandardError => :on_blocking) do
+          begin
+            IO.select(rset, wset)
+          rescue
+            retry
+          end while true
+        end
       end
+      50_000.times do
+        Thread.pass until th.stop?
+        th.raise(exc)
+      end
+      th.kill
+      th.join
     end;
+  end
+
+  def test_external_encoding_index
+    IO.pipe {|r, w|
+      assert_raise(TypeError) {Marshal.dump(r)}
+      assert_raise(TypeError) {Marshal.dump(w)}
+    }
   end
 end

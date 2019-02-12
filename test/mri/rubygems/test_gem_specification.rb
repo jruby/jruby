@@ -9,7 +9,7 @@ require 'rubygems/installer'
 
 class TestGemSpecification < Gem::TestCase
 
-  LEGACY_YAML_SPEC = <<-EOF
+  LEGACY_YAML_SPEC = <<-EOF.freeze
 --- !ruby/object:Gem::Specification
 rubygems_version: "1.0"
 name: keyedlist
@@ -28,7 +28,7 @@ email: flgr@ccan.de
 has_rdoc: true
   EOF
 
-  LEGACY_RUBY_SPEC = <<-EOF
+  LEGACY_RUBY_SPEC = <<-EOF.freeze
 Gem::Specification.new do |s|
   s.name = %q{keyedlist}
   s.version = %q{0.4.0}
@@ -48,7 +48,6 @@ end
       s.extensions << 'ext/a/extconf.rb'
       s.test_file = 'test/suite.rb'
       s.requirements << 'A working computer'
-      s.rubyforge_project = 'example'
       s.license = 'MIT'
 
       s.add_dependency 'rake', '> 0.4'
@@ -80,7 +79,6 @@ end
       s.executable = 'exec'
       s.test_file = 'test/suite.rb'
       s.requirements << 'A working computer'
-      s.rubyforge_project = 'example'
       s.license = 'MIT'
 
       s.mark_version
@@ -101,14 +99,14 @@ end
   end
 
   def test_self_find_active_stub_by_path
-    spec = new_spec('a', '1', nil, 'lib/foo.rb')
+    spec = util_spec('a', '1', nil, 'lib/foo.rb')
     spec.activated = true
 
     # There used to be a bug (introduced in a9c1aaf) when Gem::Specification
     # objects are present in the @stubs collection. This test verifies that
     # this scenario works correctly.
     Gem::Specification.all = [spec]
-    Gem::Specification.find_active_stub_by_path('foo')
+    assert_equal spec, Gem::Specification.find_active_stub_by_path('foo')
   end
 
   def test_self_activate
@@ -119,11 +117,11 @@ end
 
   def test_self_activate_ambiguous_direct
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec("b", "1", { "c" => ">= 1" }, "lib/d.rb")
-      b2 = new_spec("b", "2", { "c" => ">= 2" }, "lib/d.rb")
-      c1 = new_spec "c", "1"
-      c2 = new_spec "c", "2"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec("b", "1", { "c" => ">= 1" }, "lib/d.rb")
+      b2 = util_spec("b", "2", { "c" => ">= 2" }, "lib/d.rb")
+      c1 = util_spec "c", "1"
+      c2 = util_spec "c", "2"
 
       Gem::Specification.reset
       install_specs c1, c2, b1, b2, a1
@@ -148,10 +146,10 @@ end
           deps = Hash[((pkgi + 1)..num_of_pkg).map { |deppkgi|
             ["pkg#{deppkgi}", ">= 0"]
           }]
-          new_spec "pkg#{pkgi}", pkg_version.to_s, deps
+          util_spec "pkg#{pkgi}", pkg_version.to_s, deps
         end
       end
-      base = new_spec "pkg_base", "1", {"pkg0" => ">= 0"}
+      base = util_spec "pkg_base", "1", {"pkg0" => ">= 0"}
 
       Gem::Specification.reset
       install_specs(*packages.flatten.reverse)
@@ -167,11 +165,11 @@ end
 
   def test_self_activate_ambiguous_indirect
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 1"
-      b2 = new_spec "b", "2", "c" => ">= 2"
-      c1 = new_spec "c", "1", nil, "lib/d.rb"
-      c2 = new_spec "c", "2", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 1"
+      b2 = util_spec "b", "2", "c" => ">= 2"
+      c1 = util_spec "c", "1", nil, "lib/d.rb"
+      c2 = util_spec "c", "2", nil, "lib/d.rb"
 
       install_specs c1, c2, b1, b2, a1
 
@@ -188,12 +186,12 @@ end
 
   def test_self_activate_ambiguous_indirect_conflict
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      a2 = new_spec "a", "2", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 1"
-      b2 = new_spec "b", "2", "c" => ">= 2"
-      c1 = new_spec "c", "1", nil, "lib/d.rb"
-      c2 = new_spec("c", "2", { "a" => "1" }, "lib/d.rb") # conflicts with a-2
+      a1 = util_spec "a", "1", "b" => "> 0"
+      a2 = util_spec "a", "2", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 1"
+      b2 = util_spec "b", "2", "c" => ">= 2"
+      c1 = util_spec "c", "1", nil, "lib/d.rb"
+      c2 = util_spec("c", "2", { "a" => "1" }, "lib/d.rb") # conflicts with a-2
 
       install_specs c1, b1, a1, a2, c2, b2
 
@@ -210,12 +208,12 @@ end
 
   def test_self_activate_ambiguous_unrelated
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 1"
-      b2 = new_spec "b", "2", "c" => ">= 2"
-      c1 = new_spec "c", "1"
-      c2 = new_spec "c", "2"
-      d1 = new_spec "d", "1", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 1"
+      b2 = util_spec "b", "2", "c" => ">= 2"
+      c1 = util_spec "c", "1"
+      c2 = util_spec "c", "2"
+      d1 = util_spec "d", "1", nil, "lib/d.rb"
 
       install_specs d1, c1, c2, b1, b2, a1
 
@@ -232,11 +230,11 @@ end
 
   def test_require_should_prefer_latest_gem_level1
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 0" # unresolved
-      b2 = new_spec "b", "2", "c" => ">= 0"
-      c1 = new_spec "c", "1", nil, "lib/c.rb"  # 1st level
-      c2 = new_spec "c", "2", nil, "lib/c.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 0" # unresolved
+      b2 = util_spec "b", "2", "c" => ">= 0"
+      c1 = util_spec "c", "1", nil, "lib/c.rb"  # 1st level
+      c2 = util_spec "c", "2", nil, "lib/c.rb"
 
       install_specs c1, c2, b1, b2, a1
 
@@ -250,13 +248,13 @@ end
 
   def test_require_should_prefer_latest_gem_level2
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 0" # unresolved
-      b2 = new_spec "b", "2", "c" => ">= 0"
-      c1 = new_spec "c", "1", "d" => ">= 0"  # 1st level
-      c2 = new_spec "c", "2", "d" => ">= 0"
-      d1 = new_spec "d", "1", nil, "lib/d.rb" # 2nd level
-      d2 = new_spec "d", "2", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 0" # unresolved
+      b2 = util_spec "b", "2", "c" => ">= 0"
+      c1 = util_spec "c", "1", "d" => ">= 0"  # 1st level
+      c2 = util_spec "c", "2", "d" => ">= 0"
+      d1 = util_spec "d", "1", nil, "lib/d.rb" # 2nd level
+      d2 = util_spec "d", "2", nil, "lib/d.rb"
 
       install_specs d1, d2, c1, c2, b1, b2, a1
 
@@ -270,14 +268,14 @@ end
 
   def test_require_finds_in_2nd_level_indirect
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 0" # unresolved
-      b2 = new_spec "b", "2", "c" => ">= 0"
-      c1 = new_spec "c", "1", "d" => "<= 2" # 1st level
-      c2 = new_spec "c", "2", "d" => "<= 2"
-      d1 = new_spec "d", "1", nil, "lib/d.rb" # 2nd level
-      d2 = new_spec "d", "2", nil, "lib/d.rb"
-      d3 = new_spec "d", "3", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 0" # unresolved
+      b2 = util_spec "b", "2", "c" => ">= 0"
+      c1 = util_spec "c", "1", "d" => "<= 2" # 1st level
+      c2 = util_spec "c", "2", "d" => "<= 2"
+      d1 = util_spec "d", "1", nil, "lib/d.rb" # 2nd level
+      d2 = util_spec "d", "2", nil, "lib/d.rb"
+      d3 = util_spec "d", "3", nil, "lib/d.rb"
 
       install_specs d1, d2, d3, c1, c2, b1, b2, a1
 
@@ -291,15 +289,15 @@ end
 
   def test_require_should_prefer_reachable_gems
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 0" # unresolved
-      b2 = new_spec "b", "2", "c" => ">= 0"
-      c1 = new_spec "c", "1", "d" => "<= 2" # 1st level
-      c2 = new_spec "c", "2", "d" => "<= 2"
-      d1 = new_spec "d", "1", nil, "lib/d.rb" # 2nd level
-      d2 = new_spec "d", "2", nil, "lib/d.rb"
-      d3 = new_spec "d", "3", nil, "lib/d.rb"
-      e  = new_spec "anti_d", "1", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 0" # unresolved
+      b2 = util_spec "b", "2", "c" => ">= 0"
+      c1 = util_spec "c", "1", "d" => "<= 2" # 1st level
+      c2 = util_spec "c", "2", "d" => "<= 2"
+      d1 = util_spec "d", "1", nil, "lib/d.rb" # 2nd level
+      d2 = util_spec "d", "2", nil, "lib/d.rb"
+      d3 = util_spec "d", "3", nil, "lib/d.rb"
+      e  = util_spec "anti_d", "1", nil, "lib/d.rb"
 
       install_specs d1, d2, d3, e, c1, c2, b1, b2, a1
 
@@ -313,14 +311,14 @@ end
 
   def test_require_should_not_conflict
     save_loaded_features do
-      base = new_spec "0", "1", "A" => ">= 1"
-      a1 = new_spec "A", "1", {"c" => ">= 2", "b" => "> 0"}, "lib/a.rb"
-      a2 = new_spec "A", "2", {"c" => ">= 2", "b" => "> 0"}, "lib/a.rb"
-      b1 = new_spec "b", "1", {"c" => "= 1"}, "lib/d.rb"
-      b2 = new_spec "b", "2", {"c" => "= 2"}, "lib/d.rb"
-      c1 = new_spec "c", "1", {}, "lib/c.rb"
-      c2 = new_spec "c", "2", {}, "lib/c.rb"
-      c3 = new_spec "c", "3", {}, "lib/c.rb"
+      base = util_spec "0", "1", "A" => ">= 1"
+      a1 = util_spec "A", "1", {"c" => ">= 2", "b" => "> 0"}, "lib/a.rb"
+      a2 = util_spec "A", "2", {"c" => ">= 2", "b" => "> 0"}, "lib/a.rb"
+      b1 = util_spec "b", "1", {"c" => "= 1"}, "lib/d.rb"
+      b2 = util_spec "b", "2", {"c" => "= 2"}, "lib/d.rb"
+      c1 = util_spec "c", "1", {}, "lib/c.rb"
+      c2 = util_spec "c", "2", {}, "lib/c.rb"
+      c3 = util_spec "c", "3", {}, "lib/c.rb"
 
       install_specs c1, c2, c3, b1, b2, a1, a2, base
 
@@ -337,15 +335,15 @@ end
 
   def test_inner_clonflict_in_indirect_gems
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 1" # unresolved
-      b2 = new_spec "b", "2", "c" => ">= 1", "d" => "< 3"
-      c1 = new_spec "c", "1", "d" => "<= 2" # 1st level
-      c2 = new_spec "c", "2", "d" => "<= 2"
-      c3 = new_spec "c", "3", "d" => "<= 3"
-      d1 = new_spec "d", "1", nil, "lib/d.rb" # 2nd level
-      d2 = new_spec "d", "2", nil, "lib/d.rb"
-      d3 = new_spec "d", "3", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 1" # unresolved
+      b2 = util_spec "b", "2", "c" => ">= 1", "d" => "< 3"
+      c1 = util_spec "c", "1", "d" => "<= 2" # 1st level
+      c2 = util_spec "c", "2", "d" => "<= 2"
+      c3 = util_spec "c", "3", "d" => "<= 3"
+      d1 = util_spec "d", "1", nil, "lib/d.rb" # 2nd level
+      d2 = util_spec "d", "2", nil, "lib/d.rb"
+      d3 = util_spec "d", "3", nil, "lib/d.rb"
 
       install_specs d1, d2, d3, c1, c2, c3, b1, b2, a1
 
@@ -359,15 +357,15 @@ end
 
   def test_inner_clonflict_in_indirect_gems_reversed
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      b1 = new_spec "b", "1", "xc" => ">= 1" # unresolved
-      b2 = new_spec "b", "2", "xc" => ">= 1", "d" => "< 3"
-      c1 = new_spec "xc", "1", "d" => "<= 3" # 1st level
-      c2 = new_spec "xc", "2", "d" => "<= 2"
-      c3 = new_spec "xc", "3", "d" => "<= 3"
-      d1 = new_spec "d", "1", nil, "lib/d.rb" # 2nd level
-      d2 = new_spec "d", "2", nil, "lib/d.rb"
-      d3 = new_spec "d", "3", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", "b" => "> 0"
+      b1 = util_spec "b", "1", "xc" => ">= 1" # unresolved
+      b2 = util_spec "b", "2", "xc" => ">= 1", "d" => "< 3"
+      c1 = util_spec "xc", "1", "d" => "<= 3" # 1st level
+      c2 = util_spec "xc", "2", "d" => "<= 2"
+      c3 = util_spec "xc", "3", "d" => "<= 3"
+      d1 = util_spec "d", "1", nil, "lib/d.rb" # 2nd level
+      d2 = util_spec "d", "2", nil, "lib/d.rb"
+      d3 = util_spec "d", "3", nil, "lib/d.rb"
 
       install_specs d1, d2, d3, c1, c2, c3, b1, b2, a1
 
@@ -387,8 +385,8 @@ end
 
   def test_self_activate_checks_dependencies
     a  = util_spec 'a', '1.0'
-            a.add_dependency 'c', '= 1.0'
-            a.add_dependency 'b', '~> 1.0'
+    a.add_dependency 'c', '= 1.0'
+    a.add_dependency 'b', '~> 1.0'
 
     b1 = util_spec 'b', '1.0'
     b2 = util_spec 'b', '2.0'
@@ -493,9 +491,9 @@ end
   end
 
   def test_self_activate_via_require
-    a1 = new_spec "a", "1", "b" => "= 1"
-    b1 = new_spec "b", "1", nil, "lib/b/c.rb"
-    b2 = new_spec "b", "2", nil, "lib/b/c.rb"
+    a1 = util_spec "a", "1", "b" => "= 1"
+    b1 = util_spec "b", "1", nil, "lib/b/c.rb"
+    b2 = util_spec "b", "2", nil, "lib/b/c.rb"
 
     install_specs b1, b2, a1
 
@@ -509,13 +507,13 @@ end
 
   def test_self_activate_via_require_wtf
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0", "d" => "> 0"    # this
-      b1 = new_spec "b", "1", { "c" => ">= 1" }, "lib/b.rb"
-      b2 = new_spec "b", "2", { "c" => ">= 2" }, "lib/b.rb" # this
-      c1 = new_spec "c", "1"
-      c2 = new_spec "c", "2"                                # this
-      d1 = new_spec "d", "1", { "c" => "< 2" },  "lib/d.rb"
-      d2 = new_spec "d", "2", { "c" => "< 2" },  "lib/d.rb" # this
+      a1 = util_spec "a", "1", "b" => "> 0", "d" => "> 0"    # this
+      b1 = util_spec "b", "1", { "c" => ">= 1" }, "lib/b.rb"
+      b2 = util_spec "b", "2", { "c" => ">= 2" }, "lib/b.rb" # this
+      c1 = util_spec "c", "1"
+      c2 = util_spec "c", "2"                                # this
+      d1 = util_spec "d", "1", { "c" => "< 2" },  "lib/d.rb"
+      d2 = util_spec "d", "2", { "c" => "< 2" },  "lib/d.rb" # this
 
       install_specs c1, c2, b1, b2, d1, d2, a1
 
@@ -538,11 +536,11 @@ end
   end
 
   def test_self_activate_deep_unambiguous
-    a1 = new_spec "a", "1", "b" => "= 1"
-    b1 = new_spec "b", "1", "c" => "= 1"
-    b2 = new_spec "b", "2", "c" => "= 2"
-    c1 = new_spec "c", "1"
-    c2 = new_spec "c", "2"
+    a1 = util_spec "a", "1", "b" => "= 1"
+    b1 = util_spec "b", "1", "c" => "= 1"
+    b2 = util_spec "b", "2", "c" => "= 2"
+    c1 = util_spec "c", "1"
+    c2 = util_spec "c", "2"
 
     install_specs c1, c2, b1, b2, a1
 
@@ -668,7 +666,7 @@ end
   end
 
   def test_self_all_equals
-    a = new_spec "foo", "1", nil, "lib/foo.rb"
+    a = util_spec "foo", "1", nil, "lib/foo.rb"
 
     install_specs a
     Gem::Specification.all = [a]
@@ -701,7 +699,6 @@ end
       required_ruby_version
       required_rubygems_version
       requirements
-      rubyforge_project
       rubygems_version
       signing_key
       specification_version
@@ -721,11 +718,11 @@ end
     spec.version = '1'
     spec.specification_version = @current_version + 1
 
-    new_spec = Marshal.load Marshal.dump(spec)
+    load_spec = Marshal.load Marshal.dump(spec)
 
-    assert_equal 'a', new_spec.name
-    assert_equal Gem::Version.new(1), new_spec.version
-    assert_equal @current_version, new_spec.specification_version
+    assert_equal 'a', load_spec.name
+    assert_equal Gem::Version.new(1), load_spec.version
+    assert_equal @current_version, load_spec.specification_version
   end
 
   def test_self_from_yaml
@@ -743,12 +740,12 @@ end
     yaml = @a1.to_yaml
     yaml.sub!(/^date:.*/, "date: 2011-04-26 00:00:00.000000000Z")
 
-    new_spec = with_syck do
+    spec = with_syck do
       Gem::Specification.from_yaml yaml
     end
 
     assert_kind_of Time, @a1.date
-    assert_kind_of Time, new_spec.date
+    assert_kind_of Time, spec.date
   end
 
   def test_self_from_yaml_syck_default_key_bug
@@ -778,14 +775,14 @@ test_files: []
 bindir:
     YAML
 
-    new_spec = with_syck do
+    spec = with_syck do
       Gem::Specification.from_yaml yaml
     end
 
-    op = new_spec.dependencies.first.requirement.requirements.first.first
+    op = spec.dependencies.first.requirement.requirements.first.first
     refute_kind_of YAML::Syck::DefaultKey, op
 
-    refute_match %r%DefaultKey%, new_spec.to_ruby
+    refute_match %r%DefaultKey%, spec.to_ruby
   end
 
   def test_self_from_yaml_cleans_up_defaultkey
@@ -814,12 +811,12 @@ test_files: []
 bindir:
     YAML
 
-    new_spec = Gem::Specification.from_yaml yaml
+    spec = Gem::Specification.from_yaml yaml
 
-    op = new_spec.dependencies.first.requirement.requirements.first.first
+    op = spec.dependencies.first.requirement.requirements.first.first
     refute_kind_of YAML::Syck::DefaultKey, op
 
-    refute_match %r%DefaultKey%, new_spec.to_ruby
+    refute_match %r%DefaultKey%, spec.to_ruby
   end
 
   def test_self_from_yaml_cleans_up_defaultkey_from_newer_192
@@ -848,12 +845,12 @@ test_files: []
 bindir:
     YAML
 
-    new_spec = Gem::Specification.from_yaml yaml
+    spec = Gem::Specification.from_yaml yaml
 
-    op = new_spec.dependencies.first.requirement.requirements.first.first
+    op = spec.dependencies.first.requirement.requirements.first.first
     refute_kind_of YAML::Syck::DefaultKey, op
 
-    refute_match %r%DefaultKey%, new_spec.to_ruby
+    refute_match %r%DefaultKey%, spec.to_ruby
   end
 
   def test_self_from_yaml_cleans_up_Date_objects
@@ -871,7 +868,6 @@ require_paths:
 author: Austin Ziegler
 email: diff-lcs@halostatue.ca
 homepage: http://rubyforge.org/projects/ruwiki/
-rubyforge_project: ruwiki
 description: "Test"
 bindir: bin
 has_rdoc: true
@@ -903,9 +899,9 @@ requirements: []
 dependencies: []
     YAML
 
-    new_spec = Gem::Specification.from_yaml yaml
+    spec = Gem::Specification.from_yaml yaml
 
-    assert_kind_of Time, new_spec.date
+    assert_kind_of Time, spec.date
   end
 
   def test_self_load
@@ -948,6 +944,9 @@ dependencies: []
     @a2.files.clear
 
     assert_equal @a2, spec
+
+  ensure
+    $SAFE = 0
   end
 
   def test_self_load_escape_curly
@@ -1007,7 +1006,6 @@ dependencies: []
     assert_equal @a2, spec
   end
 
-  if defined?(Encoding)
   def test_self_load_utf8_with_ascii_encoding
     int_enc = Encoding.default_internal
     silence_warnings { Encoding.default_internal = 'US-ASCII' }
@@ -1027,7 +1025,6 @@ dependencies: []
     assert_equal spec2, spec
   ensure
     silence_warnings { Encoding.default_internal = int_enc }
-  end
   end
 
   def test_self_load_legacy_ruby
@@ -1125,24 +1122,97 @@ dependencies: []
     refute_includes Gem::Specification.stubs.map { |s| s.full_name }, 'a-1'
   end
 
+  def test_self_stubs
+    Gem.loaded_specs.clear
+    Gem::Specification.class_variable_set(:@@stubs, nil)
+
+    dir_standard_specs = File.join Gem.dir, 'specifications'
+    dir_default_specs = Gem::BasicSpecification.default_specifications_dir
+
+    # Create gemspecs in three locations used in stubs
+    loaded_spec = Gem::Specification.new 'a', '3'
+    Gem.loaded_specs['a'] = loaded_spec
+    save_gemspec 'a', '2', dir_default_specs
+    save_gemspec 'a', '1', dir_standard_specs
+
+    full_names = ['a-3', 'a-2', 'a-1']
+    assert_equal full_names, Gem::Specification.stubs.map { |s| s.full_name }
+
+    Gem.loaded_specs.delete 'a'
+    Gem::Specification.class_variable_set(:@@stubs, nil)
+  end
+
+  def test_self_stubs_for
+    Gem.loaded_specs.clear
+    Gem::Specification.class_variable_set(:@@stubs, nil)
+
+    dir_standard_specs = File.join Gem.dir, 'specifications'
+    dir_default_specs = Gem::BasicSpecification.default_specifications_dir
+
+    # Create gemspecs in three locations used in stubs
+    loaded_spec = Gem::Specification.new 'a', '3'
+    Gem.loaded_specs['a'] = loaded_spec
+    save_gemspec 'a', '2', dir_default_specs
+    save_gemspec 'a', '1', dir_standard_specs
+
+    full_names = ['a-3', 'a-2', 'a-1']
+
+    full_names = Gem::Specification.stubs_for('a').map { |s| s.full_name }
+    assert_equal full_names, Gem::Specification.stubs_for('a').map { |s| s.full_name }
+    assert_equal 1, Gem::Specification.class_variable_get(:@@stubs_by_name).length
+
+    Gem.loaded_specs.delete 'a'
+    Gem::Specification.class_variable_set(:@@stubs, nil)
+  end
+
+  def test_self_stubs_for_mult_platforms
+    # gems for two different platforms are installed with --user-install
+    # the correct one should be returned in the array
+
+    orig_platform = Gem.platforms.dup
+
+    # create user spec
+    user_spec_dir = File.join Gem.user_dir, 'specifications'
+    FileUtils.mkdir_p(user_spec_dir)  unless Dir.exist? user_spec_dir
+    # dirs doesn't include user ?
+    Gem::Specification.dirs << user_spec_dir
+
+    gem = 'mingw'
+    v   = '1.1.1'
+    platforms = ['x86-mingw32', 'x64-mingw32']
+
+    #create specs
+    platforms.each do |plat|
+      spec = Gem::Specification.new(gem, v) { |s| s.platform = plat }
+      File.open File.join(user_spec_dir, "#{gem}-#{v}-#{plat}.gemspec"), 'w' do |io|
+        io.write spec.to_ruby
+      end
+    end
+
+    platforms.each do |plat|
+      cur_plat = Gem::Platform.new plat
+      Gem.platforms = ['ruby', cur_plat]
+
+      Gem::Specification.class_variable_set :@@stubs, nil
+      Gem::Specification.stubs if plat == platforms.last # test loading via stubs
+      t = Gem::Specification.stubs_for 'mingw'
+
+      assert_equal 1, t.length
+      assert_equal cur_plat, t.first.platform
+    end
+
+    Gem.platforms = orig_platform
+  end
+
   DATA_PATH = File.expand_path "../data", __FILE__
 
   def test_handles_private_null_type
     path = File.join DATA_PATH, "null-type.gemspec.rz"
 
-    data = Marshal.load Gem.inflate(Gem.read_binary(path))
+    data = Marshal.load Gem::Util.inflate(Gem.read_binary(path))
 
-    assert_equal nil, data.rubyforge_project
+    assert_nil data.signing_key
   end
-
-  def test_emits_zulu_timestamps_properly
-    t = Time.utc(2012, 3, 12)
-    @a2.date = t
-
-    yaml = with_psych { @a2.to_yaml }
-
-    assert_match %r!date: 2012-03-12 00:00:00\.000000000 Z!, yaml
-  end if RUBY_VERSION =~ /1\.9\.2/
 
   def test_initialize
     spec = Gem::Specification.new do |s|
@@ -1153,7 +1223,7 @@ dependencies: []
     assert_equal "blah", spec.name
     assert_equal "1.3.5", spec.version.to_s
     assert_equal Gem::Platform::RUBY, spec.platform
-    assert_equal nil, spec.summary
+    assert_nil       spec.summary
     assert_equal [], spec.files
 
     assert_equal [], spec.test_files
@@ -1201,57 +1271,57 @@ dependencies: []
       s.add_dependency 'some_gem'
     end
 
-    new_spec = spec.dup
+    dup_spec = spec.dup
 
     assert_equal "blah", spec.name
-    assert_same  spec.name, new_spec.name
+    assert_same  spec.name, dup_spec.name
 
     assert_equal "1.3.5", spec.version.to_s
-    assert_same spec.version, new_spec.version
+    assert_same spec.version, dup_spec.version
 
     assert_equal Gem::Platform::RUBY, spec.platform
-    assert_same spec.platform, new_spec.platform
+    assert_same spec.platform, dup_spec.platform
 
     assert_equal 'summary', spec.summary
-    assert_same spec.summary, new_spec.summary
+    assert_same spec.summary, dup_spec.summary
 
     assert_equal %w[README.txt bin/exec ext/extconf.rb lib/file.rb
                     test/file.rb].sort,
                  spec.files
-    refute_same spec.files, new_spec.files, 'files'
+    refute_same spec.files, dup_spec.files, 'files'
 
     assert_equal %w[test/file.rb], spec.test_files
-    refute_same spec.test_files, new_spec.test_files, 'test_files'
+    refute_same spec.test_files, dup_spec.test_files, 'test_files'
 
     assert_equal %w[--foo], spec.rdoc_options
-    refute_same spec.rdoc_options, new_spec.rdoc_options, 'rdoc_options'
+    refute_same spec.rdoc_options, dup_spec.rdoc_options, 'rdoc_options'
 
     assert_equal %w[README.txt], spec.extra_rdoc_files
-    refute_same spec.extra_rdoc_files, new_spec.extra_rdoc_files,
+    refute_same spec.extra_rdoc_files, dup_spec.extra_rdoc_files,
                 'extra_rdoc_files'
 
     assert_equal %w[exec], spec.executables
-    refute_same spec.executables, new_spec.executables, 'executables'
+    refute_same spec.executables, dup_spec.executables, 'executables'
 
     assert_equal %w[ext/extconf.rb], spec.extensions
-    refute_same spec.extensions, new_spec.extensions, 'extensions'
+    refute_same spec.extensions, dup_spec.extensions, 'extensions'
 
     assert_equal %w[requirement], spec.requirements
-    refute_same spec.requirements, new_spec.requirements, 'requirements'
+    refute_same spec.requirements, dup_spec.requirements, 'requirements'
 
     assert_equal [Gem::Dependency.new('some_gem', Gem::Requirement.default)],
                  spec.dependencies
-    refute_same spec.dependencies, new_spec.dependencies, 'dependencies'
+    refute_same spec.dependencies, dup_spec.dependencies, 'dependencies'
 
     assert_equal 'bin', spec.bindir
-    assert_same spec.bindir, new_spec.bindir
+    assert_same spec.bindir, dup_spec.bindir
 
     assert_equal '>= 0', spec.required_ruby_version.to_s
-    assert_same spec.required_ruby_version, new_spec.required_ruby_version
+    assert_same spec.required_ruby_version, dup_spec.required_ruby_version
 
     assert_equal '>= 0', spec.required_rubygems_version.to_s
     assert_same spec.required_rubygems_version,
-                new_spec.required_rubygems_version
+                dup_spec.required_rubygems_version
   end
 
   def test_initialize_copy_broken
@@ -1269,6 +1339,16 @@ dependencies: []
 
     assert_equal 'a-1 has an invalid value for @licenses', e.message
     assert_equal '/path/to/file', e.file_path
+  end
+
+  def test_initialize_prerelease_version_before_name
+    spec = Gem::Specification.new do |s|
+      s.version = '1.0.0.dev'
+      s.name = 'a'
+    end
+
+    assert_equal "a", spec.name
+    assert_equal "1.0.0.dev", spec.version.to_s
   end
 
   def test__dump
@@ -1330,31 +1410,31 @@ dependencies: []
     @a2.bindir = nil
     @a2.executable = 'app'
 
-    assert_equal nil, @a2.bindir
+    assert_nil                             @a2.bindir
     assert_equal %w[app lib/code.rb].sort, @a2.files
   end
 
   def test_extensions_equals_nil
     @a2.instance_variable_set(:@extensions, nil)
-    assert_equal nil, @a2.instance_variable_get(:@extensions)
+    assert_nil                    @a2.instance_variable_get(:@extensions)
     assert_equal %w[lib/code.rb], @a2.files
   end
 
   def test_test_files_equals_nil
     @a2.instance_variable_set(:@test_files, nil)
-    assert_equal nil, @a2.instance_variable_get(:@test_files)
+    assert_nil                    @a2.instance_variable_get(:@test_files)
     assert_equal %w[lib/code.rb], @a2.files
   end
 
   def test_executables_equals_nil
     @a2.instance_variable_set(:@executables, nil)
-    assert_equal nil, @a2.instance_variable_get(:@executables)
+    assert_nil                    @a2.instance_variable_get(:@executables)
     assert_equal %w[lib/code.rb], @a2.files
   end
 
   def test_extra_rdoc_files_equals_nil
     @a2.instance_variable_set(:@extra_rdoc_files, nil)
-    assert_equal nil, @a2.instance_variable_get(:@extra_rdoc_files)
+    assert_nil                    @a2.instance_variable_get(:@extra_rdoc_files)
     assert_equal %w[lib/code.rb], @a2.files
   end
 
@@ -1487,7 +1567,7 @@ dependencies: []
     @ext.build_extensions
     refute_path_exists @ext.extension_dir
   ensure
-    unless ($DEBUG or win_platform? or Process.uid.zero?) then
+    unless ($DEBUG or win_platform? or Process.uid.zero?)
       FileUtils.chmod 0755, File.join(@ext.base_dir, 'extensions')
       FileUtils.chmod 0755, @ext.base_dir
     end
@@ -1638,6 +1718,11 @@ dependencies: []
     assert_equal Time.utc(2012,01,12,0,0,0), @a1.date
   end
 
+  def test_date_use_env_source_date_epoch
+    ENV["SOURCE_DATE_EPOCH"] = "123456789"
+    assert_equal Time.utc(1973,11,29,0,0,0), @a1.date
+  end
+
   def test_dependencies
     util_setup_deps
     assert_equal [@bonobo, @monkey], @gem.dependencies
@@ -1682,8 +1767,8 @@ dependencies: []
   end
 
   def test_eql_eh
-    g1 = new_spec 'gem', 1
-    g2 = new_spec 'gem', 1
+    g1 = util_spec 'gem', 1
+    g2 = util_spec 'gem', 1
 
     assert_equal g1, g2
     assert_equal g1.hash, g2.hash
@@ -2052,7 +2137,7 @@ dependencies: []
       remove_method :default_ext_dir_for
     end
 
-    def Gem.default_ext_dir_for base_dir
+    def Gem.default_ext_dir_for(base_dir)
       '/foo'
     end
 
@@ -2164,7 +2249,7 @@ dependencies: []
 
   def test_require_already_activated
     save_loaded_features do
-      a1 = new_spec "a", "1", nil, "lib/d.rb"
+      a1 = util_spec "a", "1", nil, "lib/d.rb"
 
       install_specs a1 # , a2, b1, b2, c1, c2
 
@@ -2181,12 +2266,12 @@ dependencies: []
 
   def test_require_already_activated_indirect_conflict
     save_loaded_features do
-      a1 = new_spec "a", "1", "b" => "> 0"
-      a2 = new_spec "a", "2", "b" => "> 0"
-      b1 = new_spec "b", "1", "c" => ">= 1"
-      b2 = new_spec "b", "2", "c" => ">= 2"
-      c1 = new_spec "c", "1", nil, "lib/d.rb"
-      c2 = new_spec("c", "2", { "a" => "1" }, "lib/d.rb") # conflicts with a-2
+      a1 = util_spec "a", "1", "b" => "> 0"
+      a2 = util_spec "a", "2", "b" => "> 0"
+      b1 = util_spec "b", "1", "c" => ">= 1"
+      b2 = util_spec "b", "2", "c" => ">= 2"
+      c1 = util_spec "c", "1", nil, "lib/d.rb"
+      c2 = util_spec("c", "2", { "a" => "1" }, "lib/d.rb") # conflicts with a-2
 
       install_specs c1, b1, a1, a2, c2, b2
 
@@ -2207,7 +2292,7 @@ dependencies: []
   end
 
   def test_allowed_push_host
-    assert_equal nil, @a1.metadata['allowed_push_host']
+    assert_nil                                   @a1.metadata['allowed_push_host']
     assert_equal 'https://privategemserver.com', @a3.metadata['allowed_push_host']
   end
 
@@ -2224,8 +2309,8 @@ dependencies: []
   end
 
   def test_spaceship_name
-    s1 = new_spec 'a', '1'
-    s2 = new_spec 'b', '1'
+    s1 = util_spec 'a', '1'
+    s2 = util_spec 'b', '1'
 
     assert_equal(-1, (s1 <=> s2))
     assert_equal( 0, (s1 <=> s1))
@@ -2233,8 +2318,8 @@ dependencies: []
   end
 
   def test_spaceship_platform
-    s1 = new_spec 'a', '1'
-    s2 = new_spec 'a', '1' do |s|
+    s1 = util_spec 'a', '1'
+    s2 = util_spec 'a', '1' do |s|
       s.platform = Gem::Platform.new 'x86-my_platform1'
     end
 
@@ -2244,8 +2329,8 @@ dependencies: []
   end
 
   def test_spaceship_version
-    s1 = new_spec 'a', '1'
-    s2 = new_spec 'a', '2'
+    s1 = util_spec 'a', '1'
+    s2 = util_spec 'a', '2'
 
     assert_equal( -1, (s1 <=> s2))
     assert_equal(  0, (s1 <=> s1))
@@ -2417,7 +2502,6 @@ Gem::Specification.new do |s|
   s.homepage = "http://example.com".freeze
   s.licenses = ["MIT".freeze]
   s.requirements = ["A working computer".freeze]
-  s.rubyforge_project = "example".freeze
   s.rubygems_version = "#{Gem::VERSION}".freeze
   s.summary = "this is a summary".freeze
   s.test_files = ["test/suite.rb".freeze]
@@ -2428,16 +2512,16 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rake>.freeze, [\"> 0.4\"])
       s.add_runtime_dependency(%q<jabber4r>.freeze, [\"> 0.0.0\"])
-      s.add_runtime_dependency(%q<pqa>.freeze, [\"<= 0.6\", \"> 0.4\"])
+      s.add_runtime_dependency(%q<pqa>.freeze, [\"> 0.4\", \"<= 0.6\"])
     else
       s.add_dependency(%q<rake>.freeze, [\"> 0.4\"])
       s.add_dependency(%q<jabber4r>.freeze, [\"> 0.0.0\"])
-      s.add_dependency(%q<pqa>.freeze, [\"<= 0.6\", \"> 0.4\"])
+      s.add_dependency(%q<pqa>.freeze, [\"> 0.4\", \"<= 0.6\"])
     end
   else
     s.add_dependency(%q<rake>.freeze, [\"> 0.4\"])
     s.add_dependency(%q<jabber4r>.freeze, [\"> 0.0.0\"])
-    s.add_dependency(%q<pqa>.freeze, [\"<= 0.6\", \"> 0.4\"])
+    s.add_dependency(%q<pqa>.freeze, [\"> 0.4\", \"<= 0.6\"])
   end
 end
     SPEC
@@ -2534,7 +2618,7 @@ end
     end
   end
 
-  def x s; s.gsub(/xxx/, ''); end
+  def x(s); s.gsub(/xxx/, ''); end
   def w; x "WARxxxNING"; end
   def t; x "TOxxxDO"; end
   def f; x "FxxxIXME"; end
@@ -2610,6 +2694,7 @@ end
       @a1.add_runtime_dependency     'l', '> 1.2.3'
       @a1.add_runtime_dependency     'm', '~> 2.1.0'
       @a1.add_runtime_dependency     'n', '~> 0.1.0'
+      @a1.add_runtime_dependency     'o'
 
       use_ui @ui do
         @a1.validate
@@ -2618,12 +2703,6 @@ end
       expected = <<-EXPECTED
 #{w}:  prerelease dependency on b (>= 1.0.rc1) is not recommended
 #{w}:  prerelease dependency on c (>= 2.0.rc2, development) is not recommended
-#{w}:  pessimistic dependency on d (~> 1.2.3) may be overly strict
-  if d is semantically versioned, use:
-    add_runtime_dependency 'd', '~> 1.2', '>= 1.2.3'
-#{w}:  pessimistic dependency on e (~> 1.2.3.4) may be overly strict
-  if e is semantically versioned, use:
-    add_runtime_dependency 'e', '~> 1.2', '>= 1.2.3.4'
 #{w}:  open-ended dependency on i (>= 1.2) is not recommended
   if i is semantically versioned, use:
     add_runtime_dependency 'i', '~> 1.2'
@@ -2636,9 +2715,8 @@ end
 #{w}:  open-ended dependency on l (> 1.2.3) is not recommended
   if l is semantically versioned, use:
     add_runtime_dependency 'l', '~> 1.2', '> 1.2.3'
-#{w}:  pessimistic dependency on m (~> 2.1.0) may be overly strict
-  if m is semantically versioned, use:
-    add_runtime_dependency 'm', '~> 2.1', '>= 2.1.0'
+#{w}:  open-ended dependency on o (>= 0) is not recommended
+  use a bounded requirement, such as '~> x.y'
 #{w}:  See http://guides.rubygems.org/specification-reference/ for help
       EXPECTED
 
@@ -2805,7 +2883,7 @@ duplicate dependency on c (>= 1.2.3, development), (~> 1.2) use:
   end
 
   def test_validate_empty_require_paths
-    if win_platform? then
+    if win_platform?
       skip 'test_validate_empty_require_paths skipped on MS Windows (symlink)'
     else
       util_setup_validate
@@ -2839,6 +2917,68 @@ duplicate dependency on c (>= 1.2.3, development), (~> 1.2) use:
 
     assert_equal %w[bin/exec ext/a/extconf.rb lib/code.rb lib2 test/suite.rb].sort,
                  @a1.files
+  end
+
+  def test_unresolved_specs
+    specification = Gem::Specification.clone
+
+    set_orig specification
+
+    specification.define_singleton_method(:unresolved_deps) do
+      { b: Gem::Dependency.new("x","1") }
+    end
+
+    specification.define_singleton_method(:find_all_by_name) do |dep_name|
+      []
+    end
+
+    expected = <<-EXPECTED
+WARN: Unresolved or ambigious specs during Gem::Specification.reset:
+      x (= 1)
+WARN: Clearing out unresolved specs. Try 'gem cleanup <gem>'
+Please report a bug if this causes problems.
+    EXPECTED
+
+    assert_output nil, expected do
+      specification.reset
+    end
+  end
+
+  def test_unresolved_specs_with_versions
+    specification = Gem::Specification.clone
+
+    set_orig specification
+
+    specification.define_singleton_method(:unresolved_deps) do
+      { b: Gem::Dependency.new("x","1") }
+    end
+
+    specification.define_singleton_method(:find_all_by_name) do |dep_name|
+      [
+        specification.new { |s| s.name = "z", s.version = Gem::Version.new("1") },
+        specification.new { |s| s.name = "z", s.version = Gem::Version.new("2") }
+      ]
+    end
+
+    expected = <<-EXPECTED
+WARN: Unresolved or ambigious specs during Gem::Specification.reset:
+      x (= 1)
+      Available/installed versions of this gem:
+      - 1
+      - 2
+WARN: Clearing out unresolved specs. Try 'gem cleanup <gem>'
+Please report a bug if this causes problems.
+    EXPECTED
+
+    assert_output nil, expected do
+      specification.reset
+    end
+  end
+
+  def set_orig(cls)
+    s_cls = cls.singleton_class
+    s_cls.send :alias_method, :orig_unresolved_deps , :unresolved_deps
+    s_cls.send :alias_method, :orig_find_all_by_name, :find_all_by_name
   end
 
   def test_validate_files_recursive
@@ -2941,6 +3081,17 @@ http://spdx.org/licenses or 'Nonstandard' for a nonstandard license.
     assert_empty @ui.error
   end
 
+  def test_validate_license_values_or_later
+    util_setup_validate
+
+    use_ui @ui do
+      @a1.licenses = ['GPL-2.0-or-later']
+      @a1.validate
+    end
+
+    assert_empty @ui.error
+  end
+
   def test_validate_license_values_with
     util_setup_validate
 
@@ -2966,6 +3117,20 @@ http://spdx.org/licenses or 'Nonstandard' for a nonstandard license.
     warning
     assert_match <<-warning, @ui.error
 WARNING:  license value 'GPL-2.0 FOO' is invalid.  Use a license identifier from
+http://spdx.org/licenses or 'Nonstandard' for a nonstandard license.
+    warning
+  end
+
+  def test_validate_license_with_invalid_exception
+    util_setup_validate
+
+    use_ui @ui do
+      @a1.licenses = ['GPL-2.0+ WITH Autocofn-exception-2.0']
+      @a1.validate
+    end
+
+    assert_match <<-warning, @ui.error
+WARNING:  license value 'GPL-2.0+ WITH Autocofn-exception-2.0' is invalid.  Use a license identifier from
 http://spdx.org/licenses or 'Nonstandard' for a nonstandard license.
     warning
   end
@@ -3222,7 +3387,7 @@ Did you mean 'Ruby'?
   end
 
   def test__load_fixes_Date_objects
-    spec = new_spec "a", 1
+    spec = util_spec "a", 1
     spec.instance_variable_set :@date, Date.today
 
     spec = Marshal.load Marshal.dump(spec)
@@ -3281,10 +3446,10 @@ Did you mean 'Ruby'?
     end
 
     expected = %W[
-                  a-2
-                  a-2-x86-my_platform-1
-                  a-3-x86-other_platform-1
-                 ]
+      a-2
+      a-2-x86-my_platform-1
+      a-3-x86-other_platform-1
+    ]
 
     latest_specs = Gem::Specification.latest_specs.map(&:full_name).sort
 
@@ -3534,7 +3699,7 @@ end
   end
 
   def test_find_by_path
-    a = new_spec "foo", "1", nil, "lib/foo.rb"
+    a = util_spec "foo", "1", nil, "lib/foo.rb"
 
     install_specs a
 
@@ -3544,13 +3709,13 @@ end
   end
 
   def test_find_inactive_by_path
-    a = new_spec "foo", "1", nil, "lib/foo.rb"
+    a = util_spec "foo", "1", nil, "lib/foo.rb"
 
     install_specs a
 
     assert_equal a, Gem::Specification.find_inactive_by_path('foo')
     a.activate
-    assert_equal nil, Gem::Specification.find_inactive_by_path('foo')
+    assert_nil Gem::Specification.find_inactive_by_path('foo')
   end
 
   def test_load_default_gem
@@ -3565,18 +3730,6 @@ end
     end
     Gem::Specification.reset
     assert_equal ["default-2.0.0.0"], Gem::Specification.map(&:full_name)
-  end
-
-  def test_detect_bundled_gem_in_old_ruby
-    util_set_RUBY_VERSION '1.9.3', 551
-
-    spec = new_spec 'bigdecimal', '1.1.0' do |s|
-      s.summary = "This bigdecimal is bundled with Ruby"
-    end
-
-    assert spec.bundled_gem_in_old_ruby?
-  ensure
-    util_restore_RUBY_VERSION
   end
 
   def util_setup_deps

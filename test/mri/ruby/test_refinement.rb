@@ -19,6 +19,10 @@ class TestRefinement < Test::Unit::TestCase
       return "Foo#a"
     end
 
+    def b
+      return "Foo#b"
+    end
+
     def call_x
       return x
     end
@@ -40,6 +44,10 @@ class TestRefinement < Test::Unit::TestCase
 
       def a
         return "FooExt#a"
+      end
+
+      private def b
+        return "FooExt#b"
       end
     end
   end
@@ -92,6 +100,18 @@ class TestRefinement < Test::Unit::TestCase
 
       def self.send_z_on(foo)
         return foo.send(:z)
+      end
+
+      def self.send_b_on(foo)
+        return foo.send(:b)
+      end
+
+      def self.public_send_z_on(foo)
+        return foo.public_send(:z)
+      end
+
+      def self.public_send_b_on(foo)
+        return foo.public_send(:b)
       end
 
       def self.method_z(foo)
@@ -179,9 +199,18 @@ class TestRefinement < Test::Unit::TestCase
     foo = Foo.new
     assert_raise(NoMethodError) { foo.send(:z) }
     assert_equal("FooExt#z", FooExtClient.send_z_on(foo))
+    assert_equal("FooExt#b", FooExtClient.send_b_on(foo))
     assert_raise(NoMethodError) { foo.send(:z) }
 
     assert_equal(true, RespondTo::Sub.new.respond_to?(:foo))
+  end
+
+  def test_public_send_should_use_refinements
+    foo = Foo.new
+    assert_raise(NoMethodError) { foo.public_send(:z) }
+    assert_equal("FooExt#z", FooExtClient.public_send_z_on(foo))
+    assert_equal("Foo#b", foo.public_send(:b))
+    assert_raise(NoMethodError) { FooExtClient.public_send_b_on(foo) }
   end
 
   def test_method_should_not_use_refinements
@@ -297,9 +326,9 @@ class TestRefinement < Test::Unit::TestCase
     end
   end
 
-  def test_respond_to_should_not_use_refinements
+  def test_respond_to_should_use_refinements
     assert_equal(false, 1.respond_to?(:foo))
-    assert_equal(false, eval_using(IntegerFooExt, "1.respond_to?(:foo)"))
+    assert_equal(true, eval_using(IntegerFooExt, "1.respond_to?(:foo)"))
   end
 
   module StringCmpExt
@@ -905,6 +934,10 @@ class TestRefinement < Test::Unit::TestCase
 
     def self.send_z_on(foo)
       return foo.send(:z)
+    end
+
+    def self.public_send_z_on(foo)
+      return foo.public_send(:z)
     end
 
     def self.method_z(foo)
@@ -2008,6 +2041,122 @@ class TestRefinement < Test::Unit::TestCase
 
   def test_dsym_literal
     assert_equal(:foo, ToSymbol.new("foo").symbol)
+  end
+
+  module ToProc
+    def self.call &block
+      block.call
+    end
+
+    class ReturnProc
+      c = self
+      using Module.new {
+        refine c do
+          def to_proc
+            proc { "to_proc" }
+          end
+        end
+      }
+      def call
+        ToProc.call &self
+      end
+    end
+
+    class ReturnNoProc
+      c = self
+      using Module.new {
+        refine c do
+          def to_proc
+            true
+          end
+        end
+      }
+
+      def call
+        ToProc.call &self
+      end
+    end
+
+    class PrivateToProc
+      c = self
+      using Module.new {
+        refine c do
+          private
+          def to_proc
+            proc { "private_to_proc" }
+          end
+        end
+      }
+
+      def call
+        ToProc.call &self
+      end
+    end
+
+
+    class NonProc
+      def call
+        ToProc.call &self
+      end
+    end
+
+    class MethodMissing
+      def method_missing *args
+        proc { "method_missing" }
+      end
+
+      def call
+        ToProc.call &self
+      end
+      end
+
+    class ToProcAndMethodMissing
+      def method_missing *args
+        proc { "method_missing" }
+      end
+
+      c = self
+      using Module.new {
+        refine c do
+          def to_proc
+            proc { "to_proc" }
+          end
+        end
+      }
+
+      def call
+        ToProc.call &self
+      end
+    end
+
+    class ToProcAndRefinements
+      def to_proc
+        proc { "to_proc" }
+      end
+
+      c = self
+      using Module.new {
+        refine c do
+          def to_proc
+            proc { "refinements_to_proc" }
+          end
+        end
+      }
+
+      def call
+        ToProc.call &self
+      end
+    end
+  end
+
+  def test_to_proc
+    assert_equal("to_proc", ToProc::ReturnProc.new.call)
+    assert_equal("private_to_proc", ToProc::PrivateToProc.new.call)
+    assert_raise(TypeError){ ToProc::ReturnNoProc.new.call }
+    assert_raise(TypeError){ ToProc::NonProc.new.call }
+    assert_equal("method_missing", ToProc::MethodMissing.new.call)
+    assert_equal("to_proc", ToProc::ToProcAndMethodMissing.new.call)
+    assert_equal("refinements_to_proc", ToProc::ToProcAndRefinements.new.call)
   end
 
   def test_unused_refinement_for_module

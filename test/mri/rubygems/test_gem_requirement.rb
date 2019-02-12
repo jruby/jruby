@@ -28,6 +28,8 @@ class TestGemRequirement < Gem::TestCase
     assert_requirement_equal "= 2", "2"
     assert_requirement_equal "= 2", ["2"]
     assert_requirement_equal "= 2", v(2)
+    assert_requirement_equal "2.0", "2"
+    assert_requirement_equal ["= 2", ">= 2"], [">= 2", "= 2"]
   end
 
   def test_create
@@ -69,6 +71,7 @@ class TestGemRequirement < Gem::TestCase
     assert_equal ['=', Gem::Version.new(1)], Gem::Requirement.parse('= 1')
     assert_equal ['>', Gem::Version.new(1)], Gem::Requirement.parse('> 1')
     assert_equal ['=', Gem::Version.new(1)], Gem::Requirement.parse("=\n1")
+    assert_equal ['=', Gem::Version.new(1)], Gem::Requirement.parse('1.0')
 
     assert_equal ['=', Gem::Version.new(2)],
       Gem::Requirement.parse(Gem::Version.new('2'))
@@ -226,6 +229,8 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "0.2.33",      "= 0.2.33"
     assert_satisfied_by "0.2.34",      "> 0.2.33"
     assert_satisfied_by "1.0",         "= 1.0"
+    assert_satisfied_by "1.0.0",       "= 1.0"
+    assert_satisfied_by "1.0",         "= 1.0.0"
     assert_satisfied_by "1.0",         "1.0"
     assert_satisfied_by "1.8.2",       "> 1.8.0"
     assert_satisfied_by "1.112",       "> 1.111"
@@ -313,6 +318,7 @@ class TestGemRequirement < Gem::TestCase
   def test_satisfied_by_boxed
     refute_satisfied_by "1.3",   "~> 1.4"
     assert_satisfied_by "1.4",   "~> 1.4"
+    assert_satisfied_by "1.4.0", "~> 1.4"
     assert_satisfied_by "1.5",   "~> 1.4"
     refute_satisfied_by "2.0",   "~> 1.4"
 
@@ -322,6 +328,20 @@ class TestGemRequirement < Gem::TestCase
     assert_satisfied_by "1.4.5", "~> 1.4.4"
     refute_satisfied_by "1.5",   "~> 1.4.4"
     refute_satisfied_by "2.0",   "~> 1.4.4"
+  end
+
+  def test_satisfied_by_explicitly_bounded
+    req = [">= 1.4.4", "< 1.5"]
+
+    assert_satisfied_by "1.4.5",     req
+    assert_satisfied_by "1.5.0.rc1", req
+    refute_satisfied_by "1.5.0",     req
+
+    req = [">= 1.4.4", "< 1.5.a"]
+
+    assert_satisfied_by "1.4.5",     req
+    refute_satisfied_by "1.5.0.rc1", req
+    refute_satisfied_by "1.5.0",     req
   end
 
   def test_specific
@@ -367,26 +387,26 @@ class TestGemRequirement < Gem::TestCase
   # Assert that two requirements are equal. Handles Gem::Requirements,
   # strings, arrays, numbers, and versions.
 
-  def assert_requirement_equal expected, actual
+  def assert_requirement_equal(expected, actual)
     assert_equal req(expected), req(actual)
   end
 
   # Assert that +version+ satisfies +requirement+.
 
-  def assert_satisfied_by version, requirement
+  def assert_satisfied_by(version, requirement)
     assert req(requirement).satisfied_by?(v(version)),
       "#{requirement} is satisfied by #{version}"
   end
 
   # Refute the assumption that two requirements are equal.
 
-  def refute_requirement_equal unexpected, actual
+  def refute_requirement_equal(unexpected, actual)
     refute_equal req(unexpected), req(actual)
   end
 
   # Refute the assumption that +version+ satisfies +requirement+.
 
-  def refute_satisfied_by version, requirement
+  def refute_satisfied_by(version, requirement)
     refute req(requirement).satisfied_by?(v(version)),
       "#{requirement} is not satisfied by #{version}"
   end

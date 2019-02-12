@@ -160,26 +160,34 @@ class TestProc < Test::Unit::TestCase
       $SAFE += 1
       proc {$SAFE}
     }.call
-    assert_equal(safe, $SAFE)
-    assert_equal(safe + 1, p.call)
-    assert_equal(safe, $SAFE)
 
+    assert_equal(safe + 1, $SAFE)
+    assert_equal(safe + 1, p.call)
+    assert_equal(safe + 1, $SAFE)
+
+    $SAFE = 0
     c.class_eval {define_method(:safe, p)}
     assert_equal(safe, x.safe)
-    assert_equal(safe, x.method(:safe).call)
-    assert_equal(safe, x.method(:safe).to_proc.call)
 
+    $SAFE = 0
     p = proc {$SAFE += 1}
     assert_equal(safe + 1, p.call)
-    assert_equal(safe, $SAFE)
+    assert_equal(safe + 1, $SAFE)
 
+    $SAFE = 0
     c.class_eval {define_method(:inc, p)}
     assert_equal(safe + 1, proc {x.inc; $SAFE}.call)
-    assert_equal(safe, $SAFE)
+    assert_equal(safe + 1, $SAFE)
+
+    $SAFE = 0
     assert_equal(safe + 1, proc {x.method(:inc).call; $SAFE}.call)
-    assert_equal(safe, $SAFE)
+    assert_equal(safe + 1, $SAFE)
+
+    $SAFE = 0
     assert_equal(safe + 1, proc {x.method(:inc).to_proc.call; $SAFE}.call)
-    assert_equal(safe, $SAFE)
+    assert_equal(safe + 1, $SAFE)
+  ensure
+    $SAFE = 0
   end
 
   def m2
@@ -395,6 +403,15 @@ class TestProc < Test::Unit::TestCase
     b = nil
     1.times { x, y, z = 1, 2, 3; [x,y,z]; b = binding }
     assert_equal([1, 2, 3], b.eval("[x, y, z]"))
+  end
+
+  def test_binding_source_location
+    b, expected_location = binding, [__FILE__, __LINE__]
+    assert_equal(expected_location, b.source_location)
+
+    file, lineno = method(:source_location_test).to_proc.binding.source_location
+    assert_match(/^#{ Regexp.quote(__FILE__) }$/, file)
+    assert_equal(@@line_of_source_location_test, lineno, 'Bug #2427')
   end
 
   def test_proc_lambda
@@ -1325,7 +1342,7 @@ class TestProc < Test::Unit::TestCase
   end
 
   def test_local_variable_set_wb
-    assert_ruby_status([], <<-'end;', '[Bug #13605]', timeout: 15)
+    assert_ruby_status([], <<-'end;', '[Bug #13605]', timeout: 30)
       b = binding
       n = 20_000
 
@@ -1372,5 +1389,96 @@ class TestProc < Test::Unit::TestCase
       e = g
       e.each {}
     EOS
+  end
+
+  def test_prepended_call
+    assert_in_out_err([], "#{<<~"begin;"}\n#{<<~'end;'}", ["call"])
+    begin;
+      Proc.prepend Module.new {def call() puts "call"; super; end}
+      def m(&blk) blk.call; end
+      m {}
+    end;
+  end
+
+  def test_refined_call
+    assert_in_out_err([], "#{<<~"begin;"}\n#{<<~'end;'}", ["call"])
+    begin;
+      using Module.new {refine(Proc) {def call() puts "call"; super; end}}
+      def m(&blk) blk.call; end
+      m {}
+    end;
+  end
+
+  def method_for_test_proc_without_block_for_symbol
+    binding.eval('proc')
+  end
+
+  def test_proc_without_block_for_symbol
+    assert_equal('1', method_for_test_proc_without_block_for_symbol(&:to_s).call(1), '[Bug #14782]')
+  end
+
+  def test_compose
+    f = proc {|x| x * 2}
+    g = proc {|x| x + 1}
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(6, (g >> f).call(2))
+  end
+
+  def test_compose_with_multiple_args
+    f = proc {|x| x * 2}
+    g = proc {|x, y| x + y}
+
+    assert_equal(6, (f << g).call(1, 2))
+    assert_equal(6, (g >> f).call(1, 2))
+  end
+
+  def test_compose_with_block
+    f = proc {|x| x * 2}
+    g = proc {|&blk| blk.call(1) }
+
+    assert_equal(8, (f << g).call { |x| x + 3 })
+    assert_equal(8, (g >> f).call { |x| x + 3 })
+  end
+
+  def test_compose_with_lambda
+    f = lambda {|x| x * 2}
+    g = lambda {|x| x}
+
+    assert_predicate((f << g), :lambda?)
+    assert_predicate((g >> f), :lambda?)
+  end
+
+  def test_compose_with_method
+    f = proc {|x| x * 2}
+    c = Class.new {
+      def g(x) x + 1 end
+    }
+    g = c.new.method(:g)
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(5, (f >> g).call(2))
+  end
+
+  def test_compose_with_callable
+    f = proc {|x| x * 2}
+    c = Class.new {
+      def call(x) x + 1 end
+    }
+    g = c.new
+
+    assert_equal(6, (f << g).call(2))
+    assert_equal(5, (f >> g).call(2))
+  end
+
+  def test_compose_with_noncallable
+    f = proc {|x| x * 2}
+
+    assert_raise(NoMethodError) {
+      (f << 5).call(2)
+    }
+    assert_raise(NoMethodError) {
+      (f >> 5).call(2)
+    }
   end
 end
