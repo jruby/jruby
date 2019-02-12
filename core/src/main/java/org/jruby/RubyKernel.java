@@ -62,11 +62,9 @@ import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -167,31 +165,52 @@ public class RubyKernel {
         runtime.setRespondToMissingMethod(module.searchMethod("respond_to_missing?"));
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = {CLASS})
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject at_exit(ThreadContext context, IRubyObject recv, Block block) {
         return context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.PROC, block));
     }
 
-    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE, reads = {CLASS})
+    @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
-        final RubyModule module = getModuleForAutoload(context, recv);
-
-        if (module == null) {
-            return context.nil;
-        }
-
-        return module.autoload_p(context, symbol);
+        final Ruby runtime = context.runtime;
+        final RubyModule module = getModuleForAutoload(runtime, recv);
+        final RubyString file = module.getAutoloadFile(symbol.asJavaString());
+        return file == null ? context.nil : file;
     }
 
-    @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = {CLASS})
+    @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        final RubyModule module = getModuleForAutoload(context, recv);
+        final Ruby runtime = context.runtime;
+        final String nonInternedName = symbol.asJavaString();
 
-        if (module == null) {
-            throw context.runtime.newTypeError("Can not set autoload on singleton class");
+        if (!IdUtil.isValidConstantName(nonInternedName)) {
+            throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
-        return module.autoload(context, symbol, file);
+        final RubyString fileString =
+            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
+
+        if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
+
+        final String baseName = nonInternedName.intern(); // interned, OK for "fast" methods
+        final RubyModule module = getModuleForAutoload(runtime, recv);
+
+        IRubyObject existingValue = module.fetchConstant(baseName);
+        if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
+
+        module.defineAutoload(baseName, new RubyModule.AutoloadMethod() {
+
+            public RubyString getFile() { return fileString; }
+
+            public void load(final Ruby runtime) {
+                final String file = getFile().asJavaString();
+                if (runtime.getLoadService().autoloadRequire(file)) {
+                    // Do not finish autoloading by cyclic autoload
+                    module.finishAutoload(baseName);
+                }
+            }
+        });
+        return context.nil;
     }
 
     @Deprecated
@@ -199,14 +218,13 @@ public class RubyKernel {
         return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
     }
 
-    static RubyModule getModuleForAutoload(ThreadContext context, IRubyObject recv) {
-        RubyModule target = IRRuntimeHelpers.findInstanceMethodContainer(context, context.getCurrentScope(), recv);
-
-        while (target != null && (target.isSingleton() || target.isIncluded())) {
-            target = target.getSuperClass();
+    static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
+        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
+        if (module == runtime.getKernel()) {
+            // special behavior if calling Kernel.autoload directly
+            module = runtime.getObject().getSingletonClass();
         }
-
-        return target;
+        return module;
     }
 
     public static IRubyObject method_missing(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
