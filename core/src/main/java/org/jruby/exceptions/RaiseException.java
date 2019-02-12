@@ -111,17 +111,15 @@ public class RaiseException extends JumpException {
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         if (backtrace == null) {
-            backtrace = sites(context).backtrace.call(context, exception, exception);
+            backtrace = Helpers.invokeChecked(context, exception, sites(context).backtrace);
         } else {
             exception.setBacktrace(backtrace);
         }
 
-        if (backtrace.isNil()) {
+        if (backtrace == null || backtrace.isNil()) {
             // No backtrace provided or overridden, capture at this point in stack
             exception.captureBacktrace(context);
             setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
-        } else {
-            // Backtrace provided
         }
     }
 

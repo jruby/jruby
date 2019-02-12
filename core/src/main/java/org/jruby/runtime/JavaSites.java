@@ -469,7 +469,7 @@ public class JavaSites {
     }
 
     public static class RaiseExceptionSites {
-        public final CallSite backtrace = new FunctionalCachingCallSite("backtrace");
+        public final CheckedSites backtrace = new CheckedSites("backtrace");
     }
 
     public static class CheckedSites {
