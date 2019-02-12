@@ -746,16 +746,7 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
-    private static final StackWalker WALKER;
-
-    static {
-        StackWalker walker = null;
-        try {
-            walker = StackWalker.getInstance();
-        } catch (Throwable t) {
-        }
-        WALKER = walker;
-    }
+    private static final StackWalker WALKER = StackWalker.getInstance();
 
     public IRubyObject createCallerBacktrace(int level, Integer length) {
         return WALKER.walk(stream -> createCallerBacktrace(level, length, stream));
@@ -837,14 +828,23 @@ public final class ThreadContext {
      *
      * @return the nearest stack trace element
      */
-    public RubyStackTraceElement getSingleBacktrace() {
+    public RubyStackTraceElement getSingleBacktrace(int level) {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(0, 1, stream));
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
         return trace.length == 0 ? null : trace[0];
+    }
+
+    /**
+     * Same as calling getSingleBacktrace(0);
+     *
+     * @see #getSingleBacktrace(int)
+     */
+    public RubyStackTraceElement getSingleBacktrace() {
+        return getSingleBacktrace(0);
     }
 
     public boolean isEventHooksEnabled() {

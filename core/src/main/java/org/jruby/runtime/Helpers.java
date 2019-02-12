@@ -976,21 +976,6 @@ public class Helpers {
         context.setErrorInfo(exception);
     }
 
-    @Deprecated
-    public static void storeNativeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
-        IRubyObject exception;
-        if (currentThrowable instanceof RaiseException) {
-            exception = ((RaiseException)currentThrowable).getException();
-        } else {
-            Ruby runtime = context.runtime;
-
-            // wrap Throwable in a NativeException object
-            exception = new NativeException(runtime, runtime.getNativeException(), currentThrowable);
-            ((NativeException)exception).prepareIntegratedBacktrace(context, currentThrowable.getStackTrace());
-        }
-        context.setErrorInfo(exception);
-    }
-
     public static void clearErrorInfo(ThreadContext context) {
         context.setErrorInfo(context.nil);
     }

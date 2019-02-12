@@ -94,22 +94,10 @@ public class RaiseException extends JumpException {
         preRaise(context, (IRubyObject) null);
     }
 
-    private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
-        context.runtime.incrementExceptionCount();
-        doSetLastError(context);
-        doCallEventHook(context);
-
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
-
-        if (requiresBacktrace(context)) {
-            exception.prepareIntegratedBacktrace(context, javaTrace);
-        }
-    }
-
     private boolean requiresBacktrace(ThreadContext context) {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
         return context.exceptionRequiresBacktrace ||
-                ! context.runtime.getStandardError().isInstance(exception) ||
+                !context.runtime.getStandardError().isInstance(exception) ||
                 context.runtime.isDebug();
     }
 
@@ -120,16 +108,14 @@ public class RaiseException extends JumpException {
 
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
-        // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
-        if (requiresBacktrace(context)) {
-            if (backtrace == null) {
-                exception.prepareBacktrace(context);
-            } else {
-                exception.forceBacktrace(backtrace);
-                if ( backtrace.isNil() ) return;
-            }
+        backtrace = backtrace == null ? exception.callMethod("backtrace") : backtrace;
 
+        if (backtrace.isNil()) {
+            // No backtrace provided or overridden, capture at this point in stack
+            exception.captureBacktrace(context);
             setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
+        } else {
+            // Backtrace provided
         }
     }
 
@@ -157,27 +143,6 @@ public class RaiseException extends JumpException {
             newTrace[i] = trace[i].asStackTraceElement();
         }
         return newTrace;
-    }
-
-    @Deprecated
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
-        return createNativeRaiseException(runtime, cause, null);
-    }
-
-    @Deprecated
-    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
-        org.jruby.NativeException nativeException = new org.jruby.NativeException(runtime, runtime.getNativeException(), cause);
-
-        return new RaiseException(cause, nativeException);
-    }
-
-    @Deprecated
-    public RaiseException(Throwable cause, org.jruby.NativeException nativeException) {
-        super(nativeException.getMessageAsJavaString(), cause);
-        providedMessage = super.getMessage(); // cause.getClass().getId() + ": " + message
-        setException(nativeException);
-        preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
-        setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
     }
 
     @Deprecated
