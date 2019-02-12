@@ -19,7 +19,7 @@ else
   ADDITIONAL_TEST_OPTIONS = ""
 end
 
-AVAILABLE_PROCESSORS = java.lang.Runtime.runtime.available_processors
+AVAILABLE_PROCESSORS = (ENV['JOBS'] || java.lang.Runtime.runtime.available_processors).to_i
 
 namespace :test do
   desc "Compile test code"
