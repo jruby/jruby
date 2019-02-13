@@ -87,9 +87,9 @@ jobs:
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain'
-      jdk: oraclejdk9
+      jdk: oraclejdk11
     - env: PHASE='-Pcomplete'
-      jdk: oraclejdk9
+      jdk: oraclejdk11
       
 allow_failures:
   - env: COMMAND=test/check_versions.sh
