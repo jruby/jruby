@@ -11,7 +11,9 @@
 #
 # -----------------------------------------------------------------------------
 
+# ----- Set some default conditions for how we'll eventually run --------------
 cygwin=false
+use_exec=true
 
 # ----- Identify OS we are running under --------------------------------------
 case "`uname`" in
@@ -398,8 +400,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 
-else
-if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
+elif [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
 
   if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
     echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
@@ -407,7 +408,7 @@ if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
     JRUBY_OPTS=''
   fi
 
-  jvm_command=("$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
@@ -423,31 +424,19 @@ else
 
 fi
 
-if [ "$PROFILE_ARGS" != "" ]; then
-  use_exec=false
-  echo "Running with instrumented profiler"
-fi
-
 # Run JRuby!
 if $use_exec; then
-  # If we do not have post-command processing to do, exec the JVM to preserve current PID
-  exec ${jvm_command[@]}
+  exec "${jvm_command[@]}"
+  echo $?
 else
-  ${jvm_command[@]}
-fi
+  "${jvm_command[@]}"
 
-# Record the exit status immediately, or it will be overridden.
-JRUBY_STATUS=$?
+  # Record the exit status immediately, or it will be overridden.
+  JRUBY_STATUS=$?
 
-if [ "$PROFILE_ARGS" != "" ]; then
-  echo "Profiling results:"
-  cat profile.txt
-  rm profile.txt
-fi
+  if $cygwin; then
+    stty icanon echo > /dev/null 2>&1
+  fi
 
-if $cygwin; then
-  stty icanon echo > /dev/null 2>&1
-fi
-
-exit $JRUBY_STATUS
+  exit $JRUBY_STATUS
 fi
