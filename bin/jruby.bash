@@ -346,6 +346,7 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 if $cygwin; then
+  use_exec=false
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 
@@ -389,67 +390,64 @@ fi
 
 # Run JRuby!
 if [ "$nailgun_client" != "" ]; then
+
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
     exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
   else
     echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
     exit 1
   fi
+
 else
 if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Running with instrumented profiler"
-  fi
 
   if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
     echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
+    use_exec=false
     JRUBY_OPTS=''
   fi
 
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  jvm_command=("$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $mode "$@"
+    $java_class $mode "$@")
 
-  # Record the exit status immediately, or it will be overridden.
-  JRUBY_STATUS=$?
-
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Profiling results:"
-      cat profile.txt
-      rm profile.txt
-  fi
-
-  if $cygwin; then
-    stty icanon echo > /dev/null 2>&1
-  fi
-
-  exit $JRUBY_STATUS
 else
-  if $cygwin; then
-    # exec doed not work correctly with cygwin bash
-    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
 
-    # Record the exit status immediately, or it will be overridden.
-    JRUBY_STATUS=$?
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "-Djruby.home=$JRUBY_HOME" \
+    "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+    "-Djruby.shell=$JRUBY_SHELL" \
+    $java_class $mode "$@")
 
-    stty icanon echo > /dev/null 2>&1
-
-    exit $JRUBY_STATUS
-  else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
-  fi
-fi
 fi
 
-# Be careful adding code down here, you might override the exit
-# status of the jruby invocation.
+if [ "$PROFILE_ARGS" != "" ]; then
+  use_exec=false
+  echo "Running with instrumented profiler"
+fi
+
+# Run JRuby!
+if $use_exec; then
+  # If we do not have post-command processing to do, exec the JVM to preserve current PID
+  exec ${jvm_command[@]}
+else
+  ${jvm_command[@]}
+fi
+
+# Record the exit status immediately, or it will be overridden.
+JRUBY_STATUS=$?
+
+if [ "$PROFILE_ARGS" != "" ]; then
+  echo "Profiling results:"
+  cat profile.txt
+  rm profile.txt
+fi
+
+if $cygwin; then
+  stty icanon echo > /dev/null 2>&1
+fi
+
+exit $JRUBY_STATUS
+fi
