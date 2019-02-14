@@ -988,16 +988,6 @@ public class RubyKernel {
         return requireCommon(context.runtime, RubyFile.get_path(context, name), block);
     }
 
-    @Deprecated
-    public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        return require(recv.getRuntime().getCurrentContext(), recv, name, block);
-    }
-
-    @Deprecated
-    public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
-        return require(context, recv, name, block);
-    }
-
     private static IRubyObject requireCommon(Ruby runtime, RubyString name, Block block) {
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, name);
         return runtime.newBoolean(runtime.getLoadService().require(path.toString()));
@@ -2357,5 +2347,15 @@ public class RubyKernel {
                 Arity.checkArgumentCount(context.runtime, args, 0, 2);
                 return null; // not reached
         }
+    }
+
+    @Deprecated
+    public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
+        return require(recv.getRuntime().getCurrentContext(), recv, name, block);
+    }
+
+    @Deprecated
+    public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
+        return require(context, recv, name, block);
     }
 }
