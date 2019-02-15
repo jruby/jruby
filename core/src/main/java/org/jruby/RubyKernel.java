@@ -1244,7 +1244,7 @@ public class RubyKernel {
             return context.nil;
         }
 
-        return warn(context, recv, _message.convertToString());
+        return warn(context, recv, _message.asString());
     }
 
     static IRubyObject warn(ThreadContext context, IRubyObject recv, RubyString message) {
