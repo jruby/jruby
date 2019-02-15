@@ -993,6 +993,27 @@ public class RubyKernel {
         return runtime.newBoolean(runtime.getLoadService().require(path.toString()));
     }
 
+    @JRubyMethod(name = "require_relative", module = true, visibility = PRIVATE, reads = SCOPE)
+    public static IRubyObject require_relative(ThreadContext context, IRubyObject recv, IRubyObject name){
+        Ruby runtime = context.runtime;
+
+        RubyString relativePath = RubyFile.get_path(context, name);
+
+        String file = context.getCurrentStaticScope().getIRScope().getFile();
+
+        if (file == null || file.matches("\\A\\((.*)\\)")) {
+            throw runtime.newLoadError("cannot infer basepath");
+        }
+
+        RubyClass fileClass = runtime.getFile();
+        IRubyObject realpath = RubyFile.realpath(context, fileClass, runtime.newString(file));
+        IRubyObject dirname = RubyFile.dirname(context, fileClass,
+                realpath);
+        IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
+
+        return RubyKernel.require(context, runtime.getKernel(), absoluteFeature, Block.NULL_BLOCK);
+    }
+
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
         Ruby runtime = context.runtime;
