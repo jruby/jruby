@@ -688,8 +688,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyString asString() {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
+        if (this instanceof RubyString) return (RubyString) this;
+
+        ThreadContext context = getRuntime().getCurrentContext();
         BasicObjectSites sites = sites(context);
         IRubyObject str = sites.to_s.call(context, this, this);
 
