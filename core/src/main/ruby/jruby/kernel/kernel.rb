@@ -1,4 +1,5 @@
 module Kernel
+  module_function
   def exec(*args)
     _exec_internal(*JRuby::ProcessUtil.exec_args(args))
   end
