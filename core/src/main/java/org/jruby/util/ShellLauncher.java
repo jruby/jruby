@@ -1153,11 +1153,10 @@ public class ShellLauncher {
             // if the executable exists, start it directly with no shell
             if (executableFile != null) {
                 log(runtime, "Got it: " + executableFile);
-                // TODO: special processing for BAT/CMD files needed at all?
-                // if (isBatch(executableFile)) {
-                //    log(runtime, "This is a BAT/CMD file, will start in shell");
-                //    return true;
-                // }
+                if (isBatch(executableFile)) {
+                    log(runtime, "This is a BAT/CMD file, will start in shell");
+                    return true;
+                }
                 return false;
             } else {
                 log(runtime, "Didn't find executable: " + executable);
@@ -1170,6 +1169,10 @@ public class ShellLauncher {
 
             // TODO: maybe true here?
             return false;
+        }
+
+        private boolean isBatch(File executableFile) {
+            return executableFile.getName().toLowerCase().endsWith(".bat");
         }
 
         public void verifyExecutableForShell() {
