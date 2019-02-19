@@ -236,7 +236,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
+    static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject i = from;
         RubyFixnum one = RubyFixnum.one(runtime);

@@ -62,7 +62,7 @@ public class CallBlock extends BlockBody {
     private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
         Signature signature = block.getSignature();
         int required = signature.required();
-        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+        if (signature.isFixed() && required > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
 
         return args;
     }
@@ -84,17 +84,17 @@ public class CallBlock extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        return callback.call(context, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
+        return callback.call(context, arg0);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
+        return callback.call(context, value);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return callback.call(context, adjustArgs(block, args), Block.NULL_BLOCK);
+        return callback.call(context, adjustArgs(block, args));
     }
 
     public StaticScope getStaticScope() {

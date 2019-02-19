@@ -35,4 +35,22 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public interface BlockCallback {
     IRubyObject call(ThreadContext context, IRubyObject[] args, Block block);
+
+    // common ops to be re-defined if few args expected (avoids array packing)
+
+    default IRubyObject call(ThreadContext context) {
+        return call(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+
+    default IRubyObject call(ThreadContext context, IRubyObject arg0) {
+        return call(context, new IRubyObject[] { arg0 }, Block.NULL_BLOCK);
+    }
+
+    default IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return call(context, new IRubyObject[] { arg0, arg1 }, Block.NULL_BLOCK);
+    }
+
+    default IRubyObject call(ThreadContext context, IRubyObject... args) {
+        return call(context, args, Block.NULL_BLOCK);
+    }
  }
