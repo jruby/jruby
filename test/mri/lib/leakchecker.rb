@@ -12,7 +12,7 @@ class LeakChecker
   def check(test_name)
     leaks = [
       check_fd_leak(test_name),
-      check_thread_leak(test_name),
+      #check_thread_leak(test_name), # JRuby: misreports finalizing threads
       check_tempfile_leak(test_name),
       check_env(test_name),
       check_encodings(test_name),
