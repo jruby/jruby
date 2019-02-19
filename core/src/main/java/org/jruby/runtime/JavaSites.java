@@ -47,6 +47,7 @@ public class JavaSites {
     public final MarshalSites Marshal = new MarshalSites();
     public final PathnameSites Pathname = new PathnameSites();
     public final DateSites Date = new DateSites();
+    public final TempfileSites Tempfile = new TempfileSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -465,6 +466,10 @@ public class JavaSites {
 
     public static class DateSites {
         public final CallSite zone_to_diff = new FunctionalCachingCallSite("zone_to_diff");
+    }
+
+    public static class TempfileSites {
+        public final CachingCallSite create = new FunctionalCachingCallSite("create");
     }
 
     public static class CheckedSites {
