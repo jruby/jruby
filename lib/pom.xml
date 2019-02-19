@@ -47,7 +47,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>csv</artifactId>
-      <version>1.0.0</version>
+      <version>3.0.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -314,9 +314,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/cmath*1.0.0.gem</include>
           <include>gems/cmath*1.0.0/**</include>
           <include>specifications/cmath*1.0.0.gemspec</include>
-          <include>cache/csv*1.0.0.gem</include>
-          <include>gems/csv*1.0.0/**</include>
-          <include>specifications/csv*1.0.0.gemspec</include>
+          <include>cache/csv*3.0.4.gem</include>
+          <include>gems/csv*3.0.4/**</include>
+          <include>specifications/csv*3.0.4.gemspec</include>
           <include>cache/fileutils*1.1.0.gem</include>
           <include>gems/fileutils*1.1.0/**</include>
           <include>specifications/fileutils*1.1.0.gemspec</include>

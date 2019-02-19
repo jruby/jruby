@@ -16,7 +16,7 @@ end
 
 default_gems = [
     ['cmath', '1.0.0'],
-    ['csv', '1.0.0'],
+    ['csv', '3.0.4'],
     ['fileutils', '1.1.0'],
     ['ipaddr', '1.2.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
