@@ -584,7 +584,6 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, IRubyObject step, final Block block) {
-        Ruby runtime = context.runtime;
         if (!block.isGiven()) {
             return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn(context));
         }
@@ -592,12 +591,11 @@ public class RubyRange extends RubyObject {
         if (!(step instanceof RubyNumeric)) {
             step = step.convertToInteger("to_int");
         }
-        IRubyObject zero = RubyFixnum.zero(runtime);
-        if (step.callMethod(context, "<", zero).isTrue()) {
-            throw runtime.newArgumentError("step can't be negative");
+        if (((RubyNumeric) step).isNegative()) {
+            throw context.runtime.newArgumentError("step can't be negative");
         }
-        if (!step.callMethod(context, ">", zero).isTrue()) {
-            throw runtime.newArgumentError("step can't be 0");
+        if (((RubyNumeric) step).isZero()) {
+            throw context.runtime.newArgumentError("step can't be 0");
         }
         return stepCommon(context, step, block);
     }
