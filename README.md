@@ -67,8 +67,6 @@ you can unpack and run in place.
 See [BUILDING](BUILDING.md) for information about prerequisites, how to compile JRuby from source
 and how to test it.
 
-Alternatively, if you need to test out some unreleased bits, there's [nightly builds](http://jruby.org/nightly).
-
 ## Authors
 
 Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
