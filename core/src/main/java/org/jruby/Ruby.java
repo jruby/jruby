@@ -63,8 +63,12 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
+import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
@@ -2876,6 +2880,7 @@ public final class Ruby implements Constantizable {
             throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
+        ThreadContext context = getCurrentContext();
         RubyModule c = getObject();
         int pbeg = 0, p = 0;
         for (int l = path.length(); p < l; ) {
@@ -2885,12 +2890,14 @@ public final class Ruby implements Constantizable {
 
             if ( p < l && path.charAt(p) == ':' ) {
                 if ( ++p < l && path.charAt(p) != ':' ) {
-                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, str)));
+                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path)));
                 }
                 pbeg = ++p;
             }
 
-            IRubyObject cc = flexibleSearch ? c.getConstant(str) : c.getConstantAt(str);
+            // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
+            boolean isJava = c instanceof JavaPackage || JavaClass.isProxyType(context, c);
+            IRubyObject cc = flexibleSearch || isJava ? c.getConstant(str) : c.getConstantAt(str);
 
             if (!flexibleSearch && cc == null) return null;
 
