@@ -102,4 +102,34 @@ class TestArray < Test::Unit::TestCase
     assert_equal [[1, 3, 5], [2, 4, 6]], res
   end
 
+  class MyArray < Array; end
+
+  def test_array_instance_methods_on_subclass
+    @arr = MyArray.new([1,2,3])
+    @arr2 = MyArray.new([[1,2],[2,3],[3,3]])
+
+    assert_equal(Array, @arr2.transpose.class)
+    assert_equal(Array, @arr.compact.class)
+    # TODO incompatibility with MRI:
+    #assert_equal(Array, @arr.reverse.class)
+    assert_equal(MyArray, @arr2.flatten.class)
+    assert_equal(MyArray, @arr.uniq.class)
+    assert_equal(Array, @arr.sort.class)
+    assert_equal(MyArray, @arr[1,2].class)
+    assert_equal(MyArray, @arr[1..2].class)
+    assert_equal(Array, @arr.to_a.class)
+    assert_equal(MyArray, @arr.to_ary.class)
+    assert_equal(MyArray, @arr.slice(1,2).class)
+    assert_equal(MyArray, @arr.slice!(1,2).class)
+    assert_equal(MyArray, (@arr*0).class)
+    assert_equal(MyArray, (@arr*2).class)
+    assert_equal(MyArray, @arr.replace([1,2,3]).class)
+    assert_equal(Array, @arr.last(2).class)
+    assert_equal(Array, @arr.first(2).class)
+    assert_equal(Enumerator, @arr.collect.class)
+    assert_equal(Array, @arr.collect{true}.class)
+    assert_equal(Array, @arr.zip([1,2,3]).class)
+    assert_equal(MyArray, @arr.dup.class)
+  end
+
 end
