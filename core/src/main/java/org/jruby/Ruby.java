@@ -2867,13 +2867,13 @@ public final class Ruby implements Constantizable {
      * Find module from a string (e.g. Foo, Foo::Bar::Car).
      *
      * @param path the path to be searched.
-     * @param exceptionClass exception type to be thrown when it cannot be found.
+     * @param undefinedExceptionClass exception type to be thrown when it cannot be found.
      * @param flexibleSearch use getConstant vs getConstantAt (former will find inherited constants from parents and fire const_missing).
      * @return the module or null when flexible search is false and a constant cannot be found.
      */
-    public RubyModule getClassFromPath(final String path, RubyClass exceptionClass, boolean flexibleSearch) {
+    public RubyModule getClassFromPath(final String path, RubyClass undefinedExceptionClass, boolean flexibleSearch) {
         if (path.length() == 0 || path.charAt(0) == '#') {
-            throw newRaiseException(exceptionClass, str(this, "can't retrieve anonymous class ", ids(this, path)));
+            throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
         RubyModule c = getObject();
@@ -2885,7 +2885,7 @@ public final class Ruby implements Constantizable {
 
             if ( p < l && path.charAt(p) == ':' ) {
                 if ( ++p < l && path.charAt(p) != ':' ) {
-                    throw newRaiseException(exceptionClass, str(this, "undefined class/module ", ids(this, str)));
+                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, str)));
                 }
                 pbeg = ++p;
             }
@@ -2895,7 +2895,7 @@ public final class Ruby implements Constantizable {
             if (!flexibleSearch && cc == null) return null;
 
             if (!(cc instanceof RubyModule)) {
-                throw newRaiseException(exceptionClass, str(this, ids(this, path), " does not refer to class/module"));
+                throw newRaiseException(getTypeError(), str(this, ids(this, path), " does not refer to class/module"));
             }
             c = (RubyModule) cc;
         }
