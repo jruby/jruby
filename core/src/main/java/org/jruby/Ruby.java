@@ -2860,30 +2860,46 @@ public final class Ruby implements Constantizable {
     }
 
     public RubyModule getClassFromPath(final String path) {
+        return getClassFromPath(path, getTypeError(), true);
+    }
+
+    /**
+     * Find module from a string (e.g. Foo, Foo::Bar::Car).
+     *
+     * @param path the path to be searched.
+     * @param undefinedExceptionClass exception type to be thrown when it cannot be found.
+     * @param flexibleSearch use getConstant vs getConstantAt (former will find inherited constants from parents and fire const_missing).
+     * @return the module or null when flexible search is false and a constant cannot be found.
+     */
+    public RubyModule getClassFromPath(final String path, RubyClass undefinedExceptionClass, boolean flexibleSearch) {
         if (path.length() == 0 || path.charAt(0) == '#') {
-            throw newTypeError(str(this, "can't retrieve anonymous class ", ids(this, path)));
+            throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
         RubyModule c = getObject();
         int pbeg = 0, p = 0;
-        for ( final int l = path.length(); p < l; ) {
+        for (int l = path.length(); p < l; ) {
             while ( p < l && path.charAt(p) != ':' ) p++;
 
             final String str = path.substring(pbeg, p);
 
             if ( p < l && path.charAt(p) == ':' ) {
                 if ( ++p < l && path.charAt(p) != ':' ) {
-                    throw newTypeError(str(this, "undefined class/module ", ids(this, str)));
+                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, str)));
                 }
                 pbeg = ++p;
             }
 
-            IRubyObject cc = c.getConstant(str);
-            if ( ! ( cc instanceof RubyModule ) ) {
-                throw newTypeError(str(this, ids(this, path), " does not refer to class/module"));
+            IRubyObject cc = flexibleSearch ? c.getConstant(str) : c.getConstantAt(str);
+
+            if (!flexibleSearch && cc == null) return null;
+
+            if (!(cc instanceof RubyModule)) {
+                throw newRaiseException(getTypeError(), str(this, ids(this, path), " does not refer to class/module"));
             }
             c = (RubyModule) cc;
         }
+
         return c;
     }
 
