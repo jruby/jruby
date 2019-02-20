@@ -11,6 +11,7 @@ jruby/test_backtraces
 jruby/test_base64
 jruby/test_big_decimal
 jruby/test_binding_eval_yield
+jruby/test_block
 jruby/test_caller
 jruby/test_case
 jruby/test_class
