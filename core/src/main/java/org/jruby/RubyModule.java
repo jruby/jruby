@@ -1548,7 +1548,7 @@ public class RubyModule extends RubyObject {
             }
         } else if (entry.method instanceof RefinedWrapper){
             // original without refined flag
-            return new CacheEntry(((RefinedWrapper) entry.method).getWrapped(), entry.sourceModule, entry.token);
+            return cacheEntryFactory.newCacheEntry(id, ((RefinedWrapper) entry.method).getWrapped(), entry.sourceModule, entry.token);
         }
 
         return entry;
@@ -1772,7 +1772,7 @@ public class RubyModule extends RubyObject {
             // This way only the recursion needs to be handled differently on
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(id);
-            if (method != null) return method.isNull() ? null : new CacheEntry(method, module, token);
+            if (method != null) return method.isNull() ? null : cacheEntryFactory.newCacheEntry(id, method, module, token);
         }
         return null;
     }
