@@ -1601,8 +1601,6 @@ public class RubyClass extends RubyModule {
             for (Map.Entry<String, DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
                 String id = methodEntry.getKey();
 
-                if (!JavaNameMangler.willMethodMangleOk(id)) continue;
-
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
                 Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(id);
@@ -1673,11 +1671,6 @@ public class RubyClass extends RubyModule {
             SkinnyMethodAdapter m;
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
                 final String id = methodEntry.getKey();
-
-                if (!JavaNameMangler.willMethodMangleOk(id)) {
-                    LOG.debug("{} method: '{}' won't be part of reified Java class", getName(), id);
-                    continue;
-                }
 
                 String javaMethodName = JavaNameMangler.mangleMethodName(id);
 

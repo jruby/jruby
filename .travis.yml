@@ -1,10 +1,8 @@
 language: java
 
-sudo: false
-
 dist: trusty
 
-# don't need more than one level for our builds
+# don't need more than a few levels for our builds
 git:
   depth: 10
 
@@ -40,7 +38,7 @@ env:
 
 install: true
 
-jobs:
+matrix:
   fast_finish: true
 
   include:
@@ -89,9 +87,22 @@ jobs:
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
     - env: PHASE='-Pmain'
-      jdk: oraclejdk9
+      jdk: oraclejdk11
     - env: PHASE='-Pcomplete'
-      jdk: oraclejdk9
+      jdk: oraclejdk11
+    - name: -Pmain openj9 jdk8
+      env: PHASE='-Ptest'
+      script:
+        - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+        - source install-jdk.sh --url https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u202-b08_openj9-0.12.1/OpenJDK8U-jdk_x64_linux_openj9_8u202b08_openj9-0.12.1.tar.gz
+        - tool/travis-script.sh
+
+  allow_failures:
+    - env: COMMAND=test/check_versions.sh
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Posgi'
+    - env: PHASE='-Pcomplete'
 
 script: tool/travis-script.sh
 

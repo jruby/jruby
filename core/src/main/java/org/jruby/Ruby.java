@@ -53,6 +53,8 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ext.jruby.JRubyLibrary;
+import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.SizedQueue;
@@ -60,7 +62,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.runtime.IRReturnJump;
-import org.jruby.ir.runtime.IRWrappedLambdaReturnValue;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -97,7 +99,6 @@ import org.jruby.embed.Extension;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.JRubyPOSIXHandler;
-import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.fiber.ThreadFiber;
@@ -142,7 +143,6 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.CompiledScriptLoader;
-import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
@@ -1258,34 +1258,36 @@ public final class Ruby implements Constantizable {
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
 
-        // initialize builtin libraries
-        initBuiltins();
-
-        // load JRuby internals, which loads Java support
-        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
-        boolean reflectionWorks = doesReflectionWork();
-
-        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
-            loadService.require("jruby");
-        }
-
-        SecurityHelper.checkCryptoRestrictions(this);
-
         // out of base boot mode
         bootingCore = false;
 
-        // init Ruby-based kernel
-        initRubyKernel();
+        // Don't load boot-time libraries when debugging IR
+        if (!RubyInstanceConfig.DEBUG_PARSER) {
+            // initialize Java support
+            initJavaSupport();
 
-        // Define blank modules for feature detection in preludes
-        if (!config.isDisableGems()) {
-            defineModule("Gem");
-        }
-        if (!config.isDisableDidYouMean()) {
-            defineModule("DidYouMean");
+            // init Ruby-based kernel
+            initRubyKernel();
+
+            // Define blank modules for feature detection in preludes
+            if (!config.isDisableGems()) {
+                defineModule("Gem");
+            }
+            if (!config.isDisableDidYouMean()) {
+                defineModule("DidYouMean");
+            }
+
+            // Provide some legacy libraries
+            loadService.provide("enumerator", "enumerator.rb");
+            loadService.provide("rational", "rational.rb");
+            loadService.provide("complex", "complex.rb");
+            loadService.provide("thread", "thread.rb");
+
+            // Load preludes
+            initRubyPreludes();
         }
 
-        initRubyPreludes();
+        SecurityHelper.checkCryptoRestrictions(this);
 
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
@@ -1579,17 +1581,26 @@ public final class Ruby implements Constantizable {
         if (profile.allowModule("Signal")) {
             RubySignal.createSignal(this);
         }
-        if (profile.allowClass("Continuation")) {
-            RubyContinuation.createContinuation(this);
-        }
 
         if (profile.allowClass("Enumerator")) {
             RubyEnumerator.defineEnumerator(this);
         }
 
+        initContinuation();
+
         TracePoint.createTracePointClass(this);
 
         RubyWarnings.createWarningModule(this);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void initContinuation() {
+        // Bare-bones class for backward compatibility
+        if (profile.allowClass("Continuation")) {
+            // Some third-party code (racc's cparse ext, at least) uses RubyContinuation directly, so we need this.
+            // Most functionality lives in continuation.rb now.
+            RubyContinuation.createContinuation(this);
+        }
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -1728,69 +1739,30 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void initBuiltins() {
-        // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
+    /**
+     * Load libraries expected to be present after a normal boot.
+     *
+     * This used to register lazy "builtins" that were shipped with JRuby but did not have a file on the filesystem
+     * to load via normal `require` logic. Because of how this interacted (badly) with require-hooking tools like
+     * bootsnap, we have moved to having all builtins as actual files rather than special virtual entries.
+     */
+    private void initJavaSupport() {
+        // load JRuby internals, which loads Java support
+        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
+        boolean reflectionWorks = doesReflectionWork();
 
-        addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
-        addLazyBuiltin("jruby.rb", "jruby", "org.jruby.ext.jruby.JRubyLibrary");
-        addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.ext.jruby.JRubyUtilLibrary");
-        addLazyBuiltin("nkf.jar", "nkf", "org.jruby.ext.nkf.NKFLibrary");
-        addLazyBuiltin("stringio.jar", "stringio", "org.jruby.ext.stringio.StringIOLibrary");
-        addLazyBuiltin("strscan.jar", "strscan", "org.jruby.ext.strscan.StringScannerLibrary");
-        addLazyBuiltin("zlib.jar", "zlib", "org.jruby.ext.zlib.ZlibLibrary");
-        addLazyBuiltin("digest.jar", "digest.so", "org.jruby.ext.digest.DigestLibrary");
-        addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.ext.digest.MD5");
-        addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.ext.digest.RMD160");
-        addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.ext.digest.SHA1");
-        addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.ext.digest.SHA2");
-        addLazyBuiltin("digest/bubblebabble.jar", "digest/bubblebabble", "org.jruby.ext.digest.BubbleBabble");
-        addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
-        addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
-        addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
-        addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
-        addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
-        addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.ext.jruby.JRubySerializationLibrary");
-        addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.FFIService");
-        addLazyBuiltin("tempfile.jar", "tempfile", "org.jruby.ext.tempfile.TempfileLibrary");
-        addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
-        addLazyBuiltin("pathname.jar", "pathname", "org.jruby.ext.pathname.PathnameLibrary");
-        addLazyBuiltin("set.rb", "set", "org.jruby.ext.set.SetLibrary");
-        addLazyBuiltin("date.jar", "date", "org.jruby.ext.date.DateLibrary");
-        addLazyBuiltin("securerandom.jar", "securerandom", "org.jruby.ext.securerandom.SecureRandomLibrary");
-        addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
-        addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
-        addLazyBuiltin("ripper.jar", "ripper", "org.jruby.ext.ripper.RipperLibrary");
-        addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
+        if (reflectionWorks) {
+            new Java().load(this, false);
+            new JRubyLibrary().load(this, false);
+            new JRubyUtilLibrary().load(this, false);
 
-        // TODO: implement something for these?
-        addBuiltinIfAllowed("continuation.rb", Library.DUMMY);
-
-        // for backward compatibility
-        loadService.provide("enumerator.jar"); // can't be in RubyEnumerator because LoadService isn't ready then
-        loadService.provide("rational.jar");
-        loadService.provide("complex.jar");
-
-        // we define the classes at boot because we need them
-        addBuiltinIfAllowed("thread.rb", Library.DUMMY);
-
-        if (RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
-            addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
+            loadService.provide("java", "java.rb");
+            loadService.provide("jruby", "jruby.rb");
+            loadService.provide("jruby/util", "jruby/util.rb");
         }
-
-        addBuiltinIfAllowed("win32ole.jar", new Library() {
-            public void load(Ruby runtime, boolean wrap) throws IOException {
-                runtime.getLoadService().require("jruby/win32ole/stub");
-            }
-        });
-
-        addLazyBuiltin("cgi/escape.jar", "cgi/escape", "org.jruby.ext.cgi.escape.CGIEscape");
     }
 
     private void initRubyKernel() {
-        // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
-
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
     }
@@ -1801,16 +1773,6 @@ public final class Ruby implements Constantizable {
 
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
-    }
-
-    private void addLazyBuiltin(String name, String shortName, String className) {
-        addBuiltinIfAllowed(name, new LateLoadingLibrary(shortName, className, getClassLoader()));
-    }
-
-    private void addBuiltinIfAllowed(String name, Library lib) {
-        if (profile.allowBuiltin(name)) {
-            loadService.addBuiltinLibrary(name, lib);
-        }
     }
 
     public IRManager getIRManager() {
@@ -4350,7 +4312,7 @@ public final class Ruby implements Constantizable {
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
 
         if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            ex.forceBacktrace(disabledBacktrace());
+            ex.setBacktrace(disabledBacktrace());
         }
 
         return ex.toThrowable();

@@ -77,6 +77,13 @@ describe "Kernel#warn" do
     }.should output(nil, /\n/)
   end
 
+  it "writes to_s representation if passed a non-string" do
+    lambda {
+      $VERBOSE = true
+      warn(ArgumentError.new("to_s text"))
+    }.should output(nil, "to_s text\n")
+  end
+
   ruby_version_is "2.5" do
     describe ":uplevel keyword argument" do
       before :each do

@@ -44,7 +44,6 @@ import org.jruby.ObjectFlags;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
@@ -62,6 +61,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.jruby.RubyString.scanForCodeRange;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
@@ -1730,7 +1731,11 @@ public final class StringSupport {
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {
-        return string.getByteList().getEncoding().isAsciiCompatible() && string.scanForCodeRange() == CR_7BIT;
+        return isAsciiOnly(string.getByteList().getEncoding(), string.scanForCodeRange());
+    }
+
+    private static boolean isAsciiOnly(Encoding encoding, final int codeRange) {
+        return encoding.isAsciiCompatible() && codeRange == CR_7BIT;
     }
 
     /**
@@ -1814,20 +1819,36 @@ public final class StringSupport {
     /**
      * rb_enc_compatible
      */
-    public static Encoding areCompatible(CodeRangeable string, CodeRangeable other) {
-        Encoding enc1 = string.getByteList().getEncoding();
-        Encoding enc2 = other.getByteList().getEncoding();
+    public static Encoding areCompatible(CodeRangeable str1, CodeRangeable str2) {
+        Encoding enc1 = str1.getByteList().getEncoding();
+        Encoding enc2 = str2.getByteList().getEncoding();
 
         if (enc1 == enc2) return enc1;
 
-        if (other.getByteList().getRealSize() == 0) return enc1;
-        if (string.getByteList().getRealSize() == 0) {
-            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
+        if (str2.getByteList().getRealSize() == 0) return enc1;
+        if (str1.getByteList().getRealSize() == 0) {
+            return (enc1.isAsciiCompatible() && isAsciiOnly(str2)) ? enc1 : enc2;
         }
 
         if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
-        return RubyEncoding.areCompatible(enc1, string.scanForCodeRange(), enc2, other.scanForCodeRange());
+        return RubyEncoding.areCompatible(enc1, str1.scanForCodeRange(), enc2, str2.scanForCodeRange());
+    }
+
+    public static Encoding areCompatible(ByteList str1, ByteList str2) {
+        Encoding enc1 = str1.getEncoding();
+        Encoding enc2 = str2.getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        if (str2.getRealSize() == 0) return enc1;
+        if (str1.getRealSize() == 0) {
+            return (enc1.isAsciiCompatible() && isAsciiOnly(enc2, scanForCodeRange(str2))) ? enc1 : enc2;
+        }
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return RubyEncoding.areCompatible(enc1, scanForCodeRange(str1), enc2, scanForCodeRange(str2));
     }
 
     public static ByteList addByteLists(ByteList value1, ByteList value2) {

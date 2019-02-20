@@ -2,6 +2,7 @@ package org.jruby.runtime.backtrace;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
 import java.io.Serializable;

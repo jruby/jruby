@@ -42,11 +42,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyContinuation.Continuation;
+import org.jruby.RubyContinuation;
+import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
@@ -70,7 +70,6 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Locale;
@@ -123,8 +122,8 @@ public final class ThreadContext {
     private DynamicScope[] scopeStack = new DynamicScope[INITIAL_SIZE];
     private int scopeIndex = -1;
 
-    private static final Continuation[] EMPTY_CATCHTARGET_STACK = new Continuation[0];
-    private Continuation[] catchStack = EMPTY_CATCHTARGET_STACK;
+    private static final CatchThrow[] EMPTY_CATCHTARGET_STACK = new CatchThrow[0];
+    private CatchThrow[] catchStack = EMPTY_CATCHTARGET_STACK;
     private int catchIndex = -1;
 
     private boolean isProfiling = false;
@@ -390,13 +389,18 @@ public final class ThreadContext {
     private void expandCatchStack() {
         int newSize = catchStack.length * 2;
         if (newSize == 0) newSize = 1;
-        Continuation[] newCatchStack = new Continuation[newSize];
+        CatchThrow[] newCatchStack = new CatchThrow[newSize];
 
         System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
         catchStack = newCatchStack;
     }
 
-    public void pushCatch(Continuation catchTarget) {
+    @Deprecated
+    public void pushCatch(RubyContinuation.Continuation catchTarget) {
+        pushCatch((CatchThrow) catchTarget);
+    }
+
+    public void pushCatch(CatchThrow catchTarget) {
         int index = ++catchIndex;
         if (index == catchStack.length) {
             expandCatchStack();
@@ -415,9 +419,9 @@ public final class ThreadContext {
      * @param tag The interned string to search for
      * @return The continuation associated with this tag
      */
-    public Continuation getActiveCatch(Object tag) {
+    public CatchThrow getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
-            Continuation c = catchStack[i];
+            CatchThrow c = catchStack[i];
             if (c.tag == tag) return c;
         }
 
@@ -742,16 +746,7 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
-    private static final StackWalker WALKER;
-
-    static {
-        StackWalker walker = null;
-        try {
-            walker = StackWalker.getInstance();
-        } catch (Throwable t) {
-        }
-        WALKER = walker;
-    }
+    private static final StackWalker WALKER = StackWalker.getInstance();
 
     public IRubyObject createCallerBacktrace(int level, Integer length) {
         return WALKER.walk(stream -> createCallerBacktrace(level, length, stream));
@@ -827,22 +822,29 @@ public final class ThreadContext {
     }
 
     /**
-     * Create an Array with backtrace information for a built-in warning
-     * @param runtime
-     * @return an Array with the backtrace
+     * Return a single RubyStackTraceElement representing the nearest Ruby stack trace element.
+     *
+     * Used for warnings and Kernel#__dir__.
+     *
+     * @return the nearest stack trace element
      */
-    public RubyStackTraceElement[] createWarningBacktrace(Ruby runtime) {
+    public RubyStackTraceElement getSingleBacktrace(int level) {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = gatherCallerBacktrace();
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
-        return trace;
+        return trace.length == 0 ? null : trace[trace.length - 1];
     }
 
-    public RubyStackTraceElement[] gatherCallerBacktrace() {
-        return Gather.CALLER.getBacktraceData(this).getBacktrace(runtime);
+    /**
+     * Same as calling getSingleBacktrace(0);
+     *
+     * @see #getSingleBacktrace(int)
+     */
+    public RubyStackTraceElement getSingleBacktrace() {
+        return getSingleBacktrace(0);
     }
 
     public boolean isEventHooksEnabled() {

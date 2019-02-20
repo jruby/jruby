@@ -1,8 +1,5 @@
 # This file boots the Ruby-based parts of JRuby.
 
-require 'jruby' # NOTE: consider not doing this, require 'java' is enough!
-require 'jruby/util' # stuff boot depends on (compared to a full require 'jruby')
-
 module JRuby
   autoload :ProcessUtil, 'jruby/kernel/jruby/process_util.rb'
   autoload :Type, 'jruby/kernel/jruby/type.rb'
@@ -30,5 +27,3 @@ load 'jruby/kernel/gc.rb'
 load 'jruby/kernel/range.rb'
 load 'jruby/kernel/file.rb'
 load 'jruby/kernel/string.rb'
-
-$" << 'thread.rb'

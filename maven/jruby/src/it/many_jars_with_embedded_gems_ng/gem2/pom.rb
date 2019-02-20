@@ -3,8 +3,9 @@
 gemfile
 
 model.repositories.clear
-repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases',
-              :id => 'rubygems-releases' )
+
+extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
 id 'org.rubygems:gem2', '2'
 

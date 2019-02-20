@@ -1056,7 +1056,7 @@ public class IRBuilder {
         String id = name.idString(); // ID Str ok here since it is 7bit check.
         if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getPosition().getLine());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getLine());
         }
 
         boolean compileLazyLabel = false;
@@ -1277,7 +1277,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + caseNode.getPosition());
+            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);

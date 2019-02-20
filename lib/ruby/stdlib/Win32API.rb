@@ -1,7 +1,7 @@
 require 'rbconfig'
 raise  LoadError.new("Win32API only supported on win32") unless RbConfig::CONFIG['host_os'] =~ /mswin/
 
-require 'ffi-internal.so'
+require 'ffi'
 
 class Win32API
   if RUBY_VERSION >= "1.9"

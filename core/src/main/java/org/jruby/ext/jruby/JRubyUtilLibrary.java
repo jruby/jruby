@@ -34,7 +34,16 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
@@ -55,7 +64,7 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public void load(Ruby runtime, boolean wrap) {
         RubyModule JRuby = runtime.getOrCreateModule("JRuby");
         RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
@@ -190,6 +199,9 @@ public class JRubyUtilLibrary implements Library {
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {
                 return ((BasicLibraryService) clazz.newInstance()).basicLoad(runtime);
+            } catch (org.jruby.exceptions.Exception e) {
+                // propagate Ruby exceptions as-is
+                throw e;
             } catch (ReflectiveOperationException e) {
                 final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
                 ex.initCause(e); throw ex;
@@ -203,10 +215,14 @@ public class JRubyUtilLibrary implements Library {
             try {
                 ((Library) clazz.newInstance()).load(runtime, false);
                 return true;
+            } catch (org.jruby.exceptions.Exception e) {
+                // propagate Ruby exceptions as-is
+                throw e;
             } catch (ReflectiveOperationException e) {
                 final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
-                ex.initCause(e); throw ex;
-            } catch (Exception e) {
+                ex.initCause(e);
+                throw ex;
+            } catch (java.lang.Exception e) {
                 final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
                 ex.initCause(e); throw ex;
             }
@@ -215,8 +231,10 @@ public class JRubyUtilLibrary implements Library {
         try {
             Object result = clazz.getMethod("load", Ruby.class).invoke(null, runtime);
             return (result instanceof Boolean) && ! ((Boolean) result).booleanValue() ? false : true;
-        }
-        catch (Exception e) {
+        } catch (org.jruby.exceptions.Exception e) {
+            // propagate Ruby exceptions as-is
+            throw e;
+        } catch (java.lang.Exception e) {
             final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
             ex.initCause(e); throw ex;
         }
@@ -252,12 +270,12 @@ public class JRubyUtilLibrary implements Library {
      * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
      */
     @JRubyMethod(module = true)
+    @Deprecated
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
-        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
 
-        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+        runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
 
-        return runtime.newArrayNoCopy(names);
+        return runtime.newEmptyArray();
     }
 }

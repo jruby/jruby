@@ -68,18 +68,68 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
 
+    private static class Backtrace {
+        private BacktraceData backtraceData;
+        private IRubyObject backtraceObject;
+        private IRubyObject backtraceLocations;
+        
+        /**
+         * Get the Ruby-facing representation of this backtrace, or a previously-set backtrace object.
+         *
+         * @param runtime the current runtime
+         * @return the Ruby object for this backtrace
+         */
+        public final IRubyObject getBacktraceObject(Ruby runtime) {
+            IRubyObject backtraceObject = this.backtraceObject;
+
+            if (backtraceObject != null) return backtraceObject;
+
+            if (backtraceData == null || backtraceData == BacktraceData.EMPTY) return runtime.getNil();
+
+            return this.backtraceObject = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
+        }
+
+        /**
+         * Set the Ruby-facing backtrace object for this backtrace.
+         *
+         * @param backtraceObject the object to return for future backtrace requests
+         */
+        public final void setBacktraceObject(IRubyObject backtraceObject) {
+            this.backtraceObject = backtraceObject;
+        }
+
+        /**
+         * Get an array of backtrace location objects for this backtrace.
+         *
+         * @param context the current thread context
+         * @return the array of backtrace locations
+         */
+        public IRubyObject getBacktraceLocations(ThreadContext context) {
+            if (backtraceLocations != null) return backtraceLocations;
+
+            if (backtraceData == null) {
+                backtraceLocations = context.nil;
+            } else {
+                Ruby runtime = context.runtime;
+                backtraceLocations = RubyThread.Location.newLocationArray(runtime, backtraceData.getBacktrace(runtime));
+            }
+
+            return backtraceLocations;
+        }
+    }
+
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;
     public static final int TRACE_MAX = RubyException.TRACE_HEAD + RubyException.TRACE_TAIL + 6;
     public static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
-    protected BacktraceData backtraceData;
+
+    private final Backtrace backtrace = new Backtrace();
+
     IRubyObject message;
     // We initialize this to UNDEF to know whether cause has been initialized (from ruby space we will just see nil
     // but internally we want to know if there was a cause or it was set to nil explicitly).
     IRubyObject cause = UNDEF;
-    private IRubyObject backtrace;
     private RaiseException throwable;
-    private IRubyObject backtraceLocations;
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -232,13 +282,11 @@ public class RubyException extends RubyObject {
         return backtrace();
     }
 
-    private void setBacktrace(IRubyObject obj) {
-        if (obj.isNil()) {
-            backtrace = null;
-        } else if (isArrayOfStrings(obj)) {
-            backtrace = obj;
+    public void setBacktrace(IRubyObject obj) {
+        if (obj.isNil() || isArrayOfStrings(obj)) {
+            backtrace.backtraceObject = obj;
         } else if (obj instanceof RubyString) {
-            backtrace = RubyArray.newArray(getRuntime(), obj);
+            backtrace.backtraceObject = RubyArray.newArray(getRuntime(), obj);
         } else {
             throw getRuntime().newTypeError("backtrace must be Array of String");
         }
@@ -246,16 +294,7 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(omit = true)
     public IRubyObject backtrace_locations(ThreadContext context) {
-        if (backtraceLocations != null) return backtraceLocations;
-
-        if (backtraceData == null) {
-            backtraceLocations = context.nil;
-        } else {
-            Ruby runtime = context.runtime;
-            backtraceLocations = RubyThread.Location.newLocationArray(runtime, backtraceData.getBacktrace(runtime));
-        }
-
-        return backtraceLocations;
+        return backtrace.getBacktraceLocations(context);
     }
 
     @JRubyMethod(optional = 1)
@@ -367,68 +406,33 @@ public class RubyException extends RubyObject {
         return cause == UNDEF ? null : cause;
     }
 
-    public void setBacktraceData(BacktraceData backtraceData) {
-        this.backtraceData = backtraceData;
-    }
-
-    public BacktraceData getBacktraceData() {
-        return backtraceData;
-    }
-
     public RubyStackTraceElement[] getBacktraceElements() {
-        if (backtraceData == null) {
+        if (backtrace.backtraceData == null) {
             return RubyStackTraceElement.EMPTY_ARRAY;
         }
-        return backtraceData.getBacktrace(getRuntime());
+        return backtrace.backtraceData.getBacktrace(getRuntime());
     }
 
-    public void prepareBacktrace(ThreadContext context) {
-        // if it's null, build a backtrace
-        if (backtraceData == null) {
-            backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context);
-        }
-    }
-
-    /**
-     * Prepare an "integrated" backtrace that includes the normal Ruby trace plus non-filtered Java frames. Used by
-     * Java integration to show the Java frames for a JI-called method.
-     *
-     * @param context
-     * @param javaTrace
-     */
-    public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
-        // if it's null, build a backtrace
-        if (backtraceData == null) {
-            backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
-        }
-    }
-
-    public void forceBacktrace(IRubyObject backtrace) {
-        backtraceData = (backtrace != null && backtrace.isNil()) ? null : BacktraceData.EMPTY;
-        setBacktrace(backtrace);
+    public void captureBacktrace(ThreadContext context) {
+        backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context);
     }
 
     public IRubyObject getBacktrace() {
-        if (backtrace == null) {
-            initBacktrace();
-        }
-        return backtrace;
-    }
+        IRubyObject backtraceObject = backtrace.backtraceObject;
 
-    public void initBacktrace() {
-        Ruby runtime = getRuntime();
-        if (backtraceData == null) {
-            backtrace = runtime.getNil();
-        } else {
-            backtrace = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
+        if (backtraceObject != null) {
+            return backtrace.backtraceObject;
         }
+
+        Ruby runtime = getRuntime();
+
+        return backtrace.getBacktraceObject(runtime);
     }
 
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
-        exception.backtraceData = backtraceData;
-        exception.backtrace = backtrace;
+        exception.backtrace.backtraceData = backtrace.backtraceData;
         exception.message = message;
     }
 
@@ -520,4 +524,11 @@ public class RubyException extends RubyObject {
         return names;
     }
 
+    @Deprecated
+    public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
+        // if it's null, build a backtrace
+        if (backtrace.backtraceData == null) {
+            backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
+        }
+    }
 }

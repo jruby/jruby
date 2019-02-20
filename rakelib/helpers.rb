@@ -1,5 +1,8 @@
 Object.const_set(:BASE_DIR, Dir.pwd)
 
+# Everything run by JRuby in Rake should have assertions enabled.
+ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -J-ea"
+
 def load_build_properties_into_constants
   constant_names = []
   IO.readlines("default.build.properties").each do |line|
