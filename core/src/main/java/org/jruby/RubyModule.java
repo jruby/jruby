@@ -1909,10 +1909,12 @@ public class RubyModule extends RubyObject {
 
     /**
      * @note Internal API - only public as its used by generated code!
+     * @note Used by AnnotationBinder.
+     * @note Not safe for target methods that super, since the frame class will not reflect original source.
      * @param id
      * @param method
      * @param oldName
-     */ // NOTE: used by AnnotationBinder
+     */
     public void putAlias(String id, DynamicMethod method, String oldName) {
         if (id.equals(oldName)) return;
 
@@ -1923,22 +1925,40 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    /**
+     * Alias the method contained in the given CacheEntry as a new entry in this module.
+     *
+     * @param id
+     * @param entry
+     * @param oldName
+     */
+    public void putAlias(String id, CacheEntry entry, String oldName) {
+        if (id.equals(oldName)) return;
+
+        putMethod(getRuntime(), id, new AliasMethod(entry.sourceModule, entry.method, oldName));
+
+        if (isRefinement()) {
+            addRefinedMethodEntry(id, entry.method);
+        }
+    }
+
     public synchronized void defineAliases(List<String> aliases, String oldId) {
         testFrozen("module");
 
         Ruby runtime = getRuntime();
-        DynamicMethod method = searchForAliasMethod(runtime, oldId);
+        CacheEntry entry = searchForAliasMethod(runtime, oldId);
 
         for (String name: aliases) {
-            putAlias(name, method, oldId);
+            putAlias(name, entry, oldId);
         }
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
     }
 
-    private DynamicMethod searchForAliasMethod(Ruby runtime, String id) {
-        DynamicMethod method = deepMethodSearch(id, runtime);
+    private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
+        CacheEntry entry = deepMethodSearch(id, runtime);
+        final DynamicMethod method = entry.method;
 
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
@@ -1949,12 +1969,12 @@ public class RubyModule extends RubyObject {
             DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
 
             // native-backed but not a direct call, ok
-            if (nativeCall == null) return method;
+            if (nativeCall == null) return entry;
 
             Method javaMethod = nativeCall.getMethod();
             JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
 
-            if (anno == null) return method;
+            if (anno == null) return entry;
 
             if (anno.reads().length > 0 || anno.writes().length > 0) {
 
@@ -1979,7 +1999,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return method;
+        return entry;
     }
 
     /** this method should be used only by interpreter or compiler
@@ -2119,7 +2139,8 @@ public class RubyModule extends RubyObject {
     public void exportMethod(String name, Visibility visibility) {
         Ruby runtime = getRuntime();
 
-        DynamicMethod method = deepMethodSearch(name, runtime);
+        CacheEntry entry = deepMethodSearch(name, runtime);
+        DynamicMethod method = entry.method;
 
         if (method.getVisibility() != visibility) {
             if (this == method.getImplementationClass()) {
@@ -2135,7 +2156,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private DynamicMethod deepMethodSearch(String id, Ruby runtime) {
+    private CacheEntry deepMethodSearch(String id, Ruby runtime) {
         CacheEntry orig = searchWithCache(id);
         if (orig.method.isRefined()) {
             orig = resolveRefinedMethod(null, orig, id, true);
@@ -2149,7 +2170,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return orig.method;
+        return orig;
     }
 
     public static String undefinedMethodMessage(Ruby runtime, IRubyObject name, IRubyObject modName, boolean isModule) {
@@ -3089,8 +3110,7 @@ public class RubyModule extends RubyObject {
 
             for (int i = 0; i < args.length; i++) {
                 RubySymbol name = TypeConverter.checkID(args[i]);
-                DynamicMethod method = deepMethodSearch(name.idString(), runtime);
-                DynamicMethod newMethod = method.dup();
+                DynamicMethod newMethod = deepMethodSearch(name.idString(), runtime).method.dup();
                 newMethod.setImplementationClass(getSingletonClass());
                 newMethod.setVisibility(PUBLIC);
                 getSingletonClass().addMethod(name.idString(), newMethod);

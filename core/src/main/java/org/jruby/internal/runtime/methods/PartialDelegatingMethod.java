@@ -56,7 +56,7 @@ public class PartialDelegatingMethod extends DynamicMethod {
      * @param visibility
      */
     public PartialDelegatingMethod(RubyModule implementationClass, DynamicMethod method, Visibility visibility) {
-        super(implementationClass, visibility, method.getName()   );
+        super(implementationClass, visibility, method.getName());
         this.method = method;
     }
     
