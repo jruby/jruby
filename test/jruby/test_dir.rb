@@ -1,11 +1,9 @@
 # coding: utf-8
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'rbconfig'
 
 class TestDir < Test::Unit::TestCase
   include TestHelper
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup; require 'fileutils' ; require 'tmpdir'
     @save_dir = Dir.pwd
