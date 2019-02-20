@@ -380,7 +380,7 @@ public class SuperCallSite extends CallSite {
     protected static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self, RubyModule frameClass, String frameName) {
         Helpers.checkSuperDisabledOrOutOfMethod(context, frameClass, frameName);
 
-        return Helpers.findImplementerIfNecessary(self.getMetaClass(), frameClass).getSuperClass();
+        return frameClass.getSuperClass();
     }
 
 }

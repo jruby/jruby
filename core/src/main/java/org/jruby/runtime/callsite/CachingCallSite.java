@@ -136,7 +136,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName);
+            return cache.method.call(context, self, cache.sourceModule, methodName);
         }
         return cacheAndCall(caller, selfType, context, self);
     }
@@ -146,7 +146,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, block);
         }
         return cacheAndCall(caller, selfType, block, context, self);
     }
@@ -167,7 +167,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         }
         return cacheAndCall(caller, selfType, context, self, arg1);
     }
@@ -177,7 +177,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1);
     }
@@ -198,7 +198,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         }
         return cacheAndCall(caller, selfType, context, self, arg1, arg2);
     }
@@ -208,7 +208,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
     }
@@ -229,7 +229,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         }
         return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
     }
@@ -239,7 +239,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
     }

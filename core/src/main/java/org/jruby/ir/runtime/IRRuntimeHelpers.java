@@ -855,7 +855,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
-                Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
+                frameClass.getSuperClass().isMethodBound(frameName, false);
 
         return defined ? definedMessage : context.nil;
     }
@@ -1178,16 +1178,7 @@ public class IRRuntimeHelpers {
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
 
-        RubyModule implMod = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz);
-
-        // FIXME: this happens when a module method is executed with a frame klazz that does not actually include the
-        //        module, as in refine(A) { include B } where B has methods that should super to A. This case fails
-        //        some other tests as well, so it is not specific to refinements.
-        if (implMod == null) {
-            throw context.runtime.newTypeError("BUG: could not find superclass method due to truncated class hierarchy (jruby/jruby#5585)");
-        }
-
-        RubyClass superClass = implMod.getSuperClass();
+        RubyClass superClass = klazz.getSuperClass();
         CacheEntry entry = superClass != null ? superClass.searchWithCache(methodName) : CacheEntry.NULL_CACHE;
 
         IRubyObject rVal;
