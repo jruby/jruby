@@ -79,13 +79,13 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
                 return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
             }
 
-            mh = getHandle(self, selfClass, method);
+            mh = getHandle(self, entry);
             // strdup for future calls
             mh = MethodHandles.filterArguments(mh, 3, STRDUP_FILTER);
 
             updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
 
-            return method.call(context, self, selfClass, methodName, args, block);
+            return method.call(context, self, entry.sourceModule, methodName, args, block);
         }
     }
 

@@ -1478,20 +1478,8 @@ public class RubyModule extends RubyObject {
      * @param refinedScope the scope containing refinements to search
      * @return the method or UndefinedMethod
      */
-    public DynamicMethod searchWithRefinements(String name, StaticScope refinedScope) {
-        CacheEntry entry = searchWithCacheAndRefinements(name, true, refinedScope);
-
-        DynamicMethod method = entry.method;
-
-        if (method instanceof CacheableMethod) {
-            method = ((CacheableMethod) method).getMethodForCaching();
-        }
-
-        if (method != null) {
-            return method;
-        }
-
-        return UndefinedMethod.INSTANCE;
+    public CacheEntry searchWithRefinements(String name, StaticScope refinedScope) {
+        return searchWithCacheAndRefinements(name, true, refinedScope);
     }
 
     /**
