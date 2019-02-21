@@ -87,7 +87,6 @@ jruby/test_yaml_charset
 
 # these tests are last because they pull in libraries that can affect others
 jruby/test_kernel
-jruby/test_loading_builtin_libraries
 jruby/test_null_channel
 jruby/test_irubyobject_java_passing
 jruby/test_jruby_object_input_stream
@@ -107,6 +106,8 @@ jruby/test_require
 jruby/test_instantiating_interfaces
 jruby/test_openssl
 jruby/test_tempfile_cleanup
+
+jruby/test_loading_builtin_libraries
 
 jruby/test_jruby_core_ext
 jruby/test_thread_context_frame_dereferences_unreachable_variables
