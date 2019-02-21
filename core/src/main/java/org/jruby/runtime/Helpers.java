@@ -190,7 +190,7 @@ public class Helpers {
         if (name.equals("method_missing")) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        
+
         CacheEntry entry = selfClass.searchWithCache("method_missing");
         DynamicMethod methodMissing = entry.method;
 
