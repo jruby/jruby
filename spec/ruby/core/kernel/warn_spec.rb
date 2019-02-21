@@ -78,10 +78,12 @@ describe "Kernel#warn" do
   end
 
   it "writes to_s representation if passed a non-string" do
+    obj = mock("obj")
+    obj.should_receive(:to_s).and_return("to_s called")
     lambda {
       $VERBOSE = true
-      warn(ArgumentError.new("to_s text"))
-    }.should output(nil, "to_s text\n")
+      warn(obj)
+    }.should output(nil, "to_s called\n")
   end
 
   ruby_version_is "2.5" do
