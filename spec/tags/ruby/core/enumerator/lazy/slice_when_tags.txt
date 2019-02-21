@@ -1,0 +1,1 @@
+fails:Enumerator::Lazy#slice_when works with an infinite enumerable

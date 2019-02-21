@@ -7,3 +7,4 @@ fails:Kernel.autoload when called from included module's method setups the autol
 fails:Kernel.autoload when called from included module's method the autoload is reacheable from the class too
 fails:Kernel.autoload when called from included module's method the autoload relative to the included module works
 fails:Kernel#autoload calls main.require(path) to load the file
+fails:Kernel.autoload when called from included module's method the autoload is reachable from the class too
