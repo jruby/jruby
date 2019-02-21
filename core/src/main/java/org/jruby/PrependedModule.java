@@ -44,16 +44,14 @@ import org.jruby.internal.runtime.methods.RefinedMarker;
  */
 public class PrependedModule extends IncludedModule {
 
-    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
-        super(runtime, superClass, origin);
-        this.methods = origin.methods;
-        origin.methods = Collections.EMPTY_MAP;
-        origin.methodLocation = this;
+    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule klass) {
+        super(runtime, superClass, klass);
+        this.methods = klass.methods;
+        klass.methods = Collections.EMPTY_MAP;
+        klass.methodLocation = this;
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
-            method.setImplementationClass(this);
-            method.setDefinedClass(origin);
-            if (moveRefinedMethod(entry.getKey(), method, origin)) {
+            if (moveRefinedMethod(entry.getKey(), method, klass)) {
                 methods.remove(entry.getKey());
             }
         }

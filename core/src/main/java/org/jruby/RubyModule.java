@@ -3345,7 +3345,7 @@ public class RubyModule extends RubyObject {
             // In the current logic, if we getService here we know that module is not an
             // IncludedModule, so there's no need to fish out the delegate. But just
             // in case the logic should change later, let's do it anyway
-            RubyClass prep = new PrependedModule(getRuntime(), getSuperClass(), this);
+            RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
 
             // if the insertion point is a class, update subclass lists
             if (this instanceof RubyClass) {
@@ -3354,12 +3354,12 @@ public class RubyModule extends RubyObject {
                 // if there's a non-null superclass, we're including into a normal class hierarchy;
                 // update subclass relationships to avoid stale parent/child relationships
                 if (insertBelowClass.getSuperClass() != null) {
-                    insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, prep);
+                    insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, origin);
                 }
 
-                prep.addSubclass(insertBelowClass);
+                origin.addSubclass(insertBelowClass);
             }
-            setSuperClass(prep);
+            setSuperClass(origin);
         }
 
         RubyModule currentInclusionPoint = this;

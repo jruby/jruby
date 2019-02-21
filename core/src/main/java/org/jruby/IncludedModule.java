@@ -53,6 +53,16 @@ public class IncludedModule extends RubyClass {
         return origin.id();
     }
 
+    @Override
+    protected synchronized Map<String, IRubyObject> getClassVariables() {
+        return origin.getClassVariables();
+    }
+
+    @Override
+    protected Map<String, IRubyObject> getClassVariablesForRead() {
+        return origin.getClassVariablesForRead();
+    }
+
     /** The module to which this include origins. */
     protected final RubyModule origin;
 }
