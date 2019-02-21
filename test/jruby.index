@@ -81,9 +81,9 @@ jruby/test_thread_backtrace
 jruby/test_threaded_nonlocal_return
 jruby/test_time
 jruby/test_unmarshal
-jruby/test_vietnamese_charset
 jruby/test_win32
 jruby/test_zlib
+jruby/test_yaml_charset
 
 # these tests are last because they pull in libraries that can affect others
 jruby/test_kernel
