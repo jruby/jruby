@@ -49,6 +49,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
@@ -158,11 +159,13 @@ public class Helpers {
             return selectInternalMM(runtime, visibility, callType);
         }
 
-        DynamicMethod methodMissing = receiver.getMetaClass().searchMethod("method_missing");
+        CacheEntry entry = receiver.getMetaClass().searchWithCache("method_missing");
+        DynamicMethod methodMissing = entry.method;
+
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return new MethodMissingMethod(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -172,11 +175,13 @@ public class Helpers {
             return selectInternalMM(runtime, visibility, callType);
         }
 
-        DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
+        CacheEntry entry = selfClass.searchWithCache("method_missing");
+        DynamicMethod methodMissing = entry.method;
+
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return new MethodMissingMethod(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -185,12 +190,14 @@ public class Helpers {
         if (name.equals("method_missing")) {
             return selectInternalMM(runtime, visibility, callType);
         }
+        
+        CacheEntry entry = selfClass.searchWithCache("method_missing");
+        DynamicMethod methodMissing = entry.method;
 
-        DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return new MethodMissingMethod(entry, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -369,13 +376,13 @@ public class Helpers {
     }
 
     private static class MethodMissingMethod extends DynamicMethod {
-        private final DynamicMethod delegate;
+        private final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
 
-        public MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
-            super(delegate.getImplementationClass(), lastVisibility, delegate.getName());
-            this.delegate = delegate;
+        public MethodMissingMethod(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
+            super(entry.method.getImplementationClass(), lastVisibility, entry.method.getName());
+            this.entry = entry;
             this.lastCallStatus = lastCallStatus;
             this.lastVisibility = lastVisibility;
         }
@@ -383,7 +390,7 @@ public class Helpers {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
-            return this.delegate.call(context, self, clazz, "method_missing", prepareMethodMissingArgs(args, context, name), block);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", prepareMethodMissingArgs(args, context, name), block);
         }
 
         @Override

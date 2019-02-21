@@ -69,7 +69,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, args);
+            return cache.method.call(context, self, cache.sourceModule, methodName, args);
         }
         return cacheAndCall(caller, selfType, args, context, self);
     }
@@ -79,7 +79,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, args, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         }
         return cacheAndCall(caller, selfType, block, args, context, self);
     }
