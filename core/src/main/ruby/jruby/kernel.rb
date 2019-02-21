@@ -7,10 +7,10 @@ end
 
 begin
   # Try to access ProcessBuilder; if it fails, don't define our special process logic
-  java.lang.ProcessBuilder # GH-1148: ProcessBuilder is not available on GAE
   load 'jruby/kernel/jruby/process_manager.rb'
-rescue Exception
+rescue Exception # java.lang.ProcessBuilder not available
   warn "ProcessBuilder unavailable; using default backtick" if $VERBOSE
+  JRuby.send(:remove_const, :ProcessManager) rescue nil
   # leave old backtick logic in place
 end unless JRuby::Util.native_posix? # native POSIX uses new logic for back-quote
 

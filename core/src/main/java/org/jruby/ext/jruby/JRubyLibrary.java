@@ -194,17 +194,6 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
-    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
-                                                   IRubyObject status, IRubyObject pid) {
-        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
-                status.convertToInteger().getLongValue(),
-                pid.convertToInteger().getLongValue()
-        );
-        context.setLastExitStatus(processStatus);
-        return processStatus;
-    }
-
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
