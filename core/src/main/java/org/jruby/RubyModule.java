@@ -2608,7 +2608,7 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = "<=", required = 1)
-   public IRubyObject op_le(IRubyObject obj) {
+    public IRubyObject op_le(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
             throw getRuntime().newTypeError("compared with non class/module");
         }
@@ -2623,7 +2623,7 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = "<", required = 1)
-   public IRubyObject op_lt(IRubyObject obj) {
+    public IRubyObject op_lt(IRubyObject obj) {
         return obj == this ? getRuntime().getFalse() : op_le(obj);
     }
 
@@ -2631,7 +2631,7 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = ">=", required = 1)
-   public IRubyObject op_ge(IRubyObject obj) {
+    public IRubyObject op_ge(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
             throw getRuntime().newTypeError("compared with non class/module");
         }
@@ -2643,7 +2643,7 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = ">", required = 1)
-   public IRubyObject op_gt(IRubyObject obj) {
+    public IRubyObject op_gt(IRubyObject obj) {
         return this == obj ? getRuntime().getFalse() : op_ge(obj);
     }
 
