@@ -570,14 +570,24 @@ public class RubyDate extends RubyObject {
 
                     subMillisNum = ((1000 * r0) - (millis * r1));
                     subMillisDen = r1;
-                    long gcd = i_gcd(subMillisNum, subMillisDen);
-                    subMillisNum = subMillisNum / gcd;
-                    subMillisDen = subMillisDen / gcd;
+                    normalizeSubMillis();
                 }
             }
         }
 
         this.dt = dt;
+    }
+
+    final RubyDate normalizeSubMillis() {
+        long subNum = subMillisNum;
+        long subDen = subMillisDen;
+        if (subNum == 0) subMillisDen = 1;
+        else {
+            long gcd = i_gcd(subNum, subDen);
+            subMillisNum = subNum / gcd;
+            subMillisDen = subDen / gcd;
+        }
+        return this;
     }
 
     @JRubyMethod(name = "valid_jd?", meta = true)
@@ -1222,7 +1232,7 @@ public class RubyDate extends RubyObject {
         if (subNum / subDen >= 1) { // sub_millis >= 1
             subNum -= subDen; ms += 1; // sub_millis -= 1
         }
-        return newInstance(context, dt.plus(ms), off, start, subNum, subDen);
+        return newInstance(context, dt.plus(ms), off, start, subNum, subDen).normalizeSubMillis();
     }
 
     static final int SUB_MS_PRECISION = 1_000_000_000;
@@ -1261,8 +1271,12 @@ public class RubyDate extends RubyObject {
 
     private RubyNumeric subMillisDiff(final ThreadContext context, final RubyDate that) {
         final Ruby runtime = context.runtime;
+        long subNum1 = this.subMillisNum;
+        long subNum2 = that.subMillisNum;
+        if (subNum2 == 0) return RubyRational.newRational(runtime, +subNum1, this.subMillisDen);
+        if (subNum1 == 0) return RubyRational.newRational(runtime, -subNum2, that.subMillisDen);
         if (this.subMillisDen == 1 && that.subMillisDen == 1) {
-            return (RubyInteger) RubyFixnum.newFixnum(runtime, this.subMillisNum).op_minus(context, that.subMillisNum);
+            return (RubyInteger) RubyFixnum.newFixnum(runtime, subNum1).op_minus(context, subNum2);
         }
         return this.subMillis(runtime).op_minus(context, that.subMillis(runtime));
     }
