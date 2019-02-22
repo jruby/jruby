@@ -1162,7 +1162,7 @@ public class RubyDate extends RubyObject {
         throw context.runtime.newTypeError("expected numeric");
     }
 
-    IRubyObject op_plus_numeric(ThreadContext context, RubyNumeric n) {
+    RubyDate op_plus_numeric(ThreadContext context, RubyNumeric n) {
         final Ruby runtime = context.runtime;
         // ms, sub = (n * 86_400_000).divmod(1)
         // sub = 0 if sub == 0 # avoid Rational(0, 1)
@@ -1181,9 +1181,7 @@ public class RubyDate extends RubyObject {
 
         if ( sub.isZero() ) ; // done - noop
         else if ( sub instanceof RubyFloat ) {
-            final int SUB_MS_PRECISION = 1_000_000_000;
-            long s = Math.round(((RubyFloat) sub).getDoubleValue() * SUB_MS_PRECISION);
-            sub = (RubyNumeric) RubyRational.newRationalCanonicalize(context, s, SUB_MS_PRECISION);
+            sub = roundToPrecision(context, (RubyFloat) sub, SUB_MS_PRECISION);
             sub_millis = (RubyNumeric) sub_millis.op_plus(context, sub);
         }
         else {
@@ -1196,6 +1194,13 @@ public class RubyDate extends RubyObject {
             subNum -= subDen; ms += 1; // sub_millis -= 1
         }
         return newInstance(context, dt.plus(ms), off, start, subNum, subDen);
+    }
+
+    static final int SUB_MS_PRECISION = 1_000_000_000;
+
+    static RubyNumeric roundToPrecision(ThreadContext context, RubyFloat sub, final long precision) {
+        long s = Math.round(sub.getDoubleValue() * precision);
+        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, s, precision);
     }
 
     @JRubyMethod(name = "-")
