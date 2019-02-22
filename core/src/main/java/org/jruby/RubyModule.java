@@ -856,20 +856,19 @@ public class RubyModule extends RubyObject {
     }
 
     // mri: using_module_recursive
-    private static void usingModuleRecursive(RubyModule cref, RubyModule klass) {
+    private static void usingModuleRecursive(RubyModule cref, RubyModule module) {
         Ruby runtime = cref.getRuntime();
-        RubyClass superClass = klass.getSuperClass();
+        RubyClass superClass = module.getSuperClass();
 
         // For each superClass of the refined module also use their refinements for the given cref
         if (superClass != null) usingModuleRecursive(cref, superClass);
 
-        RubyModule module;
-        if (klass instanceof IncludedModule) {
-            module = klass.getDelegate();
-        } else if (klass.isModule()) {
-            module = klass;
+        if (module instanceof IncludedModule) {
+            module = module.getDelegate();
+        } else if (module.isModule()) {
+            // ok as is
         } else {
-            throw runtime.newTypeError("wrong argument type " + klass.getName() + " (expected Module)");
+            throw runtime.newTypeError("wrong argument type " + module.getName() + " (expected Module)");
         }
 
         Map<RubyModule, RubyModule> refinements = module.refinements;
