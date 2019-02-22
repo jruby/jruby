@@ -101,6 +101,11 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
+    protected boolean isSame(RubyModule module) {
+        return origin.isSame(module.getDelegate());
+    }
+
+    @Override
     public Map<String, DynamicMethod> getMethods() {
         return origin.getMethods();
     }
