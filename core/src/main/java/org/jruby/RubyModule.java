@@ -2631,7 +2631,8 @@ public class RubyModule extends RubyObject {
         return runtime.getNil();
     }
 
-    RubyModule searchAncestor(RubyModule c) {
+    // MRI: class_search_ancestor
+    protected RubyModule searchAncestor(RubyModule c) {
         RubyModule cl = this;
         while (cl != null) {
             if (cl == c || cl.isSame(c) || cl.getNonIncludedClass() == c) {
