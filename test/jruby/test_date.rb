@@ -269,6 +269,16 @@ class TestDate < Test::Unit::TestCase
     end
   end
 
+  def test_new_with_float
+    d = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+    assert_equal '#<DateTime: 2018-01-14T22:25:19+00:00 ((2458133j,80719s,100000000n),+0s,2299161j)>', d.inspect
+    assert_equal(1.to_r/10, d.sec_fraction)
+
+    d = DateTime.new(2018, 1, 14, 22, 55, 59.00123456, "+9")
+    assert_equal '#<DateTime: 2018-01-14T22:55:59+09:00 ((2458133j,50159s,1234560n),+32400s,2299161j)>', d.inspect
+    assert_equal(123456.to_r/100_000_000, d.sec_fraction)
+  end
+
   def test_new_invalid
     y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
 
