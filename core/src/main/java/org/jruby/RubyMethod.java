@@ -49,6 +49,7 @@ import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -90,16 +91,18 @@ public class RubyMethod extends AbstractRubyMethod {
         String methodName,
         RubyModule originModule,
         String originName,
-        DynamicMethod method,
+        CacheEntry entry,
         IRubyObject receiver) {
         Ruby runtime = implementationModule.getRuntime();
         RubyMethod newMethod = new RubyMethod(runtime, runtime.getMethod());
 
-        newMethod.sourceModule = implementationModule;
+        newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
-        newMethod.method = method;
+        newMethod.entry = entry;
+        newMethod.method = entry.method;
+        newMethod.sourceModule = entry.sourceModule;
         newMethod.receiver = receiver;
 
         return newMethod;
@@ -205,7 +208,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        RubyMethod newMethod = newMethod(sourceModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
         newMethod.setMetaClass(getMetaClass());
         return newMethod;
     }
@@ -239,7 +242,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
-        	RubyUnboundMethod.newUnboundMethod(sourceModule, methodName, originModule, originName, method);
+        	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
         unboundMethod.infectBy(this);
         
         return unboundMethod;
@@ -354,8 +357,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context) {
-        RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), sourceModule).getSuperClass();
-        return super_method(context, receiver, superClass);
+        return super_method(context, receiver, sourceModule.getSuperClass());
     }
 
     @JRubyMethod

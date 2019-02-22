@@ -37,6 +37,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
@@ -55,14 +56,16 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         String methodName,
         RubyModule originModule,
         String originName,
-        DynamicMethod method) {
+        CacheEntry entry) {
         RubyUnboundMethod newMethod = new RubyUnboundMethod(implementationModule.getRuntime());
 
-        newMethod.sourceModule = implementationModule;
+        newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
-        newMethod.method = method;
+        newMethod.entry = entry;
+        newMethod.method = entry.method;
+        newMethod.sourceModule = entry.sourceModule;
 
         return newMethod;
     }
@@ -117,13 +120,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         
         receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
         
-        return RubyMethod.newMethod(sourceModule, methodName, receiverClass, originName, method, aReceiver);
+        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
     }
 
     @JRubyMethod(name = "clone")
     @Override
     public RubyUnboundMethod rbClone() {
-        return newUnboundMethod(sourceModule, methodName, originModule, originName, method);
+        return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -134,13 +137,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
         str.append(getMetaClass().getRealClass().getName()).append(": ");
 
-        if (sourceModule.isSingleton()) {
-            str.append(sourceModule.inspect().toString());
+        if (implementationModule.isSingleton()) {
+            str.append(implementationModule.inspect().toString());
         } else {
             str.append(originModule.getName());
 
-            if (sourceModule != originModule) {
-                str.append('(').append(sourceModule.getName()).append(')');
+            if (implementationModule != originModule) {
+                str.append('(').append(implementationModule.getName()).append(')');
             }
         }
 

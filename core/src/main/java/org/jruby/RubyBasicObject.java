@@ -34,6 +34,7 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -2492,9 +2493,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         final String methodName = symbol.idString();
         final RubyClass klass = metaClass;
         if (klass.isSingleton()) {
-            DynamicMethod method = klass.searchMethod(methodName);
-            if (klass == method.getDefinedClass()) { // ! method.isUndefined()
-                AbstractRubyMethod newMethod = RubyMethod.newMethod(klass, methodName, klass, methodName, method, this);
+            CacheEntry entry = klass.searchWithCache(methodName);
+            if (klass == entry.method.getDefinedClass()) { // ! method.isUndefined()
+                AbstractRubyMethod newMethod = RubyMethod.newMethod(klass, methodName, klass, methodName, entry, this);
                 newMethod.infectBy(this);
                 return newMethod;
             }

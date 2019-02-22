@@ -2257,9 +2257,9 @@ public class RubyModule extends RubyObject {
 
         AbstractRubyMethod newMethod;
         if (bound) {
-            newMethod = RubyMethod.newMethod(entry.sourceModule, methodName, originModule, methodName, method, receiver);
+            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, entry, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(entry.sourceModule, methodName, originModule, methodName, method);
+            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, entry);
         }
         newMethod.infectBy(this);
 
