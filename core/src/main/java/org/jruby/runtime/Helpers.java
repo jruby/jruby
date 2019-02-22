@@ -518,7 +518,7 @@ public class Helpers {
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klass.getSuperClass();
-        CacheEntry entry = superClass.searchWithCache(name);
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -532,7 +532,7 @@ public class Helpers {
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klass.getSuperClass();
-        CacheEntry entry = superClass.searchWithCache(name);
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -548,7 +548,7 @@ public class Helpers {
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
-        CacheEntry entry = superClass.searchWithCache(name);
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -562,10 +562,9 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
-        CacheEntry entry = superClass.searchWithCache(name);
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -579,10 +578,9 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
-        CacheEntry entry = superClass.searchWithCache(name);
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -599,7 +597,7 @@ public class Helpers {
 
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
-        CacheEntry entry = superClass.searchWithCache(name);
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
