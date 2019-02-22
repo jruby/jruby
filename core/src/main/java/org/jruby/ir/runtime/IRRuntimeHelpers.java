@@ -1181,7 +1181,7 @@ public class IRRuntimeHelpers {
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
 
-        RubyClass superClass = klazz.getSuperClass();
+        RubyClass superClass = searchNormalSuperclass(klazz);
         CacheEntry entry = superClass != null ? superClass.searchWithCache(methodName) : CacheEntry.NULL_CACHE;
 
         IRubyObject rVal;
@@ -1192,6 +1192,17 @@ public class IRRuntimeHelpers {
         }
 
         return rVal;
+    }
+
+    // MRI: vm_search_normal_superclass
+    private static RubyClass searchNormalSuperclass(RubyModule klazz) {
+        // Unwrap refinements, since super should always dispatch back to the refined class
+        if (klazz.isIncluded()
+                && klazz.getNonIncludedClass().isRefinement()) {
+            klazz = klazz.getNonIncludedClass();
+        }
+        klazz = klazz.getMethodLocation();
+        return klazz.getSuperClass();
     }
 
     public static IRubyObject zSuperSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
