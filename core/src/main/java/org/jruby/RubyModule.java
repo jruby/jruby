@@ -2604,19 +2604,39 @@ public class RubyModule extends RubyObject {
         return super.freeze(context);
     }
 
-    /** rb_mod_le
-    *
+    /**
+    * MRI: rb_class_inherited_p
     */
     @JRubyMethod(name = "<=", required = 1)
-    public IRubyObject op_le(IRubyObject obj) {
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError("compared with non class/module");
+    public IRubyObject op_le(IRubyObject arg) {
+        Ruby runtime = getRuntime();
+
+        if (!(arg instanceof RubyModule)) {
+            throw runtime.newTypeError("compared with non class/module");
         }
 
-        if (isKindOfModule((RubyModule) obj)) return getRuntime().getTrue();
-        if (((RubyModule) obj).isKindOfModule(this)) return getRuntime().getFalse();
+        RubyModule argMod = (RubyModule) arg;
 
-        return getRuntime().getNil();
+        if (searchAncestor(argMod.getMethodLocation()) != null) {
+            return runtime.getTrue();
+        }
+
+        /* not mod < arg; check if mod > arg */
+        if (argMod.searchAncestor(this) != null) {
+            return runtime.getFalse();
+        }
+
+        return runtime.getNil();
+    }
+
+    RubyModule searchAncestor(RubyModule c) {
+        RubyModule cl = this;
+        while (cl != null) {
+            if (cl == c || cl.getMethods() == c.getMethods())
+                return cl;
+            cl = cl.getSuperClass();
+        }
+        return null;
     }
 
     /** rb_mod_lt
