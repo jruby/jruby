@@ -95,7 +95,7 @@ public class RubyMethod extends AbstractRubyMethod {
         Ruby runtime = implementationModule.getRuntime();
         RubyMethod newMethod = new RubyMethod(runtime, runtime.getMethod());
 
-        newMethod.implementationModule = implementationModule;
+        newMethod.sourceModule = implementationModule;
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
@@ -110,23 +110,23 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, block);
+        return method.call(context, receiver, sourceModule, methodName, block);
     }
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, arg, block);
+        return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, arg0, arg1, block);
+        return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, arg0, arg1, arg2, block);
+        return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
     @JRubyMethod(name = {"call", "[]"}, rest = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, args, block);
+        return method.call(context, receiver, sourceModule, methodName, args, block);
     }
 
     /** Returns the number of arguments a method accepted.
@@ -159,7 +159,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "===", required = 1)
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return method.call(context, receiver, implementationModule, methodName, other, Block.NULL_BLOCK);
+        return method.call(context, receiver, sourceModule, methodName, other, Block.NULL_BLOCK);
     }
 
     @Override
@@ -205,7 +205,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(sourceModule, methodName, originModule, originName, method, receiver);
         newMethod.setMetaClass(getMetaClass());
         return newMethod;
     }
@@ -239,7 +239,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
-        	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        	RubyUnboundMethod.newUnboundMethod(sourceModule, methodName, originModule, originName, method);
         unboundMethod.infectBy(this);
         
         return unboundMethod;
@@ -354,7 +354,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context) {
-        RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), implementationModule).getSuperClass();
+        RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), sourceModule).getSuperClass();
         return super_method(context, receiver, superClass);
     }
 

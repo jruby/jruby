@@ -48,7 +48,7 @@ import org.jruby.runtime.marshal.DataType;
  * @see RubyUnboundMethod
  */
 public abstract class AbstractRubyMethod extends RubyObject implements DataType {
-    protected RubyModule implementationModule;
+    protected RubyModule sourceModule;
     protected String methodName;
     protected RubyModule originModule;
     protected String originName;
@@ -106,7 +106,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
+        return sourceModule;
     }
 
     @JRubyMethod(name = "source_location")

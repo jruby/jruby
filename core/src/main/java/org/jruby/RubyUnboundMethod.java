@@ -58,7 +58,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         DynamicMethod method) {
         RubyUnboundMethod newMethod = new RubyUnboundMethod(implementationModule.getRuntime());
 
-        newMethod.implementationModule = implementationModule;
+        newMethod.sourceModule = implementationModule;
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
@@ -117,13 +117,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         
         receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
         
-        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
+        return RubyMethod.newMethod(sourceModule, methodName, receiverClass, originName, method, aReceiver);
     }
 
     @JRubyMethod(name = "clone")
     @Override
     public RubyUnboundMethod rbClone() {
-        return newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        return newUnboundMethod(sourceModule, methodName, originModule, originName, method);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -134,13 +134,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
         str.append(getMetaClass().getRealClass().getName()).append(": ");
 
-        if (implementationModule.isSingleton()) {
-            str.append(implementationModule.inspect().toString());
+        if (sourceModule.isSingleton()) {
+            str.append(sourceModule.inspect().toString());
         } else {
             str.append(originModule.getName());
 
-            if (implementationModule != originModule) {
-                str.append('(').append(implementationModule.getName()).append(')');
+            if (sourceModule != originModule) {
+                str.append('(').append(sourceModule.getName()).append(')');
             }
         }
 
@@ -158,6 +158,6 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context ) {
-        return super_method(context, null, implementationModule.getSuperClass());
+        return super_method(context, null, sourceModule.getSuperClass());
     }
 }

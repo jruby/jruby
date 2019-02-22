@@ -2234,7 +2234,8 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        DynamicMethod method = searchMethod(methodName);
+        CacheEntry entry = searchWithCache(methodName);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined() || (visibility != null && method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
@@ -2256,9 +2257,9 @@ public class RubyModule extends RubyObject {
 
         AbstractRubyMethod newMethod;
         if (bound) {
-            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
+            newMethod = RubyMethod.newMethod(entry.sourceModule, methodName, originModule, methodName, method, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, method);
+            newMethod = RubyUnboundMethod.newUnboundMethod(entry.sourceModule, methodName, originModule, methodName, method);
         }
         newMethod.infectBy(this);
 

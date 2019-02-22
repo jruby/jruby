@@ -484,188 +484,81 @@ public class RubyClass extends RubyModule {
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, block);
         }
-        return method.call(context, self, this, name, block);
+        return method.call(context, self, entry.sourceModule, name, block);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject[] args, Block block) {
         assert args != null;
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, args, block);
         }
-        return method.call(context, self, this, name, args, block);
+        return method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg, block);
         }
-        return method.call(context, self, this, name, arg, block);
+        return method.call(context, self, entry.sourceModule, name, arg, block);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg0, IRubyObject arg1, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg0, arg1, block);
         }
-        return method.call(context, self, this, name, arg0, arg1, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg0, arg1, arg2, block);
         }
-        return method.call(context, self, this, name, arg0, arg1, arg2, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                              Block block) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, block);
-        }
-        return method.call(context, self, this, name, block);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject[] args, Block block) {
-        assert args != null;
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, block);
-        }
-        return method.call(context, self, this, name, args, block);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg, Block block) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, block);
-        }
-        return method.call(context, self, this, name, arg, block);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg0, IRubyObject arg1, Block block) { // NOT USED?
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, block);
-        }
-        return method.call(context, self, this, name, arg0, arg1, block);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                                  IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, block);
-        }
-        return method.call(context, self, this, name, arg0, arg1, arg2, block);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, this, name);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                              IRubyObject[] args) {
-        assert args != null;
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, this, name, args);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                              IRubyObject arg) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, this, name, arg);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                              IRubyObject arg0, IRubyObject arg1) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, this, name, arg0, arg1);
-    }
-
-    /**
-     * Same behavior as finvoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
-                              IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        DynamicMethod method = searchMethod(name);
-        if (shouldCallMethodMissing(method, name, caller, callType)) {
-            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, Block.NULL_BLOCK);
-        }
-        return method.call(context, self, this, name, arg0, arg1, arg2);
+        return method.call(context, self, entry.sourceModule, name);
     }
 
     /**
     * MRI: rb_funcallv_public
     */
     public IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
         if (shouldCallMethodMissing(method) || method.getVisibility() != PUBLIC) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg);
+        return method.call(context, self, entry.sourceModule, name, arg);
     }
 
     /**
@@ -966,13 +859,14 @@ public class RubyClass extends RubyModule {
     }
 
     public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-        DynamicMethod method = getMetaClass().searchMethod("inherited");
+        CacheEntry entry = getMetaClass().searchWithCache("inherited");
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return Helpers.callMethodMissing(context, self, method.getVisibility(), "inherited", CallType.FUNCTIONAL, Block.NULL_BLOCK);
         }
 
-        return method.call(context, self, getMetaClass(), "inherited", subclass, Block.NULL_BLOCK);
+        return method.call(context, self, entry.sourceModule, "inherited", subclass, Block.NULL_BLOCK);
     }
 
     /** rb_class_new_instance
@@ -2174,12 +2068,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               CallType callType, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, block);
         }
-        return method.call(context, self, this, name, block);
+        return method.call(context, self, entry.sourceModule, name, block);
     }
 
     /**
@@ -2193,12 +2089,14 @@ public class RubyClass extends RubyModule {
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject[] args, CallType callType, Block block) {
         assert args != null;
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, block);
         }
-        return method.call(context, self, this, name, args, block);
+        return method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     /**
@@ -2211,12 +2109,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg, CallType callType, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, block);
         }
-        return method.call(context, self, this, name, arg, block);
+        return method.call(context, self, entry.sourceModule, name, arg, block);
     }
 
     /**
@@ -2229,12 +2129,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, CallType callType, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, block);
         }
-        return method.call(context, self, this, name, arg0, arg1, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
     }
 
     /**
@@ -2247,12 +2149,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType, Block block) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, block);
         }
-        return method.call(context, self, this, name, arg0, arg1, arg2, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
     /**
@@ -2265,12 +2169,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               CallType callType) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name);
+        return method.call(context, self, entry.sourceModule, name);
     }
 
     /**
@@ -2284,12 +2190,14 @@ public class RubyClass extends RubyModule {
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject[] args, CallType callType) {
         assert args != null;
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, args);
+        return method.call(context, self, entry.sourceModule, name, args);
     }
 
     /**
@@ -2302,12 +2210,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg, CallType callType) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg);
+        return method.call(context, self, entry.sourceModule, name, arg);
     }
 
     /**
@@ -2320,12 +2230,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, CallType callType) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg0, arg1);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1);
     }
 
     /**
@@ -2338,12 +2250,14 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         IRubyObject caller = context.getFrameSelf();
+
         if (shouldCallMethodMissing(method, name, caller, callType)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg0, arg1, arg2);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
     @Deprecated
@@ -2359,6 +2273,127 @@ public class RubyClass extends RubyModule {
     @Deprecated
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  Block block) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, block);
+        }
+        return method.call(context, self, entry.sourceModule, name, block);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject[] args, Block block) {
+        assert args != null;
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, block);
+        }
+        return method.call(context, self, entry.sourceModule, name, args, block);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject arg, Block block) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, block);
+        }
+        return method.call(context, self, entry.sourceModule, name, arg, block);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject arg0, IRubyObject arg1, Block block) { // NOT USED?
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, block);
+        }
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, block);
+        }
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, entry.sourceModule, name);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject[] args) {
+        assert args != null;
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, args, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, entry.sourceModule, name, args);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject arg) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, entry.sourceModule, name, arg);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject arg0, IRubyObject arg1) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1);
+    }
+
+    @Deprecated
+    public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
+                                  IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
+
+        if (shouldCallMethodMissing(method, name, caller, callType)) {
+            return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, callType, arg0, arg1, arg2, Block.NULL_BLOCK);
+        }
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
     // OBJECT STATE

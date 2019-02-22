@@ -470,27 +470,6 @@ public class Helpers {
     }
 
     /**
-     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
-        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, args, block);
-    }
-
-    /**
-     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
-        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, arg, block);
-    }
-
-    /**
-     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
-        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    }
-
-    /**
     * MRI: rb_funcallv_public
     */
     public static IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
@@ -538,26 +517,28 @@ public class Helpers {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
         RubyClass selfClass = getMetaClass(self);
-        RubyClass superClass = findImplementerIfNecessary(selfClass, klass).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass superClass = klass.getSuperClass();
+        CacheEntry entry = superClass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, args, block);
         }
-        return method.call(context, self, superClass, name, args, block);
+        return method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
         RubyClass selfClass = getMetaClass(self);
-        RubyClass superClass = findImplementerIfNecessary(selfClass, klass).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass superClass = klass.getSuperClass();
+        CacheEntry entry = superClass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, block);
         }
-        return method.call(context, self, superClass, name, arg0, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
@@ -566,13 +547,14 @@ public class Helpers {
         String name = context.getFrameName();
 
         RubyClass selfClass = getMetaClass(self);
-        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, block);
         }
-        return method.call(context, self, superClass, name, block);
+        return method.call(context, self, entry.sourceModule, name, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
@@ -580,14 +562,16 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
+
         RubyClass selfClass = getMetaClass(self);
-        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, block);
         }
-        return method.call(context, self, superClass, name, arg0, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
@@ -595,14 +579,16 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
+
         RubyClass selfClass = getMetaClass(self);
-        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, arg1, block);
         }
-        return method.call(context, self, superClass, name, arg0, arg1, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -610,14 +596,16 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
+
         RubyClass selfClass = getMetaClass(self);
-        RubyClass superClass = findImplementerIfNecessary(selfClass, klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
             return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, arg1, arg2, block);
         }
-        return method.call(context, self, superClass, name, arg0, arg1, arg2, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
     @Deprecated
@@ -2595,6 +2583,22 @@ public class Helpers {
     }
 
     /**
+     *
+     * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
+     * This method is just so we can share that logic.
+     */
+    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
+        if (method.isUndefined() || method.isNotImplemented()) return false;
+
+        return !(checkVisibility &&
+                (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    }
+
+    public static StaticScope getStaticScope(IRScope scope) {
+        return scope.getStaticScope();
+    }
+
+    /**
      * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
      * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
      *
@@ -2630,19 +2634,18 @@ public class Helpers {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }
 
-    /**
-     *
-     * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
-     * This method is just so we can share that logic.
-     */
-    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
-        if (method.isUndefined() || method.isNotImplemented()) return false;
-
-        return !(checkVisibility &&
-                (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    @Deprecated
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, args, block);
     }
 
-    public static StaticScope getStaticScope(IRScope scope) {
-        return scope.getStaticScope();
+    @Deprecated
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, arg, block);
+    }
+
+    @Deprecated
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 }
