@@ -63,6 +63,11 @@ public class IncludedModule extends RubyClass {
         return origin.getClassVariablesForRead();
     }
 
+    @Override
+    protected boolean isSame(RubyModule module) {
+        return origin.isSame(module.getDelegate());
+    }
+
     /** The module to which this include origins. */
     protected final RubyModule origin;
 }

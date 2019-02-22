@@ -264,7 +264,7 @@ public class RubyModule extends RubyObject {
     public static class KindOf {
         public static final KindOf DEFAULT_KIND_OF = new KindOf();
         public boolean isKindOf(IRubyObject obj, RubyModule type) {
-            return obj.getMetaClass().hasModuleInHierarchy(type);
+            return obj.getMetaClass().hasModuleInHierarchy(type.getMethodLocation());
         }
     }
 
