@@ -279,6 +279,38 @@ class TestDate < Test::Unit::TestCase
     assert_equal(123456.to_r/100_000_000, d.sec_fraction)
   end
 
+  def test_parse_eql_with_sec_fraction
+    d1 = DateTime.parse('2018-01-14T22:25:19.1')
+    d2 = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+    assert_equal(d1, d2)
+    assert d1.eql?(d2), "#{d1.inspect} isnt eql? to #{d2.inspect}"
+    assert d2.eql?(d1), "#{d2.inspect} isnt eql? to #{d1.inspect}"
+
+    d1 = DateTime.new(2018, 1, 14, 22, 55, 59.00123456, "+9")
+    d2 = DateTime.parse('2018-01-14T22:55:59.00123456+09:00')
+    assert_equal(d1, d2)
+    assert d1.eql?(d2), "#{d1.inspect} isnt eql? to #{d2.inspect}"
+    assert d2.eql?(d1), "#{d2.inspect} isnt eql? to #{d1.inspect}"
+  end
+
+  def test_equality_details
+    d1 = DateTime.parse('2018-01-14T22:25:19.1')
+    d2 = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+
+    assert_equal false, d1 == 1
+    assert_equal false, d1 === 1
+    assert_equal false, d1 === Date.today
+    assert_equal true, d1 === d2.to_date
+    assert_equal true, d1.to_date === d2
+    assert_equal false, d1 == d2.to_date
+    assert_equal false, d1.to_date == d2
+    assert_equal false, d2 == BasicObject.new
+    assert_equal nil, d2 === BasicObject.new
+    assert_equal nil, d2 === :sym
+    assert_equal true, d2 === d1
+    assert_equal false, d2 === DateTime.now
+  end
+
   def test_new_invalid
     y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
 

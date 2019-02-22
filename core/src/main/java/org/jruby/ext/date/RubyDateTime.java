@@ -54,9 +54,6 @@ import org.jruby.util.ByteList;
 
 import java.io.Serializable;
 import java.time.*;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
@@ -233,7 +230,7 @@ public class RubyDateTime extends RubyDate {
             throw context.runtime.newArgumentError("invalid date");
         }
 
-        return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen);
+        return (RubyDateTime) new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen).normalizeSubMillis();
     }
 
     static long getDay(ThreadContext context, IRubyObject day, final long[] rest) {
