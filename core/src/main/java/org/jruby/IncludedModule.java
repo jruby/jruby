@@ -65,7 +65,7 @@ public class IncludedModule extends RubyClass {
 
     @Override
     protected boolean isSame(RubyModule module) {
-        return origin.isSame(module.getDelegate());
+        return origin.isSame(module.getNonIncludedClass());
     }
 
     /** The module to which this include origins. */

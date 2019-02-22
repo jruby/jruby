@@ -3311,10 +3311,10 @@ public class RubyModule extends RubyObject {
 
             // nextClass.isIncluded() && nextClass.getNonIncludedClass() == nextModule.getNonIncludedClass();
             // scan class hierarchy for module
-            for (RubyClass nextClass = methodLocation.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            for (RubyClass nextClass = getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
                 if (nextClass.isIncluded()) {
                     // does the class equal the module
-                    if (nextClass.getDelegate() == nextModule.getDelegate()) {
+                    if (nextClass.isSame(nextModule)) {
                         // next in hierarchy is an included version of the module we're attempting,
                         // so we skip including it
 
@@ -3371,10 +3371,10 @@ public class RubyModule extends RubyObject {
             boolean superclassSeen = false;
 
             // scan class hierarchy for module
-            for (RubyClass nextClass = methodLocation.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            for (RubyClass nextClass = getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
                 if (nextClass.isIncluded()) {
                     // does the class equal the module
-                    if (nextClass.getDelegate() == nextModule.getDelegate()) {
+                    if (nextClass.isSame(nextModule)) {
                         // next in hierarchy is an included version of the module we're attempting,
                         // so we skip including it
 
