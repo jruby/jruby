@@ -279,6 +279,24 @@ class TestDate < Test::Unit::TestCase
     assert_equal(123456.to_r/100_000_000, d.sec_fraction)
   end
 
+  def test_equality_details
+    d1 = DateTime.parse('2018-01-14T22:25:19.1')
+    d2 = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+
+    assert_equal false, d1 == 1
+    assert_equal false, d1 === 1
+    assert_equal false, d1 === Date.today
+    assert_equal true, d1 === d2.to_date
+    assert_equal true, d1.to_date === d2
+    assert_equal false, d1 == d2.to_date
+    assert_equal false, d1.to_date == d2
+    assert_equal false, d2 == BasicObject.new
+    assert_equal nil, d2 === BasicObject.new
+    assert_equal nil, d2 === :sym
+    assert_equal true, d2 === d1
+    assert_equal false, d2 === DateTime.now
+  end
+
   def test_new_invalid
     y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
 
