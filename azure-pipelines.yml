@@ -10,5 +10,5 @@ pool:
   vmImage: 'Ubuntu-16.04'
 
 steps:
-- script: mvn -B package -Ptest
+- script: mvn -B package -Ptest -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   displayName: -Ptest
