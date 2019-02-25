@@ -34,6 +34,8 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -61,6 +63,8 @@ public class AliasMethod extends DynamicMethod {
 
         this.entry = entry;
 
+        boolean findImplementer = true;
+
         // This logic is an attempt to reduce the number of cases that must do an implementer search,
         // since it is only needed for super calls (and possibly other features that require the caller's
         // frame class to be available).
@@ -68,17 +72,17 @@ public class AliasMethod extends DynamicMethod {
         if (entry.method instanceof AbstractIRMethod) {
             AbstractIRMethod irMethod = (AbstractIRMethod) entry.method;
 
-            // ensure the scope is ready
-            irMethod.getIRScope().getInterpreterContext();
+            // Ensure scope is ready for flags
+            irMethod.ensureInstrsReady();
 
-            if (irMethod.getIRScope().getFlags().contains(IRFlags.REQUIRES_CLASS)) {
-                findImplementer = true;
-            } else {
+            IRScope irScope = irMethod.getIRScope();
+            if (irScope instanceof IRMethod
+                    && !irScope.getFlags().contains(IRFlags.REQUIRES_CLASS)) {
                 findImplementer = false;
             }
-        } else {
-            findImplementer = true;
         }
+
+        this.findImplementer = findImplementer;
     }
 
     @Override
