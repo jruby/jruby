@@ -72,9 +72,9 @@ public class AliasMethod extends DynamicMethod {
             irMethod.getIRScope().getInterpreterContext();
 
             if (irMethod.getIRScope().getFlags().contains(IRFlags.REQUIRES_CLASS)) {
-                findImplementer = false;
-            } else {
                 findImplementer = true;
+            } else {
+                findImplementer = false;
             }
         } else {
             findImplementer = true;
