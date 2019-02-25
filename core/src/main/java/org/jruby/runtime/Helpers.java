@@ -1488,11 +1488,12 @@ public class Helpers {
                 }
                 return (RubyArray)avalue;
             } else {
-                DynamicMethod methodMissing = value.getMetaClass().searchMethod("method_missing");
+                CacheEntry entry = value.getMetaClass().searchWithCache("method_missing");
+                DynamicMethod methodMissing = entry.method;
                 if (methodMissing.isUndefined() || runtime.isDefaultMethodMissing(methodMissing)) {
                     return runtime.newArray(value);
                 } else {
-                    IRubyObject avalue = methodMissing.call(context, value, value.getMetaClass(), "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
+                    IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
                     if (!(avalue instanceof RubyArray)) {
                         if (avalue.isNil()) {
                             return runtime.newArray(value);
@@ -1612,12 +1613,13 @@ public class Helpers {
         // remove this hack too.
 
         RubyClass metaClass = value.getMetaClass();
-        DynamicMethod method = metaClass.searchMethod("to_a");
+        CacheEntry entry = metaClass.searchWithCache("to_a");
+        DynamicMethod method = entry.method;
         if (method.isUndefined() || method.isImplementedBy(runtime.getKernel())) {
             return new IRubyObject[] {value};
         }
 
-        IRubyObject avalue = method.call(runtime.getCurrentContext(), value, metaClass, "to_a");
+        IRubyObject avalue = method.call(runtime.getCurrentContext(), value, entry.sourceModule, "to_a");
         if (!(avalue instanceof RubyArray)) {
             if (avalue.isNil()) {
                 return new IRubyObject[] {value};
@@ -2290,18 +2292,20 @@ public class Helpers {
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method) {
         RubyClass metaclass = self.getMetaClass();
         String name = method.realName();
-        return getMethodCached(context, metaclass, method.ordinal(), name).call(context, self, metaclass, name);
+        CacheEntry entry = getMethodCached(context, metaclass, method.ordinal(), name);
+        return entry.method.call(context, self, entry.sourceModule, name);
     }
 
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method, IRubyObject arg0) {
         RubyClass metaclass = self.getMetaClass();
         String name = method.realName();
-        return getMethodCached(context, metaclass, method.ordinal(), name).call(context, self, metaclass, name, arg0);
+        CacheEntry entry = getMethodCached(context, metaclass, method.ordinal(), name);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0);
     }
 
-    private static DynamicMethod getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
-        if (metaclass.getClassIndex() == ClassIndex.NO_INDEX) return metaclass.searchMethod(name);
-        return context.runtimeCache.getMethod(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
+    private static CacheEntry getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
+        if (metaclass.getClassIndex() == ClassIndex.NO_INDEX) return metaclass.searchWithCache(name);
+        return context.runtimeCache.getMethodEntry(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
     }
 
     @Deprecated // not used

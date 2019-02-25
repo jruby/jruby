@@ -232,7 +232,7 @@ public class RubyMethod extends AbstractRubyMethod {
         }
 
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
-        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, method, argsDesc,
+        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
         

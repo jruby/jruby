@@ -101,7 +101,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         args[0] = ((RubyString) args[0]).strDup(context.runtime);
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, name, args, block);
+            return entry.method.call(context, self, entry.sourceModule, name, args, block);
         }
 
         entry = selfClass.searchWithCache(name);
@@ -112,7 +112,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
         cache = entry;
 
-        return entry.method.call(context, self, selfClass, name, args, block);
+        return entry.method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     private static final MethodHandle STRDUP_FILTER = Binder.from(IRubyObject.class, IRubyObject.class)

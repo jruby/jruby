@@ -5,12 +5,13 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 /**
  * Represents a method wrapped in a block (proc), as in Method#to_proc.
  */
 public class MethodBlockBody extends ContextAwareBlockBody {
-    private final DynamicMethod method;
+    private final CacheEntry entry;
     private final ArgumentDescriptor[] argsDesc;
     private final IRubyObject receiver;
     private final RubyModule originModule;
@@ -18,9 +19,11 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     private final String file;
     private final int line;
 
-    public MethodBlockBody(StaticScope staticScope, Signature signature, DynamicMethod method, ArgumentDescriptor[] argsDesc, IRubyObject receiver, RubyModule originModule, String originName, String file, int line) {
+    public MethodBlockBody(StaticScope staticScope, Signature signature, CacheEntry entry, ArgumentDescriptor[] argsDesc, IRubyObject receiver, RubyModule originModule, String originName, String file, int line) {
         super(staticScope, signature);
-        this.method = method;
+
+        // TODO: It's possible this should be dynamically dispatching every time...
+        this.entry = entry;
         this.argsDesc = argsDesc;
         this.receiver = receiver;
         this.originModule = originModule;
@@ -30,18 +33,19 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     }
 
     public static Block createMethodBlock(MethodBlockBody body) {
-        RubyModule module = body.method.getImplementationClass();
+        DynamicMethod method = body.entry.method;
+        RubyModule module = method.getImplementationClass();
         Frame frame = new Frame();
 
         frame.setKlazz(module);
-        frame.setName(body.method.getName());
+        frame.setName(method.getName());
         frame.setSelf(body.receiver);
-        frame.setVisibility(body.method.getVisibility());
+        frame.setVisibility(method.getVisibility());
 
         Binding binding = new Binding(
                 frame,
                 body.getStaticScope().getDummyScope(),
-                body.method.getName(), body.getFile(), body.getLine());
+                method.getName(), body.getFile(), body.getLine());
 
         return new Block(body, binding);
     }
@@ -50,25 +54,25 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
         args = prepareArgumentsForCall(context, args, block.type);
 
-        return method.call(context, receiver, originModule, originName, args);
+        return entry.method.call(context, receiver, entry.sourceModule, originName, args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         args = prepareArgumentsForCall(context, args, block.type);
 
-        return method.call(context, receiver, originModule, originName, args, blockArg);
+        return entry.method.call(context, receiver, entry.sourceModule, originName, args, blockArg);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         IRubyObject[] realArgs = Helpers.restructureBlockArgs(context, value, getSignature(), block.type, false);
-        return method.call(context, receiver, originModule, originName, realArgs, Block.NULL_BLOCK);
+        return entry.method.call(context, receiver, entry.sourceModule, originName, realArgs, Block.NULL_BLOCK);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        return method.call(context, receiver, originModule, originName, args, Block.NULL_BLOCK);
+        return entry.method.call(context, receiver, entry.sourceModule, originName, args, Block.NULL_BLOCK);
     }
 
     @Override

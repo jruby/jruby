@@ -614,11 +614,12 @@ public class RubyClass extends RubyModule {
         final RubyClass klass = this;
         if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
 
-        DynamicMethod method = sites.site.retrieveCache(klass).method;
+        CacheEntry entry = sites.site.retrieveCache(klass);
+        DynamicMethod method = entry.method;
         if (!checkFuncallCallable(context, method, CallType.FUNCTIONAL, self)) {
             return checkFuncallMissing(context, klass, self, sites.methodName, sites.respond_to_missing, sites.method_missing, args);
         }
-        return method.call(context, self, klass, sites.methodName, args);
+        return method.call(context, self, entry.sourceModule, sites.methodName, args);
     }
 
     // MRI: rb_check_funcall_default
@@ -626,11 +627,12 @@ public class RubyClass extends RubyModule {
         final RubyClass klass = this;
         if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
 
-        DynamicMethod method = sites.site.retrieveCache(klass).method;
+        CacheEntry entry = sites.site.retrieveCache(klass);
+        DynamicMethod method = entry.method;
         if (!checkFuncallCallable(context, method, CallType.FUNCTIONAL, self)) {
             return checkFuncallMissing(context, klass, self, sites.methodName, sites.respond_to_missing, sites.method_missing);
         }
-        return method.call(context, self, klass, sites.methodName);
+        return method.call(context, self, entry.sourceModule, sites.methodName);
     }
 
     // MRI: check_funcall_exec
@@ -658,7 +660,8 @@ public class RubyClass extends RubyModule {
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
         final Ruby runtime = context.runtime;
-        DynamicMethod me = klass.searchMethod("respond_to?");
+        CacheEntry entry = klass.searchWithCache("respond_to?");
+        DynamicMethod me = entry.method;
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
@@ -669,9 +672,9 @@ public class RubyClass extends RubyModule {
 
             IRubyObject result;
             if (arityValue == 1) {
-                result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid));
+                result = me.call(context, recv, entry.sourceModule, "respond_to?", runtime.newSymbol(mid));
             } else {
-                result = me.call(context, recv, klass, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
+                result = me.call(context, recv, entry.sourceModule, "respond_to?", runtime.newSymbol(mid), runtime.getTrue());
             }
             return result.isTrue();
         }
@@ -720,14 +723,15 @@ public class RubyClass extends RubyModule {
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
         final Ruby runtime = context.runtime;
 
-        DynamicMethod me = klass.searchMethod("respond_to_missing?");
+        CacheEntry entry = klass.searchWithCache("respond_to_missing?");
+        DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
         if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
-                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method));
+                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
             } else {
-                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
+                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
             }
             if ( ! ret.isTrue() ) return null;
         }
@@ -748,14 +752,15 @@ public class RubyClass extends RubyModule {
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, CachingCallSite respondToMissingSite, CachingCallSite methodMissingSite, IRubyObject... args) {
         final Ruby runtime = context.runtime;
 
-        DynamicMethod me = respondToMissingSite.retrieveCache(klass).method;
+        CacheEntry entry = respondToMissingSite.retrieveCache(klass);
+        DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
         if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
-                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method));
+                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
             } else {
-                ret = me.call(context, self, klass, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
+                ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method), runtime.getTrue());
             }
             if ( ! ret.isTrue() ) return null;
         }
@@ -775,38 +780,42 @@ public class RubyClass extends RubyModule {
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject[] args) {
         assert args != null;
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, args, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, args);
+        return method.call(context, self, entry.sourceModule, name, args);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg);
+        return method.call(context, self, entry.sourceModule, name, arg);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg0, arg1, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg0, arg1);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1);
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        DynamicMethod method = searchMethod(name);
+        CacheEntry entry = searchWithCache(name);
+        DynamicMethod method = entry.method;
         if (shouldCallMethodMissing(method)) {
             return Helpers.callMethodMissing(context, self, this, method.getVisibility(), name, CallType.FUNCTIONAL, arg0, arg1, arg2, Block.NULL_BLOCK);
         }
-        return method.call(context, self, this, name, arg0, arg1, arg2);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
     private void dumpReifiedClass(String dumpDir, String javaPath, byte[] classBytes) {
@@ -1846,14 +1855,14 @@ public class RubyClass extends RubyModule {
         /**
          * Construct a new MarshalTuple with the given values.
          *
-         * @param method The method to invoke, or null in the case of default
+         * @param entry The method entry to invoke, or null in the case of default
          * marshaling.
          * @param type The type of marshaling to perform, from @MarshalType
          * @param generation The generation of the associated class at the time
          * of creation.
          */
-        public MarshalTuple(DynamicMethod method, MarshalType type, int generation) {
-            this.method = method;
+        public MarshalTuple(CacheEntry entry, MarshalType type, int generation) {
+            this.entry = entry;
             this.type = type;
             this.generation = generation;
         }
@@ -1872,10 +1881,10 @@ public class RubyClass extends RubyModule {
                     stream.writeDirectly(object);
                     return;
                 case NEW_USER:
-                    stream.userNewMarshal(object, method);
+                    stream.userNewMarshal(object, entry);
                     return;
                 case OLD_USER:
-                    stream.userMarshal(object, method);
+                    stream.userMarshal(object, entry);
                     return;
                 case DEFAULT_SLOW:
                     if (object.respondsTo("marshal_dump")) {
@@ -1892,7 +1901,7 @@ public class RubyClass extends RubyModule {
         /** A "null" tuple, used as the default value for caches. */
         public static final MarshalTuple NULL_TUPLE = new MarshalTuple(null, null, 0);
         /** The method associated with this tuple. */
-        public final DynamicMethod method;
+        public final CacheEntry entry;
         /** The type of marshaling that will be performed */
         public final MarshalType type;
         /** The generation of the associated class at the time of creation */
@@ -1924,21 +1933,22 @@ public class RubyClass extends RubyModule {
         if ((tuple = cachedDumpMarshal).generation == generation) {
         } else {
             // recache
-            DynamicMethod method = searchMethod("respond_to?");
+            CacheEntry entry = searchWithCache("respond_to?");
+            DynamicMethod method = entry.method;
             if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, always do slow default marshaling
                 tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));
 
-            } else if (!(method = searchMethod("marshal_dump")).isUndefined()) {
+            } else if (!(entry = searchWithCache("marshal_dump")).method.isUndefined()) {
 
                 // object really has 'marshal_dump', cache "new" user marshaling
-                tuple = (cachedDumpMarshal = new MarshalTuple(method, MarshalType.NEW_USER, generation));
+                tuple = (cachedDumpMarshal = new MarshalTuple(entry, MarshalType.NEW_USER, generation));
 
-            } else if (!(method = searchMethod("_dump")).isUndefined()) {
+            } else if (!(entry = searchWithCache("_dump")).method.isUndefined()) {
 
                 // object really has '_dump', cache "old" user marshaling
-                tuple = (cachedDumpMarshal = new MarshalTuple(method, MarshalType.OLD_USER, generation));
+                tuple = (cachedDumpMarshal = new MarshalTuple(entry, MarshalType.OLD_USER, generation));
 
             } else {
 
@@ -1972,14 +1982,15 @@ public class RubyClass extends RubyModule {
         ThreadContext context = runtime.getCurrentContext();
         CacheEntry cache;
         if ((cache = cachedLoad).token == generation) {
-            cache.method.call(context, target, this, "marshal_load", data);
+            cache.method.call(context, target, cache.sourceModule, "marshal_load", data);
             return target;
         } else {
-            DynamicMethod method = searchMethod("respond_to?");
+            cache = searchWithCache("respond_to?");
+            DynamicMethod method = cache.method;
             if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, target, this, "respond_to?", runtime.newSymbol("marshal_load")).isTrue()) {
+                if (method.call(context, target, cache.sourceModule, "respond_to?", runtime.newSymbol("marshal_load")).isTrue()) {
                     target.callMethod(context, "marshal_load", data);
                     return target;
                 } else {
@@ -1990,7 +2001,7 @@ public class RubyClass extends RubyModule {
 
                 // real marshal_load defined, cache and call it
                 cachedLoad = cache;
-                cache.method.call(context, target, this, "marshal_load", data);
+                cache.method.call(context, target, cache.sourceModule, "marshal_load", data);
                 return target;
 
             } else {
@@ -2024,13 +2035,14 @@ public class RubyClass extends RubyModule {
         ThreadContext context = runtime.getCurrentContext();
         CacheEntry cache;
         if ((cache = getSingletonClass().cachedLoad).token == getSingletonClass().generation) {
-            return cache.method.call(context, this, getSingletonClass(), "_load", data);
+            return cache.method.call(context, this, cache.sourceModule, "_load", data);
         } else {
-            DynamicMethod method = getSingletonClass().searchMethod("respond_to?");
+            cache = getSingletonClass().searchWithCache("respond_to?");
+            DynamicMethod method = cache.method;
             if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, this, getSingletonClass(), "respond_to?", runtime.newSymbol("_load")).isTrue()) {
+                if (method.call(context, this, cache.sourceModule, "respond_to?", runtime.newSymbol("_load")).isTrue()) {
                     return callMethod(context, "_load", data);
                 } else {
                     throw runtime.newTypeError(str(runtime, "class ", types(runtime, this), " needs to have method `_load'"));
@@ -2040,7 +2052,7 @@ public class RubyClass extends RubyModule {
 
                 // real _load defined, cache and call it
                 getSingletonClass().cachedLoad = cache;
-                return cache.method.call(context, this, getSingletonClass(), "_load", data);
+                return cache.method.call(context, this, cache.sourceModule, "_load", data);
 
             } else {
 

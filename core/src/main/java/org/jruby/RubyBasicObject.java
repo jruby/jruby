@@ -587,7 +587,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public final boolean respondsTo(String name) {
         final Ruby runtime = getRuntime();
-        final DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
+        final CacheEntry entry = getMetaClass().searchWithCache("respond_to?");
+        final DynamicMethod respondTo = entry.method;
 
         // fastest path; builtin respond_to? and respond_to_missing? so we just check isMethodBound
         if ( respondTo.equals(runtime.getRespondToMethod()) &&
@@ -610,14 +611,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         final Arity arity = respondTo.getArity();
         if ( arity.isFixed() ) {
             if ( arity.required() == 1 ) {
-                return respondTo.call(context, this, metaClass, respondName, mname).isTrue();
+                return respondTo.call(context, this, entry.sourceModule, respondName, mname).isTrue();
             }
             if ( arity.required() != 2 ) {
                 throw runtime.newArgumentError(str(runtime, ids(runtime, respondName), " must accept 1 or 2 arguments (requires " + arity.getValue() + ")"));
             }
         }
 
-        return respondTo.call(context, this, metaClass, respondName, mname, runtime.getTrue()).isTrue();
+        return respondTo.call(context, this, entry.sourceModule, respondName, mname, runtime.getTrue()).isTrue();
     }
 
     /**
@@ -633,11 +634,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public final boolean respondsToMissing(String name, boolean incPrivate) {
-        DynamicMethod method = getMetaClass().searchMethod("respond_to_missing?");
+        CacheEntry entry = getMetaClass().searchWithCache("respond_to_missing?");
+        DynamicMethod method = entry.method;
         // perhaps should try a smart version as for respondsTo above?
         if ( method.isUndefined() ) return false;
         final Ruby runtime = getRuntime();
-        return method.call(runtime.getCurrentContext(), this, getMetaClass(),
+        return method.call(runtime.getCurrentContext(), this, entry.sourceModule,
             "respond_to_missing?", runtime.newSymbol(name), runtime.newBoolean(incPrivate)
         ).isTrue();
     }
