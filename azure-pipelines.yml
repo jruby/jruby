@@ -10,5 +10,5 @@ pool:
   vmImage: 'Ubuntu-16.04'
 
 steps:
-- script: mvn package -Ptest
+- script: mvn -B package -Ptest
   displayName: -Ptest
