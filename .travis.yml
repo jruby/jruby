@@ -43,66 +43,66 @@ matrix:
 
   include:
     - stage: test
-#      env: PHASE='-Prake -Dtask=test:mri:core:int'
-#    - env: PHASE='-Prake -Dtask=test:mri:core:fullint'
-#    - env: PHASE='-Prake -Dtask=test:mri:core:jit'
-#    - env: PHASE='-Prake -Dtask=test:mri:extra'
-#    - env: PHASE='-Prake -Dtask=test:mri:stdlib'
-#    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-#    - env: COMMAND=test/check_versions.sh
-#    - env: PHASE='-Ptest'
-#    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
-#    - name: sequel
-#      script: tool/sequel-travis.sh
-#      addons:
-#        postgresql: "9.6"
-#      services:
-#        - postgresql
-#    - env: PHASE='-Prake -Dtask=test:jruby'
-#    - env:
-#      - PHASE='-Prake -Dtask=test:jruby'
-#        JRUBY_OPTS=-Xcompile.invokedynamic
-#    - env: PHASE='-Prake -Dtask=test:jruby:aot'
-#    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
-#    - env: PHASE='-Prake -Dtask=test:slow_suites'
-#    - env: PHASE='-Prake -Dtask=spec:ji'
-#    - env: PHASE='-Prake -Dtask=spec:compiler'
-#    - env:
-#      - PHASE='-Prake -Dtask=spec:compiler'
-#        JRUBY_OPTS=-Xcompile.invokedynamic
-#    - env: PHASE='-Prake -Dtask=spec:ffi'
-#    - env: PHASE='-Prake -Dtask=spec:regression'
-#    - env:
-#      - PHASE='-Prake -Dtask=spec:regression'
-#      - JRUBY_OPTS=-Xjit.threshold=0
-#    - env: PHASE='-Prake -Dtask=spec:jruby'
-#    - env: PHASE='-Prake -Dtask=spec:jrubyc'
-#    - env: PHASE='-Prake -Dtask=spec:profiler'
-#    - env: PHASE='-Pdist'
-#    - env: PHASE='-Pjruby-jars'
-#    - env: PHASE='-Pmain'
-#    - env: PHASE='-Pcomplete'
-#    - env: PHASE='-Posgi'
-#    - env: PHASE='-Pj2ee'
-#    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-#    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-#    - env: PHASE='-Pmain'
-#      jdk: oraclejdk11
-#    - stage: test
-      script: echo OK
-#    - name: -Pmain openj9 jdk8
-#      env: PHASE='-Ptest'
-#      script:
-#        - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
-#        - source install-jdk.sh --url https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u202-b08_openj9-0.12.1/OpenJDK8U-jdk_x64_linux_openj9_8u202b08_openj9-0.12.1.tar.gz
-#        - tool/travis-script.sh
+      env: PHASE='-Prake -Dtask=test:mri:core:int'
+    - env: PHASE='-Prake -Dtask=test:mri:core:fullint'
+    - env: PHASE='-Prake -Dtask=test:mri:core:jit'
+    - env: PHASE='-Prake -Dtask=test:mri:extra'
+    - env: PHASE='-Prake -Dtask=test:mri:stdlib'
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+    - env: COMMAND=test/check_versions.sh
+    - env: PHASE='-Ptest'
+    - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+    - name: sequel
+      script: tool/sequel-travis.sh
+      addons:
+        postgresql: "9.6"
+      services:
+        - postgresql
+    - env: PHASE='-Prake -Dtask=test:jruby'
+    - env:
+      - PHASE='-Prake -Dtask=test:jruby'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=test:jruby:aot'
+    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
+    - env: PHASE='-Prake -Dtask=test:slow_suites'
+    - env: PHASE='-Prake -Dtask=spec:ji'
+    - env: PHASE='-Prake -Dtask=spec:compiler'
+    - env:
+      - PHASE='-Prake -Dtask=spec:compiler'
+        JRUBY_OPTS=-Xcompile.invokedynamic
+    - env: PHASE='-Prake -Dtask=spec:ffi'
+    - env: PHASE='-Prake -Dtask=spec:regression'
+    - env:
+      - PHASE='-Prake -Dtask=spec:regression'
+      - JRUBY_OPTS=-Xjit.threshold=0
+    - env: PHASE='-Prake -Dtask=spec:jruby'
+    - env: PHASE='-Prake -Dtask=spec:jrubyc'
+    - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Pdist'
+    - env: PHASE='-Pjruby-jars'
+    - env: PHASE='-Pmain'
+    - env: PHASE='-Pcomplete'
+    - env: PHASE='-Posgi'
+    - env: PHASE='-Pj2ee'
+    - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+    - env: PHASE='-Pmain'
+      jdk: oraclejdk11
+    - env: PHASE='-Pcomplete'
+      jdk: oraclejdk11
+    - name: -Pmain openj9 jdk8
+      env: PHASE='-Ptest'
+      script:
+        - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+        - source install-jdk.sh --url https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u202-b08_openj9-0.12.1/OpenJDK8U-jdk_x64_linux_openj9_8u202b08_openj9-0.12.1.tar.gz
+        - tool/travis-script.sh
+
     - stage: deploy
       name: deploy snapshots
-      jdk: oraclejdk8
       script:
         - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
         - ./mvnw clean deploy -Prelease
-      if: branch IN (master, jruby-9.1, push_snapshots)
+      if: branch IN (master, jruby-9.1)
 
   allow_failures:
     - env: COMMAND=test/check_versions.sh
