@@ -89,8 +89,7 @@ matrix:
 #    - env: PHASE='-Pmain'
 #      jdk: oraclejdk11
 #    - stage: test
-      env: PHASE='-Pcomplete'
-      jdk: oraclejdk11
+      env: PHASE='-Pmain'
 #    - name: -Pmain openj9 jdk8
 #      env: PHASE='-Ptest'
 #      script:
