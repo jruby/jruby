@@ -169,7 +169,7 @@ public class AliasMethod extends DynamicMethod {
         if (entry.method.definedClass != null) return definedClass;
 
         if (findImplementer) {
-            return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.implementationClass);
+            return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());
         } else {
             return incomingSourceModule;
         }
