@@ -1026,16 +1026,17 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
                     " (expected Module).");
         }
-        if (((RubyModule) arg).refinedClass != null) {
-            throw getRuntime().newArgumentError("refinement module is not allowed");
-        }
 
         RubyModule module = (RubyModule) arg;
+
+        if (module.refinedClass != null) {
+            throw getRuntime().newArgumentError("refinement module is not allowed");
+        }
 
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
 
-        if (hasModuleInHierarchy((RubyModule) arg)) {
+        if (hasModuleInPrepends(module)) {
             invalidateCacheDescendants();
             return;
         }
@@ -1063,19 +1064,15 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
                     " (expected Module).");
         }
-        if (((RubyModule) arg).refinedClass != null) {
-            throw getRuntime().newArgumentError("refinement module is not allowed");
-        }
 
         RubyModule module = (RubyModule) arg;
 
+        if (module.refinedClass != null) {
+            throw getRuntime().newArgumentError("refinement module is not allowed");
+        }
+
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
-
-        if (hasModuleInPrepends(((RubyModule)arg).getNonIncludedClass())) {
-            invalidateCacheDescendants();
-            return;
-        }
 
         infectBy(module);
 
@@ -2497,10 +2494,16 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean hasModuleInPrepends(RubyModule type) {
-        for (RubyModule module = this; module != methodLocation; module = module.getSuperClass()) {
+        RubyModule stopClass = getPrependCeiling();
+        for (RubyModule module = this; module != stopClass; module = module.getSuperClass()) {
             if (type == module.getNonIncludedClass()) return true;
         }
         return false;
+    }
+
+    private RubyModule getPrependCeiling() {
+        RubyClass mlSuper = methodLocation.getSuperClass();
+        return mlSuper == null ? methodLocation : mlSuper.getRealClass();
     }
 
     public boolean hasModuleInHierarchy(RubyModule type) {
@@ -3394,8 +3397,9 @@ public class RubyModule extends RubyObject {
 
             boolean superclassSeen = false;
 
-            // scan class hierarchy for module
-            for (RubyClass nextClass = getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            // scan prepend section of hierarchy for module, from superClass to the next concrete superClass
+            RubyModule stopClass = getPrependCeiling();
+            for (RubyClass nextClass = getSuperClass(); nextClass != stopClass; nextClass = nextClass.getSuperClass()) {
                 if (nextClass.isIncluded()) {
                     // does the class equal the module
                     if (nextClass.getDelegate() == nextModule.getDelegate()) {
