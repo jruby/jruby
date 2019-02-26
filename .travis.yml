@@ -98,6 +98,7 @@ matrix:
 #        - tool/travis-script.sh
     - stage: deploy
       name: deploy snapshots
+      jdk: oraclejdk8
       script:
         - ./mvnw clean deploy -Prelease
 
