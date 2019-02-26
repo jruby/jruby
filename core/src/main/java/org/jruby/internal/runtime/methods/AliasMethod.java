@@ -68,7 +68,7 @@ public class AliasMethod extends DynamicMethod {
         // This logic is an attempt to reduce the number of cases that must do an implementer search,
         // since it is only needed for super calls (and possibly other features that require the caller's
         // frame class to be available).
-        // TODO: general support for DynamicMethod.needsClass etc, so we can easily make this deterimnation.
+        // TODO: general support for DynamicMethod.needsClass etc, so we can easily make this determination.
         if (entry.method instanceof AbstractIRMethod) {
             AbstractIRMethod irMethod = (AbstractIRMethod) entry.method;
 
