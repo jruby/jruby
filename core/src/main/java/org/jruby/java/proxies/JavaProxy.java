@@ -42,6 +42,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
@@ -453,10 +454,26 @@ public class JavaProxy extends RubyObject {
 
     private RubyMethod getRubyMethod(ThreadContext context, String name, Class... argTypes) {
         Method jmethod = getMethod(context, name, argTypes);
+        RubyClass sourceModule;
+
         if (Modifier.isStatic(jmethod.getModifiers())) {
-            return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes).toString(), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
+            sourceModule = metaClass.getSingletonClass();
+            return RubyMethod.newMethod(
+                    sourceModule,
+                    CodegenUtils.prettyParams(argTypes).toString(),
+                    sourceModule,
+                    name,
+                    new CacheEntry(getMethodInvoker(jmethod), sourceModule, metaClass.getGeneration()),
+                    getMetaClass());
         } else {
-            return RubyMethod.newMethod(metaClass, CodegenUtils.prettyParams(argTypes).toString(), metaClass, name, getMethodInvoker(jmethod), this);
+            sourceModule = metaClass;
+            return RubyMethod.newMethod(
+                    sourceModule,
+                    CodegenUtils.prettyParams(argTypes).toString(),
+                    sourceModule,
+                    name,
+                    new CacheEntry(getMethodInvoker(jmethod), sourceModule, metaClass.getGeneration()),
+                    this);
         }
     }
 
@@ -647,11 +664,11 @@ public class JavaProxy extends RubyObject {
 
             if ( Modifier.isStatic( method.getModifiers() ) ) {
                 MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method, name);
-                return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, invoker, clazz);
+                return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, new CacheEntry(invoker, proxyClass, proxyClass.getGeneration()), clazz);
             }
 
             MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method, name);
-            return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, invoker);
+            return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, new CacheEntry(invoker, proxyClass, proxyClass.getGeneration()));
         }
 
         private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,

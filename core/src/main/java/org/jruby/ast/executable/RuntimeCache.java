@@ -408,25 +408,32 @@ public class RuntimeCache {
     }
 
     public DynamicMethod getMethod(ThreadContext context, RubyClass selfType, int index, String methodName) {
-        CacheEntry myCache = getCacheEntry(index);
-        if (myCache.typeOk(selfType)) {
-            return myCache.method;
-        }
-        return cacheAndGet(context, selfType, index, methodName);
+        return getMethodEntry(context, selfType, index, methodName).method;
     }
 
     public DynamicMethod getMethod(ThreadContext context, IRubyObject self, int index, String methodName) {
         return getMethod(context, pollAndGetClass(context, self), index, methodName);
     }
 
-    private DynamicMethod cacheAndGet(ThreadContext context, RubyClass selfType, int index, String methodName) {
+    public CacheEntry getMethodEntry(ThreadContext context, RubyClass selfType, int index, String methodName) {
+        CacheEntry myCache = getCacheEntry(index);
+        if (myCache.typeOk(selfType)) {
+            return myCache;
+        }
+        return cacheAndGet(context, selfType, index, methodName);
+    }
+
+    private CacheEntry cacheAndGet(ThreadContext context, RubyClass selfType, int index, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (method.isUndefined()) {
-            return Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, CallType.FUNCTIONAL);
+            return new CacheEntry(
+                    Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, CallType.FUNCTIONAL),
+                    selfType.getMetaClass(),
+                    entry.token);
         }
         methodCache[index] = entry;
-        return method;
+        return entry;
     }
 
     private DynamicMethod searchWithCacheNoMethodMissing(RubyClass clazz, int index, String name1) {

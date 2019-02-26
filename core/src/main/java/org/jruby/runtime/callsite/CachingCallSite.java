@@ -69,7 +69,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, args);
+            return cache.method.call(context, self, cache.sourceModule, methodName, args);
         }
         return cacheAndCall(caller, selfType, args, context, self);
     }
@@ -79,7 +79,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, args, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         }
         return cacheAndCall(caller, selfType, block, args, context, self);
     }
@@ -136,7 +136,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName);
+            return cache.method.call(context, self, cache.sourceModule, methodName);
         }
         return cacheAndCall(caller, selfType, context, self);
     }
@@ -146,7 +146,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, block);
         }
         return cacheAndCall(caller, selfType, block, context, self);
     }
@@ -167,7 +167,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         }
         return cacheAndCall(caller, selfType, context, self, arg1);
     }
@@ -177,7 +177,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1);
     }
@@ -198,7 +198,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         }
         return cacheAndCall(caller, selfType, context, self, arg1, arg2);
     }
@@ -208,7 +208,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
     }
@@ -229,7 +229,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         }
         return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
     }
@@ -239,7 +239,7 @@ public abstract class CachingCallSite extends CallSite {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
     }
@@ -300,7 +300,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, args, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, args, block);
+        return method.call(context, self, entry.sourceModule, methodName, args, block);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
@@ -311,7 +311,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, args);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, args);
+        return method.call(context, self, entry.sourceModule, methodName, args);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
@@ -322,7 +322,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName);
+        return method.call(context, self, entry.sourceModule, methodName);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
@@ -333,7 +333,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, block);
+        return method.call(context, self, entry.sourceModule, methodName, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
@@ -343,7 +343,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, arg);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg);
+        return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
@@ -354,7 +354,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, arg, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg, block);
+        return method.call(context, self, entry.sourceModule, methodName, arg, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
@@ -364,7 +364,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2);
+        return method.call(context, self, entry.sourceModule, methodName, arg1, arg2);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
@@ -375,7 +375,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2, block);
+        return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, block);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
@@ -387,7 +387,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+        return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3);
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
@@ -399,7 +399,7 @@ public abstract class CachingCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3, block);
         }
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+        return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3, block);
     }
 
     protected final IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass selfType,

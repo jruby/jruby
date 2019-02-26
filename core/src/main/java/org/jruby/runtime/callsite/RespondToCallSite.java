@@ -112,14 +112,14 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
-        CacheEntry entry = selfType.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
+        final CacheEntry entry = selfType.searchWithCache(methodName);
+        final DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method.isBuiltin()) {
+        if (method.isBuiltin()) {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
 
@@ -133,19 +133,19 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
         // normal logic if it's not the builtin respond_to? method
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg);
+        return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        CacheEntry entry = selfType.searchWithCache(methodName);
-        DynamicMethod method = entry.method;
+        final CacheEntry entry = selfType.searchWithCache(methodName);
+        final DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1);
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method.equals(context.runtime.getRespondToMethod())) {
+        if (method.equals(context.runtime.getRespondToMethod())) {
             String name = arg0.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
 
@@ -159,7 +159,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
         // normal logic if it's not the builtin respond_to? method
         cache = entry;
-        return method.call(context, self, selfType, methodName, arg0, arg1);
+        return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
     }
 
     private static RespondToTuple recacheRespondsTo(CacheEntry respondToMethod, String newString, RubyClass klass, boolean checkVisibility, ThreadContext context) {

@@ -264,7 +264,9 @@ public class RubyModule extends RubyObject {
     public static class KindOf {
         public static final KindOf DEFAULT_KIND_OF = new KindOf();
         public boolean isKindOf(IRubyObject obj, RubyModule type) {
-            return obj.getMetaClass().hasModuleInHierarchy(type);
+            RubyModule cl = obj.getMetaClass();
+
+            return cl.searchAncestor(type.getMethodLocation()) != null;
         }
     }
 
@@ -856,20 +858,19 @@ public class RubyModule extends RubyObject {
     }
 
     // mri: using_module_recursive
-    private static void usingModuleRecursive(RubyModule cref, RubyModule klass) {
+    private static void usingModuleRecursive(RubyModule cref, RubyModule module) {
         Ruby runtime = cref.getRuntime();
-        RubyClass superClass = klass.getSuperClass();
+        RubyClass superClass = module.getSuperClass();
 
         // For each superClass of the refined module also use their refinements for the given cref
         if (superClass != null) usingModuleRecursive(cref, superClass);
 
-        RubyModule module;
-        if (klass instanceof IncludedModule) {
-            module = klass.getDelegate();
-        } else if (klass.isModule()) {
-            module = klass;
+        if (module instanceof IncludedModule) {
+            module = module.getDelegate();
+        } else if (module.isModule()) {
+            // ok as is
         } else {
-            throw runtime.newTypeError("wrong argument type " + klass.getName() + " (expected Module)");
+            throw runtime.newTypeError("wrong argument type " + module.getName() + " (expected Module)");
         }
 
         Map<RubyModule, RubyModule> refinements = module.refinements;
@@ -1025,16 +1026,17 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
                     " (expected Module).");
         }
-        if (((RubyModule) arg).refinedClass != null) {
-            throw getRuntime().newArgumentError("refinement module is not allowed");
-        }
 
         RubyModule module = (RubyModule) arg;
+
+        if (module.refinedClass != null) {
+            throw getRuntime().newArgumentError("refinement module is not allowed");
+        }
 
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
 
-        if (hasModuleInHierarchy((RubyModule) arg)) {
+        if (hasModuleInPrepends(module)) {
             invalidateCacheDescendants();
             return;
         }
@@ -1062,19 +1064,15 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
                     " (expected Module).");
         }
-        if (((RubyModule) arg).refinedClass != null) {
-            throw getRuntime().newArgumentError("refinement module is not allowed");
-        }
 
         RubyModule module = (RubyModule) arg;
 
+        if (module.refinedClass != null) {
+            throw getRuntime().newArgumentError("refinement module is not allowed");
+        }
+
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
-
-        if (hasModuleInPrepends(((RubyModule)arg).getNonIncludedClass())) {
-            invalidateCacheDescendants();
-            return;
-        }
 
         infectBy(module);
 
@@ -1478,20 +1476,8 @@ public class RubyModule extends RubyObject {
      * @param refinedScope the scope containing refinements to search
      * @return the method or UndefinedMethod
      */
-    public DynamicMethod searchWithRefinements(String name, StaticScope refinedScope) {
-        CacheEntry entry = searchWithCacheAndRefinements(name, true, refinedScope);
-
-        DynamicMethod method = entry.method;
-
-        if (method instanceof CacheableMethod) {
-            method = ((CacheableMethod) method).getMethodForCaching();
-        }
-
-        if (method != null) {
-            return method;
-        }
-
-        return UndefinedMethod.INSTANCE;
+    public CacheEntry searchWithRefinements(String name, StaticScope refinedScope) {
+        return searchWithCacheAndRefinements(name, true, refinedScope);
     }
 
     /**
@@ -1548,7 +1534,7 @@ public class RubyModule extends RubyObject {
             }
         } else if (entry.method instanceof RefinedWrapper){
             // original without refined flag
-            return new CacheEntry(((RefinedWrapper) entry.method).getWrapped(), entry.token);
+            return cacheEntryFactory.newCacheEntry(id, ((RefinedWrapper) entry.method).getWrapped(), entry.sourceModule, entry.token);
         }
 
         return entry;
@@ -1569,24 +1555,18 @@ public class RubyModule extends RubyObject {
         // update with an earlier serial number, which would just flush anyway
         final int token = generation;
 
-        DynamicMethod method = searchMethodInner(id);
+        CacheEntry methodEntry = searchMethodEntryInner(id);
 
-        if (method instanceof CacheableMethod) {
-            method = ((CacheableMethod) method).getMethodForCaching();
+        if (methodEntry == null) {
+            if (cacheUndef) {
+                return addToCache(id, UndefinedMethod.getInstance(), this, token);
+            }
+            return cacheEntryFactory.newCacheEntry(id, UndefinedMethod.getInstance(), methodEntry.sourceModule, token);
+        } else if (!runtime.isBooting()) {
+            addToCache(id, methodEntry);
         }
 
-        boolean cache;
-
-        if (method == null) {
-            method = UndefinedMethod.getInstance();
-            cache = cacheUndef;
-        } else if (runtime.isBooting()) {
-            cache = false;
-        } else {
-            cache = true;
-        }
-
-        return cache ? addToCache(id, method, token) : cacheEntryFactory.newCacheEntry(id, method, token);
+        return methodEntry;
     }
 
     @Deprecated
@@ -1640,7 +1620,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected static abstract class CacheEntryFactory {
-        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, int token);
+        public abstract CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token);
 
         /**
          * Test all WrapperCacheEntryFactory instances in the chain for assignability
@@ -1686,8 +1666,8 @@ public class RubyModule extends RubyObject {
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
         @Override
-        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
-            return new CacheEntry(method, token);
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token) {
+            return new CacheEntry(method, sourceModule, token);
         }
     };
 
@@ -1696,13 +1676,13 @@ public class RubyModule extends RubyObject {
             super(previous);
         }
         @Override
-        public CacheEntry newCacheEntry(String id,DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
             }
             // delegate up the chain
-            CacheEntry delegated = previous.newCacheEntry(id, method, token);
-            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, sourceModule, token);
+            return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.sourceModule, delegated.token);
         }
     }
 
@@ -1720,13 +1700,13 @@ public class RubyModule extends RubyObject {
         }
 
         @Override
-        public CacheEntry newCacheEntry(String id, DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String id, DynamicMethod method, RubyModule sourceModule, int token) {
             if (method.isUndefined()) return new CacheEntry(method, token);
 
-            CacheEntry delegated = previous.newCacheEntry(id, method, token);
+            CacheEntry delegated = previous.newCacheEntry(id, method, sourceModule, token);
             DynamicMethod enhancedMethod = getMethodEnhancer().enhance(id, delegated.method);
 
-            return new CacheEntry(enhancedMethod, delegated.token);
+            return new CacheEntry(enhancedMethod, delegated.sourceModule, delegated.token);
         }
     }
 
@@ -1741,9 +1721,15 @@ public class RubyModule extends RubyObject {
         return cacheEntryFactory.hasCacheEntryFactory(SynchronizedCacheEntryFactory.class);
     }
 
-    protected CacheEntry addToCache(String id, DynamicMethod method, int token) {
-        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, token);
+    protected CacheEntry addToCache(String id, DynamicMethod method, RubyModule sourceModule, int token) {
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, sourceModule, token);
 
+        methodLocation.getCachedMethodsForWrite().put(id, entry);
+
+        return entry;
+    }
+
+    protected CacheEntry addToCache(String id, CacheEntry entry) {
         methodLocation.getCachedMethodsForWrite().put(id, entry);
 
         return entry;
@@ -1759,6 +1745,20 @@ public class RubyModule extends RubyObject {
             // IncludedModuleWrapper.
             DynamicMethod method = module.searchMethodCommon(id);
             if (method != null) return method.isNull() ? null : method;
+        }
+        return null;
+    }
+
+    public CacheEntry searchMethodEntryInner(String id) {
+        int token = generation;
+        // This flattens some of the recursion that would be otherwise be necessary.
+        // Used to recurse up the class hierarchy which got messy with prepend.
+        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            // Only recurs if module is an IncludedModuleWrapper.
+            // This way only the recursion needs to be handled differently on
+            // IncludedModuleWrapper.
+            DynamicMethod method = module.searchMethodCommon(id);
+            if (method != null) return method.isNull() ? null : cacheEntryFactory.newCacheEntry(id, method, module, token);
         }
         return null;
     }
@@ -1907,17 +1907,36 @@ public class RubyModule extends RubyObject {
 
     /**
      * @note Internal API - only public as its used by generated code!
+     * @note Used by AnnotationBinder.
+     * @note Not safe for target methods that super, since the frame class will not reflect original source.
      * @param id
      * @param method
      * @param oldName
-     */ // NOTE: used by AnnotationBinder
+     */
     public void putAlias(String id, DynamicMethod method, String oldName) {
         if (id.equals(oldName)) return;
 
-        putMethod(getRuntime(), id, new AliasMethod(this, method, oldName));
+        putMethod(getRuntime(), id, new AliasMethod(this, new CacheEntry(method, method.getImplementationClass(), generation), oldName));
 
         if (isRefinement()) {
             addRefinedMethodEntry(id, method);
+        }
+    }
+
+    /**
+     * Alias the method contained in the given CacheEntry as a new entry in this module.
+     *
+     * @param id
+     * @param entry
+     * @param oldName
+     */
+    public void putAlias(String id, CacheEntry entry, String oldName) {
+        if (id.equals(oldName)) return;
+
+        putMethod(getRuntime(), id, new AliasMethod(this, entry, oldName));
+
+        if (isRefinement()) {
+            addRefinedMethodEntry(id, entry.method);
         }
     }
 
@@ -1925,18 +1944,19 @@ public class RubyModule extends RubyObject {
         testFrozen("module");
 
         Ruby runtime = getRuntime();
-        DynamicMethod method = searchForAliasMethod(runtime, oldId);
+        CacheEntry entry = searchForAliasMethod(runtime, oldId);
 
         for (String name: aliases) {
-            putAlias(name, method, oldId);
+            putAlias(name, entry, oldId);
         }
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
     }
 
-    private DynamicMethod searchForAliasMethod(Ruby runtime, String id) {
-        DynamicMethod method = deepMethodSearch(id, runtime);
+    private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
+        CacheEntry entry = deepMethodSearch(id, runtime);
+        final DynamicMethod method = entry.method;
 
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
@@ -1947,12 +1967,12 @@ public class RubyModule extends RubyObject {
             DynamicMethod.NativeCall nativeCall = ((NativeCallMethod) method).getNativeCall();
 
             // native-backed but not a direct call, ok
-            if (nativeCall == null) return method;
+            if (nativeCall == null) return entry;
 
             Method javaMethod = nativeCall.getMethod();
             JRubyMethod anno = javaMethod.getAnnotation(JRubyMethod.class);
 
-            if (anno == null) return method;
+            if (anno == null) return entry;
 
             if (anno.reads().length > 0 || anno.writes().length > 0) {
 
@@ -1977,7 +1997,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return method;
+        return entry;
     }
 
     /** this method should be used only by interpreter or compiler
@@ -2117,7 +2137,8 @@ public class RubyModule extends RubyObject {
     public void exportMethod(String name, Visibility visibility) {
         Ruby runtime = getRuntime();
 
-        DynamicMethod method = deepMethodSearch(name, runtime);
+        CacheEntry entry = deepMethodSearch(name, runtime);
+        DynamicMethod method = entry.method;
 
         if (method.getVisibility() != visibility) {
             if (this == method.getImplementationClass()) {
@@ -2133,7 +2154,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private DynamicMethod deepMethodSearch(String id, Ruby runtime) {
+    private CacheEntry deepMethodSearch(String id, Ruby runtime) {
         CacheEntry orig = searchWithCache(id);
         if (orig.method.isRefined()) {
             orig = resolveRefinedMethod(null, orig, id, true);
@@ -2147,7 +2168,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return orig.method;
+        return orig;
     }
 
     public static String undefinedMethodMessage(Ruby runtime, IRubyObject name, IRubyObject modName, boolean isModule) {
@@ -2211,12 +2232,15 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        DynamicMethod method = searchMethod(methodName);
+        CacheEntry entry = searchWithCache(methodName);
 
-        if (method.isUndefined() || (visibility != null && method.getVisibility() != visibility)) {
+        if (entry.method.isUndefined() || (visibility != null && entry.method.getVisibility() != visibility)) {
             if (respondToMissing) { // 1.9 behavior
                 if (receiver.respondsToMissing(methodName, priv)) {
-                    method = new RespondToMissingMethod(this, PUBLIC, methodName);
+                    entry = new CacheEntry(
+                            new RespondToMissingMethod(this, PUBLIC, methodName),
+                            entry.sourceModule,
+                            entry.token);
                 } else {
                     throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
                 }
@@ -2225,7 +2249,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        RubyModule implementationModule = method.getDefinedClass();
+        RubyModule implementationModule = entry.method.getDefinedClass();
         RubyModule originModule = this;
         while (originModule != implementationModule && (originModule.isSingleton() || originModule.isIncluded())) {
             originModule = originModule.getSuperClass();
@@ -2233,9 +2257,9 @@ public class RubyModule extends RubyObject {
 
         AbstractRubyMethod newMethod;
         if (bound) {
-            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, method, receiver);
+            newMethod = RubyMethod.newMethod(implementationModule, methodName, originModule, methodName, entry, receiver);
         } else {
-            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, method);
+            newMethod = RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, methodName, entry);
         }
         newMethod.infectBy(this);
 
@@ -2470,10 +2494,16 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean hasModuleInPrepends(RubyModule type) {
-        for (RubyModule module = this; module != methodLocation; module = module.getSuperClass()) {
+        RubyModule stopClass = getPrependCeiling();
+        for (RubyModule module = this; module != stopClass; module = module.getSuperClass()) {
             if (type == module.getNonIncludedClass()) return true;
         }
         return false;
+    }
+
+    private RubyModule getPrependCeiling() {
+        RubyClass mlSuper = methodLocation.getSuperClass();
+        return mlSuper == null ? methodLocation : mlSuper.getRealClass();
     }
 
     public boolean hasModuleInHierarchy(RubyModule type) {
@@ -2579,26 +2609,48 @@ public class RubyModule extends RubyObject {
         return super.freeze(context);
     }
 
-    /** rb_mod_le
-    *
+    /**
+    * MRI: rb_class_inherited_p
     */
     @JRubyMethod(name = "<=", required = 1)
-   public IRubyObject op_le(IRubyObject obj) {
-        if (!(obj instanceof RubyModule)) {
-            throw getRuntime().newTypeError("compared with non class/module");
+    public IRubyObject op_le(IRubyObject arg) {
+        Ruby runtime = getRuntime();
+
+        if (!(arg instanceof RubyModule)) {
+            throw runtime.newTypeError("compared with non class/module");
         }
 
-        if (isKindOfModule((RubyModule) obj)) return getRuntime().getTrue();
-        if (((RubyModule) obj).isKindOfModule(this)) return getRuntime().getFalse();
+        RubyModule argMod = (RubyModule) arg;
 
-        return getRuntime().getNil();
+        if (searchAncestor(argMod.getMethodLocation()) != null) {
+            return runtime.getTrue();
+        }
+
+        /* not mod < arg; check if mod > arg */
+        if (argMod.searchAncestor(this) != null) {
+            return runtime.getFalse();
+        }
+
+        return runtime.getNil();
+    }
+
+    // MRI: class_search_ancestor
+    protected RubyModule searchAncestor(RubyModule c) {
+        RubyModule cl = this;
+        while (cl != null) {
+            if (cl == c || cl.isSame(c) || cl.getNonIncludedClass() == c) {
+                return cl;
+            }
+            cl = cl.getSuperClass();
+        }
+        return null;
     }
 
     /** rb_mod_lt
     *
     */
     @JRubyMethod(name = "<", required = 1)
-   public IRubyObject op_lt(IRubyObject obj) {
+    public IRubyObject op_lt(IRubyObject obj) {
         return obj == this ? getRuntime().getFalse() : op_le(obj);
     }
 
@@ -2606,7 +2658,7 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = ">=", required = 1)
-   public IRubyObject op_ge(IRubyObject obj) {
+    public IRubyObject op_ge(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
             throw getRuntime().newTypeError("compared with non class/module");
         }
@@ -2618,7 +2670,7 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = ">", required = 1)
-   public IRubyObject op_gt(IRubyObject obj) {
+    public IRubyObject op_gt(IRubyObject obj) {
         return this == obj ? getRuntime().getFalse() : op_ge(obj);
     }
 
@@ -3087,8 +3139,7 @@ public class RubyModule extends RubyObject {
 
             for (int i = 0; i < args.length; i++) {
                 RubySymbol name = TypeConverter.checkID(args[i]);
-                DynamicMethod method = deepMethodSearch(name.idString(), runtime);
-                DynamicMethod newMethod = method.dup();
+                DynamicMethod newMethod = deepMethodSearch(name.idString(), runtime).method.dup();
                 newMethod.setImplementationClass(getSingletonClass());
                 newMethod.setVisibility(PUBLIC);
                 getSingletonClass().addMethod(name.idString(), newMethod);
@@ -3287,7 +3338,7 @@ public class RubyModule extends RubyObject {
 
             // nextClass.isIncluded() && nextClass.getNonIncludedClass() == nextModule.getNonIncludedClass();
             // scan class hierarchy for module
-            for (RubyClass nextClass = methodLocation.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            for (RubyClass nextClass = getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
                 if (nextClass.isIncluded()) {
                     // does the class equal the module
                     if (nextClass.getDelegate() == nextModule.getDelegate()) {
@@ -3323,7 +3374,7 @@ public class RubyModule extends RubyObject {
             // In the current logic, if we getService here we know that module is not an
             // IncludedModule, so there's no need to fish out the delegate. But just
             // in case the logic should change later, let's do it anyway
-            RubyClass prep = new PrependedModule(getRuntime(), getSuperClass(), this);
+            RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
 
             // if the insertion point is a class, update subclass lists
             if (this instanceof RubyClass) {
@@ -3332,12 +3383,12 @@ public class RubyModule extends RubyObject {
                 // if there's a non-null superclass, we're including into a normal class hierarchy;
                 // update subclass relationships to avoid stale parent/child relationships
                 if (insertBelowClass.getSuperClass() != null) {
-                    insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, prep);
+                    insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, origin);
                 }
 
-                prep.addSubclass(insertBelowClass);
+                origin.addSubclass(insertBelowClass);
             }
-            setSuperClass(prep);
+            setSuperClass(origin);
         }
 
         RubyModule currentInclusionPoint = this;
@@ -3346,8 +3397,9 @@ public class RubyModule extends RubyObject {
 
             boolean superclassSeen = false;
 
-            // scan class hierarchy for module
-            for (RubyClass nextClass = methodLocation.getSuperClass(); nextClass != null; nextClass = nextClass.getSuperClass()) {
+            // scan prepend section of hierarchy for module, from superClass to the next concrete superClass
+            RubyModule stopClass = getPrependCeiling();
+            for (RubyClass nextClass = getSuperClass(); nextClass != stopClass; nextClass = nextClass.getSuperClass()) {
                 if (nextClass.isIncluded()) {
                     // does the class equal the module
                     if (nextClass.getDelegate() == nextModule.getDelegate()) {
@@ -3379,9 +3431,11 @@ public class RubyModule extends RubyObject {
     private List<RubyModule> gatherModules(RubyModule baseModule) {
         // build a list of all modules to consider for inclusion
         List<RubyModule> modulesToInclude = new ArrayList<RubyModule>();
-        while (baseModule != null) {
+        for (; baseModule != null; baseModule = baseModule.superClass) {
+            // skip prepended roots
+            if (baseModule != baseModule.getMethodLocation()) continue;
+
             modulesToInclude.add(baseModule.getDelegate());
-            baseModule = baseModule.getSuperClass();
         }
 
         return modulesToInclude;
@@ -5065,7 +5119,7 @@ public class RubyModule extends RubyObject {
      * @return
      */
     public boolean isMethodBuiltin(String methodName) {
-        DynamicMethod method = searchMethodInner(methodName);
+        DynamicMethod method = searchMethod(methodName);
 
         return method != null && method.isBuiltin();
     }

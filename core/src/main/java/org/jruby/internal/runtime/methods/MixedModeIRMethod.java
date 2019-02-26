@@ -87,9 +87,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, args, block);
+            return jittedMethod.call(context, self, clazz, name, args, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, args, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -120,9 +120,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, block);
+            return jittedMethod.call(context, self, clazz, name, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -153,9 +153,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, arg0, block);
+            return jittedMethod.call(context, self, clazz, name, arg0, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -186,9 +186,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, arg0, arg1, block);
+            return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -218,9 +218,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, arg0, arg1, arg2, block);
+            return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, arg2, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,

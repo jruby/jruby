@@ -79,6 +79,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -1942,13 +1943,14 @@ public class RubyKernel {
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
 
         final RubyClass klass = RubyBasicObject.getMetaClass(recv);
-        DynamicMethod method = klass.searchMethod(name);
+        CacheEntry entry = klass.searchWithCache(name);
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined() || method.getVisibility() != PUBLIC) {
             return Helpers.callMethodMissing(context, recv, klass, method.getVisibility(), name, CallType.NORMAL, args, block);
         }
 
-        return method.call(context, recv, klass, name, args, block);
+        return method.call(context, recv, entry.sourceModule, name, args, block);
     }
 
     /*

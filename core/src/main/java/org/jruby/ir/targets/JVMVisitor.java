@@ -1420,6 +1420,7 @@ public class JVMVisitor extends IRVisitor {
         m.loadSelf(); // TODO: get rid of caller
         m.loadSelf();
         if (definingModule == UndefinedValue.UNDEFINED) {
+            // Not used in eventual call
             jvmAdapter().aconst_null();
         } else {
             visit(definingModule);
