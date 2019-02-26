@@ -100,7 +100,9 @@ matrix:
       name: deploy snapshots
       jdk: oraclejdk8
       script:
+        - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
         - ./mvnw clean deploy -Prelease
+      if: branch IN (master, jruby-9.1, push_snapshots)
 
   allow_failures:
     - env: COMMAND=test/check_versions.sh
