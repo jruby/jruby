@@ -73,7 +73,7 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:modulator:1.0'
+  jar 'com.headius:modulator:1.1'
   jar 'com.headius:backport9:1.1'
 
   plugin_management do

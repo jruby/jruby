@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.headius.modulator.Modulator;
+import com.headius.modulator.Module;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -437,11 +439,28 @@ public class JavaProxy extends RubyObject {
     }
 
     private Method getMethod(ThreadContext context, String name, Class... argTypes) {
+        Class<?> originalClass = getObject().getClass();
+
         try {
-            return getObject().getClass().getMethod(name, argTypes);
+            for (Class<?> clazz = originalClass; clazz != null; clazz = clazz.getSuperclass()) {
+                if (!Modifier.isPublic(clazz.getModifiers())) continue;
+
+                Module module = Modulator.getModule(clazz);
+                Package pkg = clazz.getPackage();
+
+                if (!module.isExported(pkg.getName())) continue;
+
+                Method method = clazz.getMethod(name, argTypes);
+
+                if (!Modifier.isPublic(method.getModifiers())) continue;
+
+                return method;
+            }
         } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(context.runtime, getObject().getClass(), name + CodegenUtils.prettyParams(argTypes), name);
+            throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
         }
+
+        throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
     }
 
     private MethodInvoker getMethodInvoker(Method method) {
