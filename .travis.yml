@@ -108,13 +108,17 @@ matrix:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Posgi'
     - env: PHASE='-Pcomplete'
-stages:
-    - compile
-    - test
-    - name: deploy
-      if: branch IN (master, jruby-9.1, push_snapshots)
 
 script: tool/travis-script.sh
+
+deploy:
+  provider: script
+  script: "cp .travis.settings.xml $HOME/.m2/settings.xml && mvn clean deploy -Prelease"
+  on:
+    branch:
+      - master
+      - jruby-9.1
+      - push_snapshots
 
 notifications:
   irc:
