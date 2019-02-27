@@ -427,7 +427,6 @@ fi
 # Run JRuby!
 if $use_exec; then
   exec "${jvm_command[@]}"
-  echo $?
 else
   "${jvm_command[@]}"
 
