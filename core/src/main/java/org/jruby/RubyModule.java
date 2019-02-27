@@ -95,6 +95,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -1211,7 +1212,7 @@ public class RubyModule extends RubyObject {
             LOG.debug("trace mode, using default populator");
         } else {
             try {
-                String qualifiedName = "org.jruby.gen." + type.getCanonicalName().replace('.', '$');
+                String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
                 String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
                 String fullPath = fullName.replace('.', '/') + ".class";
                 if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);

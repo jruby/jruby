@@ -59,6 +59,7 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ThreadContext;
@@ -1483,12 +1484,12 @@ public class Java implements Library {
         // normal new class implementing interfaces
         interfacesHashCode = 31 * interfacesHashCode + clazz.hashCode();
 
-        String implClassName;
+        String implClassName = Constants.GENERATED_PACKAGE;
         if (clazz.getBaseName() == null) {
             // no-name class, generate a bogus name for it
-            implClassName = "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
+            implClassName += "anon_class" + Math.abs(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName = StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
+            implClassName += StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {
