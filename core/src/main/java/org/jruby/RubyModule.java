@@ -1370,7 +1370,7 @@ public class RubyModule extends RubyObject {
     private void addRefinedMethodEntry(String id, DynamicMethod method) {
         DynamicMethod orig = refinedClass.searchMethodCommon(id);
 
-        if (orig == null) {
+        if (orig == null || orig.isNull()) {
             refinedClass.addMethodInternal(id, new RefinedMarker(refinedClass, method.getVisibility(), id));
         } else {
             if (orig.isRefined()) {

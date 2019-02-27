@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -96,7 +97,9 @@ public class TracePoint extends RubyObject {
                 if (type == null) type = context.fals;
 
                 IRubyObject binding;
-                if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
+                if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    binding = null;
+                } else if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
                     binding = context.nil;
                 } else {
                     binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
@@ -134,7 +137,14 @@ public class TracePoint extends RubyObject {
     public IRubyObject binding(ThreadContext context) {
         checkInside(context);
         
-        return binding == null ? context.nil : binding;
+        if (binding == null) {
+            // bindings are normally optimized away
+            context.runtime.getWarnings().warn("TracePoint will not provide bindings without --debug flag");
+
+            return context.nil;
+        }
+
+        return binding;
     }
     
     @JRubyMethod
@@ -223,6 +233,13 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod
     public IRubyObject self(ThreadContext context) {
+        if (binding == null) {
+            // bindings are normally optimized away
+            context.runtime.getWarnings().warn("TracePoint will not provide self without --debug flag");
+
+            return context.nil;
+        }
+
         return binding.isNil() ? context.nil : ((RubyBinding)binding).getBinding().getSelf();
     }
 

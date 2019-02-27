@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
-import java.util.Map;
+
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.MetaClass;
@@ -38,19 +38,20 @@ import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Interp;
 import org.jruby.ir.JIT;
+import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
+import org.jruby.ir.targets.TraceSite;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -2143,13 +2144,32 @@ public class IRRuntimeHelpers {
         return context.runtime.newString(currScope.getIRScope().getFile());
     }
 
-    @JIT
     public static void callTrace(ThreadContext context, RubyEvent event, String name, String filename, int line) {
         if (context.runtime.hasEventHooks()) {
             // FIXME: Try and statically generate END linenumber instead of hacking it.
             int linenumber = line == -1 ? context.getLine()+1 : line;
 
             context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
+        }
+    }
+
+    public static void fireTraceEvent(ThreadContext context, LineNumberInstr lineNumber) {
+        if (context.runtime.hasEventHooks()) {
+            IRRuntimeHelpers.fireTraceEventInner(context, lineNumber.event, lineNumber.name, lineNumber.filename, lineNumber.lineNumber, lineNumber.coverage);
+        }
+    }
+
+    public static void fireTraceEvent(ThreadContext context, TraceSite site) {
+        if (context.runtime.hasEventHooks()) {
+            IRRuntimeHelpers.fireTraceEventInner(context, site.event, site.name, site.filename, site.line, site.coverage);
+        }
+    }
+
+    private static void fireTraceEventInner(ThreadContext context, RubyEvent event, String name, String filename, int line, boolean coverage) {
+        callTrace(context, event, name, filename, line);
+
+        if (coverage && event == RubyEvent.LINE) {
+            callTrace(context, RubyEvent.COVERAGE, name, filename, line);
         }
     }
 

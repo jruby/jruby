@@ -1493,11 +1493,9 @@ public class JVMVisitor extends IRVisitor {
         lastLine = linenumberinstr.getLineNumber() + 1;
         jvmAdapter().line(lastLine);
 
-        // tracing still off in JIT without flag
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            jvmMethod().loadContext();
-            jvmMethod().callTrace(linenumberinstr);
-        }
+        // trace
+        jvmMethod().loadContext();
+        jvmMethod().callTrace(linenumberinstr);
     }
 
     @Override

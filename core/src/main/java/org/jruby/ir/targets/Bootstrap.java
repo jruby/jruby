@@ -22,6 +22,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -32,6 +33,7 @@ import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
+import org.jruby.runtime.opto.SwitchPointInvalidator;
 import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
@@ -44,6 +46,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.*;
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;

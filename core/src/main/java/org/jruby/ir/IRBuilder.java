@@ -2063,9 +2063,7 @@ public class IRBuilder {
         // Build IR for body
         Operand rv = build(defNode.getBodyNode());
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(manager.newLineNumber(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
-        }
+        addInstr(manager.newLineNumber(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
 
         if (rv != null) addInstr(new ReturnInstr(rv));
 
@@ -3561,7 +3559,7 @@ public class IRBuilder {
     }
 
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
+        if (!(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
 
         RescueBodyNode rescueClause = rescueNode.getRescueNode();
@@ -4121,9 +4119,7 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(manager.newLineNumber(RubyEvent.CLASS, null, getFileName(), startLine));
-        }
+        addInstr(manager.newLineNumber(RubyEvent.CLASS, null, getFileName(), startLine));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module

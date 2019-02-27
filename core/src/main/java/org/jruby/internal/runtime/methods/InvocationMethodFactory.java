@@ -253,10 +253,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
 
         String generatedClassName = CodegenUtils.getAnnotatedBindingClassName(javaMethodName, desc1.declaringClassName, desc1.isStatic, desc1.actualRequired, desc1.optional, descs.size() > 1, desc1.anno.frame());
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // in debug mode we append _DBG to class name to force it to regenerate (or use pre-generated debug version)
-            generatedClassName += "_DBG";
-        }
         String generatedClassPath = generatedClassName.replace('.', '/');
 
         DescriptorInfo info = new DescriptorInfo(descs);
@@ -729,7 +725,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             invokeCallConfigPre(method, superClass, specificArity, block, callConfig);
         }
 
-        final boolean FULL_TRACE_ENABLED = RubyInstanceConfig.FULL_TRACE_ENABLED;
+        final boolean FULL_TRACE_ENABLED = true || RubyInstanceConfig.FULL_TRACE_ENABLED;
 
         int traceBoolIndex = -1;
         if (FULL_TRACE_ENABLED) {

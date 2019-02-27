@@ -413,15 +413,7 @@ public class InterpreterEngine {
                 LineNumberInstr lineNumber = (LineNumberInstr) instr;
                 int line = lineNumber.lineNumber;
                 context.setLine(line);
-                if (runtime.hasEventHooks()) {
-                    RubyEvent event = lineNumber.event;
-                    String methodName = lineNumber.name;
-                    String filename = lineNumber.filename;
-                    IRRuntimeHelpers.callTrace(context, event, name, filename, line);
-                    if (lineNumber.coverage && event == RubyEvent.LINE) {
-                        IRRuntimeHelpers.callTrace(context, RubyEvent.COVERAGE, name, filename, line);
-                    }
-                }
+                IRRuntimeHelpers.fireTraceEvent(context, lineNumber);
                 break;
             }
             case TOGGLE_BACKTRACE:

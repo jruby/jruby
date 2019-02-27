@@ -1055,33 +1055,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void callTrace(LineNumberInstr line) {
-        boolean coverage = line.coverage;
-
-        if (line.coverage) {
-            // dup context
-            adapter.dup();
-        }
-
-        // TODO: inefficient
-        for (;;) {
-            adapter.getstatic(p(RubyEvent.class), line.event.name(), ci(RubyEvent.class));
-
-            String name = line.name;
-            if (name == null) {
-                adapter.aconst_null();
-            } else {
-                adapter.ldc(name);
-            }
-
-            adapter.ldc(line.filename);
-            adapter.ldc(line.lineNumber);
-
-            if (!coverage) break;
-
-            coverage = false;
-
-            invokeIRHelper("callTrace", sig(void.class, ThreadContext.class, RubyEvent.class, String.class, String.class, int.class));
-        }
+        String traceName = "trace:" + line.event.name();
+        String name = line.name;
+        if (name == null) name = "";
+        adapter.invokedynamic(traceName, sig(void.class, ThreadContext.class), TraceSite.traceHandle(),
+                line.event.ordinal(), name, line.filename, line.lineNumber, line.coverage ? 1 : 0);
     }
 
     private final Map<Object, String> cacheFieldNames = new HashMap<>();

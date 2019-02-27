@@ -74,6 +74,7 @@ import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.opto.SwitchPointInvalidator;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
@@ -308,7 +309,8 @@ public final class Ruby implements Constantizable {
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES.ordinal() * MethodNames.values().length - 1);
 
-        checkpointInvalidator = OptoFactory.newConstantInvalidator(this);
+        checkpointInvalidator = new SwitchPointInvalidator();
+        traceInvalidator = new SwitchPointInvalidator();
 
         if (config.isObjectSpaceEnabled()) {
             objectSpacer = ENABLED_OBJECTSPACE;
@@ -3123,7 +3125,12 @@ public final class Ruby implements Constantizable {
                 if (file == null) file = "(ruby)";
                 if (type == null) type = getNil();
 
-                RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
+                IRubyObject binding;
+                if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    binding = getNil();
+                } else {
+                    binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
+                }
 
                 context.preTrace();
                 try {
@@ -3150,16 +3157,12 @@ public final class Ruby implements Constantizable {
     private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
 
     public synchronized void addEventHook(EventHook hook) {
-        if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // without full tracing, many events will not fire
-            getWarnings().warn("tracing (e.g. set_trace_func) will not capture all events without --debug flag");
-        }
-
         EventHook[] hooks = eventHooks;
         EventHook[] newHooks = Arrays.copyOf(hooks, hooks.length + 1);
         newHooks[hooks.length] = hook;
         eventHooks = newHooks;
         hasEventHooks = true;
+        traceInvalidator.invalidate();
     }
 
     public synchronized void removeEventHook(EventHook hook) {
@@ -3185,6 +3188,7 @@ public final class Ruby implements Constantizable {
 
         eventHooks = newHooks;
         hasEventHooks = newHooks.length > 0;
+        traceInvalidator.invalidate();
     }
 
     public void setTraceFunction(RubyProc traceFunction) {
@@ -4529,6 +4533,10 @@ public final class Ruby implements Constantizable {
         return checkpointInvalidator;
     }
 
+    public Invalidator getTraceInvalidator() {
+        return traceInvalidator;
+    }
+
     public <E extends Enum<E>> void loadConstantSet(RubyModule module, Class<E> enumClass) {
         for (E e : EnumSet.allOf(enumClass)) {
             Constant c = (Constant) e;
@@ -5082,6 +5090,7 @@ public final class Ruby implements Constantizable {
             1     /* concurrency level - mostly reads here so this can be 1 */);
 
     private final Invalidator checkpointInvalidator;
+    private final Invalidator traceInvalidator;
     private final ThreadService threadService;
 
     private final POSIX posix;
