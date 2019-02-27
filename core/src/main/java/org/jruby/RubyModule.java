@@ -70,12 +70,10 @@ import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
-import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -95,6 +93,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
@@ -1211,7 +1210,7 @@ public class RubyModule extends RubyObject {
             LOG.debug("trace mode, using default populator");
         } else {
             try {
-                String qualifiedName = "org.jruby.gen." + type.getCanonicalName().replace('.', '$');
+                String qualifiedName = Constants.GENERATED_PACKAGE + type.getCanonicalName().replace('.', '$');
                 String fullName = qualifiedName + AnnotationBinder.POPULATOR_SUFFIX;
                 String fullPath = fullName.replace('.', '/') + ".class";
                 if (LOG.isDebugEnabled()) LOG.debug("looking for populator " + fullName);

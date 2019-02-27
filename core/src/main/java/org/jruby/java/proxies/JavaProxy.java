@@ -443,12 +443,13 @@ public class JavaProxy extends RubyObject {
 
         try {
             for (Class<?> clazz = originalClass; clazz != null; clazz = clazz.getSuperclass()) {
-                if (!Modifier.isPublic(clazz.getModifiers())) continue;
-
                 Module module = Modulator.getModule(clazz);
                 Package pkg = clazz.getPackage();
 
-                if (!module.isExported(pkg.getName())) continue;
+                // Default package cannot be used by modules
+                if (pkg != null) {
+                    if (!module.isExported(pkg.getName())) continue;
+                }
 
                 Method method = clazz.getMethod(name, argTypes);
 
