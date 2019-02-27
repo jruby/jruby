@@ -446,7 +446,10 @@ public class JavaProxy extends RubyObject {
                 Module module = Modulator.getModule(clazz);
                 Package pkg = clazz.getPackage();
 
-                if (pkg == null || !module.isExported(pkg.getName())) continue;
+                // Default package cannot be used by modules
+                if (pkg != null) {
+                    if (!module.isExported(pkg.getName())) continue;
+                }
 
                 Method method = clazz.getMethod(name, argTypes);
 
