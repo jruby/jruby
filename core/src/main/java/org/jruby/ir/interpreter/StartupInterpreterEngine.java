@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.Operation;
@@ -30,6 +31,8 @@ public class StartupInterpreterEngine extends InterpreterEngine {
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                  InterpreterContext interpreterContext, RubyModule implClass,
                                  String name, IRubyObject[] args, Block blockArg) {
+        Ruby runtime = context.runtime;
+
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         int       n         = instrs.length;
@@ -97,7 +100,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                             case EXC_REGION_END:
                                 break;
                             default:
-                                processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
+                                processBookKeepingOp(context, runtime, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                         }
                         break;
                     case OTHER_OP:

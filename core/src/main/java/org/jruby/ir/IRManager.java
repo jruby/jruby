@@ -33,6 +33,7 @@ import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
 import org.jruby.ir.util.IGVInstrListener;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -221,19 +222,19 @@ public class IRManager {
         }
     }
 
-    public LineNumberInstr newLineNumber(int line) {
-        if (line >= lineNumbers.length-1) growLineNumbersPool(line);
+    /**
+     * Create a new non-coverage line event instruction.
+     */
+    public LineNumberInstr newLineNumber(RubyEvent event, RubySymbol name, String file, int line) {
+        return newLineNumber(event, name == null ? null : name.idString(), file, line, false);
+    }
 
-        if (line < 0) line = 0;
-        LineNumberInstr tempVar = lineNumbers[line];
+    /**
+     * Create a new line event instruction.
+     */
+    public LineNumberInstr newLineNumber(RubyEvent event, String name, String file, int line, boolean coverage) {
 
-        if (tempVar == null) {
-            tempVar = new LineNumberInstr(line);
-            lineNumbers[line] = tempVar;
-        }
-
-        return tempVar;
-
+        return new LineNumberInstr(event, name, file, line, coverage);
     }
 
     private ReceiveSelfInstr receiveSelfInstr = new ReceiveSelfInstr(Self.SELF);
@@ -241,18 +242,6 @@ public class IRManager {
     public ReceiveSelfInstr getReceiveSelfInstr() {
         return receiveSelfInstr;
     }
-
-    private LineNumberInstr[] lineNumbers = new LineNumberInstr[3000];
-
-    protected LineNumberInstr[] growLineNumbersPool(int index) {
-        int newLength = index * 2;
-        LineNumberInstr[] newPool = new LineNumberInstr[newLength];
-
-        System.arraycopy(lineNumbers, 0, newPool, 0, lineNumbers.length);
-        lineNumbers = newPool;
-        return newPool;
-    }
-
 
     public void removeListener(IRScopeListener listener) {
         if (irScopeListener.equals(listener)) irScopeListener = null;

@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -27,7 +28,6 @@ import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
-import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
 import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
@@ -62,6 +62,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -107,6 +108,8 @@ public class InterpreterEngine {
     public IRubyObject interpret(ThreadContext context, Block block, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
                                          String name, IRubyObject[] args, Block blockArg) {
+        Ruby runtime = context.runtime;
+
         Instr[]   instrs    = interpreterContext.getInstructions();
         Object[]  temp      = interpreterContext.allocateTemporaryVariables();
         double[]  floats    = interpreterContext.allocateTemporaryFloatVariables();
@@ -195,7 +198,7 @@ public class InterpreterEngine {
                             args = IRRuntimeHelpers.prepareBlockArgs(context, block, args, acceptsKeywordArgument);
                             break;
                         default:
-                            processBookKeepingOp(context, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
+                            processBookKeepingOp(context, runtime, block, instr, operation, name, args, self, blockArg, implClass, currDynScope, temp, currScope);
                             break;
                         }
                         break;
@@ -365,10 +368,10 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processBookKeepingOp(ThreadContext context, Block block, Instr instr, Operation operation,
-                                             String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
-                                             DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
-        switch(operation) {
+    protected static void processBookKeepingOp(ThreadContext context, Ruby runtime, Block block, Instr instr, Operation operation,
+                                               String name, IRubyObject[] args, IRubyObject self, Block blockArg, RubyModule implClass,
+                                               DynamicScope currDynScope, Object[] temp, StaticScope currScope) {
+        switch (operation) {
             case LABEL:
                 break;
             case SAVE_BINDING_VIZ:
@@ -406,23 +409,24 @@ public class InterpreterEngine {
             case CHECK_ARITY:
                 ((CheckArityInstr) instr).checkArity(context, currScope, args, block);
                 break;
-            case LINE_NUM:
-                context.setLine(((LineNumberInstr)instr).lineNumber);
-                break;
-            case TOGGLE_BACKTRACE:
-                context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
-                break;
-            case TRACE: {
-                if (context.runtime.hasEventHooks()) {
-                    TraceInstr trace = (TraceInstr) instr;
-                    // FIXME: Try and statically generate END linenumber instead of hacking it.
-                    int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
-
-                    context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                            trace.getFilename(), linenumber);
+            case LINE_NUM: {
+                LineNumberInstr lineNumber = (LineNumberInstr) instr;
+                int line = lineNumber.lineNumber;
+                context.setLine(line);
+                if (runtime.hasEventHooks()) {
+                    RubyEvent event = lineNumber.event;
+                    String methodName = lineNumber.name;
+                    String filename = lineNumber.filename;
+                    IRRuntimeHelpers.callTrace(context, event, name, filename, line);
+                    if (lineNumber.coverage && event == RubyEvent.LINE) {
+                        IRRuntimeHelpers.callTrace(context, RubyEvent.COVERAGE, name, filename, line);
+                    }
                 }
                 break;
             }
+            case TOGGLE_BACKTRACE:
+                context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
+                break;
         }
     }
 
@@ -432,7 +436,8 @@ public class InterpreterEngine {
         switch(operation) {
             // --------- Return flavored instructions --------
             case RETURN: {
-                return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, currScope, temp);
+                IRubyObject result = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
+                return result;
             }
             case BREAK: {
                 BreakInstr bi = (BreakInstr)instr;

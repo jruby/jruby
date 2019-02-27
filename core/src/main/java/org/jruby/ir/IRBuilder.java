@@ -324,13 +324,13 @@ public class IRBuilder {
     public void addInstr(Instr instr) {
         if (needsLineNumInfo) {
             needsLineNumInfo = false;
-            addInstr(manager.newLineNumber(_lastProcessedLineNum));
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum));
-                if (needsCodeCoverage()) {
-                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum));
-                }
-            }
+            RubySymbol name = methodNameFor();
+            addInstr(manager.newLineNumber(
+                    RubyEvent.LINE,
+                    name != null ? name.idString() : null,
+                    getFileName(),
+                    _lastProcessedLineNum,
+                    needsCodeCoverage()));
         }
 
         // If we are building an ensure body, stash the instruction
@@ -2044,11 +2044,8 @@ public class IRBuilder {
     protected InterpreterContext defineMethodInner(DefNode defNode, IRScope parent, boolean needsCodeCoverage) {
         this.needsCodeCoverage = needsCodeCoverage;
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // Explicit line number here because we need a line number for trace before we process any nodes
-            addInstr(manager.newLineNumber(scope.getLine()));
-            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine()));
-        }
+        // Explicit line number here because we need a line number for trace before we process any nodes
+        addInstr(manager.newLineNumber(RubyEvent.CALL, getName(), getFileName(), scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
 
@@ -2067,8 +2064,7 @@ public class IRBuilder {
         Operand rv = build(defNode.getBodyNode());
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new LineNumberInstr(defNode.getEndLine()));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
+            addInstr(manager.newLineNumber(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -3787,10 +3783,7 @@ public class IRBuilder {
         } else {
             retVal = processEnsureRescueBlocks(retVal);
 
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
-            }
-
+            addInstr(manager.newLineNumber(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
             addInstr(new ReturnInstr(retVal));
         }
 
@@ -3802,7 +3795,7 @@ public class IRBuilder {
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
         needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
-        addInstr(manager.newLineNumber(scope.getLine()));
+        addInstr(manager.newLineNumber(RubyEvent.LINE, getName(), getFileName(), scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
@@ -4129,7 +4122,7 @@ public class IRBuilder {
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
+            addInstr(manager.newLineNumber(RubyEvent.CLASS, null, getFileName(), startLine));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -4137,12 +4130,7 @@ public class IRBuilder {
 
         Operand bodyReturnValue = build(bodyNode);
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
-            // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
-            addInstr(manager.newLineNumber(endLine));
-            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
-        }
+        addInstr(manager.newLineNumber(RubyEvent.END, null, getFileName(), endLine));
 
         addInstr(new ReturnInstr(bodyReturnValue));
 

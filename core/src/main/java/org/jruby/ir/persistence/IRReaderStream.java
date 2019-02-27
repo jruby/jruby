@@ -312,7 +312,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case SEARCH_CONST: return SearchConstInstr.decode(this);
             case SEARCH_MODULE_FOR_CONST: return SearchModuleForConstInstr.decode(this);
             case SET_CAPTURED_VAR: return SetCapturedVarInstr.decode(this);
-            case TRACE: return TraceInstr.decode(this);
             case THREAD_POLL: return ThreadPollInstr.decode(this);
             case THROW: return ThrowExceptionInstr.decode(this);
             case TO_ARY: return ToAryInstr.decode(this);

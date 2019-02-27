@@ -1492,6 +1492,12 @@ public class JVMVisitor extends IRVisitor {
 
         lastLine = linenumberinstr.getLineNumber() + 1;
         jvmAdapter().line(lastLine);
+
+        // tracing still off in JIT without flag
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            jvmMethod().loadContext();
+            jvmMethod().callTrace(linenumberinstr);
+        }
     }
 
     @Override
@@ -2174,21 +2180,6 @@ public class JVMVisitor extends IRVisitor {
         visit(toaryinstr.getArray());
         jvmMethod().invokeIRHelper("irToAry", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(toaryinstr.getResult());
-    }
-
-    @Override
-    public void TraceInstr(TraceInstr traceInstr) {
-        jvmMethod().loadContext();
-        jvmAdapter().getstatic(p(RubyEvent.class), traceInstr.getEvent().name(), ci(RubyEvent.class));
-        String name = traceInstr.getName();
-        if (name == null) {
-            jvmAdapter().aconst_null();
-        } else {
-            jvmAdapter().ldc(name);
-        }
-        jvmAdapter().ldc(traceInstr.getFilename());
-        jvmAdapter().ldc(traceInstr.getLinenumber());
-        jvmMethod().invokeIRHelper("callTrace", sig(void.class, ThreadContext.class, RubyEvent.class, String.class, String.class, int.class));
     }
 
     @Override

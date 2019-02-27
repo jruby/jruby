@@ -14,6 +14,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -690,6 +691,13 @@ public abstract class IRBytecodeAdapter {
      * Stack required: context, case value, when value
      */
     public abstract void callEqq(EQQInstr call);
+
+    /**
+     * Call a the system event hook trace for the given event details.
+     *
+     * Stack required: context
+     */
+    public abstract void callTrace(LineNumberInstr line);
 
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;

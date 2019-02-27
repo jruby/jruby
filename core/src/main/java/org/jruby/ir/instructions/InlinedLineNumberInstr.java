@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import java.util.Arrays;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.runtime.RubyEvent;
 
 /**
  * This represents a linenumber instr that has been inlined into another method/closure.
@@ -12,8 +13,8 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 public class InlinedLineNumberInstr extends LineNumberInstr {
     private final IRScope scope;
 
-    public InlinedLineNumberInstr(IRScope scope, int lineNumber) {
-        super(lineNumber);
+    public InlinedLineNumberInstr(IRScope scope, RubyEvent event, String name, String filename, int lineNumber, boolean coverage) {
+        super(event, name, filename, lineNumber, coverage);
 
         this.scope = scope;
     }

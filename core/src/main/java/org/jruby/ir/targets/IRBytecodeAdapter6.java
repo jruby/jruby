@@ -30,6 +30,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -40,6 +41,7 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -1049,6 +1051,37 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         IRBytecodeAdapter.cacheCallSite(adapter, getClassData().clsName, getUniqueSiteName(call.getId()), null, call);
         adapter.ldc(call.isSplattedValue());
         invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
+    }
+
+    @Override
+    public void callTrace(LineNumberInstr line) {
+        boolean coverage = line.coverage;
+
+        if (line.coverage) {
+            // dup context
+            adapter.dup();
+        }
+
+        // TODO: inefficient
+        for (;;) {
+            adapter.getstatic(p(RubyEvent.class), line.event.name(), ci(RubyEvent.class));
+
+            String name = line.name;
+            if (name == null) {
+                adapter.aconst_null();
+            } else {
+                adapter.ldc(name);
+            }
+
+            adapter.ldc(line.filename);
+            adapter.ldc(line.lineNumber);
+
+            if (!coverage) break;
+
+            coverage = false;
+
+            invokeIRHelper("callTrace", sig(void.class, ThreadContext.class, RubyEvent.class, String.class, String.class, int.class));
+        }
     }
 
     private final Map<Object, String> cacheFieldNames = new HashMap<>();
