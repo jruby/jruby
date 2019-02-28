@@ -1348,6 +1348,8 @@ public class RubyModule extends RubyObject {
     public void addMethod(String id, DynamicMethod method) {
         testFrozen("class/module");
 
+        RubyModule location = this;
+
         if (methodLocation != this) {
             methodLocation.addMethod(id, method);
             return;
@@ -1371,12 +1373,12 @@ public class RubyModule extends RubyObject {
         DynamicMethod orig = refinedClass.searchMethodCommon(id);
 
         if (orig == null) {
-            refinedClass.addMethodInternal(id, new RefinedMarker(refinedClass, method.getVisibility(), id));
+            refinedClass.addMethod(id, new RefinedMarker(refinedClass.getMethodLocation(), method.getVisibility(), id));
         } else {
             if (orig.isRefined()) {
                 return;
             }
-            refinedClass.addMethodInternal(id, new RefinedWrapper(refinedClass, method.getVisibility(), id, orig));
+            refinedClass.addMethod(id, new RefinedWrapper(refinedClass.getMethodLocation(), method.getVisibility(), id, orig));
         }
     }
 

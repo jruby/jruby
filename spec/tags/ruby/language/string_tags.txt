@@ -1,2 +1,4 @@
 windows:Ruby character strings allows HEREDOC with <<'identifier', no interpolation
 windows:Ruby character strings allows HEREDOC with <<-'identifier', allowing to indent identifier, no interpolation
+fails(--debug is required for other tests, but turns on frozen string debugging):Ruby String literals with a magic frozen comment produce the same object for literals with the same content
+fails(--debug is required for other tests, but turns on frozen string debugging):Ruby String literals with a magic frozen comment produce the same object for literals with the same content in different files
