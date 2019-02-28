@@ -63,6 +63,25 @@ class MSpecScript
     '^' + SPEC_DIR + '/language/predefined_spec.rb',
     '^' + SPEC_DIR + '/language/predefined/data_spec.rb',
     '^' + SPEC_DIR + '/library/net/http',
+
+    # These require --debug which slows down or changes other spec results
+    '^' + SPEC_DIR + '/core/tracepoint',
+  ]
+  
+  set :slow, [
+    SPEC_DIR + '/core/process',
+    SPEC_DIR + '/core/io/popen',
+    SPEC_DIR + '/core/argf/gets_spec.rb',
+    SPEC_DIR + '/core/argf/read_spec.rb',
+    SPEC_DIR + '/core/argf/readline_spec.rb',
+    SPEC_DIR + '/core/encoding/default_external_spec.rb',
+    SPEC_DIR + '/core/encoding/default_internal_spec.rb',
+    SPEC_DIR + '/core/io/pid_spec.rb',
+    SPEC_DIR + '/core/kernel/at_exit_spec.rb',
+    SPEC_DIR + '/language/predefined_spec.rb',
+    SPEC_DIR + '/language/predefined/data_spec.rb',
+    SPEC_DIR + '/library/net/http',
+    SPEC_DIR + '/core/tracepoint',
   ]
 
   # Enable features

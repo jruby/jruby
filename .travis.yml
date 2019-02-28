@@ -50,6 +50,7 @@ matrix:
     - env: PHASE='-Prake -Dtask=test:mri:extra'
     - env: PHASE='-Prake -Dtask=test:mri:stdlib'
     - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+    - env: PHASE='-Prake -Dtask=spec:ruby:slow'
     - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Ptest'
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
