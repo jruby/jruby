@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -30,6 +31,14 @@ public class ClassSuperInstr extends CallInstr {
 
     public Operand getDefiningModule() {
         return getReceiver();
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        super.computeScopeFlags(scope);
+        scope.getFlags().add(IRFlags.REQUIRES_CLASS); // for current class and method name
+        scope.getFlags().add(IRFlags.REQUIRES_METHODNAME); // for current class and method name
+        return true;
     }
 
     @Override
@@ -73,9 +82,7 @@ public class ClassSuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
-        RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
-
-        return IRRuntimeHelpers.classSuper(context, self, getId(), definingModule, args, block);
+        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
     }
 
     @Override
