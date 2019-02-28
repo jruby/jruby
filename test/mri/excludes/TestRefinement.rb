@@ -1,4 +1,3 @@
-exclude :test_include_into_refinement, "zsuper in module issue #5585"
 exclude :test_prepend_into_refinement, "zsuper in module issue #5585"
 exclude :test_refine_prepended_class, "markers not being applied properly to prepended module"
 exclude :test_refine_with_prepend, "markers not being applied properly to target that has a prepend"
