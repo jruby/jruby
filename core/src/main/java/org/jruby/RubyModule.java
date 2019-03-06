@@ -1370,15 +1370,16 @@ public class RubyModule extends RubyObject {
 
     // MRI: rb_add_refined_method_entry
     private void addRefinedMethodEntry(String id, DynamicMethod method) {
-        DynamicMethod orig = refinedClass.searchMethodCommon(id);
+        RubyModule methodLocation = refinedClass.getMethodLocation();
+        DynamicMethod orig = methodLocation.searchMethodCommon(id);
 
         if (orig == null) {
-            refinedClass.addMethod(id, new RefinedMarker(refinedClass.getMethodLocation(), method.getVisibility(), id));
+            refinedClass.addMethod(id, new RefinedMarker(methodLocation, method.getVisibility(), id));
         } else {
             if (orig.isRefined()) {
                 return;
             }
-            refinedClass.addMethod(id, new RefinedWrapper(refinedClass.getMethodLocation(), method.getVisibility(), id, orig));
+            refinedClass.addMethod(id, new RefinedWrapper(methodLocation, method.getVisibility(), id, orig));
         }
     }
 
