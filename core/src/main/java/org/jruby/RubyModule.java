@@ -1774,11 +1774,11 @@ public class RubyModule extends RubyObject {
                 return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, entry);
             } else {
                 CacheEntry tmpEntry = refinement.searchWithCache(id);
-                if (tmpEntry.method.isRefined()) {
-                    return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, tmpEntry);
+                if (!tmpEntry.method.isRefined()) {
+                    return tmpEntry;
+                } else {
+                    return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, entry);
                 }
-
-                return tmpEntry;
             }
         }
 
