@@ -1525,20 +1525,19 @@ public class RubyModule extends RubyObject {
     // MRI: refined_method_original_method_entry
     private CacheEntry refinedMethodOriginalMethodEntry(Map<RubyModule, RubyModule> refinements, String id, boolean cacheUndef, CacheEntry entry) {
         RubyModule superClass;
-        if (entry.method instanceof RefinedMarker) {
-            if ((superClass = entry.method.getDefinedClass().getSuperClass()) == null) {
-                // marker with no scope and no super, no method
-                return CacheEntry.NULL_CACHE;
-            } else {
-                // marker with no scope available, find super method
-                return resolveRefinedMethod(refinements, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
-            }
-        } else if (entry.method instanceof RefinedWrapper){
-            // original without refined flag
-            return cacheEntryFactory.newCacheEntry(id, ((RefinedWrapper) entry.method).getWrapped(), entry.sourceModule, entry.token);
-        }
 
-        return entry;
+        DynamicMethod method = entry.method;
+
+        if (method instanceof RefinedWrapper){
+            // original without refined flag
+            return cacheEntryFactory.newCacheEntry(id, ((RefinedWrapper) method).getWrapped(), entry.sourceModule, entry.token);
+        } else if ((superClass = entry.sourceModule.getSuperClass()) == null) {
+            // marker with no scope and no super, no method
+            return CacheEntry.NULL_CACHE;
+        } else {
+            // marker with no scope available, find super method
+            return resolveRefinedMethod(refinements, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
+        }
     }
 
     /**
