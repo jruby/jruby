@@ -1717,16 +1717,25 @@ public class Pack {
         return (RubyString) pack.infectBy(formatString);
     }
 
+    /**
+     * Introduced to allow outlining cases in #packCommon that update both of these values.
+     */
+    private static class PackInts {
+        PackInts(int listSize, int idx) {
+            this.listSize = listSize;
+            this.idx = idx;
+        }
+        int listSize;
+        int idx;
+    }
+
     private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = tainted;
-        int listSize = list.size();
+        PackInts packInts = new PackInts(list.size(), 0);
         int type;
         int next = safeGet(format);
-
-        int idx = 0;
-        ByteList lCurElemString;
 
         int enc_info = 1;
 
@@ -1787,7 +1796,7 @@ public class Pack {
                         occurrences = 0;
                         ignoreStar = true;
                     } else {
-                        occurrences = list.size() - idx;
+                        occurrences = list.size() - packInts.idx;
                         isStar = true;
                     }
                     next = safeGet(format);
@@ -1800,327 +1809,49 @@ public class Pack {
                 }
             }
 
-            switch (type) {
-                case 'U':
-                    if (enc_info == 1) enc_info = 2;
-                    break;
-                case 'm':
-                case 'M':
-                case 'u':
-                    break;
-                default:
-                    enc_info = 0;
-                    break;
-            }
+            enc_info = adjustEncInfo(type, enc_info);
 
             Converter converter = converters[type];
 
             if (converter != null) {
                 executor.setConverter(converter);
-                idx = encode(context.runtime, occurrences, result, list, idx, executor);
+                packInts.idx = encode(context.runtime, occurrences, result, list, packInts.idx, executor);
                 continue;
             }
 
             switch (type) {
-                case '%' :
+                case '%':
                     throw context.runtime.newArgumentError("% is not supported");
-                case 'A' :
-                case 'a' :
-                case 'Z' :
-                case 'B' :
-                case 'b' :
-                case 'H' :
-                case 'h' : {
-                        if (listSize-- <= 0) {
-                            throw context.runtime.newArgumentError(sTooFew);
-                        }
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
-                        if (from.isTaint()) taintOutput = true;
-
-                        if (isStar) {
-                            occurrences = lCurElemString.length();
-                            // 'Z' adds extra null pad (versus 'a')
-                            if (type == 'Z') occurrences++;
-                        }
-
-                        switch (type) {
-                            case 'a' :
-                            case 'A' :
-                            case 'Z' :
-                                if (lCurElemString.length() >= occurrences) {
-                                    result.append(lCurElemString.getUnsafeBytes(), lCurElemString.getBegin(), occurrences);
-                                } else {//need padding
-                                    //I'm fairly sure there is a library call to create a
-                                    //string filled with a given char with a given length but I couldn't find it
-                                    result.append(lCurElemString);
-                                    occurrences -= lCurElemString.length();
-
-                                    switch (type) {
-                                      case 'a':
-                                      case 'Z':
-                                          grow(result, sNil10, occurrences);
-                                          break;
-                                      default:
-                                          grow(result, sSp10, occurrences);
-                                          break;
-                                    }
-                                }
-                            break;
-                            case 'b' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
-                                            currentByte |= 128; //set the high bit of the result
-                                        }
-
-                                        if ((i & 7) == 0) {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                            continue;
-                                        }
-
-                                           //if the index is not a multiple of 8, we are not on a byte boundary
-                                           currentByte >>= 1; //shift the byte
-                                    }
-
-                                    if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                                        currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
-                                        result.append((byte) (currentByte & 0xff));
-                                    }
-
-                                    //do some padding, I don't understand the padding strategy
-                                    result.length(result.length() + padLength);
-                                }
-                            break;
-                            case 'B' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        currentByte |= lCurElemString.charAt(i++) & 1;
-
-                                        // we filled up current byte; append it and create next one
-                                        if ((i & 7) == 0) {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                            continue;
-                                        }
-
-                                        //if the index is not a multiple of 8, we are not on a byte boundary
-                                        currentByte <<= 1;
-                                    }
-
-                                    if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                                        currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
-                                        result.append((byte) (currentByte & 0xff));
-                                    }
-
-                                    result.length(result.length() + padLength);
-                                }
-                            break;
-                            case 'h' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length() + 1;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        byte currentChar = (byte)lCurElemString.charAt(i++);
-
-                                        if (Character.isJavaIdentifierStart(currentChar)) {
-                                            //this test may be too lax but it is the same as in MRI
-                                            currentByte |= (((currentChar & 15) + 9) & 15) << 4;
-                                        } else {
-                                            currentByte |= (currentChar & 15) << 4;
-                                        }
-
-                                        if ((i & 1) != 0) {
-                                            currentByte >>= 4;
-                                        } else {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                        }
-                                    }
-
-                                    if ((occurrences & 1) != 0) {
-                                        result.append((byte) (currentByte & 0xff));
-                                        if (padLength > 0) padLength--;
-                                    }
-
-                                    result.length(result.length() + padLength / 2);
-                                }
-                            break;
-                            case 'H' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length() + 1;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        byte currentChar = (byte)lCurElemString.charAt(i++);
-
-                                        if (Character.isJavaIdentifierStart(currentChar)) {
-                                            //this test may be too lax but it is the same as in MRI
-                                            currentByte |= ((currentChar & 15) + 9) & 15;
-                                        } else {
-                                            currentByte |= currentChar & 15;
-                                        }
-
-                                        if ((i & 1) != 0) {
-                                            currentByte <<= 4;
-                                        } else {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                        }
-                                    }
-
-                                    if ((occurrences & 1) != 0) {
-                                        result.append((byte) (currentByte & 0xff));
-                                        if (padLength > 0) padLength--;
-                                    }
-
-                                    result.length(result.length() + padLength / 2);
-                                }
-                            break;
-                        }
-                        break;
-                    }
-
-                case 'x' :
+                case 'A':
+                case 'a':
+                case 'Z':
+                case 'B':
+                case 'b':
+                case 'H':
+                case 'h':
+                    taintOutput = pack_h(context, list, result, taintOutput, packInts, type, occurrences, isStar);
+                    break;
+                case 'x':
                     grow(result, sNil10, occurrences);
                     break;
-                case 'X' :
-                    try {
-                        shrink(result, occurrences);
-                    } catch (IllegalArgumentException e) {
-                        throw context.runtime.newArgumentError("in `pack': X outside of string");
-                    }
+                case 'X':
+                    pack_X(context, result, occurrences);
                     break;
-                case '@' :
-                    occurrences -= result.length();
-                    if (occurrences > 0) {
-                        grow(result, sNil10, occurrences);
-                    }
-                    occurrences = -occurrences;
-                    if (occurrences > 0) {
-                        shrink(result, occurrences);
-                    }
+                case '@':
+                    pack_at(result, occurrences);
                     break;
-                case 'u' :
-                case 'm' : {
-                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
-                        lCurElemString = from.convertToString().getByteList();
-                        if (from.isTaint()) taintOutput = true;
-                        encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
-                    }
+                case 'u':
+                case 'm':
+                    taintOutput = pack_m(context, list, result, taintOutput, packInts, (char) type, occurrences, ignoreStar);
                     break;
-                case 'M' : {
-                       if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                       IRubyObject from = list.eltInternal(idx++);
-                       if (from.isTaint()) taintOutput = true;
-                       lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
-
-                       if (occurrences <= 1) {
-                           occurrences = 72;
-                       }
-
-                       PackUtils.qpencode(result, lCurElemString, occurrences);
-                    }
+                case 'M':
+                    taintOutput = pack_M(context, list, result, taintOutput, packInts, occurrences);
                     break;
-                case 'U' :
-                    while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
-
-                        if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
-
-                        int len = result.getRealSize();
-                        result.ensure(len + 6);
-                        result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
-                    }
+                case 'U':
+                    pack_U(context, list, result, packInts, occurrences);
                     break;
-                case 'w' :
-                    while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        if (from == context.nil) throw context.runtime.newTypeError("pack('w') does not take nil");
-
-                        final ByteList buf = new ByteList();
-
-                        if (from instanceof RubyBignum) {
-                            RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
-                            while (from instanceof RubyBignum) {
-                                RubyArray ary = (RubyArray) ((RubyBignum) from).divmod(context, big128);
-                                buf.append((byte) (RubyNumeric.fix2int(ary.eltInternal(1)) | 0x80) & 0xff);
-                                from = ary.eltInternal(0);
-                            }
-                        }
-
-                        long l = RubyNumeric.num2long(from);
-
-                        // we don't deal with negatives.
-                        if (l >= 0) {
-
-                            while(l != 0) {
-                                buf.append((byte)(((l & 0x7f) | 0x80) & 0xff));
-                                l >>= 7;
-                            }
-
-                            int left = 0;
-                            int right = buf.getRealSize() - 1;
-
-                            if (right >= 0) {
-                                buf.getUnsafeBytes()[0] &= 0x7F;
-                            } else {
-                                buf.append(0);
-                            }
-
-                            while (left < right) {
-                                byte tmp = buf.getUnsafeBytes()[left];
-                                buf.getUnsafeBytes()[left] = buf.getUnsafeBytes()[right];
-                                buf.getUnsafeBytes()[right] = tmp;
-
-                                left++;
-                                right--;
-                            }
-
-                            result.append(buf);
-                        } else {
-                            throw context.runtime.newArgumentError("can't compress negative numbers");
-                        }
-                    }
-
+                case 'w':
+                    pack_w(context, list, result, packInts, occurrences);
                     break;
             }
         }
@@ -2140,6 +1871,334 @@ public class Pack {
         }
 
         return output;
+    }
+
+    private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
+        while (occurrences-- > 0) {
+            if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+            IRubyObject from = list.eltInternal(packInts.idx++);
+            if (from == context.nil) throw context.runtime.newTypeError("pack('w') does not take nil");
+
+            final ByteList buf = new ByteList();
+
+            if (from instanceof RubyBignum) {
+                RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
+                while (from instanceof RubyBignum) {
+                    RubyArray ary = (RubyArray) ((RubyBignum) from).divmod(context, big128);
+                    buf.append((byte) (RubyNumeric.fix2int(ary.eltInternal(1)) | 0x80) & 0xff);
+                    from = ary.eltInternal(0);
+                }
+            }
+
+            long l = RubyNumeric.num2long(from);
+
+            // we don't deal with negatives.
+            if (l >= 0) {
+
+                while(l != 0) {
+                    buf.append((byte)(((l & 0x7f) | 0x80) & 0xff));
+                    l >>= 7;
+                }
+
+                int left = 0;
+                int right = buf.getRealSize() - 1;
+
+                if (right >= 0) {
+                    buf.getUnsafeBytes()[0] &= 0x7F;
+                } else {
+                    buf.append(0);
+                }
+
+                while (left < right) {
+                    byte tmp = buf.getUnsafeBytes()[left];
+                    buf.getUnsafeBytes()[left] = buf.getUnsafeBytes()[right];
+                    buf.getUnsafeBytes()[right] = tmp;
+
+                    left++;
+                    right--;
+                }
+
+                result.append(buf);
+            } else {
+                throw context.runtime.newArgumentError("can't compress negative numbers");
+            }
+        }
+    }
+
+    private static void pack_U(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
+        while (occurrences-- > 0) {
+            if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+            IRubyObject from = list.eltInternal(packInts.idx++);
+            int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
+
+            if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
+
+            int len = result.getRealSize();
+            result.ensure(len + 6);
+            result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
+        }
+    }
+
+    private static boolean pack_M(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, int occurrences) {
+        ByteList lCurElemString;
+        if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+        IRubyObject from = list.eltInternal(packInts.idx++);
+        if (from.isTaint()) taintOutput = true;
+        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
+
+        if (occurrences <= 1) {
+            occurrences = 72;
+        }
+
+        PackUtils.qpencode(result, lCurElemString, occurrences);
+        return taintOutput;
+    }
+
+    private static boolean pack_h(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, int type, int occurrences, boolean isStar) {
+        ByteList lCurElemString;
+        if (packInts.listSize-- <= 0) {
+            throw context.runtime.newArgumentError(sTooFew);
+        }
+
+        IRubyObject from = list.eltInternal(packInts.idx++);
+        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
+        if (from.isTaint()) taintOutput = true;
+
+        if (isStar) {
+            occurrences = lCurElemString.length();
+            // 'Z' adds extra null pad (versus 'a')
+            if (type == 'Z') occurrences++;
+        }
+
+        pack_h_inner(result, type, lCurElemString, occurrences);
+        return taintOutput;
+    }
+
+    private static boolean pack_m(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, char type, int occurrences, boolean ignoreStar) {
+        ByteList lCurElemString;
+        if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+        IRubyObject from = list.eltInternal(packInts.idx++);
+        if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
+        lCurElemString = from.convertToString().getByteList();
+        if (from.isTaint()) taintOutput = true;
+        encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, type, result);
+        return taintOutput;
+    }
+
+    private static void pack_at(ByteList result, int occurrences) {
+        occurrences -= result.length();
+        if (occurrences > 0) {
+            grow(result, sNil10, occurrences);
+        }
+        occurrences = -occurrences;
+        if (occurrences > 0) {
+            shrink(result, occurrences);
+        }
+    }
+
+    private static void pack_X(ThreadContext context, ByteList result, int occurrences) {
+        try {
+            shrink(result, occurrences);
+        } catch (IllegalArgumentException e) {
+            throw context.runtime.newArgumentError("in `pack': X outside of string");
+        }
+    }
+
+    private static void pack_h_inner(ByteList result, int type, ByteList lCurElemString, int occurrences) {
+        switch (type) {
+            case 'a' :
+            case 'A' :
+            case 'Z' :
+                pack_h_aAZ(result, type, lCurElemString, occurrences);
+                break;
+            case 'b' :
+                    pack_h_b(result, lCurElemString, occurrences);
+            break;
+            case 'B' :
+                    pack_h_B(result, lCurElemString, occurrences);
+            break;
+            case 'h' :
+                    pack_h_h(result, lCurElemString, occurrences);
+            break;
+            case 'H' :
+                    pack_h_H(result, lCurElemString, occurrences);
+            break;
+        }
+    }
+
+    private static void pack_h_H(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = occurrences - lCurElemString.length() + 1;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            byte currentChar = (byte)lCurElemString.charAt(i++);
+
+            if (Character.isJavaIdentifierStart(currentChar)) {
+                //this test may be too lax but it is the same as in MRI
+                currentByte |= ((currentChar & 15) + 9) & 15;
+            } else {
+                currentByte |= currentChar & 15;
+            }
+
+            if ((i & 1) != 0) {
+                currentByte <<= 4;
+            } else {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+            }
+        }
+
+        if ((occurrences & 1) != 0) {
+            result.append((byte) (currentByte & 0xff));
+            if (padLength > 0) padLength--;
+        }
+
+        result.length(result.length() + padLength / 2);
+    }
+
+    private static void pack_h_h(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = occurrences - lCurElemString.length() + 1;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            byte currentChar = (byte)lCurElemString.charAt(i++);
+
+            if (Character.isJavaIdentifierStart(currentChar)) {
+                //this test may be too lax but it is the same as in MRI
+                currentByte |= (((currentChar & 15) + 9) & 15) << 4;
+            } else {
+                currentByte |= (currentChar & 15) << 4;
+            }
+
+            if ((i & 1) != 0) {
+                currentByte >>= 4;
+            } else {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+            }
+        }
+
+        if ((occurrences & 1) != 0) {
+            result.append((byte) (currentByte & 0xff));
+            if (padLength > 0) padLength--;
+        }
+
+        result.length(result.length() + padLength / 2);
+    }
+
+    private static void pack_h_B(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            currentByte |= lCurElemString.charAt(i++) & 1;
+
+            // we filled up current byte; append it and create next one
+            if ((i & 7) == 0) {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+                continue;
+            }
+
+            //if the index is not a multiple of 8, we are not on a byte boundary
+            currentByte <<= 1;
+        }
+
+        if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+            currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+            result.append((byte) (currentByte & 0xff));
+        }
+
+        result.length(result.length() + padLength);
+    }
+
+    private static void pack_h_b(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                currentByte |= 128; //set the high bit of the result
+            }
+
+            if ((i & 7) == 0) {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+                continue;
+            }
+
+               //if the index is not a multiple of 8, we are not on a byte boundary
+               currentByte >>= 1; //shift the byte
+        }
+
+        if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+            currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+            result.append((byte) (currentByte & 0xff));
+        }
+
+        //do some padding, I don't understand the padding strategy
+        result.length(result.length() + padLength);
+    }
+
+    private static void pack_h_aAZ(ByteList result, int type, ByteList lCurElemString, int occurrences) {
+        if (lCurElemString.length() >= occurrences) {
+            result.append(lCurElemString.getUnsafeBytes(), lCurElemString.getBegin(), occurrences);
+        } else {//need padding
+            //I'm fairly sure there is a library call to create a
+            //string filled with a given char with a given length but I couldn't find it
+            result.append(lCurElemString);
+            occurrences -= lCurElemString.length();
+
+            switch (type) {
+              case 'a':
+              case 'Z':
+                  grow(result, sNil10, occurrences);
+                  break;
+              default:
+                  grow(result, sSp10, occurrences);
+                  break;
+            }
+        }
+    }
+
+    private static int adjustEncInfo(int type, int enc_info) {
+        switch (type) {
+            case 'U':
+                if (enc_info == 1) enc_info = 2;
+                break;
+            case 'm':
+            case 'M':
+            case 'u':
+                break;
+            default:
+                enc_info = 0;
+                break;
+        }
+        return enc_info;
     }
 
     /**

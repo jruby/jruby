@@ -1,9 +1,7 @@
 class String
   def unpack1(spec)
-    catch(:unpack1) do
-      unpack(spec) do |value|
-        throw(:unpack1, value)
-      end
+    unpack(spec) do |value|
+      return value
     end
   end
 end
