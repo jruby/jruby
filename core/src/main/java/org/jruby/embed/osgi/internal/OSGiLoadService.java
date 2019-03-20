@@ -49,11 +49,7 @@ public class OSGiLoadService extends LoadService {
     
     public static final String OSGI_BUNDLE_CLASSPATH_SCHEME = "osgibundle:/";
     
-    public static LoadServiceCreator OSGI_DEFAULT = new LoadServiceCreator() {
-        public LoadService create(Ruby runtime) {
-            return new OSGiLoadService19(runtime);
-        }
-    };
+    public static LoadServiceCreator OSGI_DEFAULT = runtime -> new OSGiLoadService(runtime);
 
     /**
      * Default constructor
@@ -115,7 +111,6 @@ public class OSGiLoadService extends LoadService {
      * Support for 'bundle:/' to look for libraries in osgi bundles.
      */
     @Override
-    @Deprecated
     protected Library createLibrary(SearchState state, LoadServiceResource resource) {
         if (resource == null) {
             return null;
@@ -149,12 +144,6 @@ public class OSGiLoadService extends LoadService {
         }
     }
 
-}
-class OSGiLoadService19 extends OSGiLoadService {
-    public OSGiLoadService19(Ruby runtime) {
-        super(runtime);
-    }
-
     @Override
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
         String path = foundResource.getAbsolutePath();
@@ -163,5 +152,4 @@ class OSGiLoadService19 extends OSGiLoadService {
         }
         return path;
     }
-
 }
