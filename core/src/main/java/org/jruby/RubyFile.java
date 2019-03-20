@@ -494,11 +494,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
         final String path = openFile.getPath();
-        ByteList str = new ByteList(path.length() + 8);
+        ByteList str = new ByteList((path == null ? 4 : path.length()) + 8);
 
         str.append('#').append('<');
-        str.append(((RubyString) getMetaClass().to_s()).getByteList());
-        str.append(':').append( RubyEncoding.encodeUTF8(path) );
+        str.append(getMetaClass().to_s().getByteList());
+        str.append(':').append(path == null ? RubyNil.nilBytes : RubyEncoding.encodeUTF8(path));
         if (!openFile.isOpen()) {
             str.append(' ').append('(');
             str.append('c').append('l').append('o').append('s').append('e').append('d');
