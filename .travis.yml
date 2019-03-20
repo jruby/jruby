@@ -104,7 +104,7 @@ matrix:
       script:
         - cp .travis-maven-settings.xml $HOME/.m2/settings.xml
         - ./mvnw clean deploy -Prelease
-      if: type = push AND branch IN (master, jruby-9.1) # only master and maintenance pushes
+      if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.1) # only master and maintenance pushes
 
   allow_failures:
     - env: COMMAND=test/check_versions.sh
