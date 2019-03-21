@@ -45,6 +45,7 @@ import java.security.AccessControlException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -56,6 +57,7 @@ import java.util.zip.ZipException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyDir;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
@@ -1356,12 +1358,10 @@ public class LoadService {
     protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-        RubyString env_home = runtime.newString("HOME");
-        if (env.has_key_p(env_home).isFalse()) {
-            return null;
-        }
-        String home = env.op_aref(runtime.getCurrentContext(), env_home).toString();
+        Optional<String> maybeHome = RubyDir.getHomeFromEnv(runtime);
+        if (!maybeHome.isPresent()) return null;
+
+        String home = maybeHome.get();
         String path = baseName.substring(2);
 
         for (String suffix : suffixType.getSuffixes()) {

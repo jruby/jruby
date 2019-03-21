@@ -8,9 +8,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyDir;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ir.IRScope;
@@ -27,6 +29,7 @@ class LibrarySearcher {
     private final PathEntry cwdPathEntry;
     private final PathEntry classloaderPathEntry;
     private final PathEntry nullPathEntry;
+    private final PathEntry homePathEntry;
 
     protected ExpandedLoadPath expandedLoadPath;
 
@@ -36,6 +39,7 @@ class LibrarySearcher {
         this.cwdPathEntry = new NormalPathEntry(runtime.newString("."));
         this.classloaderPathEntry = new NormalPathEntry(runtime.newString(URLResource.URI_CLASSLOADER));
         this.nullPathEntry = new NullPathEntry();
+        this.homePathEntry = new HomePathEntry();
     }
 
     public List<LibrarySearcher.PathEntry> getExpandedLoadPath() {
@@ -92,15 +96,7 @@ class LibrarySearcher {
         }
 
         if (baseName.startsWith("~/")) {
-            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-            RubyString env_home = runtime.newString("HOME");
-            if (env.has_key_p(env_home).isFalse()) {
-                return null;
-            }
-            String home = env.op_aref(runtime.getCurrentContext(), env_home).toString();
-            String path = home + "/" + baseName.substring(2);
-
-            return nullPathEntry.findFile(path, suffix);
+            return homePathEntry.findFile(baseName.substring(2), suffix);
         }
 
         // If path is considered absolute, bypass loadPath iteration and load as-is
@@ -315,36 +311,38 @@ class LibrarySearcher {
         protected FoundLibrary findFile(String searchName, String suffix) {
             Ruby runtime = LibrarySearcher.this.runtime;
 
-            String fullPath = createFullPath(searchName, suffix);
+            FileResource fullPath = fullPath(searchName, suffix);
 
-            DebugLog.Resource.logTry(fullPath);
-            FileResource resource = JRubyFile.createResourceAsFile(runtime, fullPath);
+            // Can't determine a full path for this entry, return no result
+            if (fullPath == null) {
+                return null;
+            }
 
-            if (resource.exists()) {
-                if (resource.absolutePath() != resource.canonicalPath()) {
-                    FileResource expandedResource = JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
+            if (fullPath.exists()) {
+                if (fullPath.absolutePath() != fullPath.canonicalPath()) {
+                    FileResource expandedResource = JRubyFile.createResourceAsFile(runtime, fullPath.canonicalPath());
 
                     if (expandedResource.exists()){
                         String expandedAbsolute = expandedResource.absolutePath();
 
                         DebugLog.Resource.logFound(fullPath);
 
-                        return new FoundLibrary(ResourceLibrary.create(searchName, expandedAbsolute, resource), expandedAbsolute);
+                        return new FoundLibrary(ResourceLibrary.create(searchName, expandedAbsolute, fullPath), expandedAbsolute);
                     }
                 }
 
                 DebugLog.Resource.logFound(fullPath);
 
-                String scriptName = resource.absolutePath();
-                String loadName = resource.absolutePath();
+                String scriptName = fullPath.absolutePath();
+                String loadName = fullPath.absolutePath();
 
-                return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
+                return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, fullPath), loadName);
             }
 
             return null;
         }
 
-        protected abstract String createFullPath(String searchName, String suffix);
+        protected abstract FileResource fullPath(String searchName, String suffix);
     }
 
     class NormalPathEntry extends PathEntry {
@@ -355,6 +353,16 @@ class LibrarySearcher {
         NormalPathEntry(IRubyObject path) {
             this.path = path;
             this.cacheExpanded = isCachable(runtime, path);
+        }
+
+        protected FileResource fullPath(String searchName, String suffix) {
+            FileResource loadPath = expandPathCached();
+
+            String fullPath = loadPath.path() + "/" + searchName + suffix;
+
+            DebugLog.Resource.logTry(fullPath);
+
+            return JRubyFile.createResourceAsFile(runtime, fullPath);
         }
 
         private FileResource expandPathCached() {
@@ -374,13 +382,7 @@ class LibrarySearcher {
             return JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
         }
 
-        protected String createFullPath(String searchName, String suffix) {
-            FileResource loadPath = expandPathCached();
-
-            return loadPath.path() + "/" + searchName + suffix;
-        }
-
-        boolean isCachable(Ruby runtime, IRubyObject path) {
+        private boolean isCachable(Ruby runtime, IRubyObject path) {
             if (!(path instanceof RubyString)) return false;
 
             String pathAsString = path.asJavaString();
@@ -395,9 +397,24 @@ class LibrarySearcher {
         }
     }
 
+    class HomePathEntry extends PathEntry {
+        protected FileResource fullPath(String searchName, String suffix) {
+            Optional<String> home = RubyDir.getHomeFromEnv(runtime);
+
+            // FIXME: Ick. See #5661
+            if (!home.isPresent()) return null;
+
+            String fullPath = home.get();
+
+            DebugLog.Resource.logTry(fullPath);
+
+            return JRubyFile.createResourceAsFile(runtime, fullPath + "/" + searchName + suffix);
+        }
+    }
+
     class NullPathEntry extends PathEntry {
-        protected String createFullPath(String searchName, String suffix) {
-            return searchName + suffix;
+        protected FileResource fullPath(String searchName, String suffix) {
+            return JRubyFile.createResourceAsFile(runtime, searchName + suffix);
         }
     }
 }

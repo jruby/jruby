@@ -1,6 +1,7 @@
 package org.jruby.runtime.load;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.FileResource;
 
 class DebugLog {
 
@@ -17,6 +18,12 @@ class DebugLog {
     }
 
     public void logFound(String path) {
+        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            LoadService.LOG.info("found {}: {}", typeMessage, path);
+        }
+    }
+
+    public void logFound(FileResource path) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LoadService.LOG.info("found {}: {}", typeMessage, path);
         }
