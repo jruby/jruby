@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -181,6 +182,7 @@ public class LoadService {
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|bundle|jar)$");
 
     protected RubyArray loadPath;
+    protected ExpandedLoadPath expandedLoadPath;
     protected StringArraySet loadedFeatures;
     protected RubyArray loadedFeaturesDup;
     private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
@@ -603,6 +605,55 @@ public class LoadService {
 
     public IRubyObject getLoadPath() {
         return loadPath;
+    }
+
+    static class PathEntry {
+        final IRubyObject path;
+
+        PathEntry(IRubyObject path) {
+            this.path = path;
+        }
+    }
+
+    private static class ExpandedLoadPath {
+        final RubyArray loadPath;
+        final RubyArray loadPathSnapshot;
+        final List<PathEntry> pathEntries;
+
+        ExpandedLoadPath(RubyArray loadPath) {
+            this.loadPath = loadPath;
+
+            RubyArray loadPathSnapshot = loadPath.aryDup();
+            List<PathEntry> pathEntries = new ArrayList<>(loadPathSnapshot.size());
+
+            for (int i = 0; i < loadPathSnapshot.size(); i++) {
+                IRubyObject path = loadPathSnapshot.eltOk(i);
+
+                pathEntries.add(new PathEntry(path));
+            }
+            this.loadPathSnapshot = loadPathSnapshot;
+            this.pathEntries = pathEntries;
+        }
+
+        boolean isCurrent() {
+            return pathEntries == null || loadPath.toJavaArrayUnsafe() != loadPathSnapshot.toJavaArrayUnsafe();
+        }
+    }
+
+    public List<PathEntry> getExpandedLoadPath() {
+        ExpandedLoadPath expandedLoadPath = this.expandedLoadPath;
+
+        if (expandedLoadPath == null || !expandedLoadPath.isCurrent()) {
+            expandedLoadPath = this.expandedLoadPath = new ExpandedLoadPath(loadPath);
+        }
+
+        return expandedLoadPath.pathEntries;
+    }
+
+    private ExpandedLoadPath expandLoadPath() {
+        RubyArray loadPath = this.loadPath;
+
+        return new ExpandedLoadPath(loadPath);
     }
 
     public IRubyObject getLoadedFeatures() {

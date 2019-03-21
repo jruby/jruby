@@ -108,13 +108,9 @@ class LibrarySearcher {
         }
 
         // search the $LOAD_PATH
-        try {
-            for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
-                FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry));
-                if (library != null) return library;
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
+        for (LoadService.PathEntry loadPathEntry : loadService.getExpandedLoadPath()) {
+            FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry.path));
+            if (library != null) return library;
         }
 
         // inside a classloader the path "." is the place where to find the jruby kernel
