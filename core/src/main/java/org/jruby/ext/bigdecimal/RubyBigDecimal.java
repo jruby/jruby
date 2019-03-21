@@ -782,8 +782,8 @@ public class RubyBigDecimal extends RubyNumeric {
         return setResult(0);
     }
 
-    private RubyBigDecimal setResult(final int scale) {
-        int prec = (scale == 0) ? RubyFixnum.fix2int(vpPrecLimit(getRuntime())) : scale;
+    private RubyBigDecimal setResult(int prec) {
+        if (prec == 0) prec = getPrecLimit(getRuntime());
         int exponent;
         if (prec > 0 && this.value.scale() > (prec - (exponent = getExponent()))) {
             this.value = this.value.setScale(prec - exponent, BigDecimal.ROUND_HALF_UP);
@@ -894,9 +894,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return callCoerced(context, sites(context).op_times, b, true);
         }
 
-        RubyBigDecimal res = multImpl(context.runtime, val);
-        res.setResult(mx);
-        return res;
+        return multImpl(context.runtime, val).setResult(mx);
     }
 
     private RubyBigDecimal multImpl(final Ruby runtime, RubyBigDecimal val) {
@@ -926,7 +924,7 @@ public class RubyBigDecimal extends RubyNumeric {
         catch (ArithmeticException ex) {
             return checkOverUnderFlow(runtime, ex, false);
         }
-        return new RubyBigDecimal(runtime, result).setResult(0);
+        return new RubyBigDecimal(runtime, result).setResult();
     }
 
     private static RubyBigDecimal checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex, boolean nullDefault) {
@@ -970,6 +968,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static IRubyObject vpPrecLimit(final Ruby runtime) {
         return runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
+    }
+
+    private static int getPrecLimit(final Ruby runtime) {
+        return RubyNumeric.fix2int(vpPrecLimit(runtime));
     }
 
     @Deprecated
