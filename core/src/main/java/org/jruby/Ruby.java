@@ -1204,7 +1204,6 @@ public final class Ruby implements Constantizable {
      */
     private void init() {
         // Construct key services
-        loadService = config.createLoadService(this);
         javaSupport = loadJavaSupport();
 
         executor = new ThreadPoolExecutor(
@@ -1260,6 +1259,7 @@ public final class Ruby implements Constantizable {
         RubyGlobal.createGlobals(context, this);
 
         // Prepare LoadService and load path
+        loadService = config.createLoadService(this);
         getLoadService().init(config.getLoadPaths());
 
         // out of base boot mode

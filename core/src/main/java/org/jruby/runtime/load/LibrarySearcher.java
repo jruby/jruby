@@ -6,13 +6,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.Ruby;
-import org.jruby.RubyFile;
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ir.IRScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
@@ -20,31 +22,30 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
 
 class LibrarySearcher {
-    static class FoundLibrary implements Library {
-        private final Library delegate;
-        private final String loadName;
-
-        public FoundLibrary(Library delegate, String loadName) {
-            this.delegate = delegate;
-            this.loadName = loadName;
-        }
-
-        @Override
-        public void load(Ruby runtime, boolean wrap) throws IOException {
-            delegate.load(runtime, wrap);
-        }
-
-        public String getLoadName() {
-            return loadName;
-        }
-    }
-
     private final LoadService loadService;
     private final Ruby runtime;
+    private final PathEntry cwdPathEntry;
+    private final PathEntry classloaderPathEntry;
+    private final PathEntry nullPathEntry;
+
+    protected ExpandedLoadPath expandedLoadPath;
 
     public LibrarySearcher(LoadService loadService) {
         this.loadService = loadService;
         this.runtime = loadService.runtime;
+        this.cwdPathEntry = new NormalPathEntry(runtime.newString("."));
+        this.classloaderPathEntry = new NormalPathEntry(runtime.newString(URLResource.URI_CLASSLOADER));
+        this.nullPathEntry = new NullPathEntry();
+    }
+
+    public List<LibrarySearcher.PathEntry> getExpandedLoadPath() {
+        LibrarySearcher.ExpandedLoadPath expandedLoadPath = this.expandedLoadPath;
+
+        if (expandedLoadPath == null || !expandedLoadPath.isCurrent()) {
+            expandedLoadPath = this.expandedLoadPath = new ExpandedLoadPath(loadService.loadPath);
+        }
+
+        return expandedLoadPath.pathEntries;
     }
 
     // TODO(ratnikov): Kill this helper once we kill LoadService.SearchState
@@ -82,12 +83,12 @@ class LibrarySearcher {
 
     private FoundLibrary findResourceLibrary(String baseName, String suffix) {
         if (baseName.startsWith("./")) {
-            return findFileResource(baseName, suffix);
+            return nullPathEntry.findFile(baseName, suffix);
         }
 
         if (baseName.startsWith("../")) {
             // Path should be canonicalized in the findFileResource
-            return findFileResource(baseName, suffix);
+            return nullPathEntry.findFile(baseName, suffix);
         }
 
         if (baseName.startsWith("~/")) {
@@ -99,17 +100,17 @@ class LibrarySearcher {
             String home = env.op_aref(runtime.getCurrentContext(), env_home).toString();
             String path = home + "/" + baseName.substring(2);
 
-            return findFileResource(path, suffix);
+            return nullPathEntry.findFile(path, suffix);
         }
 
         // If path is considered absolute, bypass loadPath iteration and load as-is
         if (isAbsolute(baseName)) {
-          return findFileResource(baseName, suffix);
+            return nullPathEntry.findFile(baseName, suffix);
         }
 
         // search the $LOAD_PATH
-        for (LoadService.PathEntry loadPathEntry : loadService.getExpandedLoadPath()) {
-            FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry.path));
+        for (PathEntry loadPathEntry : getExpandedLoadPath()) {
+            FoundLibrary library = loadPathEntry.findFile(baseName, suffix);
             if (library != null) return library;
         }
 
@@ -117,7 +118,7 @@ class LibrarySearcher {
         if (!runtime.getCurrentDirectory().startsWith(URLResource.URI_CLASSLOADER)) {
 
             // ruby does not load a relative path unless the current working directory is in $LOAD_PATH
-            FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, ".");
+            FoundLibrary library = cwdPathEntry.findFile(baseName, suffix);
 
             // we did not find the file on the $LOAD_PATH but in current directory so we need to treat it
             // as not found (the classloader search below will find it otherwise)
@@ -125,45 +126,7 @@ class LibrarySearcher {
         }
 
         // load the jruby kernel and all resource added to $CLASSPATH
-        return findFileResourceWithLoadPath(baseName, suffix, URLResource.URI_CLASSLOADER);
-    }
-
-    // FIXME: to_path should not be called n times it should only be once and that means a cache which would
-    // also reduce all this casting and/or string creates.
-    // (mkristian) would it make sense to turn $LOAD_PATH into something like RubyClassPathVariable where we could cache
-    // the Strings ?
-    private String getPath(IRubyObject loadPathEntry) {
-        return RubyFile.get_path(runtime.getCurrentContext(), loadPathEntry).asJavaString();
-    }
-
-    private FoundLibrary findFileResource(String searchName, String suffix) {
-        return findFileResourceWithLoadPath(searchName, suffix, null);
-    }
-
-    private FoundLibrary findFileResourceWithLoadPath(String searchName, String suffix, String loadPath) {
-        String fullPath = loadPath != null ? loadPath + "/" + searchName : searchName;
-        String pathWithSuffix = fullPath + suffix;
-
-        DebugLog.Resource.logTry(pathWithSuffix);
-        FileResource resource = JRubyFile.createResourceAsFile(runtime, pathWithSuffix);
-        if (resource.exists()) {
-            if (resource.absolutePath() != resource.canonicalPath()) {
-                FileResource expandedResource = JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
-                if (expandedResource.exists()){
-                    String scriptName = resolveScriptName(expandedResource, expandedResource.canonicalPath());
-                    String loadName = resolveLoadName(expandedResource, searchName + suffix);
-                    DebugLog.Resource.logFound(pathWithSuffix);
-                    return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
-                }
-            }
-            DebugLog.Resource.logFound(pathWithSuffix);
-            String scriptName = resolveScriptName(resource, pathWithSuffix);
-            String loadName = resolveLoadName(resource, searchName + suffix);
-
-            return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
-        }
-
-        return null;
+        return classloaderPathEntry.findFile(baseName, suffix);
     }
 
     private static boolean isAbsolute(String path) {
@@ -190,12 +153,31 @@ class LibrarySearcher {
         return new File(path).isAbsolute();
     }
 
-    protected String resolveLoadName(FileResource resource, String ruby18path) {
+    protected String resolveLoadName(FileResource resource) {
         return resource.absolutePath();
     }
 
-    protected String resolveScriptName(FileResource resource, String ruby18Path) {
+    protected String resolveScriptName(FileResource resource) {
         return resource.absolutePath();
+    }
+
+    static class FoundLibrary implements Library {
+        private final Library delegate;
+        private final String loadName;
+
+        public FoundLibrary(Library delegate, String loadName) {
+            this.delegate = delegate;
+            this.loadName = loadName;
+        }
+
+        @Override
+        public void load(Ruby runtime, boolean wrap) throws IOException {
+            delegate.load(runtime, wrap);
+        }
+
+        public String getLoadName() {
+            return loadName;
+        }
     }
 
     static class ResourceLibrary implements Library {
@@ -304,6 +286,97 @@ class LibrarySearcher {
             if (serviceExtension != null) {
                 serviceExtension.load(runtime, wrap);
             }
+        }
+    }
+
+    class ExpandedLoadPath {
+        final RubyArray loadPath;
+        final RubyArray loadPathSnapshot;
+        final List<PathEntry> pathEntries;
+
+        ExpandedLoadPath(RubyArray loadPath) {
+            this.loadPath = loadPath;
+
+            RubyArray loadPathSnapshot = loadPath.aryDup();
+            List<PathEntry> pathEntries = new ArrayList<>(loadPathSnapshot.size());
+
+            for (int i = 0; i < loadPathSnapshot.size(); i++) {
+                IRubyObject path = loadPathSnapshot.eltOk(i);
+
+                pathEntries.add(new NormalPathEntry(path));
+            }
+            this.loadPathSnapshot = loadPathSnapshot;
+            this.pathEntries = pathEntries;
+        }
+
+        boolean isCurrent() {
+            return loadPath.toJavaArrayUnsafe() == loadPathSnapshot.toJavaArrayUnsafe();
+        }
+    }
+
+    abstract class PathEntry {
+        public abstract FoundLibrary findFile(String searchName, String suffix);
+
+        protected FoundLibrary findInPath(String searchName, Ruby runtime, String pathWithSuffix) {
+            FileResource resource = JRubyFile.createResourceAsFile(runtime, pathWithSuffix);
+
+            if (resource.exists()) {
+                if (resource.absolutePath() != resource.canonicalPath()) {
+                    FileResource expandedResource = JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
+
+                    if (expandedResource.exists()){
+                        String expandedAbsolute = expandedResource.absolutePath();
+
+                        DebugLog.Resource.logFound(pathWithSuffix);
+
+                        return new FoundLibrary(ResourceLibrary.create(searchName, expandedAbsolute, resource), expandedAbsolute);
+                    }
+                }
+
+                DebugLog.Resource.logFound(pathWithSuffix);
+
+                String scriptName = resource.absolutePath();
+                String loadName = resource.absolutePath();
+
+                return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
+            }
+
+            return null;
+        }
+    }
+
+    class NormalPathEntry extends PathEntry {
+        final IRubyObject path;
+
+        NormalPathEntry(IRubyObject path) {
+            this.path = path;
+        }
+
+        public FoundLibrary findFile(String searchName, String suffix) {
+            Ruby runtime = LibrarySearcher.this.runtime;
+
+            String loadPath = Helpers.javaStringFromPath(runtime, path);
+            String fullPath = loadPath != null ? loadPath + "/" + searchName : searchName;
+            String pathWithSuffix = fullPath + suffix;
+
+            DebugLog.Resource.logTry(pathWithSuffix);
+
+            return findInPath(searchName, runtime, pathWithSuffix);
+        }
+    }
+
+    class NullPathEntry extends PathEntry {
+        NullPathEntry() {
+        }
+
+        public FoundLibrary findFile(String searchName, String suffix) {
+            Ruby runtime = LibrarySearcher.this.runtime;
+
+            String pathWithSuffix = searchName + suffix;
+
+            DebugLog.Resource.logTry(pathWithSuffix);
+
+            return findInPath(searchName, runtime, pathWithSuffix);
         }
     }
 }
