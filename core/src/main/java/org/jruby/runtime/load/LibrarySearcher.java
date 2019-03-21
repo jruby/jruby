@@ -130,6 +130,10 @@ class LibrarySearcher {
     }
 
     private static boolean isAbsolute(String path) {
+        return isURI(path) || new File(path).isAbsolute();
+    }
+
+    private static boolean isURI(String path) {
         // jar: prefix doesn't mean anything anymore, but we might still encounter it
         if (path.startsWith("jar:")) {
             path = path.substring(4);
@@ -150,15 +154,8 @@ class LibrarySearcher {
             // classpath URLS are always absolute
             return true;
         }
-        return new File(path).isAbsolute();
-    }
 
-    protected String resolveLoadName(FileResource resource) {
-        return resource.absolutePath();
-    }
-
-    protected String resolveScriptName(FileResource resource) {
-        return resource.absolutePath();
+        return false;
     }
 
     static class FoundLibrary implements Library {
@@ -315,10 +312,13 @@ class LibrarySearcher {
     }
 
     abstract class PathEntry {
-        public abstract FoundLibrary findFile(String searchName, String suffix);
+        protected FoundLibrary findFile(String searchName, String suffix) {
+            Ruby runtime = LibrarySearcher.this.runtime;
 
-        protected FoundLibrary findInPath(String searchName, Ruby runtime, String pathWithSuffix) {
-            FileResource resource = JRubyFile.createResourceAsFile(runtime, pathWithSuffix);
+            String fullPath = createFullPath(searchName, suffix);
+
+            DebugLog.Resource.logTry(fullPath);
+            FileResource resource = JRubyFile.createResourceAsFile(runtime, fullPath);
 
             if (resource.exists()) {
                 if (resource.absolutePath() != resource.canonicalPath()) {
@@ -327,13 +327,13 @@ class LibrarySearcher {
                     if (expandedResource.exists()){
                         String expandedAbsolute = expandedResource.absolutePath();
 
-                        DebugLog.Resource.logFound(pathWithSuffix);
+                        DebugLog.Resource.logFound(fullPath);
 
                         return new FoundLibrary(ResourceLibrary.create(searchName, expandedAbsolute, resource), expandedAbsolute);
                     }
                 }
 
-                DebugLog.Resource.logFound(pathWithSuffix);
+                DebugLog.Resource.logFound(fullPath);
 
                 String scriptName = resource.absolutePath();
                 String loadName = resource.absolutePath();
@@ -343,40 +343,61 @@ class LibrarySearcher {
 
             return null;
         }
+
+        protected abstract String createFullPath(String searchName, String suffix);
     }
 
     class NormalPathEntry extends PathEntry {
         final IRubyObject path;
+        final boolean cacheExpanded;
+        FileResource expanded;
 
         NormalPathEntry(IRubyObject path) {
             this.path = path;
+            this.cacheExpanded = isCachable(runtime, path);
         }
 
-        public FoundLibrary findFile(String searchName, String suffix) {
-            Ruby runtime = LibrarySearcher.this.runtime;
+        private FileResource expandPathCached() {
+            if (cacheExpanded) {
+                FileResource expanded = this.expanded;
+                if (expanded != null) return expanded;
 
-            String loadPath = Helpers.javaStringFromPath(runtime, path);
-            String fullPath = loadPath != null ? loadPath + "/" + searchName : searchName;
-            String pathWithSuffix = fullPath + suffix;
+                return this.expanded = expandPath();
+            }
 
-            DebugLog.Resource.logTry(pathWithSuffix);
+            return expandPath();
+        }
 
-            return findInPath(searchName, runtime, pathWithSuffix);
+        private FileResource expandPath() {
+            FileResource resource = JRubyFile.createResourceAsFile(runtime, Helpers.javaStringFromPath(runtime, path));
+
+            return JRubyFile.createResourceAsFile(runtime, resource.canonicalPath());
+        }
+
+        protected String createFullPath(String searchName, String suffix) {
+            FileResource loadPath = expandPathCached();
+
+            return loadPath.path() + "/" + searchName + suffix;
+        }
+
+        boolean isCachable(Ruby runtime, IRubyObject path) {
+            if (!(path instanceof RubyString)) return false;
+
+            String pathAsString = path.asJavaString();
+
+            if (pathAsString.length() == 0) return false;
+
+            if (isURI(pathAsString)) return false;
+
+            FileResource resource = JRubyFile.createResourceAsFile(runtime, pathAsString);
+
+            return resource.isDirectory() && resource.path() == resource.canonicalPath();
         }
     }
 
     class NullPathEntry extends PathEntry {
-        NullPathEntry() {
-        }
-
-        public FoundLibrary findFile(String searchName, String suffix) {
-            Ruby runtime = LibrarySearcher.this.runtime;
-
-            String pathWithSuffix = searchName + suffix;
-
-            DebugLog.Resource.logTry(pathWithSuffix);
-
-            return findInPath(searchName, runtime, pathWithSuffix);
+        protected String createFullPath(String searchName, String suffix) {
+            return searchName + suffix;
         }
     }
 }
