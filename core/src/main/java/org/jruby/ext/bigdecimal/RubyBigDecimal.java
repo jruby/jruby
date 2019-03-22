@@ -1216,6 +1216,12 @@ public class RubyBigDecimal extends RubyNumeric {
         if (mx < mxb) mx = mxb;
         mx = (mx + 1) * BASE_FIG;
 
+        final int limit = getPrecLimit(context.runtime);
+        if (limit > 0 && limit < mx) mx = limit;
+        else { // second guess since the * BASE_FIG tends to get us too much -> division gets *really* slow
+            mx = (int) Math.min(this.value.precision() + (long) Math.ceil(that.value.precision() * 8.1), mx);
+        }
+
         MathContext mathContext = new MathContext(mx, getRoundingMode(context.runtime));
         return new RubyBigDecimal(context.runtime, this.value.divide(that.value, mathContext)).setResult();
     }
