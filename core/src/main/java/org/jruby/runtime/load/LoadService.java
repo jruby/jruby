@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,9 +80,7 @@ import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.URLUtil.getPath;
-import org.jruby.util.cli.Options;
 
 /**
  * <h2>How require works in JRuby</h2>
@@ -150,35 +149,30 @@ public class LoadService {
     private boolean canGetAbsolutePath = true;
 
     public enum SuffixType {
-        Source, Extension, Both, Neither;
+        Source(LibrarySearcher.Suffix.SOURCES),
+        Extension(LibrarySearcher.Suffix.EXTENSIONS),
+        Both(EnumSet.allOf(LibrarySearcher.Suffix.class)),
+        Neither(EnumSet.noneOf(LibrarySearcher.Suffix.class));
 
-        private static final String[] emptySuffixes = { "" };
-        // NOTE: always search .rb first for speed
-        public static final String[] sourceSuffixes =
-                Options.AOT_LOADCLASSES.load() ? arrayOf(".rb", ".class") : arrayOf(".rb");
-        public static final String[] extensionSuffixes = arrayOf(".jar");
-        private static final String[] allSuffixes;
+        public final EnumSet<LibrarySearcher.Suffix> suffixes;
 
-        static {
-            allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
-            System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
-            System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
+        SuffixType(EnumSet suffixes) {
+            this.suffixes = suffixes;
         }
 
+        @Deprecated
         public String[] getSuffixes() {
-            switch (this) {
-            case Source:
-                return sourceSuffixes;
-            case Extension:
-                return extensionSuffixes;
-            case Both:
-                return allSuffixes;
-            case Neither:
-                return emptySuffixes;
-            }
-            throw new RuntimeException("Unknown SuffixType: " + this);
+            return suffixes.stream()
+                    .map((suffix) -> suffix.name())
+                    .toArray(String[]::new);
         }
+
+        @Deprecated
+        public static final String[] sourceSuffixes = LibrarySearcher.Suffix.SOURCES.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
+        @Deprecated
+        public static final String[] extensionSuffixes = LibrarySearcher.Suffix.EXTENSIONS.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
     }
+
     protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|dll|bundle|jar)$");
 

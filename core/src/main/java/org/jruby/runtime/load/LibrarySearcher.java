@@ -7,13 +7,14 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyDir;
-import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.Helpers;
@@ -22,6 +23,7 @@ import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
+import org.jruby.util.cli.Options;
 
 class LibrarySearcher {
     private final LoadService loadService;
@@ -63,7 +65,7 @@ class LibrarySearcher {
     }
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
-        for (String suffix : suffixType.getSuffixes()) {
+        for (Suffix suffix : suffixType.suffixes) {
             FoundLibrary library = findResourceLibrary(baseName, suffix);
 
             if (library != null) {
@@ -85,23 +87,14 @@ class LibrarySearcher {
         }
     }
 
-    private FoundLibrary findResourceLibrary(String baseName, String suffix) {
-        if (baseName.startsWith("./")) {
-            return nullPathEntry.findFile(baseName, suffix);
-        }
-
-        if (baseName.startsWith("../")) {
+    private FoundLibrary findResourceLibrary(String baseName, Suffix suffix) {
+        if (baseName.startsWith("./") || baseName.startsWith("../") || isAbsolute(baseName)) {
             // Path should be canonicalized in the findFileResource
             return nullPathEntry.findFile(baseName, suffix);
         }
 
         if (baseName.startsWith("~/")) {
             return homePathEntry.findFile(baseName.substring(2), suffix);
-        }
-
-        // If path is considered absolute, bypass loadPath iteration and load as-is
-        if (isAbsolute(baseName)) {
-            return nullPathEntry.findFile(baseName, suffix);
         }
 
         // search the $LOAD_PATH
@@ -152,6 +145,51 @@ class LibrarySearcher {
         }
 
         return false;
+    }
+
+    enum Suffix {
+        RUBY(".rb", ResourceLibrary::new),
+        CLASS(".class", ClassResourceLibrary::new),
+        JAR(".jar", JarResourceLibrary::new);
+
+        static final EnumSet<Suffix> SOURCES =
+                Options.AOT_LOADCLASSES.load() ?
+                        EnumSet.of(Suffix.RUBY, Suffix.CLASS) : // NOTE: always search .rb first for speed
+                        EnumSet.of(RUBY);
+        static final EnumSet<Suffix> EXTENSIONS = EnumSet.of(Suffix.JAR);
+
+        private final String extension;
+        private final TriFunction<String, String, FileResource, Library> libraryFactory;
+
+        Suffix(String extension, TriFunction<String, String, FileResource, Library> libraryFactory) {
+            this.extension = extension;
+            this.libraryFactory = libraryFactory;
+        }
+
+        public Library constructLibrary(String target, String name, FileResource fullPath) {
+            return libraryFactory.apply(target, name, fullPath);
+        }
+
+        public String forTarget(String targetName) {
+            return targetName + extension;
+        }
+
+        public static Suffix forString(String withSuffix) {
+            int last = withSuffix.lastIndexOf('.');
+
+            if (last > -1) {
+                switch (withSuffix.substring(last)) {
+                    case ".rb":
+                        return RUBY;
+                    case ".jar":
+                        return JAR;
+                    case ".class":
+                        return CLASS;
+                }
+            }
+
+            throw new RuntimeException("invalid suffix in LoadService (missing '.'?): " + withSuffix);
+        }
     }
 
     static class FoundLibrary implements Library {
@@ -307,11 +345,18 @@ class LibrarySearcher {
         }
     }
 
+    interface TriFunction<T, U, V, R> {
+        default <W> TriFunction<T, U, V, W> andThen(Function<? super R,? extends W> after) {
+            return (t, u, v) -> after.apply(apply(t, u, v));
+        }
+        R apply(T t, U u, V v);
+    }
+
     abstract class PathEntry {
-        protected FoundLibrary findFile(String searchName, String suffix) {
+        protected FoundLibrary findFile(String target, Suffix suffix) {
             Ruby runtime = LibrarySearcher.this.runtime;
 
-            FileResource fullPath = fullPath(searchName, suffix);
+            FileResource fullPath = fullPath(target, suffix);
 
             // Can't determine a full path for this entry, return no result
             if (fullPath == null) {
@@ -327,7 +372,7 @@ class LibrarySearcher {
 
                         DebugLog.Resource.logFound(fullPath);
 
-                        return new FoundLibrary(ResourceLibrary.create(searchName, expandedAbsolute, fullPath), expandedAbsolute);
+                        return new FoundLibrary(suffix.constructLibrary(target, expandedAbsolute, fullPath), expandedAbsolute);
                     }
                 }
 
@@ -336,13 +381,13 @@ class LibrarySearcher {
                 String scriptName = fullPath.absolutePath();
                 String loadName = fullPath.absolutePath();
 
-                return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, fullPath), loadName);
+                return new FoundLibrary(suffix.constructLibrary(target, scriptName, fullPath), loadName);
             }
 
             return null;
         }
 
-        protected abstract FileResource fullPath(String searchName, String suffix);
+        protected abstract FileResource fullPath(String searchName, Suffix suffix);
     }
 
     class NormalPathEntry extends PathEntry {
@@ -355,10 +400,10 @@ class LibrarySearcher {
             this.cacheExpanded = isCachable(runtime, path);
         }
 
-        protected FileResource fullPath(String searchName, String suffix) {
+        protected FileResource fullPath(String searchFile, Suffix suffix) {
             FileResource loadPath = expandPathCached();
 
-            String fullPath = loadPath.path() + "/" + searchName + suffix;
+            String fullPath = loadPath.path() + "/" + suffix.forTarget(searchFile);
 
             DebugLog.Resource.logTry(fullPath);
 
@@ -398,7 +443,7 @@ class LibrarySearcher {
     }
 
     class HomePathEntry extends PathEntry {
-        protected FileResource fullPath(String searchName, String suffix) {
+        protected FileResource fullPath(String searchFile, Suffix suffix) {
             Optional<String> home = RubyDir.getHomeFromEnv(runtime);
 
             // FIXME: Ick. See #5661
@@ -408,13 +453,13 @@ class LibrarySearcher {
 
             DebugLog.Resource.logTry(fullPath);
 
-            return JRubyFile.createResourceAsFile(runtime, fullPath + "/" + searchName + suffix);
+            return JRubyFile.createResourceAsFile(runtime, fullPath + "/" + suffix.forTarget(searchFile));
         }
     }
 
     class NullPathEntry extends PathEntry {
-        protected FileResource fullPath(String searchName, String suffix) {
-            return JRubyFile.createResourceAsFile(runtime, searchName + suffix);
+        protected FileResource fullPath(String searchFile, Suffix suffix) {
+            return JRubyFile.createResourceAsFile(runtime, suffix.forTarget(searchFile));
         }
     }
 }

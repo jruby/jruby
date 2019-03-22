@@ -17,6 +17,12 @@ class DebugLog {
         }
     }
 
+    public void logTry(FileResource path) {
+        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            LoadService.LOG.info("trying {}: {}", typeMessage, path);
+        }
+    }
+
     public void logFound(String path) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LoadService.LOG.info("found {}: {}", typeMessage, path);
