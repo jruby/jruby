@@ -1609,12 +1609,16 @@ public class RubyBigDecimal extends RubyNumeric {
         // If round is called without any argument, we should raise a
         // FloatDomainError. Otherwise, we don't have to call round ;
         // we can simply return the number itself.
-        if (args.length == 0 && isInfinity()) {
-            throw newInfinityFloatDomainError(runtime, infinitySign);
+        if (isNaN()) {
+            if (args.length == 0) {
+                throw newNaNFloatDomainError(runtime);
+            }
+            return newNaN(runtime);
         }
-
-        if (isNaN()) return newNaN(runtime);
         if (isInfinity()) {
+            if (args.length == 0) {
+                throw newInfinityFloatDomainError(runtime, infinitySign);
+            }
             return newInfinity(runtime, infinitySign);
         }
 

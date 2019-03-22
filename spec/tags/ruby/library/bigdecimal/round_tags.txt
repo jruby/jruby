@@ -1,1 +1,0 @@
-fails:BigDecimal#round raise exception, if self is special value
