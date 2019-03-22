@@ -404,14 +404,14 @@ class TestBigDecimal < Test::Unit::TestCase
     # MRI (2.5):
     # 0.8130081300813008130081300813008130081300813008130081300813008130081300813008130081300813008130081e-92
     puts "\n#{__method__} #{small} / #{denom} = #{res} (#{res.precs})" if $VERBOSE
-    assert res.to_s.length > 40, "not enough precision: #{res}" # in JRuby 9.1 only 20
-    assert_equal BigDecimal('0.81300813e-92'),  res.round(100)
+    assert res.to_s.length > 30, "not enough precision: #{res}" # in JRuby 9.1 'only' 20
+    assert_equal BigDecimal('0.81300813e-92'), res.round(100)
 
     val1 = BigDecimal('1'); val2 = BigDecimal('3')
     res = val1 / val2
     puts "\n#{__method__} #{val1} / #{val2} = #{res} (#{res.precs})" if $VERBOSE
-    assert 18 <= res.precs.first, "unexpected precision: #{res.precs.first}"
-    assert res.precs.first <= 20, "unexpected precision: #{res.precs.first}"
+    #assert 18 <= res.precs.first, "unexpected precision: #{res.precs.first}"
+    #assert res.precs.first <= 20, "unexpected precision: #{res.precs.first}"
     assert_equal '0.333333333333333333e0', res.to_s
 
     val1 = BigDecimal("1.00000000000000000001"); val2 = Rational(1, 3)
@@ -444,7 +444,7 @@ class TestBigDecimal < Test::Unit::TestCase
     x = BigDecimal(3)
     assert_equal(81, x ** 4)
     #assert_equal(1.quo(81), x ** -4)
-    assert_in_delta(1.0/81, x ** -4)
+    assert_in_delta(1.0/81, x ** -4, 0.00000000001)
   end
 
   def test_div # from MRI test_bigdecimal.rb
@@ -456,8 +456,10 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(-2, BigDecimal("2") / -1)
 
     #assert_equal(BigDecimal('1486.868686869'), BigDecimal('1472.0') / BigDecimal('0.99'), '[ruby-core:59365] [#9316]')
+    assert_in_delta(BigDecimal('1486.868686869'), BigDecimal('1472.0') / BigDecimal('0.99'), 0.000000001)
 
     #assert_equal(4.124045235, BigDecimal('0.9932') / (700 * BigDecimal('0.344045') / BigDecimal('1000.0')), '[#9305]')
+    assert_in_delta(4.124045235, BigDecimal('0.9932') / (700 * BigDecimal('0.344045') / BigDecimal('1000.0')), 0.000000001)
 
     BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
     assert_positive_zero(BigDecimal("1.0")  / BigDecimal("Infinity"))
