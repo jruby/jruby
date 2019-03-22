@@ -629,6 +629,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
+                if (isZeroBase(str, s, exp)) return newZero(context.runtime, sign); // unless its a HUGE zero
                 return newInfinity(context.runtime, sign);
             }
         }
@@ -662,6 +663,13 @@ public class RubyBigDecimal extends RubyNumeric {
             return true;
         }
         return false;
+    }
+
+    private static boolean isZeroBase(final char[] str, final int off, final int end) {
+        for (int i=off; i<end; i++) {
+            if (str[i] != '0') return false;
+        }
+        return true;
     }
 
     private static boolean isExponentOutOfRange(final char[] str, final int off, final int end) {
