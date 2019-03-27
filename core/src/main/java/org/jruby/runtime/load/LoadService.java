@@ -347,18 +347,18 @@ public class LoadService {
         long startTime = loadTimer.startLoad("classloader:" + file);
         int currentLine = runtime.getCurrentLine();
         try {
-            SearchState state = new SearchState(file);
-            state.prepareLoadSearch(file);
+            String[] fileHolder = {file};
+            librarySearcher.getSuffixTypeForLoad(fileHolder);
+            String baseName = fileHolder[0];
 
-            Library library = null;
             LoadServiceResource resource = getClassPathResource(classLoader, file);
-            if (resource != null) {
-                state.setLoadName(resolveLoadName(resource, file));
-                library = createLibrary(state, resource);
-            }
-            if (library == null) {
-                throw runtime.newLoadError("no such file to load -- " + file);
-            }
+
+            if (resource == null) throw runtime.newLoadError("no such file to load -- " + file);
+
+            String loadName = resolveLoadName(resource, file);
+            LibrarySearcher.FoundLibrary library =
+                    new LibrarySearcher.FoundLibrary(baseName, loadName, createLibrary(baseName, loadName, resource));
+
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
@@ -729,10 +729,6 @@ public class LoadService {
      */
     protected LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
         return librarySearcher.findLibraryForLoad(file);
-    }
-
-    protected Library findLibraryBySearchState(SearchState state) {
-        return librarySearcher.findLibrary(state.searchFile, state.suffixType);
     }
 
     protected LibrarySearcher.FoundLibrary findLibraryWithClassloaders(String baseName, SuffixType suffixType) {
@@ -1648,6 +1644,11 @@ public class LoadService {
     @Deprecated
     protected boolean isJarfileLibrary(SearchState state, final String file) {
         return isJarfileLibrary(state.library, file);
+    }
+
+    @Deprecated
+    protected Library findLibraryBySearchState(SearchState state) {
+        return librarySearcher.findLibrary(state.searchFile, state.suffixType);
     }
     //</editor-fold>
 }

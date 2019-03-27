@@ -56,7 +56,6 @@ public class LibrarySearcher {
         return expandedLoadPath.pathEntries;
     }
 
-    // TODO(ratnikov): Kill this helper once we kill LoadService.SearchState
     @Deprecated
     public FoundLibrary findBySearchState(LoadService.SearchState state) {
         FoundLibrary lib = findLibraryForRequire(state.searchFile);
@@ -336,7 +335,7 @@ public class LibrarySearcher {
         public void load(Ruby runtime, boolean wrap) {
             InputStream ris = null;
             try {
-                ris = resource.inputStream();
+                ris = resource.openInputStream();
 
                 if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
                     runtime.compileAndLoadFile(scriptName, ris, wrap);
@@ -362,7 +361,7 @@ public class LibrarySearcher {
         public void load(Ruby runtime, boolean wrap) {
             InputStream is = null;
             try {
-                is = new BufferedInputStream(resource.inputStream(), 32768);
+                is = new BufferedInputStream(resource.openInputStream(), 32768);
                 IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
 
                 // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
