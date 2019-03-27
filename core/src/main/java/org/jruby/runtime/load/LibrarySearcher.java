@@ -17,6 +17,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyDir;
 import org.jruby.RubyString;
 import org.jruby.ir.IRScope;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
@@ -25,7 +26,7 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
 import org.jruby.util.cli.Options;
 
-class LibrarySearcher {
+public class LibrarySearcher {
     private final LoadService loadService;
     private final Ruby runtime;
     private final PathEntry cwdPathEntry;
@@ -55,17 +56,25 @@ class LibrarySearcher {
     }
 
     // TODO(ratnikov): Kill this helper once we kill LoadService.SearchState
+    @Deprecated
     public FoundLibrary findBySearchState(LoadService.SearchState state) {
-        FoundLibrary lib = findLibrary(state.searchFile, state.suffixType);
+        FoundLibrary lib = findLibrary(state.searchFile);
         if (lib != null) {
+            state.searchFile = lib.searchName;
             state.library = lib;
             state.setLoadName(lib.getLoadName());
         }
         return lib;
     }
 
-    public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
-        for (Suffix suffix : suffixType.suffixes) {
+    // MRI: search_required
+    public LibrarySearcher.FoundLibrary findLibrary(String file) {
+        // Determine suffix type and get base file name out
+        String[] fileHolder = {file};
+        SuffixType suffixType = getSuffixType(fileHolder);
+        String baseName = fileHolder[0];
+
+        for (Suffix suffix : suffixType.getSuffixSet()) {
             FoundLibrary library = findResourceLibrary(baseName, suffix);
 
             if (library != null) {
@@ -76,12 +85,55 @@ class LibrarySearcher {
         return findServiceLibrary(baseName);
     }
 
+    public static SuffixType getSuffixType(String[] fileHolder) {
+        SuffixType suffixType;
+        String file = fileHolder[0];
+
+        // FIXME: Does this matter? We pass this through various path-normalizing calls elsewhere
+        if (Platform.IS_WINDOWS) {
+            file = file.replace('\\', '/');
+        }
+
+        int lastDot = file.lastIndexOf('.');
+
+        if (lastDot != -1 && file.indexOf('/', lastDot) == -1) {
+            if (file.endsWith(".rb")) {
+                // source extensions
+                suffixType = SuffixType.Source;
+
+                // trim extension to try other options
+                fileHolder[0] = file.substring(0, lastDot);
+            } else if (file.endsWith(".so") // Even if we don't support .so, some stdlib require .so directly.
+                    || file.endsWith(".o") // Matching MRI default extension search
+                    || file.endsWith(".jar")) {
+
+                // extension extensions
+                suffixType = SuffixType.Extension;
+
+                // trim extension to try other options
+                fileHolder[0] = file.substring(0, lastDot);
+            } else if (file.endsWith(".class")) {
+                // For JRUBY-6731, treat require 'foo.class' as no other filename than 'foo.class'.
+                suffixType = SuffixType.Neither;
+
+            } else {
+                // unknown extension, fall back to search with extensions
+                suffixType = SuffixType.Both;
+            }
+        } else {
+            // try all extensions
+            suffixType = SuffixType.Both;
+        }
+
+        return suffixType;
+    }
+
     private FoundLibrary findServiceLibrary(String name) {
         DebugLog.JarExtension.logTry(name);
         Library extensionLibrary = ClassExtensionLibrary.tryFind(runtime, name);
         if (extensionLibrary != null) {
             DebugLog.JarExtension.logFound(name);
-            return new FoundLibrary(extensionLibrary, name);
+            return new FoundLibrary(name, name, extensionLibrary);
         } else {
             return null;
         }
@@ -192,13 +244,15 @@ class LibrarySearcher {
         }
     }
 
-    static class FoundLibrary implements Library {
+    public static class FoundLibrary implements Library {
         private final Library delegate;
+        private final String searchName;
         private final String loadName;
 
-        public FoundLibrary(Library delegate, String loadName) {
-            this.delegate = delegate;
+        public FoundLibrary(String searchName, String loadName, Library delegate) {
+            this.searchName = searchName;
             this.loadName = loadName;
+            this.delegate = delegate;
         }
 
         @Override
@@ -208,6 +262,10 @@ class LibrarySearcher {
 
         public String getLoadName() {
             return loadName;
+        }
+
+        public String getSearchName() {
+            return searchName;
         }
     }
 
@@ -372,16 +430,15 @@ class LibrarySearcher {
 
                         DebugLog.Resource.logFound(fullPath);
 
-                        return new FoundLibrary(suffix.constructLibrary(target, expandedAbsolute, fullPath), expandedAbsolute);
+                        return new FoundLibrary(target, expandedAbsolute, suffix.constructLibrary(target, expandedAbsolute, fullPath));
                     }
                 }
 
                 DebugLog.Resource.logFound(fullPath);
 
-                String scriptName = fullPath.absolutePath();
-                String loadName = fullPath.absolutePath();
+                String resolvedName = fullPath.absolutePath();
 
-                return new FoundLibrary(suffix.constructLibrary(target, scriptName, fullPath), loadName);
+                return new FoundLibrary(target, resolvedName, suffix.constructLibrary(target, resolvedName, fullPath));
             }
 
             return null;

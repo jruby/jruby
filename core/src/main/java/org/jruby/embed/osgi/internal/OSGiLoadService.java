@@ -35,20 +35,21 @@ import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.embed.osgi.utils.OSGiFileLocator;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.load.LibrarySearcher;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.osgi.framework.Bundle;
 
 /**
  * @author hmalphettes
- * 
+ *
  * Load scripts and java classes directly from the OSGi bundles.
  * bundle:/symbolic.name/
  */
 public class OSGiLoadService extends LoadService {
-    
+
     public static final String OSGI_BUNDLE_CLASSPATH_SCHEME = "osgibundle:/";
-    
+
     public static LoadServiceCreator OSGI_DEFAULT = runtime -> new OSGiLoadService(runtime);
 
     /**
@@ -59,18 +60,18 @@ public class OSGiLoadService extends LoadService {
     public OSGiLoadService(Ruby runtime) {
         super(runtime);
     }
-    
-    protected Library findLibraryBySearchState(SearchState state) {
-        Library library = super.findLibraryBySearchState(state);
-        if (library == null){
-            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-            if (library != null) {
-                state.library = library;
-            }
-        }
-        return library;
+
+    protected LibrarySearcher.FoundLibrary findLibrary(String searchFile) {
+        String[] fileHolder = {searchFile};
+        SuffixType suffixType = LibrarySearcher.getSuffixType(fileHolder);
+        String baseName = fileHolder[0];
+
+        LibrarySearcher.FoundLibrary library = librarySearcher.findLibrary(baseName);
+        if (library != null) return library;
+
+        return findLibraryWithClassloaders(searchFile, suffixType);
     }
-    
+
     /**
      * Support for 'bundle:/' to look for libraries in osgi bundles
      * or classes or ruby files.
@@ -106,16 +107,16 @@ public class OSGiLoadService extends LoadService {
         }
         return super.findFileInClasspath(name);
     }
-    
+
     /**
      * Support for 'bundle:/' to look for libraries in osgi bundles.
      */
     @Override
-    protected Library createLibrary(SearchState state, LoadServiceResource resource) {
+    protected LibrarySearcher.FoundLibrary createLibrary(String baseName, String loadName, LoadServiceResource resource) {
         if (resource == null) {
             return null;
         }
-        String file = state.loadName;
+        String file = loadName;
         if (file.startsWith(OSGI_BUNDLE_CLASSPATH_SCHEME)) {
             file = cleanupFindName(file);
             StringTokenizer tokenizer = new StringTokenizer(file, "/", false);
@@ -123,10 +124,10 @@ public class OSGiLoadService extends LoadService {
             String symname = tokenizer.nextToken();
             Bundle bundle = OSGiFileLocator.getBundle(symname);
             if (bundle != null) {
-                return new OSGiBundleLibrary(bundle);
+                return new LibrarySearcher.FoundLibrary(baseName, loadName, new OSGiBundleLibrary(bundle));
             }
         }
-        return super.createLibrary(state, resource);
+        return new LibrarySearcher.FoundLibrary(baseName, loadName, super.createLibrary(baseName, loadName, resource));
     }
     
     /**
@@ -152,4 +153,38 @@ public class OSGiLoadService extends LoadService {
         }
         return path;
     }
+
+    @Override
+    @Deprecated
+    protected Library findLibraryBySearchState(SearchState state) {
+        Library library = super.findLibraryBySearchState(state);
+        if (library == null){
+            library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+            if (library != null) {
+                state.library = library;
+            }
+        }
+        return library;
+    }
+
+    @Override
+    @Deprecated
+    protected Library createLibrary(SearchState state, LoadServiceResource resource) {
+        if (resource == null) {
+            return null;
+        }
+        String file = state.loadName;
+        if (file.startsWith(OSGI_BUNDLE_CLASSPATH_SCHEME)) {
+            file = cleanupFindName(file);
+            StringTokenizer tokenizer = new StringTokenizer(file, "/", false);
+            tokenizer.nextToken();
+            String symname = tokenizer.nextToken();
+            Bundle bundle = OSGiFileLocator.getBundle(symname);
+            if (bundle != null) {
+                return new OSGiBundleLibrary(bundle);
+            }
+        }
+        return super.createLibrary(state, resource);
+    }
+
 }
