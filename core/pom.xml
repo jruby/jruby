@@ -434,6 +434,33 @@ DO NOT MODIFIY - GENERATED CODE
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>condense-kernel-files</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.anno.LoadInliner</argument>
+                <argument>src/main/ruby</argument>
+                <argument>${project.build.outputDirectory}</argument>
+                <argument>jruby/kernel.rb</argument>
+                <argument>jruby/preludes.rb</argument>
+                <argument>jruby/java.rb</argument>
+              </arguments>
+              <executable>java</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <executions>
           <execution>
