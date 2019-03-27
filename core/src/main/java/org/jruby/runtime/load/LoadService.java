@@ -320,10 +320,7 @@ public class LoadService {
                 throw runtime.newLoadError("no such file to load -- " + file, file);
             }
 
-            SearchState state = new SearchState(file);
-            state.prepareLoadSearch(file);
-
-            LibrarySearcher.FoundLibrary library = findLibrary(file);
+            LibrarySearcher.FoundLibrary library = librarySearcher.findLibraryForLoad(file);
 
             // load() will do a last chance look in current working directory for the file (see load.c:rb_f_load()).
             if (library == null) {
@@ -463,7 +460,7 @@ public class LoadService {
             return RequireState.ALREADY_LOADED;
         }
 
-        LibrarySearcher.FoundLibrary library = findLibrary(file);
+        LibrarySearcher.FoundLibrary library = findLibraryForRequire(file);
 
         if (library == null) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
@@ -630,30 +627,15 @@ public class LoadService {
         @Deprecated
         public void prepareRequireSearch(final String file) {
             String[] fileHolder = {file};
-            suffixType = LibrarySearcher.getSuffixType(fileHolder);
+            suffixType = LibrarySearcher.getSuffixTypeForRequire(fileHolder);
             searchFile = fileHolder[0];
         }
 
+        @Deprecated
         public void prepareLoadSearch(final String file) {
-            // if a source extension is specified, try all source extensions
-            if (file.lastIndexOf('.') > file.lastIndexOf('/')) {
-                Matcher matcher;
-                if ((matcher = sourcePattern.matcher(file)).find()) {
-                    // source extensions
-                    suffixType = SuffixType.Source;
-
-                    // trim extension to try other options
-                    searchFile = file.substring(0, matcher.start());
-                } else {
-                    // unknown extension, fall back to exact search
-                    suffixType = SuffixType.Neither;
-                    searchFile = file;
-                }
-            } else {
-                // try only literal search
-                suffixType = SuffixType.Neither;
-                searchFile = file;
-            }
+            String[] fileHolder = {file};
+            suffixType = LibrarySearcher.getSuffixTypeForLoad(fileHolder);
+            searchFile = fileHolder[0];
         }
 
         public void setLoadName(String loadName) {
@@ -735,12 +717,22 @@ public class LoadService {
         }
     }
 
-    protected LibrarySearcher.FoundLibrary findLibrary(String file) {
-        return librarySearcher.findLibrary(file);
+    /**
+     * Replaces findLibraryBySearchState but split off for require. Needed for OSGiLoadService to override.
+     */
+    protected LibrarySearcher.FoundLibrary findLibraryForRequire(String file) {
+        return librarySearcher.findLibraryForRequire(file);
+    }
+
+    /**
+     * Replaces findLibraryBySearchState but split off for load. Needed for OSGiLoadService to override.
+     */
+    protected LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
+        return librarySearcher.findLibraryForLoad(file);
     }
 
     protected Library findLibraryBySearchState(SearchState state) {
-        return librarySearcher.findLibrary(state.searchFile);
+        return librarySearcher.findLibrary(state.searchFile, state.suffixType);
     }
 
     protected LibrarySearcher.FoundLibrary findLibraryWithClassloaders(String baseName, SuffixType suffixType) {

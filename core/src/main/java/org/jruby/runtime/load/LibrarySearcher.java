@@ -11,6 +11,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -58,7 +59,7 @@ public class LibrarySearcher {
     // TODO(ratnikov): Kill this helper once we kill LoadService.SearchState
     @Deprecated
     public FoundLibrary findBySearchState(LoadService.SearchState state) {
-        FoundLibrary lib = findLibrary(state.searchFile);
+        FoundLibrary lib = findLibraryForRequire(state.searchFile);
         if (lib != null) {
             state.searchFile = lib.searchName;
             state.library = lib;
@@ -68,12 +69,25 @@ public class LibrarySearcher {
     }
 
     // MRI: search_required
-    public LibrarySearcher.FoundLibrary findLibrary(String file) {
+    public LibrarySearcher.FoundLibrary findLibraryForRequire(String file) {
         // Determine suffix type and get base file name out
         String[] fileHolder = {file};
-        SuffixType suffixType = getSuffixType(fileHolder);
+        SuffixType suffixType = getSuffixTypeForRequire(fileHolder);
         String baseName = fileHolder[0];
 
+        return findLibrary(baseName, suffixType);
+    }
+
+    public LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
+        // Determine suffix type and get base file name out
+        String[] fileHolder = {file};
+        SuffixType suffixType = getSuffixTypeForLoad(fileHolder);
+        String baseName = fileHolder[0];
+
+        return findLibrary(baseName, suffixType);
+    }
+
+    public LibrarySearcher.FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
         for (Suffix suffix : suffixType.getSuffixSet()) {
             FoundLibrary library = findResourceLibrary(baseName, suffix);
 
@@ -85,7 +99,7 @@ public class LibrarySearcher {
         return findServiceLibrary(baseName);
     }
 
-    public static SuffixType getSuffixType(String[] fileHolder) {
+    public static SuffixType getSuffixTypeForRequire(String[] fileHolder) {
         SuffixType suffixType;
         String file = fileHolder[0];
 
@@ -123,6 +137,33 @@ public class LibrarySearcher {
         } else {
             // try all extensions
             suffixType = SuffixType.Both;
+        }
+
+        return suffixType;
+    }
+
+    public static SuffixType getSuffixTypeForLoad(final String[] fileHolder) {
+        SuffixType suffixType;
+        String file = fileHolder[0];
+
+        int lastDot = file.lastIndexOf('.');
+
+        if (lastDot != -1 && file.indexOf('/', lastDot) == -1) {
+            // if a source extension is specified, try all source extensions
+            Matcher matcher;
+            if (file.endsWith(".rb")) {
+                // source extensions
+                suffixType = SuffixType.Source;
+
+                // trim extension to try other options
+                fileHolder[0] = file.substring(0, lastDot);
+            } else {
+                // unknown extension or .so/.jar, fall back to exact search
+                suffixType = SuffixType.Neither;
+            }
+        } else {
+            // try only literal search
+            suffixType = SuffixType.Neither;
         }
 
         return suffixType;
