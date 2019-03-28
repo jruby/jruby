@@ -16,3 +16,6 @@ fails:Module#autoload after autoloading searches for the constant like the origi
 fails:Module#autoload the autoload is removed when the same file is required directly without autoload with a full path
 fails:Module#autoload the autoload is removed when the same file is required directly without autoload with a relative path
 fails(hangs):Module#autoload the autoload is removed when the same file is required directly without autoload in a nested require
+fails:Module#autoload the autoload is triggered when the same file is required directly with a full path
+fails:Module#autoload the autoload is triggered when the same file is required directly with a relative path
+fails:Module#autoload the autoload is triggered when the same file is required directly in a nested require
