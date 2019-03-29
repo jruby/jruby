@@ -151,7 +151,7 @@ public class LoadService {
     public enum SuffixType {
         Source(LibrarySearcher.Suffix.SOURCES),
         Extension(LibrarySearcher.Suffix.EXTENSIONS),
-        Both(EnumSet.allOf(LibrarySearcher.Suffix.class)),
+        Both(LibrarySearcher.Suffix.ALL),
         Neither(EnumSet.noneOf(LibrarySearcher.Suffix.class));
 
         public final EnumSet<LibrarySearcher.Suffix> suffixes;
@@ -182,8 +182,6 @@ public class LoadService {
 
     protected RubyArray loadPath;
     protected StringArraySet loadedFeatures;
-    protected RubyArray loadedFeaturesDup;
-    private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
 
     protected final Map<String, JarFile> jarFiles = new HashMap<>();
 
@@ -212,6 +210,7 @@ public class LoadService {
         loadPath = RubyArray.newArray(runtime);
 
         String jrubyHome = runtime.getJRubyHome();
+
         loadedFeatures = new StringArraySet(runtime);
 
         librarySearcher = new LibrarySearcher(this);
@@ -281,23 +280,8 @@ public class LoadService {
     }
 
     // MRI: rb_provide, roughly
-    public void provide(String shortName, String fullName) {
-        addLoadedFeature(shortName, fullName);
-    }
-
-    protected boolean isFeatureInIndex(String shortName) {
-        return loadedFeaturesIndex.containsKey(shortName);
-    }
-
-    protected void addLoadedFeature(String shortName, String name) {
-        loadedFeatures.appendString(runtime, name);
-
-        addFeatureToIndex(shortName, name);
-    }
-
-    protected void addFeatureToIndex(String shortName, String name) {
-        loadedFeaturesDup = (RubyArray)loadedFeatures.dup();
-        loadedFeaturesIndex.put(shortName, name);
+    public void provide(String name) {
+        librarySearcher.provideFeature(runtime.newString(name));
     }
 
     protected void addPath(String path) {
@@ -383,12 +367,12 @@ public class LoadService {
         LOADED, ALREADY_LOADED, CIRCULAR
     }
 
-    private final RequireLocks requireLocks = new RequireLocks();
+    final RequireLocks requireLocks = new RequireLocks();
 
     enum LockResult { LOCKED, CIRCULAR }
 
-    private final class RequireLocks {
-        private final ConcurrentHashMap<String, ReentrantLock> pool;
+    final class RequireLocks {
+        final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
 
@@ -407,26 +391,42 @@ public class LoadService {
          * @return If the sync object already locked by current thread, it just
          *         returns false without getting a lock. Otherwise true.
          */
-        private LockResult lock(String requireName) {
+        private String lock(String requireName, boolean circularRequireWarning) {
             ReentrantLock lock = pool.get(requireName);
 
+            // Check if lock is already there
             if (lock == null) {
                 ReentrantLock newLock = new ReentrantLock();
                 lock = pool.putIfAbsent(requireName, newLock);
-                if (lock == null) lock = newLock;
+                // Lock is new, lock and return LOCKED
+                if (lock == null) {
+                    lock = newLock;
+                    lock.lock();
+
+                    return requireName;
+                }
             }
 
-            if (lock.isHeldByCurrentThread()) return LockResult.CIRCULAR;
+//            if (lock carries a function that's supposed to clean up autoload?) ... {
+//                replace entry with a lock, lock it, and return empty file
+
+            if (circularRequireWarning && runtime.isVerbose()) {
+                warnCircularRequire(requireName);
+            }
+
+            if (lock.isHeldByCurrentThread()) return null;
 
             try {
                 runtime.getCurrentContext().getThread().enterSleep();
-                lock.lock();
+                lock.lockInterruptibly();
+            } catch (InterruptedException ie) {
+                return null;
             } finally {
                 runtime.getCurrentContext().getThread().exitSleep();
             }
 
 
-            return LockResult.LOCKED;
+            return requireName;
         }
 
         /**
@@ -436,12 +436,11 @@ public class LoadService {
          *            name of the lock to be unlocked.
          */
         private void unlock(String requireName) {
-            ReentrantLock lock = pool.get(requireName);
-
-            if (lock != null) {
+            pool.computeIfPresent(requireName, (name, lock) -> {
                 assert lock.isHeldByCurrentThread();
                 lock.unlock();
-            }
+                return null;
+            });
         }
     }
 
@@ -455,55 +454,46 @@ public class LoadService {
     private RequireState smartLoadInternal(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
 
-        // check with short name
-        if (featureAlreadyLoaded(file)) {
-            return RequireState.ALREADY_LOADED;
-        }
+        LibrarySearcher.FoundLibrary[] libraryHolder = {null};
+        char found = searchForRequire(file, libraryHolder);
 
-        LibrarySearcher.FoundLibrary library = findLibraryForRequire(file);
+        String lockedFile = null;
 
-        if (library == null) {
+        LibrarySearcher.FoundLibrary library;
+        String loadName = null;
+
+        if (found == 0) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
-        // check with long name
-        if (featureAlreadyLoaded(library.getLoadName())) {
-            return RequireState.ALREADY_LOADED;
-        }
-
-        if (!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
-        }
-
-        if (requireLocks.lock(library.getLoadName()) == LockResult.CIRCULAR) {
-            if (circularRequireWarning && runtime.isVerbose()) {
-                warnCircularRequire(library.getLoadName());
-            }
-            return RequireState.CIRCULAR;
-        }
-
-        // numbers from loadTimer does not include lock waiting time.
-        long startTime = loadTimer.startLoad(library.getLoadName());
+        library = libraryHolder[0];
+        if (library != null) loadName = library.getLoadName();
 
         try {
-            // check with short name again
-            if (featureAlreadyLoaded(file)) {
+            if (library == null || (lockedFile = requireLocks.lock(loadName, circularRequireWarning)) == null) {
                 return RequireState.ALREADY_LOADED;
-            }
+            } else if (lockedFile.length() == 0) {
+                provide(loadName);
+                return RequireState.LOADED;
+            } else {
+                if (library == null || !runtime.getProfile().allowRequire(file)) {
+                    throw runtime.newLoadError("no such file to load -- " + file, file);
+                }
 
-            // check with long name again in case it loaded while we were locking
-            if (featureAlreadyLoaded(library.getLoadName())) {
-                return RequireState.ALREADY_LOADED;
+                // numbers from loadTimer does not include lock waiting time.
+                long startTime = loadTimer.startLoad(loadName);
+                try {
+                    tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
+                    provide(library.getLoadName());
+                    return RequireState.LOADED;
+                } finally {
+                    loadTimer.endLoad(loadName, startTime);
+                }
             }
-
-            boolean loaded = tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
-            if (loaded) {
-                addLoadedFeature(file, library.getLoadName());
-            }
-            return loaded ? RequireState.LOADED : RequireState.ALREADY_LOADED;
         } finally {
-            loadTimer.endLoad(library.getLoadName(), startTime);
-            requireLocks.unlock(library.getLoadName());
+            if (lockedFile != null) {
+                requireLocks.unlock(loadName);
+            }
         }
     }
 
@@ -585,28 +575,6 @@ public class LoadService {
 
     public IRubyObject getLoadedFeatures() {
         return loadedFeatures;
-    }
-
-    private boolean isFeaturesIndexUpToDate() {
-        // disable tracing during index check
-        runtime.getCurrentContext().preTrace();
-        try {
-            return loadedFeaturesDup != null && loadedFeaturesDup.eql(loadedFeatures);
-        } finally {
-            runtime.getCurrentContext().postTrace();
-        }
-    }
-
-    public boolean featureAlreadyLoaded(String name) {
-        if (loadedFeatures.containsString(name)) return true;
-
-        // Bail if our features index fell out of date.
-        if (!isFeaturesIndexUpToDate()) {
-            loadedFeaturesIndex.clear();
-            return false;
-        }
-
-        return isFeatureInIndex(name);
     }
 
     protected boolean isJarfileLibrary(Library library, final String file) {
@@ -717,18 +685,28 @@ public class LoadService {
         }
     }
 
+    protected final void debugLogFound(String what, String msg) {
+        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
+            LOG.info( "found {}: {}", what, msg );
+        }
+    }
+
     /**
      * Replaces findLibraryBySearchState but split off for require. Needed for OSGiLoadService to override.
      */
-    protected LibrarySearcher.FoundLibrary findLibraryForRequire(String file) {
-        return librarySearcher.findLibraryForRequire(file);
+    protected char searchForRequire(String file, LibrarySearcher.FoundLibrary[] path) {
+        return librarySearcher.findLibraryForRequire(file, path);
     }
 
     /**
      * Replaces findLibraryBySearchState but split off for load. Needed for OSGiLoadService to override.
      */
-    protected LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
+    protected LibrarySearcher.FoundLibrary searchForLoad(String file) {
         return librarySearcher.findLibraryForLoad(file);
+    }
+
+    public boolean featureAlreadyLoaded(String feature) {
+        return librarySearcher.featureAlreadyLoaded(feature, null);
     }
 
     protected LibrarySearcher.FoundLibrary findLibraryWithClassloaders(String baseName, SuffixType suffixType) {
@@ -1202,13 +1180,6 @@ public class LoadService {
     }
 
     @Deprecated
-    protected final void debugLogFound(String what, String msg) {
-        if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
-            LOG.info( "found {}: {}", what, msg );
-        }
-    }
-
-    @Deprecated
     protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
@@ -1649,6 +1620,18 @@ public class LoadService {
     @Deprecated
     protected Library findLibraryBySearchState(SearchState state) {
         return librarySearcher.findLibrary(state.searchFile, state.suffixType);
+    }
+
+    @Deprecated
+    public void provide(String shortName, String fullName) {
+        provide(fullName);
+    }
+
+    @Deprecated
+    protected void addLoadedFeature(String shortName, String name) {
+        RubyString strName = runtime.newString(name);
+        loadedFeatures.append(strName);
+        librarySearcher.addFeatureToIndex(strName, loadedFeatures.size() - 1);
     }
     //</editor-fold>
 }

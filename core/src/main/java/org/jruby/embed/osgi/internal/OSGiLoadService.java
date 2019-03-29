@@ -61,26 +61,32 @@ public class OSGiLoadService extends LoadService {
         super(runtime);
     }
 
-    @Override
-    protected LibrarySearcher.FoundLibrary findLibraryForRequire(String searchFile) {
+//    @Override
+    protected LibrarySearcher.FoundLibrary searchForRequire(String searchFile) {
         String[] fileHolder = {searchFile};
         SuffixType suffixType = LibrarySearcher.getSuffixTypeForRequire(fileHolder);
         String baseName = fileHolder[0];
 
-        LibrarySearcher.FoundLibrary library = librarySearcher.findLibraryForRequire(baseName);
-        if (library != null) return library;
+        LibrarySearcher.FoundLibrary[] library = {null};
+        char found = librarySearcher.findLibraryForRequire(baseName, library);
+        if (found != 0) {
+            return library[0];
+        }
 
         return findLibraryWithClassloaders(searchFile, suffixType);
     }
 
     @Override
-    protected LibrarySearcher.FoundLibrary findLibraryForLoad(String searchFile) {
+    protected LibrarySearcher.FoundLibrary searchForLoad(String searchFile) {
         String[] fileHolder = {searchFile};
         SuffixType suffixType = LibrarySearcher.getSuffixTypeForLoad(fileHolder);
         String baseName = fileHolder[0];
 
-        LibrarySearcher.FoundLibrary library = librarySearcher.findLibraryForRequire(baseName);
-        if (library != null) return library;
+        LibrarySearcher.FoundLibrary[] library = {null};
+        char found = librarySearcher.findLibraryForRequire(baseName, library);
+        if (found != 0) {
+            return library[0];
+        }
 
         return findLibraryWithClassloaders(searchFile, suffixType);
     }
