@@ -7,6 +7,100 @@ class Enumerator
     # or http://bugs.ruby-lang.org/issues/7696
     attr_accessor :backports_memo
   end
+  def next
+    return @__lookahead__.shift unless @__lookahead__.empty?
+
+    unless @__generator__
+      # Allow #to_generator to return nil, indicating it has none for
+      # this method.
+      if @object.respond_to? :to_generator
+        @__generator__ = @object.to_generator(@iter)
+      end
+
+      if !@__generator__
+        @__generator__ = FiberGenerator.new(self)
+      end
+    end
+
+    begin
+      return @__generator__.next if @__generator__.next?
+    rescue StopIteration
+      nil # the enumerator could change between next? and next leading to StopIteration
+    end
+
+    exception = StopIteration.new 'iteration reached end'
+    JRuby.ref(exception).result = @__generator__.result
+
+    raise exception
+  end
+
+  def next_values
+    Array(self.next)
+  end
+
+  def peek
+    return @__lookahead__.first unless @__lookahead__.empty?
+    item = self.next
+    @__lookahead__ << item
+    item
+  end
+
+  def peek_values
+    Array(self.peek)
+  end
+
+  def rewind
+    @object.rewind if @object.respond_to? :rewind
+    @__generator__.rewind if @__generator__
+    @__lookahead__ = []
+    @__feedvalue__ = nil
+    self
+  end
+
+  def feed(val)
+    raise TypeError, 'Feed value already set' unless @__feedvalue__.nil?
+    @__feedvalue__ = val
+    nil
+  end
+
+  class FiberGenerator
+    attr_reader :result
+
+    def initialize(obj)
+      @object = obj
+      rewind
+    end
+
+    def next?
+      !@done
+    end
+
+    def next
+      reset unless @fiber
+
+      val = @fiber.resume
+
+      raise StopIteration, 'iteration has ended' if @done
+
+      val
+    end
+
+    def rewind
+      @fiber = nil
+      @done = false
+    end
+
+    def reset
+      @done = false
+      @fiber = Fiber.new do
+        obj = @object
+        @result = obj.each do |*val|
+          Fiber.yield(*val)
+        end
+        @done = true
+      end
+    end
+  end
 
   class Lazy < Enumerator
     LAZY_WITH_NO_BLOCK = Struct.new(:object, :method, :args) # used internally to create lazy without block

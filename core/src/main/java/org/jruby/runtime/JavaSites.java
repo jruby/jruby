@@ -48,6 +48,7 @@ public class JavaSites {
     public final PathnameSites Pathname = new PathnameSites();
     public final DateSites Date = new DateSites();
     public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
+    public final FiberSites Fiber = new FiberSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -470,6 +471,11 @@ public class JavaSites {
 
     public static class RaiseExceptionSites {
         public final CheckedSites backtrace = new CheckedSites("backtrace");
+    }
+
+    public static class FiberSites {
+        public final CachingCallSite next_p = new FunctionalCachingCallSite("next?");
+        public final CachingCallSite next = new FunctionalCachingCallSite("next");
     }
 
     public static class CheckedSites {

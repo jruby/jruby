@@ -37,6 +37,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -295,6 +296,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
         setInstanceVariable("@__args__", RubyArray.newArrayMayCopy(runtime, methodArgs));
+        setInstanceVariable("@__generator__", runtime.getNil());
+        setInstanceVariable("@__lookahead__", RubyArray.newArray(runtime));
+        setInstanceVariable("@__feedvalue__", runtime.getNil());
+
         return this;
     }
 
@@ -519,91 +524,26 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return with_index(context, arg, block);
     }
 
-    private volatile Nexter nexter = null;
-
-    @JRubyMethod
-    public synchronized IRubyObject next(ThreadContext context) {
-        final Nexter nexter = ensureNexter(context.runtime);
-
-        if (!feedValue.isNil()) feedValue = context.nil;
-        return nexter.next();
-    }
-
-    @JRubyMethod
-    public synchronized IRubyObject rewind(ThreadContext context) {
-        if (object.respondsTo("rewind")) object.callMethod(context, "rewind");
-
-        if (nexter != null) {
-            nexter.shutdown();
-            nexter = null;
-        }
-
-        return this;
-    }
-
-    @JRubyMethod
-    public synchronized IRubyObject peek(ThreadContext context) {
-        final Nexter nexter = ensureNexter(context.runtime);
-
-        return nexter.peek();
-    }
-
-    @JRubyMethod(name = "peek_values")
-    public IRubyObject peekValues(ThreadContext context) {
-        return RubyArray.newArray(context.runtime, peek(context));
-    }
-
-    @JRubyMethod(name = "next_values")
-    public IRubyObject nextValues(ThreadContext context) {
-        return RubyArray.newArray(context.runtime, next(context));
-    }
-
-    @JRubyMethod
-    public synchronized IRubyObject feed(ThreadContext context, IRubyObject val) {
-        final Nexter nexter = ensureNexter(context.runtime);
-        if (!feedValue.isNil()) {
-            throw context.runtime.newTypeError("feed value already set");
-        }
-        feedValue = val;
-        nexter.setFeedValue(val);
-        return context.nil;
-    }
-
-    private Nexter ensureNexter(final Ruby runtime) {
-        Nexter nexter = this.nexter;
-        if (nexter != null) return nexter;
-
-        if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
-            if (object instanceof RubyArray && method.equals("each") && methodArgs.length == 0) {
-                return this.nexter = new ArrayNexter(runtime, object, method, methodArgs);
-            }
-        }
-        return this.nexter = new ThreadedNexter(runtime, object, method, methodArgs);
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            Nexter nexter = this.nexter;
-            if (nexter != null) {
-                nexter.shutdown();
-                nexter = null;
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
     // java.util.Iterator :
 
     @Override
     public synchronized boolean hasNext() {
-        return ensureNexter(getRuntime()).hasNext();
+        Ruby runtime = getRuntime();
+
+        IRubyObject generator = getInstanceVariable("@__generator__");
+
+        if (generator == null || generator == runtime.getNil()) {
+            return false;
+        }
+
+        ThreadContext context = runtime.getCurrentContext();
+        return sites(context).next_p.call(context, this, this).isTrue();
     }
 
     @Override
     public Object next() {
-        return next( getRuntime().getCurrentContext() ).toJava( java.lang.Object.class );
+        ThreadContext context = getRuntime().getCurrentContext();
+        return sites(context).next_p.call(context, this, this).toJava( java.lang.Object.class );
     }
 
     @Override
@@ -623,7 +563,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     public Spliterator<Object> spliterator() {
         final long size = size();
-        // we do not have ArrayNexter detection - assume immutable
+        // we do not have Array detection - assume immutable
         int mod = java.util.Spliterator.IMMUTABLE;
         if (size >= 0) mod |= java.util.Spliterator.SIZED;
         return java.util.Spliterators.spliterator(this, size, mod);
@@ -644,308 +584,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         IRubyObject size(IRubyObject[] args);
     }
 
-    private static abstract class Nexter {
-        /** the runtime associated with all objects */
-        protected final Ruby runtime;
-
-        /** target for each operation */
-        protected final IRubyObject object;
-
-        /** method to invoke for each operation */
-        protected final String method;
-
-        /** args to each method */
-        protected final IRubyObject[] methodArgs;
-
-        private IRubyObject feedValue;
-
-        public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
-            this.object = object;
-            this.method = method;
-            this.methodArgs = methodArgs;
-            this.runtime = runtime;
-        }
-
-        public void setFeedValue(IRubyObject feedValue) {
-            this.feedValue = feedValue;
-        }
-
-        public IRubyObject getFeedValue() {
-            return feedValue;
-        }
-
-        public abstract IRubyObject next();
-
-        public abstract void shutdown();
-
-        public abstract IRubyObject peek();
-
-        abstract boolean hasNext() ;
-    }
-
-    private static class ArrayNexter extends Nexter {
-        private final RubyArray array;
-        private int index = 0;
-
-        public ArrayNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
-            super(runtime, object, method, methodArgs);
-            array = (RubyArray)object;
-        }
-
-        @Override
-        public IRubyObject next() {
-            IRubyObject obj = peek();
-            index += 1;
-            return obj;
-        }
-
-        @Override
-        public void shutdown() {
-            // not really anything to do
-            index = 0;
-        }
-
-        @Override
-        public IRubyObject peek() {
-            checkIndex();
-
-            return get();
-        }
-
-        protected IRubyObject get() {
-            return array.eltOk(index);
-        }
-
-        private void checkIndex() throws RaiseException {
-            if ( ! hasNext() ) throw runtime.newStopIteration(array, null);
-        }
-
-        @Override
-        final boolean hasNext() {
-            return index < array.size();
-        }
-    }
-
-    private static class ThreadedNexter extends Nexter implements Runnable {
-        private static final boolean DEBUG = false;
-
-        /** sync queue to wait for values */
-        final SynchronousQueue<IRubyObject> out = new SynchronousQueue<IRubyObject>();
-
-        /** thread that's executing this Nexter */
-        private volatile Thread thread;
-
-        /** whether we're done iterating */
-        private IRubyObject doneObject;
-
-        /** future to cancel job if it has not started */
-        private Future future;
-
-        /** death mark */
-        protected volatile boolean die = false;
-
-        /** the last value we got, used for peek */
-        private IRubyObject lastValue;
-
-        /** the block return value, to be fed as StopIteration#result */
-        private volatile IRubyObject stopValue;
-
-        /** Exception used for unrolling the iteration on terminate */
-        private static class TerminateEnumeration extends RuntimeException implements Unrescuable {}
-
-        public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
-            super(runtime, object, method, methodArgs);
-            setFeedValue(runtime.getNil());
-        }
-
-        @Override
-        public synchronized IRubyObject next() {
-            return nextImpl(false);
-        }
-
-        @Override
-        public synchronized void shutdown() {
-            // cancel future in case we have not been started
-            future.cancel(true);
-
-            // mark for death
-            die = true;
-            if (dissociateNexterThread(true)) doneObject = null;
-        }
-
-        private synchronized boolean dissociateNexterThread(boolean interrupt) {
-            Thread nexterThread = thread;
-
-            if (nexterThread != null) {
-                if (DEBUG) System.out.println("dissociating nexter thread, interrupt: " + interrupt);
-
-                if (interrupt) {
-                    // we interrupt twice, to break out of iteration and
-                    // (potentially) break out of final exchange
-                    nexterThread.interrupt();
-                    nexterThread.interrupt();
-                }
-
-                // release references
-                thread = null;
-                return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public synchronized IRubyObject peek() {
-            if (doneObject != null) {
-                return returnValue(doneObject, false);
-            }
-
-            ensureStarted();
-
-            if (lastValue != null) {
-                return lastValue;
-            }
-
-            peekTake();
-
-            return returnValue(lastValue, false);
-        }
-
-        private void ensureStarted() {
-            try {
-                if (thread == null) future = runtime.getFiberExecutor().submit(this);
-            } catch (OutOfMemoryError oome) {
-                String oomeMessage = oome.getMessage();
-                if (oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
-                    // try to clean out stale enumerator threads by forcing GC
-                    System.gc();
-                    future = runtime.getFiberExecutor().submit(this);
-                } else {
-                    throw oome;
-                }
-            }
-        }
-
-        private IRubyObject peekTake() {
-            try {
-                return lastValue = out.take();
-            } catch (InterruptedException ie) {
-                throw runtime.newThreadError("interrupted during iteration");
-            }
-        }
-
-        private IRubyObject take() {
-            try {
-                if (lastValue != null) {
-                    return lastValue;
-                }
-
-                return out.take();
-            } catch (InterruptedException ie) {
-                throw runtime.newThreadError("interrupted during iteration");
-            } finally {
-                lastValue = null;
-            }
-        }
-
-        private IRubyObject returnValue(IRubyObject value, final boolean silent) {
-            // if it's the NEVER object, raise StopIteration
-            if (value == NEVER) {
-                doneObject = value;
-                if ( silent ) return null;
-                throw runtime.newStopIteration(stopValue, "iteration reached an end");
-            }
-
-            // if it's an exception, raise it
-            if (value instanceof RubyException) {
-                doneObject = value;
-                if ( silent ) return null;
-                throw ((RubyException) value).toThrowable();
-            }
-
-            // otherwise, just return it
-            return value;
-        }
-
-        private IRubyObject nextImpl(boolean hasNext) {
-            if (doneObject != null) {
-                return returnValue(doneObject, hasNext);
-            }
-
-            ensureStarted();
-
-            return returnValue(take(), hasNext);
-        }
-
-        @Override
-        final synchronized boolean hasNext() {
-            if ( doneObject == NEVER ) return false; // already done
-            // we're doing read-ahead so Iterator#hasNext() might do enum.next
-            // value 'buffering' - to be returned on following Iterator#next
-            return ( lastValue = nextImpl(true) ) != null;
-        }
-
-        @Override
-        public void run() {
-            if (die) return;
-
-            thread = Thread.currentThread();
-            ThreadContext context = runtime.getCurrentContext();
-
-            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": starting up nexter thread");
-
-            IRubyObject finalObject = NEVER;
-
-            try {
-                final IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
-                final TerminateEnumeration terminateEnumeration = new TerminateEnumeration();
-                Block generatorClosure = CallBlock.newCallClosure(object, object.getMetaClass(), Signature.OPTIONAL, new BlockCallback() {
-
-                    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                        try {
-                            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + Arrays.toString(args));
-                            if (die) throw terminateEnumeration;
-                            out.put( RubyEnumerable.packEnumValues(context, args) );
-                            if (die) throw terminateEnumeration;
-                        }
-                        catch (InterruptedException ie) {
-                            if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
-
-                            throw terminateEnumeration;
-                        }
-
-                        IRubyObject feedValue = getFeedValue();
-                        setFeedValue(context.nil);
-                        return feedValue;
-                    }
-                }, context);
-                try {
-                    this.stopValue = object.callMethod(context, method, methodArgs, generatorClosure);
-                }
-                catch (TerminateEnumeration te) {
-                    if (te != terminateEnumeration) throw te;
-                    // ignore, we're shutting down
-                }
-                catch (RaiseException re) {
-                    if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
-                    finalObject = re.getException();
-                    runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-                }
-                catch (Throwable t) {
-                    if (DEBUG) {
-                        System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + t);
-                        t.printStackTrace();
-                    }
-                    Helpers.throwException(t);
-                }
-
-                try {
-                    if (!die) out.put(finalObject);
-                }
-                catch (InterruptedException ie) { /* ignore */ }
-            } finally {
-                dissociateNexterThread(false); // disassociate this Nexter with the thread running it
-            }
-        }
+    private static JavaSites.FiberSites sites(ThreadContext context) {
+        return context.sites.Fiber;
     }
 }
