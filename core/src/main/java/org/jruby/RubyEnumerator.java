@@ -537,7 +537,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         }
 
         ThreadContext context = runtime.getCurrentContext();
-        return sites(context).next_p.call(context, this, this).isTrue();
+        return sites(context).next_p.call(context, this, generator).isTrue();
     }
 
     @Override

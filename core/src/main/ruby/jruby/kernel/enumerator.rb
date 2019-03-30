@@ -28,7 +28,7 @@ class Enumerator
       nil # the enumerator could change between next? and next leading to StopIteration
     end
 
-    exception = StopIteration.new 'iteration reached end'
+    exception = StopIteration.new 'iteration reached an end'
     JRuby.ref(exception).result = @__generator__.result
 
     raise exception
