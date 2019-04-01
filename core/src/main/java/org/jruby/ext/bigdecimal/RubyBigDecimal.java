@@ -1212,15 +1212,11 @@ public class RubyBigDecimal extends RubyNumeric {
     private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal that) {
         int mx = this.value.precision();
         int mxb = that.value.precision();
-
         if (mx < mxb) mx = mxb;
         mx = (mx + 1) * BASE_FIG;
 
         final int limit = getPrecLimit(context.runtime);
         if (limit > 0 && limit < mx) mx = limit;
-        else { // second guess since the * BASE_FIG tends to get us too much -> division gets *really* slow
-            mx = (int) Math.min(this.value.precision() + (long) Math.ceil(that.value.precision() * 8.1), mx);
-        }
 
         MathContext mathContext = new MathContext(mx, getRoundingMode(context.runtime));
         return new RubyBigDecimal(context.runtime, divide(this.value, that.value, mathContext)).setResult(limit);
@@ -1229,60 +1225,33 @@ public class RubyBigDecimal extends RubyNumeric {
     // NOTE: base on Android's
     // https://android.googlesource.com/platform/libcore/+/refs/heads/master/luni/src/main/java/java/math/BigDecimal.java
     private static BigDecimal divide(BigDecimal target, BigDecimal divisor, MathContext mc) {
+        assert mc.getPrecision() != 0; // NOTE: handled by divSpecialCases
         /* Calculating how many zeros must be append to 'dividend'
          * to obtain a  quotient with at least 'mc.precision()' digits */
-        long trailingZeros = mc.getPrecision() + 2L + divisor.precision() - target.precision();
+        long trailingZeros = (long) mc.getPrecision() + 1L + divisor.precision() - target.precision();
         long diffScale = (long) target.scale() - divisor.scale();
         long newScale = diffScale; // scale of the final quotient
-        int compRem; // to compare the remainder
-        int i = 1; // index
-        final BigInteger[] TEN_POW = Multiplication.bigTenPows;
-        int lastPow = TEN_POW.length - 1; // last power of ten
-        BigInteger integerQuot; // for temporal results
         BigInteger quotAndRem[] = { target.unscaledValue() };
-        assert mc.getPrecision() != 0;
-        // NOTE: handled by divSpecialCases
-        // In special cases it reduces the problem to call the dual method
-        //if ((mc.getPrecision() == 0) || (target.isZero()) || (divisor.isZero())) {
-        //    return target.divide(divisor);
-        //}
+        final BigInteger divScaled = divisor.unscaledValue();
         if (trailingZeros > 0) {
             // To append trailing zeros at end of dividend
-            quotAndRem[0] = target.unscaledValue().multiply( Multiplication.powerOf10(trailingZeros) );
+            quotAndRem[0] = quotAndRem[0].multiply(Multiplication.powerOf10(trailingZeros));
             newScale += trailingZeros;
         }
-        quotAndRem = quotAndRem[0].divideAndRemainder( divisor.unscaledValue() );
-        integerQuot = quotAndRem[0];
+        quotAndRem = quotAndRem[0].divideAndRemainder(divScaled);
+        BigInteger integerQuot = quotAndRem[0];
         // Calculating the exact quotient with at least 'mc.precision()' digits
         if (quotAndRem[1].signum() != 0) {
             // Checking if:   2 * remainder >= divisor ?
-            compRem = shiftLeftOneBit(quotAndRem[1]).compareTo( divisor.unscaledValue() );
+            int compRem = shiftLeftOneBit(quotAndRem[1]).compareTo(divScaled);
             // quot := quot * 10 + r;     with 'r' in {-6,-5,-4, 0,+4,+5,+6}
             integerQuot = integerQuot.multiply(BigInteger.TEN)
                     .add(BigInteger.valueOf(quotAndRem[0].signum() * (5 + compRem)));
             newScale++;
-        } else {
-            // To strip trailing zeros until the preferred scale is reached
-            while (!integerQuot.testBit(0)) {
-                quotAndRem = integerQuot.divideAndRemainder(TEN_POW[i]);
-                if ((quotAndRem[1].signum() == 0)
-                        && (newScale - i >= diffScale)) {
-                    newScale -= i;
-                    if (i < lastPow) {
-                        i++;
-                    }
-                    integerQuot = quotAndRem[0];
-                } else {
-                    if (i == 1) {
-                        break;
-                    }
-                    i = 1;
-                }
-            }
-        }
-        // To perform rounding
+        } // else BigDecimal() will scale 'down'
         return new BigDecimal(integerQuot, safeLongToInt(newScale), mc);
     }
+
 
     private static BigInteger shiftLeftOneBit(BigInteger i) { return i.shiftLeft(1); }
 

@@ -28,26 +28,35 @@ class Multiplication {
     /** Just to denote that this class can't be instantiated. */
     private Multiplication() {}
 
+    static final BigInteger FIVE = BigInteger.valueOf(5);
+
     /**
      * An array with the first powers of ten in {@code BigInteger} version.
      * ({@code 10^0,10^1,...,10^31})
      */
     static final BigInteger[] bigTenPows = new BigInteger[32];
-    /**
-     * An array with the first powers of five in {@code BigInteger} version.
-     * ({@code 5^0,5^1,...,5^31})
-     */
-    static final BigInteger bigFivePows[] = new BigInteger[32];
+
     static {
-        int i;
-        long fivePow = 1L;
-        for (i = 0; i <= 18; i++) {
-            bigFivePows[i] = BigInteger.valueOf(fivePow);
-            bigTenPows[i] = BigInteger.valueOf(fivePow << i);
-            fivePow *= 5;
-        }
-        for (; i < bigTenPows.length; i++) {
-            bigFivePows[i] = bigFivePows[i - 1].multiply(bigFivePows[1]);
+        bigTenPows[0]  = BigInteger.ONE;
+        bigTenPows[1]  = BigInteger.TEN;
+        bigTenPows[2]  = BigInteger.valueOf(100);
+        bigTenPows[3]  = BigInteger.valueOf(1000);
+        bigTenPows[4]  = BigInteger.valueOf(10000);
+        bigTenPows[5]  = BigInteger.valueOf(100000);
+        bigTenPows[6]  = BigInteger.valueOf(1000000);
+        bigTenPows[7]  = BigInteger.valueOf(10000000);
+        bigTenPows[8]  = BigInteger.valueOf(100000000);
+        bigTenPows[9]  = BigInteger.valueOf(1000000000);
+        bigTenPows[10] = BigInteger.valueOf(10000000000L);
+        bigTenPows[11] = BigInteger.valueOf(100000000000L);
+        bigTenPows[12] = BigInteger.valueOf(1000000000000L);
+        bigTenPows[13] = BigInteger.valueOf(10000000000000L);
+        bigTenPows[14] = BigInteger.valueOf(100000000000000L);
+        bigTenPows[15] = BigInteger.valueOf(1000000000000000L);
+        bigTenPows[16] = BigInteger.valueOf(10000000000000000L);
+        bigTenPows[17] = BigInteger.valueOf(100000000000000000L);
+        bigTenPows[18] = BigInteger.valueOf(1000000000000000000L);
+        for (int i=19; i < bigTenPows.length; i++) {
             bigTenPows[i] = bigTenPows[i - 1].multiply(BigInteger.TEN);
         }
     }
@@ -75,7 +84,7 @@ class Multiplication {
             // "LARGE POWERS"
             if (exp <= Integer.MAX_VALUE) {
                 // To calculate:    5^exp * 2^exp
-                res = bigFivePows[1].pow(intExp).shiftLeft(intExp);
+                res = FIVE.pow(intExp).shiftLeft(intExp);
             } else {
                 /*
                  * "HUGE POWERS"
@@ -84,7 +93,7 @@ class Multiplication {
                  * big.
                  */
                 // To calculate:    5^exp
-                BigInteger powerOfFive = bigFivePows[1].pow(Integer.MAX_VALUE);
+                BigInteger powerOfFive = FIVE.pow(Integer.MAX_VALUE);
                 res = powerOfFive;
                 long longExp = exp - Integer.MAX_VALUE;
                 intExp = (int) (exp % Integer.MAX_VALUE);
@@ -92,7 +101,7 @@ class Multiplication {
                     res = res.multiply(powerOfFive);
                     longExp -= Integer.MAX_VALUE;
                 }
-                res = res.multiply(bigFivePows[1].pow(intExp));
+                res = res.multiply(FIVE.pow(intExp));
                 // To calculate:    5^exp << exp
                 res = res.shiftLeft(Integer.MAX_VALUE);
                 longExp = exp - Integer.MAX_VALUE;
