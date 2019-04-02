@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -31,10 +32,13 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
 import org.jruby.util.cli.Options;
-import org.jruby.util.collections.IntList;
 import org.jruby.util.collections.StringArraySet;
 
 public class LibrarySearcher {
+    public static final char EXTENSION_TYPE = 's';
+    public static final char SOURCE_TYPE = 'r';
+    public static final char UNKNOWN_TYPE = 'u';
+    public static final char NOT_FOUND = 0;
     private final LoadService loadService;
     private final Ruby runtime;
     private final PathEntry cwdPathEntry;
@@ -94,32 +98,32 @@ public class LibrarySearcher {
             if (isSourceExt(file)) {
                 if (isFeature(file, ext, true, false, loading) != 0) {
                     if (loading[0] != null) path[0] = new FoundLibrary(file, loading[0], Suffix.RUBY.constructLibrary(file, loading[0], JRubyFile.createResourceAsFile(runtime, loading[0])));
-                    return 'r';
+                    return SOURCE_TYPE;
                 }
                 if ((tmp = findLibrary(file.substring(0, ext), SuffixType.Source)) != null) {
                     String tmpPath = tmp.loadName;
                     ext = tmpPath.lastIndexOf('.');
                     if (isFeature(tmpPath, ext, true, true, loading) == 0 || loading[0] != null)
                         path[0] = tmp;
-                    return 'r';
+                    return SOURCE_TYPE;
                 }
                 return 0;
             } else if (isLibraryExt(file)) {
                 if (isFeature(file, ext, true, false, loading) != 0) {
                     if (loading[0] != null) path[0] = new FoundLibrary(file, loading[0], Suffix.JAR.constructLibrary(file, loading[0], JRubyFile.createResourceAsFile(runtime, loading[0])));
-                    return 's';
+                    return EXTENSION_TYPE;
                 }
                 if ((tmp = findLibrary(file.substring(0, ext), SuffixType.Extension)) != null) {
                     ext = tmp.loadName.lastIndexOf('.');
                     if (isFeature(tmp.loadName, ext, false, true, loading) == 0 || loading[0] != null) {
                         path[0] = tmp;
                     }
-                    return 's';
+                    return EXTENSION_TYPE;
                 }
             }
-        } else if ((ft = isFeature(file, -1, false, false, loading)) == 'r') {
+        } else if ((ft = isFeature(file, -1, false, false, loading)) == SOURCE_TYPE) {
             if (loading[0] != null) path[0] = new FoundLibrary(file, loading[0], Suffix.RUBY.constructLibrary(file, loading[0], JRubyFile.createResourceAsFile(runtime, loading[0])));
-            return 'r';
+            return SOURCE_TYPE;
         }
 
         tmp = findLibrary(file, SuffixType.Both);
@@ -151,7 +155,7 @@ public class LibrarySearcher {
         }
 
         // If it's not a jar, it's Ruby source
-        return tmp.loadName.endsWith(".jar") ? 's' : 'r';
+        return tmp.loadName.endsWith(".jar") ? EXTENSION_TYPE : SOURCE_TYPE;
     }
 
     public LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
@@ -287,14 +291,15 @@ public class LibrarySearcher {
         loadedFeatures.append(name);
 
         snapshotLoadedFeatures();
-        addFeatureToIndex(name, loadedFeatures.size() - 1);
+
+        addFeatureToIndex(name, name);
     }
 
     protected RubyArray snapshotLoadedFeatures() {
         return (RubyArray) loadedFeaturesSnapshot.replace(this.loadService.loadedFeatures);
     }
 
-    protected void addFeatureToIndex(RubyString name, int offset) {
+    protected void addFeatureToIndex(RubyString name, IRubyObject featurePath) {
         ByteList featureByteList = name.getByteList();
         byte[] featureBytes = featureByteList.unsafeBytes();
         int featureBegin = featureByteList.begin();
@@ -317,146 +322,124 @@ public class LibrarySearcher {
                 p--;
             if (p < featureBegin) break;
             /* Now *p == '/'.  We reach this point for every '/' in `feature`. */
-            addSingleFeatureToIndex(new String(featureBytes, p + 1, featureEnd - p - 1), offset);
+            addSingleFeatureToIndex(new String(featureBytes, p + 1, featureEnd - p - 1), featurePath);
 
             if (ext != -1) {
-                addSingleFeatureToIndex(new String(featureBytes, p + 1, ext - p - 1), offset);
+                addSingleFeatureToIndex(new String(featureBytes, p + 1, ext - p - 1), featurePath);
             }
         }
-        addSingleFeatureToIndex(new String(featureBytes, featureBegin, featureEnd - featureBegin), offset);
+        addSingleFeatureToIndex(new String(featureBytes, featureBegin, featureEnd - featureBegin), featurePath);
         if (ext != -1) {
-            addSingleFeatureToIndex(new String(featureBytes, featureBegin, ext - featureBegin), offset);
+            addSingleFeatureToIndex(new String(featureBytes, featureBegin, ext - featureBegin), featurePath);
         }
     }
 
     static class Feature {
-        Feature(String key, int offset) {
+        Feature(String key, IRubyObject featurePath) {
             this.key = key;
-            this.indices = new IntList(2);
-            indices.add(offset);
+            this.featurePaths = new CopyOnWriteArrayList();
+
+            featurePaths.add(featurePath);
         }
 
-        void addOffset(int offset) {
-            indices.add(offset);
+        void addFeaturePath(IRubyObject offset) {
+            featurePaths.add(offset);
         }
 
         public void clear() {
-            indices.clear();
+            featurePaths.clear();
         }
 
-        String key;
-        IntList indices;
+        final String key;
+        final CopyOnWriteArrayList<IRubyObject> featurePaths;
     }
 
-    protected void addSingleFeatureToIndex(String key, int offset) {
+    protected void addSingleFeatureToIndex(String key, IRubyObject featurePath) {
         Map<String, Feature> featuresIndex = this.loadedFeaturesIndex;
 
         Feature thisFeature = featuresIndex.get(key);
 
         if (thisFeature == null) {
-            featuresIndex.put(key, new Feature(key, offset));
+            featuresIndex.put(key, new Feature(key, featurePath));
         } else {
-            thisFeature.addOffset(offset);
+            thisFeature.addFeaturePath(featurePath);
         }
     }
 
     protected char isFeature(String feature, int ext, boolean rb, boolean expanded, String[] fn) {
-        StringArraySet features;
-
-        Feature thisFeature = null;
-        String featureString;
-        String p;
         List<LibrarySearcher.PathEntry> loadPath = null;
 
-        int f, e;
-        final int len, elen;
-
-        Map<String, ReentrantLock> loadingTable;
-        Map<String, Feature> featuresIndex;
-        final LibrarySearcher.Suffix type;
+        final LibrarySearcher.Suffix suffixType;
 
         if (fn != null) fn[0] = null;
-        if (ext != -1) {
-            elen = feature.length() - ext;
-            len = feature.length() - elen;
-            type = rb ? LibrarySearcher.Suffix.RUBY : LibrarySearcher.Suffix.JAR;
-        }
-        else {
+
+        boolean suffixGiven = ext != -1;
+
+        final int len;
+        if (suffixGiven) {
+            len = ext;
+            suffixType = rb ? LibrarySearcher.Suffix.RUBY : LibrarySearcher.Suffix.JAR;
+        } else {
             len = feature.length();
-            elen = 0;
-            type = null;
+            suffixType = null;
         }
 
-        features = this.loadService.loadedFeatures;
-        featuresIndex = getLoadedFeaturesIndex();
+        /*
+        This caching logic assumes an index mapping all loaded paths and subpaths to potential loaded features. Each
+        feature is added to the cache as a series of subpaths pointing at the original loaded feature entry. This
+        allows subsequent requires of that path or similar subpaths (as in require_relative) to quickly check all
+        previously added features for a match.
 
-        thisFeature = featuresIndex.get(feature);
-
-        /* We search `features` for an entry such that either
-             "#{features[i]}" == "#{load_path[j]}/#{feature}#{e}"
-           for some j, or
-             "#{features[i]}" == "#{feature}#{e}"
-           Here `e` is an "allowed" extension -- either empty or one
-           of the extensions accepted by IS_RBEXT, IS_SOEXT, or
-           IS_DLEXT.  Further, if `ext && rb` then `IS_RBEXT(e)`,
-           and if `ext && !rb` then `IS_SOEXT(e) || IS_DLEXT(e)`.
-
-           If `expanded`, then only the latter form (without load_path[j])
-           is accepted.  Otherwise either form is accepted, *unless* `ext`
-           is false and an otherwise-matching entry of the first form is
-           preceded by an entry of the form
-             "#{features[i2]}" == "#{load_path[j2]}/#{feature}#{e2}"
-           where `e2` matches %r{^\.[^./]*$} but is not an allowed extension.
-           After a "distractor" entry of this form, only entries of the
-           form "#{feature}#{e}" are accepted.
-
-           In `rb_provide_feature()` and `get_loaded_features_index()` we
-           maintain an invariant that the array `this_feature_index` will
-           point to every entry in `features` which has the form
-             "#{prefix}#{feature}#{e}"
-           where `e` is empty or matches %r{^\.[^./]*$}, and `prefix` is empty
-           or ends in '/'.  This includes both match forms above, as well
-           as any distractors, so we may ignore all other entries in `features`.
+        The matches are calculated by taking the given feature path combined with load path entries and file suffixes
+        and attempting to match it against any loaded features this path has been associated with.
          */
-        if (thisFeature != null) {
-            for (int i = 0; i < thisFeature.indices.size(); i++) {
-                int index = thisFeature.indices.get(i);
-                RubyString featureRuby = features.eltOk(index).convertToString();
-                f = 0;
-                if (featureRuby.length() < len) continue;
-                featureString = featureRuby.asJavaString();
+        Feature matchingFeature = getLoadedFeaturesIndex().get(feature);
+        if (matchingFeature != null) {
+            for (IRubyObject featurePath : matchingFeature.featurePaths) {
+                RubyString loadedFeaturePath = featurePath.convertToString();
+
+                if (loadedFeaturePath.length() < len) continue;
+
+                String featureString = loadedFeaturePath.asJavaString();
+
+                int expandedPathLength = 0;
+
                 if (!featureString.regionMatches(0, feature, 0, len)) {
-                    if (expanded) continue;
+                    if (expanded) continue; // already given expanded path
+
                     loadPath = lazyLoadPath(loadPath);
-                    if ((p = loadedFeatureWithPath(featureString, feature, type, loadPath)) == null) {
-                        continue;
-                    }
+                    String withPath = loadedFeatureWithPath(featureString, feature, suffixType, loadPath);
+
+                    if (withPath == null) continue; // no match with expanded path, try next
+
                     expanded = true;
-                    f += p.length() + 1;
+                    expandedPathLength = withPath.length();
                 }
-                if ((e = f + len) == featureString.length()) {
-                    if (ext != -1) continue;
-                    return 'u';
+
+                int e = expandedPathLength + len;
+                if (e == featureString.length()) {
+                    if (suffixGiven) continue;
+                    return UNKNOWN_TYPE;
                 }
                 if (featureString.charAt(e) != '.') continue;
-                if ((!rb || ext == -1) && (featureString.endsWith(".jar"))) {
-                    return 's';
+                if ((!rb || !suffixGiven) && isLibraryExt(featureString)) {
+                    return EXTENSION_TYPE;
                 }
-                if ((rb || ext == -1) && (featureString.endsWith(".rb"))) {
-                    return 'r';
+                if ((rb || !suffixGiven) && isSourceExt(featureString)) {
+                    return SOURCE_TYPE;
                 }
             }
         }
 
         // Check load locks to see if another thread is currently loading this file
-        loadingTable = this.loadService.requireLocks.pool;
+        Map<String, ReentrantLock> loadingTable = this.loadService.requireLocks.pool;
         if (!expanded) {
             loadPath = lazyLoadPath(loadPath);
             for (Map.Entry<String, ReentrantLock> entry : loadingTable.entrySet()) {
-                if (loadedFeatureWithPath(entry.getKey(), feature, type, loadPath) != null) {
+                if (loadedFeatureWithPath(entry.getKey(), feature, suffixType, loadPath) != null) {
                     if (fn != null) fn[0] = entry.getKey();
-                    if (ext == -1) return 'u';
-                    return !feature.endsWith(".rb") ? 's' : 'r';
+                    if (!suffixGiven) return UNKNOWN_TYPE;
+                    return !isSourceExt(feature) ? EXTENSION_TYPE : SOURCE_TYPE;
                 }
             }
         }
@@ -464,22 +447,22 @@ public class LibrarySearcher {
         if (loadingTable.containsKey(feature)) {
             // FIXME: use key from the actual table?
             if (fn != null) fn[0] = feature;
-            if (ext == -1) return 'u';
-            return !feature.endsWith(".rb") ? 's' : 'r';
+            if (!suffixGiven) return UNKNOWN_TYPE;
+            return !isSourceExt(feature) ? EXTENSION_TYPE : SOURCE_TYPE;
         }
 
-        if (ext != -1 && ext == feature.length()) return 0;
+        if (suffixGiven && ext == feature.length()) return 0;
         // FIXME: using Iterator
         String baseName = feature.substring(0, len);
         for (LibrarySearcher.Suffix suffix : Suffix.ALL) {
             String withExt = suffix.forTarget(baseName);
             if (loadingTable.containsKey(withExt)) {
                 if (fn != null) fn[0] = withExt;
-                return suffix != LibrarySearcher.Suffix.RUBY ? 's' : 'r';
+                return suffix != LibrarySearcher.Suffix.RUBY ? EXTENSION_TYPE : SOURCE_TYPE;
             }
         }
 
-        return 0;
+        return NOT_FOUND;
     }
 
     private List<LibrarySearcher.PathEntry> lazyLoadPath(List<LibrarySearcher.PathEntry> loadPath) {
@@ -488,20 +471,22 @@ public class LibrarySearcher {
 
     Map<String, Feature> getLoadedFeaturesIndex() {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
+
+        // Compare to see if the snapshot still matches actual.
         if (loadedFeaturesSnapshot.toJavaArrayUnsafe() != loadedFeatures.toJavaArrayUnsafe()) {
-            /* The sharing was broken; something (other than us in rb_provide_feature())
-               modified loaded_features.  Rebuild the index. */
             loadedFeaturesIndex.forEach((name, feature) -> feature.clear());
+
             RubyArray features = snapshotLoadedFeatures();
+            Ruby runtime = this.runtime;
+
             for (int i = 0; i < features.size(); i++) {
-                IRubyObject entry;
-                entry = features.eltOk(i);
+                IRubyObject entry = features.eltOk(i);
                 RubyString asStr = runtime.freezeAndDedupString(entry.convertToString());
-                if (asStr != entry)
-                    features.eltSetOk(i, asStr);
-                addFeatureToIndex(asStr, i);
+                if (asStr != entry) features.eltSetOk(i, asStr);
+                addFeatureToIndex(asStr, asStr);
             }
         }
+
         return loadedFeaturesIndex;
     }
 

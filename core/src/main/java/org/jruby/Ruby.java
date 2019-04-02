@@ -1346,8 +1346,7 @@ public final class Ruby implements Constantizable {
 
     private void initDefinedMessages() {
         for (DefinedMessage definedMessage : DefinedMessage.values()) {
-            RubyString str = freezeAndDedupString(
-                RubyString.newString(this, ByteList.create(definedMessage.getText())));
+            RubyString str = newDeduplicatedString(definedMessage.getText());
             definedMessages.put(definedMessage, str);
         }
     }
@@ -3602,6 +3601,10 @@ public final class Ruby implements Constantizable {
 
     public RubyString newString(String string) {
         return RubyString.newString(this, string);
+    }
+
+    public RubyString newDeduplicatedString(String string) {
+        return freezeAndDedupString(RubyString.newString(this, string));
     }
 
     public RubyString newString(ByteList byteList) {
