@@ -543,7 +543,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @Override
     public Object next() {
         ThreadContext context = getRuntime().getCurrentContext();
-        return sites(context).next_p.call(context, this, this).toJava( java.lang.Object.class );
+        return sites(context).next.call(context, this, this).toJava( java.lang.Object.class );
     }
 
     @Override
