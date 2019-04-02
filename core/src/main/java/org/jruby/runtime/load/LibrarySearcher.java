@@ -80,7 +80,7 @@ public class LibrarySearcher {
     }
 
     // MRI: search_required
-    public char findLibraryForRequire(String file, FoundLibrary[] path) {
+    public synchronized char findLibraryForRequire(String file, FoundLibrary[] path) {
         // check loaded features
         FoundLibrary tmp;
         int ext, ftptr;

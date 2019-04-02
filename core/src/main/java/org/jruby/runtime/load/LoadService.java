@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -391,7 +392,11 @@ public class LoadService {
          * @return If the sync object already locked by current thread, it just
          *         returns false without getting a lock. Otherwise true.
          */
-        private String lock(String requireName, boolean circularRequireWarning) {
+        private RequireState lock(
+                String requireName,
+                boolean circularRequireWarning,
+                RequireState defaultResult,
+                Function<String, RequireState> ifLocked) {
             ReentrantLock lock = pool.get(requireName);
 
             // Check if lock is already there
@@ -403,12 +408,18 @@ public class LoadService {
                     lock = newLock;
                     lock.lock();
 
-                    return requireName;
+                    try {
+                        return ifLocked.apply(requireName);
+                    } finally {
+                        pool.remove(requireName);
+                        lock.unlock();
+                    }
                 }
             }
 
 //            if (lock carries a function that's supposed to clean up autoload?) ... {
 //                replace entry with a lock, lock it, and return empty file
+            // return defaultResult
 
             if (circularRequireWarning && runtime.isVerbose()) {
                 warnCircularRequire(requireName);
@@ -416,31 +427,23 @@ public class LoadService {
 
             if (lock.isHeldByCurrentThread()) return null;
 
-            try {
-                runtime.getCurrentContext().getThread().enterSleep();
-                lock.lockInterruptibly();
-            } catch (InterruptedException ie) {
-                return null;
-            } finally {
-                runtime.getCurrentContext().getThread().exitSleep();
+            while (true) {
+                try {
+                    runtime.getCurrentContext().getThread().enterSleep();
+                    lock.lockInterruptibly();
+                    break;
+                } catch (InterruptedException ie) {
+                    runtime.getCurrentContext().pollThreadEvents();
+                } finally {
+                    runtime.getCurrentContext().getThread().exitSleep();
+                }
             }
 
-
-            return requireName;
-        }
-
-        /**
-         * Unlock the lock for the specified requireName.
-         *
-         * @param requireName
-         *            name of the lock to be unlocked.
-         */
-        private void unlock(String requireName) {
-            pool.computeIfPresent(requireName, (name, lock) -> {
-                assert lock.isHeldByCurrentThread();
+            try {
+                return ifLocked.apply(requireName);
+            } finally {
                 lock.unlock();
-                return null;
-            });
+            }
         }
     }
 
@@ -454,46 +457,42 @@ public class LoadService {
     private RequireState smartLoadInternal(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
 
+        if (!runtime.getProfile().allowRequire(file)) {
+            throw runtime.newLoadError("no such file to load -- " + file, file);
+        }
+
         LibrarySearcher.FoundLibrary[] libraryHolder = {null};
         char found = searchForRequire(file, libraryHolder);
 
-        String lockedFile = null;
-
-        LibrarySearcher.FoundLibrary library;
-        String loadName = null;
+        ReentrantLock requireLock = null;
 
         if (found == 0) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
 
-        library = libraryHolder[0];
-        if (library != null) loadName = library.getLoadName();
+        LibrarySearcher.FoundLibrary library = libraryHolder[0];
 
-        try {
-            if (library == null || (lockedFile = requireLocks.lock(loadName, circularRequireWarning)) == null) {
-                return RequireState.ALREADY_LOADED;
-            } else if (lockedFile.length() == 0) {
-                provide(loadName);
-                return RequireState.LOADED;
-            } else {
-                if (library == null || !runtime.getProfile().allowRequire(file)) {
-                    throw runtime.newLoadError("no such file to load -- " + file, file);
-                }
-
-                // numbers from loadTimer does not include lock waiting time.
-                long startTime = loadTimer.startLoad(loadName);
-                try {
-                    tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
-                    provide(library.getLoadName());
+        if (library == null) {
+            return RequireState.ALREADY_LOADED;
+        } else {
+            String loadName = library.getLoadName();
+            return requireLocks.lock(loadName, circularRequireWarning, RequireState.ALREADY_LOADED, (name) -> {
+                if (name.length() == 0) {
+                    // logic for load_lock returning a blank string, apparently for autoload func?
+                    provide(loadName);
                     return RequireState.LOADED;
-                } finally {
-                    loadTimer.endLoad(loadName, startTime);
+                } else {
+                    // numbers from loadTimer does not include lock waiting time.
+                    long startTime = loadTimer.startLoad(loadName);
+                    try {
+                        tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
+                        provide(library.getLoadName());
+                        return RequireState.LOADED;
+                    } finally {
+                        loadTimer.endLoad(loadName, startTime);
+                    }
                 }
-            }
-        } finally {
-            if (lockedFile != null) {
-                requireLocks.unlock(loadName);
-            }
+            });
         }
     }
 
