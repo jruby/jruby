@@ -427,19 +427,6 @@ class TestBigDecimal < Test::Unit::TestCase
     assert_equal(4.124045235, (BigDecimal('0.9932') / (700 * BigDecimal('0.344045') / BigDecimal('1000.0'))).round(9))
   end
 
-  def test_zero_p # from MRI test_bigdecimal.rb
-    # BigDecimal.mode(BigDecimal::EXCEPTION_INFINITY, false)
-    # BigDecimal.mode(BigDecimal::EXCEPTION_NaN, false)
-
-    assert_equal(true, BigDecimal("0").zero?)
-    assert_equal(true, BigDecimal("-0").zero?)
-    assert_equal(false, BigDecimal("1").zero?)
-    #assert_equal(true, BigDecimal("0E200000000000000").zero?)
-    assert_equal(false, BigDecimal("Infinity").zero?)
-    assert_equal(false, BigDecimal("-Infinity").zero?)
-    assert_equal(false, BigDecimal("NaN").zero?)
-  end
-
   def test_power_of_three # from MRI test_bigdecimal.rb
     x = BigDecimal(3)
     assert_equal(81, x ** 4)
