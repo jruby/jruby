@@ -22,7 +22,7 @@ class TestBigDecimal < Test::Unit::TestCase
     number = java.lang.Number
     assert_equal java.math.BigDecimal.new('8.0111'), BigDecimal('8.0111').to_java(number)
     assert_equal java.lang.Long, 1000.to_java(number).class
-  end
+  end if defined? JRUBY_VERSION
 
   def test_no_singleton_methods_on_bigdecimal
     num = BigDecimal("0.001")
@@ -404,14 +404,14 @@ class TestBigDecimal < Test::Unit::TestCase
     # MRI (2.5):
     # 0.8130081300813008130081300813008130081300813008130081300813008130081300813008130081300813008130081e-92
     puts "\n#{__method__} #{small} / #{denom} = #{res} (#{res.precs})" if $VERBOSE
-    assert res.to_s.length > 30, "not enough precision: #{res}" # in JRuby 9.1 'only' 20
+    assert res.to_s.length > 40, "not enough precision: #{res}" # in JRuby 9.1 'only' 20
     assert_equal BigDecimal('0.81300813e-92'), res.round(100)
 
     val1 = BigDecimal('1'); val2 = BigDecimal('3')
     res = val1 / val2
     puts "\n#{__method__} #{val1} / #{val2} = #{res} (#{res.precs})" if $VERBOSE
-    #assert 18 <= res.precs.first, "unexpected precision: #{res.precs.first}"
-    #assert res.precs.first <= 20, "unexpected precision: #{res.precs.first}"
+    assert 18 <= res.precs.first, "unexpected precision: #{res.precs.first}"
+    assert res.precs.first <= 20, "unexpected precision: #{res.precs.first}"
     assert_equal '0.333333333333333333e0', res.to_s
 
     val1 = BigDecimal("1.00000000000000000001"); val2 = Rational(1, 3)
