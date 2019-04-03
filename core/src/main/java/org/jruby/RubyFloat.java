@@ -363,7 +363,7 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "/", required = 1)
     public IRubyObject op_div(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
-        switch (other.getMetaClass().getClassIndex()) {
+        switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
         case FLOAT:
             try {
@@ -393,7 +393,7 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = {"%", "modulo"}, required = 1)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().getClassIndex()) {
+        switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
         case FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
@@ -427,7 +427,7 @@ public class RubyFloat extends RubyNumeric {
     @Override
     @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        switch (other.getMetaClass().getClassIndex()) {
+        switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
         case FLOAT:
             double y = ((RubyNumeric) other).getDoubleValue();
@@ -508,16 +508,13 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public boolean fastEqual(RubyFloat other) {
-        if (Double.isNaN(value)) {
-            return false;
-        }
-        return value == other.value;
+        return Double.isNaN(value) ? false : value == other.value;
     }
 
     @Override
     public final int compareTo(IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER:
+        case INTEGER:
         case FLOAT:
             return Double.compare(value, ((RubyNumeric) other).getDoubleValue());
         default:
