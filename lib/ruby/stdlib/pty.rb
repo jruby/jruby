@@ -54,7 +54,7 @@ module PTY
       fds.each do |fd|
         fd.sync = true
 
-        hack_close_on_exec(fd)
+        fd.close_on_exec = true
       end
 
       return fds unless block_given?
@@ -106,8 +106,8 @@ module PTY
       pid = Process.spawn(*args, in: read, out: slave, err: slave, close_others: true, pgroup: true)
       [read, slave].each(&:close)
 
-      hack_close_on_exec(master)
-      hack_close_on_exec(write)
+      master.close_on_exec = true
+      write.close_on_exec = true
 
       ret = [master, write, pid]
 
@@ -130,16 +130,6 @@ module PTY
         return pwent.shell
       else
         "/bin/sh"
-      end
-    end
-
-    def hack_close_on_exec(fd)
-      # I assume this isn't actually supported for good reasons.
-      # but let's see how close to passing test_pty we can get.
-      fl = fd.fcntl(Fcntl::F_GETFL, 0)
-      fd.fcntl(Fcntl::F_SETFL, Fcntl::FD_CLOEXEC|fl)
-      fd.define_singleton_method(:close_on_exec?) do
-        true
       end
     end
 
