@@ -837,27 +837,17 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {
-        Ruby runtime = context.runtime;
-
         BigInteger xn, yn, mn, zn;
 
-        if (this instanceof RubyFixnum) {
-            xn = BigInteger.valueOf(this.getLongValue());
-        } else {
-            xn = this.getBigIntegerValue();
-        }
-        if (y instanceof RubyFixnum) {
-            yn = BigInteger.valueOf(y.getLongValue());
-        } else {
-            yn = y.getBigIntegerValue();
-        }
+        xn = getBigIntegerValue();
+        yn = y.getBigIntegerValue();
         mn = m.getBigIntegerValue();
 
         zn = xn.modPow(yn, mn);
         if (negaFlg & zn.signum() == 1) {
             zn = zn.negate();
         }
-        return RubyBignum.bignorm(runtime, zn);
+        return RubyBignum.bignorm(context.runtime, zn);
     }
 
     @JRubyMethod(name = "abs")

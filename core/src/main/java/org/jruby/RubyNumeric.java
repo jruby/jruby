@@ -796,6 +796,10 @@ public class RubyNumeric extends RubyObject {
         return sites(context).op_minus.call(context, this, this, product);
     }
 
+    IRubyObject modulo(ThreadContext context, long other) {
+        return modulo(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     /** num_remainder
      *
      */

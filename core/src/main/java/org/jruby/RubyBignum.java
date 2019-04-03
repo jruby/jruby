@@ -656,6 +656,16 @@ public class RubyBignum extends RubyInteger {
         return bignorm(context.runtime, result);
     }
 
+    @Override
+    public IRubyObject modulo(ThreadContext context, IRubyObject other) {
+        return op_mod(context, other);
+    }
+
+    @Override
+    IRubyObject modulo(ThreadContext context, long other) {
+        return op_mod(context, other);
+    }
+
     @Deprecated
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         return op_mod(context, other);
