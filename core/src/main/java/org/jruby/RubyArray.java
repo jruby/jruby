@@ -782,7 +782,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < realLength; i++) {
             IRubyObject value = eltOk(i);
             RubyFixnum n = Helpers.safeHash(context, value);
-            h = murmurCombine(h, n.getLongValue());
+            h = murmurCombine(h, n.value);
         }
 
         return hashEnd(h);
@@ -1175,7 +1175,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
             if ( arg instanceof RubyFixnum ) {
-                result.append( entry(((RubyFixnum) arg).getLongValue()) );
+                result.append( entry(((RubyFixnum) arg).value) );
                 continue;
             }
 
@@ -1477,7 +1477,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject aref(IRubyObject arg0) {
-        return arg0 instanceof RubyFixnum ? entry(((RubyFixnum)arg0).getLongValue()) : arefCommon(arg0);
+        return arg0 instanceof RubyFixnum ? entry(((RubyFixnum) arg0).value) : arefCommon(arg0);
     }
 
     @Deprecated
@@ -1540,7 +1540,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1) {
         modifyCheck();
         if (arg0 instanceof RubyFixnum) {
-            store(((RubyFixnum)arg0).getLongValue(), arg1);
+            store(((RubyFixnum) arg0).value, arg1);
         } else if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange)arg0;
             int beg = (int) range.begLen0(realLength);

@@ -222,7 +222,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static long num2long(IRubyObject arg) {
-        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).getLongValue() : other2long(arg);
+        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).value : other2long(arg);
     }
 
     private static long other2long(IRubyObject arg) throws RaiseException {
@@ -311,7 +311,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static long fix2long(IRubyObject arg) {
-        return ((RubyFixnum) arg).getLongValue();
+        return ((RubyFixnum) arg).value;
     }
 
     public static int fix2int(IRubyObject arg) {
@@ -321,7 +321,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static int fix2int(RubyFixnum arg) {
-        long num = arg.getLongValue();
+        long num = arg.value;
         checkInt(arg, num);
         return (int) num;
     }
@@ -1073,8 +1073,8 @@ public class RubyNumeric extends RubyObject {
     }
 
     private static void fixnumStep(ThreadContext context, Ruby runtime, RubyFixnum from, IRubyObject to, RubyFixnum step, boolean inf, boolean desc, Block block) {
-        long i = from.getLongValue();
-        long diff = step.getLongValue();
+        long i = from.value;
+        long diff = step.value;
 
         if (inf) {
             for (;; i += diff) {
@@ -1153,13 +1153,13 @@ public class RubyNumeric extends RubyObject {
         if (from instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             long delta, diff;
 
-            diff = ((RubyFixnum) step).getLongValue();
+            diff = ((RubyFixnum) step).value;
             if (diff == 0) {
                 return RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
             }
             // overflow checking
-            long toLong = ((RubyFixnum) to).getLongValue();
-            long fromLong = ((RubyFixnum) from).getLongValue();
+            long toLong = ((RubyFixnum) to).value;
+            long fromLong = ((RubyFixnum) from).value;
             delta = toLong - fromLong;
             if (!Helpers.subtractionOverflowed(toLong, fromLong, delta)) {
                 if (diff < 0) {

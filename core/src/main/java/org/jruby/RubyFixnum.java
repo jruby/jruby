@@ -76,7 +76,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return fixnum;
     }
 
-    private final long value;
+    final long value;
     private static final int BIT_SIZE = 64;
     public static final long SIGN_BIT = (1L << (BIT_SIZE - 1));
     public static final long MAX = (1L<<(BIT_SIZE - 1)) - 1;
@@ -295,10 +295,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
         long ndigits = arg.convertToInteger().getLongValue();
-        long self = getLongValue();
         if (ndigits >= 0) {
             return this;
         } else {
+            long self = this.value;
             long posdigits = Math.abs(ndigits);
             long exp = (long) Math.pow(10, posdigits);
             long mod = (self % exp + exp) % exp;
@@ -316,10 +316,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
         long ndigits = (arg).convertToInteger().getLongValue();
-        long self = getLongValue();
         if (ndigits >= 0) {
             return this;
         } else {
+            long self = this.value;
             long posdigits = Math.abs(ndigits);
             long exp = (long) Math.pow(10, posdigits);
             long mod = (self % exp + exp) % exp;
@@ -333,7 +333,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
-        long self = getLongValue();
+        long self = this.value;
         if (self > 0){
             return floor(context, arg);
         } else if (self < 0){
@@ -860,7 +860,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     protected IRubyObject intPowTmp1(ThreadContext context, RubyInteger y, long mm, boolean negaFlg) {
         Ruby runtime = context.runtime;
 
-        long xx = getLongValue();
+        long xx = this.value;
         long tmp = 1L;
         long yy;
 
@@ -896,7 +896,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         long yy;
 
         RubyFixnum tmp2 = runtime.newFixnum(tmp);
-        RubyFixnum xx = (RubyFixnum) this;
+        RubyFixnum xx = this;
 
         for (/*NOP*/; !(y instanceof RubyFixnum); y = (RubyInteger) sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
             if (f_odd_p(context, y)) {

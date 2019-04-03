@@ -2625,7 +2625,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
 
         if (other instanceof RubyFixnum) {
-            cat(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()));
+            cat(ConvertBytes.longToByteList(((RubyFixnum) other).value));
             return this;
         }
         if (other instanceof RubyFloat) {
@@ -2650,7 +2650,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
 
         if (other instanceof RubyFixnum) {
-            cat19(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()), StringSupport.CR_7BIT);
+            cat19(ConvertBytes.longToByteList(((RubyFixnum) other).value), StringSupport.CR_7BIT);
             return this;
         } else if (other instanceof RubyFloat) {
             return cat19((RubyString) ((RubyFloat) other).to_s());
