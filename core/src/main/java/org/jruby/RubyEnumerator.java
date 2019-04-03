@@ -59,6 +59,12 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  */
 @JRubyModule(name="Enumerator", include="Enumerable")
 public class RubyEnumerator extends RubyObject implements java.util.Iterator<Object> {
+    public static final String GENERATOR = "@__generator__";
+    public static final String LOOKAHEAD = "@__lookahead__";
+    public static final String FEEDVALUE = "@__feedvalue__";
+    public static final String OBJECT = "@__object__";
+    public static final String METHOD = "@__method__";
+    public static final String ARGS = "@__args__";
     /** target for each operation */
     private IRubyObject object;
 
@@ -293,12 +299,12 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         this.size = size;
         this.sizeFn = sizeFn;
         this.feedValue = runtime.getNil();
-        setInstanceVariable("@__object__", object);
-        setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayMayCopy(runtime, methodArgs));
-        setInstanceVariable("@__generator__", runtime.getNil());
-        setInstanceVariable("@__lookahead__", RubyArray.newArray(runtime));
-        setInstanceVariable("@__feedvalue__", runtime.getNil());
+        setInstanceVariable(OBJECT, object);
+        setInstanceVariable(METHOD, method);
+        setInstanceVariable(ARGS, RubyArray.newArrayMayCopy(runtime, methodArgs));
+        setInstanceVariable(GENERATOR, runtime.getNil());
+        setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime));
+        setInstanceVariable(FEEDVALUE, runtime.getNil());
 
         return this;
     }
@@ -528,22 +534,18 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @Override
     public synchronized boolean hasNext() {
-        Ruby runtime = getRuntime();
+        ThreadContext context = getRuntime().getCurrentContext();
+        return !sites(context).peek.call(context, this, this).isNil();
+    }
 
-        IRubyObject generator = getInstanceVariable("@__generator__");
-
-        if (generator == null || generator == runtime.getNil()) {
-            return false;
-        }
-
-        ThreadContext context = runtime.getCurrentContext();
-        return sites(context).next_p.call(context, this, generator).isTrue();
+    private IRubyObject getGenerator() {
+        return getInstanceVariable(GENERATOR);
     }
 
     @Override
     public Object next() {
         ThreadContext context = getRuntime().getCurrentContext();
-        return sites(context).next.call(context, this, this).toJava( java.lang.Object.class );
+        return sites(context).next.call(context, this, this).toJava(java.lang.Object.class);
     }
 
     @Override

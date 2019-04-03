@@ -474,7 +474,7 @@ public class JavaSites {
     }
 
     public static class FiberSites {
-        public final CachingCallSite next_p = new FunctionalCachingCallSite("next?");
+        public final CachingCallSite peek = new FunctionalCachingCallSite("peek");
         public final CachingCallSite next = new FunctionalCachingCallSite("next");
     }
 
