@@ -31,6 +31,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StopIteration;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -47,6 +48,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
@@ -535,7 +537,13 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @Override
     public synchronized boolean hasNext() {
         ThreadContext context = getRuntime().getCurrentContext();
-        return !sites(context).peek.call(context, this, this).isNil();
+        try {
+            // We don't care about the result, just whether it succeeds.
+            sites(context).peek.call(context, this, this);
+            return true;
+        } catch (StopIteration si) {
+            return false;
+        }
     }
 
     private IRubyObject getGenerator() {
