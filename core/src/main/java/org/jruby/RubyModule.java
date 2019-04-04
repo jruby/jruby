@@ -265,7 +265,7 @@ public class RubyModule extends RubyObject {
         public boolean isKindOf(IRubyObject obj, RubyModule type) {
             RubyModule cl = obj.getMetaClass();
 
-            return cl.searchAncestor(type.getMethodLocation()) != null;
+            return cl.searchAncestor(type.getDelegate().getNonIncludedClass()) != null;
         }
     }
 
