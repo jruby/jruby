@@ -882,8 +882,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return runtime.newFixnum(tmp);
     }
 
-    // MRI: int_pow_tmp2
+    @Deprecated
     protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, final long mm, boolean negaFlg) {
+        return intPowTmp2(context, (RubyInteger) y, mm, negaFlg);
+    }
+
+    // MRI: int_pow_tmp2
+    IRubyObject intPowTmp2(ThreadContext context, RubyInteger y, final long mm, boolean negaFlg) {
         Ruby runtime = context.runtime;
 
         long tmp = 1L;
@@ -892,7 +897,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         RubyFixnum tmp2 = runtime.newFixnum(tmp);
         RubyFixnum xx = (RubyFixnum) this;
 
-        for (/*NOP*/; !(y instanceof RubyFixnum); y = sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
+        for (/*NOP*/; !(y instanceof RubyFixnum); y = (RubyInteger) sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
             if (f_odd_p(context, y)) {
                 tmp2 = mulModulo(context, tmp2, xx, mm);
             }

@@ -113,7 +113,10 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public int signum() { return getBigIntegerValue().signum(); }
 
-    public abstract RubyInteger negate() ;
+    public RubyInteger negate() { // abstract - Fixnum/Bignum do override
+        ThreadContext context = getRuntime().getCurrentContext();
+        return sites(context).op_uminus.call(context, this, this).convertToInteger();
+    }
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
@@ -796,41 +799,39 @@ public abstract class RubyInteger extends RubyNumeric {
     // MRI: rb_int_powm
     @JRubyMethod(name = "pow")
     public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
+        // a == this
         Ruby runtime = context.runtime;
-
-        RubyInteger a = this;
 
         boolean negaFlg = false;
         if (!(b instanceof RubyInteger)) {
             throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
         }
-        RubyInteger intB = (RubyInteger) b;
-        if (negativeInt(context, intB)) {
+        if (((RubyInteger) b).isNegative()) {
             throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
         }
         if (!(m instanceof RubyInteger)) {
             throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless all arguments are integers");
         }
 
-        if (negativeInt(context, m)) {
-            m = sites(context).op_uminus.call(context, m, m);
+        if (((RubyInteger) m).isNegative()) {
+            m = ((RubyInteger) m).negate();
             negaFlg = true;
         }
 
-        if (!positiveInt(context, m)) {
-            throw runtime.newZeroDivisionError();
-        }
+        if (!((RubyInteger) m).isPositive()) throw runtime.newZeroDivisionError();
+
         if (m instanceof RubyFixnum) {
             long halfVal = HALF_LONG_MSB;
-            long mm = m.convertToInteger().getLongValue();
-            RubyFixnum modulo = (RubyFixnum) a.modulo(context, m);
+            long mm = ((RubyFixnum) m).getLongValue();
+            RubyFixnum modulo = (RubyFixnum) modulo(context, m);
             if (mm <= halfVal) {
-                return modulo.intPowTmp1(context, intB, mm, negaFlg);
+                return modulo.intPowTmp1(context, (RubyInteger) b, mm, negaFlg);
             } else {
-                return modulo.intPowTmp2(context, intB, mm, negaFlg);
+                return modulo.intPowTmp2(context, (RubyInteger) b, mm, negaFlg);
             }
-        } else if (m instanceof RubyBignum) {
-            return ((RubyInteger) a.modulo(context, m)).intPowTmp3(context, intB, (RubyBignum) m, negaFlg);
+        }
+        if (m instanceof RubyBignum) {
+            return ((RubyInteger) modulo(context, m)).intPowTmp3(context, (RubyInteger) b, (RubyBignum) m, negaFlg);
         }
         // not reached
         throw new AssertionError("BUG: unexpected type " + m.getType());
