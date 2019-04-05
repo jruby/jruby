@@ -2639,7 +2639,7 @@ public class RubyModule extends RubyObject {
     protected RubyModule searchAncestor(RubyModule c) {
         RubyModule cl = this;
         while (cl != null) {
-            if (cl == c || cl.isSame(c) || cl.getNonIncludedClass() == c) {
+            if (cl == c || cl.isSame(c) || cl.getDelegate().getNonIncludedClass() == c) {
                 return cl;
             }
             cl = cl.getSuperClass();
