@@ -159,7 +159,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public static final long floorSqrt(final long x) {
         if ((x & 0xfff0000000000000L) == 0L) return (long) StrictMath.sqrt(x);
         final long result = (long) StrictMath.sqrt(2.0d*(x >>> 1));  
-        return result*result - x > 0L ? (long) result - 1 : (long) result;
+        return result*result - x > 0L ? result - 1 : result;
     }
 
     // floorSqrt :: BigInteger -> BigInteger
@@ -529,7 +529,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return RubyFixnum.zero(runtime);
         }
 
-        f = (RubyNumeric) int_pow(context, 10, -ndigits);
+        f = int_pow(context, 10, -ndigits);
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
             long x = fix2long(this), y = fix2long(f);
             boolean neg = x < 0;
@@ -794,7 +794,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return sites(context).op_pow.call(context, this, this, other);
     }
 
-    private final long HALF_LONG_MSB = 0x80000000L;
+    private static final long HALF_LONG_MSB = 0x80000000L;
 
     // MRI: rb_int_powm
     @JRubyMethod(name = "pow")
@@ -821,10 +821,9 @@ public abstract class RubyInteger extends RubyNumeric {
         if (!((RubyInteger) m).isPositive()) throw runtime.newZeroDivisionError();
 
         if (m instanceof RubyFixnum) {
-            long halfVal = HALF_LONG_MSB;
             long mm = ((RubyFixnum) m).getLongValue();
             RubyFixnum modulo = (RubyFixnum) modulo(context, m);
-            if (mm <= halfVal) {
+            if (mm <= HALF_LONG_MSB) {
                 return modulo.intPowTmp1(context, (RubyInteger) b, mm, negaFlg);
             } else {
                 return modulo.intPowTmp2(context, (RubyInteger) b, mm, negaFlg);

@@ -1112,9 +1112,8 @@ public class RubyNumeric extends RubyObject {
             /* if unit is infinity, i*unit+beg is NaN */
             if (n != 0) block.yield(context, from);
         } else if (unit == 0) {
-            IRubyObject val = from;
             for (;;) {
-                block.yield(context, val);
+                block.yield(context, from);
             }
         } else {
             for (i=0; i<n; i++) {

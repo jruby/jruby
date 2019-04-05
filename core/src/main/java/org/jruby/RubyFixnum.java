@@ -1345,7 +1345,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject succ(ThreadContext context) {
-        return ((RubyFixnum) this).op_plus_one(context);
+        return op_plus_one(context);
     }
 
     @Override
@@ -1464,8 +1464,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
         }
 
-        long n = value;
-        long sq = floorSqrt(n);
+        long sq = floorSqrt(value);
         
         return RubyFixnum.newFixnum(runtime, sq);
     }
