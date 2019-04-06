@@ -33,6 +33,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -890,11 +891,21 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             if (die) return;
 
             thread = Thread.currentThread();
+
             ThreadContext context = runtime.getCurrentContext();
 
             if (DEBUG) System.out.println(Thread.currentThread().getName() + ": starting up nexter thread");
 
             IRubyObject finalObject = NEVER;
+
+            String oldName = thread.getName();
+            if (object instanceof RubyGenerator) {
+                RubyProc proc = ((RubyGenerator) object).getProc();
+                Binding binding = proc.getBlock().getBinding();
+                thread.setName("Enumerator thread for Generator proc at: " + binding.getFile() + ":" + binding.getLine());
+            } else {
+                thread.setName("Enumerator thread for: " + object.getType() + "#" + method);
+            }
 
             try {
                 final IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -944,6 +955,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                 }
                 catch (InterruptedException ie) { /* ignore */ }
             } finally {
+                thread.setName(oldName);
                 dissociateNexterThread(false); // disassociate this Nexter with the thread running it
             }
         }
