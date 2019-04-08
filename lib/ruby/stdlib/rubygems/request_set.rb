@@ -171,7 +171,9 @@ class Gem::RequestSet
         rescue Gem::RuntimeRequirementNotMetError => e
           recent_match = req.spec.set.find_all(req.request).sort_by(&:version).reverse_each.find do |s|
             s = s.spec
-            s.required_ruby_version.satisfied_by?(Gem.ruby_version) && s.required_rubygems_version.satisfied_by?(Gem.rubygems_version)
+            s.required_ruby_version.satisfied_by?(Gem.ruby_version) &&
+              s.required_rubygems_version.satisfied_by?(Gem.rubygems_version) &&
+              Gem::Platform.installable?(s)
           end
           if recent_match
             suggestion = "The last version of #{req.request} to support your Ruby & RubyGems was #{recent_match.version}. Try installing it with `gem install #{recent_match.name} -v #{recent_match.version}`"
@@ -189,22 +191,7 @@ class Gem::RequestSet
 
     return requests if options[:gemdeps]
 
-    specs = requests.map do |request|
-      case request
-      when Gem::Resolver::ActivationRequest then
-        request.spec.spec
-      else
-        request
-      end
-    end
-
-    require 'rubygems/dependency_installer'
-    inst = Gem::DependencyInstaller.new options
-    inst.installed_gems.replace specs
-
-    Gem.done_installing_hooks.each do |hook|
-      hook.call inst, specs
-    end unless Gem.done_installing_hooks.empty?
+    install_hooks requests, options
 
     requests
   end
@@ -281,9 +268,33 @@ class Gem::RequestSet
       installed << request
     end
 
+    install_hooks installed, options
+
     installed
   ensure
     ENV['GEM_HOME'] = gem_home
+  end
+
+  ##
+  # Call hooks on installed gems
+
+  def install_hooks requests, options
+    specs = requests.map do |request|
+      case request
+      when Gem::Resolver::ActivationRequest then
+        request.spec.spec
+      else
+        request
+      end
+    end
+
+    require "rubygems/dependency_installer"
+    inst = Gem::DependencyInstaller.new options
+    inst.installed_gems.replace specs
+
+    Gem.done_installing_hooks.each do |hook|
+      hook.call inst, specs
+    end unless Gem.done_installing_hooks.empty?
   end
 
   ##
