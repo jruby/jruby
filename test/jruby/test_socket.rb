@@ -7,29 +7,25 @@ require 'ipaddr'
 class SocketTest < Test::Unit::TestCase
   include TestHelper
 
-  # Disabled for now. See https://github.com/jruby/jruby/issues/620
-  #
-  # # Should this work on windows? JRUBY-6665
-  # if !WINDOWS
-  #   def test_multicast_send_and_receive
-  #     multicast_addr = "225.4.5.6"
-  #     port = 6789
-  #     multicast_msg = "Hello from automated JRuby test suite"
-  #
-  #     assert_nothing_raised do
-  #       socket = UDPSocket.new
-  #       ip =  IPAddr.new(multicast_addr).hton + IPAddr.new("0.0.0.0").hton
-  #       socket.setsockopt(Socket::IPPROTO_IP, Socket::IP_ADD_MEMBERSHIP, ip)
-  #       socket.bind(Socket::INADDR_ANY, port)
-  #       socket.send(multicast_msg, 0, multicast_addr, port)
-  #       msg, info = socket.recvfrom(1024)
-  #       assert_equal(multicast_msg, msg)
-  #       assert_equal(multicast_msg.size, msg.size)
-  #       assert_equal(port, info[1])
-  #       socket.close
-  #     end
-  #   end
-  # end
+  if !WINDOWS # #5656 is tracking issue for this.
+    def test_multicast_send_and_receive
+      multicast_addr, port = "225.4.5.6", 6789
+      multicast_msg = "Hello from automated JRuby test suite"
+  
+      assert_nothing_raised do
+        socket = UDPSocket.new
+        ip =  IPAddr.new(multicast_addr).hton + IPAddr.new("0.0.0.0").hton
+        socket.setsockopt(Socket::IPPROTO_IP, Socket::IP_ADD_MEMBERSHIP, ip)
+        socket.bind(Socket::INADDR_ANY, port)
+        socket.send(multicast_msg, 0, multicast_addr, port)
+        msg, info = socket.recvfrom(1024)
+        assert_equal(multicast_msg, msg)
+        assert_equal(multicast_msg.size, msg.size)
+        assert_equal(port, info[1])
+        socket.close
+      end
+    end
+  end
 
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
