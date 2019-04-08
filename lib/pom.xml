@@ -202,6 +202,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>bundler</artifactId>
+      <version>1.16.6</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>did_you_mean</artifactId>
       <version>1.2.0</version>
       <type>gem</type>
@@ -350,6 +363,9 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/webrick*1.4.2.gem</include>
           <include>gems/webrick*1.4.2/**</include>
           <include>specifications/webrick*1.4.2.gemspec</include>
+          <include>cache/bundler*1.16.6.gem</include>
+          <include>gems/bundler*1.16.6/**</include>
+          <include>specifications/bundler*1.16.6.gemspec</include>
           <include>cache/did_you_mean*1.2.0.gem</include>
           <include>gems/did_you_mean*1.2.0/**</include>
           <include>specifications/did_you_mean*1.2.0.gemspec</include>

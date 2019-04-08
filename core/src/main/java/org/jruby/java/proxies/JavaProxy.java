@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.headius.modulator.Modulator;
-import com.headius.modulator.Module;
+import com.headius.backport9.modules.Module;
+import com.headius.backport9.modules.Modules;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -443,7 +443,7 @@ public class JavaProxy extends RubyObject {
 
         try {
             for (Class<?> clazz = originalClass; clazz != null; clazz = clazz.getSuperclass()) {
-                Module module = Modulator.getModule(clazz);
+                Module module = Modules.getModule(clazz);
                 Package pkg = clazz.getPackage();
 
                 // Default package cannot be used by modules

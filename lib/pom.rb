@@ -31,6 +31,7 @@ default_gems = [
 ]
 
 bundled_gems = [
+    ['bundler', '1.16.6'],
     ['did_you_mean', '1.2.0'],
     ['minitest', '${minitest.version}'],
     ['net-telnet', '0.1.1'],

@@ -706,6 +706,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return moduloFixnum(context, other);
     }
 
+    @Override
+    public IRubyObject modulo(ThreadContext context, IRubyObject other) {
+        return op_mod(context, other);
+    }
+
+    @Override
+    IRubyObject modulo(ThreadContext context, long other) {
+        return op_mod(context, other);
+    }
+
     private IRubyObject moduloFixnum(ThreadContext context, RubyFixnum other) {
         return moduloFixnum(context, other.value);
     }
@@ -872,31 +882,35 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return runtime.newFixnum(tmp);
     }
 
+    @Deprecated
+    protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, final long mm, boolean negaFlg) {
+        return intPowTmp2(context, (RubyInteger) y, mm, negaFlg);
+    }
+
     // MRI: int_pow_tmp2
-    protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, long mm, boolean negaFlg) {
+    IRubyObject intPowTmp2(ThreadContext context, RubyInteger y, final long mm, boolean negaFlg) {
         Ruby runtime = context.runtime;
 
         long tmp = 1L;
         long yy;
 
-        final IRubyObject m = runtime.newFixnum(mm);
         RubyFixnum tmp2 = runtime.newFixnum(tmp);
         RubyFixnum xx = (RubyFixnum) this;
 
-        for (/*NOP*/; !(y instanceof RubyFixnum); y = sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
+        for (/*NOP*/; !(y instanceof RubyFixnum); y = (RubyInteger) sites(context).op_rshift.call(context, y, y, RubyFixnum.one(runtime))) {
             if (f_odd_p(context, y)) {
-                tmp2 = mulModulo(context, tmp2, xx, m);
+                tmp2 = mulModulo(context, tmp2, xx, mm);
             }
-            xx = mulModulo(context, xx, xx, m);
+            xx = mulModulo(context, xx, xx, mm);
         }
-        for (yy = ((RubyFixnum) y).getLongValue(); yy != 0; yy >>= 1L) {
+        for (yy = ((RubyFixnum) y).value; yy != 0; yy >>= 1L) {
             if ((yy & 1L) != 0) {
-                tmp2 = mulModulo(context, tmp2, xx, m);
+                tmp2 = mulModulo(context, tmp2, xx, mm);
             }
-            xx = mulModulo(context, xx, xx, m);
+            xx = mulModulo(context, xx, xx, mm);
         }
 
-        tmp = tmp2.getLongValue();
+        tmp = tmp2.value;
         if (negaFlg && (tmp != 0)) {
             tmp -= mm;
         }
@@ -904,8 +918,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     // MRI: MUL_MODULO macro defined within int_pow_tmp2 in numeric.c
-    private static RubyFixnum mulModulo(ThreadContext context, RubyFixnum a, RubyFixnum b, IRubyObject c) {
-        return (RubyFixnum) ((RubyInteger) a.op_mul(context, b.getLongValue())).modulo(context, c);
+    private static RubyFixnum mulModulo(ThreadContext context, RubyFixnum a, RubyFixnum b, long c) {
+        return (RubyFixnum) ((RubyInteger) a.op_mul(context, b.value)).modulo(context, c);
     }
 
     /** fix_abs
@@ -1331,7 +1345,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject succ(ThreadContext context) {
-        return ((RubyFixnum) this).op_plus_one(context);
+        return op_plus_one(context);
     }
 
     @Override
@@ -1450,8 +1464,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
         }
 
-        long n = value;
-        long sq = floorSqrt(n);
+        long sq = floorSqrt(value);
         
         return RubyFixnum.newFixnum(runtime, sq);
     }

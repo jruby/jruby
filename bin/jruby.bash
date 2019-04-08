@@ -387,7 +387,7 @@ if [ -d $JAVA_HOME/jmods ]; then
   fi
 
   # Add base opens we need for Ruby compatibility
-  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist"
+  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist --add-opens java.base/sun.nio.ch=org.jruby.dist"
 fi
 
 # Run JRuby!
