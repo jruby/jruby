@@ -232,7 +232,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (!Platform.IS_BSD) {
             // lchmod appears to be mostly a BSD-ism, not supported on Linux.
             // See https://github.com/jruby/jruby/issues/5547
-            fileClass.searchMethod("lchmod").setNotImplemented(true);
+            fileClass.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
         }
 
         return fileClass;
