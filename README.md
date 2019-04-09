@@ -59,6 +59,12 @@ For [`rvm`](https://rvm.io) you can simply do:
 $ rvm install jruby
 ```
 
+Using [`Homebrew`](https://brew.sh/) works too:
+
+```
+$ brew install jruby
+```
+
 You can also [download packages from the JRuby website](http://jruby.org/download) that
 you can unpack and run in place.
 
