@@ -424,9 +424,18 @@ public class RubyInstanceConfig {
     private static InputStream findScript(InputStream is) throws IOException {
         StringBuilder buf = new StringBuilder(64);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String currentLine = br.readLine();
-        while (currentLine != null && !isRubyShebangLine(currentLine)) {
-            currentLine = br.readLine();
+
+        boolean foundRubyShebang = false;
+        String currentLine;
+        while ((currentLine = br.readLine()) != null) {
+            if (isRubyShebangLine(currentLine)) {
+                foundRubyShebang = true;
+                break;
+            }
+        }
+
+        if (!foundRubyShebang) {
+            throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
         }
 
         buf.append(currentLine).append('\n');
