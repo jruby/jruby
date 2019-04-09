@@ -97,7 +97,18 @@ public class Mutex extends RubyObject implements DataType {
             // failed to acquire, proceed to sleep and block
             try {
                 thread.enterSleep();
-                thread.lock(lock);
+
+                // Loop until lock is acquired or we are interrupted with a thread event.
+                while (true) {
+                    try {
+                        thread.lockInterruptibly(lock);
+                        break;
+                    } catch (InterruptedException ie) {
+                        // Check thread events; if one is present, it will propagate. Otherwise interrupt was spurious.
+                        // See jruby/jruby#5476
+                        thread.pollThreadEvents(context);
+                    }
+                }
             } finally {
                 thread.exitSleep();
             }
