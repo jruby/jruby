@@ -28,6 +28,7 @@
 
 package org.jruby.ext.thread;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -94,12 +95,10 @@ public class Mutex extends RubyObject implements DataType {
 
         // try locking without sleep status to avoid looking like blocking
         if (!thread.tryLock(lock)) {
-            // failed to acquire, proceed to sleep and block
             try {
-                thread.enterSleep();
-                thread.lock(lock);
-            } finally {
-                thread.exitSleep();
+                context.getThread().lockInterruptibly(lock);
+            } catch (InterruptedException ex) {
+                throw context.runtime.newConcurrencyError("interrupted waiting for mutex");
             }
         }
 
@@ -122,40 +121,36 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context) {
-        long beg = System.currentTimeMillis();
-        try {
-            unlock(context);
-            context.getThread().sleep(0);
-        } catch (InterruptedException ex) {
-            // ignore interrupted
-        } finally {
-            lock(context);
-        }
-        return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        return sleep(context, context.nil);
     }
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
+        Ruby runtime = context.runtime;
+
         final long beg = System.currentTimeMillis();
-        double t = RubyTime.convertTimeInterval(context, timeout);
-
-        unlock(context);
-
         try {
-            long millis = (long) (t * 1000);
+            RubyThread thread = context.getThread();
 
-            if (Double.compare(t, 0.0d) == 0 || millis == 0) {
-                // wait time is zero or smaller than 1ms, so we just proceed
+            if (timeout.isNil()) {
+                thread.sleep(lock);
             } else {
-                context.getThread().sleep(millis);
+                double t = RubyTime.convertTimeInterval(context, timeout);
+                long millis = (long) (t * 1000);
+
+                if (Double.compare(t, 0.0d) == 0 || millis == 0) {
+                    // wait time is zero or smaller than 1ms, so we just proceed
+                } else {
+                    thread.sleep(lock, millis);
+                }
             }
+        } catch (IllegalMonitorStateException imse) {
+            throw runtime.newThreadError("Attempt to unlock a mutex which is not locked");
         } catch (InterruptedException ex) {
-            // ignore interrupted
-        } finally {
-            lock(context);
+            context.pollThreadEvents();
         }
 
-        return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        return runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
     }
 
     @JRubyMethod

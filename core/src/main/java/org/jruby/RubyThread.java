@@ -51,6 +51,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
@@ -2132,7 +2133,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void lockInterruptibly(Lock lock) throws InterruptedException {
         assert Thread.currentThread() == getNativeThread();
-        lock.lockInterruptibly();
+        executeTask(getContext(), lock, new RubyThread.Task<Lock, Object>() {
+            @Override
+            public Object run(ThreadContext context, Lock reentrantLock) throws InterruptedException {
+                reentrantLock.lockInterruptibly();
+                return reentrantLock;
+            }
+
+            @Override
+            public void wakeup(RubyThread thread, Lock reentrantLock) {
+                thread.getNativeThread().interrupt();
+            }
+        });
         heldLocks.add(lock);
     }
 
@@ -2171,6 +2183,26 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         assert Thread.currentThread() == getNativeThread();
         for (Lock lock : heldLocks) {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Release lock and sleep.
+     */
+    public void sleep(Lock lock) throws InterruptedException {
+        sleep(lock, 0);
+    }
+
+    /**
+     * Release lock and sleep for the specified number of milliseconds.
+     */
+    public void sleep(Lock lock, long millis) throws InterruptedException {
+        assert Thread.currentThread() == getNativeThread();
+        try {
+            unlock(lock);
+            sleep(millis);
+        } finally {
+            lock(lock);
         }
     }
 
