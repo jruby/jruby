@@ -32,12 +32,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyMarshal;
 import org.jruby.RubyObject;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * The "ConditionVariable" class from the 'thread' library.
@@ -69,65 +72,60 @@ public class ConditionVariable extends RubyObject {
         runtime.getObject().setConstant("ConditionVariable", cConditionVariable);
     }
 
-    @JRubyMethod(name = "wait", required = 1, optional = 1)
-    public IRubyObject wait_ruby(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = "wait")
+    public IRubyObject wait_ruby(ThreadContext context, IRubyObject m) {
+        return waitCommon(context, m, context.nil);
+    }
+
+    @JRubyMethod(name = "wait")
+    public IRubyObject wait_ruby(ThreadContext context, IRubyObject m, IRubyObject t) {
+        return waitCommon(context, m, t);
+    }
+
+    public IRubyObject waitCommon(ThreadContext context, IRubyObject m, IRubyObject t) {
         Ruby runtime = context.runtime;
-        if (args.length < 1) {
-            throw runtime.newArgumentError(args.length, 1);
+
+        if (!(m instanceof Mutex)) {
+            throw context.runtime.newTypeError(m, runtime.getClass("Mutex"));
         }
-        if (args.length > 2) {
-            throw runtime.newArgumentError(args.length, 2);
-        }
-        if (!(args[0] instanceof Mutex)) {
-            throw context.runtime.newTypeError(args[0], runtime.getClass("Mutex"));
-        }
-        Mutex mutex = (Mutex) args[0];
-        Double timeout = null;
-        if (args.length > 1 && !args[1].isNil()) {
-            timeout = args[1].convertToFloat().getDoubleValue();
-            if (timeout < 0) {
-                throw runtime.newArgumentError("time interval must be positive");
-            }
-        }
+
+        Mutex mutex = (Mutex) m;
+
         if (Thread.interrupted()) {
             throw runtime.newConcurrencyError("thread interrupted");
         }
-        boolean success = false;
+
+        RubyThread thread = context.getThread();
+
+        waiters.add(thread);
         try {
-            synchronized (this) {
-                mutex.unlock(context);
-                try {
-                    success = context.getThread().wait_timeout(this, timeout);
-                } catch (InterruptedException ie) {
-                    throw runtime.newConcurrencyError(ie.getLocalizedMessage());
-                } finally {
-                    // An interrupt or timeout may have caused us to miss
-                    // a notify that we consumed, so do another notify in
-                    // case someone else is available to pick it up.
-                    if (!success) {
-                        this.notify();
-                    }
-                }
+            if (t.isNil()) {
+                mutex.sleep(context);
+            } else {
+                mutex.sleep(context, t);
             }
         } finally {
-            mutex.lock(context);
+            waiters.remove(thread);
         }
-        if (timeout != null) {
-            return runtime.newBoolean(success);
-        } else {
-            return this;
-        }
+
+        return this;
     }
 
     @JRubyMethod
     public synchronized IRubyObject broadcast(ThreadContext context) {
-        notifyAll();
+        waiters.forEach((waiter) -> waiter.interrupt());
+
         return this;
     }
 
     @JRubyMethod
     public synchronized IRubyObject signal(ThreadContext context) {
-        notify();
+        RubyThread waiter = waiters.poll();
+
+        if (waiter != null) {
+            waiter.interrupt();
+        }
+
         return this;
     }
 
@@ -135,5 +133,7 @@ public class ConditionVariable extends RubyObject {
     public IRubyObject marshal_dump(ThreadContext context) {
         return RubyMarshal.undumpable(context, this);
     }
+
+    private ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<RubyThread>();
     
 }

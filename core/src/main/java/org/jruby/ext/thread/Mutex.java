@@ -28,6 +28,7 @@
 
 package org.jruby.ext.thread;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -95,27 +96,9 @@ public class Mutex extends RubyObject implements DataType {
         // try locking without sleep status to avoid looking like blocking
         if (!thread.tryLock(lock)) {
             try {
-                context.getThread().enterSleep();
-                try {
-                    checkRelocking(context);
-                    context.getThread().executeTask(context, lock, new RubyThread.Task<ReentrantLock, Object>() {
-                        @Override
-                        public Object run(ThreadContext context, ReentrantLock reentrantLock) throws InterruptedException {
-                            reentrantLock.lockInterruptibly();
-                            return reentrantLock;
-                        }
-
-                        @Override
-                        public void wakeup(RubyThread thread, ReentrantLock reentrantLock) {
-                            thread.getNativeThread().interrupt();
-                        }
-                    });
-                } catch (InterruptedException ex) {
-                    context.pollThreadEvents();
-                    throw context.runtime.newConcurrencyError("interrupted waiting for mutex");
-                }
-            } finally {
-                context.getThread().exitSleep();
+                context.getThread().lockInterruptibly(lock);
+            } catch (InterruptedException ex) {
+                throw context.runtime.newConcurrencyError("interrupted waiting for mutex");
             }
         }
 
@@ -139,14 +122,14 @@ public class Mutex extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context) {
         long beg = System.currentTimeMillis();
+
         try {
-            unlock(context);
-            context.getThread().sleep(0);
-        } catch (InterruptedException ex) {
-            // ignore interrupted
-        } finally {
-            lock(context);
+            context.getThread().sleep(lock);
+        } catch (IllegalMonitorStateException imse) {
+            throw context.runtime.newThreadError("Attempt to unlock a mutex which is not locked");
+        } catch (InterruptedException ie) {
         }
+
         return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
     }
 
