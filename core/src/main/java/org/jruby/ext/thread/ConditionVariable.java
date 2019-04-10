@@ -35,7 +35,9 @@ import org.jruby.RubyObject;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -83,27 +85,11 @@ public class ConditionVariable extends RubyObject {
     }
 
     public IRubyObject waitCommon(ThreadContext context, IRubyObject m, IRubyObject t) {
-        Ruby runtime = context.runtime;
-
-        if (!(m instanceof Mutex)) {
-            throw context.runtime.newTypeError(m, runtime.getClass("Mutex"));
-        }
-
-        Mutex mutex = (Mutex) m;
-
-        if (Thread.interrupted()) {
-            throw runtime.newConcurrencyError("thread interrupted");
-        }
-
         RubyThread thread = context.getThread();
 
         waiters.add(thread);
         try {
-            if (t.isNil()) {
-                mutex.sleep(context);
-            } else {
-                mutex.sleep(context, t);
-            }
+            sites(context).mutex_sleep.call(context, this, m, t);
         } finally {
             waiters.remove(thread);
         }
@@ -134,6 +120,23 @@ public class ConditionVariable extends RubyObject {
         return RubyMarshal.undumpable(context, this);
     }
 
-    private ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<RubyThread>();
+    private static JavaSites.ConditionVariableSites sites(ThreadContext context) {
+        return context.sites.ConditionVariable;
+    }
+
+    @Deprecated
+    public IRubyObject wait_ruby(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return wait_ruby(context, args[0]);
+            case 2:
+                return wait_ruby(context, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context, args.length, 1, 2);
+                return null; // not reached
+        }
+    }
+
+    private ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<>();
     
 }
