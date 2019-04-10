@@ -2196,7 +2196,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /**
      * Release lock and sleep for the specified number of milliseconds.
      */
-    public void sleep(Lock lock, int millis) throws InterruptedException {
+    public void sleep(Lock lock, long millis) throws InterruptedException {
         assert Thread.currentThread() == getNativeThread();
         try {
             unlock(lock);

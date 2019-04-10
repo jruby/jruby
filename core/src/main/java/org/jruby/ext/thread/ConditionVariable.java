@@ -78,16 +78,7 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod(name = "wait")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject m) {
-        RubyThread thread = context.getThread();
-
-        waiters.add(thread);
-        try {
-            sites(context).mutex_sleep.call(context, this, m);
-        } finally {
-            waiters.remove(thread);
-        }
-
-        return this;
+        return wait_ruby(context, m, context.nil);
     }
 
     @JRubyMethod(name = "wait")
