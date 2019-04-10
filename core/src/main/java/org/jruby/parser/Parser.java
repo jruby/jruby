@@ -107,9 +107,8 @@ public class Parser {
             try {
                 return parse(file, lexerSource, blockScope, configuration);
             } finally {
-                if (requiresClosing && (!runtime.getGlobalVariables().isDefined("DATA") || runtime.getGlobalVariables().get("DATA") != io)) {
-                    io.close();
-                }
+                if (requiresClosing && runtime.getObject().getConstantAt("DATA") != io) io.close();
+
                 // In case of GetsLexerSource we actually will dispatch to gets which will increment $.
                 // We do not want that in the case of raw parsing.
                 runtime.setCurrentLine(0);
