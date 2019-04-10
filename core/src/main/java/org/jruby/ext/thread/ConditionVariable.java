@@ -38,7 +38,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -62,29 +61,37 @@ public class ConditionVariable extends RubyObject {
     }
 
     public static void setup(Ruby runtime) {
-        RubyClass cConditionVariable = runtime.getThread().defineClassUnder("ConditionVariable", runtime.getObject(), new ObjectAllocator() {
+        RubyClass cConditionVariable =
+                runtime.getThread().defineClassUnder(
+                        "ConditionVariable",
+                        runtime.getObject(),
+                        (r, klass) -> new ConditionVariable(r, klass));
 
-            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                return new ConditionVariable(runtime, klass);
-            }
-        });
         cConditionVariable.undefineMethod("initialize_copy");
+
         cConditionVariable.setReifiedClass(ConditionVariable.class);
+
         cConditionVariable.defineAnnotatedMethods(ConditionVariable.class);
+
         runtime.getObject().setConstant("ConditionVariable", cConditionVariable);
     }
 
     @JRubyMethod(name = "wait")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject m) {
-        return waitCommon(context, m, context.nil);
+        RubyThread thread = context.getThread();
+
+        waiters.add(thread);
+        try {
+            sites(context).mutex_sleep.call(context, this, m);
+        } finally {
+            waiters.remove(thread);
+        }
+
+        return this;
     }
 
     @JRubyMethod(name = "wait")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject m, IRubyObject t) {
-        return waitCommon(context, m, t);
-    }
-
-    public IRubyObject waitCommon(ThreadContext context, IRubyObject m, IRubyObject t) {
         RubyThread thread = context.getThread();
 
         waiters.add(thread);
@@ -99,7 +106,10 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject broadcast(ThreadContext context) {
-        waiters.forEach((waiter) -> waiter.interrupt());
+        waiters.removeIf(waiter -> {
+            waiter.interrupt();
+            return true;
+        });
 
         return this;
     }
