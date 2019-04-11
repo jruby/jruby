@@ -27,6 +27,7 @@
 package org.jruby.ext.coverage;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -107,6 +108,8 @@ public class CoverageData {
 
         return coverage;
     }
+
+    private static final EnumSet<RubyEvent> COVERAGE_EVENTS = EnumSet.of(RubyEvent.COVERAGE);
     
     private final EventHook COVERAGE_HOOK = new EventHook() {
         @Override
@@ -123,6 +126,11 @@ public class CoverageData {
         @Override
         public boolean isInterestedInEvent(RubyEvent event) {
             return event == RubyEvent.COVERAGE;
+        }
+
+        @Override
+        public EnumSet<RubyEvent> eventSet() {
+            return COVERAGE_EVENTS;
         }
     };
     

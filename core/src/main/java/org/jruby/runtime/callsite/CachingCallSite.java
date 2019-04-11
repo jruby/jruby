@@ -16,13 +16,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
 
 public abstract class CachingCallSite extends CallSite {
+
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
-    //public static volatile int totalCallSites;
-    //private AtomicBoolean isPolymorphic = new AtomicBoolean(false);
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
-        //totalCallSites++;
     }
 
     public final CacheEntry getCache() {
@@ -278,18 +276,13 @@ public abstract class CachingCallSite extends CallSite {
         if (cache.typeOk(selfType)) {
             return cache.method.isBuiltin();
         }
-        return cacheAndGetBuiltin(selfType, methodName);
+        return cacheAndGet(selfType, methodName).method.isBuiltin(); // false for method.isUndefined()
     }
 
     private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        if (!entry.method.isUndefined()) cache = entry;
+        if (!entry.method.isUndefined()) this.cache = entry;
         return entry;
-    }
-
-    private static boolean cacheAndGetBuiltin(RubyClass selfType, String methodName) {
-        final DynamicMethod method = selfType.searchWithCache(methodName).method;
-        return method.isUndefined() && method.isBuiltin();
     }
     
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,

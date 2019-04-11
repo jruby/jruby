@@ -1385,6 +1385,7 @@ public final class Ruby implements Constantizable {
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
+        objectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
@@ -3100,19 +3101,20 @@ public final class Ruby implements Constantizable {
         return javaProxyClassFactory;
     }
 
-    public class CallTraceFuncHook extends EventHook {
+    private static final EnumSet<RubyEvent> interest =
+            EnumSet.of(
+                    RubyEvent.C_CALL,
+                    RubyEvent.C_RETURN,
+                    RubyEvent.CALL,
+                    RubyEvent.CLASS,
+                    RubyEvent.END,
+                    RubyEvent.LINE,
+                    RubyEvent.RAISE,
+                    RubyEvent.RETURN
+            );
+
+    public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
-        private EnumSet<RubyEvent> interest =
-                EnumSet.of(
-                        RubyEvent.C_CALL,
-                        RubyEvent.C_RETURN,
-                        RubyEvent.CALL,
-                        RubyEvent.CLASS,
-                        RubyEvent.END,
-                        RubyEvent.LINE,
-                        RubyEvent.RAISE,
-                        RubyEvent.RETURN
-                );
 
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;
@@ -3121,19 +3123,20 @@ public final class Ruby implements Constantizable {
         public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
             if (!context.isWithinTrace()) {
                 if (file == null) file = "(ruby)";
-                if (type == null) type = getNil();
+                if (type == null) type = context.nil;
 
-                RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
+                Ruby runtime = context.runtime;
+                RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
 
                 context.preTrace();
                 try {
-                    traceFunc.call(context, new IRubyObject[] {
-                        newString(eventName), // event name
-                        newString(file), // filename
-                        newFixnum(line), // line numbers should be 1-based
-                        name != null ? newSymbol(name) : getNil(),
-                        binding,
-                        type
+                    traceFunc.call(context, new IRubyObject[]{
+                            runtime.newString(eventName), // event name
+                            runtime.newString(file), // filename
+                            runtime.newFixnum(line), // line numbers should be 1-based
+                            name != null ? runtime.newSymbol(name) : runtime.getNil(),
+                            binding,
+                            type
                     });
                 } finally {
                     context.postTrace();
@@ -3145,12 +3148,17 @@ public final class Ruby implements Constantizable {
         public boolean isInterestedInEvent(RubyEvent event) {
             return interest.contains(event);
         }
+
+        @Override
+        public EnumSet<RubyEvent> eventSet() {
+            return interest;
+        }
     };
 
-    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    private static final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
 
     public synchronized void addEventHook(EventHook hook) {
-        if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
+        if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {
             // without full tracing, many events will not fire
             getWarnings().warn("tracing (e.g. set_trace_func) will not capture all events without --debug flag");
         }

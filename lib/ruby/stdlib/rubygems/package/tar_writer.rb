@@ -111,7 +111,7 @@ class Gem::Package::TarWriter
     name, prefix = split_name name
 
     init_pos = @io.pos
-    @io.write "\0" * 512 # placeholder for the header
+    @io.write Gem::Package::TarHeader::EMPTY_HEADER # placeholder for the header
 
     yield RestrictedStream.new(@io) if block_given?
 
@@ -189,8 +189,7 @@ class Gem::Package::TarWriter
         if digest.respond_to? :name then
           digest.name
         else
-          /::([^:]+)$/ =~ digest.class.name
-          $1
+          digest.class.name[/::([^:]+)\z/, 1]
         end
 
       digest_name == signer.digest_name

@@ -796,6 +796,10 @@ public class RubyNumeric extends RubyObject {
         return sites(context).op_minus.call(context, this, this, product);
     }
 
+    IRubyObject modulo(ThreadContext context, long other) {
+        return modulo(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     /** num_remainder
      *
      */
@@ -1108,9 +1112,8 @@ public class RubyNumeric extends RubyObject {
             /* if unit is infinity, i*unit+beg is NaN */
             if (n != 0) block.yield(context, from);
         } else if (unit == 0) {
-            IRubyObject val = from;
             for (;;) {
-                block.yield(context, val);
+                block.yield(context, from);
             }
         } else {
             for (i=0; i<n; i++) {

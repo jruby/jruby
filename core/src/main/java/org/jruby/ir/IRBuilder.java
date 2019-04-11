@@ -4128,21 +4128,17 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
-        }
+        addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         Operand bodyReturnValue = build(bodyNode);
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
-            // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
-            addInstr(manager.newLineNumber(endLine));
-            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
-        }
+        // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
+        // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
+        addInstr(manager.newLineNumber(endLine));
+        addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
 
         addInstr(new ReturnInstr(bodyReturnValue));
 

@@ -34,6 +34,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;

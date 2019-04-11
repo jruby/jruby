@@ -274,16 +274,20 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
 
         // retry with GC once
-        boolean retried = true;
+        boolean retried = false;
 
-        try {
-            runtime.getFiberExecutor().execute(new Runnable() {
-                public void run() {
+        while (!retried) {
+            try {
+                runtime.getFiberExecutor().execute(() -> {
                     ThreadContext context = runtime.getCurrentContext();
                     context.setFiber(data.fiber.get());
                     context.useRecursionGuardsFrom(data.parent.getContext());
                     fiberThread.set(context.getThread());
                     context.getThread().setFiberCurrentThread(data.parent);
+
+                    Thread thread = Thread.currentThread();
+                    String oldName = thread.getName();
+                    thread.setName("Fiber thread for block at: " + block.getBinding().getFile() + ":" + block.getBinding().getLine());
 
                     try {
                         IRubyObject init = data.queue.pop(context);
@@ -335,17 +339,22 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         if (data.prev != null) {
                             data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
                         }
+                    } finally {
+                        thread.setName(oldName);
                     }
+                });
+
+                // Successfully submitted to executor, break out of retry loop
+                break;
+            } catch (OutOfMemoryError oome) {
+                String oomeMessage = oome.getMessage();
+                if (!retried && oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
+                    // try to clean out stale enumerator threads by forcing GC
+                    System.gc();
+                    retried = true;
+                } else {
+                    throw oome;
                 }
-            });
-        } catch (OutOfMemoryError oome) {
-            String oomeMessage = oome.getMessage();
-            if (!retried && oomeMessage != null && oomeMessage.contains("unable to create new native thread")) {
-                // try to clean out stale enumerator threads by forcing GC
-                System.gc();
-                retried = true;
-            } else {
-                throw oome;
             }
         }
         

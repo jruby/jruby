@@ -265,7 +265,7 @@ public class RubyModule extends RubyObject {
         public boolean isKindOf(IRubyObject obj, RubyModule type) {
             RubyModule cl = obj.getMetaClass();
 
-            return cl.searchAncestor(type.getMethodLocation()) != null;
+            return cl.searchAncestor(type.getDelegate().getNonIncludedClass()) != null;
         }
     }
 
@@ -2639,7 +2639,7 @@ public class RubyModule extends RubyObject {
     protected RubyModule searchAncestor(RubyModule c) {
         RubyModule cl = this;
         while (cl != null) {
-            if (cl == c || cl.isSame(c) || cl.getNonIncludedClass() == c) {
+            if (cl == c || cl.isSame(c) || cl.getDelegate().getNonIncludedClass() == c) {
                 return cl;
             }
             cl = cl.getSuperClass();
