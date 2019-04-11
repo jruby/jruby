@@ -4082,7 +4082,9 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
-        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
+        //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
+        // NOTE: can not assert IdUtil.isConstant(name) until unmarshal-ing is using this for Java classes
+        // since some classes won't assert the upper case first char (anonymous classes start with a digit)
 
         IRubyObject value = getConstantNoConstMissing(name, inherit, includeObject);
         Ruby runtime = getRuntime();
@@ -4586,7 +4588,6 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
-        assert IdUtil.isConstant(name);
         ConstantEntry entry = constantEntryFetch(name);
 
         if (entry == null) return null;
