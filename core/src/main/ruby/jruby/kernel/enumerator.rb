@@ -13,12 +13,12 @@ class Enumerator
     unless @__generator__
       # Allow #to_generator to return nil, indicating it has none for
       # this method.
-      if @object.respond_to? :to_generator
-        @__generator__ = @object.to_generator(@iter)
+      if @__object__.respond_to? :to_generator
+        @__generator__ = @__object__.to_generator(@__method__, *@__args__)
       end
 
       if !@__generator__
-        @__generator__ = FiberGenerator.new(self)
+        @__generator__ = FiberGenerator.new(@__object__, @__method__, @__args__)
       end
     end
 
@@ -66,13 +66,35 @@ class Enumerator
   class FiberGenerator
     attr_reader :result
 
-    def initialize(obj)
-      @object = obj
+    class State
+      attr_reader :object, :method, :args, :to_proc
+      attr_accessor :done, :result
+
+      def initialize(object, method, args)
+        @object = object
+        @method = method
+        @args = args
+        @done = false
+        @result = nil
+
+        @to_proc = proc do
+          obj = @object
+          @result = obj.send(@method, *@args, &FIBER_YIELD_PROC)
+          @done = true
+        end
+      end
+
+      FIBER_YIELD_PROC = Fiber.method(:yield).to_proc
+    end
+
+    def initialize(obj, method, args)
+      @state = State.new(obj, method, args)
+      @fiber = nil
       rewind
     end
 
     def next?
-      !@done
+      !@state.done
     end
 
     def next
@@ -80,25 +102,20 @@ class Enumerator
 
       val = @fiber.resume
 
-      raise StopIteration, 'iteration has ended' if @done
+      raise StopIteration, 'iteration has ended' if @state.done
 
       val
     end
 
     def rewind
       @fiber = nil
-      @done = false
+      @state.done = false
     end
 
     def reset
-      @done = false
-      @fiber = Fiber.new do
-        obj = @object
-        @result = obj.each do |*val|
-          Fiber.yield(*val)
-        end
-        @done = true
-      end
+      @state.done = false
+      @state.result = nil
+      @fiber = Fiber.new(&@state)
     end
   end
 
