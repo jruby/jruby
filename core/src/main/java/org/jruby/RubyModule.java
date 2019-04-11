@@ -4082,6 +4082,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
+        assert name != null : "null name";
         //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
         // NOTE: can not assert IdUtil.isConstant(name) until unmarshal-ing is using this for Java classes
         // since some classes won't assert the upper case first char (anonymous classes start with a digit)
@@ -4616,16 +4617,17 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
-        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
         assert value != null : "value is null";
+        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value);
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
-        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
         assert value != null : "value is null";
+        //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
+        // NOTE used to setup (store) Java class names
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden);
@@ -4633,8 +4635,8 @@ public class RubyModule extends RubyObject {
 
     // NOTE: private for now - not sure about the API - maybe an int mask would be better?
     private IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, boolean deprecated) {
-        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
         assert value != null : "value is null";
+        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden, deprecated);
