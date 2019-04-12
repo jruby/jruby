@@ -518,8 +518,13 @@ public class RubyNumeric extends RubyObject {
      *
      */
     protected final void coerceFailed(ThreadContext context, IRubyObject other) {
+        if (other.isSpecialConst() || other instanceof RubyFloat) {
+            other = other.inspect();
+        } else {
+            other = other.getMetaClass().name();
+        }
         throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
-                (other.isSpecialConst() ? other.inspect() : other.getMetaClass().getName()), getMetaClass()));
+                other, getMetaClass()));
     }
 
     /** rb_num_coerce_bin
