@@ -49,6 +49,7 @@ public class JavaSites {
     public final DateSites Date = new DateSites();
     public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
     public final ConditionVariableSites ConditionVariable = new ConditionVariableSites();
+    public final FiberSites Fiber = new FiberSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -475,6 +476,11 @@ public class JavaSites {
 
     public static class ConditionVariableSites {
         public final CachingCallSite mutex_sleep = new FunctionalCachingCallSite("sleep");
+    }
+
+    public static class FiberSites {
+        public final CachingCallSite peek = new FunctionalCachingCallSite("peek");
+        public final CachingCallSite next = new FunctionalCachingCallSite("next");
     }
 
     public static class CheckedSites {
