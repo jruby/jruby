@@ -1110,10 +1110,11 @@ public class RubyNumeric extends RubyObject {
 
         if (Double.isInfinite(unit)) {
             /* if unit is infinity, i*unit+beg is NaN */
-            if (n != 0) block.yield(context, from);
+            if (n != 0) block.yield(context, RubyFloat.newFloat(runtime, beg));
         } else if (unit == 0) {
+            RubyFloat value = RubyFloat.newFloat(runtime, beg);
             for (;;) {
-                block.yield(context, from);
+                block.yield(context, value);
             }
         } else {
             for (i=0; i<n; i++) {
