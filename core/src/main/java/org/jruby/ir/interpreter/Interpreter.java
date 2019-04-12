@@ -91,7 +91,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            runBeginBlocks(ic.getBeginBlocks(), context, self, scope, null);
             return INTERPRET_ROOT(context, self, ic, currModule, name);
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);

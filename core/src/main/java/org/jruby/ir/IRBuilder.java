@@ -3839,6 +3839,13 @@ public class IRBuilder {
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
+        // Run all discovered BEGIN blocks before main body.
+        List<IRClosure> begins = scope.getBeginBlocks();
+        for (int i = begins.size() ; i > 0 ; i--) {
+            IRClosure begin = begins.get(i - 1);
+            addInstrAtBeginning(new RunBeginBlockInstr(scope, new WrappedIRClosure(begin.getSelf(), begin)));
+        }
+
         return scope.allocateInterpreterContext(instructions);
     }
 
