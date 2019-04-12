@@ -46,7 +46,7 @@ class Enumerator
   end
 
   def peek_values
-    Array(self.peek)
+    [*self.peek]
   end
 
   def rewind
@@ -64,8 +64,6 @@ class Enumerator
   end
 
   class FiberGenerator
-    attr_reader :result
-
     class State
       attr_reader :object, :method, :args, :to_proc
       attr_accessor :done, :result
@@ -93,6 +91,10 @@ class Enumerator
       rewind
     end
 
+    def result
+      @state.result
+    end
+
     def next?
       !@state.done
     end
@@ -108,7 +110,13 @@ class Enumerator
     end
 
     def rewind
-      @fiber = nil
+      fiber, @fiber = @fiber, nil
+      if fiber
+        fiber_ref = JRuby.ref(fiber)
+        if fiber_ref.alive?
+          fiber_ref.finalize rescue nil
+        end
+      end
       @state.done = false
     end
 
