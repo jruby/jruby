@@ -240,6 +240,7 @@ do
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
+                java_args=("${java_args[@]}" "${1:2}")
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=${val:16}
             elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
