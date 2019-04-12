@@ -548,14 +548,6 @@ public abstract class IRScope implements ParseResult {
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
     private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
-        // All passes are disabled in scopes where BEGIN and END scopes might
-        // screw around with escaped variables. Optimizing for them is not
-        // worth the effort. It is simpler to just go fully safe in scopes
-        // influenced by their presence.
-        if (isUnsafeScope()) {
-            passes = getManager().getSafePasses(this);
-        }
-
         if (dumper != null) dumper.dump(getCFG(), "Start");
 
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
