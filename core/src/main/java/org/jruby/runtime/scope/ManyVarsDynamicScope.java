@@ -267,12 +267,12 @@ public class ManyVarsDynamicScope extends DynamicScope {
 
     private void assertGetValueTwoDepthZeroOrNil() {
         IRubyObject[] values = variableValues;
-        assert values != null && 3 < values.length : "No variables or index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
+        assert values != null && 2 < values.length : "No variables or index to big for getValue off: " + 2 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertGetValueThreeDepthZeroOrNil() {
         IRubyObject[] values = variableValues;
-        assert values != null && 2 < values.length : "No variables or index to big for getValue off: " + 2 + ", Dep: " + 0 + ", O: " + this;
+        assert values != null && 3 < values.length : "No variables or index to big for getValue off: " + 3 + ", Dep: " + 0 + ", O: " + this;
     }
 
     private void assertParent() {
@@ -295,12 +295,12 @@ public class ManyVarsDynamicScope extends DynamicScope {
         assert 1 < variableValues.length : "Setting " + 1 + " to " + value + ", O: " + this;
     }
 
-    private void assertSetValueThreeDepthZero(IRubyObject value) {
-        assert 3 < variableValues.length : "Setting " + 3 + " to " + value + ", O: " + this;
-    }
-
     private void assertSetValueTwoDepthZero(IRubyObject value) {
         assert 2 < variableValues.length : "Setting " + 2 + " to " + value + ", O: " + this;
+    }
+
+    private void assertSetValueThreeDepthZero(IRubyObject value) {
+        assert 3 < variableValues.length : "Setting " + 3 + " to " + value + ", O: " + this;
     }
 
     @Deprecated
