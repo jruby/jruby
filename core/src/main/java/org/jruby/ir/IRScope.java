@@ -1246,11 +1246,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<IRClosure> getBeginBlocks() {
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public List<IRClosure> getEndBlocks() {
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     // Enebo: We should just make n primitive int and not take the hash hit

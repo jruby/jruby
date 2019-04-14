@@ -164,11 +164,6 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
         } else if (scope instanceof IRClosure) {
-//            // just load scope from context
-//            // FIXME: don't do this if we won't need the scope
-//            jvmMethod().loadContext();
-//            jvmAdapter().invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
-
             // just load null so it is initialized; if we need it, we'll set it later
             jvmAdapter().aconst_null();
             jvmStoreLocal(DYNAMIC_SCOPE);
@@ -1941,6 +1936,15 @@ public class JVMVisitor extends IRVisitor {
         visit(instr.getReturnValue());
         jvmMethod().invokeIRHelper("returnOrRethrowSavedException", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         jvmMethod().returnValue();
+    }
+
+    @Override
+    public void RunBeginBlock(RunBeginBlockInstr runbeginblockinstr) {
+        WrappedIRClosure(runbeginblockinstr.getBeginBlockClosure());
+        jvmMethod().loadContext();
+        jvmAdapter().aconst_null();
+        jvmAdapter().invokevirtual(p(Block.class), "yield", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+        jvmAdapter().pop();
     }
 
     @Override
