@@ -141,7 +141,7 @@ public class FilenoUtil {
             } catch (RuntimeException re) {
                 // Warn users since we don't currently handle half-native process control.
                 LOG.warn("Native subprocess control requires open access to sun.nio.ch\n" +
-                        "Pass '--add-opens java.base/sun.nio.ch=org.jruby.dist' or '=org.jruby.core' to enable.", re);
+                        "Pass '--add-opens java.base/sun.nio.ch=org.jruby.dist' or '=org.jruby.core' to enable.");
             }
 
             Method getFD;
