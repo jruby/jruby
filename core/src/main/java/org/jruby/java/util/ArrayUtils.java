@@ -107,7 +107,7 @@ public class ArrayUtils {
     }
 
     private static RaiseException mapIndexOutOfBoundsException(final Ruby runtime, final Object array, int index) {
-        return runtime.newArgumentError("index out of bounds for java array (" +
+        return runtime.newIndexError("index out of bounds for java array (" +
                 index + " for length " + Array.getLength(array) + ')');
     }
 

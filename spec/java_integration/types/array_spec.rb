@@ -1324,7 +1324,7 @@ describe "ArrayJavaProxy" do
     end
 
     it "raises an ArgumentError when 2 or more arguments are passed" do
-      expect { [:a, :b].to_java.at(0,1) }.to raise_error(ArgumentError)
+      expect { [:a, :b].to_java.at(0, 1) }.to raise_error(ArgumentError)
     end
 
   end
@@ -1357,6 +1357,10 @@ describe "ArrayJavaProxy" do
     #   expect( [ "a", "b", "c", "d", "e" ].to_java[-10..2] ).to be nil
     #   expect( [ "a", "b", "c", "d", "e" ].to_java[10..12] ).to be nil
     # end
+    it 'raises IndexError for invalid [index]' do
+      expect { [ "a", "b", "c", "d", "e" ].to_java[-10] }.to raise_error(IndexError)
+      expect { [ "a", "b", "c", "d", "e" ].to_java[5] }.to raise_error(IndexError)
+    end
 
     it "returns a subarray where m, n negatives and m < n with [m..n]" do
       expect( [ "a", "b", "c", "d", "e" ].to_java[-3..-2] ).to eql ["c", "d"].to_java
