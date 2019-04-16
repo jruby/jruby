@@ -726,14 +726,14 @@ public final class ArrayJavaProxy extends JavaProxy {
         final IRubyObject rFirst = range.first(context);
         final IRubyObject rLast = range.last(context);
         if ( rFirst instanceof RubyFixnum && rLast instanceof RubyFixnum ) {
-            int first = (int) ((RubyFixnum) rFirst).getLongValue();
-            int last = (int) ((RubyFixnum) rLast).getLongValue();
+            int first = RubyFixnum.fix2int((RubyFixnum) rFirst);
+            int last = RubyFixnum.fix2int((RubyFixnum) rLast);
 
             first = first >= 0 ? first : arrayLength + first;
             last = last >= 0 ? last : arrayLength + last;
 
             int newLength = last - first;
-            if ( range.isExcludeEnd() ) newLength += 1;
+            if ( !range.isExcludeEnd() ) newLength++;
 
             if ( newLength <= 0 ) {
                 return ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType());
