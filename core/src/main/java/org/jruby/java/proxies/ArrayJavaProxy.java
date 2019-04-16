@@ -767,7 +767,7 @@ public final class ArrayJavaProxy extends JavaProxy {
             first = first >= 0 ? first : arrayLength + first;
             return ArrayUtils.javaArraySubarrayDirect(context, array, first, length);
         }
-        throw context.runtime.newTypeError("only Fixnum ranges supported");
+        throw context.runtime.newTypeError("only Integer ranges supported");
     }
 
     private static final class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {
