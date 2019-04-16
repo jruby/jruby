@@ -1016,7 +1016,7 @@ describe "A Java primitive Array of type" do
     it "should coerce strings, booleans, and numerics via []" do
       ary = [1, 1.0, "blah", true, false, nil].to_java
 
-      expect(ary[0].class).to eq(Fixnum)
+      expect(ary[0].class).to eq(Integer)
       expect(ary[1].class).to eq(Float)
       expect(ary[2].class).to eq(String)
       expect(ary[3].class).to eq(TrueClass)
@@ -1188,7 +1188,7 @@ describe "ArrayJavaProxy" do
   it "to_a coerces nested Java arrays to Ruby arrays" do
     arr = [[1],[2]].to_java(Java::byte[]).to_a
     expect(arr.first).to eql [1]
-    expect(arr.first.first).to be_kind_of(Fixnum)
+    expect(arr.first.first).to be_kind_of(Integer)
   end
 
   it "returns a new array from to_a" do

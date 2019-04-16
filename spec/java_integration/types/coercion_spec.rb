@@ -248,7 +248,7 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.nullStaticField).to be_kind_of(NilClass)
     expect(JavaFields.nullStaticField).to eq(nil)
 
-    expect(JavaFields.bigIntegerStaticField).to be_kind_of(Bignum)
+    expect(JavaFields.bigIntegerStaticField).to be_kind_of(Integer) # Bignum
     expect(JavaFields.bigIntegerStaticField).to eq(
       1234567890123456789012345678901234567890
     )
@@ -282,7 +282,7 @@ describe "Java String and primitive-typed fields" do
     expect(jf.nullField).to be_kind_of(NilClass)
     expect(jf.nullField).to eq(nil)
 
-    expect(jf.bigIntegerField).to be_kind_of(Bignum)
+    expect(jf.bigIntegerField).to be_kind_of(Integer) # Bignum
     expect(jf.bigIntegerField).to eq(
       1234567890123456789012345678901234567890
     )
