@@ -1283,6 +1283,119 @@ describe "ArrayJavaProxy" do
     expect( enum.next ).to eql [3, 3]
   end
 
+  describe '#at' do
+
+    it "returns the (n+1)'th element for the passed index n" do
+      a = [1, 2, 3, 4, 5, 6].to_java
+      expect( a.at(0) ).to eql 1
+      expect( a.at(1) ).to eql 2
+      expect( a.at(5) ).to eql 6
+    end
+
+    it "returns nil if the given index is greater than or equal to the array's length" do
+      a = [1, 2, 3, 4, 5, 6].to_java(:int)
+      expect( a.at(6) ).to eql nil
+      expect( a.at(7) ).to eql nil
+    end
+
+    it "returns the (-n)'th element from the last, for the given negative index n" do
+      a = [1, 2, 3, 4, 5, 6].to_java(:long)
+      expect( a.at(-1) ).to eql 6
+      expect( a.at(-2) ).to eql 5
+      expect( a.at(-6) ).to eql 1
+    end
+
+    it "returns nil if the given index is less than -len, where len is length of the array"  do
+      a = [1, 2, 3, 4, 5, 6].to_java
+      expect( a.at(-7) ).to eql nil
+      expect( a.at(-8) ).to eql nil
+    end
+
+    it "tries to convert the passed argument to an Integer using #to_int" do
+      a = ["a", "b", "c"].to_java
+      expect( a.at(0.5) ).to eql "a"
+
+      obj = java.lang.Integer.new(2)
+      expect( a.at(obj) ).to eql "c"
+    end
+
+    it "raises a TypeError when the passed argument can't be coerced to Integer" do
+        expect { [].to_java.at("cat") }.to raise_error(TypeError)
+    end
+
+    it "raises an ArgumentError when 2 or more arguments are passed" do
+      expect { [:a, :b].to_java.at(0,1) }.to raise_error(ArgumentError)
+    end
+
+  end
+
+  describe '#[]' do
+
+    it "returns [] if the index is valid but length is zero with [index, length]" do
+      expect( [ "a", "b", "c", "d", "e" ].to_java[0, 0] ).to eql [].to_java
+      expect( [ "a", "b", "c", "d", "e" ].to_java[2, 0] ).to eql [].to_java
+    end
+
+    # This is by design. It is in the official documentation.
+    # it "returns [] if index == array.size with [index, length]" do
+    #   expect( %w|a b c d e|.to_java[5, 2] ).to eql [].to_java
+    # end
+
+    it "returns nil if index > array.size with [index, length]" do
+      expect( %w|a b c d e|.to_java[6, 2] ).to be nil
+    end
+
+    # it "returns nil if length is negative with [index, length]" do
+    #   expect( %w|a b c d e|.to_java[3, -1] ).to be nil
+    # end
+
+    it "returns nil if no requested index is in the array with [m..n]" do
+      expect( %w|a b c d e|.to_java[6..10] ).to be nil
+    end
+
+    # it "returns nil if range start is not in the array with [m..n]" do
+    #   expect( [ "a", "b", "c", "d", "e" ].to_java[-10..2] ).to be nil
+    #   expect( [ "a", "b", "c", "d", "e" ].to_java[10..12] ).to be nil
+    # end
+
+    it "returns a subarray where m, n negatives and m < n with [m..n]" do
+      expect( [ "a", "b", "c", "d", "e" ].to_java[-3..-2] ).to eql ["c", "d"].to_java
+    end
+
+    it "returns an empty array when m == n with [m...n]" do
+      expect( [1, 2, 3, 4, 5].to_java(:int)[1...1] ).to eql [].to_java(:int)
+    end
+
+    it "returns an empty array with [0...0]" do
+      expect( [1, 2, 3, 4, 5].to_java(:long)[0...0] ).to eql [].to_java(:long)
+    end
+
+    it "returns an array containing the first element with [0..0]" do
+      expect( [1, 2, 3, 4, 5].to_java(:byte)[0..0] ).to eql [1].to_java(:byte)
+    end
+
+    it "returns the entire array with [0..-1]" do
+      expect( [1, 2, 3, 4, 5].to_java[0..-1] ).to eql [1, 2, 3, 4, 5].to_java
+    end
+
+    it "returns all but the last element with [0...-1]" do
+      expect( [1, 2, 3, 4, 5].to_java[0...-1] ).to eql [1, 2, 3, 4].to_java
+    end
+
+    it "returns [3] for [2..-1] out of [1, 2, 3]" do
+      expect( [1, 2, 3].to_java[2..-1] ).to eql [3].to_java
+    end
+
+    it "returns an empty array when m > n and m, n are positive with [m..n]" do
+      expect( [1, 2, 3, 4, 5].to_java[3..2] ).to eql [].to_java
+    end
+
+    it "returns an empty array when m > n and m, n are negative with [m..n]" do
+      expect( [1, 2, 3, 4, 5].to_java(:long)[-2..-3] ).to eql [].to_java(:long)
+    end
+
+  end
+
   describe "#dig" do
 
     it 'returns #at with one arg' do
