@@ -1349,17 +1349,22 @@ describe "ArrayJavaProxy" do
       expect( %w|a b c d e|.to_java[3, -1] ).to be nil
     end
 
+    it 'raises IndexError for invalid [index]' do
+      expect { [ "a", "b", "c", "d", "e" ].to_java[-10] }.to raise_error(IndexError)
+      expect { [ "a", "b", "c", "d", "e" ].to_java[5] }.to raise_error(IndexError)
+    end
+
     it "returns nil if no requested index is in the array with [m..n]" do
       expect( %w|a b c d e|.to_java[6..10] ).to be nil
     end
 
-    # it "returns nil if range start is not in the array with [m..n]" do
-    #   expect( [ "a", "b", "c", "d", "e" ].to_java[-10..2] ).to be nil
-    #   expect( [ "a", "b", "c", "d", "e" ].to_java[10..12] ).to be nil
-    # end
-    it 'raises IndexError for invalid [index]' do
-      expect { [ "a", "b", "c", "d", "e" ].to_java[-10] }.to raise_error(IndexError)
-      expect { [ "a", "b", "c", "d", "e" ].to_java[5] }.to raise_error(IndexError)
+    it "returns sub-array even if upper range is out of array [m..n]" do
+      expect( %w|a b c d e|.to_java[3..10] ).to eql ['d', 'e'].to_java
+    end
+
+    it "returns nil if range start is not in the array with [m..n]" do
+      expect( [ "a", "b", "c", "d", "e" ].to_java[10..12] ).to be nil
+      expect( [ "a", "b", "c", "d", "e" ].to_java[-10..2] ).to be nil
     end
 
     it "returns a subarray where m, n negatives and m < n with [m..n]" do
