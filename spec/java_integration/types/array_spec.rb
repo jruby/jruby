@@ -1345,9 +1345,9 @@ describe "ArrayJavaProxy" do
       expect( %w|a b c d e|.to_java[6, 2] ).to be nil
     end
 
-    # it "returns nil if length is negative with [index, length]" do
-    #   expect( %w|a b c d e|.to_java[3, -1] ).to be nil
-    # end
+    it "returns nil if length is negative with [index, length]" do
+      expect( %w|a b c d e|.to_java[3, -1] ).to be nil
+    end
 
     it "returns nil if no requested index is in the array with [m..n]" do
       expect( %w|a b c d e|.to_java[6..10] ).to be nil

@@ -754,15 +754,13 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int arrayLength = Array.getLength( array );
 
         if ( rFirst instanceof RubyFixnum && rLength instanceof RubyFixnum ) {
-            int first = (int) ((RubyFixnum) rFirst).getLongValue();
-            int length = (int) ((RubyFixnum) rLength).getLongValue();
+            int first = RubyFixnum.fix2int((RubyFixnum) rFirst);
+            int length = RubyFixnum.fix2int((RubyFixnum) rLength);
 
             if ( length > arrayLength ) {
-                throw context.runtime.newIndexError("length specifed is longer than array");
+                throw context.runtime.newIndexError("length specified is longer than array");
             }
-            if ( length <= 0 ) {
-                return ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType());
-            }
+            if ( length < 0 ) return context.nil;
 
             first = first >= 0 ? first : arrayLength + first;
             return ArrayUtils.javaArraySubarrayDirect(context, array, first, length);
