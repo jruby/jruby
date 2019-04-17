@@ -13,9 +13,9 @@ describe "Enumerator::Lazy#select" do
       true
     end
 
-    lambda {
-      enum.next
-    }.should change { eval_count }.from(0).to(1)
+    eval_count.should == 0
+    enum.next
+    eval_count.should == 1
   end
 
   it "doesn't over-evaluate when peeked" do
@@ -25,10 +25,10 @@ describe "Enumerator::Lazy#select" do
       true
     end
 
-    lambda {
-      enum.peek
-      enum.peek
-    }.should change { eval_count }.from(0).to(1)
+    eval_count.should == 0
+    enum.peek
+    enum.peek
+    eval_count.should == 1
   end
 
   it "doesn't re-evaluate after peek" do
@@ -38,10 +38,11 @@ describe "Enumerator::Lazy#select" do
       true
     end
 
-    lambda {
-      enum.peek
-      enum.next
-    }.should change { eval_count }.from(0).to(1)
+    eval_count.should == 0
+    enum.peek
+    eval_count.should == 1
+    enum.next
+    eval_count.should == 1
   end
 end
 
