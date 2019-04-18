@@ -851,12 +851,16 @@ describe "Time#to_java" do
   end
 
   describe 'java 8 types' do
-    it "coerces to java.time.Instant" do
+    it "coerces to Instant" do
       t = Time.at(0)
       expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+
+      t = Time.new(2019, 04, 18, 14, 30, (50 * 1_000_000_000 + 123456780) / 1_000_000_000r, '-03:00')
+      j = java.time.ZonedDateTime.of(2019, 04, 18, 14, 30, 50, 123456780, java.time.ZoneId.of('-03:00'))
+      expect(t.to_java(java.time.Instant)).to eq(j.toInstant)
     end
 
-    it "coerces to Temporal to Instant" do
+    it "coerces a Temporal to Instant" do
       t = Time.at(0, 123456.789)
       d = t.to_java(java.time.temporal.Temporal)
       expect(d.class).to eq(java.time.Instant)
