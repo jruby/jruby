@@ -49,7 +49,9 @@ matrix:
     - env: PHASE='-Prake -Dtask=test:mri:core:jit'
     - env: PHASE='-Prake -Dtask=test:mri:extra'
     - env: PHASE='-Prake -Dtask=test:mri:stdlib'
-    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
+    - env:
+        - PHASE='-Prake -Dtask=spec:ruby:fast'
+        - JRUBY_OPTS=-J-Xmx800M
     - env: PHASE='-Prake -Dtask=spec:ruby:slow'
     - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Ptest'
