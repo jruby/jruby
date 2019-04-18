@@ -44,14 +44,12 @@ matrix:
 
   include:
     - stage: test
-      env: PHASE='-Prake -Dtask=test:mri:core:int'
-    - env: PHASE='-Prake -Dtask=test:mri:core:fullint'
-    - env: PHASE='-Prake -Dtask=test:mri:core:jit'
+      env: PHASE='-Prake -Dtask=test:mri:core:int' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+    - env: PHASE='-Prake -Dtask=test:mri:core:fullint' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+    - env: PHASE='-Prake -Dtask=test:mri:core:jit' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
     - env: PHASE='-Prake -Dtask=test:mri:extra'
-    - env: PHASE='-Prake -Dtask=test:mri:stdlib'
-    - env:
-        - PHASE='-Prake -Dtask=spec:ruby:fast'
-        - JRUBY_OPTS=-J-Xmx800M
+    - env: PHASE='-Prake -Dtask=test:mri:stdlib' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+    - env: PHASE='-Prake -Dtask=spec:ruby:fast' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx800M'
     - env: PHASE='-Prake -Dtask=spec:ruby:slow'
     - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Ptest'
