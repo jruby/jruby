@@ -120,7 +120,7 @@ public class JavaTime {
                     val.getMinute(),
                     val.getSecond(),
                     val.getNano(),
-                    DateTimeZone.forID(val.getOffset().getId())
+                    convertZone(val.getOffset().getId())
             );
         }
 
@@ -146,7 +146,7 @@ public class JavaTime {
                     val.getMinute(),
                     val.getSecond(),
                     val.getNano(),
-                    DateTimeZone.forID(val.getZone().getId())
+                    convertZone(val.getZone().getId())
             );
         }
 
@@ -167,6 +167,18 @@ public class JavaTime {
                 zone
         );
         return RubyTime.newTime(runtime, dt, nano % 1_000_000);
+    }
+
+    /**
+     * Convert a Java time zone to a JODA time zone.
+     * @param id
+     * @return a (joda) date-time zone from Java time's zone id
+     */
+    private static DateTimeZone convertZone(final String id) {
+        if ("Z".equals(id)) { // special Java time case JODA does not handle (for UTC)
+            return DateTimeZone.UTC;
+        }
+        return DateTimeZone.forID(id);
     }
 
 }
