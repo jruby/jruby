@@ -232,10 +232,13 @@ public class RbConfigLibrary implements Library {
         String[] versionParts;
         versionParts = Constants.RUBY_VERSION.split("\\.");
 
-        setConfig(context, CONFIG, "MAJOR", versionParts[0]);
-        setConfig(context, CONFIG, "MINOR", versionParts[1]);
-        setConfig(context, CONFIG, "TEENY", versionParts[2]);
-        setConfig(context, CONFIG, "ruby_version", versionParts[0] + '.' + versionParts[1] + ".0");
+        String major = versionParts[0];
+        String minor = versionParts[1];
+        String teeny = versionParts[2];
+        setConfig(context, CONFIG, "MAJOR", major);
+        setConfig(context, CONFIG, "MINOR", minor);
+        setConfig(context, CONFIG, "TEENY", teeny);
+        setConfig(context, CONFIG, "ruby_version", major + '.' + minor + '.' + teeny);
         // Rubygems is too specific on host cpu so until we have real need lets default to universal
         //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
         setConfig(context, CONFIG, "arch", "universal-java" + System.getProperty("java.specification.version"));
