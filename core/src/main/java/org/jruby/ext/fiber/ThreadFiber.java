@@ -287,7 +287,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
                     Thread thread = Thread.currentThread();
                     String oldName = thread.getName();
-                    thread.setName("Fiber thread for block at: " + block.getBinding().getFile() + ":" + block.getBinding().getLine());
+                    thread.setName("Fiber thread for block at: " + block.getBody().getFile() + ":" + block.getBody().getLine());
 
                     try {
                         IRubyObject init = data.queue.pop(context);
