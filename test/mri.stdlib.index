@@ -248,7 +248,10 @@ stringio/test_stringio.rb
 
 strscan/test_stringscanner.rb
 
-thread
+thread/test_cv.rb
+# Removed temporarily due to unexplained hangs on Travis
+#thread/test_queue.rb
+thread/test_sync.rb
 
 zlib/test_zlib.rb
 
