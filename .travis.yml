@@ -44,23 +44,37 @@ matrix:
 
   include:
     - stage: test
-      script: jruby -S rake test:mri:core:int
+      script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:int
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script: jruby -S rake test:mri:core:fullint
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:fullint
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script: jruby -S rake test:mri:core:jit
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:core:jit
 
-    - script: jruby -S rake test:mri:extra
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:extra
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script: jruby -S rake test:mri:stdlib
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:mri:stdlib
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script: jruby -S rake spec:ruby:fast
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:fast
 
-    - script: jruby -S rake spec:ruby:slow
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ruby:slow
 
     - env: COMMAND=test/check_versions.sh
 
@@ -75,36 +89,64 @@ matrix:
       services:
         - postgresql
 
-    - script: jruby -S rake test:jruby
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby
 
-    - script: jruby -S rake test:jruby
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
-    - script: jruby -S rake test:jruby:aot
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby:aot
 
-    - script: jruby -S rake test:jruby:fullint
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:jruby:fullint
 
-    - script: jruby -S rake test:slow_suites
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake test:slow_suites
 
-    - script: jruby -S rake spec:ji
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ji
 
-    - script: jruby -S rake spec:compiler
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
 
-    - script: jruby -S rake spec:compiler
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
-    - script: jruby -S rake spec:ffi
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:ffi
 
-    - script: jruby -S rake spec:regression
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:regression
 
-    - script: jruby -S rake spec:regression
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:regression
       env: JRUBY_OPTS=-Xjit.threshold=0
 
-    - script: jruby -S rake spec:jruby
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:jruby
 
-    - script: jruby -S rake spec:jrubyc
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:jrubyc
 
-    - script: jruby -S rake spec:profiler
+    - script:
+        - mvn clean package -Pbootstrap
+        - jruby -S rake spec:profiler
 
     - env: PHASE='-Pdist'
 
