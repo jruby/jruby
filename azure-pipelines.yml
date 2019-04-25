@@ -12,3 +12,5 @@ pool:
 steps:
 - script: mvn -B package -Ptest -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   displayName: -Ptest
+- script: mvn -B package -Ptest -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+  displayName: -Ptest
