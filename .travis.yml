@@ -44,54 +44,90 @@ matrix:
 
   include:
     - stage: test
-      env: PHASE='-Prake -Dtask=test:mri:core:int' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
-    - env: PHASE='-Prake -Dtask=test:mri:core:fullint' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
-    - env: PHASE='-Prake -Dtask=test:mri:core:jit' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
-    - env: PHASE='-Prake -Dtask=test:mri:extra'
-    - env: PHASE='-Prake -Dtask=test:mri:stdlib' JRUBY_OPTS='$JRUBY_OPTS -J-Xmx800M'
-    - env: PHASE='-Prake -Dtask=spec:ruby:fast'
-    - env: PHASE='-Prake -Dtask=spec:ruby:slow'
+      script: bin/jruby -S rake test:mri:core:int
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - script: bin/jruby -S rake test:mri:core:fullint
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - script: bin/jruby -S rake test:mri:core:jit
+
+    - script: bin/jruby -S rake test:mri:extra
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - script: bin/jruby -S rake test:mri:stdlib
+      env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
+
+    - script: bin/jruby -S rake spec:ruby:fast
+
+    - script: bin/jruby -S rake spec:ruby:slow
+
     - env: COMMAND=test/check_versions.sh
+
     - env: PHASE='-Ptest'
+
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
+
     - name: sequel
       script: tool/sequel-travis.sh
       addons:
         postgresql: "9.6"
       services:
         - postgresql
-    - env: PHASE='-Prake -Dtask=test:jruby'
-    - env:
-      - PHASE='-Prake -Dtask=test:jruby'
-        JRUBY_OPTS=-Xcompile.invokedynamic
-    - env: PHASE='-Prake -Dtask=test:jruby:aot'
-    - env: PHASE='-Prake -Dtask=test:jruby:fullint'
-    - env: PHASE='-Prake -Dtask=test:slow_suites'
-    - env: PHASE='-Prake -Dtask=spec:ji'
-    - env: PHASE='-Prake -Dtask=spec:compiler'
-    - env:
-      - PHASE='-Prake -Dtask=spec:compiler'
-        JRUBY_OPTS=-Xcompile.invokedynamic
-    - env: PHASE='-Prake -Dtask=spec:ffi'
-    - env: PHASE='-Prake -Dtask=spec:regression'
-    - env:
-      - PHASE='-Prake -Dtask=spec:regression'
-      - JRUBY_OPTS=-Xjit.threshold=0
-    - env: PHASE='-Prake -Dtask=spec:jruby'
-    - env: PHASE='-Prake -Dtask=spec:jrubyc'
-    - env: PHASE='-Prake -Dtask=spec:profiler'
+
+    - script: bin/jruby -S rake test:jruby
+
+    - script: bin/jruby -S rake test:jruby
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - script: bin/jruby -S rake test:jruby:aot
+
+    - script: bin/jruby -S rake test:jruby:fullint
+
+    - script: bin/jruby -S rake test:slow_suites
+
+    - script: bin/jruby -S rake spec:ji
+
+    - script: bin/jruby -S rake spec:compiler
+
+    - script: bin/jruby -S rake spec:compiler
+      env: JRUBY_OPTS=-Xcompile.invokedynamic
+
+    - script: bin/jruby -S rake spec:ffi
+
+    - script: bin/jruby -S rake spec:regression
+
+    - script: bin/jruby -S rake spec:regression
+      env: JRUBY_OPTS=-Xjit.threshold=0
+
+    - script: bin/jruby -S rake spec:jruby
+
+    - script: bin/jruby -S rake spec:jrubyc
+
+    - script: bin/jruby -S rake spec:profiler
+
     - env: PHASE='-Pdist'
+
     - env: PHASE='-Pjruby-jars'
+
     - env: PHASE='-Pmain'
+
     - env: PHASE='-Pcomplete'
+
     - env: PHASE='-Posgi'
+
     - env: PHASE='-Pj2ee'
+
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
+
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
+
     - env: PHASE='-Pmain'
       jdk: oraclejdk11
+
     - env: PHASE='-Pcomplete'
       jdk: oraclejdk11
+      
     - name: -Pmain openj9 jdk8
       env: PHASE='-Ptest'
       script:
