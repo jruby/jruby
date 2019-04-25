@@ -61,6 +61,7 @@ class MSpecScript
       SPEC_DIR + '/library/net/http',
       # This requires --debug which slows down or changes other spec results
       SPEC_DIR + '/core/tracepoint',
+      *get(:command_line)
   ]
 
   set :fast, [
