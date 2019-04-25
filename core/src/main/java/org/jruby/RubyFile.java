@@ -486,7 +486,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (fptr.posix.ftruncate(fptr.fd(), pos) < 0) {
-            throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+            throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
         }
 
         return RubyFixnum.zero(runtime);

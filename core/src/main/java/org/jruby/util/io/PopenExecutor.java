@@ -543,13 +543,13 @@ public class PopenExecutor {
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
                 if (API.rb_pipe(runtime, writePair) == -1)
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
                 if (API.rb_pipe(runtime, pair) == -1) {
-                    e = posix.errno;
+                    e = posix.getErrno();
                     runtime.getPosix().close(writePair[1]);
                     runtime.getPosix().close(writePair[0]);
-                    posix.errno = e;
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    posix.setErrno(e);
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
                 }
 
                 if (eargp != null) prepareStdioRedirects(runtime, pair, writePair, eargp);
@@ -557,14 +557,14 @@ public class PopenExecutor {
                 break;
             case OpenFile.READABLE:
                 if (API.rb_pipe(runtime, pair) == -1)
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
 
                 if (eargp != null) prepareStdioRedirects(runtime, pair, null, eargp);
 
                 break;
             case OpenFile.WRITABLE:
                 if (API.rb_pipe(runtime, pair) == -1)
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
 
                 if (eargp != null) prepareStdioRedirects(runtime, null, pair, eargp);
 
