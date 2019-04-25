@@ -44,35 +44,42 @@ matrix:
 
   include:
     - stage: test
+      name: MRI core int
       script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:mri:core:int
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script:
+    - name: MRI core fullint
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:mri:core:fullint
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script:
+    - name: MRI core jit
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:mri:core:jit
 
-    - script:
+    - name: MRI extra
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:mri:extra
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script:
+    - name: MRI stdlib
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:mri:stdlib
       env: JRUBY_OPTS='$JRUBY_OPTS -J-Xmx1G'
 
-    - script:
+    - name: spec/ruby fast
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:ruby:fast
 
-    - script:
+    - name: spec/ruby slow
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:ruby:slow
 
@@ -89,62 +96,76 @@ matrix:
       services:
         - postgresql
 
-    - script:
+    - name: JRuby tests jit
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:jruby
 
-    - script:
+    - name: JRuby tests jit indy
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:jruby
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
-    - script:
+    - name: JRuby tests aot
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:jruby:aot
 
-    - script:
+    - name: JRuby tests fullint
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:jruby:fullint
 
-    - script:
+    - name: JRuby slow tests
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake test:slow_suites
 
-    - script:
+    - name: JI specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:ji
 
-    - script:
+    - name: Compiler specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:compiler
 
-    - script:
+    - name: Compiler specs indy
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:compiler
       env: JRUBY_OPTS=-Xcompile.invokedynamic
 
-    - script:
+    - name: FFI specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:ffi
 
-    - script:
+    - name: Regression specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:regression
 
-    - script:
+    - name: Regression specs jit
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:regression
       env: JRUBY_OPTS=-Xjit.threshold=0
 
-    - script:
+    - name: JRuby specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:jruby
 
-    - script:
+    - name: jrubyc specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:jrubyc
 
-    - script:
+    - name: Profilers specs
+      script:
         - mvn clean package -Pbootstrap
         - jruby -S rake spec:profiler
 
