@@ -1,0 +1,3 @@
+critical(fails on Travis):The -I command line option adds the path at the front of $LOAD_PATH
+fails:The -I command line option adds the path expanded from CWD to $LOAD_PATH
+fails:The -I command line option expands a path from CWD even if it does not exist
