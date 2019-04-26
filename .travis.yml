@@ -206,6 +206,7 @@ matrix:
       if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.1) # only master and maintenance pushes
 
   allow_failures:
+    - name: MRI stdlib
     - env: COMMAND=test/check_versions.sh
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
     - env: PHASE='-Pcomplete'
