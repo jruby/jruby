@@ -20,3 +20,4 @@ fails:Module#autoload the autoload is triggered when the same file is required d
 fails:Module#autoload the autoload is triggered when the same file is required directly with a relative path
 fails:Module#autoload the autoload is triggered when the same file is required directly in a nested require
 critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
+critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks others threads while doing an autoload
