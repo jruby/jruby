@@ -140,19 +140,6 @@ project 'JRuby Core' do
                      :id => 'add-populators',
                      'sources' => [ '${anno.sources}' ] )
     end
-
-    plugin 'org.codehaus.mojo:exec-maven-plugin' do
-      execute_goals( 'exec',
-                     :id => 'invoker-generator',
-                     'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
-                                      '-classpath',
-                                      xml( '<classpath/>' ),
-                                      'org.jruby.anno.InvokerGenerator',
-                                      '${anno.sources}/annotated_classes.txt',
-                                      '${project.build.outputDirectory}' ],
-                     'executable' =>  'java',
-                     'classpathScope' =>  'compile' )
-    end
   end
 
   plugin( :compiler,
@@ -170,7 +157,7 @@ project 'JRuby Core' do
                    :id => 'anno',
                    :phase => 'process-resources',
                    'includes' => [ 'org/jruby/anno/FrameField.java',
-                                   'org/jruby/anno/AnnotationBinder.java',
+                                   'org/jruby/anno/IndyBinder.java',
                                    'org/jruby/anno/JRubyMethod.java',
                                    'org/jruby/anno/FrameField.java',
                                    'org/jruby/CompatVersion.java',
@@ -181,7 +168,7 @@ project 'JRuby Core' do
                    :id => 'default-compile',
                    :phase => 'compile',
                    'debug' => 'true',
-                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
+                   'annotationProcessors' => [ 'org.jruby.anno.IndyBinder' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
