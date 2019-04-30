@@ -4263,13 +4263,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         byte first  = target[targetOffset];
         int max = sourceOffset + (sourceCount - targetCount);
 
-        for (int i = sourceOffset + fromIndex; i <= max; i++) {
-            if (source[i] != first) {
-              i += enc.length(source, i, sourceCount);
-              while (i <= max && source[i] != first) {
-                i += enc.length(source, i, sourceCount);
-              }
-            }
+        int i = sourceOffset + fromIndex;
+        while (i <= max) {
+            while (i <= max && source[i] != first)
+                i += StringSupport.length(enc, source, i, sourceCount);
 
             if (i <= max) {
                 int j = i + 1;
@@ -4277,6 +4274,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
 
                 if (j == end) return i - sourceOffset;
+                i += StringSupport.length(enc, source, i, sourceCount);
             }
         }
         return -1;
