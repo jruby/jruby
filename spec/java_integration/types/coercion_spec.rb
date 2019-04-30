@@ -957,7 +957,7 @@ describe "Date/DateTime#to_java" do
   end
 
   describe 'java 8 types' do
-    it "coerces to java.time.Instant" do
+    it "coerces to Instant" do
       t = Date.new(0)
       expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
       local_date = java.time.LocalDate.of(-1, 12, 30) # joda-time vs ruby-date rules
@@ -968,7 +968,7 @@ describe "Date/DateTime#to_java" do
       expect(t.to_java(java.time.Instant)).to eq(java.time.Instant::EPOCH.plusSeconds(42))
     end
 
-    it "coerces to Temporal to Instant" do
+    it "coerces a Temporal to Instant" do
       t = Time.at(0, 123456.789).to_datetime
       d = t.to_java(java.time.temporal.Temporal)
       expect(d.class).to eq(java.time.Instant)
@@ -988,6 +988,34 @@ describe "Date/DateTime#to_java" do
       expect(d.class).to eq(java.time.LocalDateTime)
       expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
     end
+  end
+end
+
+describe "java.time.Instant#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.Instant').to_time).to eq t
+  end
+end
+
+describe "java.time.LocalDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.LocalDateTime').to_time).to eq t
+  end
+end
+
+describe "java.time.OffsetDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.OffsetDateTime').to_time).to eq t
+  end
+end
+
+describe "java.time.ZonedDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.ZonedDateTime').to_time).to eq t
   end
 end
 
