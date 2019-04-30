@@ -45,5 +45,3 @@ describe "Enumerator::Lazy#select" do
     eval_count.should == 1
   end
 end
-
-
