@@ -618,7 +618,7 @@ public class RubyEnumerable {
             return result[0];
         }
 
-        return ifnone != null ? ifnone.callMethod(context, "call") : runtime.getNil();
+        return ifnone != null && !ifnone.isNil() ? ifnone.callMethod(context, "call") : runtime.getNil();
     }
 
     @JRubyMethod
