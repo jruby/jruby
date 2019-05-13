@@ -782,10 +782,17 @@ public class RubyTime extends RubyObject {
     }
 
     private RubyFloat opMinus(Ruby runtime, RubyTime other) {
-        long timeInMillis = getTimeInMillis() - other.getTimeInMillis();
-        double timeInSeconds = timeInMillis / 1000.0 + (getNSec() - other.getNSec()) / 1000000000.0;
+        if (nanosCanFitInLong() && other.nanosCanFitInLong()) {
+            long nanos1 = getTimeInMillis() * 1_000_000 + getNSec();
+            long nanos2 = other.getTimeInMillis() * 1_000_000 + other.getNSec();
 
-        return RubyFloat.newFloat(runtime, timeInSeconds); // float number of seconds
+            return RubyFloat.newFloat(runtime, (nanos1 - nanos2) /  1_000_000_000.0); // float number of seconds
+        } else {
+            long timeInMillis = getTimeInMillis() - other.getTimeInMillis();
+            double timeInSeconds = timeInMillis / 1_000.0 + (getNSec() - other.getNSec()) / 1_000_000_000.0;
+
+            return RubyFloat.newFloat(runtime, timeInSeconds); // float number of seconds
+        }
     }
 
     public IRubyObject op_minus(IRubyObject other) {
@@ -916,12 +923,30 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public RubyFloat to_f() {
-        long millis = getTimeInMillis();
-        long nanos = nsec;
-        double secs = 0;
-        if (millis != 0) secs += (millis / 1000.0);
-        if (nanos != 0) secs += (nanos / 1000000000.0);
-        return RubyFloat.newFloat(getRuntime(), secs);
+        return RubyFloat.newFloat(getRuntime(), getTimeInSecsAsDouble());
+    }
+
+    // If we can fit the entire time as a single nanosecond resolution value in a long we can prevent doing
+    // multiple math operations and more closely match MRI.  This range fits until about 2262AD.
+    private boolean nanosCanFitInLong() {
+        return getTimeInMillis() < (Long.MAX_VALUE - nsec) / 1_000_000;
+    }
+
+    public double getTimeInSecsAsDouble() {
+        double secs;
+
+        // Being able to do a single divide here has us match MRI rounding.
+        if (nanosCanFitInLong()) {
+            long nanos = getTimeInMillis() * 1_000_000 + nsec;
+            secs = nanos / 1_000_000_000.0;
+        } else {
+            long millis = getTimeInMillis();
+            secs = 0;
+            if (millis != 0) secs += (millis / 1_000.0);
+            if (nsec != 0) secs += (nsec / 1_000_000_000.0);
+        }
+
+        return secs;
     }
 
     @JRubyMethod(name = {"to_i", "tv_sec"})
