@@ -929,7 +929,10 @@ public class RubyTime extends RubyObject {
     // If we can fit the entire time as a single nanosecond resolution value in a long we can prevent doing
     // multiple math operations and more closely match MRI.  This range fits until about 2262AD.
     private boolean nanosCanFitInLong() {
-        return getTimeInMillis() < (Long.MAX_VALUE - nsec) / 1_000_000;
+        long millis = getTimeInMillis();
+
+        return millis >= 0 && millis < (Long.MAX_VALUE - nsec) / 1_000_000 ||
+                millis < 0 && millis > -(Long.MAX_VALUE + nsec) / 1_000_000;
     }
 
     public double getTimeInSecsAsDouble() {
