@@ -1680,7 +1680,7 @@ public class IRBuilder {
                             createTemporaryVariable(),
                             IS_DEFINED_NTH_REF,
                             new Operand[] {
-                                    new Fixnum(((NthRefNode) node).getMatchNumber()),
+                                    manager.newFixnum(((NthRefNode) node).getMatchNumber()),
                                     new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
                             }
                     )
@@ -2765,7 +2765,7 @@ public class IRBuilder {
     }
 
     public Operand buildFixnum(FixnumNode node) {
-        return new Fixnum(node.getValue());
+        return manager.newFixnum(node.getValue());
     }
 
     public Operand buildFlip(FlipNode flipNode) {
@@ -2792,8 +2792,8 @@ public class IRBuilder {
          * enough and also makes the IR output readable
          * ---------------------------------------------------------------------- */
 
-        Fixnum s1 = new Fixnum((long)1);
-        Fixnum s2 = new Fixnum((long)2);
+        Fixnum s1 = manager.newFixnum((long)1);
+        Fixnum s2 = manager.newFixnum((long)2);
 
         // Create a variable to hold the flip state
         IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
@@ -4070,7 +4070,7 @@ public class IRBuilder {
                     // Generate the next set of instructions
                     if (next != null) addInstr(new LabelInstr(next));
                     next = getNewLabel();
-                    addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
+                    addInstr(BNEInstr.create(next, manager.newFixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
                     addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
                     addInstr(new JumpInstr(allDoneLabel));
