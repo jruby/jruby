@@ -4236,7 +4236,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int e, p = 0;
 
-        while (p < realSize && (e = indexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p)) >= 0) {
+        while (p < realSize && (e = indexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p, enc)) >= 0) {
             int t = enc.rightAdjustCharHead(bytes, p + begin, e + begin, begin + realSize) - begin;
             if (t != e) {
                 p = t;
@@ -4255,7 +4255,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // TODO: make the ByteList version public and use it, rather than copying here
-    static int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
+    static int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex, Encoding enc) {
         if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
         if (fromIndex < 0) fromIndex = 0;
         if (targetCount == 0) return fromIndex;
@@ -4263,8 +4263,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         byte first  = target[targetOffset];
         int max = sourceOffset + (sourceCount - targetCount);
 
-        for (int i = sourceOffset + fromIndex; i <= max; i++) {
-            if (source[i] != first) while (++i <= max && source[i] != first);
+        int i = sourceOffset + fromIndex;
+        while (i <= max) {
+            while (i <= max && source[i] != first)
+                i += StringSupport.length(enc, source, i, sourceOffset + sourceCount);
 
             if (i <= max) {
                 int j = i + 1;
@@ -4272,6 +4274,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
 
                 if (j == end) return i - sourceOffset;
+                i += StringSupport.length(enc, source, i, sourceOffset + sourceCount);
             }
         }
         return -1;
