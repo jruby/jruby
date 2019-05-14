@@ -79,11 +79,14 @@ public class RubyObjectSpecializer {
     }
 
     public static ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
-        // Limit size of reified objects
-        int size = Math.min(foundVariables.size(), Options.REIFY_VARIABLES_MAX.load());
+        int size = foundVariables.size();
+
+        // clamp to max object width (jruby/jruby#
+        size = Math.min(size, Options.REIFY_VARIABLES_MAX.load());
 
         ClassAndAllocator cna = getClassForSize(size);
 
+        // Generate class for specified size
         if (cna == null) {
             final String clsPath = "org/jruby/gen/RubyObject" + size;
 
@@ -94,7 +97,7 @@ public class RubyObjectSpecializer {
                     specialized = LOADER.loadClass(clsPath.replace('/', '.'));
                 } catch (ClassNotFoundException cnfe) {
                     // generate specialized class
-                    specialized = generateInternal(foundVariables.size(), clsPath);
+                    specialized = generateInternal(size, clsPath);
                 }
 
                 try {
@@ -107,14 +110,18 @@ public class RubyObjectSpecializer {
             }
         }
 
+        // Pre-initialize variable table with field accessors for size
         try {
             int offset = 0;
+
+            // TODO: this just ends up reifying the first N variables it finds, which may not be the most valuable
             for (String name : foundVariables) {
                 klass.getVariableTableManager().getVariableAccessorForVar(
                         name,
                         LOOKUP.findGetter(cna.cls, "var" + offset, Object.class),
                         LOOKUP.findSetter(cna.cls, "var" + offset, Object.class));
                 offset++;
+                if (offset >= size) break;
             }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
