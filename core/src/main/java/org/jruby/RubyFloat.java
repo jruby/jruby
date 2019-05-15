@@ -66,7 +66,6 @@ import static org.jruby.util.Numeric.f_negate;
 import static org.jruby.util.Numeric.f_negative_p;
 import static org.jruby.util.Numeric.f_sub;
 import static org.jruby.util.Numeric.f_to_r;
-import static org.jruby.util.Numeric.f_zero_p;
 import static org.jruby.util.Numeric.frexp;
 import static org.jruby.util.Numeric.ldexp;
 import static org.jruby.util.Numeric.nurat_rationalize_internal;
@@ -790,7 +789,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "rationalize", optional = 1)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         if (f_negative_p(context, this)) {
-            return f_negate(context, ((RubyFloat) f_abs(context, this)).rationalize(context, args));
+            return f_negate(context, f_abs(context, this).rationalize(context, args));
         }
 
         final Ruby runtime = context.runtime;
@@ -898,20 +897,12 @@ public class RubyFloat extends RubyNumeric {
                 If ndigits + ceil(binexp/(3 or 4)) < 0 the result is 0
         */
 
-        if (ndigits >= FLOAT_DIG - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1)) {
-            return true;
-        }
-
-        return false;
+        return ndigits >= FLOAT_DIG - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1);
     }
 
     // MRI: float_round_underflow
     private static boolean floatRoundUnderflow(int ndigits, long[] binexp) {
-        if (ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4)) {
-            return true;
-        }
-
-        return false;
+        return ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4);
     }
 
     /**
@@ -990,11 +981,10 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
         Ruby runtime = context.runtime;
-        int digits = 0;
 
         // options (only "half" right now)
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
-        digits = num2int(_digits);
+        int digits = num2int(_digits);
 
         RoundingMode roundingMode = getRoundingMode(context, opts);
 
@@ -1069,7 +1059,7 @@ public class RubyFloat extends RubyNumeric {
 
         int signum = x >= 0.0 ? 1 : -1;
         xs = xs * signum;
-        f = roundHalfUp(xs);;
+        f = roundHalfUp(xs);
         f = f * signum;
         if (x > 0) {
             if ((f - 0.5) / s >= x) f -= 1;

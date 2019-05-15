@@ -73,13 +73,27 @@ OUT
     $LOADED_FEATURES.delete 'gh4091-sample.rb'
   end
 
+  module ::ASimpleLib; end
+
+  def test_define_class_type_mismatch
+    ASimpleLib.const_set :Error, 1
+
+    # MRI: TypeError: Error is not a class
+    assert_raise(TypeError) do
+      require_relative('a_simple_lib')
+    end
+  ensure
+    ASimpleLib.send :remove_const, :Error
+  end
+
   # module ::Zlib; end
   #
-  # def test_define_class_type_mismatch
+  # def test_define_class_type_mismatch_ext
   #   return if $LOADED_FEATURES.include?('zlib')
   #
   #   Zlib.const_set :Error, 1
   #
+  #   # MRI: TypeError: Zlib::Error is not a class (Integer)
   #   assert_raise(TypeError) do
   #     require('zlib')
   #   end
@@ -87,12 +101,12 @@ OUT
   #   Zlib.send :remove_const, :Error
   # end
 
-  # def test_define_class_type_mismatch
+  # def test_define_class_type_mismatch_ext2
   #   return if $LOADED_FEATURES.include?('socket')
   #
   #   Object.const_set :BasicSocket, Class.new
   #
-  #   assert_raise(NameError) do
+  #   assert_raise(TypeError) do # superclass mismatch for class BasicSocket
   #     require('socket')
   #   end
   # ensure

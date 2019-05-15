@@ -23,6 +23,10 @@ describe "C-API Util function" do
       lambda { @o.rb_scan_args([1, 2], "3", 0, @acc) }.should raise_error(ArgumentError)
     end
 
+    it "raises an ArgumentError if there are too many arguments" do
+      lambda { @o.rb_scan_args([1, 2, 3, 4], "3", 0, @acc) }.should raise_error(ArgumentError)
+    end
+
     it "assigns the required and optional arguments scanned" do
       @o.rb_scan_args([1, 2], "11", 2, @acc).should == 2
       ScratchPad.recorded.should == [1, 2]
@@ -113,6 +117,11 @@ describe "C-API Util function" do
     it "assigns required and Hash arguments with nil Hash" do
       @o.rb_scan_args([1, nil], "1:", 2, @acc).should == 1
       ScratchPad.recorded.should == [1, nil]
+    end
+
+    it "assigns required and optional arguments with no hash argument given" do
+      @o.rb_scan_args([1, 7, 4], "21:", 3, @acc).should == 3
+      ScratchPad.recorded.should == [1, 7, 4]
     end
 
     it "assigns required, optional, splat, post-splat, Hash and block arguments" do

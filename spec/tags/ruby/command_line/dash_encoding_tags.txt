@@ -1,0 +1,5 @@
+fails:The --encoding command line option does not accept a third encoding
+fails:The --encoding command line option sets Encoding.default_external and optionally Encoding.default_internal if given a single encoding with an =
+fails:The --encoding command line option sets Encoding.default_external and optionally Encoding.default_internal if given a single encoding as a separate argument
+fails:The --encoding command line option sets Encoding.default_external and optionally Encoding.default_internal if given two encodings with an =
+fails:The --encoding command line option sets Encoding.default_external and optionally Encoding.default_internal if given two encodings as a separate argument

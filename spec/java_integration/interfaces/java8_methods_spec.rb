@@ -31,7 +31,7 @@ describe "an interface (Java 8+)" do
     import java.util.stream.*;
     import java.util.function.*;
 
-    public class Java8Implemtor implements Java8Interface {
+    public class Java8Implementor implements Java8Interface {
       public String bar() { return getClass().getSimpleName(); }
 
       // re-using the same class for proc-impl testing
@@ -84,7 +84,7 @@ describe "an interface (Java 8+)" do
 
     }
     JAVA
-    files << (file = "#{@tmpdir}/Java8Implemtor.java"); File.open(file, 'w') { |f| f.print(src) }
+    files << (file = "#{@tmpdir}/Java8Implementor.java"); File.open(file, 'w') { |f| f.print(src) }
 
     fail "#{files.inspect} compilation failed (see above javac output)!" unless javac_compile files
 
@@ -120,23 +120,23 @@ describe "an interface (Java 8+)" do
 
   it "(default) java_method is callable" do
     method = Java::Java8Interface.java_method(:foo, [ java.lang.Object ])
-    expect( method.bind(Java::Java8Implemtor.new).call '' ).to eql 'foo Java8Implemtor'
+    expect( method.bind(Java::Java8Implementor.new).call '' ).to eql 'foo Java8Implementor'
   end
 
   it "java_send works on implemented interface (default method)" do
-    impl = Java::Java8Implemtor.new
-    expect(impl.java_send(:bar)).to eq("Java8Implemtor")
-    expect(impl.java_send(:foo, [ java.lang.Object ], 11)).to eq("11foo Java8Implemtor")
+    impl = Java::Java8Implementor.new
+    expect(impl.java_send(:bar)).to eq("Java8Implementor")
+    expect(impl.java_send(:foo, [ java.lang.Object ], 11)).to eq("11foo Java8Implementor")
   end
 
   it "works with java.util.function-al interface using proc implementation" do
-    expect( Java::Java8Implemtor.withConsumerCall(1) do |i|
+    expect( Java::Java8Implementor.withConsumerCall(1) do |i|
       expect(i).to eql 10
     end ).to eql 2
 
-    ret = Java::Java8Implemtor.withPredicateCall([ ]) { |obj| obj.empty? }
+    ret = Java::Java8Implementor.withPredicateCall([ ]) { |obj| obj.empty? }
     expect( ret ).to be true
-    ret = Java::Java8Implemtor.withPredicateCall('x') { |obj| obj.empty? }
+    ret = Java::Java8Implementor.withPredicateCall('x') { |obj| obj.empty? }
     expect( ret ).to be false
   end
 
@@ -144,10 +144,10 @@ describe "an interface (Java 8+)" do
     expect( Java::Java8Interface.bar { 'BAR' } ).to eq 'BAR'
     expect( Java::Java8Interface.foo { 'BAR' } ).to eq 'foo BAR' # 'BAR' prior to 9.1
 
-    res = Java::Java8Implemtor.compose10pp # Java + 10 impl
+    res = Java::Java8Implementor.compose10pp # Java + 10 impl
     expect( res.apply(1.to_java(:int)) ).to eql 12
     # NOTE: has been failing prior to 9.1 as { ... } override #apply as well as #compose default method!
-    res = Java::Java8Implemtor.composepp { |i| i + 10 } # Ruby + 10 impl
+    res = Java::Java8Implementor.composepp { |i| i + 10 } # Ruby + 10 impl
     expect( res.apply(1.to_java(:int)) ).to eql 12
   end
 
@@ -195,7 +195,7 @@ describe "an interface (Java 8+)" do
 
   it "does not consider Map vs func-type Consumer ambiguous" do
     output = with_stderr_captured do # exact match should not warn :
-      ret = Java::Java8Implemtor.ambiguousCall1('') do |c|
+      ret = Java::Java8Implementor.ambiguousCall1('') do |c|
         c.append('+proc')
       end
       expect( ret ).to eql "ambiguousWithConsumer+proc"
@@ -203,7 +203,7 @@ describe "an interface (Java 8+)" do
     expect( output.index('ambiguous') ).to be nil
 
     output = with_stderr_captured do # exact match should not warn :
-      ret = Java::Java8Implemtor.ambiguousCall2('') do |c|
+      ret = Java::Java8Implementor.ambiguousCall2('') do |c|
         c.append('+proc')
       end
       expect( ret ).to eql "ambiguousWithConsumer+proc"
@@ -211,7 +211,7 @@ describe "an interface (Java 8+)" do
     expect( output.index('ambiguous') ).to be nil
 
     output = with_stderr_captured do # exact match should not warn :
-      ret = Java::Java8Implemtor.ambiguousCall3('') do |c|
+      ret = Java::Java8Implementor.ambiguousCall3('') do |c|
         c.append('+proc')
       end
       expect( ret ).to eql "ambiguousWithConsumer+proc"

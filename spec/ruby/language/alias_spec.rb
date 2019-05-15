@@ -38,14 +38,14 @@ describe "The alias keyword" do
     @obj.a.should == 5
   end
 
-  it "works with a doubule quoted symbol on the left-hand side" do
+  it "works with a double quoted symbol on the left-hand side" do
     @meta.class_eval do
       alias :"a" value
     end
     @obj.a.should == 5
   end
 
-  it "works with an interoplated symbol on the left-hand side" do
+  it "works with an interpolated symbol on the left-hand side" do
     @meta.class_eval do
       alias :"#{'a'}" value
     end
@@ -66,14 +66,14 @@ describe "The alias keyword" do
     @obj.a.should == 5
   end
 
-  it "works with a doubule quoted symbol on the right-hand side" do
+  it "works with a double quoted symbol on the right-hand side" do
     @meta.class_eval do
       alias a :"value"
     end
     @obj.a.should == 5
   end
 
-  it "works with an interoplated symbol on the right-hand side" do
+  it "works with an interpolated symbol on the right-hand side" do
     @meta.class_eval do
       alias a :"#{'value'}"
     end
@@ -204,7 +204,7 @@ describe "The alias keyword" do
   end
 
   it "operates on methods with splat arguments defined in a superclass using text block for class eval" do
-    class Sub < AliasObject;end
+    subclass = Class.new(AliasObject)
     AliasObject.class_eval <<-code
       def test(*args)
         4
@@ -215,7 +215,7 @@ describe "The alias keyword" do
       alias test_without_check test
       alias test test_with_check
     code
-    Sub.new.test("testing").should == 4
+    subclass.new.test("testing").should == 4
   end
 
   it "is not allowed against Fixnum or String instances" do
@@ -242,5 +242,17 @@ describe "The alias keyword" do
       # a NameError and not a NoMethodError
       e.class.should == NameError
     }
+  end
+end
+
+describe "The alias keyword" do
+  it "can create a new global variable, synonym of the original" do
+    code = '$a = 1; alias $b $a; p [$a, $b]; $b = 2; p [$a, $b]'
+    ruby_exe(code).should == "[1, 1]\n[2, 2]\n"
+  end
+
+  it "can override an existing global variable and make them synonyms" do
+    code = '$a = 1; $b = 2; alias $b $a; p [$a, $b]; $b = 3; p [$a, $b]'
+    ruby_exe(code).should == "[1, 1]\n[3, 3]\n"
   end
 end

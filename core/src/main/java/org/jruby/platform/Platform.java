@@ -68,6 +68,7 @@ public abstract class Platform {
 
     private static final String GCJ = "GNU libgcj";
     private static final String IBM = "IBM J9 VM";
+    private static final String OPENJ9 = "Eclipse OpenJ9 VM";
 
     @Deprecated // no longer used
     public static final Map<String, String> OS_NAMES = Helpers.map("Mac OS X", DARWIN);
@@ -126,8 +127,9 @@ public abstract class Platform {
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
 
     public static final boolean IS_GCJ = JVM.equals(GCJ);
-    public static final boolean IS_IBM = JVM.equals(IBM);
-    
+    public static final boolean IS_J9 = JVM.equals(OPENJ9) || JVM.equals(IBM);
+    public static final boolean IS_IBM = IS_J9;
+
     private static Platform initPlatform(){
         try {
             if (IS_WINDOWS)

@@ -5,8 +5,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -28,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -303,6 +302,14 @@ public abstract class IRScope implements ParseResult {
         return staticScope;
     }
 
+    public boolean isWithinEND() {
+        for (IRScope current = this; current != null && current instanceof IRClosure; current = current.getLexicalParent()) {
+            if (((IRClosure) current).isEND()) return true;
+        }
+
+        return false;
+    }
+
     public IRMethod getNearestMethod() {
         IRScope current = this;
 
@@ -541,14 +548,6 @@ public abstract class IRScope implements ParseResult {
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
     private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
-        // All passes are disabled in scopes where BEGIN and END scopes might
-        // screw around with escaped variables. Optimizing for them is not
-        // worth the effort. It is simpler to just go fully safe in scopes
-        // influenced by their presence.
-        if (isUnsafeScope()) {
-            passes = getManager().getSafePasses(this);
-        }
-
         if (dumper != null) dumper.dump(getCFG(), "Start");
 
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
@@ -1247,11 +1246,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<IRClosure> getBeginBlocks() {
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public List<IRClosure> getEndBlocks() {
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     // Enebo: We should just make n primitive int and not take the hash hit
@@ -1377,5 +1376,28 @@ public abstract class IRScope implements ParseResult {
     // FIXME: This should become some heuristic later
     public boolean inliningAllowed() {
         return !alreadyHasInline;
+    }
+
+    /**
+     * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.
+     *
+     * @param context
+     */
+    public void captureParentRefinements(ThreadContext context) {
+        if (maybeUsingRefinements()) {
+            for (IRScope cur = this.getLexicalParent(); cur != null; cur = cur.getLexicalParent()) {
+                RubyModule overlay = cur.staticScope.getOverlayModuleForRead();
+                if (overlay != null && !overlay.getRefinements().isEmpty()) {
+                    // capture current refinements at definition time
+                    RubyModule myOverlay = staticScope.getOverlayModuleForWrite(context);
+
+                    // FIXME: MRI does a copy-on-write thing here with the overlay
+                    myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
+
+                    // only search until we find an overlay
+                    break;
+                }
+            }
+        }
     }
 }

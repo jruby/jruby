@@ -46,4 +46,11 @@ class TestParsing < Test::Unit::TestCase
     assert_equal " \#${\n", eval("<<E\n \#$\{\nE\n")
     assert_equal " # #\#${\n", eval("<<E\n \# \#\#$\{\nE\n")
   end
+
+  # JRUBY-5922
+  def test_magic_comment_encoding_only; require 'rbconfig'
+    path = File.join(File.dirname(__FILE__), 'magic_comment_encoding_only.rb')
+    assert system("#{RbConfig.ruby} #{path}")
+  end
+
 end

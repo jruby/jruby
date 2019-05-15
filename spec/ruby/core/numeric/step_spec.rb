@@ -60,6 +60,25 @@ describe "Numeric#step" do
               enum.size.should == Float::INFINITY
             end
           end
+
+          it "defaults to an infinite size" do
+            enum = 1.step
+            enum.size.should == Float::INFINITY
+          end
+        end
+
+        describe "type" do
+          ruby_version_is ""..."2.6" do
+            it "returns an instance of Enumerator" do
+              1.step(10).class.should == Enumerator
+            end
+          end
+
+          ruby_version_is "2.6" do
+            it "returns an instance of Enumerator::ArithmeticSequence" do
+              1.step(10).class.should == Enumerator::ArithmeticSequence
+            end
+          end
         end
       end
     end
@@ -100,7 +119,7 @@ describe "Numeric#step" do
             1.step(to: Float::INFINITY, by: 42).size.should == infinity_value
           end
 
-          it "should return infinity_value when decending towards a limit of -Float::INFINITY" do
+          it "should return infinity_value when descending towards a limit of -Float::INFINITY" do
             1.step(to: -Float::INFINITY, by: -42).size.should == infinity_value
           end
 

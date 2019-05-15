@@ -351,7 +351,9 @@ public final class EncodingService {
 
         SpecialEncoding special = SpecialEncoding.valueOf(name);
         if (special != null) {
-            return special.toEncoding(runtime);
+            Encoding specialEncoding = special.toEncoding(runtime);
+            if (specialEncoding == null) specialEncoding = ASCIIEncoding.INSTANCE;
+            return specialEncoding;
         }
 
         if (error) return findEncodingWithError(name);

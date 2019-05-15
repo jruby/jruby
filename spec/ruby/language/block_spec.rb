@@ -36,7 +36,7 @@ describe "A block yielded a single" do
       m([1, 2]) { |a=5, b=4, c=3| [a, b, c] }.should == [1, 2, 3]
     end
 
-    it "assgins elements to post arguments" do
+    it "assigns elements to post arguments" do
       m([1, 2]) { |a=5, b, c, d| [a, b, c, d] }.should == [5, 1, 2, nil]
     end
 
@@ -49,7 +49,20 @@ describe "A block yielded a single" do
       result.should == [1, 2, [], 3, 2, {x: 9}]
     end
 
-    it "calls #to_hash on the argument" do
+    it "assigns symbol keys from a Hash to keyword arguments" do
+      result = m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }
+      result.should == [{"a" => 1}, a: 10]
+    end
+
+    it "assigns symbol keys from a Hash returned by #to_hash to keyword arguments" do
+      obj = mock("coerce block keyword arguments")
+      obj.should_receive(:to_hash).and_return({"a" => 1, b: 2})
+
+      result = m([obj]) { |a=nil, **b| [a, b] }
+      result.should == [{"a" => 1}, b: 2]
+    end
+
+    it "calls #to_hash on the argument but does not use the result when no keywords are present" do
       obj = mock("coerce block keyword arguments")
       obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
 
@@ -58,17 +71,9 @@ describe "A block yielded a single" do
     end
 
     describe "when non-symbol keys are in a keyword arguments Hash" do
-      ruby_version_is ""..."2.6" do
-        it "separates non-symbol keys and symbol keys" do
-          result = m(["a" => 10, b: 2]) { |a=nil, **b| [a, b] }
-          result.should == [{"a" => 10}, {b: 2}]
-        end
-      end
-
-      ruby_version_is "2.6" do
-        it "raises an ArgumentError" do
-          lambda {m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }}.should raise_error(ArgumentError)
-        end
+      it "separates non-symbol keys and symbol keys" do
+        result = m(["a" => 10, b: 2]) { |a=nil, **b| [a, b] }
+        result.should == [{"a" => 10}, {b: 2}]
       end
     end
 
@@ -212,6 +217,12 @@ describe "A block" do
     it "does not raise an exception when values are yielded" do
       @y.s(0) { 1 }.should == 1
     end
+
+    ruby_version_is "2.5" do
+      it "may include a rescue clause" do
+        eval("@y.z do raise ArgumentError; rescue ArgumentError; 7; end").should == 7
+      end
+    end
   end
 
   describe "taking || arguments" do
@@ -221,6 +232,12 @@ describe "A block" do
 
     it "does not raise an exception when values are yielded" do
       @y.s(0) { || 1 }.should == 1
+    end
+
+    ruby_version_is "2.5" do
+      it "may include a rescue clause" do
+        eval('@y.z do || raise ArgumentError; rescue ArgumentError; 7; end').should == 7
+      end
     end
   end
 
@@ -247,10 +264,16 @@ describe "A block" do
     it "does not destructure a single Array value" do
       @y.s([1, 2]) { |a| a }.should == [1, 2]
     end
+
+    ruby_version_is "2.5" do
+      it "may include a rescue clause" do
+        eval('@y.s(1) do |x| raise ArgumentError; rescue ArgumentError; 7; end').should == 7
+      end
+    end
   end
 
   describe "taking |a, b| arguments" do
-    it "assgins nil to the arguments when no values are yielded" do
+    it "assigns nil to the arguments when no values are yielded" do
       @y.z { |a, b| [a, b] }.should == [nil, nil]
     end
 
@@ -454,7 +477,7 @@ describe "A block" do
       @y.z { |a, | a }.should be_nil
     end
 
-    it "assgins the argument a single value yielded" do
+    it "assigns the argument a single value yielded" do
       @y.s(1) { |a, | a }.should == 1
     end
 
@@ -618,6 +641,12 @@ describe "A block" do
 
     it "destructures a single multi-level Array value yielded" do
       @y.m(1, [[2, 3], 4]) { |a, ((b, c), d)| [a, b, c, d] }.should == [1, 2, 3, 4]
+    end
+  end
+
+  describe "taking |*a, b:|" do
+    it "merges the hash into the splatted array" do
+      @y.k { |*a, b:| [a, b] }.should == [[], true]
     end
   end
 

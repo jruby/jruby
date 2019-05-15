@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -57,7 +58,6 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -162,29 +162,17 @@ public class UnmarshalStream extends InputStream {
     }
 
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
-        final RubyModule value = getConstantFromPath(runtime, path);
+        final RubyModule value = runtime.getClassFromPath(path, runtime.getArgumentError(), false);
+        if (value == null) throw runtime.newArgumentError("undefined class/module " + path);
         if ( ! value.isModule() ) throw runtime.newArgumentError(path + " does not refer module");
         return value;
     }
 
     public static RubyClass getClassFromPath(Ruby runtime, String path) {
-        final RubyModule value = getConstantFromPath(runtime, path);
+        final RubyModule value = runtime.getClassFromPath(path, runtime.getArgumentError(), false);
+        if (value == null) throw runtime.newArgumentError("undefined class/module " + path);
         if ( ! value.isClass() ) throw runtime.newArgumentError(path + " does not refer class");
         return (RubyClass) value;
-    }
-
-    private static RubyModule getConstantFromPath(Ruby runtime, String path) {
-        final RubyModule value;
-        try {
-            value = runtime.getClassFromPath(path);
-        }
-        catch (RaiseException e) {
-            if ( runtime.getModule("NameError").isInstance(e.getException()) ) {
-                throw runtime.newArgumentError("undefined class/module " + path);
-            }
-            throw e;
-        }
-        return value;
     }
 
     private IRubyObject doCallProcForLink(IRubyObject result, int type) {
@@ -204,7 +192,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     private IRubyObject unmarshalObjectDirectly(int type, MarshalState state, boolean callProc) throws IOException {
-        IRubyObject rubyObj = null;
+        IRubyObject rubyObj;
         switch (type) {
             case 'I':
                 MarshalState childState = new MarshalState(true);
@@ -437,9 +425,7 @@ public class UnmarshalStream extends InputStream {
 
         RubyClass type = getClassFromPath(runtime, className.idString());
 
-        IRubyObject result = (IRubyObject)type.unmarshal(this);
-
-        return result;
+        return (IRubyObject)type.unmarshal(this);
     }
 
     public void defaultVariablesUnmarshal(IRubyObject object) throws IOException {
@@ -494,8 +480,8 @@ public class UnmarshalStream extends InputStream {
                 throw runtime.newArgumentError("invalid encoding in marshaling stream: " + encodingName);
             }
             enc = entry.getEncoding();
-
         }
+
         return enc;
     }
 

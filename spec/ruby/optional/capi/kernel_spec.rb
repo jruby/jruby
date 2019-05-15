@@ -244,6 +244,10 @@ describe "C-API Kernel function" do
       @s.rb_yield_splat([1, 2]) { |x, y| x + y }.should == 3
     end
 
+    it "passes arguments to a block accepting splatted args" do
+      @s.rb_yield_splat([1, 2]) { |*v| v }.should == [1, 2]
+    end
+
     it "raises LocalJumpError when no block is given" do
       lambda { @s.rb_yield_splat([1, 2]) }.should raise_error(LocalJumpError)
     end
@@ -276,6 +280,15 @@ describe "C-API Kernel function" do
         @s.rb_protect_yield(7, proof) { |x| raise NameError}
       end.should raise_error(NameError)
       proof[0].should == 23
+    end
+
+    it "will return nil if an error was raised" do
+      proof = [] # Hold proof of work performed after the yield.
+      lambda do
+        @s.rb_protect_yield(7, proof) { |x| raise NameError}
+      end.should raise_error(NameError)
+      proof[0].should == 23
+      proof[1].should == nil
     end
   end
 
@@ -440,6 +453,32 @@ describe "C-API Kernel function" do
       proc = @s.rb_block_proc() { 1+1 }
       proc.should be_kind_of(Proc)
       proc.call.should == 2
+      proc.lambda?.should == false
+    end
+
+    it "passes through an existing lambda and does not convert to a proc" do
+      b = -> { 1+1 }
+      proc = @s.rb_block_proc(&b)
+      proc.should equal(b)
+      proc.call.should == 2
+      proc.lambda?.should == true
+    end
+  end
+
+  describe "rb_block_lambda" do
+    it "converts the implicit block into a Proc but does not convert it to a lambda" do
+      proc = @s.rb_block_proc { 1+1 }
+      proc.should be_kind_of(Proc)
+      proc.call.should == 2
+      proc.lambda?.should == false
+    end
+
+    it "passes through an existing Proc and does not convert to a lambda" do
+      b = proc { 1+1 }
+      proc = @s.rb_block_proc(&b)
+      proc.should equal(b)
+      proc.call.should == 2
+      proc.lambda?.should == false
     end
   end
 

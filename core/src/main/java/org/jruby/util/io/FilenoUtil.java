@@ -7,6 +7,8 @@ import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.util.collections.NonBlockingHashMapLong;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
@@ -129,15 +131,26 @@ public class FilenoUtil {
     private final NonBlockingHashMapLong<ChannelFD> filenoMap = new NonBlockingHashMapLong<ChannelFD>();
     private final POSIX posix;
 
+    static final Logger LOG = LoggerFactory.getLogger(FilenoUtil.class);
+
     private static class ReflectiveAccess {
         static {
+            // open package "sun.nio.ch" (from java.base) for org.jruby.dist module
+            try {
+                Modules.addOpens(FileDescriptor.class, "sun.nio.ch", ReflectiveAccess.class);
+            } catch (RuntimeException re) {
+                // Warn users since we don't currently handle half-native process control.
+                LOG.warn("Native subprocess control requires open access to sun.nio.ch\n" +
+                        "Pass '--add-opens java.base/sun.nio.ch=org.jruby.dist' or '=org.jruby.core' to enable.");
+            }
+
             Method getFD;
             Class selChImpl;
             try {
                 selChImpl = Class.forName("sun.nio.ch.SelChImpl");
                 try {
                     getFD = selChImpl.getMethod("getFD");
-                    if (!Modules.trySetAccessible(getFD)) {
+                    if (!Modules.trySetAccessible(getFD, ReflectiveAccess.class)) {
                         getFD = null;
                     }
                 } catch (Exception e) {
@@ -156,7 +169,7 @@ public class FilenoUtil {
                 fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
                 try {
                     fd = fileChannelImpl.getDeclaredField("fd");
-                    if (!Modules.trySetAccessible(fd)) {
+                    if (!Modules.trySetAccessible(fd, ReflectiveAccess.class)) {
                         fd = null;
                     }
                 } catch (Exception e) {
@@ -172,7 +185,7 @@ public class FilenoUtil {
             Field ffd;
             try {
                 ffd = FileDescriptor.class.getDeclaredField("fd");
-                if (!Modules.trySetAccessible(ffd)) {
+                if (!Modules.trySetAccessible(ffd, ReflectiveAccess.class)) {
                     ffd = null;
                 }
             } catch (Exception e) {

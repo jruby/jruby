@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-require 'socket.so'
+# Load built-in socket library
+JRuby::Util.load_ext("org.jruby.ext.socket.SocketLibrary")
+
 require 'io/wait'
 
 class Addrinfo

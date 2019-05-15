@@ -1,0 +1,1 @@
+fails:Hash#each yields 2 values and not an Array of 2 elements when given a callable of arity 2

@@ -165,7 +165,7 @@ describe "CApiTimeSpecs" do
       usec.should == 500000
     end
 
-    platform_is_not :mingw32 do
+    guard -> { platform_is_not :mingw or ruby_version_is '2.5' } do
       it "creates a timeval for a negative Fixnum" do
         sec, usec = @s.rb_time_timeval(-1232141421)
         sec.should be_kind_of(Integer)
@@ -224,7 +224,7 @@ describe "CApiTimeSpecs" do
       nsec.should == 500000000
     end
 
-    platform_is_not :mingw32 do
+    guard -> { platform_is_not :mingw or ruby_version_is '2.5' } do
       it "creates a timespec for a negative Fixnum" do
         sec, nsec = @s.rb_time_timespec(-1232141421)
         sec.should be_kind_of(Integer)
@@ -294,7 +294,7 @@ describe "CApiTimeSpecs" do
       now = Time.now
       time = @s.rb_time_from_timespec(now.utc_offset)
       time.should be_an_instance_of(Time)
-      (time - now).should be_close(0, 10)
+      (time - now).should be_close(0, TIME_TOLERANCE)
     end
   end
 end

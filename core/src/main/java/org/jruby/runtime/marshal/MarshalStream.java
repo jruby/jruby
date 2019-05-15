@@ -60,6 +60,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
@@ -147,10 +148,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
-        ByteList sym;
-        if (value instanceof RubySymbol && cache.isSymbolRegistered(sym = ((RubySymbol) value).getBytes())) {
-            cache.writeSymbolLink(this, sym);
-        } else if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
+        if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
             cache.writeLink(this, value);
         } else {
             value.getMetaClass().smartDump(this, value);
@@ -340,23 +338,23 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
-    public void userNewMarshal(IRubyObject value, DynamicMethod method) throws IOException {
-        userNewCommon(value, method);
+    public void userNewMarshal(IRubyObject value, CacheEntry entry) throws IOException {
+        userNewCommon(value, entry);
     }
 
     public void userNewMarshal(IRubyObject value) throws IOException {
         userNewCommon(value, null);
     }
 
-    private void userNewCommon(IRubyObject value, DynamicMethod method) throws IOException {
+    private void userNewCommon(IRubyObject value, CacheEntry entry) throws IOException {
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
         writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
 
         IRubyObject marshaled;
-        if (method != null) {
-            marshaled = method.call(runtime.getCurrentContext(), value, klass, "marshal_dump");
+        if (entry != null) {
+            marshaled = entry.method.call(runtime.getCurrentContext(), value, entry.sourceModule, "marshal_dump");
         } else {
             marshaled = value.callMethod(runtime.getCurrentContext(), "marshal_dump");
         }
@@ -366,20 +364,20 @@ public class MarshalStream extends FilterOutputStream {
         dumpObject(marshaled);
     }
 
-    public void userMarshal(IRubyObject value, DynamicMethod method) throws IOException {
-        userCommon(value, method);
+    public void userMarshal(IRubyObject value, CacheEntry entry) throws IOException {
+        userCommon(value, entry);
     }
 
     public void userMarshal(IRubyObject value) throws IOException {
         userCommon(value, null);
     }
 
-    private void userCommon(IRubyObject value, DynamicMethod method) throws IOException {
+    private void userCommon(IRubyObject value, CacheEntry entry) throws IOException {
         RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
         final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
-        if (method != null) {
-            dumpResult = method.call(runtime.getCurrentContext(), value, klass, "_dump", depthLimitFixnum);
+        if (entry != null) {
+            dumpResult = entry.method.call(runtime.getCurrentContext(), value, entry.sourceModule, "_dump", depthLimitFixnum);
         } else {
             dumpResult = value.callMethod(runtime.getCurrentContext(), "_dump", depthLimitFixnum);
         }

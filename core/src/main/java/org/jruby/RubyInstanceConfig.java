@@ -424,9 +424,18 @@ public class RubyInstanceConfig {
     private static InputStream findScript(InputStream is) throws IOException {
         StringBuilder buf = new StringBuilder(64);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String currentLine = br.readLine();
-        while (currentLine != null && !isRubyShebangLine(currentLine)) {
-            currentLine = br.readLine();
+
+        boolean foundRubyShebang = false;
+        String currentLine;
+        while ((currentLine = br.readLine()) != null) {
+            if (isRubyShebangLine(currentLine)) {
+                foundRubyShebang = true;
+                break;
+            }
+        }
+
+        if (!foundRubyShebang) {
+            throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
         }
 
         buf.append(currentLine).append('\n');
@@ -1645,7 +1654,7 @@ public class RubyInstanceConfig {
     /**
      * The version to use for generated classes. Set to current JVM version by default
      */
-    public static final int JAVA_VERSION = initGlobalJavaVersion();
+    public static final int JAVA_VERSION = initJavaBytecodeVersion();
 
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -1736,13 +1745,6 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.fiber.thread.pool.max</tt> system property.
      */
     public static final int FIBER_POOL_TTL = Options.FIBER_THREADPOOL_TTL.load();
-
-    /**
-     * Enable use of the native Java version of the 'net/protocol' library.
-     *
-     * Set with the <tt>jruby.native.net.protocol</tt> system property.
-     */
-    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
 
     /**
      * Enable tracing of method calls.
@@ -1877,7 +1879,7 @@ public class RubyInstanceConfig {
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
 
-    private static int initGlobalJavaVersion() {
+    private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
             case "1.6" :
@@ -1889,7 +1891,9 @@ public class RubyInstanceConfig {
             case "9" :
                 return Opcodes.V9;
             case "10" :
-                return Opcodes.V9; // TODO: switch when `V10 = 54` added
+                return Opcodes.V10;
+            case "11" :
+                return Opcodes.V11;
         }
     }
 
@@ -2032,4 +2036,12 @@ public class RubyInstanceConfig {
     @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
     }
+
+    /**
+     * Enable use of the native Java version of the 'net/protocol' library.
+     *
+     * Set with the <tt>jruby.native.net.protocol</tt> system property.
+     */
+    @Deprecated
+    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
 }

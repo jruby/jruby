@@ -128,7 +128,7 @@ describe "File.open" do
   end
 
   it "creates the file and returns writable descriptor when called with 'w' mode and r-o permissions" do
-    # it should be possible to write to such a file via returned descriptior,
+    # it should be possible to write to such a file via returned descriptor,
     # even though the file permissions are r-r-r.
 
     File.open(@file, "w", 0444) { |f| f.write("test") }
@@ -162,21 +162,6 @@ describe "File.open" do
     fh_copy = File.open(@fh.fileno)
     fh_copy.autoclose = false
     fh_copy.should be_kind_of(File)
-    File.exist?(@file).should == true
-  end
-
-  it "opens a file with a file descriptor d and a block" do
-    @fh = File.open(@file)
-    @fh.should be_kind_of(File)
-
-    lambda {
-      File.open(@fh.fileno) do |fh|
-        @fd = fh.fileno
-        @fh.close
-      end
-    }.should raise_error(Errno::EBADF)
-    lambda { File.open(@fd) }.should raise_error(Errno::EBADF)
-
     File.exist?(@file).should == true
   end
 
@@ -236,7 +221,7 @@ describe "File.open" do
     File.exist?(@file).should == true
   end
 
-  # Check the grants associated to the differents open modes combinations.
+  # Check the grants associated to the different open modes combinations.
   it "raises an ArgumentError exception when call with an unknown mode" do
     lambda { File.open(@file, "q") }.should raise_error(ArgumentError)
   end
@@ -538,7 +523,7 @@ describe "File.open" do
             io.read.should == "ruby"
             Dir["#{dir}/*"].should == []
           end
-        rescue Errno::EOPNOTSUPP, Errno::EINVAL
+        rescue Errno::EOPNOTSUPP, Errno::EINVAL, Errno::EISDIR
           # EOPNOTSUPP: no support from the filesystem
           # EINVAL: presumably bug in glibc
           1.should == 1
@@ -638,13 +623,40 @@ describe "File.open" do
     end
   end
 
+  ruby_version_is "2.6" do
+    context "'x' flag" do
+      before :each do
+        @xfile = tmp("x-flag")
+        rm_r @xfile
+      end
+
+      after :each do
+        rm_r @xfile
+      end
+
+      it "does nothing if the file doesn't exist" do
+        File.open(@xfile, "wx") { |f| f.write("content") }
+        File.read(@xfile).should == "content"
+      end
+
+      it "throws a Errno::EEXIST error if the file exists" do
+        touch @xfile
+        lambda { File.open(@xfile, "wx") }.should raise_error(Errno::EEXIST)
+      end
+
+      it "can't be used with 'r' and 'a' flags" do
+        lambda { File.open(@xfile, "rx") }.should raise_error(ArgumentError, 'invalid access mode rx')
+        lambda { File.open(@xfile, "ax") }.should raise_error(ArgumentError, 'invalid access mode ax')
+      end
+    end
+  end
 end
 
 describe "File.open when passed a file descriptor" do
   before do
     @content = "File#open when passed a file descriptor"
     @name = tmp("file_open_with_fd.txt")
-    @fd = new_fd @name, fmode("w:utf-8")
+    @fd = new_fd @name, "w:utf-8"
     @file = nil
   end
 

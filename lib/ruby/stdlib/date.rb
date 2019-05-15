@@ -162,7 +162,9 @@
 # DateTime instance will use the time zone offset of this
 # instance.
 
-require 'date.jar'
+# Load built-in date library
+JRuby::Util.load_ext("org.jruby.ext.date.DateLibrary")
+
 require 'date/format'
 
 # Class representing a date.
@@ -519,28 +521,6 @@ class Date
 
   DAYNAMES.each_with_index do |n, i|
     define_method(n.downcase + '?') { wday == i }
-  end
-
-  # The relationship operator for Date.
-  #
-  # Compares dates by Julian Day Number.  When comparing
-  # two DateTime instances, or a DateTime with a Date,
-  # the instances will be regarded as equivalent if they
-  # fall on the same date in local time.
-  def === (other)
-    case other
-    when Numeric
-      jd == other
-    when Date
-      jd == other.jd
-    else
-      begin
-        l, r = other.coerce(self)
-        l === r
-      rescue NoMethodError
-        false
-      end
-    end
   end
 
   # Step the current date forward +step+ days at a

@@ -18,7 +18,7 @@ describe "Socket::TCPServer.accept_nonblock" do
     }.should raise_error(IO::WaitReadable)
 
     c = TCPSocket.new("127.0.0.1", @port)
-    sleep 0.1
+    IO.select([@server])
     s = @server.accept_nonblock
 
     port, address = Socket.unpack_sockaddr_in(s.getsockname)
@@ -75,6 +75,7 @@ describe 'TCPServer#accept_nonblock' do
         end
 
         it 'returns a TCPSocket' do
+          IO.select([@server])
           @socket = @server.accept_nonblock
           @socket.should be_an_instance_of(TCPSocket)
         end

@@ -24,6 +24,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.MathLinker;
@@ -395,9 +396,10 @@ public class Bootstrap {
         return IRRuntimeHelpers.dupKwargsHashAndPopulateFromArray(context, hash, pairs);
     }
 
-    static MethodHandle buildIndyHandle(InvokeSite site, DynamicMethod method, RubyModule implClass) {
+    static MethodHandle buildIndyHandle(InvokeSite site, CacheEntry entry) {
         MethodHandle mh = null;
         Signature siteToDyncall = site.signature.insertArgs(3, arrayOf("class", "name"), arrayOf(RubyModule.class, String.class));
+        DynamicMethod method = entry.method;
 
         if (method instanceof HandleMethod) {
             HandleMethod handleMethod = (HandleMethod)method;
@@ -440,7 +442,7 @@ public class Bootstrap {
             }
 
             if (mh != null) {
-                mh = insertArguments(mh, 3, implClass, site.name());
+                mh = insertArguments(mh, 3, entry.sourceModule, site.name());
 
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info(site.name() + "\tbound directly to handle " + Bootstrap.logMethod(method));
@@ -451,12 +453,13 @@ public class Bootstrap {
         return mh;
     }
 
-    static MethodHandle buildGenericHandle(InvokeSite site, DynamicMethod method, RubyClass dispatchClass) {
+    static MethodHandle buildGenericHandle(InvokeSite site, CacheEntry entry) {
         SmartBinder binder;
+        DynamicMethod method = entry.method;
 
         binder = SmartBinder.from(site.signature)
                 .permute("context", "self", "arg.*", "block")
-                .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, dispatchClass, site.name())
+                .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, entry.sourceModule, site.name())
                 .insert(0, "method", DynamicMethod.class, method);
 
         if (site.arity > 3) {
@@ -470,13 +473,15 @@ public class Bootstrap {
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
     }
 
-    static MethodHandle buildAttrHandle(InvokeSite site, DynamicMethod method, IRubyObject self, RubyClass dispatchClass) {
+    static MethodHandle buildAttrHandle(InvokeSite site, CacheEntry entry, IRubyObject self) {
+        DynamicMethod method = entry.method;
+
         if (method instanceof AttrReaderMethod && site.arity == 0) {
             AttrReaderMethod attrReader = (AttrReaderMethod) method;
             String varName = attrReader.getVariableName();
 
             // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
-            VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
+            VariableAccessor accessor = self.getType().getVariableAccessorForWrite(varName);
 
             // Ruby to attr reader
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
@@ -487,13 +492,13 @@ public class Bootstrap {
                 }
             }
 
-            return createAttrReaderHandle(site, self, dispatchClass.getRealClass(), accessor);
+            return createAttrReaderHandle(site, self, self.getType(), accessor);
         } else if (method instanceof AttrWriterMethod && site.arity == 1) {
             AttrWriterMethod attrReader = (AttrWriterMethod)method;
             String varName = attrReader.getVariableName();
 
             // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
-            VariableAccessor accessor = dispatchClass.getRealClass().getVariableAccessorForWrite(varName);
+            VariableAccessor accessor = self.getType().getVariableAccessorForWrite(varName);
 
             // Ruby to attr reader
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
@@ -504,7 +509,7 @@ public class Bootstrap {
                 }
             }
 
-            return createAttrWriterHandle(site, self, dispatchClass.getRealClass(), accessor);
+            return createAttrWriterHandle(site, self, self.getType(), accessor);
         }
 
         return null;
@@ -571,10 +576,12 @@ public class Bootstrap {
         return setValue;
     }
 
-    static MethodHandle buildJittedHandle(InvokeSite site, DynamicMethod method, boolean blockGiven) {
+    static MethodHandle buildJittedHandle(InvokeSite site, CacheEntry entry, boolean blockGiven) {
         MethodHandle mh = null;
         SmartBinder binder;
         CompiledIRMethod compiledIRMethod = null;
+        DynamicMethod method = entry.method;
+        RubyModule sourceModule = entry.sourceModule;
 
         if (method instanceof CompiledIRMethod) {
             compiledIRMethod = (CompiledIRMethod)method;
@@ -624,7 +631,7 @@ public class Bootstrap {
 
             binder = binder
                     .insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope())
-                    .append("class", RubyModule.class, compiledIRMethod.getImplementationClass())
+                    .append("class", RubyModule.class, sourceModule)
                     .append("frameName", String.class, site.name());
 
             mh = binder.invoke(mh).handle();
@@ -637,9 +644,10 @@ public class Bootstrap {
         return mh;
     }
 
-    static MethodHandle buildNativeHandle(InvokeSite site, DynamicMethod method, boolean blockGiven) {
+    static MethodHandle buildNativeHandle(InvokeSite site, CacheEntry entry, boolean blockGiven) {
         MethodHandle mh = null;
         SmartBinder binder = null;
+        DynamicMethod method = entry.method;
 
         if (method instanceof NativeCallMethod && ((NativeCallMethod) method).getNativeCall() != null) {
             NativeCallMethod nativeMethod = (NativeCallMethod)method;
@@ -713,7 +721,7 @@ public class Bootstrap {
 
                 JRubyMethod anno = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
                 if (anno != null && anno.frame()) {
-                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, method.getImplementationClass(), site.name(), mh);
+                    mh = InvocationLinker.wrapWithFrameOnly(site.signature, entry.sourceModule, site.name(), mh);
                 }
             }
         }

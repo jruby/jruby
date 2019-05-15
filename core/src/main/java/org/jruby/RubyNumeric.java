@@ -518,8 +518,13 @@ public class RubyNumeric extends RubyObject {
      *
      */
     protected final void coerceFailed(ThreadContext context, IRubyObject other) {
+        if (other.isSpecialConst() || other instanceof RubyFloat) {
+            other = other.inspect();
+        } else {
+            other = other.getMetaClass().name();
+        }
         throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
-                (other.isSpecialConst() ? other.inspect() : other.getMetaClass().getName()), getMetaClass()));
+                other, getMetaClass()));
     }
 
     /** rb_num_coerce_bin
@@ -794,6 +799,10 @@ public class RubyNumeric extends RubyObject {
         IRubyObject div = numFuncall(context, this, sites(context).div, other);
         IRubyObject product = sites(context).op_times.call(context, other, other, div);
         return sites(context).op_minus.call(context, this, this, product);
+    }
+
+    IRubyObject modulo(ThreadContext context, long other) {
+        return modulo(context, RubyFixnum.newFixnum(context.runtime, other));
     }
 
     /** num_remainder
@@ -1106,11 +1115,11 @@ public class RubyNumeric extends RubyObject {
 
         if (Double.isInfinite(unit)) {
             /* if unit is infinity, i*unit+beg is NaN */
-            if (n != 0) block.yield(context, from);
+            if (n != 0) block.yield(context, RubyFloat.newFloat(runtime, beg));
         } else if (unit == 0) {
-            IRubyObject val = from;
+            RubyFloat value = RubyFloat.newFloat(runtime, beg);
             for (;;) {
-                block.yield(context, val);
+                block.yield(context, value);
             }
         } else {
             for (i=0; i<n; i++) {

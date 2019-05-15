@@ -241,4 +241,21 @@ describe "Method#parameters" do
     m = MethodSpecs::Methods.new
     m.method(:writer=).parameters.should == [[:req]]
   end
+
+  it "returns [[:rest]] for core methods with variable-length argument lists" do
+    # delete! takes rest args
+    "foo".method(:delete!).parameters.should == [[:rest]]
+  end
+
+  it "returns [[:rest]] or [[:opt]] for core methods with optional arguments" do
+    # pop takes 1 optional argument
+    [
+      [[:rest]],
+      [[:opt]]
+    ].should include([].method(:pop).parameters)
+  end
+
+  it "returns [[:req]] for each parameter for core methods with fixed-length argument lists" do
+    "foo".method(:+).parameters.should == [[:req]]
+  end
 end

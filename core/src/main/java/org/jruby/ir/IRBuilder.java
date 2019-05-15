@@ -32,7 +32,6 @@ import java.util.*;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
-import static org.jruby.ir.operands.CurrentScope.*;
 import static org.jruby.ir.operands.ScopeModule.*;
 
 // This class converts an AST into a bunch of IR instructions
@@ -1057,7 +1056,7 @@ public class IRBuilder {
         String id = name.idString(); // ID Str ok here since it is 7bit check.
         if (receiverNode instanceof StrNode && (id.equals("freeze") || id.equals("-@"))) {
             StrNode asString = (StrNode) receiverNode;
-            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getPosition().getLine());
+            return new FrozenString(asString.getValue(), asString.getCodeRange(), scope.getFile(), asString.getLine());
         }
 
         boolean compileLazyLabel = false;
@@ -1221,7 +1220,7 @@ public class IRBuilder {
             Node exprNodes = whenNode.getExpressionNodes();
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, needsSplat, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -1278,7 +1277,7 @@ public class IRBuilder {
 
             FixnumNode expr = (FixnumNode) whenNode.getExpressionNodes();
             long exprLong = expr.getValue();
-            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + caseNode.getPosition());
+            if (exprLong > Integer.MAX_VALUE) throw new NotCompilableException("optimized fixnum case has long-ranged when at " + getFileName() + ":" + caseNode.getLine());
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, bodyLabel);
@@ -1337,7 +1336,7 @@ public class IRBuilder {
                 expression = ((StringLiteral) expression).frozenString;
             }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, false));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, manager.getTrue(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
@@ -1681,7 +1680,7 @@ public class IRBuilder {
                             createTemporaryVariable(),
                             IS_DEFINED_NTH_REF,
                             new Operand[] {
-                                    new Fixnum(((NthRefNode) node).getMatchNumber()),
+                                    manager.newFixnum(((NthRefNode) node).getMatchNumber()),
                                     new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
                             }
                     )
@@ -2684,7 +2683,11 @@ public class IRBuilder {
     }
 
     public Operand buildEvStr(EvStrNode node) {
-        return new AsString(build(node.getBody()));
+        TemporaryVariable result = createTemporaryVariable();
+
+        addInstr(new AsStringInstr(scope, result, build(node.getBody()), scope.maybeUsingRefinements()));
+
+        return result;
     }
 
     public Operand buildFalse() {
@@ -2706,9 +2709,9 @@ public class IRBuilder {
             block = setupCallClosure(fcallNode.getIterNode());
             callInstr = CallInstr.createWithKwargs(scope, CallType.FUNCTIONAL, result, fcallNode.getName(), buildSelf(), args, block, kwargs);
         } else {
-            Operand[] args         = setupCallArgs(callArgsNode);
-            block        = setupCallClosure(fcallNode.getIterNode());
-            determineIfMaybeUsingMethod(fcallNode.getName(), args);
+            Operand[] args = setupCallArgs(callArgsNode);
+            determineIfMaybeRefined(fcallNode.getName(), args);
+            block = setupCallClosure(fcallNode.getIterNode());
 
             // We will stuff away the iters AST source into the closure in the hope we can convert
             // this closure to a method.
@@ -2739,7 +2742,7 @@ public class IRBuilder {
                 return build(node);
             case BLOCKPASSNODE:
                 Node bodyNode = ((BlockPassNode)node).getBodyNode();
-                return bodyNode instanceof SymbolNode ?
+                return bodyNode instanceof SymbolNode && !scope.maybeUsingRefinements() ?
                         new SymbolProc(((SymbolNode)bodyNode).getName()) : build(bodyNode);
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
@@ -2747,17 +2750,22 @@ public class IRBuilder {
     }
 
     // FIXME: This needs to be called on super/zsuper too
-    private void determineIfMaybeUsingMethod(RubySymbol methodName, Operand[] args) {
+    private void determineIfMaybeRefined(RubySymbol methodName, Operand[] args) {
         IRScope outerScope = scope.getNearestTopLocalVariableScope();
 
         // 'using single_mod_arg' possible nearly everywhere but method scopes.
-        if (CommonByteLists.USING_METHOD.equals(methodName.getBytes()) && !(outerScope instanceof IRMethod) && args.length == 1) {
+        if (!(outerScope instanceof IRMethod) && args.length == 1
+                && (
+                CommonByteLists.USING_METHOD.equals(methodName.getBytes())
+                        // FIXME: This sets the bit for the whole module, but really only the refine block needs it
+                        || CommonByteLists.REFINE_METHOD.equals(methodName.getBytes())
+        )) {
             scope.setIsMaybeUsingRefinements();
         }
     }
 
     public Operand buildFixnum(FixnumNode node) {
-        return new Fixnum(node.getValue());
+        return manager.newFixnum(node.getValue());
     }
 
     public Operand buildFlip(FlipNode flipNode) {
@@ -2784,8 +2792,8 @@ public class IRBuilder {
          * enough and also makes the IR output readable
          * ---------------------------------------------------------------------- */
 
-        Fixnum s1 = new Fixnum((long)1);
-        Fixnum s2 = new Fixnum((long)2);
+        Fixnum s1 = manager.newFixnum((long)1);
+        Fixnum s2 = manager.newFixnum((long)2);
 
         // Create a variable to hold the flip state
         IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
@@ -3490,6 +3498,7 @@ public class IRBuilder {
 
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
                 Signature.from(postExeNode), CommonByteLists._END_, true);
+        endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
 
@@ -3678,9 +3687,8 @@ public class IRBuilder {
                 Node [] exceptionNodes = ((ListNode) exceptionList).children();
                 Operand[] exceptionTypes = new Operand[exceptionNodes.length];
                 for (int i = 0; i < exceptionNodes.length; i++) {
-                    exceptionTypes[i] = build(exceptionNodes[i]);
+                    outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
-                outputExceptionCheck(new Array(exceptionTypes), exc, caughtLabel);
             } else if (exceptionList instanceof SplatNode) { // splatnode, catch
                 outputExceptionCheck(build(((SplatNode)exceptionList).getValue()), exc, caughtLabel);
             } else { // argscat/argspush
@@ -3755,15 +3763,21 @@ public class IRBuilder {
         Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
-            // Closures return behavior has several cases (which depend on runtime state):
-            // 1. closure in method (return). !method (error) except if in define_method (return)
-            // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
-            // 3. migrated closure (LJE) [dynamic]
-            // 4. eval/for (return) [static]
-            boolean definedWithinMethod = scope.getNearestMethod() != null;
-            if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) addInstr(new CheckForLJEInstr(definedWithinMethod));
-            addInstr(new NonlocalReturnInstr(retVal,
-                    definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+            if (scope.isWithinEND()) {
+                // ENDs do not allow returns
+                addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
+            } else {
+                // Closures return behavior has several cases (which depend on runtime state):
+                // 1. closure in method (return). !method (error) except if in define_method (return)
+                // 2. lambda (return) [dynamic]  // FIXME: I believe ->() can be static and omit LJE check.
+                // 3. migrated closure (LJE) [dynamic]
+                // 4. eval/for (return) [static]
+                boolean definedWithinMethod = scope.getNearestMethod() != null;
+                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
+                    addInstr(new CheckForLJEInstr(definedWithinMethod));
+                addInstr(new NonlocalReturnInstr(retVal,
+                        definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+            }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
@@ -3824,6 +3838,13 @@ public class IRBuilder {
         scope.computeScopeFlagsEarly(instructions);
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
+
+        // Run all discovered BEGIN blocks before main body.
+        List<IRClosure> begins = scope.getBeginBlocks();
+        for (int i = begins.size() ; i > 0 ; i--) {
+            IRClosure begin = begins.get(i - 1);
+            addInstrAtBeginning(new RunBeginBlockInstr(scope, new WrappedIRClosure(begin.getSelf(), begin)));
+        }
 
         return scope.allocateInterpreterContext(instructions);
     }
@@ -4049,7 +4070,7 @@ public class IRBuilder {
                     // Generate the next set of instructions
                     if (next != null) addInstr(new LabelInstr(next));
                     next = getNewLabel();
-                    addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
+                    addInstr(BNEInstr.create(next, manager.newFixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
                     addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
                     addInstr(new JumpInstr(allDoneLabel));
@@ -4114,21 +4135,17 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
-        }
+        addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         Operand bodyReturnValue = build(bodyNode);
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
-            // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
-            addInstr(manager.newLineNumber(endLine));
-            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
-        }
+        // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
+        // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
+        addInstr(manager.newLineNumber(endLine));
+        addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
 
         addInstr(new ReturnInstr(bodyReturnValue));
 

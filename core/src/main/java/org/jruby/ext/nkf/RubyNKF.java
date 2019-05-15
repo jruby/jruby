@@ -103,6 +103,10 @@ public class RubyNKF {
 
     public static final Map<Integer, String> NKFCharsetMap = new HashMap<Integer, String>(20, 1);
 
+    public static void load(Ruby runtime) {
+        createNKF(runtime);
+    }
+
     public static void createNKF(Ruby runtime) {
         final RubyModule NKF = runtime.defineModule("NKF");
         final String version = "2.1.2";

@@ -207,14 +207,14 @@ public class MathLinker {
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, operator, value);
+            return entry.method.call(context, self, entry.sourceModule, operator, value);
         } else {
             entry = selfClass.searchWithCache(operator);
             if (InvokeDynamicSupport.methodMissing(entry, site.callType(), operator, caller)) {
                 return InvokeDynamicSupport.callMethodMissing(entry, site.callType(), context, self, operator, value);
             }
             site.entry = entry;
-            return entry.method.call(context, self, selfClass, operator, value);
+            return entry.method.call(context, self, entry.sourceModule, operator, value);
         }
     }
 
@@ -367,14 +367,14 @@ public class MathLinker {
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, operator, value);
+            return entry.method.call(context, self, entry.sourceModule, operator, value);
         } else {
             entry = selfClass.searchWithCache(operator);
             if (InvokeDynamicSupport.methodMissing(entry, site.callType(), operator, caller)) {
                 return InvokeDynamicSupport.callMethodMissing(entry, site.callType(), context, self, operator, value);
             }
             site.entry = entry;
-            return entry.method.call(context, self, selfClass, operator, value);
+            return entry.method.call(context, self, entry.sourceModule, operator, value);
         }
     }
 

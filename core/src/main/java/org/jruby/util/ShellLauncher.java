@@ -262,7 +262,7 @@ public class ShellLauncher {
             }
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
-                    for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)mergeEnv) {
+                    for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
                         // if the key is nil, raise TypeError
                         if (e.getKey() == null) {
                             throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
@@ -271,7 +271,7 @@ public class ShellLauncher {
                         if (e.getValue() == null) {
                             continue;
                         }
-                        ret[i] = e.getKey() + '=' + e.getValue();
+                        ret[i] = e.getKey().toString() + '=' + e.getValue();
                         i++;
                     }
                 } else if (mergeEnv instanceof RubyArray) {
@@ -1153,11 +1153,10 @@ public class ShellLauncher {
             // if the executable exists, start it directly with no shell
             if (executableFile != null) {
                 log(runtime, "Got it: " + executableFile);
-                // TODO: special processing for BAT/CMD files needed at all?
-                // if (isBatch(executableFile)) {
-                //    log(runtime, "This is a BAT/CMD file, will start in shell");
-                //    return true;
-                // }
+                if (isBatch(executableFile)) {
+                    log(runtime, "This is a BAT/CMD file, will start in shell");
+                    return true;
+                }
                 return false;
             } else {
                 log(runtime, "Didn't find executable: " + executable);
@@ -1170,6 +1169,10 @@ public class ShellLauncher {
 
             // TODO: maybe true here?
             return false;
+        }
+
+        private boolean isBatch(File executableFile) {
+            return executableFile.getName().toLowerCase().endsWith(".bat");
         }
 
         public void verifyExecutableForShell() {

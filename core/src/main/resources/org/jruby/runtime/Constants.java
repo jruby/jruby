@@ -82,6 +82,11 @@ public final class Constants {
      * The JIT threshold to the specified method invocation count.
      */
     public static final int JIT_THRESHOLD = 50;
+
+    /**
+     * The default package into which we generate non-jit code
+     */
+    public static final String GENERATED_PACKAGE = "org.jruby.gen.";
     
     private static String jruby_revision = "@jruby.revision@";
 

@@ -269,13 +269,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return cr;
     }
 
-    public static int scanForCodeRange(ByteList byteList) {
-        Encoding enc = byteList.getEncoding();
+    public static int scanForCodeRange(final ByteList bytes) {
+        Encoding enc = bytes.getEncoding();
         if (enc.minLength() > 1 && enc.isDummy()) {
             return CR_BROKEN;
-        } else {
-            return codeRangeScan(EncodingUtils.getActualEncoding(enc, byteList), byteList);
         }
+        return codeRangeScan(EncodingUtils.getActualEncoding(enc, bytes), bytes);
     }
 
     final boolean singleByteOptimizable() {
@@ -316,6 +315,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Encoding enc = StringSupport.areCompatible(this, other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
                 value.getEncoding() + " and " + other.getByteList().getEncoding());
+        return enc;
+    }
+
+    public static Encoding checkEncoding(final Ruby runtime, ByteList str1, ByteList str2) {
+        Encoding enc = StringSupport.areCompatible(str1, str2);
+        if (enc == null) {
+            throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                    str1.getEncoding() + " and " + str2.getEncoding());
+        }
         return enc;
     }
 
@@ -1223,10 +1231,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "%", required = 1)
     public RubyString op_format(ThreadContext context, IRubyObject arg) {
-        return opFormatCommon(context, arg);
-    }
-
-    private RubyString opFormatCommon(ThreadContext context, IRubyObject arg) {
         IRubyObject tmp;
         if (arg instanceof RubyHash) {
             tmp = arg;
@@ -4232,7 +4236,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int e, p = 0;
 
-        while (p < realSize && (e = indexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p)) >= 0) {
+        while (p < realSize && (e = indexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p, enc)) >= 0) {
             int t = enc.rightAdjustCharHead(bytes, p + begin, e + begin, begin + realSize) - begin;
             if (t != e) {
                 p = t;
@@ -4251,7 +4255,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // TODO: make the ByteList version public and use it, rather than copying here
-    static int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
+    static int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex, Encoding enc) {
         if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
         if (fromIndex < 0) fromIndex = 0;
         if (targetCount == 0) return fromIndex;
@@ -4259,8 +4263,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         byte first  = target[targetOffset];
         int max = sourceOffset + (sourceCount - targetCount);
 
-        for (int i = sourceOffset + fromIndex; i <= max; i++) {
-            if (source[i] != first) while (++i <= max && source[i] != first);
+        int i = sourceOffset + fromIndex;
+        while (i <= max) {
+            while (i <= max && source[i] != first)
+                i += StringSupport.length(enc, source, i, sourceOffset + sourceCount);
 
             if (i <= max) {
                 int j = i + 1;
@@ -4268,6 +4274,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
 
                 if (j == end) return i - sourceOffset;
+                i += StringSupport.length(enc, source, i, sourceOffset + sourceCount);
             }
         }
         return -1;

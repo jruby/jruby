@@ -28,32 +28,27 @@
 
 package org.jruby;
 
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.exceptions.Unrescuable;
+import org.jruby.exceptions.CatchThrow;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * Placeholder until/if we can support this
- *
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ * Minimal RubyContinuation class to support third-party users.
  */
 @JRubyClass(name="Continuation")
+@Deprecated
 public class RubyContinuation extends RubyObject {
-    public static class Continuation extends RuntimeException implements Unrescuable {
-        public Continuation() {tag = null;}
-        public Continuation(IRubyObject tag) {
-            this.tag = tag;
+    @Deprecated
+    public static class Continuation extends CatchThrow {
+        public Continuation() {
+            super();
         }
-        public IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        public final IRubyObject tag;
-        
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
+
+        public Continuation(IRubyObject tag) {
+            super(tag);
         }
     }
 
@@ -65,13 +60,13 @@ public class RubyContinuation extends RubyObject {
 
         cContinuation.setClassIndex(ClassIndex.CONTINUATION);
         cContinuation.setReifiedClass(RubyContinuation.class);
-        
-        cContinuation.defineAnnotatedMethods(RubyContinuation.class);
+
         cContinuation.getSingletonClass().undefineMethod("new");
         
         runtime.setContinuation(cContinuation);
     }
 
+    @Deprecated
     public RubyContinuation(Ruby runtime) {
         super(runtime, runtime.getContinuation());
         this.continuation = new Continuation();
@@ -83,16 +78,18 @@ public class RubyContinuation extends RubyObject {
      * @param runtime Current JRuby runtime
      * @param tag The tag to use
      */
+    @Deprecated
     public RubyContinuation(Ruby runtime, IRubyObject tag) {
         super(runtime, runtime.getContinuation());
         this.continuation = new Continuation(tag);
     }
 
+    @Deprecated
     public Continuation getContinuation() {
         return continuation;
     }
 
-    @JRubyMethod(name = {"call", "[]"}, rest = true)
+    @Deprecated
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         if (disabled) {
             RubyKernel.raise(context, context.runtime.getThreadError(),
@@ -103,6 +100,7 @@ public class RubyContinuation extends RubyObject {
         throw continuation;
     }
 
+    @Deprecated
     public IRubyObject enter(ThreadContext context, IRubyObject yielded, Block block) {
         try {
             return block.yield(context, yielded);

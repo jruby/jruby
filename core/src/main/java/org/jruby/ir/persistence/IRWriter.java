@@ -5,6 +5,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.LocalVariable;
@@ -84,6 +85,10 @@ public class IRWriter {
         file.encode(scope.getLine());
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
         file.encode(scope.getTemporaryVariablesCount());
+
+        if (scope.getScopeType() == IRScopeType.CLOSURE) {
+            file.encode(((IRClosure) scope).isEND());
+        }
 
         persistScopeLabelIndices(scope, file);
 

@@ -17,6 +17,11 @@ public class DescriptorInfo {
     private boolean block;
     private String parameterDesc;
 
+    // These are sourced from here because ArgumentType references Ruby, which can't load during invoker generation.
+    public static final char ANONREQ_CHAR = 'n';
+    public static final char ANONOPT_CHAR = 'O';
+    public static final char ANONREST_CHAR = 'R';
+
     private static final boolean RICH_NATIVE_METHOD_PARAMETERS = false;
 
     public DescriptorInfo(MethodDescriptor... descs) {
@@ -95,31 +100,32 @@ public class DescriptorInfo {
         StringBuilder descBuilder = new StringBuilder();
 
         // FIXME: argument type names duplicated from ArgumentType, because it pulls in org.jruby.Ruby
-        if (min == max) {
+        if (RICH_NATIVE_METHOD_PARAMETERS) {
             int i = 0;
             for (; i < min; i++) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append('n');
-            }
-            // variable arity
-        } else if (RICH_NATIVE_METHOD_PARAMETERS) {
-            int i = 0;
-            for (; i < min; i++) {
-                if (i > 0) descBuilder.append(';');
-                descBuilder.append('n');
+                descBuilder.append(ANONREQ_CHAR);
             }
 
             for (; i < max; i++) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append('O');
+                descBuilder.append(ANONOPT_CHAR);
             }
 
             if (rest) {
                 if (i > 0) descBuilder.append(';');
-                descBuilder.append('R');
+                descBuilder.append(ANONOPT_CHAR);
             }
         } else {
-            descBuilder.append('R');
+            if (rest || min != max) {
+                descBuilder.append(ANONREST_CHAR);
+            } else {
+                int i = 0;
+                for (; i < min; i++) {
+                    if (i > 0) descBuilder.append(';');
+                    descBuilder.append(ANONREQ_CHAR);
+                }
+            }
         }
 
         parameterDesc = descBuilder.toString();

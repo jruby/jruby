@@ -77,13 +77,13 @@ public class Timeout {
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, IRubyObject message, Block block) {
-        IRubyObject timeout = context.runtime.getModule("Timeout");
         // No seconds, just yield
         if ( nilOrZeroSeconds(context, seconds) ) {
             return block.yieldSpecific(context);
         }
 
         final Ruby runtime = context.runtime;
+        final RubyModule timeout = runtime.getModule("Timeout");
 
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
@@ -99,7 +99,7 @@ public class Timeout {
             return yieldWithTimeout(executor, context, seconds, block, timeoutRunnable, latch);
         } catch (RaiseException re) {
             // if it's the exception we're expecting
-            if (re.getException().getMetaClass() == getDefaultException(timeout)) {
+            if (re.getException().getMetaClass() == getTimeoutError(timeout)) {
                 // and we were not given a specific exception
                 if ( exceptionType.isNil() ) {
                     raiseTimeoutErrorIfMatches(context, timeout, re, id);
@@ -136,12 +136,12 @@ public class Timeout {
         final RubyThread currentThread;
         final AtomicBoolean latch;
 
-        final IRubyObject timeout; // Timeout module
+        final RubyModule timeout; // Timeout module
         final IRubyObject id; // needed for 'anonymous' timeout (no exception passed)
         final IRubyObject exception; // if there's exception (type) passed to timeout
         final RubyString message; // message for exception
 
-        private TimeoutTask(final RubyThread currentThread, final IRubyObject timeout,
+        private TimeoutTask(final RubyThread currentThread, final RubyModule timeout,
             final AtomicBoolean latch, final IRubyObject id, final IRubyObject exception, final RubyString message) {
             this.currentThread = currentThread;
             this.timeout = timeout;
@@ -151,12 +151,12 @@ public class Timeout {
             this.message = message;
         }
 
-        static TimeoutTask newAnonymousTask(final RubyThread currentThread, final IRubyObject timeout,
+        static TimeoutTask newAnonymousTask(final RubyThread currentThread, final RubyModule timeout,
                                             final AtomicBoolean latch, final IRubyObject id, final RubyString message) {
             return new TimeoutTask(currentThread, timeout, latch, id, null, message);
         }
 
-        static TimeoutTask newTaskWithException(final RubyThread currentThread, final IRubyObject timeout,
+        static TimeoutTask newTaskWithException(final RubyThread currentThread, final RubyModule timeout,
             final AtomicBoolean latch, final IRubyObject exception, final RubyString message) {
             return new TimeoutTask(currentThread, timeout, latch, null, exception, message);
         }
@@ -174,7 +174,7 @@ public class Timeout {
         private void raiseAnonymous() {
             // TODO: MRI calls Timeout::Error.catch here with the body of the timeout; we use __identifier__.
             IRubyObject anonException =
-                    getDefaultException(timeout).newInstance(timeout.getRuntime().getCurrentContext(), message, Block.NULL_BLOCK);
+                    getTimeoutError(timeout).newInstance(timeout.getRuntime().getCurrentContext(), message, Block.NULL_BLOCK);
             anonException.getInternalVariables().setInternalVariable("__identifier__", id);
             currentThread.raise(anonException);
         }
@@ -204,7 +204,7 @@ public class Timeout {
     }
 
     private static IRubyObject raiseTimeoutErrorIfMatches(ThreadContext context,
-        final IRubyObject timeout, final RaiseException ex, final IRubyObject id) {
+        final RubyModule timeout, final RaiseException ex, final IRubyObject id) {
 
         // check if it's the exception intended for us
         if ( ex.getException().getInternalVariable("__identifier__") == id ) {
@@ -214,7 +214,7 @@ public class Timeout {
                     context,
                     context.runtime.getKernel(),
                     new IRubyObject[] {
-                        getClassFrom(timeout, "Error"), // Timeout::Error
+                        getTimeoutError(timeout), // Timeout::Error
                         rubyException.callMethod(context, "message"),
                         rubyException.callMethod(context, "backtrace")
                     },
@@ -223,11 +223,8 @@ public class Timeout {
         return null;
     }
 
-    private static RubyClass getDefaultException(final IRubyObject timeout) {
-        return getClassFrom(timeout, "Error");
+    private static RubyClass getTimeoutError(final RubyModule timeout) {
+        return timeout.getClass("Error"); // Timeout::Error
     }
 
-    private static RubyClass getClassFrom(final IRubyObject timeout, final String name) {
-        return ((RubyModule) timeout).getClass(name); // Timeout::[name]
-    }
 }

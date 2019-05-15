@@ -13,7 +13,9 @@ properties( 'jruby.plugins.version' => '1.0.10',
 pom 'org.jruby:jruby', '${jruby.version}'
 
 model.repositories.clear
-repository( :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases', :id => 'rubygems-releases' )
+
+extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
 jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'
 

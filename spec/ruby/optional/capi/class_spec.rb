@@ -109,6 +109,16 @@ describe "C-API Class function" do
     end
   end
 
+  describe "rb_define_method" do
+    it "defines a method taking variable arguments as a C array if the argument count is -1" do
+      @s.rb_method_varargs_1(1, 3, 7, 4).should == [1, 3, 7, 4]
+    end
+
+    it "defines a method taking variable arguments as a Ruby array if the argument count is -2" do
+      @s.rb_method_varargs_2(1, 3, 7, 4).should == [1, 3, 7, 4]
+    end
+  end
+
   describe "rb_class2name" do
     it "returns the class name" do
       @s.rb_class2name(CApiClassSpecs).should == "CApiClassSpecs"
@@ -227,12 +237,10 @@ describe "C-API Class function" do
       }.should raise_error(TypeError)
     end
 
-    ruby_version_is "2.4" do
-      it "raises a ArgumentError when given NULL as superclass" do
-        lambda {
-          @s.rb_define_class("ClassSpecDefineClass4", nil)
-        }.should raise_error(ArgumentError)
-      end
+    it "raises a ArgumentError when given NULL as superclass" do
+      lambda {
+        @s.rb_define_class("ClassSpecDefineClass4", nil)
+      }.should raise_error(ArgumentError)
     end
   end
 

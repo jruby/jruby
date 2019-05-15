@@ -37,6 +37,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 /**
  * An unbound method representation (e.g. when retrieving an instance method from a class - isn't bound to any instance).
@@ -55,14 +56,16 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         String methodName,
         RubyModule originModule,
         String originName,
-        DynamicMethod method) {
+        CacheEntry entry) {
         RubyUnboundMethod newMethod = new RubyUnboundMethod(implementationModule.getRuntime());
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
-        newMethod.method = method;
+        newMethod.entry = entry;
+        newMethod.method = entry.method;
+        newMethod.sourceModule = entry.sourceModule;
 
         return newMethod;
     }
@@ -117,13 +120,13 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         
         receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context));
         
-        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
+        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, entry, aReceiver);
     }
 
     @JRubyMethod(name = "clone")
     @Override
     public RubyUnboundMethod rbClone() {
-        return newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        return newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
@@ -158,6 +161,6 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context ) {
-        return super_method(context, null, implementationModule.getSuperClass());
+        return super_method(context, null, sourceModule.getSuperClass());
     }
 }

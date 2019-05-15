@@ -53,15 +53,22 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.ext.jruby.JRubyLibrary;
+import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.runtime.IRWrappedLambdaReturnValue;
+import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.JavaPackage;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
+import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
@@ -96,7 +103,6 @@ import org.jruby.embed.Extension;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.JRubyPOSIXHandler;
-import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ext.ffi.FFI;
 import org.jruby.ext.fiber.ThreadFiber;
@@ -141,7 +147,6 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.CompiledScriptLoader;
-import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
@@ -172,6 +177,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassReader;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -859,7 +865,25 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
-        return interpreter.execute(this, parseResult, self);
+        try {
+            return interpreter.execute(this, parseResult, self);
+        } catch (IRReturnJump ex) {
+            /* We happen to not push script scope as a dynamic scope or at least we seem to get rid of it.
+             * This will capture any return which says it should return to a script scope as the reasonable
+             * exit point.  We still raise when jump off point is anything else since that is a bug.
+             */
+            if (!ex.methodToReturnFrom.isScriptScope()) {
+                System.err.println("Unexpected 'return' escaped the runtime from " + ex.returnScope + " to " + ex.methodToReturnFrom);
+                System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(ex, false));
+                Throwable t = ex;
+                while ((t = t.getCause()) != null) {
+                    System.err.println("Caused by:");
+                    System.err.println(ThreadContext.createRawBacktraceStringFromThrowable(t, false));
+                }
+            }
+        }
+
+        return context.nil;
    }
 
     public IRubyObject runInterpreter(ThreadContext context,  Node rootNode, IRubyObject self) {
@@ -1238,34 +1262,36 @@ public final class Ruby implements Constantizable {
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
 
-        // initialize builtin libraries
-        initBuiltins();
-
-        // load JRuby internals, which loads Java support
-        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
-        boolean reflectionWorks = doesReflectionWork();
-
-        if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks) {
-            loadService.require("jruby");
-        }
-
-        SecurityHelper.checkCryptoRestrictions(this);
-
         // out of base boot mode
         bootingCore = false;
 
-        // init Ruby-based kernel
-        initRubyKernel();
+        // Don't load boot-time libraries when debugging IR
+        if (!RubyInstanceConfig.DEBUG_PARSER) {
+            // initialize Java support
+            initJavaSupport();
 
-        // Define blank modules for feature detection in preludes
-        if (!config.isDisableGems()) {
-            defineModule("Gem");
-        }
-        if (!config.isDisableDidYouMean()) {
-            defineModule("DidYouMean");
+            // init Ruby-based kernel
+            initRubyKernel();
+
+            // Define blank modules for feature detection in preludes
+            if (!config.isDisableGems()) {
+                defineModule("Gem");
+            }
+            if (!config.isDisableDidYouMean()) {
+                defineModule("DidYouMean");
+            }
+
+            // Provide some legacy libraries
+            loadService.provide("enumerator", "enumerator.rb");
+            loadService.provide("rational", "rational.rb");
+            loadService.provide("complex", "complex.rb");
+            loadService.provide("thread", "thread.rb");
+
+            // Load preludes
+            initRubyPreludes();
         }
 
-        initRubyPreludes();
+        SecurityHelper.checkCryptoRestrictions(this);
 
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
@@ -1359,6 +1385,7 @@ public final class Ruby implements Constantizable {
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
+        objectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
@@ -1559,17 +1586,26 @@ public final class Ruby implements Constantizable {
         if (profile.allowModule("Signal")) {
             RubySignal.createSignal(this);
         }
-        if (profile.allowClass("Continuation")) {
-            RubyContinuation.createContinuation(this);
-        }
 
         if (profile.allowClass("Enumerator")) {
             RubyEnumerator.defineEnumerator(this);
         }
 
+        initContinuation();
+
         TracePoint.createTracePointClass(this);
 
         RubyWarnings.createWarningModule(this);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void initContinuation() {
+        // Bare-bones class for backward compatibility
+        if (profile.allowClass("Continuation")) {
+            // Some third-party code (racc's cparse ext, at least) uses RubyContinuation directly, so we need this.
+            // Most functionality lives in continuation.rb now.
+            RubyContinuation.createContinuation(this);
+        }
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -1708,69 +1744,30 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void initBuiltins() {
-        // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
+    /**
+     * Load libraries expected to be present after a normal boot.
+     *
+     * This used to register lazy "builtins" that were shipped with JRuby but did not have a file on the filesystem
+     * to load via normal `require` logic. Because of how this interacted (badly) with require-hooking tools like
+     * bootsnap, we have moved to having all builtins as actual files rather than special virtual entries.
+     */
+    private void initJavaSupport() {
+        // load JRuby internals, which loads Java support
+        // if we can't use reflection, 'jruby' and 'java' won't work; no load.
+        boolean reflectionWorks = doesReflectionWork();
 
-        addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
-        addLazyBuiltin("jruby.rb", "jruby", "org.jruby.ext.jruby.JRubyLibrary");
-        addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.ext.jruby.JRubyUtilLibrary");
-        addLazyBuiltin("nkf.jar", "nkf", "org.jruby.ext.nkf.NKFLibrary");
-        addLazyBuiltin("stringio.jar", "stringio", "org.jruby.ext.stringio.StringIOLibrary");
-        addLazyBuiltin("strscan.jar", "strscan", "org.jruby.ext.strscan.StringScannerLibrary");
-        addLazyBuiltin("zlib.jar", "zlib", "org.jruby.ext.zlib.ZlibLibrary");
-        addLazyBuiltin("digest.jar", "digest.so", "org.jruby.ext.digest.DigestLibrary");
-        addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.ext.digest.MD5");
-        addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.ext.digest.RMD160");
-        addLazyBuiltin("digest/sha1.jar", "digest/sha1", "org.jruby.ext.digest.SHA1");
-        addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.ext.digest.SHA2");
-        addLazyBuiltin("digest/bubblebabble.jar", "digest/bubblebabble", "org.jruby.ext.digest.BubbleBabble");
-        addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
-        addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
-        addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
-        addLazyBuiltin("socket.jar", "socket", "org.jruby.ext.socket.SocketLibrary");
-        addLazyBuiltin("rbconfig.rb", "rbconfig", "org.jruby.ext.rbconfig.RbConfigLibrary");
-        addLazyBuiltin("jruby/serialization.rb", "serialization", "org.jruby.ext.jruby.JRubySerializationLibrary");
-        addLazyBuiltin("ffi-internal.jar", "ffi-internal", "org.jruby.ext.ffi.FFIService");
-        addLazyBuiltin("tempfile.jar", "tempfile", "org.jruby.ext.tempfile.TempfileLibrary");
-        addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
-        addLazyBuiltin("pathname.jar", "pathname", "org.jruby.ext.pathname.PathnameLibrary");
-        addLazyBuiltin("set.rb", "set", "org.jruby.ext.set.SetLibrary");
-        addLazyBuiltin("date.jar", "date", "org.jruby.ext.date.DateLibrary");
-        addLazyBuiltin("securerandom.jar", "securerandom", "org.jruby.ext.securerandom.SecureRandomLibrary");
-        addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
-        addLazyBuiltin("mathn/rational.jar", "mathn/rational", "org.jruby.ext.mathn.Rational");
-        addLazyBuiltin("ripper.jar", "ripper", "org.jruby.ext.ripper.RipperLibrary");
-        addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
+        if (reflectionWorks) {
+            new Java().load(this, false);
+            new JRubyLibrary().load(this, false);
+            new JRubyUtilLibrary().load(this, false);
 
-        // TODO: implement something for these?
-        addBuiltinIfAllowed("continuation.rb", Library.DUMMY);
-
-        // for backward compatibility
-        loadService.provide("enumerator.jar"); // can't be in RubyEnumerator because LoadService isn't ready then
-        loadService.provide("rational.jar");
-        loadService.provide("complex.jar");
-
-        // we define the classes at boot because we need them
-        addBuiltinIfAllowed("thread.rb", Library.DUMMY);
-
-        if (RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
-            addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
+            loadService.provide("java", "java.rb");
+            loadService.provide("jruby", "jruby.rb");
+            loadService.provide("jruby/util", "jruby/util.rb");
         }
-
-        addBuiltinIfAllowed("win32ole.jar", new Library() {
-            public void load(Ruby runtime, boolean wrap) throws IOException {
-                runtime.getLoadService().require("jruby/win32ole/stub");
-            }
-        });
-
-        addLazyBuiltin("cgi/escape.jar", "cgi/escape", "org.jruby.ext.cgi.escape.CGIEscape");
     }
 
     private void initRubyKernel() {
-        // We cannot load any .rb and debug new parser features
-        if (RubyInstanceConfig.DEBUG_PARSER) return;
-
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
     }
@@ -1781,16 +1778,6 @@ public final class Ruby implements Constantizable {
 
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
-    }
-
-    private void addLazyBuiltin(String name, String shortName, String className) {
-        addBuiltinIfAllowed(name, new LateLoadingLibrary(shortName, className, getClassLoader()));
-    }
-
-    private void addBuiltinIfAllowed(String name, Library lib) {
-        if (profile.allowBuiltin(name)) {
-            loadService.addBuiltinLibrary(name, lib);
-        }
     }
 
     public IRManager getIRManager() {
@@ -2878,30 +2865,49 @@ public final class Ruby implements Constantizable {
     }
 
     public RubyModule getClassFromPath(final String path) {
+        return getClassFromPath(path, getTypeError(), true);
+    }
+
+    /**
+     * Find module from a string (e.g. Foo, Foo::Bar::Car).
+     *
+     * @param path the path to be searched.
+     * @param undefinedExceptionClass exception type to be thrown when it cannot be found.
+     * @param flexibleSearch use getConstant vs getConstantAt (former will find inherited constants from parents and fire const_missing).
+     * @return the module or null when flexible search is false and a constant cannot be found.
+     */
+    public RubyModule getClassFromPath(final String path, RubyClass undefinedExceptionClass, boolean flexibleSearch) {
         if (path.length() == 0 || path.charAt(0) == '#') {
-            throw newTypeError(str(this, "can't retrieve anonymous class ", ids(this, path)));
+            throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
+        ThreadContext context = getCurrentContext();
         RubyModule c = getObject();
         int pbeg = 0, p = 0;
-        for ( final int l = path.length(); p < l; ) {
+        for (int l = path.length(); p < l; ) {
             while ( p < l && path.charAt(p) != ':' ) p++;
 
             final String str = path.substring(pbeg, p);
 
             if ( p < l && path.charAt(p) == ':' ) {
                 if ( ++p < l && path.charAt(p) != ':' ) {
-                    throw newTypeError(str(this, "undefined class/module ", ids(this, str)));
+                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path)));
                 }
                 pbeg = ++p;
             }
 
-            IRubyObject cc = c.getConstant(str);
-            if ( ! ( cc instanceof RubyModule ) ) {
-                throw newTypeError(str(this, ids(this, path), " does not refer to class/module"));
+            // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
+            boolean isJava = c instanceof JavaPackage || JavaClass.isProxyType(context, c);
+            IRubyObject cc = flexibleSearch || isJava ? c.getConstant(str) : c.getConstantAt(str);
+
+            if (!flexibleSearch && cc == null) return null;
+
+            if (!(cc instanceof RubyModule)) {
+                throw newRaiseException(getTypeError(), str(this, ids(this, path), " does not refer to class/module"));
             }
             c = (RubyModule) cc;
         }
+
         return c;
     }
 
@@ -2910,13 +2916,11 @@ public final class Ruby implements Constantizable {
      * MRI: eval.c - error_print()
      *
      */
-    public void printError(RubyException excp) {
-        if (excp == null || excp.isNil()) {
-            return;
-        }
+    public void printError(final RubyException ex) {
+        if (ex == null) return;
 
         PrintStream errorStream = getErrorStream();
-        String backtrace = config.getTraceType().printBacktrace(excp, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
+        String backtrace = config.getTraceType().printBacktrace(ex, errorStream == System.err && getPosix().isatty(FileDescriptor.err));
         try {
             errorStream.print(backtrace);
         } catch (Exception e) {
@@ -2924,15 +2928,26 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    public void printError(Throwable t) {
-        if (t instanceof RaiseException) {
-            printError(((RaiseException) t).getException());
+    public void printError(final Throwable ex) {
+        if (ex instanceof RaiseException) {
+            printError(((RaiseException) ex).getException());
+            return;
         }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream errorStream = getErrorStream();
+
+        ex.printStackTrace(new PrintStream(baos));
+
         try {
-            t.printStackTrace(errorStream);
+            errorStream.write(baos.toByteArray());
         } catch (Exception e) {
-            t.printStackTrace(System.err);
+            try {
+                System.err.write(baos.toByteArray());
+            } catch (IOException ioe) {
+                ioe.initCause(e);
+                throw new RuntimeException("BUG: could not write exception trace", ioe);
+            }
         }
     }
 
@@ -3086,19 +3101,20 @@ public final class Ruby implements Constantizable {
         return javaProxyClassFactory;
     }
 
-    public class CallTraceFuncHook extends EventHook {
+    private static final EnumSet<RubyEvent> interest =
+            EnumSet.of(
+                    RubyEvent.C_CALL,
+                    RubyEvent.C_RETURN,
+                    RubyEvent.CALL,
+                    RubyEvent.CLASS,
+                    RubyEvent.END,
+                    RubyEvent.LINE,
+                    RubyEvent.RAISE,
+                    RubyEvent.RETURN
+            );
+
+    public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
-        private EnumSet<RubyEvent> interest =
-                EnumSet.of(
-                        RubyEvent.C_CALL,
-                        RubyEvent.C_RETURN,
-                        RubyEvent.CALL,
-                        RubyEvent.CLASS,
-                        RubyEvent.END,
-                        RubyEvent.LINE,
-                        RubyEvent.RAISE,
-                        RubyEvent.RETURN
-                );
 
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;
@@ -3107,19 +3123,20 @@ public final class Ruby implements Constantizable {
         public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
             if (!context.isWithinTrace()) {
                 if (file == null) file = "(ruby)";
-                if (type == null) type = getNil();
+                if (type == null) type = context.nil;
 
-                RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
+                Ruby runtime = context.runtime;
+                RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
 
                 context.preTrace();
                 try {
-                    traceFunc.call(context, new IRubyObject[] {
-                        newString(eventName), // event name
-                        newString(file), // filename
-                        newFixnum(line), // line numbers should be 1-based
-                        name != null ? newSymbol(name) : getNil(),
-                        binding,
-                        type
+                    traceFunc.call(context, new IRubyObject[]{
+                            runtime.newString(eventName), // event name
+                            runtime.newString(file), // filename
+                            runtime.newFixnum(line), // line numbers should be 1-based
+                            name != null ? runtime.newSymbol(name) : runtime.getNil(),
+                            binding,
+                            type
                     });
                 } finally {
                     context.postTrace();
@@ -3131,12 +3148,17 @@ public final class Ruby implements Constantizable {
         public boolean isInterestedInEvent(RubyEvent event) {
             return interest.contains(event);
         }
+
+        @Override
+        public EnumSet<RubyEvent> eventSet() {
+            return interest;
+        }
     };
 
-    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    private static final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
 
     public synchronized void addEventHook(EventHook hook) {
-        if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
+        if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {
             // without full tracing, many events will not fire
             getWarnings().warn("tracing (e.g. set_trace_func) will not capture all events without --debug flag");
         }
@@ -3314,28 +3336,40 @@ public final class Ruby implements Constantizable {
             try {
                 proc.call(context, IRubyObject.NULL_ARRAY);
             } catch (RaiseException rj) {
-                RubyException raisedException = rj.getException();
-                if (!getSystemExit().isInstance(raisedException)) {
-                    status = 1;
-                    printError(raisedException);
-                } else {
-                    IRubyObject statusObj = raisedException.callMethod(context, "status");
-                    if (statusObj != null && !statusObj.isNil()) {
-                        status = RubyNumeric.fix2int(statusObj);
+                // END { return } can generally be statically determined during build time so we generate the LJE
+                // then.  This if captures the static side of this. See IReturnJump below for dynamic case
+                if (rj.getException() instanceof RubyLocalJumpError) {
+                    RubyLocalJumpError rlje = (RubyLocalJumpError) rj.getException();
+                    String filename = proc.getBlock().getBinding().filename;
+
+                    if (rlje.getReason() == RubyLocalJumpError.Reason.RETURN) {
+                        getWarnings().warn(filename, "unexpected return");
+                    } else {
+                        getWarnings().warn(filename, "break from proc-closure");
                     }
+
+                } else {
+                    RubyException raisedException = rj.getException();
+                    if (!getSystemExit().isInstance(raisedException)) {
+                        status = 1;
+                        printError(raisedException);
+                    } else {
+                        IRubyObject statusObj = raisedException.callMethod(context, "status");
+                        if (statusObj != null && !statusObj.isNil()) {
+                            status = RubyNumeric.fix2int(statusObj);
+                        }
+                    }
+                    // Reset $! now that rj has been handled
+                    // context.runtime.getGlobalVariables().set("$!", oldExc);
                 }
-                // Reset $! now that rj has been handled
-                // context.runtime.getGlobalVariables().set("$!", oldExc);
-            } catch (IRWrappedLambdaReturnValue e) {
+            }  catch (IRReturnJump e) {
+                // This capture dynamic returns happening in an end block where it cannot be statically determined
+                // (like within an eval.
+
                 // This is partially similar to code in eval_error.c:error_handle but with less actual cases.
                 // IR treats END blocks are closures and as such we see this special non-local return jump type
                 // bubble this far out as we exec each END proc.
-                String filename = proc.getBlock().getBinding().filename;
-                if (e.isReturn()) {
-                    getWarnings().warn(filename, "unexpected return");
-                } else {
-                    getWarnings().warn(filename, "break from proc-closure");
-                }
+                getWarnings().warn(proc.getBlock().getBinding().filename, "unexpected return");
             }
         }
 
@@ -4309,7 +4343,7 @@ public final class Ruby implements Constantizable {
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
 
         if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            ex.forceBacktrace(disabledBacktrace());
+            ex.setBacktrace(disabledBacktrace());
         }
 
         return ex.toThrowable();
@@ -5311,8 +5345,8 @@ public final class Ruby implements Constantizable {
     /** Used to find the ProfilingService implementation to use. If profiling is disabled it's null */
     private final ProfilingServiceLookup profilingServiceLookup;
 
-    private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
-    private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
+    private final EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<>(DefinedMessage.class);
+    private final EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<>(RubyThread.Status.class);
 
     public interface ObjectSpacer {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);

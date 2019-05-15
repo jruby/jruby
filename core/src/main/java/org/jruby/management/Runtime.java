@@ -40,6 +40,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.TraceType.Format;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 
@@ -108,7 +109,7 @@ public class Runtime implements RuntimeMBean {
         ThreadContext tc = th.getContext();
         if (tc != null) {
             RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
-            exc.setBacktraceData(WALKER.walk(th.getNativeThread().getStackTrace(), stream -> gather.getBacktraceData(tc, stream)));
+            exc.toThrowable();
             pw.println(Format.MRI.printBacktrace(exc, false));
         } else {
             pw.println("    [no longer alive]");

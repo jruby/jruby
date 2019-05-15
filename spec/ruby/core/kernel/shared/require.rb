@@ -225,9 +225,8 @@ describe :kernel_require, shared: true do
     it "loads a file that recursively requires itself" do
       path = File.expand_path "recursive_require_fixture.rb", CODE_LOADING_DIR
       -> {
-        $VERBOSE = true
         @object.require(path).should be_true
-      }.should complain(/circular require considered harmful/)
+      }.should complain(/circular require considered harmful/, verbose: true)
       ScratchPad.recorded.should == [:loaded]
     end
   end
@@ -553,6 +552,15 @@ describe :kernel_require, shared: true do
         code = provided.map { |f| "puts require #{f.inspect}\n" }.join
         required = ruby_exe(code, options: '--disable-gems')
         required.should == "false\n" * provided.size
+      end
+
+      it "unicode_normalize is part of core and not $LOADED_FEATURES" do
+        features = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems')
+        features.lines.each { |feature|
+          feature.should_not include("unicode_normalize")
+        }
+
+        -> { @object.require("unicode_normalize") }.should raise_error(LoadError)
       end
     end
   end

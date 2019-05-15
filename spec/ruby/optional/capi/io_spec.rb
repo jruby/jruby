@@ -9,7 +9,7 @@ describe "C-API IO function" do
     @name = tmp("c_api_rb_io_specs")
     touch @name
 
-    @io = new_io @name, fmode("w:utf-8")
+    @io = new_io @name, "w:utf-8"
     @io.sync = true
   end
 
@@ -113,7 +113,7 @@ describe "C-API IO function" do
     @name = tmp("c_api_io_specs")
     touch @name
 
-    @io = new_io @name, fmode("r:utf-8")
+    @io = new_io @name, "r:utf-8"
   end
 
   after :each do
@@ -193,7 +193,7 @@ describe "C-API IO function" do
 
     @name = tmp("c_api_io_specs")
     touch @name
-    @rw_io = new_io @name, fmode("w+")
+    @rw_io = new_io @name, "w+"
   end
 
   after :each do
@@ -299,6 +299,26 @@ describe "C-API IO function" do
     end
   end
 
+  describe "rb_wait_for_single_fd" do
+    it "waits til an fd is ready for reading" do
+      start = false
+      thr = Thread.new do
+        start = true
+        sleep 0.05
+        @w_io.write "rb_io_wait_readable"
+      end
+
+      Thread.pass until start
+
+      @o.rb_wait_for_single_fd(@r_io, 1, nil, nil).should == 1
+
+      thr.join
+    end
+
+    it "polls whether an fd is ready for reading if timeout is 0" do
+      @o.rb_wait_for_single_fd(@r_io, 1, 0, 0).should == 0
+    end
+  end
 end
 
 describe "rb_fd_fix_cloexec" do
@@ -309,7 +329,7 @@ describe "rb_fd_fix_cloexec" do
     @name = tmp("c_api_rb_io_specs")
     touch @name
 
-    @io = new_io @name, fmode("w:utf-8")
+    @io = new_io @name, "w:utf-8"
     @io.close_on_exec = false
     @io.sync = true
   end

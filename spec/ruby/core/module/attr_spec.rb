@@ -54,7 +54,7 @@ describe "Module#attr" do
     o.attr3 = "test3 updated"
   end
 
-  it "creates a getter and setter for the given attribute name if called with and without writeable is true" do
+  it "creates a getter and setter for the given attribute name if called with and without writable is true" do
     c = Class.new do
       attr :attr, true
       attr :attr
@@ -138,9 +138,8 @@ describe "Module#attr" do
 
   it "with a boolean argument emits a warning when $VERBOSE is true" do
     lambda {
-      $VERBOSE = true
       Class.new { attr :foo, true }
-    }.should complain(/boolean argument is obsoleted/)
+    }.should complain(/boolean argument is obsoleted/, verbose: true)
   end
 
   ruby_version_is ''...'2.5' do

@@ -570,14 +570,24 @@ public class RubyDate extends RubyObject {
 
                     subMillisNum = ((1000 * r0) - (millis * r1));
                     subMillisDen = r1;
-                    long gcd = i_gcd(subMillisNum, subMillisDen);
-                    subMillisNum = subMillisNum / gcd;
-                    subMillisDen = subMillisDen / gcd;
+                    normalizeSubMillis();
                 }
             }
         }
 
         this.dt = dt;
+    }
+
+    final RubyDate normalizeSubMillis() {
+        long subNum = subMillisNum;
+        long subDen = subMillisDen;
+        if (subNum == 0) subMillisDen = 1;
+        else {
+            long gcd = i_gcd(subNum, subDen);
+            subMillisNum = subNum / gcd;
+            subMillisDen = subDen / gcd;
+        }
+        return this;
     }
 
     @JRubyMethod(name = "valid_jd?", meta = true)
@@ -713,13 +723,19 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self) { // sg=ITALY
-        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, ITALY, 0)).withTimeAtStartOfDay());
+        return new RubyDate(context.runtime, (RubyClass) self, todayDate(context, CHRONO_ITALY_UTC));
     }
 
     @JRubyMethod(meta = true)
     public static RubyDate today(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final long start = val2sg(context, sg);
-        return new RubyDate(context.runtime, (RubyClass) self, new DateTime(getChronology(context, start, 0)).withTimeAtStartOfDay(), 0, start);
+        final Chronology chrono = getChronology(context, start, 0);
+        return new RubyDate(context.runtime, (RubyClass) self, todayDate(context, chrono), 0, start);
+    }
+
+    private static DateTime todayDate(final ThreadContext context, final Chronology chrono) {
+        org.joda.time.LocalDate today = new org.joda.time.LocalDate(RubyTime.getLocalTimeZone(context.runtime));
+        return new DateTime(today.getYear(), today.getMonthOfYear(), today.getDayOfMonth(), 0, 0, chrono);
     }
 
     @JRubyMethod(name = "_valid_civil?", meta = true, required = 3, optional = 1)
@@ -752,18 +768,50 @@ public class RubyDate extends RubyObject {
 
     @Override
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(IRubyObject other) throws RuntimeException {
+    public IRubyObject eql_p(IRubyObject other) {
         if (other instanceof RubyDate) {
             return getRuntime().newBoolean( equals((RubyDate) other) );
         }
         return getRuntime().getFalse();
     }
 
+    /**
+     * The relationship operator for Date.
+     *
+     * Compares dates by Julian Day Number.  When comparing two DateTime instances, or a DateTime with a Date,
+     * the instances will be regarded as equivalent if they fall on the same date in local time.
+     * @param context
+     * @param other
+     * @return true/false/nil
+     */
+    @Override
+    @JRubyMethod(name = "===", required = 1)
+    public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyDate) {
+            return f_equal(context, jd(context), ((RubyDate) other).jd(context));
+        }
+        if (other instanceof RubyNumeric) {
+            return f_equal(context, jd(context), other);
+        }
+        return fallback_eqq(context, other); // rb_num_coerce_cmp(self, other, "==")
+    }
+
+    private IRubyObject fallback_eqq(ThreadContext context, IRubyObject other) {
+        RubyArray res;
+        try {
+            res = (RubyArray) other.callMethod(context, "coerce", this);
+        } catch (RaiseException ex) {
+            if (ex.getException() instanceof RubyNoMethodError) return context.nil;
+            throw ex;
+        }
+        return f_equal(context, res.eltInternal(0), res.eltInternal(1));
+    }
+
     @Override
     @JRubyMethod(name = "<=>", required = 1)
-    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) throws RaiseException {
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyDate) {
-            return context.runtime.newFixnum(cmp((RubyDate) other));
+            return context.runtime.newFixnum(cmp(context, (RubyDate) other));
         }
 
         // other (Numeric) - interpreted as an Astronomical Julian Day Number.
@@ -776,14 +824,13 @@ public class RubyDate extends RubyObject {
         // considered as falling on midnight UTC.
 
         if (other instanceof RubyNumeric) {
-            final IRubyObject ajd = ajd(context);
-            return context.sites.Numeric.op_cmp.call(context, ajd, ajd, other);
+            return f_cmp(context, ajd(context), other);
         }
 
         return fallback_cmp(context, other);
     }
 
-    private int cmp(final RubyDate that) {
+    private int cmp(ThreadContext context, final RubyDate that) {
         int cmp = this.dt.compareTo(that.dt); // 0, +1, -1
 
         if (cmp == 0) {
@@ -794,14 +841,13 @@ public class RubyDate extends RubyObject {
                 if (subNum1 > subNum2) return +1;
                 return 0;
             }
-            return cmpSubMillis(that);
+            return cmpSubMillis(context, that);
         }
 
         return cmp;
     }
 
-    private int cmpSubMillis(final RubyDate that) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    private int cmpSubMillis(ThreadContext context, final RubyDate that) {
         RubyNumeric diff = subMillisDiff(context, that);
         return diff.isZero() ? 0 : ( Numeric.f_negative_p(context, diff) ? -1 : +1 );
     }
@@ -810,8 +856,7 @@ public class RubyDate extends RubyObject {
         RubyArray res;
         try {
             res = (RubyArray) other.callMethod(context, "coerce", this);
-        }
-        catch (RaiseException ex) {
+        } catch (RaiseException ex) {
             if (ex.getException() instanceof RubyNoMethodError) return context.nil;
             throw ex;
         }
@@ -1156,7 +1201,7 @@ public class RubyDate extends RubyObject {
         throw context.runtime.newTypeError("expected numeric");
     }
 
-    IRubyObject op_plus_numeric(ThreadContext context, RubyNumeric n) {
+    RubyDate op_plus_numeric(ThreadContext context, RubyNumeric n) {
         final Ruby runtime = context.runtime;
         // ms, sub = (n * 86_400_000).divmod(1)
         // sub = 0 if sub == 0 # avoid Rational(0, 1)
@@ -1175,9 +1220,7 @@ public class RubyDate extends RubyObject {
 
         if ( sub.isZero() ) ; // done - noop
         else if ( sub instanceof RubyFloat ) {
-            final int SUB_MS_PRECISION = 1_000_000_000;
-            long s = Math.round(((RubyFloat) sub).getDoubleValue() * SUB_MS_PRECISION);
-            sub = (RubyNumeric) RubyRational.newRationalCanonicalize(context, s, SUB_MS_PRECISION);
+            sub = roundToPrecision(context, (RubyFloat) sub, SUB_MS_PRECISION);
             sub_millis = (RubyNumeric) sub_millis.op_plus(context, sub);
         }
         else {
@@ -1189,7 +1232,14 @@ public class RubyDate extends RubyObject {
         if (subNum / subDen >= 1) { // sub_millis >= 1
             subNum -= subDen; ms += 1; // sub_millis -= 1
         }
-        return newInstance(context, dt.plus(ms), off, start, subNum, subDen);
+        return newInstance(context, dt.plus(ms), off, start, subNum, subDen).normalizeSubMillis();
+    }
+
+    static final int SUB_MS_PRECISION = 1_000_000_000;
+
+    static RubyNumeric roundToPrecision(ThreadContext context, RubyFloat sub, final long precision) {
+        long s = Math.round(sub.getDoubleValue() * precision);
+        return (RubyNumeric) RubyRational.newRationalCanonicalize(context, s, precision);
     }
 
     @JRubyMethod(name = "-")
@@ -1213,6 +1263,7 @@ public class RubyDate extends RubyObject {
 
         RubyNumeric subDiff = subMillisDiff(context, that);
         if ( ! subDiff.isZero() ) { // diff += diff_sub;
+            subDiff = subDiff.convertToRational().op_div(context, RubyFixnum.newFixnum(context.runtime, DAY_MS));  // #5493
             return (RubyNumeric) diffMillis.op_plus(context, subDiff);
         }
         return diffMillis;
@@ -1220,8 +1271,12 @@ public class RubyDate extends RubyObject {
 
     private RubyNumeric subMillisDiff(final ThreadContext context, final RubyDate that) {
         final Ruby runtime = context.runtime;
+        long subNum1 = this.subMillisNum;
+        long subNum2 = that.subMillisNum;
+        if (subNum2 == 0) return RubyRational.newRational(runtime, +subNum1, this.subMillisDen);
+        if (subNum1 == 0) return RubyRational.newRational(runtime, -subNum2, that.subMillisDen);
         if (this.subMillisDen == 1 && that.subMillisDen == 1) {
-            return (RubyInteger) RubyFixnum.newFixnum(runtime, this.subMillisNum).op_minus(context, that.subMillisNum);
+            return (RubyInteger) RubyFixnum.newFixnum(runtime, subNum1).op_minus(context, subNum2);
         }
         return this.subMillis(runtime).op_minus(context, that.subMillis(runtime));
     }

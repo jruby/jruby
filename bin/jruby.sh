@@ -280,7 +280,7 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]; then
+if [[ "$NO_BOOTCLASSPATH" != "" || ( "$VERIFY_JRUBY" != "" ) ]]; then
   if [ "$PROFILE_ARGS" != "" ]; then
       echo "Running with instrumented profiler"
   fi

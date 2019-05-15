@@ -4,6 +4,30 @@ require_relative '../../shared/string/times'
 
 load_extension('string')
 
+class CApiStringSpecs
+  class ValidTostrTest
+    def to_str
+      "ruby"
+    end
+  end
+
+  class InvalidTostrTest
+    def to_str
+      []
+    end
+  end
+
+  class ToSOrInspect
+    def to_s
+      'A string'
+    end
+
+    def inspect
+      'A different string'
+    end
+  end
+end
+
 describe :rb_str_new2, shared: true do
   it "returns a new string object calling strlen on the passed C string" do
     # Hardcoded to pass const char * = "hello\0invisible"
@@ -20,56 +44,56 @@ describe "C-API String function" do
     @s = CApiStringSpecs.new
   end
 
-  class ValidTostrTest
-    def to_str
-      "ruby"
-    end
-  end
+  [Encoding::BINARY, Encoding::UTF_8].each do |enc|
+    describe "rb_str_set_len on a #{enc.name} String" do
+      before :each do
+        @str = "abcdefghij".force_encoding(enc)
+        # Make sure to unshare the string
+        @s.rb_str_modify(@str)
+      end
 
-  class InvalidTostrTest
-    def to_str
-      []
-    end
-  end
+      it "reduces the size of the string" do
+        @s.rb_str_set_len(@str, 5).should == "abcde"
+      end
 
-  describe "rb_str_set_len" do
-    before :each do
-      # Make a completely new copy of the string
-      # for every example (#dup doesn't cut it).
-      @str = "abcdefghij"[0..-1]
-    end
+      it "inserts a NULL byte at the length" do
+        @s.rb_str_set_len(@str, 5).should == "abcde"
+        @s.rb_str_set_len(@str, 8).should == "abcde\x00gh"
+      end
 
-    it "reduces the size of the string" do
-      @s.rb_str_set_len(@str, 5).should == "abcde"
-    end
+      it "updates the byte size" do
+        @s.rb_str_set_len(@str, 4)
+        @str.bytesize.should == 4
+        @str.should == "abcd"
+      end
 
-    it "inserts a NULL byte at the length" do
-      @s.rb_str_set_len(@str, 5).should == "abcde"
-      @s.rb_str_set_len(@str, 8).should == "abcde\x00gh"
-    end
+      it "invalidates the character size" do
+        @str.size.should == 10
+        @s.rb_str_set_len(@str, 4)
+        @str.size.should == 4
+        @str.should == "abcd"
+      end
 
-    it "updates the byte size and character size" do
-      @s.rb_str_set_len(@str, 4)
-      @str.bytesize.should == 4
-      @str.size.should == 4
-      @str.should == "abcd"
-    end
+      it "invalidates the code range" do
+        @s.rb_str_set_len(@str, 4)
+        @str.ascii_only?.should == true
+      end
 
-    it "updates the string's attributes visible in C code" do
-      @s.rb_str_set_len_RSTRING_LEN(@str, 4).should == 4
-    end
+      it "updates the string's attributes visible in C code" do
+        @s.rb_str_set_len_RSTRING_LEN(@str, 4).should == 4
+      end
 
-    it "can reveal characters written from C with RSTRING_PTR" do
-      @s.rb_str_set_len(@str, 1)
-      @str.should == "a"
+      it "can reveal characters written from C with RSTRING_PTR" do
+        @s.rb_str_set_len(@str, 1)
+        @str.should == "a"
 
-      @str.force_encoding(Encoding::UTF_8)
-      @s.RSTRING_PTR_set(@str, 1, 'B'.ord)
-      @s.RSTRING_PTR_set(@str, 2, 'C'.ord)
-      @s.rb_str_set_len(@str, 3)
+        @s.RSTRING_PTR_set(@str, 1, 'B'.ord)
+        @s.RSTRING_PTR_set(@str, 2, 'C'.ord)
+        @s.rb_str_set_len(@str, 3)
 
-      @str.bytesize.should == 3
-      @str.should == "aBC"
+        @str.bytesize.should == 3
+        @str.should == "aBC"
+      end
     end
   end
 
@@ -141,6 +165,10 @@ describe "C-API String function" do
 
     it "returns a new string object from a char buffer of len characters" do
       @s.rb_str_new("hello", 3).should == "hel"
+    end
+
+    it "returns a non-tainted string" do
+      @s.rb_str_new("hello", 5).tainted?.should == false
     end
 
     it "returns an empty string if len is 0" do
@@ -426,12 +454,12 @@ describe "C-API String function" do
   describe "rb_str_to_str" do
     it "calls #to_str to coerce the value to a String" do
       @s.rb_str_to_str("foo").should == "foo"
-      @s.rb_str_to_str(ValidTostrTest.new).should == "ruby"
+      @s.rb_str_to_str(CApiStringSpecs::ValidTostrTest.new).should == "ruby"
     end
 
     it "raises a TypeError if coercion fails" do
       lambda { @s.rb_str_to_str(0) }.should raise_error(TypeError)
-      lambda { @s.rb_str_to_str(InvalidTostrTest.new) }.should raise_error(TypeError)
+      lambda { @s.rb_str_to_str(CApiStringSpecs::InvalidTostrTest.new) }.should raise_error(TypeError)
     end
   end
 
@@ -546,10 +574,33 @@ describe "C-API String function" do
     it_behaves_like :string_value_macro, :SafeStringValue
   end
 
+  describe "rb_str_modify_expand" do
+    it "grows the capacity to bytesize + expand, not changing the bytesize" do
+      str = @s.rb_str_buf_new(256, "abcd")
+      @s.rb_str_capacity(str).should == 256
+
+      @s.rb_str_set_len(str, 3)
+      str.bytesize.should == 3
+      @s.RSTRING_LEN(str).should == 3
+      @s.rb_str_capacity(str).should == 256
+
+      @s.rb_str_modify_expand(str, 4)
+      str.bytesize.should == 3
+      @s.RSTRING_LEN(str).should == 3
+      @s.rb_str_capacity(str).should == 7
+
+      @s.rb_str_modify_expand(str, 1024)
+      str.bytesize.should == 3
+      @s.RSTRING_LEN(str).should == 3
+      @s.rb_str_capacity(str).should == 1027
+    end
+  end
+
   describe "rb_str_resize" do
     it "reduces the size of the string" do
       str = @s.rb_str_resize("test", 2)
       str.size.should == 2
+      str.bytesize.should == 2
       @s.RSTRING_LEN(str).should == 2
       str.should == "te"
     end
@@ -562,6 +613,7 @@ describe "C-API String function" do
       expected = "test".force_encoding("US-ASCII")
       str = @s.rb_str_resize(expected.dup, 12)
       str.size.should == 12
+      str.bytesize.should == 12
       @s.RSTRING_LEN(str).should == 12
       str[0, 4].should == expected
     end
@@ -829,6 +881,27 @@ describe "C-API String function" do
     end
   end
 
+  describe "rb_str_export_to_enc" do
+    it "returns a copy of an ascii string converted to the new encoding" do
+      source = "A simple string".encode(Encoding::US_ASCII)
+      result = @s.rb_str_export_to_enc(source, Encoding::UTF_8)
+      result.should == source.encode(Encoding::UTF_8)
+      result.encoding.should == Encoding::UTF_8
+    end
+
+    it "returns the source string if it can not be converted" do
+      source = ["00ff"].pack("H*");
+      result = @s.rb_str_export_to_enc(source, Encoding::UTF_8)
+      result.should equal(source)
+    end
+
+    it "does not alter the source string if it can not be converted" do
+      source = ["00ff"].pack("H*");
+      result = @s.rb_str_export_to_enc(source, Encoding::UTF_8)
+      source.bytes.should == [0, 255]
+    end
+end
+
   describe "rb_sprintf" do
     it "replaces the parts like sprintf" do
       @s.rb_sprintf1("Awesome %s is replaced", "string").should == "Awesome string is replaced"
@@ -838,6 +911,26 @@ describe "C-API String function" do
     it "accepts multiple arguments" do
       s = "Awesome %s is here with %s"
       @s.rb_sprintf2(s, "string", "content").should == "Awesome string is here with content"
+    end
+
+    it "formats a string VALUE using to_s if sign not specified in format" do
+      s = 'Result: A string.'
+      @s.rb_sprintf3(CApiStringSpecs::ToSOrInspect.new).should == s
+    end
+
+    it "formats a string VALUE using inspect if sign specified in format" do
+      s = 'Result: A different string.'
+      @s.rb_sprintf4(CApiStringSpecs::ToSOrInspect.new).should == s
+    end
+
+    it "formats a TrueClass VALUE as `TrueClass` if sign not specified in format" do
+      s = 'Result: TrueClass.'
+      @s.rb_sprintf3(true.class).should == s
+    end
+
+    it "formats a TrueClass VALUE as 'true' if sign specified in format" do
+      s = 'Result: true.'
+      @s.rb_sprintf4(true.class).should == s
     end
   end
 
@@ -854,11 +947,11 @@ describe "C-API String function" do
     end
 
     it "tries to convert the passed argument to a string by calling #to_str first" do
-      @s.rb_String(ValidTostrTest.new).should == "ruby"
+      @s.rb_String(CApiStringSpecs::ValidTostrTest.new).should == "ruby"
     end
 
     it "raises a TypeError if #to_str does not return a string" do
-      lambda { @s.rb_String(InvalidTostrTest.new) }.should raise_error(TypeError)
+      lambda { @s.rb_String(CApiStringSpecs::InvalidTostrTest.new) }.should raise_error(TypeError)
     end
 
     it "tries to convert the passed argument to a string by calling #to_s" do

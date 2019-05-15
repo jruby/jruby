@@ -153,7 +153,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
-    public void invokeArrayDeref(String file, int line, CallBase call) {
+    public void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call) {
         adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP, file, line);
     }
 
@@ -271,9 +271,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
         } else {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
         }
     }
 
@@ -289,7 +289,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     public void pushBignum(BigInteger bigint) {
         loadContext();
-        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint);
+        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint.toString());
     }
 
     public void putField(String name) {

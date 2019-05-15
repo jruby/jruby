@@ -7,27 +7,25 @@ platform_is :windows do
 end
 
 describe :process_spawn_does_not_close_std_streams, shared: true do
-  platform_is_not :windows do
-    it "does not close STDIN" do
-      code = "STDOUT.puts STDIN.read(0).inspect"
-      cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
-      ruby_exe(cmd, args: "> #{@output}")
-      File.binread(@output).should == %[""#{newline}]
-    end
+  it "does not close STDIN" do
+    code = "puts STDIN.read"
+    cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
+    ruby_exe(cmd, args: "< #{fixture(__FILE__, "in.txt")} > #{@name}")
+    File.binread(@name).should == %[stdin#{newline}]
+  end
 
-    it "does not close STDOUT" do
-      code = "STDOUT.puts 'hello'"
-      cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
-      ruby_exe(cmd, args: "> #{@output}")
-      File.binread(@output).should == "hello#{newline}"
-    end
+  it "does not close STDOUT" do
+    code = "STDOUT.puts 'hello'"
+    cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
+    ruby_exe(cmd, args: "> #{@name}")
+    File.binread(@name).should == "hello#{newline}"
+  end
 
-    it "does not close STDERR" do
-      code = "STDERR.puts 'hello'"
-      cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
-      ruby_exe(cmd, args: "2> #{@output}")
-      File.binread(@output).should =~ /hello#{newline}/
-    end
+  it "does not close STDERR" do
+    code = "STDERR.puts 'hello'"
+    cmd = "Process.wait Process.spawn(#{ruby_cmd(code).inspect}, #{@options.inspect})"
+    ruby_exe(cmd, args: "2> #{@name}")
+    File.binread(@name).should =~ /hello#{newline}/
   end
 end
 
@@ -391,6 +389,50 @@ describe "Process.spawn" do
     end
   end
 
+  # chdir
+
+  platform_is :linux do
+    describe "inside Dir.chdir" do
+      def child_pids(pid)
+        `pgrep -P #{pid}`.lines.map { |child| Integer(child) }
+      end
+
+      it "does not create extra process without chdir" do
+        pid = Process.spawn("sleep 10")
+        begin
+          child_pids(pid).size.should == 0
+        ensure
+          Process.kill("TERM", pid)
+          Process.wait(pid)
+        end
+      end
+
+      it "kills extra chdir processes" do
+        pid = nil
+        Dir.chdir("/tmp") do
+          pid = Process.spawn("sleep 10")
+        end
+
+        children = child_pids(pid)
+        children.size.should <= 1
+
+        Process.kill("TERM", pid)
+        Process.wait(pid)
+
+        if children.size > 0
+          # wait a bit for children to die
+          sleep(1)
+
+          children.each do |child|
+            lambda do
+              Process.kill("TERM", child)
+            end.should raise_error(Errno::ESRCH)
+          end
+        end
+      end
+    end
+  end
+
   # :umask
 
   it "uses the current umask by default" do
@@ -409,7 +451,7 @@ describe "Process.spawn" do
 
   # redirection
 
-  it "redirects STDOUT to the given file descriptior if out: Fixnum" do
+  it "redirects STDOUT to the given file descriptor if out: Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
         Process.wait Process.spawn("echo glark", out: file.fileno)
@@ -435,7 +477,7 @@ describe "Process.spawn" do
     File.read(@name).should == "glark\n"
   end
 
-  it "redirects STDERR to the given file descriptior if err: Fixnum" do
+  it "redirects STDERR to the given file descriptor if err: Fixnum" do
     File.open(@name, 'w') do |file|
       lambda do
         Process.wait Process.spawn("echo glark>&2", err: file.fileno)
@@ -464,7 +506,7 @@ describe "Process.spawn" do
     end
   end
 
-  it "redirects both STDERR and STDOUT to the given file descriptior" do
+  it "redirects both STDERR and STDOUT to the given file descriptor" do
     File.open(@name, 'w') do |file|
       lambda do
         Process.wait Process.spawn(ruby_cmd("print(:glark); STDOUT.flush; STDERR.print(:bang)"),
@@ -488,73 +530,97 @@ describe "Process.spawn" do
     File.read(@name).should == "glarkbang"
   end
 
-  context "when passed close_others: true" do
-    before :each do
-      @output = tmp("spawn_close_others_true")
-      @options = { close_others: true }
-    end
+  # :close_others
 
-    after :each do
-      rm_r @output
-    end
+  platform_is_not :windows do
+    context "defaults :close_others to" do
+      ruby_version_is ""..."2.6" do
+        it "true" do
+          IO.pipe do |r, w|
+            w.close_on_exec = false
+            code = "begin; IO.new(#{w.fileno}).close; rescue Errno::EBADF; puts 'not inherited'; end"
+            Process.wait Process.spawn(ruby_cmd(code), :out => @name)
+            File.read(@name).should == "not inherited\n"
+          end
+        end
+      end
 
-    it "closes file descriptors >= 3 in the child process" do
-      IO.pipe do |r, w|
-        begin
-          pid = Process.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
-          w.close
-          lambda { r.read_nonblock(1) }.should raise_error(EOFError)
-        ensure
-          rm_r @name
-          Process.wait(pid) if pid
+      ruby_version_is "2.6" do
+        it "false" do
+          IO.pipe do |r, w|
+            w.close_on_exec = false
+            code = "io = IO.new(#{w.fileno}); io.puts('inherited'); io.close"
+            pid = Process.spawn(ruby_cmd(code))
+            w.close
+            Process.wait(pid)
+            r.read.should == "inherited\n"
+          end
         end
       end
     end
 
-    it_should_behave_like :process_spawn_does_not_close_std_streams
-  end
-
-  context "when passed close_others: false" do
-    before :each do
-      @output = tmp("spawn_close_others_false")
-      @options = { close_others: false }
-    end
-
-    after :each do
-      rm_r @output
-    end
-
-    it "closes file descriptors >= 3 in the child process because they are set close_on_exec by default" do
-      IO.pipe do |r, w|
-        begin
-          pid = Process.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
-          w.close
-          lambda { r.read_nonblock(1) }.should raise_error(EOFError)
-        ensure
-          rm_r @name
-          Process.wait(pid) if pid
-        end
+    context "when passed close_others: true" do
+      before :each do
+        @options = { close_others: true }
       end
-    end
 
-    platform_is_not :windows do
-      it "does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false" do
+      it "closes file descriptors >= 3 in the child process even if fds are set close_on_exec=false" do
+        touch @name
         IO.pipe do |r, w|
           r.close_on_exec = false
           w.close_on_exec = false
+
           begin
             pid = Process.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
             w.close
-            lambda { r.read_nonblock(1) }.should raise_error(Errno::EAGAIN)
+            r.read(1).should == nil
           ensure
             rm_r @name
             Process.wait(pid) if pid
           end
         end
       end
+
+      it_should_behave_like :process_spawn_does_not_close_std_streams
     end
 
-    it_should_behave_like :process_spawn_does_not_close_std_streams
+    context "when passed close_others: false" do
+      before :each do
+        @options = { close_others: false }
+      end
+
+      it "closes file descriptors >= 3 in the child process because they are set close_on_exec by default" do
+        touch @name
+        IO.pipe do |r, w|
+          begin
+            pid = Process.spawn(ruby_cmd("while File.exist? '#{@name}'; sleep 0.1; end"), @options)
+            w.close
+            r.read(1).should == nil
+          ensure
+            rm_r @name
+            Process.wait(pid) if pid
+          end
+        end
+      end
+
+      it "does not close file descriptors >= 3 in the child process if fds are set close_on_exec=false" do
+        IO.pipe do |r, w|
+          r.close_on_exec = false
+          w.close_on_exec = false
+
+          code = "fd = IO.for_fd(#{w.fileno}); fd.autoclose = false; fd.write 'abc'; fd.close"
+          pid = Process.spawn(ruby_cmd(code), @options)
+          begin
+            w.close
+            r.read.should == 'abc'
+          ensure
+            Process.wait(pid)
+          end
+        end
+      end
+
+      it_should_behave_like :process_spawn_does_not_close_std_streams
+    end
   end
 
   # error handling
@@ -609,7 +675,7 @@ describe "Process.spawn" do
     lambda { Process.spawn("echo", nonesuch: :foo) }.should raise_error(ArgumentError)
   end
 
-  platform_is_not :windows do
+  platform_is_not :windows, :aix do
     describe "with Integer option keys" do
       before :each do
         @name = tmp("spawn_fd_map.txt")
@@ -623,7 +689,7 @@ describe "Process.spawn" do
       end
 
       it "maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value" do
-        child_fd = @io.fileno + 1
+        child_fd = find_unused_fd
         args = ruby_cmd(fixture(__FILE__, "map_fd.rb"), args: [child_fd.to_s])
         pid = Process.spawn(*args, { child_fd => @io })
         Process.waitpid pid

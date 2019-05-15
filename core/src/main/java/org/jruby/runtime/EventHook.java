@@ -11,6 +11,8 @@ package org.jruby.runtime;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Set;
+
 /**
  *
  * @author headius
@@ -32,4 +34,10 @@ public abstract class EventHook {
     
     public abstract void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type);
     public abstract boolean isInterestedInEvent(RubyEvent event);
+    public Set<RubyEvent> eventSet() {
+        return RubyEvent.ALL_EVENTS;
+    }
+    public boolean needsDebug() {
+        return eventSet().stream().anyMatch(evt -> evt.requiresDebug());
+    }
 }

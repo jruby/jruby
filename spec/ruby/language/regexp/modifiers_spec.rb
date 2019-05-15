@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 require_relative '../fixtures/classes'
 
-describe "Regexps with modifers" do
+describe "Regexps with modifiers" do
   it "supports /i (case-insensitive)" do
     /foo/i.match("FOO").to_a.should == ["FOO"]
   end
@@ -39,11 +39,9 @@ describe "Regexps with modifers" do
     lambda { eval('/foo/a') }.should raise_error(SyntaxError)
   end
 
-  ruby_version_is "2.4" do
-    it "supports (?~) (absent operator)" do
-      Regexp.new("(?~foo)").match("hello").to_a.should == ["hello"]
-      "foo".scan(Regexp.new("(?~foo)")).should == ["fo","o",""]
-    end
+  it "supports (?~) (absent operator)" do
+    Regexp.new("(?~foo)").match("hello").to_a.should == ["hello"]
+    "foo".scan(Regexp.new("(?~foo)")).should == ["fo","o",""]
   end
 
   it "supports (?imx-imx) (inline modifiers)" do
