@@ -209,7 +209,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     }
 
     private static RubyFixnum cachedFixnum(Ruby runtime, long value) {
-        return runtime.fixnumCache[(int) value + CACHE_OFFSET];
+        // This truncates to int but we determine above that it's in cache range
+        return runtime.fixnumCache[(int) (value + CACHE_OFFSET)];
     }
 
     @Deprecated // not used
