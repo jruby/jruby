@@ -64,11 +64,9 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
-import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
@@ -1486,10 +1484,7 @@ public final class Ruby implements Constantizable {
 
         // Filesystem should always have a value
         if (Platform.IS_WINDOWS) {
-            encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
-            Encoding filesystemEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-            if (filesystemEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-            setDefaultFilesystemEncoding(filesystemEncoding);
+            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(this));
         } else {
             setDefaultFilesystemEncoding(getDefaultExternalEncoding());
         }
