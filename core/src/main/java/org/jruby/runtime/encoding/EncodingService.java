@@ -435,12 +435,13 @@ public final class EncodingService {
             // if the encoding name matches /^MS[0-9]+/ we can assume it's a Windows code page and use CP### to look it up.
             Matcher match = MS_CP_PATTERN.matcher(encoding);
             if (match.find()) {
-                encoding = "CP" + match.group(1);
-                filesystemEncoding = loadEncoding(ByteList.create(encoding));
+                String cpEncoding = "CP" + match.group(1);
+                filesystemEncoding = loadEncoding(ByteList.create(cpEncoding));
             }
         }
 
         if (filesystemEncoding == null) {
+            ruby.getWarnings().warn("unrecognized system encoding \"" + encoding + "\", using default external");
             filesystemEncoding = ruby.getDefaultExternalEncoding();
         }
 
