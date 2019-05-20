@@ -89,7 +89,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         super(runtime, type);
     }
 
-    @JRubyMethod(optional = 3, visibility = Visibility.PRIVATE)
+    @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length == 0) {
@@ -250,7 +250,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         return open(context, recv, args, block);
     }
 
-    @JRubyMethod(required = 1, optional = 2, meta = true)
+    @JRubyMethod(optional = 4, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
