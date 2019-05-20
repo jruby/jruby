@@ -72,15 +72,8 @@ class MSpecScript
     # These all spawn sub-rubies, making them very slow to run
     *slow_specs.map {|name| '^' + name},
   ]
-  
-  set :slow, slow_specs
 
-  # Enable features
-  MSpec.enable_feature :fiber
-  MSpec.enable_feature :fiber_library
-  MSpec.enable_feature :continuation_library
-  MSpec.disable_feature :fork
-  MSpec.enable_feature :encoding
+  set :slow, slow_specs
 
   # Filter out ObjectSpace specs if ObjectSpace is disabled
   unless JRuby.objectspace
