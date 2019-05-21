@@ -61,7 +61,10 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
 
     @Override
     public void encode(IRWriterEncoder e) {
-        super.encode(e);
+        e.encode(Operation.AS_STRING);
+        e.encode(result);
+        e.encode(getReceiver());
+        e.encode(isPotentiallyRefined());
     }
 
     public static AsStringInstr decode(IRReaderDecoder d) {
