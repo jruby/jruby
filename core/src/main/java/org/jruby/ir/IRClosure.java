@@ -55,8 +55,8 @@ public class IRClosure extends IRScope {
     protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix) {
         super(manager, lexicalParent, null, lineNumber, staticScope);
 
-        this.startLabel = getNewLabel(prefix + "START");
-        this.endLabel = getNewLabel(prefix + "END");
+        this.startLabel = new Label(prefix + "START", 0);
+        this.endLabel = new Label(prefix + "END", 0);
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
         name.append(Integer.toString(closureId).getBytes());
@@ -70,8 +70,8 @@ public class IRClosure extends IRScope {
         super(c, lexicalParent);
         this.closureId = closureId;
         super.setName(fullName);
-        this.startLabel = getNewLabel(getId() + "_START");
-        this.endLabel = getNewLabel(getId() + "_END");
+        this.startLabel = new Label(getId() + "_START", 0);
+        this.endLabel = new Label(getId() + "_END", 0);
         if (getManager().isDryRun()) {
             this.body = null;
         } else {

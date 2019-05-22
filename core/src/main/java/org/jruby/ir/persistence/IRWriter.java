@@ -90,7 +90,7 @@ public class IRWriter {
             file.encode(((IRClosure) scope).isEND());
         }
 
-        persistScopeLabelIndices(scope, file);
+        file.encode(scope.getNextLabelIndex());
 
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 
@@ -116,19 +116,6 @@ public class IRWriter {
             if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
             file.encode(offset); // No need to write depth..it is zero.
         }
-    }
-
-    private static void persistScopeLabelIndices(IRScope scope, IRWriterEncoder file) {
-        Map<String,Integer> labelIndices = scope.getVarIndices();
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL_SIZE: " + labelIndices.size());
-        file.encode(labelIndices.size());
-        for (String key : labelIndices.keySet()) {
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL: " + key);
-            file.encode(key);
-            file.encode(labelIndices.get(key).intValue());
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL(num): " + labelIndices.get(key).intValue());
-        }
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("DONE LABELS: " + labelIndices.size());
     }
 
     // {type,[variables],signature}

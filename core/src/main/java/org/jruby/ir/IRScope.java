@@ -115,7 +115,7 @@ public abstract class IRScope implements ParseResult {
     protected int booleanVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
-    private Map<String, Integer> nextVarIndex;
+    private int nextLabelIndex = 0;
 
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
@@ -148,7 +148,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.nextVarIndex = new HashMap<>(1); // SSS FIXME: clone!
         this.interpreterContext = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -171,7 +170,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.nextVarIndex = new HashMap<>(1);
         this.interpreterContext = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -247,7 +245,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public Label getNewLabel(String prefix) {
-        return new Label(prefix, allocateNextPrefixedName(prefix));
+        return new Label(prefix, nextLabelIndex++);
     }
 
     public Label getNewLabel() {
@@ -876,8 +874,12 @@ public abstract class IRScope implements ParseResult {
         this.localVars = variables;
     }
 
-    public void setLabelIndices(Map<String, Integer> indices) {
-        nextVarIndex = indices;
+    public void setNextLabelIndex(int index) {
+        nextLabelIndex = index;
+    }
+
+    public int getNextLabelIndex() {
+        return nextLabelIndex;
     }
 
     public LocalVariable lookupExistingLVar(RubySymbol name) {
@@ -1222,31 +1224,6 @@ public abstract class IRScope implements ParseResult {
 
     public List<IRClosure> getEndBlocks() {
         return Collections.EMPTY_LIST;
-    }
-
-    // Enebo: We should just make n primitive int and not take the hash hit
-    protected int allocateNextPrefixedName(String prefix) {
-        int index = getPrefixCountSize(prefix);
-
-        nextVarIndex.put(prefix, index + 1);
-
-        return index;
-    }
-
-    protected void resetVariableCounter(String prefix) {
-        nextVarIndex.remove(prefix);
-    }
-
-    public Map<String, Integer> getVarIndices() {
-        return nextVarIndex;
-    }
-
-    protected int getPrefixCountSize(String prefix) {
-        Integer index = nextVarIndex.get(prefix);
-
-        if (index == null) return 0;
-
-        return index.intValue();
     }
 
     public int getNextClosureId() {
