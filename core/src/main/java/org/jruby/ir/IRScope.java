@@ -246,16 +246,6 @@ public abstract class IRScope implements ParseResult {
         if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
-    private static final ByteList FLIP = new ByteList(new byte[] {'%', 'f', 'l', 'i', 'p', '_'});
-
-    public LocalVariable getNewFlipStateVariable() {
-        ByteList flip = FLIP.dup();
-
-        flip.append(allocateNextPrefixedName("%flip"));
-
-        return getLocalVariable(getManager().getRuntime().newSymbol(flip) , 0);
-    }
-
     public Label getNewLabel(String prefix) {
         return new Label(prefix, allocateNextPrefixedName(prefix));
     }
@@ -318,16 +308,6 @@ public abstract class IRScope implements ParseResult {
         }
 
         return (IRMethod) current;
-    }
-
-    public IRScope getNearestFlipVariableScope() {
-        IRScope current = this;
-
-        while (current != null && !current.isFlipScope()) {
-            current = current.getLexicalParent();
-        }
-
-        return current;
     }
 
     public IRScope getNearestTopLocalVariableScope() {
@@ -1040,15 +1020,6 @@ public abstract class IRScope implements ParseResult {
         return localVars.size();
     }
 
-    public int getUsedVariablesCount() {
-        // System.out.println("For " + this + ", # lvs: " + getLocalVariablesCount());
-        // # local vars, # flip vars
-        //
-        // SSS FIXME: When we are opting local var access,
-        // no need to allocate local var space except when we have been asked to!
-        return getLocalVariablesCount() + getPrefixCountSize("%flip");
-    }
-
     public void setUpUseDefLocalVarMaps() {
         definedLocalVars = new HashSet<>(1);
         usedLocalVars = new HashSet<>(1);
@@ -1300,10 +1271,6 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isNonSingletonClassBody() {
         return false;
-    }
-
-    public boolean isFlipScope() {
-        return true;
     }
 
     public boolean isTopLocalVariableScope() {

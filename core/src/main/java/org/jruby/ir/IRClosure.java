@@ -165,11 +165,6 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public LocalVariable getNewFlipStateVariable() {
-        throw new RuntimeException("Cannot get flip variables from closures.");
-    }
-
-    @Override
     public TemporaryLocalVariable createTemporaryVariable() {
         return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
     }
@@ -196,11 +191,6 @@ public class IRClosure extends IRScope {
 
     @Override
     public boolean isTopLocalVariableScope() {
-        return false;
-    }
-
-    @Override
-    public boolean isFlipScope() {
         return false;
     }
 

@@ -362,16 +362,6 @@ public class IRBuilder {
         }
     }
 
-    public IRBuilder getNearestFlipVariableScopeBuilder() {
-        IRBuilder current = this;
-
-        while (current != null && !this.scope.isFlipScope()) {
-            current = current.parent;
-        }
-
-        return current;
-    }
-
     // Emit cloned ensure bodies by walking up the ensure block stack.
     // If we have been passed a loop value, only emit bodies that are nested within that loop.
     private void emitEnsureBlocks(IRLoop loop) {
@@ -2769,103 +2759,7 @@ public class IRBuilder {
     }
 
     public Operand buildFlip(FlipNode flipNode) {
-        /* ----------------------------------------------------------------------
-         * Consider a simple 2-state (s1, s2) FSM with the following transitions:
-         *
-         *     new_state(s1, F) = s1
-         *     new_state(s1, T) = s2
-         *     new_state(s2, F) = s2
-         *     new_state(s2, T) = s1
-         *
-         * Here is the pseudo-code for evaluating the flip-node.
-         * Let 'v' holds the value of the current state.
-         *
-         *    1. if (v == 's1') f1 = eval_condition(s1-condition); v = new_state(v, f1); ret = f1
-         *    2. if (v == 's2') f2 = eval_condition(s2-condition); v = new_state(v, f2); ret = true
-         *    3. return ret
-         *
-         * For exclusive flip conditions, line 2 changes to:
-         *    2. if (!f1 && (v == 's2')) f2 = eval_condition(s2-condition); v = new_state(v, f2)
-         *
-         * In IR code below, we are representing the two states as 1 and 2.  Any
-         * two values are good enough (even true and false), but 1 and 2 is simple
-         * enough and also makes the IR output readable
-         * ---------------------------------------------------------------------- */
-
-        Fixnum s1 = manager.newFixnum((long)1);
-        Fixnum s2 = manager.newFixnum((long)2);
-
-        // Create a variable to hold the flip state
-        IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
-
-        // Flip is completely broken atm and it was semi-broken in its last incarnation.
-        // Method and closures (or evals) are not built at the same time and if -X-C or JIT or AOT
-        // and jit.threshold=0 then the non-closure where we want to store the hidden flip variable
-        // is unable to get more instrs added to it (not quite true for -X-C but definitely true
-        // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
-        if (nearestNonClosureBuilder == null) {
-            Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
-                    manager.runtime.newSymbol(CommonByteLists.NOT_IMPLEMENTED_ERROR)));
-            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), manager.runtime.newSymbol(CommonByteLists.NEW),
-                    excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
-            addInstr(new ThrowExceptionInstr(exc));
-            return buildNil();
-        }
-        Variable flipState = nearestNonClosureBuilder.scope.getNewFlipStateVariable();
-        nearestNonClosureBuilder.initFlipStateVariable(flipState, s1);
-        if (scope instanceof IRClosure) {
-            // Clone the flip variable to be usable at the proper-depth.
-            int n = 0;
-            IRScope x = scope;
-            while (!x.isFlipScope()) {
-                n++;
-                x = x.getLexicalParent();
-            }
-            if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
-        }
-
-        // Variables and labels needed for the code
-        Variable returnVal = createTemporaryVariable();
-        Label    s2Label   = getNewLabel();
-        Label    doneLabel = getNewLabel();
-
-        // Init
-        addInstr(new CopyInstr(returnVal, manager.getFalse()));
-
-        // Are we in state 1?
-        addInstr(BNEInstr.create(s2Label, flipState, s1));
-
-        // ----- Code for when we are in state 1 -----
-        Operand s1Val = build(flipNode.getBeginNode());
-        addInstr(BNEInstr.create(s2Label, s1Val, manager.getTrue()));
-
-        // s1 condition is true => set returnVal to true & move to state 2
-        addInstr(new CopyInstr(returnVal, manager.getTrue()));
-        addInstr(new CopyInstr(flipState, s2));
-
-        // Check for state 2
-        addInstr(new LabelInstr(s2Label));
-
-        // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
-        if (flipNode.isExclusive()) addInstr(createBranch(returnVal, manager.getTrue(), doneLabel));
-
-        // Are we in state 2?
-        addInstr(BNEInstr.create(doneLabel, flipState, s2));
-
-        // ----- Code for when we are in state 2 -----
-        Operand s2Val = build(flipNode.getEndNode());
-        addInstr(new CopyInstr(returnVal, manager.getTrue()));
-        addInstr(BNEInstr.create(doneLabel, s2Val, manager.getTrue()));
-
-        // s2 condition is true => move to state 1
-        addInstr(new CopyInstr(flipState, s1));
-
-        // Done testing for s1's and s2's conditions.
-        // returnVal will have the result of the flip condition
-        addInstr(new LabelInstr(doneLabel));
-
-        return returnVal;
+        throw new NotCompilableException("ERROR: flip is not supported in JRuby");
     }
 
     public Operand buildFloat(FloatNode node) {
@@ -4180,11 +4074,6 @@ public class IRBuilder {
 
     private String getFileName() {
         return scope.getFile();
-    }
-
-    public void initFlipStateVariable(Variable v, Operand initState) {
-        addInstrAtBeginning(new CopyInstr(v, initState));
-
     }
 
     private RubySymbol symbol(String id) {

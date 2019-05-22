@@ -89,21 +89,7 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public LocalVariable getNewFlipStateVariable() {
-        ByteList flipVarName = new ByteList(("%flip_" + allocateNextPrefixedName("%flip")).getBytes());
-        RubySymbol name = getManager().getRuntime().newSymbol(flipVarName);
-        LocalVariable v = lookupExistingLVar(name);
-
-        return v == null ? getNewLocalVariable(name, 0) : v;
-    }
-
-    @Override
     public boolean isScriptScope() {
-        return true;
-    }
-
-    @Override
-    public boolean isFlipScope() {
         return true;
     }
 
