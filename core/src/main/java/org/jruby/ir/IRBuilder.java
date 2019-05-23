@@ -2759,7 +2759,13 @@ public class IRBuilder {
     }
 
     public Operand buildFlip(FlipNode flipNode) {
-        throw new NotCompilableException("ERROR: flip is not supported in JRuby");
+        Ruby runtime = scope.getManager().getRuntime();
+        Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol("NotImplementedError"));
+        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new StringLiteral("flip-flop is no longer supported in JRuby")}, null));
+
+        addInstr(new ThrowExceptionInstr(exception));
+
+        return manager.getNil(); // not-reached
     }
 
     public Operand buildFloat(FloatNode node) {
