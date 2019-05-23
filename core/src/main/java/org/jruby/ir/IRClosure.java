@@ -293,6 +293,8 @@ public class IRClosure extends IRScope {
         int d = depth;
         if (depth > 0 && !(this instanceof IRFor)) flags.add(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
 
+        if (depth == 0) return s.getNewLocalVariable(name, 0);
+
         do {
             // account for for-loops
             while (s instanceof IRFor) {
@@ -309,7 +311,12 @@ public class IRClosure extends IRScope {
         } while (lvar == null && d >= 0);
 
         if (lvar == null) {
-            // Create a new var at requested/adjusted depth
+            // Note on this null check: Create a new var at eventual scope which has not been created
+            // because the hard scope does not have a definition for it yet.  The reason for this can
+            // be:
+            //   a) initialization of lvar happens after first closure which uses the lvar
+            //   b) ensure blocks get processed before the body for the ensure so it is possible
+            // a nested closure in the ensure will find an lvar first.
             lvar = s.getNewLocalVariable(name, 0).cloneForDepth(depth);
         } else {
             // Find # of lexical scopes we walked up to find 'lvar'.
