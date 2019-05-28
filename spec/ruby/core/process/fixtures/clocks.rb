@@ -29,7 +29,7 @@ module ProcessSpecs
     # These clocks in practice on macOS seem to be less precise than advertised by clock_getres
     platform_is :darwin do
       clocks = clocks.reject { |clock, value|
-        [:CLOCK_UPTIME_RAW_APPROX].include?(clock)
+        [:CLOCK_UPTIME_RAW_APPROX, :CLOCK_MONOTONIC_RAW_APPROX].include?(clock)
       }
     end
 
@@ -40,10 +40,18 @@ module ProcessSpecs
       }
     end
 
-    # CentOS seems to report a negative resolution for CLOCK_MONOTONIC_RAW
+    # These clocks in practice on AIX seem to be more precise than their reported resolution.
+    platform_is :aix do
+      clocks = clocks.reject { |clock, value|
+        [:CLOCK_REALTIME, :CLOCK_MONOTONIC].include?(clock)
+      }
+    end
+
+    # On a Hyper-V Linux guest machine, these clocks in practice
+    # seem to be less precise than advertised by clock_getres
     platform_is :linux do
       clocks = clocks.reject { |clock, value|
-        clock == :CLOCK_MONOTONIC_RAW and Process.clock_getres(value, :nanosecond) < 0
+        clock == :CLOCK_MONOTONIC_RAW
       }
     end
 
