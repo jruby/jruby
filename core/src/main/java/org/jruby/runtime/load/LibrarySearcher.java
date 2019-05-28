@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -48,12 +49,16 @@ public class LibrarySearcher {
 
     protected ExpandedLoadPath expandedLoadPath;
 
+    protected RubyArray loadPath;
     protected RubyArray loadedFeaturesSnapshot;
-    private final Map<String, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
+    private final Map<CharBuffer, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
 
     public LibrarySearcher(LoadService loadService) {
+        Ruby runtime = loadService.runtime;
+
+        this.runtime = runtime;
+        this.loadPath = RubyArray.newArray(runtime);
         this.loadService = loadService;
-        this.runtime = loadService.runtime;
         this.cwdPathEntry = new NormalPathEntry(runtime.newString("."));
         this.classloaderPathEntry = new NormalPathEntry(runtime.newString(URLResource.URI_CLASSLOADER));
         this.nullPathEntry = new NullPathEntry();
@@ -292,25 +297,22 @@ public class LibrarySearcher {
 
         snapshotLoadedFeatures();
 
-        addFeatureToIndex(name, name);
+        addFeatureToIndex(CharBuffer.wrap(name.toString()), name);
     }
 
     protected RubyArray snapshotLoadedFeatures() {
         return (RubyArray) loadedFeaturesSnapshot.replace(this.loadService.loadedFeatures);
     }
 
-    protected void addFeatureToIndex(RubyString name, IRubyObject featurePath) {
-        ByteList featureByteList = name.getByteList();
-        byte[] featureBytes = featureByteList.unsafeBytes();
-        int featureBegin = featureByteList.begin();
-        int featureEnd = featureBegin + featureByteList.length();
+    protected void addFeatureToIndex(CharBuffer name, IRubyObject featurePath) {
+        int featureEnd = 0 + name.remaining();
 
         int ext, p;
 
-        for (ext = featureEnd - 1; ext > featureBegin; ext--)
-            if (featureBytes[ext] == '.' || featureBytes[ext] == '/') break;
+        for (ext = featureEnd - 1; ext > 0; ext--)
+            if (name.get(ext) == '.' || name.get(ext) == '/') break;
 
-        if (featureBytes[ext] != '.') ext = -1;
+        if (name.get(ext) != '.') ext = -1;
 
         /* Now `ext` points to the only string matching %r{^\.[^./]*$} that is
            at the end of `feature`, or is NULL if there is no such string. */
@@ -318,24 +320,32 @@ public class LibrarySearcher {
         p = ext != -1 ? ext : featureEnd;
         while (true) {
             p--;
-            while (p >= featureBegin && featureBytes[p] != '/')
-                p--;
-            if (p < featureBegin) break;
-            /* Now *p == '/'.  We reach this point for every '/' in `feature`. */
-            addSingleFeatureToIndex(new String(featureBytes, p + 1, featureEnd - p - 1), featurePath);
 
+            // Walk back to nearest '/'
+            while (p >= 0 && name.get(p) != '/') p--;
+
+            if (p < 0) break;
+
+            // Add partial feature to index
+            addSingleFeatureToIndex(name.subSequence(p + 1, featureEnd), featurePath);
+
+            // Add partial feature without extension, if appropriate
             if (ext != -1) {
-                addSingleFeatureToIndex(new String(featureBytes, p + 1, ext - p - 1), featurePath);
+                addSingleFeatureToIndex(name.subSequence(p + 1, ext), featurePath);
             }
         }
-        addSingleFeatureToIndex(new String(featureBytes, featureBegin, featureEnd - featureBegin), featurePath);
+
+        // Add full feature to index
+        addSingleFeatureToIndex(name, featurePath);
+
+        // Add version without extension, if appropriate
         if (ext != -1) {
-            addSingleFeatureToIndex(new String(featureBytes, featureBegin, ext - featureBegin), featurePath);
+            addSingleFeatureToIndex(name.subSequence(0, ext), featurePath);
         }
     }
 
     static class Feature {
-        Feature(String key, IRubyObject featurePath) {
+        Feature(CharSequence key, IRubyObject featurePath) {
             this.key = key;
             this.featurePaths = new CopyOnWriteArrayList();
 
@@ -350,12 +360,12 @@ public class LibrarySearcher {
             featurePaths.clear();
         }
 
-        final String key;
+        final CharSequence key;
         final CopyOnWriteArrayList<IRubyObject> featurePaths;
     }
 
-    protected void addSingleFeatureToIndex(String key, IRubyObject featurePath) {
-        Map<String, Feature> featuresIndex = this.loadedFeaturesIndex;
+    protected void addSingleFeatureToIndex(CharBuffer key, IRubyObject featurePath) {
+        Map<CharBuffer, Feature> featuresIndex = this.loadedFeaturesIndex;
 
         Feature thisFeature = featuresIndex.get(key);
 
@@ -393,7 +403,7 @@ public class LibrarySearcher {
         The matches are calculated by taking the given feature path combined with load path entries and file suffixes
         and attempting to match it against any loaded features this path has been associated with.
          */
-        Feature matchingFeature = getLoadedFeaturesIndex().get(feature);
+        Feature matchingFeature = getLoadedFeature(CharBuffer.wrap(feature));
         if (matchingFeature != null) {
             for (IRubyObject featurePath : matchingFeature.featurePaths) {
                 RubyString loadedFeaturePath = featurePath.convertToString();
@@ -469,7 +479,7 @@ public class LibrarySearcher {
         return (loadPath == null) ? getExpandedLoadPath() : loadPath;
     }
 
-    Map<String, Feature> getLoadedFeaturesIndex() {
+    Map<CharBuffer, Feature> getLoadedFeaturesIndex() {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
 
         // Compare to see if the snapshot still matches actual.
@@ -483,11 +493,15 @@ public class LibrarySearcher {
                 IRubyObject entry = features.eltOk(i);
                 RubyString asStr = runtime.freezeAndDedupString(entry.convertToString());
                 if (asStr != entry) features.eltSetOk(i, asStr);
-                addFeatureToIndex(asStr, asStr);
+                addFeatureToIndex(CharBuffer.wrap(asStr.toString()), asStr);
             }
         }
 
         return loadedFeaturesIndex;
+    }
+
+    Feature getLoadedFeature(CharBuffer feature) {
+        return getLoadedFeaturesIndex().get(CharBuffer.wrap(feature));
     }
 
     /* This searches `load_path` for a value such that

@@ -41,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.CharBuffer;
 import java.security.AccessControlException;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -486,7 +487,7 @@ public class LoadService {
                     long startTime = loadTimer.startLoad(loadName);
                     try {
                         tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
-                        provide(library.getLoadName());
+                        provide(loadName);
                         return RequireState.LOADED;
                     } finally {
                         loadTimer.endLoad(loadName, startTime);
@@ -1630,7 +1631,7 @@ public class LoadService {
     protected void addLoadedFeature(String shortName, String name) {
         RubyString strName = runtime.newString(name);
         loadedFeatures.append(strName);
-        librarySearcher.addFeatureToIndex(strName, runtime.freezeAndDedupString(strName));
+        librarySearcher.addFeatureToIndex(CharBuffer.wrap(strName), runtime.freezeAndDedupString(strName));
     }
     //</editor-fold>
 }
