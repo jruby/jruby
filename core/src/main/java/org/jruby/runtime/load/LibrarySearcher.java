@@ -423,7 +423,7 @@ public class LibrarySearcher {
                     if (withPath == null) continue; // no match with expanded path, try next
 
                     expanded = true;
-                    expandedPathLength = withPath.length();
+                    expandedPathLength = withPath.length() + 1;
                 }
 
                 int e = expandedPathLength + len;
@@ -539,8 +539,8 @@ public class LibrarySearcher {
             return null;
         }
         if (
-                (type == LibrarySearcher.Suffix.JAR && !LibrarySearcher.isLibraryExt(name.substring(plen+featureLength))) ||
-                        (type == LibrarySearcher.Suffix.RUBY && !LibrarySearcher.isSourceExt(name.substring(plen+featureLength)))) {
+                (type == LibrarySearcher.Suffix.JAR && !LibrarySearcher.isLibraryExt(name)) ||
+                        (type == LibrarySearcher.Suffix.RUBY && !LibrarySearcher.isSourceExt(name))) {
 
             return null;
         }
