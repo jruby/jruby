@@ -465,8 +465,6 @@ public class LoadService {
         LibrarySearcher.FoundLibrary[] libraryHolder = {null};
         char found = searchForRequire(file, libraryHolder);
 
-        ReentrantLock requireLock = null;
-
         if (found == 0) {
             throw runtime.newLoadError("no such file to load -- " + file, file);
         }
