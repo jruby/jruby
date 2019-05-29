@@ -1,9 +1,7 @@
 fails:Module#autoload does not load the file when referring to the constant in defined?
 fails:Module#autoload shares the autoload request across dup'ed copies of modules
-fails:Module#autoload returns 'constant' on referring the constant with defined?()
 fails:Module#autoload does not load the file when referring to the constant in defined?
-fails:Module#autoload returns 'constant' on referring the constant with defined?()
-fails(hangs):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and 'constant' otherwise for defined?
+critical(hangs):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and 'constant' otherwise for defined?
 fails:Module#autoload calls main.require(path) to load the file
 fails:Module#autoload does not remove the constant from Module#constants if load fails and keeps it as an autoload
 fails:Module#autoload does not remove the constant from Module#constants if load raises a RuntimeError and keeps it as an autoload
