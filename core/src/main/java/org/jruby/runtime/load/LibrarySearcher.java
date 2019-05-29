@@ -442,10 +442,10 @@ public class LibrarySearcher {
         }
 
         // Check load locks to see if another thread is currently loading this file
-        Map<String, ReentrantLock> loadingTable = this.loadService.requireLocks.pool;
+        Map<String, LoadService.RequireLocks.RequireLock> loadingTable = this.loadService.requireLocks.pool;
         if (!expanded) {
             loadPath = lazyLoadPath(loadPath);
-            for (Map.Entry<String, ReentrantLock> entry : loadingTable.entrySet()) {
+            for (Map.Entry<String, LoadService.RequireLocks.RequireLock> entry : loadingTable.entrySet()) {
                 if (loadedFeatureWithPath(entry.getKey(), feature, suffixType, loadPath) != null) {
                     if (fn != null) fn[0] = entry.getKey();
                     if (!suffixGiven) return UNKNOWN_TYPE;

@@ -65,6 +65,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.RubyThread;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
@@ -374,7 +375,10 @@ public class LoadService {
     enum LockResult { LOCKED, CIRCULAR }
 
     final class RequireLocks {
-        final ConcurrentHashMap<String, ReentrantLock> pool;
+        final class RequireLock extends ReentrantLock {
+            volatile boolean destroyed;
+        }
+        final ConcurrentHashMap<String, RequireLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
 
@@ -398,22 +402,27 @@ public class LoadService {
                 boolean circularRequireWarning,
                 RequireState defaultResult,
                 Function<String, RequireState> ifLocked) {
-            ReentrantLock lock = pool.get(requireName);
+            ThreadContext currentContext = runtime.getCurrentContext();
+            RubyThread thread = currentContext.getThread();
+
+            RequireLock lock = pool.get(requireName);
 
             // Check if lock is already there
             if (lock == null) {
-                ReentrantLock newLock = new ReentrantLock();
+                RequireLock newLock = new RequireLock();
                 lock = pool.putIfAbsent(requireName, newLock);
                 // Lock is new, lock and return LOCKED
                 if (lock == null) {
                     lock = newLock;
-                    lock.lock();
+                    thread.lock(lock);
 
                     try {
-                        return ifLocked.apply(requireName);
+                        RequireState state = ifLocked.apply(requireName);
+                        return state;
                     } finally {
+                        lock.destroyed = true;
                         pool.remove(requireName);
-                        lock.unlock();
+                        thread.unlock(lock);
                     }
                 }
             }
@@ -430,20 +439,21 @@ public class LoadService {
 
             while (true) {
                 try {
-                    runtime.getCurrentContext().getThread().enterSleep();
-                    lock.lockInterruptibly();
+                    thread.lockInterruptibly(lock);
                     break;
                 } catch (InterruptedException ie) {
-                    runtime.getCurrentContext().pollThreadEvents();
+                    currentContext.pollThreadEvents();
                 } finally {
-                    runtime.getCurrentContext().getThread().exitSleep();
+                    thread.exitSleep();
                 }
             }
 
             try {
+                if (lock.destroyed) return defaultResult;
+
                 return ifLocked.apply(requireName);
             } finally {
-                lock.unlock();
+                thread.unlock(lock);
             }
         }
     }
@@ -485,9 +495,9 @@ public class LoadService {
                     long startTime = loadTimer.startLoad(loadName);
                     try {
                         tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
+                        provide(loadName);
                         return RequireState.LOADED;
                     } finally {
-                        provide(loadName);
                         loadTimer.endLoad(loadName, startTime);
                     }
                 }
