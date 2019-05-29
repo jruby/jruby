@@ -90,7 +90,7 @@ public class IRReader implements IRPersistenceValues {
         if (type == IRScopeType.CLOSURE) {
             isEND = decoder.decodeBoolean();
         }
-        Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
+        int nextLabelInt = decoder.decodeInt();
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         Signature signature;
@@ -111,8 +111,7 @@ public class IRReader implements IRPersistenceValues {
         }
 
         scope.setTemporaryVariableCount(tempVarsCount);
-        // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
-        scope.setLabelIndices(indices);
+        scope.setNextLabelIndex(nextLabelInt);
 
         // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
         // But because of this we have to push decoding lvars to the end of the scope info.
@@ -138,15 +137,6 @@ public class IRReader implements IRPersistenceValues {
         }
 
         return localVariables;
-    }
-
-    private static Map<String, Integer> decodeScopeLabelIndices(IRReaderDecoder decoder) {
-        int labelIndicesSize = decoder.decodeInt();
-        Map<String, Integer> indices = new HashMap<String, Integer>(labelIndicesSize);
-        for (int i = 0; i < labelIndicesSize; i++) {
-            indices.put(decoder.decodeString(), decoder.decodeInt());
-        }
-        return indices;
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {

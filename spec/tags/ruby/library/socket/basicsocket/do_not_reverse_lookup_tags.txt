@@ -1,0 +1,2 @@
+fails:BasicSocket#do_not_reverse_lookup for an TCPSocket.new socket is false when BasicSocket.do_not_reverse_lookup is false
+fails:BasicSocket#do_not_reverse_lookup for an TCPServer#accept socket is false when BasicSocket.do_not_reverse_lookup is false

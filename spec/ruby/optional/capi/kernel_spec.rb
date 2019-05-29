@@ -281,6 +281,31 @@ describe "C-API Kernel function" do
       end.should raise_error(NameError)
       proof[0].should == 23
     end
+
+    it "will return nil if an error was raised" do
+      proof = [] # Hold proof of work performed after the yield.
+      lambda do
+        @s.rb_protect_yield(7, proof) { |x| raise NameError}
+      end.should raise_error(NameError)
+      proof[0].should == 23
+      proof[1].should == nil
+    end
+  end
+
+  describe "rb_eval_string_protect" do
+    it "will evaluate the given string" do
+      proof = []
+      res = @s.rb_eval_string_protect('1 + 7', proof)
+      proof.should == [23, 8]
+    end
+
+    it "will allow cleanup code to be run when an exception is raised" do
+      proof = []
+      lambda do
+        @s.rb_eval_string_protect('raise RuntimeError', proof)
+      end.should raise_error(RuntimeError)
+      proof.should == [23, nil]
+    end
   end
 
   describe "rb_rescue" do

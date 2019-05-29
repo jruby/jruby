@@ -8,15 +8,11 @@ describe "Process.wait2" do
     # but we shouldn't reap them from Ruby-space
     begin
       Process.wait(-1, Process::WNOHANG)
-      without_feature :mjit do
-        $stderr.puts "Leaked process before wait2 specs! Waiting for it"
-      end
+      $stderr.puts "Leaked process before wait2 specs! Waiting for it"
       leaked = Process.waitall
       $stderr.puts "leaked before wait2 specs: #{leaked}" unless leaked.empty?
-      with_feature :mjit do
-        # Ruby-space should not see PIDs used by mjit
-        leaked.should be_empty
-      end
+      # Ruby-space should not see PIDs used by mjit
+      leaked.should be_empty
     rescue Errno::ECHILD # No child processes
     rescue NotImplementedError
     end

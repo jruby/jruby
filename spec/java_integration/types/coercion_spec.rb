@@ -248,7 +248,7 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.nullStaticField).to be_kind_of(NilClass)
     expect(JavaFields.nullStaticField).to eq(nil)
 
-    expect(JavaFields.bigIntegerStaticField).to be_kind_of(Bignum)
+    expect(JavaFields.bigIntegerStaticField).to be_kind_of(Integer) # Bignum
     expect(JavaFields.bigIntegerStaticField).to eq(
       1234567890123456789012345678901234567890
     )
@@ -282,7 +282,7 @@ describe "Java String and primitive-typed fields" do
     expect(jf.nullField).to be_kind_of(NilClass)
     expect(jf.nullField).to eq(nil)
 
-    expect(jf.bigIntegerField).to be_kind_of(Bignum)
+    expect(jf.bigIntegerField).to be_kind_of(Integer) # Bignum
     expect(jf.bigIntegerField).to eq(
       1234567890123456789012345678901234567890
     )
@@ -851,12 +851,16 @@ describe "Time#to_java" do
   end
 
   describe 'java 8 types' do
-    it "coerces to java.time.Instant" do
+    it "coerces to Instant" do
       t = Time.at(0)
       expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+
+      t = Time.new(2019, 04, 18, 14, 30, (50 * 1_000_000_000 + 123456780) / 1_000_000_000r, '-03:00')
+      j = java.time.ZonedDateTime.of(2019, 04, 18, 14, 30, 50, 123456780, java.time.ZoneId.of('-03:00'))
+      expect(t.to_java(java.time.Instant)).to eq(j.toInstant)
     end
 
-    it "coerces to Temporal to Instant" do
+    it "coerces a Temporal to Instant" do
       t = Time.at(0, 123456.789)
       d = t.to_java(java.time.temporal.Temporal)
       expect(d.class).to eq(java.time.Instant)
@@ -953,7 +957,7 @@ describe "Date/DateTime#to_java" do
   end
 
   describe 'java 8 types' do
-    it "coerces to java.time.Instant" do
+    it "coerces to Instant" do
       t = Date.new(0)
       expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
       local_date = java.time.LocalDate.of(-1, 12, 30) # joda-time vs ruby-date rules
@@ -964,7 +968,7 @@ describe "Date/DateTime#to_java" do
       expect(t.to_java(java.time.Instant)).to eq(java.time.Instant::EPOCH.plusSeconds(42))
     end
 
-    it "coerces to Temporal to Instant" do
+    it "coerces a Temporal to Instant" do
       t = Time.at(0, 123456.789).to_datetime
       d = t.to_java(java.time.temporal.Temporal)
       expect(d.class).to eq(java.time.Instant)
@@ -984,6 +988,34 @@ describe "Date/DateTime#to_java" do
       expect(d.class).to eq(java.time.LocalDateTime)
       expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
     end
+  end
+end
+
+describe "java.time.Instant#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.Instant').to_time).to eq t
+  end
+end
+
+describe "java.time.LocalDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.LocalDateTime').to_time).to eq t
+  end
+end
+
+describe "java.time.OffsetDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.OffsetDateTime').to_time).to eq t
+  end
+end
+
+describe "java.time.ZonedDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.ZonedDateTime').to_time).to eq t
   end
 end
 

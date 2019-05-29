@@ -77,4 +77,8 @@ public class RubyStopIteration extends RubyIndexError {
         return result == null ? getRuntime().getNil() : result;
     }
 
+    public void setResult(IRubyObject result) {
+        this.result = result;
+    }
+
 }

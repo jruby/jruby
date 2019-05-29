@@ -1526,7 +1526,10 @@ public class RubyTime extends RubyObject {
      * @since 9.2
      */
     public java.time.Instant toInstant() {
-        return java.time.Instant.ofEpochMilli(getTimeInMillis()).plusNanos(getNSec());
+        final long millis = getTimeInMillis();
+        long sec = Math.floorDiv(millis, 1000);
+        long nanoAdj = getNSec() + (Math.floorMod(millis, 1000) * 1_000_000);
+        return java.time.Instant.ofEpochSecond(sec, nanoAdj);
     }
 
     /**

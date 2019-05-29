@@ -4744,7 +4744,7 @@ float_loop:
             if (block.yield(context, value).isTrue()) return value;
         }
 
-        return ifnone != null ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
+        return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
     }
 
     public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {

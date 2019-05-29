@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -16,7 +17,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.util.ByteList;
 
 public class IREvalScript extends IRClosure {
-    private List<IRClosure> beginBlocks;
+    private List<IRClosure> beginBlocks = Collections.emptyList();
     private EvalType evalType;
     private String fileName;
 
@@ -78,7 +79,7 @@ public class IREvalScript extends IRClosure {
     /* Record a begin block -- not all scope implementations can handle them */
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
-        if (beginBlocks == null) beginBlocks = new ArrayList<>();
+        if (beginBlocks.isEmpty()) beginBlocks = new ArrayList<>();
         beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }
@@ -88,21 +89,7 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public LocalVariable getNewFlipStateVariable() {
-        ByteList flipVarName = new ByteList(("%flip_" + allocateNextPrefixedName("%flip")).getBytes());
-        RubySymbol name = getManager().getRuntime().newSymbol(flipVarName);
-        LocalVariable v = lookupExistingLVar(name);
-
-        return v == null ? getNewLocalVariable(name, 0) : v;
-    }
-
-    @Override
     public boolean isScriptScope() {
-        return true;
-    }
-
-    @Override
-    public boolean isFlipScope() {
         return true;
     }
 

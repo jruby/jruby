@@ -177,4 +177,40 @@ class TestString < Test::Unit::TestCase
     end
   end
 
+  def test_split_wchar_with_null_byte
+    [
+     Encoding::UTF_16BE, Encoding::UTF_16LE,
+     Encoding::UTF_32BE, Encoding::UTF_32LE,
+    ].each do |enc|
+      s = "AA\0BB\0CC".encode(enc)
+      assert_equal(["AA", "BB", "CC"].map {|c| c.encode(enc)},
+                   s.split("\0".encode(enc)),
+                   "with #{enc.name}")
+    end
+  end
+
+  def test_split_two_code_unit_wchar
+    [
+     Encoding::UTF_16BE, Encoding::UTF_16LE,
+     Encoding::UTF_32BE, Encoding::UTF_32LE,
+    ].each do |enc|
+      s = "ab\u{10437},\u{10437}de\u{10437}".encode(enc)
+      assert_equal(["ab\u{10437}", "\u{10437}de\u{10437}"].map {|c| c.encode(enc)},
+                   s.split(",".encode(enc)),
+                   "with #{enc.name}")
+    end
+  end
+
+  def test_split_wchar_with_two_code_unit_delimiter
+    [
+     Encoding::UTF_16BE, Encoding::UTF_16LE,
+     Encoding::UTF_32BE, Encoding::UTF_32LE,
+    ].each do |enc|
+      s = "ab\u{10437},\u{10437}de\u{10437}".encode(enc)
+      assert_equal(["ab", ",", "de"].map {|c| c.encode(enc)},
+                   s.split("\u{10437}".encode(enc)),
+                   "with #{enc.name}")
+    end
+  end
+
 end

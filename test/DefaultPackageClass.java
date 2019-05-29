@@ -1,4 +1,8 @@
 public class DefaultPackageClass {
+
+    public transient int x;
+    public static long anY = 1L;
+
     public String foo() { return "foo"; }
 
     public static int compareTo(org.jruby.RubyObject o1, org.jruby.RubyObject o2) {

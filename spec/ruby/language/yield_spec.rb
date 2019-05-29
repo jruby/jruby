@@ -19,6 +19,10 @@ describe "The yield call" do
     it "ignores assignment to the explicit block argument and calls the passed block" do
       @y.ze { 42 }.should == 42
     end
+
+    it "does not pass a named block to the block being yielded to" do
+      @y.z() { |&block| block == nil }.should == true
+    end
   end
 
   describe "taking a single argument" do
@@ -69,12 +73,10 @@ describe "The yield call" do
         }.should raise_error(ArgumentError)
       end
 
-      ruby_bug "#12705", ""..."2.5" do
-        it "should not destructure an Array into multiple arguments" do
-          lambda {
-            @y.s([1, 2], &lambda { |a,b| [a,b] })
-          }.should raise_error(ArgumentError)
-        end
+      it "should not destructure an Array into multiple arguments" do
+        lambda {
+          @y.s([1, 2], &lambda { |a,b| [a,b] })
+        }.should raise_error(ArgumentError)
       end
     end
   end
@@ -169,6 +171,12 @@ describe "The yield call" do
 
     it "passes the arguments to the block" do
       @y.rs([1, 2], 3, 4) { |(*a, b), c, d| [a, b, c, d] }.should == [[1], 2, 3, 4]
+    end
+  end
+
+  describe "taking a splat and a keyword argument" do
+    it "passes it as an array of the values and a hash" do
+      @y.k([1, 2]) { |*a| a }.should == [1, 2, {:b=>true}]
     end
   end
 

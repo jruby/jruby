@@ -119,6 +119,11 @@ describe "C-API Util function" do
       ScratchPad.recorded.should == [1, nil]
     end
 
+    it "assigns required and optional arguments with no hash argument given" do
+      @o.rb_scan_args([1, 7, 4], "21:", 3, @acc).should == 3
+      ScratchPad.recorded.should == [1, 7, 4]
+    end
+
     it "assigns required, optional, splat, post-splat, Hash and block arguments" do
       h = {a: 1, b: 2}
       @o.rb_scan_args([1, 2, 3, 4, 5, h], "11*1:&", 6, @acc, &@prc).should == 5
@@ -146,6 +151,50 @@ describe "C-API Util function" do
       h = {1 => 2, 3 => 4}
       @o.rb_scan_args([1, 2, 3, 4, 5, h], "11*1:&", 6, @acc, &@prc).should == 6
       ScratchPad.recorded.should == [1, 2, [3, 4, 5], h, nil, @prc]
+    end
+  end
+
+  describe "rb_get_kwargs" do
+    it "extracts required arguments in the order requested" do
+      h = { :a => 7, :b => 5 }
+      @o.rb_get_kwargs(h, [:b, :a], 2, 0).should == [5, 7]
+      h.should == {}
+    end
+
+    it "extracts required and optional arguments in the order requested" do
+      h = { :a => 7, :c => 12, :b => 5 }
+      @o.rb_get_kwargs(h, [:b, :a, :c], 2, 1).should == [5, 7, 12]
+      h.should == {}
+    end
+
+    it "accepts nil instead of a hash when only optional arguments are requested" do
+      h = nil
+      @o.rb_get_kwargs(h, [:b, :a, :c], 0, 3).should == []
+      h.should == nil
+    end
+
+    it "raises an error if a required argument is not in the hash" do
+      h = { :a => 7, :c => 12, :b => 5 }
+      lambda { @o.rb_get_kwargs(h, [:b, :d], 2, 0) }.should raise_error(ArgumentError, /missing keyword: d/)
+      h.should == {:a => 7, :c => 12}
+    end
+
+    it "does not raise an error for an optional argument not in the hash" do
+      h = { :a => 7, :b => 5 }
+      @o.rb_get_kwargs(h, [:b, :a, :c], 2, 1).should == [5, 7]
+      h.should == {}
+    end
+
+    it "raises an error if there are additional arguments  and optional is positive" do
+      h = { :a => 7, :c => 12, :b => 5 }
+      lambda { @o.rb_get_kwargs(h, [:b, :a], 2, 0) }.should raise_error(ArgumentError, /unknown keyword: c/)
+      h.should == {:c => 12}
+    end
+
+    it "leaves additional arguments in the hash if optional is negative" do
+      h = { :a => 7, :c => 12, :b => 5 }
+      @o.rb_get_kwargs(h, [:b, :a], 2, -1).should == [5, 7]
+      h.should == {:c => 12}
     end
   end
 

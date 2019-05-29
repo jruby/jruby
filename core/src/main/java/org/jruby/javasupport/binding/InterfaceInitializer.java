@@ -29,13 +29,16 @@ final class InterfaceInitializer extends Initializer {
             final Field field = fields[i];
             if ( javaClass != field.getDeclaringClass() ) continue;
 
-            if ( ConstantField.isConstant(field) ) {
+            boolean isConstant = ConstantField.isConstant(field);
+            if (isConstant) {
                 state.constantFields.add(new ConstantField(field));
             }
 
             final int mod = field.getModifiers();
             if ( Modifier.isStatic(mod) ) {
-                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(mod), true);
+                // If we already are adding it as a constant, make the accessors warn about deprecated behavior.
+                // See jruby/jruby#5730.
+                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(mod), true, isConstant);
             }
         }
 

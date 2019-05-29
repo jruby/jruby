@@ -104,9 +104,9 @@ final class ClassInitializer extends Initializer {
 
             int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers)) {
-                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(modifiers), true);
+                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(modifiers), true, false);
             } else {
-                addField(state.instanceInstallers, state.instanceNames, field, Modifier.isFinal(modifiers), false);
+                addField(state.instanceInstallers, state.instanceNames, field, Modifier.isFinal(modifiers), false, false);
             }
         }
     }

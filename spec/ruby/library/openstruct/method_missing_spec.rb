@@ -24,17 +24,19 @@ describe "OpenStruct#method_missing when called with a method name ending in '='
     @os.test = "changed"
     @os.test.should == "changed"
   end
-
-  it "updates the method/value table with the passed method/value" do
-    @os.method_missing(:test=, "test")
-    @os.send(:table)[:test].should == "test"
-  end
 end
 
 describe "OpenStruct#method_missing when passed additional arguments" do
-  it "raises a NoMethodError" do
+  it "raises a NoMethodError when the key does not exist" do
     os = OpenStruct.new
     lambda { os.method_missing(:test, 1, 2, 3) }.should raise_error(NoMethodError)
+  end
+
+  ruby_version_is "2.7" do
+    it "raises an ArgumentError when the key exists" do
+      os = OpenStruct.new(test: 20)
+      lambda { os.method_missing(:test, 1, 2, 3) }.should raise_error(ArgumentError)
+    end
   end
 end
 

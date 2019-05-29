@@ -518,8 +518,13 @@ public class RubyNumeric extends RubyObject {
      *
      */
     protected final void coerceFailed(ThreadContext context, IRubyObject other) {
+        if (other.isSpecialConst() || other instanceof RubyFloat) {
+            other = other.inspect();
+        } else {
+            other = other.getMetaClass().name();
+        }
         throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
-                (other.isSpecialConst() ? other.inspect() : other.getMetaClass().getName()), getMetaClass()));
+                other, getMetaClass()));
     }
 
     /** rb_num_coerce_bin
@@ -1110,10 +1115,11 @@ public class RubyNumeric extends RubyObject {
 
         if (Double.isInfinite(unit)) {
             /* if unit is infinity, i*unit+beg is NaN */
-            if (n != 0) block.yield(context, from);
+            if (n != 0) block.yield(context, RubyFloat.newFloat(runtime, beg));
         } else if (unit == 0) {
+            RubyFloat value = RubyFloat.newFloat(runtime, beg);
             for (;;) {
-                block.yield(context, from);
+                block.yield(context, value);
             }
         } else {
             for (i=0; i<n; i++) {

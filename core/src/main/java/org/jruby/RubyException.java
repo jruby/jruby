@@ -72,6 +72,12 @@ public class RubyException extends RubyObject {
         private BacktraceData backtraceData;
         private IRubyObject backtraceObject;
         private IRubyObject backtraceLocations;
+
+        public void copy(Backtrace clone) {
+            this.backtraceData = clone.backtraceData;
+            this.backtraceObject = clone.backtraceObject;
+            this.backtraceLocations = clone.backtraceLocations;
+        }
         
         /**
          * Get the Ruby-facing representation of this backtrace, or a previously-set backtrace object.
@@ -87,15 +93,6 @@ public class RubyException extends RubyObject {
             if (backtraceData == null || backtraceData == BacktraceData.EMPTY) return runtime.getNil();
 
             return this.backtraceObject = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
-        }
-
-        /**
-         * Set the Ruby-facing backtrace object for this backtrace.
-         *
-         * @param backtraceObject the object to return for future backtrace requests
-         */
-        public final void setBacktraceObject(IRubyObject backtraceObject) {
-            this.backtraceObject = backtraceObject;
         }
 
         /**
@@ -432,7 +429,7 @@ public class RubyException extends RubyObject {
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
-        exception.backtrace.backtraceData = backtrace.backtraceData;
+        exception.backtrace.copy(backtrace);
         exception.message = message;
     }
 

@@ -235,7 +235,7 @@ public class JavaProxy extends RubyObject {
 
         if ( Modifier.isStatic(field.getModifiers()) ) {
             if ( asReader ) {
-                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field));
+                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field, false));
             }
             if ( asWriter == null || asWriter ) {
                 if ( Modifier.isFinal(field.getModifiers()) ) {

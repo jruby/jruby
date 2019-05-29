@@ -115,7 +115,7 @@ public abstract class IRScope implements ParseResult {
     protected int booleanVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
-    private Map<String, Integer> nextVarIndex;
+    private int nextLabelIndex = 0;
 
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
@@ -148,7 +148,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.nextVarIndex = new HashMap<>(1); // SSS FIXME: clone!
         this.interpreterContext = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -171,7 +170,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.nextVarIndex = new HashMap<>(1);
         this.interpreterContext = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -246,18 +244,8 @@ public abstract class IRScope implements ParseResult {
         if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
-    private static final ByteList FLIP = new ByteList(new byte[] {'%', 'f', 'l', 'i', 'p', '_'});
-
-    public LocalVariable getNewFlipStateVariable() {
-        ByteList flip = FLIP.dup();
-
-        flip.append(allocateNextPrefixedName("%flip"));
-
-        return getLocalVariable(getManager().getRuntime().newSymbol(flip) , 0);
-    }
-
     public Label getNewLabel(String prefix) {
-        return new Label(prefix, allocateNextPrefixedName(prefix));
+        return new Label(prefix, nextLabelIndex++);
     }
 
     public Label getNewLabel() {
@@ -318,16 +306,6 @@ public abstract class IRScope implements ParseResult {
         }
 
         return (IRMethod) current;
-    }
-
-    public IRScope getNearestFlipVariableScope() {
-        IRScope current = this;
-
-        while (current != null && !current.isFlipScope()) {
-            current = current.getLexicalParent();
-        }
-
-        return current;
     }
 
     public IRScope getNearestTopLocalVariableScope() {
@@ -548,14 +526,6 @@ public abstract class IRScope implements ParseResult {
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
     private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
-        // All passes are disabled in scopes where BEGIN and END scopes might
-        // screw around with escaped variables. Optimizing for them is not
-        // worth the effort. It is simpler to just go fully safe in scopes
-        // influenced by their presence.
-        if (isUnsafeScope()) {
-            passes = getManager().getSafePasses(this);
-        }
-
         if (dumper != null) dumper.dump(getCFG(), "Start");
 
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
@@ -904,8 +874,12 @@ public abstract class IRScope implements ParseResult {
         this.localVars = variables;
     }
 
-    public void setLabelIndices(Map<String, Integer> indices) {
-        nextVarIndex = indices;
+    public void setNextLabelIndex(int index) {
+        nextLabelIndex = index;
+    }
+
+    public int getNextLabelIndex() {
+        return nextLabelIndex;
     }
 
     public LocalVariable lookupExistingLVar(RubySymbol name) {
@@ -1046,15 +1020,6 @@ public abstract class IRScope implements ParseResult {
 
     public int getLocalVariablesCount() {
         return localVars.size();
-    }
-
-    public int getUsedVariablesCount() {
-        // System.out.println("For " + this + ", # lvs: " + getLocalVariablesCount());
-        // # local vars, # flip vars
-        //
-        // SSS FIXME: When we are opting local var access,
-        // no need to allocate local var space except when we have been asked to!
-        return getLocalVariablesCount() + getPrefixCountSize("%flip");
     }
 
     public void setUpUseDefLocalVarMaps() {
@@ -1254,36 +1219,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<IRClosure> getBeginBlocks() {
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public List<IRClosure> getEndBlocks() {
-        return null;
-    }
-
-    // Enebo: We should just make n primitive int and not take the hash hit
-    protected int allocateNextPrefixedName(String prefix) {
-        int index = getPrefixCountSize(prefix);
-
-        nextVarIndex.put(prefix, index + 1);
-
-        return index;
-    }
-
-    protected void resetVariableCounter(String prefix) {
-        nextVarIndex.remove(prefix);
-    }
-
-    public Map<String, Integer> getVarIndices() {
-        return nextVarIndex;
-    }
-
-    protected int getPrefixCountSize(String prefix) {
-        Integer index = nextVarIndex.get(prefix);
-
-        if (index == null) return 0;
-
-        return index.intValue();
+        return Collections.EMPTY_LIST;
     }
 
     public int getNextClosureId() {
@@ -1308,10 +1248,6 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isNonSingletonClassBody() {
         return false;
-    }
-
-    public boolean isFlipScope() {
-        return true;
     }
 
     public boolean isTopLocalVariableScope() {

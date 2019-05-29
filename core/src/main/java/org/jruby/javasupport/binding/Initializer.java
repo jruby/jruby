@@ -122,14 +122,15 @@ public abstract class Initializer {
             final Map<String, AssignedName> names,
             final Field field,
             final boolean isFinal,
-            final boolean isStatic) {
+            final boolean isStatic,
+            final boolean isConstant) {
 
         final String name = field.getName();
 
         if ( Priority.FIELD.lessImportantThan( names.get(name) ) ) return;
 
         names.put(name, new AssignedName(name, Priority.FIELD));
-        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
+        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field, isConstant) :
                 new InstanceFieldGetterInstaller(name, field));
 
         if (!isFinal) {

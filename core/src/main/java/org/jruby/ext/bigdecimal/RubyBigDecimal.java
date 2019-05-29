@@ -131,6 +131,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // Static constants
     private static final double SQRT_10 = 3.162277660168379332;
+    private static final long NEGATIVE_ZERO_LONG_BITS = Double.doubleToLongBits(-0.0);
 
     public static RubyClass createBigDecimal(Ruby runtime) {
         RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), ALLOCATOR);
@@ -533,7 +534,7 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal newFloatSpecialCases(Ruby runtime, RubyFloat val) {
         if (val.isNaN()) return newNaN(runtime);
         if (val.isInfinite()) return newInfinity(runtime, val.getDoubleValue() == Double.POSITIVE_INFINITY ? 1 : -1);
-        if (val.isZero()) return newZero(runtime, val.getDoubleValue() == -0.0 ? -1 : 1);
+        if (val.isZero()) return newZero(runtime, Double.doubleToLongBits(val.getDoubleValue()) == NEGATIVE_ZERO_LONG_BITS ? -1 : 1);
         return null;
     }
 

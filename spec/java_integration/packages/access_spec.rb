@@ -113,4 +113,10 @@ describe "class in default package" do
       Java::BadStaticInit.new
     end.to raise_error(NameError)
   end
+
+  it "has accessible public fields" do
+    expect( Java::DefaultPackageClass.new.x ).to eql 0
+    expect( Java::DefaultPackageClass.anY ).to eql 1
+  end
+
 end

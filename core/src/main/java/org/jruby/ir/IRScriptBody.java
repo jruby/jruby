@@ -9,11 +9,12 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
 public class IRScriptBody extends IRScope {
-    private List<IRClosure> beginBlocks;
+    private List<IRClosure> beginBlocks = Collections.EMPTY_LIST;
     private DynamicScope toplevelScope;
     // FIXME: bytelist_love - This is pretty weird...look at how we use getId in this and consider alternative.
     private RubySymbol fileName;
@@ -72,7 +73,7 @@ public class IRScriptBody extends IRScope {
     /* Record a begin block -- not all scope implementations can handle them */
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
-        if (beginBlocks == null) beginBlocks = new ArrayList<>();
+        if (beginBlocks.isEmpty()) beginBlocks = new ArrayList<>();
         beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }

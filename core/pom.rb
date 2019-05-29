@@ -49,8 +49,8 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.26'
-  jar 'org.jruby.jcodings:jcodings:1.0.43'
+  jar 'org.jruby.joni:joni:2.1.28'
+  jar 'org.jruby.jcodings:jcodings:1.0.44'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -73,7 +73,9 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.2'
+  jar 'com.headius:backport9:1.3'
+
+  jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -411,13 +413,5 @@ project 'JRuby Core' do
                      :id => 'pack core sources',
                      :phase => 'prepare-package' ) # Needs to run before the shade plugin
     end
-  end
-
-  profile 'java9' do
-    activation do
-      jdk '[9,)'
-    end
-
-    jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
   end
 end
