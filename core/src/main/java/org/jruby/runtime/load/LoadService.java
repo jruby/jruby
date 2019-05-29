@@ -487,9 +487,9 @@ public class LoadService {
                     long startTime = loadTimer.startLoad(loadName);
                     try {
                         tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
-                        provide(loadName);
                         return RequireState.LOADED;
                     } finally {
+                        provide(loadName);
                         loadTimer.endLoad(loadName, startTime);
                     }
                 }
