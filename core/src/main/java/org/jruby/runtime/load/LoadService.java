@@ -362,8 +362,8 @@ public class LoadService {
         return smartLoadInternal(requireName, true) == RequireState.LOADED;
     }
 
-    public boolean autoloadRequire(String requireName) {
-        return smartLoadInternal(requireName, false) != RequireState.CIRCULAR;
+    public boolean autoloadRequire(RubyString requireName) {
+        return runtime.getTopSelf().callMethod(runtime.getCurrentContext(), "require", requireName).isTrue();
     }
 
     private enum RequireState {

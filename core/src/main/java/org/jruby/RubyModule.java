@@ -105,6 +105,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.ivars.MethodData;
+import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
@@ -231,10 +232,12 @@ public class RubyModule extends RubyObject {
             public RubyString getFile() { return fileString; }
 
             public void load(final Ruby runtime) {
-                final String file = getFile().asJavaString();
-                if (runtime.getLoadService().autoloadRequire(file)) {
-                    // Do not finish autoloading by cyclic autoload
-                    finishAutoload(baseName);
+                LoadService loadService = runtime.getLoadService();
+                if (!loadService.featureAlreadyLoaded(fileString.asJavaString())) {
+                    if (loadService.autoloadRequire(fileString)) {
+                        // Do not finish autoloading by cyclic autoload
+                        finishAutoload(baseName);
+                    }
                 }
             }
         });
