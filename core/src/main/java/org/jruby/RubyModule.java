@@ -2488,6 +2488,10 @@ public class RubyModule extends RubyObject {
         if (other.getConstantMap() != Collections.EMPTY_MAP) {
             getConstantMapForWrite().putAll(other.getConstantMap());
         }
+        Map<String, Autoload> autoloadMap = other.getAutoloadMap();
+        if (!autoloadMap.isEmpty()) {
+            this.autoloads = autoloadMap;
+        }
     }
 
     public void syncClassVariables(RubyModule other) {
