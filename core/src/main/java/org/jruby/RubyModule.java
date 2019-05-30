@@ -4379,21 +4379,7 @@ public class RubyModule extends RubyObject {
 
     public boolean fastIsConstantDefined(String internedName) {
         assert internedName.equals(internedName.intern()) : internedName + " is not interned";
-        assert IdUtil.isConstant(internedName);
-        boolean isObject = this == getRuntime().getObject();
-
-        RubyModule module = this;
-
-        do {
-            Object value;
-            if ((value = module.constantTableFetch(internedName)) != null) {
-                if (value != UNDEF) return true;
-                return getAutoloadMap().get(internedName) != null;
-            }
-
-        } while (isObject && (module = module.getSuperClass()) != null );
-
-        return false;
+        return isConstantDefined(internedName);
     }
 
     public boolean fastIsConstantDefined19(String internedName) {
@@ -4878,6 +4864,12 @@ public class RubyModule extends RubyObject {
         if ( autoload == null ) return null;
         if ( ! loadConstant ) return RubyObject.UNDEF;
         return autoload.getConstant( getRuntime().getCurrentContext() );
+    }
+
+    public boolean isAutoloadConstant(String name) {
+        final Autoload autoload = getAutoloadMap().get(name);
+        if ( autoload == null ) return false;
+        return true;
     }
 
     /**

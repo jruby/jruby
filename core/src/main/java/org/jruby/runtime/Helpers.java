@@ -2016,7 +2016,7 @@ public class Helpers {
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name, false) != null;
+        return left instanceof RubyModule && ((RubyModule) left).isConstantDefined(name);
     }
 
     @JIT @Interp

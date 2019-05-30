@@ -1,4 +1,3 @@
-fails:Module#autoload interacting with defined? does not load the file when referring to the constant in defined?
 fails:Module#autoload the autoload is triggered when the same file is required directly with a full path
 fails:Module#autoload the autoload is triggered when the same file is required directly with a relative path
 fails:Module#autoload the autoload is triggered when the same file is required directly in a nested require
