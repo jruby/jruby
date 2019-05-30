@@ -70,7 +70,9 @@ import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
+import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.RuntimeError;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
@@ -5060,10 +5062,18 @@ public class RubyModule extends RubyObject {
                 } else if (isSelf(ctx)) {
                     return getValue();
                 }
-                // This method needs to be synchronized for removing Autoload
-                // from autoloadMap when it's loaded.
-                loadMethod.load(ctx.runtime);
+
+                try {
+                    // This method needs to be synchronized for removing Autoload
+                    // from autoloadMap when it's loaded.
+                    loadMethod.load(ctx.runtime);
+                } catch (LoadError | RuntimeError lre) {
+                    // reset ctx to null for a future attempt to load
+                    this.ctx = null;
+                    throw lre;
+                }
             }
+
             return getValue();
         }
 
