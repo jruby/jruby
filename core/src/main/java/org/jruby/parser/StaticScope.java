@@ -34,8 +34,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
@@ -331,16 +331,16 @@ public class StaticScope implements Serializable {
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
 
-        // If we could not find the constant from cref..then try getting from inheritence hierarchy
+        // If we could not find the constant from cref..then try getting from inheritance hierarchy
         return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
 
     public IRubyObject getConstantInner(String internedName) {
-        IRubyObject result = cref.fetchConstant(internedName);
+        IRubyObject result = cref.getConstantWithAutoload(internedName, RubyBasicObject.UNDEF, true);
 
-        if (result != null) {
-            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(internedName) : result;
-        }
+        // If we had a failed autoload, give up hierarchy search
+        if (result == RubyBasicObject.UNDEF) return null;
+        if (result != null) return result;
 
         return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);
     }

@@ -3,9 +3,6 @@ fails:Module#autoload the autoload is triggered when the same file is required d
 fails:Module#autoload the autoload is triggered when the same file is required directly in a nested require
 fails:Module#autoload during the autoload before the constant is assigned returns false in autoload thread and true otherwise for Module#const_defined?
 fails:Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and returns the path in other threads for Module#autoload?
-fails:Module#autoload after autoloading searches for the constant like the original lookup in the included modules
-fails:Module#autoload after autoloading searches for the constant like the original lookup in the included modules of the superclass
-fails:Module#autoload after autoloading searches for the constant like the original lookup in the prepended modules
 critical(hangs):Module#autoload during the autoload before the constant is assigned returns nil in autoload thread and 'constant' otherwise for defined?
 critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
 critical(hangs intermittently, #5717):Module#autoload (concurrently) blocks others threads while doing an autoload

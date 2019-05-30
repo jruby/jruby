@@ -4196,9 +4196,11 @@ public class RubyModule extends RubyObject {
     private static IRubyObject iterateConstantNoConstMissing(String name,
         RubyModule init, boolean inherit, boolean loadConstant) {
         for (RubyModule mod = init; mod != null; mod = mod.getSuperClass()) {
-            final IRubyObject value = mod.fetchConstant(name, true);
+            IRubyObject value =
+                    loadConstant ?
+                            mod.getConstantWithAutoload(name, null, true) :
+                            mod.fetchConstant(name, true);
 
-            if ( value == UNDEF ) return mod.getAutoloadConstant(name, loadConstant);
             if ( value != null ) return value;
 
             if ( ! inherit ) break;
@@ -4211,6 +4213,36 @@ public class RubyModule extends RubyObject {
         IRubyObject value = getConstantFromNoConstMissing(name);
 
         return value != null ? value : getConstantFromConstMissing(name);
+    }
+
+    /**
+     * Search just this class for a constant value, or trigger autoloading.
+     *
+     * @param name
+     * @return
+     */
+    public IRubyObject getConstantWithAutoload(String name, IRubyObject failedAutoloadValue, boolean includePrivate) {
+        RubyModule autoloadModule = null;
+        IRubyObject result;
+
+        while ((result = fetchConstant(name, includePrivate)) != null) { // loop for autoload
+            if (result == RubyObject.UNDEF) {
+                if (autoloadModule == this) return failedAutoloadValue;
+                autoloadModule = this;
+
+                final RubyModule.Autoload autoload = getAutoloadMap().get(name);
+
+                if (autoload == null) return null;
+                if (autoload.getValue() != null) return autoload.getValue();
+
+                autoload.load(getRuntime().getCurrentContext());
+                continue;
+            }
+
+            return result;
+        }
+
+        return autoloadModule != null ? failedAutoloadValue : null;
     }
 
     @Deprecated
@@ -4226,20 +4258,22 @@ public class RubyModule extends RubyObject {
         final Ruby runtime = getRuntime();
         final RubyClass objectClass = runtime.getObject();
 
-        RubyModule mod = this; IRubyObject value;
+        RubyModule mod = this;
 
-        while ( mod != null ) {
-            if ( ( value = mod.fetchConstant(name, includePrivate) ) != null ) {
-                if ( value == UNDEF ) return mod.resolveUndefConstant(name);
+        while (mod != null) {
+            IRubyObject result = mod.getConstantWithAutoload(name, null, includePrivate);
 
+            if (result != null) {
                 if ( mod == objectClass && this != objectClass ) {
                     return null;
                 }
 
-                return value;
+                return result;
             }
+
             mod = mod.getSuperClass();
         }
+
         return null;
     }
 
@@ -4368,8 +4402,7 @@ public class RubyModule extends RubyObject {
         do {
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
-                if (value != UNDEF) return true;
-                return getAutoloadMap().get(name) != null;
+                if (value != null) return true;
             }
 
         } while (isObject && (module = module.getSuperClass()) != null );
@@ -4842,11 +4875,16 @@ public class RubyModule extends RubyObject {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload == null ) return null;
         final IRubyObject value = autoload.getValue();
-        if ( value != null ) {
+
+        if (value != null) {
             storeConstant(name, value);
+        } else {
+            deleteConstant(name);
         }
+
         removeAutoload(name);
         invalidateConstantCache(name);
+
         return value;
     }
 
@@ -4863,13 +4901,7 @@ public class RubyModule extends RubyObject {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload == null ) return null;
         if ( ! loadConstant ) return RubyObject.UNDEF;
-        return autoload.getConstant( getRuntime().getCurrentContext() );
-    }
-
-    public boolean isAutoloadConstant(String name) {
-        final Autoload autoload = getAutoloadMap().get(name);
-        if ( autoload == null ) return false;
-        return true;
+        return autoload.load( getRuntime().getCurrentContext() );
     }
 
     /**
@@ -5033,7 +5065,7 @@ public class RubyModule extends RubyObject {
      * 'Module#autoload' creates this object and stores it in autoloadMap.
      * This object can be shared with multiple threads so take care to change volatile and synchronized definitions.
      */
-    private static final class Autoload {
+    public static final class Autoload {
         // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
         // The lock for test-and-set the ctx.
@@ -5051,7 +5083,7 @@ public class RubyModule extends RubyObject {
 
         // Returns an object for the constant if the caller is the autoloading thread.
         // Otherwise, try to start autoloading and returns the defined object by autoload.
-        IRubyObject getConstant(ThreadContext ctx) {
+        IRubyObject load(ThreadContext ctx) {
             synchronized (ctxLock) {
                 if (this.ctx == null) {
                     this.ctx = ctx;
