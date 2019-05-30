@@ -114,6 +114,7 @@ import org.jruby.util.ByteListHelper;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.IdUtil;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
@@ -205,39 +206,80 @@ public class RubyModule extends RubyObject {
         this.index = classIndex.ordinal();
     }
 
-    public static class ModuleKernelMethods {
-        @JRubyMethod
-        public static IRubyObject autoload(ThreadContext context, IRubyObject self, IRubyObject symbol, IRubyObject file) {
-            return RubyKernel.autoload(context, self, symbol, file);
+    @JRubyMethod
+    public IRubyObject autoload(ThreadContext context, IRubyObject symbol, IRubyObject file) {
+        final Ruby runtime = context.runtime;
+
+        final RubyString fileString =
+                StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, file));
+
+        if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
+
+        final String nonInternedName = symbol.asJavaString();
+
+        if (!IdUtil.isValidConstantName(nonInternedName)) {
+            throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
-        @JRubyMethod(name = "autoload?")
-        public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
-            final Ruby runtime = context.runtime;
-            final String name = TypeConverter.checkID(symbol).idString();
+        final String baseName = nonInternedName.intern(); // interned, OK for "fast" methods
 
-            RubyModule mod = RubyKernel.getModuleForAutoload(runtime, self);
-            for (/* RubyModule mod = (RubyModule) self */; mod != null; mod = mod.getSuperClass()) {
-                final IRubyObject loadedValue = mod.fetchConstant(name);
-                if ( loadedValue != null && loadedValue != UNDEF ) return context.nil;
+        IRubyObject existingValue = fetchConstant(baseName);
+        if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
-                final RubyString file;
-                if ( mod.isIncluded() ) {
-                    file = mod.getNonIncludedClass().getAutoloadFile(name);
-                }
-                else {
-                    file = mod.getAutoloadFile(name);
-                }
+        defineAutoload(baseName, new RubyModule.AutoloadMethod() {
 
-                if ( file != null ) { // due explicit requires still need to :
-                    if ( runtime.getLoadService().featureAlreadyLoaded(file.asJavaString()) ) {
-                        // TODO in which case the auto-load never finish-es ?!
-                        return context.nil;
-                    }
-                    return file;
+            public RubyString getFile() { return fileString; }
+
+            public void load(final Ruby runtime) {
+                final String file = getFile().asJavaString();
+                if (runtime.getLoadService().autoloadRequire(file)) {
+                    // Do not finish autoloading by cyclic autoload
+                    finishAutoload(baseName);
                 }
             }
-            return context.nil;
+        });
+        return context.nil;
+    }
+
+    @JRubyMethod(name = "autoload?")
+    public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol) {
+        final Ruby runtime = context.runtime;
+        final String name = TypeConverter.checkID(symbol).idString();
+
+        RubyModule mod = this;
+        for (/* RubyModule mod = (RubyModule) self */; mod != null; mod = mod.getSuperClass()) {
+            final IRubyObject loadedValue = mod.fetchConstant(name);
+            if ( loadedValue != null && loadedValue != UNDEF ) return context.nil;
+
+            final RubyString file;
+            if ( mod.isIncluded() ) {
+                file = mod.getNonIncludedClass().getAutoloadFile(name);
+            }
+            else {
+                file = mod.getAutoloadFile(name);
+            }
+
+            if ( file != null ) { // due explicit requires still need to :
+                if ( runtime.getLoadService().featureAlreadyLoaded(file.asJavaString()) ) {
+                    // TODO in which case the auto-load never finish-es ?!
+                    return context.nil;
+                }
+                return file;
+            }
+        }
+        return context.nil;
+    }
+
+    @Deprecated
+    public static class ModuleKernelMethods {
+        @Deprecated
+        public static IRubyObject autoload(ThreadContext context, IRubyObject self, IRubyObject symbol, IRubyObject file) {
+            return ((RubyModule) self).autoload(context, symbol, file);
+        }
+
+        @Deprecated
+        public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
+            return ((RubyModule) self).autoload_p(context, symbol);
         }
     }
 
