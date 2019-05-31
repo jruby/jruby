@@ -24,7 +24,7 @@ namespace :spec do
     mspec :compile_mode => "OFF",
           :format => MSPEC_FORMAT,
           :spec_target => ":fast",
-          :jruby_opts => "-I. --dev"
+          :jruby_opts => "--dev"
   end
 
   desc "Run fast specs that do not spawn many subprocesses"
@@ -40,7 +40,7 @@ namespace :spec do
     mspec :compile_mode => "OFF",
           :format => MSPEC_FORMAT,
           :spec_target => ":slow",
-          :jruby_opts => "-I. --dev --debug"
+          :jruby_opts => "--dev --debug"
   end
 
   desc "Run rubyspecs expected to pass"

@@ -2786,7 +2786,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         if (args.length == 2 && (args[1] == runtime.getTrue() || args[1] == runtime.getFalse())) {
-            runtime.getWarnings().warn(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            runtime.getWarnings().warning(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
             addAccessor(context, TypeConverter.checkID(args[0]), context.getCurrentVisibility(), args[0].isTrue(), args[1].isTrue());
             return runtime.getNil();
         }
