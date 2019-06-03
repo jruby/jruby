@@ -471,6 +471,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "CPP", cpp);
         setConfig(context, mkmfHash, "CXX", cxx);
         setConfig(context, mkmfHash, "OUTFLAG", "-o ");
+        setConfig(context, mkmfHash, "COUTFLAG", "-o ");
         setConfig(context, mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(context, mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(context, mkmfHash, "INSTALL", "install -c ");
