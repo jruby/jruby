@@ -32,8 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.RubyClass;
@@ -48,20 +46,18 @@ public class JRubyCallSite extends MutableCallSite {
 
     private static final AtomicLong SITE_ID = new AtomicLong(1);
 
-    private final Lookup lookup;
-    private final CallType callType;
-    public CacheEntry entry = CacheEntry.NULL_CACHE;
-    private final boolean expression;
-    private final String name;
-    private final long siteID = SITE_ID.getAndIncrement();
+    final long siteID = SITE_ID.getAndIncrement();
+    final CallType callType;
+    final String name;
     private final String file;
     private final int line;
-    private boolean boundOnce = false;
     private final Signature signature;
     private final Signature fullSignature;
     private final int arity;
 
-    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean expression) {
+    CacheEntry entry = CacheEntry.NULL_CACHE;
+
+    JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name) {
         super(type);
 
         this.name = name;
@@ -110,42 +106,16 @@ public class JRubyCallSite extends MutableCallSite {
 
         this.arity = arity;
 
-        this.lookup = lookup;
-        this.expression = expression;
         this.file = file;
         this.line = line;
     }
-    
+
     public int arity() {
         return arity;
-    }
-    
-    public Lookup lookup() {
-        return lookup;
     }
 
     public CallType callType() {
         return callType;
-    }
-
-    public boolean isAttrAssign() {
-        return false;
-    }
-
-    public boolean isIterator() {
-        return false;
-    }
-    
-    public boolean isExpression() {
-        return expression;
-    }
-    
-    public String name() {
-        return name;
-    }
-
-    public long siteID() {
-        return siteID;
     }
 
     public String file() {
@@ -156,24 +126,10 @@ public class JRubyCallSite extends MutableCallSite {
         return line;
     }
 
-    public boolean boundOnce() {
-        return boundOnce;
-    }
-
-    public void boundOnce(boolean boundOnce) {
-        this.boundOnce = boundOnce;
-    }
-
-    @Override
-    public void setTarget(MethodHandle target) {
-        super.setTarget(target);
-        boundOnce = true;
-    }
-
     public void setInitialTarget(MethodHandle target) {
         super.setTarget(target);
     }
-    
+
     /**
      * Get the actual incoming Signature for this call site.
      * 

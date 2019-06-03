@@ -88,10 +88,12 @@ public class MathLinker {
 
     private static final CallType[] CALL_TYPES = CallType.values();
 
+    private static final int[] ARG_2_TO_0 = new int[] { 2 }; // MethodHandles.permuteArguments clones the array
+
     public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, long value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         List<String> names = StringSupport.split(name, ':');
         String operator = JavaNameMangler.demangleMethodName(names.get(1));
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator, true);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator);
 
         MethodHandle target = FIXNUM_OPERATOR;
         target = insertArguments(target, 3, site, value);
@@ -103,7 +105,7 @@ public class MathLinker {
     public static CallSite fixnumBooleanBootstrap(Lookup lookup, String name, MethodType type, long value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         List<String> names = StringSupport.split(name, ':');
         String operator = JavaNameMangler.demangleMethodName(names.get(1));
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator, true);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator);
 
         MethodHandle target = FIXNUM_BOOLEAN;
         target = insertArguments(target, 3, site, value);
@@ -115,7 +117,7 @@ public class MathLinker {
     public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, double value, int callType, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         List<String> names = StringSupport.split(name, ':');
         String operator = JavaNameMangler.demangleMethodName(names.get(1));
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator, true);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CALL_TYPES[callType], file, line, operator);
 
         MethodHandle target = FLOAT_OPERATOR;
 
@@ -126,7 +128,7 @@ public class MathLinker {
     }
     
     public static IRubyObject fixnumOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, long value) throws Throwable {
-        String operator = site.name();
+        String operator = site.name;
         String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
         String name = "fixnum_" + opMethod;
         MethodType type = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
@@ -152,9 +154,9 @@ public class MathLinker {
         fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
         
         MethodHandle test = FIXNUM_TEST;
-        test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
+        test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
 
-        if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+        if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Fixnum
         target = guardWithTest(test, target, fallback);
@@ -169,7 +171,7 @@ public class MathLinker {
     }
     
     public static boolean fixnumBoolean(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, long value) throws Throwable {
-        String operator = site.name();
+        String operator = site.name;
         String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
         String name = "fixnum_boolean_" + opMethod;
         MethodType type = methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
@@ -185,9 +187,9 @@ public class MathLinker {
         fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
         
         MethodHandle test = FIXNUM_TEST;
-        test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
+        test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
 
-        if (LOG_BINDING) LOG.debug(name + "\tFixnum boolean operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+        if (LOG_BINDING) LOG.debug(name + "\tFixnum boolean operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Fixnum
         target = guardWithTest(test, target, fallback);
@@ -202,7 +204,7 @@ public class MathLinker {
     }
     
     public static IRubyObject fixnumOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFixnum value) throws Throwable {
-        String operator = site.name();
+        String operator = site.name;
         RubyClass selfClass = InvokeDynamicSupport.pollAndGetClass(context, self);
         CacheEntry entry = site.entry;
         
@@ -210,8 +212,8 @@ public class MathLinker {
             return entry.method.call(context, self, entry.sourceModule, operator, value);
         } else {
             entry = selfClass.searchWithCache(operator);
-            if (InvokeDynamicSupport.methodMissing(entry, site.callType(), operator, caller)) {
-                return InvokeDynamicSupport.callMethodMissing(entry, site.callType(), context, self, operator, value);
+            if (InvokeDynamicSupport.methodMissing(entry, site.callType, operator, caller)) {
+                return InvokeDynamicSupport.callMethodMissing(entry, site.callType, context, self, operator, value);
             }
             site.entry = entry;
             return entry.method.call(context, self, entry.sourceModule, operator, value);
@@ -319,7 +321,7 @@ public class MathLinker {
     }
     
     public static IRubyObject floatOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, double value) throws Throwable {
-        String operator = site.name();
+        String operator = site.name;
         String opMethod = MethodIndex.getFastFloatOpsMethod(operator);
         String name = "float_" + opMethod;
         MethodType type = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
@@ -337,9 +339,9 @@ public class MathLinker {
         MethodHandle test = FLOAT_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
 
-        if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
 
         site.setTarget(guardWithTest(test, target, fallback));
+        if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Float
         target = guardWithTest(test, target, fallback);
@@ -362,7 +364,7 @@ public class MathLinker {
     }
     
     public static IRubyObject floatOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFloat value) throws Throwable {
-        String operator = site.name();
+        String operator = site.name;
         RubyClass selfClass = InvokeDynamicSupport.pollAndGetClass(context, self);
         CacheEntry entry = site.entry;
         
@@ -370,8 +372,8 @@ public class MathLinker {
             return entry.method.call(context, self, entry.sourceModule, operator, value);
         } else {
             entry = selfClass.searchWithCache(operator);
-            if (InvokeDynamicSupport.methodMissing(entry, site.callType(), operator, caller)) {
-                return InvokeDynamicSupport.callMethodMissing(entry, site.callType(), context, self, operator, value);
+            if (InvokeDynamicSupport.methodMissing(entry, site.callType, operator, caller)) {
+                return InvokeDynamicSupport.callMethodMissing(entry, site.callType, context, self, operator, value);
             }
             site.entry = entry;
             return entry.method.call(context, self, entry.sourceModule, operator, value);
