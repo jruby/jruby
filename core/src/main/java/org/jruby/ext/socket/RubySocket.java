@@ -48,6 +48,7 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.INAddr;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.NameInfo;
@@ -70,6 +71,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -622,33 +624,28 @@ public class RubySocket extends RubyBasicSocket {
     static void handleSocketException(final Ruby runtime, final SocketException ex,
         final String caller, final SocketAddress addr) {
 
-        final String message = ex.getMessage();
-        if ( message != null ) {
-            switch ( message ) {
-                case "permission denied" :
-                case "Permission denied" :
-                    if ( addr == null ) {
-                        throw runtime.newErrnoEACCESError(caller + " - " + message);
-                    }
-                    throw runtime.newErrnoEACCESError("Address already in use - " + caller + " for " + formatAddress(addr));
-                case "Address already in use" :
-                    throw runtime.newErrnoEADDRINUSEError(caller + " for " + formatAddress(addr));
-                case "Protocol family unavailable" :
-                    throw runtime.newErrnoEADDRNOTAVAILError(caller + " for " + formatAddress(addr));
-            }
+        final Errno errno = Helpers.errnoFromException(ex);
+        final String callerWithAddr = caller + " for " + formatAddress(addr);
 
+        if (errno != null) {
+            throw runtime.newErrnoFromErrno(errno, caller);
+        }
+
+        final String message = ex.getMessage();
+
+        if (message != null) {
             // This is ugly, but what can we do, Java provides the same exception type
             // for different situations, so we differentiate the errors
             // based on the exception's message.
             if (ALREADY_BOUND_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEINVALError(caller + " - " + message);
+                throw runtime.newErrnoEINVALError(callerWithAddr);
             }
             if (ADDR_NOT_AVAIL_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEADDRNOTAVAILError(caller + " - " + message);
+                throw runtime.newErrnoEADDRNOTAVAILError(callerWithAddr);
             }
         }
 
-        throw runtime.newErrnoEADDRINUSEError(caller + " - " + message);
+        throw runtime.newIOError(callerWithAddr);
     }
 
     private static CharSequence formatAddress(final SocketAddress addr) {
