@@ -2038,9 +2038,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             if (fptr == null) return context.nil;
             if (fptr.fd() == null) return context.nil;
+            if (!fptr.fd().ch.isOpen()) return context.nil;
+            
             final Ruby runtime = context.runtime;
-
-            fptr.finalizeFlush(context, false);
 
             fptr.finalizeFlush(context, false);
 
