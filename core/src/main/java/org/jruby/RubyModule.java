@@ -1014,19 +1014,10 @@ public class RubyModule extends RubyObject {
      *
      * MRI: rb_prepend_module
      *
-     * @param arg The module to include
+     * @param module The module to include
      */
-    public synchronized void prependModule(IRubyObject arg) {
-        assert arg != null;
-
+    public void prependModule(RubyModule module) {
         testFrozen("module");
-
-        if (!(arg instanceof RubyModule)) {
-            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
-                    " (expected Module).");
-        }
-
-        RubyModule module = (RubyModule) arg;
 
         if (module.refinedClass != null) {
             throw getRuntime().newArgumentError("refinement module is not allowed");
@@ -1035,18 +1026,30 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
 
-        if (hasModuleInPrepends(module)) {
+        synchronized (this) {
+            if (hasModuleInPrepends(module)) {
+                invalidateCacheDescendants();
+                return;
+            }
+
+            infectBy(module);
+
+            doPrependModule(module);
+
+            invalidateCoreClasses();
             invalidateCacheDescendants();
-            return;
+            invalidateConstantCacheForModuleInclusion(module);
         }
+    }
 
-        infectBy(module);
-
-        doPrependModule(module);
-
-        invalidateCoreClasses();
-        invalidateCacheDescendants();
-        invalidateConstantCacheForModuleInclusion(module);
+    @Deprecated
+    public void prependModule(IRubyObject arg) {
+        assert arg != null;
+        if (!(arg instanceof RubyModule)) {
+            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
+                    " (expected Module).");
+        }
+        prependModule((RubyModule) arg);
     }
 
     /**
