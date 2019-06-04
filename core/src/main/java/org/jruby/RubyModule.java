@@ -1824,6 +1824,7 @@ public class RubyModule extends RubyObject {
         methodInvalidator.invalidateAll(invalidators);
     }
 
+    @SuppressWarnings("deprecation")
     protected void invalidateCoreClasses() {
         if (!getRuntime().isBootingCore()) {
             if (this == getRuntime().getFixnum()) {
