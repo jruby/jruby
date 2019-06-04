@@ -11,6 +11,7 @@ public class PlusCallSite extends NormalCachingCallSite2 {
         super("+");
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long arg) {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_plus(context, arg);
@@ -20,9 +21,12 @@ public class PlusCallSite extends NormalCachingCallSite2 {
         return super.call(context, caller, self, arg);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double arg) {
-        if (self instanceof RubyFloat && isBuiltin2(self.getMetaClass())) {
-            return ((RubyFloat) self).op_plus(context, arg);
+        if (self instanceof RubyFixnum) {
+            if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_plus(context, arg);
+        } else if (self instanceof RubyFloat) {
+            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_plus(context, arg);
         }
         return super.call(context, caller, self, arg);
     }

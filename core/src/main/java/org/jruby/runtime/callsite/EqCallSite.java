@@ -23,8 +23,10 @@ public class EqCallSite extends NormalCachingCallSite2 {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double arg) {
-        if (self instanceof RubyFloat && isBuiltin2(self.getMetaClass())) {
-            return ((RubyFloat) self).op_equal(context, arg);
+        if (self instanceof RubyFixnum) {
+            if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_equal(context, arg);
+        } else if (self instanceof RubyFloat) {
+            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
         }
         return super.call(context, caller, self, arg);
     }

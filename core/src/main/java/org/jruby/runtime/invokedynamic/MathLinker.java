@@ -240,6 +240,10 @@ public class MathLinker {
         return ((RubyFixnum)self).op_mod(context, value);
     }
 
+    public static IRubyObject fixnum_op_div(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_div(context, value);
+    }
+
     public static IRubyObject fixnum_op_equal(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_equal(context, value);
     }
@@ -390,6 +394,14 @@ public class MathLinker {
 
     public static IRubyObject float_op_mul(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {
         return ((RubyFloat)self).op_mul(context, value);
+    }
+
+    public static IRubyObject float_op_mod(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {
+        return ((RubyFloat)self).op_mod(context, value);
+    }
+
+    public static IRubyObject float_op_div(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {
+        return ((RubyFloat)self).op_div(context, value);
     }
 
     public static IRubyObject float_op_equal(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {

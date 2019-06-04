@@ -9,6 +9,7 @@ public class XorCallSite extends NormalCachingCallSite {
         super("^");
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
         if (self instanceof RubyFixnum && isBuiltin(self.getMetaClass())) {
             return ((RubyFixnum) self).op_xor(context, fixnum);

@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRScope;
+import org.jruby.runtime.callsite.DivCallSite;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -146,6 +147,7 @@ public class MethodIndex {
             case "-"  : return "op_minus";
             case "*"  : return "op_mul";
             case "%"  : return "op_mod";
+            case "/"  : return "op_div";
 
             case "&"  : return "op_and";
             case "|"  : return "op_or";
@@ -169,6 +171,7 @@ public class MethodIndex {
             case "-"   : return new MinusCallSite();
             case "*"   : return new MulCallSite();
             case "%"   : return new ModCallSite();
+            case "/"   : return new DivCallSite();
 
             case "&"   : return new BitAndCallSite();
             case "|"   : return new BitOrCallSite();
@@ -195,6 +198,8 @@ public class MethodIndex {
             case "+"  : return "op_plus";
             case "-"  : return "op_minus";
             case "*"  : return "op_mul";
+            case "%"  : return "op_mod";
+            case "/"  : return "op_div";
 
             case "==" : return "op_equal";
             case "<"  : return "op_lt";
@@ -211,6 +216,8 @@ public class MethodIndex {
             case "+"   : return new PlusCallSite();
             case "-"   : return new MinusCallSite();
             case "*"   : return new MulCallSite();
+            case "%"   : return new ModCallSite();
+            case "/"   : return new DivCallSite();
 
             case "=="  : return new EqCallSite();
             case "<"   : return new LtCallSite();
