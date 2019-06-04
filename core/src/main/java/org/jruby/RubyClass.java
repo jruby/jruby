@@ -830,7 +830,7 @@ public class RubyClass extends RubyModule {
                 classStream.write(classBytes);
             }
             catch (IOException io) {
-                getRuntime().getWarnings().warn("unable to dump class file: " + io.getMessage());
+                runtime.getWarnings().warn("unable to dump class file: " + io.getMessage());
             }
             finally {
                 if (classStream != null) {
@@ -868,7 +868,7 @@ public class RubyClass extends RubyModule {
     }
 
     public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-        CacheEntry entry = getMetaClass().searchWithCache("inherited");
+        CacheEntry entry = metaClass.searchWithCache("inherited");
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -1125,7 +1125,7 @@ public class RubyClass extends RubyModule {
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
 
-        if (getRuntime().getNil() != null) {
+        if (runtime.getNil() != null) {
             superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
         }
     }
@@ -1140,7 +1140,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return context.nil;
+            if (metaClass == runtime.getBasicObject().metaClass) return context.nil;
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1816,7 +1816,7 @@ public class RubyClass extends RubyModule {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
-            final ThreadContext context = getRuntime().getCurrentContext();
+            final ThreadContext context = runtime.getCurrentContext();
             IRubyObject javaClass = JavaClass.java_class(context, this);
             if ( ! javaClass.isNil() ) return javaClass.toJava(target);
 

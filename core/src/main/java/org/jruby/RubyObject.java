@@ -161,7 +161,7 @@ public class RubyObject extends RubyBasicObject {
             ObjectAllocator allocator = RubyObjectSpecializer.specializeForVariables(klass, foundVariables);
 
             // invalidate metaclass so new allocator is picked up for specialized .new
-            klass.getMetaClass().invalidateCacheDescendants();
+            klass.metaClass.invalidateCacheDescendants();
 
             return allocator.allocate(runtime, klass);
         }

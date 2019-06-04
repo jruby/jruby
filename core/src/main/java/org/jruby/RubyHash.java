@@ -1229,8 +1229,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<long[]> CalculateHashVisitor = new VisitorWithState<long[]>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
-            hval[0] += Helpers.safeHash(context, key).convertToInteger().getLongValue()
-                    ^ Helpers.safeHash(context, value).convertToInteger().getLongValue();
+            hval[0] += Helpers.safeHash(context, key).value ^ Helpers.safeHash(context, value).value;
         }
     };
 
@@ -2172,7 +2171,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     public RubyHash dupFast(final ThreadContext context) {
         final Ruby runtime = context.runtime;
-        RubyHash dup = new RubyHash(runtime, getMetaClass(), this);
+        RubyHash dup = new RubyHash(runtime, metaClass, this);
 
         dup.setComparedByIdentity(this.isComparedByIdentity());
 
