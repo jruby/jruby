@@ -432,6 +432,24 @@ DO NOT MODIFIY - GENERATED CODE
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
+          <execution>
+            <id>scope-generator</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.bytecode.version=${base.java.version}</argument>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.runtime.scope.DynamicScopeGenerator</argument>
+                <argument>${project.build.outputDirectory}</argument>
+              </arguments>
+              <executable>java</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
