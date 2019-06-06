@@ -30,7 +30,6 @@ import org.objectweb.asm.Handle;
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
-    public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
     private boolean isEND;         // Does this represent and END { } closure?
@@ -55,7 +54,6 @@ public class IRClosure extends IRScope {
         super(manager, lexicalParent, null, lineNumber, staticScope);
 
         this.startLabel = new Label(prefix + "START", 0);
-        this.endLabel = new Label(prefix + "END", 0);
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
         name.append(Integer.toString(closureId).getBytes());
@@ -70,7 +68,6 @@ public class IRClosure extends IRScope {
         this.closureId = closureId;
         super.setName(fullName);
         this.startLabel = new Label(getId() + "_START", 0);
-        this.endLabel = new Label(getId() + "_END", 0);
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
@@ -279,7 +276,6 @@ public class IRClosure extends IRScope {
         //
         // In "(a)", it is 0 (correct), but in the body, it is 1 (incorrect)
 
-        int originalDepth = depth;
         LocalVariable lvar;
         IRScope s = this;
         int d = depth;
