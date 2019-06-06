@@ -302,7 +302,10 @@ public class IRBuilder {
     protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
 
-    protected int beginIndex = 0; // Current index to put next BEGIN block at the front of this scope.
+    // Current index to put next BEGIN blocks and other things at the front of this scope.
+    // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
+    // execution order
+    protected int afterPrologueIndex = 0;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -2794,7 +2797,9 @@ public class IRBuilder {
         if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode);
 
         addCurrentScopeAndModule();                                // %current_scope/%current_module
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // Start label -- used by redo!
+
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
+        afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode());
@@ -2949,7 +2954,7 @@ public class IRBuilder {
 
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
 
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
+        afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
@@ -3421,9 +3426,9 @@ public class IRBuilder {
     public Operand buildPreExe(PreExeNode preExeNode) {
         List<Instr> beginInstrs = newIRBuilder(manager, scope).buildPreExeInner(preExeNode.getBodyNode());
 
-        instructions.addAll(beginIndex, beginInstrs);
+        instructions.addAll(afterPrologueIndex, beginInstrs);
 
-        beginIndex += beginInstrs.size();
+        afterPrologueIndex += beginInstrs.size();
 
         return manager.getNil();
     }
@@ -3452,7 +3457,9 @@ public class IRBuilder {
                     throwSyntaxError(redoNode, "Can't escape from eval with redo");
                 } else {
                     addInstr(new ThreadPollInstr(true));
-                    addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                    Label startLabel = new Label(scope.getId() + "_START", 0);
+                    instructions.add(afterPrologueIndex, new LabelInstr(startLabel));
+                    addInstr(new JumpInstr(startLabel));
                 }
             } else {
                 throwSyntaxError(redoNode, "Invalid redo");
@@ -3714,7 +3721,7 @@ public class IRBuilder {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        beginIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
@@ -3741,7 +3748,7 @@ public class IRBuilder {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        beginIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
