@@ -33,8 +33,6 @@ public class IRClosure extends IRScope {
 
     private boolean isEND;         // Does this represent and END { } closure?
 
-    private Signature signature;
-
     // We allow closures who happen to be assigned to calls named 'defined_method' to save the original
     // AST so we can attempt to convert those blocks to full methods.
     private IterNode source;
@@ -72,8 +70,6 @@ public class IRClosure extends IRScope {
             this.body = shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) : new InterpretedIRBlockBody(c, c.getSignature());
         }
         isEND = c.isEND;
-
-        this.signature = c.signature;
     }
 
     private static final ByteList CLOSURE = new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_'});
@@ -100,7 +96,7 @@ public class IRClosure extends IRScope {
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope,
                      Signature signature, ByteList prefix, boolean isBeginEndBlock, boolean needsCoverage) {
         this(manager, lexicalParent, lineNumber, staticScope, prefix);
-        this.signature = signature;
+
         lexicalParent.addClosure(this);
 
         if (getManager().isDryRun()) {
@@ -366,7 +362,7 @@ public class IRClosure extends IRScope {
     }
 
     public Signature getSignature() {
-        return signature;
+        return body.getSignature();
     }
 
     public void setHandle(Handle handle) {
