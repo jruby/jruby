@@ -302,6 +302,8 @@ public class IRBuilder {
     protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
 
+    protected int beginIndex = 0; // Current index to put next BEGIN block at the front of this scope.
+
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
         this.scope = scope;
@@ -3392,6 +3394,12 @@ public class IRBuilder {
         return scope.allocateInterpreterContext(instructions);
     }
 
+    private List<Instr> buildPreExeInner(Node body) {
+        build(body);
+
+        return instructions;
+    }
+
     public Operand buildPostExe(PostExeNode postExeNode) {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
@@ -3411,13 +3419,12 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRScope topLevel = scope.getRootLexicalScope();
-        IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
-                Signature.from(preExeNode), IRFor._BEGIN_);
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
+        List<Instr> beginInstrs = newIRBuilder(manager, scope).buildPreExeInner(preExeNode.getBodyNode());
 
-        topLevel.recordBeginBlock(beginClosure);  // Record the begin block at IR build time
+        instructions.addAll(beginIndex, beginInstrs);
+
+        beginIndex += beginInstrs.size();
+
         return manager.getNil();
     }
 
@@ -3707,6 +3714,8 @@ public class IRBuilder {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
+        beginIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
+
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
 
@@ -3732,19 +3741,14 @@ public class IRBuilder {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
+        beginIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
+
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
 
         scope.computeScopeFlagsEarly(instructions);
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
-
-        // Run all discovered BEGIN blocks before main body.
-        List<IRClosure> begins = scope.getBeginBlocks();
-        for (int i = begins.size() ; i > 0 ; i--) {
-            IRClosure begin = begins.get(i - 1);
-            addInstrAtBeginning(new RunBeginBlockInstr(scope, new WrappedIRClosure(begin.getSelf(), begin)));
-        }
 
         return scope.allocateInterpreterContext(instructions);
     }

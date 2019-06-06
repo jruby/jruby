@@ -33,7 +33,6 @@ public class IRClosure extends IRScope {
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
-    private boolean isBeginEndBlock;
     private boolean isEND;         // Does this represent and END { } closure?
 
     private Signature signature;
@@ -149,14 +148,6 @@ public class IRClosure extends IRScope {
 
     public boolean isEND() {
         return isEND;
-    }
-
-    public void setBeginEndBlock() {
-        this.isBeginEndBlock = true;
-    }
-
-    public boolean isBeginEndBlock() {
-        return isBeginEndBlock;
     }
 
     @Override
@@ -288,6 +279,7 @@ public class IRClosure extends IRScope {
         //
         // In "(a)", it is 0 (correct), but in the body, it is 1 (incorrect)
 
+        int originalDepth = depth;
         LocalVariable lvar;
         IRScope s = this;
         int d = depth;
@@ -329,10 +321,6 @@ public class IRClosure extends IRScope {
     }
 
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
-        // SSS FIXME: This is fragile. Untangle this state.
-        // Why is this being copied over to InterpretedIRBlockBody?
-        clone.isBeginEndBlock = this.isBeginEndBlock;
-
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
 //        if (getCFG() != null) {

@@ -506,18 +506,6 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext.getCFG();
     }
 
-    protected boolean isUnsafeScope() {
-        if (this.isBeginEndBlock()) return true;                        // this is a BEGIN block
-
-        List beginBlocks = getBeginBlocks();
-        if (beginBlocks != null && !beginBlocks.isEmpty()) return true; // this contains a BEGIN block
-
-        // Does topmost variable scope contain any BEGIN blocks (IRScriptBody or IREval)?
-        // Ex1: eval("BEGIN {a = 1}; p a")    Ex2: BEGIN {a = 1}; p a
-        beginBlocks = getNearestTopLocalVariableScope().getBeginBlocks();
-        return beginBlocks != null && !beginBlocks.isEmpty();
-    }
-
     public List<CompilerPass> getExecutedPasses() {
         return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
@@ -609,7 +597,8 @@ public abstract class IRScope implements ParseResult {
         getManager().optimizeIfSimpleScope(this);
 
         // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
-        if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
+        // FIXME: ACP as normal now since we have no BEGINs to make thing unsafe?
+        new AddCallProtocolInstructions().run(this);
 
         fullInterpreterContext.generateInstructionsForInterpretation();
 
@@ -1213,27 +1202,10 @@ public abstract class IRScope implements ParseResult {
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
     }
 
-    /** Record a begin block.  Only eval and script body scopes support this */
-    public void recordBeginBlock(IRClosure beginBlockClosure) {
-        throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
-    }
-
-    public List<IRClosure> getBeginBlocks() {
-        return Collections.EMPTY_LIST;
-    }
-
-    public List<IRClosure> getEndBlocks() {
-        return Collections.EMPTY_LIST;
-    }
-
     public int getNextClosureId() {
         nextClosureIndex++;
 
         return nextClosureIndex;
-    }
-
-    public boolean isBeginEndBlock() {
-        return false;
     }
 
     /**

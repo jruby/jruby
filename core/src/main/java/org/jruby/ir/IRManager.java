@@ -334,7 +334,7 @@ public class IRManager {
 
         EnumSet<IRFlags> flags = scope.getFlags();
 
-        if (!scope.isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
+        if (!flags.contains(REQUIRES_DYNSCOPE)) {
             if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(scope);
             deadCodeEliminationPass.run(scope);
             optimizeDynScopesPass.run(scope);

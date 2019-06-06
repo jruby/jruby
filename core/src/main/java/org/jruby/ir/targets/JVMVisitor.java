@@ -1938,15 +1938,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void RunBeginBlock(RunBeginBlockInstr runbeginblockinstr) {
-        WrappedIRClosure(runbeginblockinstr.getBeginBlockClosure());
-        jvmMethod().loadContext();
-        jvmAdapter().aconst_null();
-        jvmAdapter().invokevirtual(p(Block.class), "yield", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
-        jvmAdapter().pop();
-    }
-
-    @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
             case HANDLE_PROPAGATED_BREAK:
