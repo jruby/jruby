@@ -33,7 +33,7 @@ import java.security.ProtectionDomain;
 
 public class ClassDefiningJRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
 
-    final static ProtectionDomain DEFAULT_DOMAIN;
+    public final static ProtectionDomain DEFAULT_DOMAIN;
 
     static {
         ProtectionDomain defaultDomain = null;

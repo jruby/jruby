@@ -8,17 +8,22 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -30,6 +35,9 @@ import static org.jruby.util.CodegenUtils.sig;
 public class DynamicScopeGenerator {
     private static final NonBlockingHashMapLong<MethodHandle> specializedFactories = new NonBlockingHashMapLong<>();
     private static ClassDefiningClassLoader CDCL = new OneShotClassLoader(Ruby.getClassLoader());
+
+    public static final String SCOPES_PACKAGE = "org.jruby.runtime.scopes";
+    public static final String SCOPES_PATH = SCOPES_PACKAGE.replaceAll("\\.", "/");
 
     public static final List<String> SPECIALIZED_GETS = Collections.unmodifiableList(Arrays.asList(
             "getValueZeroDepthZero",
@@ -71,29 +79,13 @@ public class DynamicScopeGenerator {
     ));
 
     public static MethodHandle generate(final int size) {
+        ClassDefiningClassLoader cdcl = CDCL;
+
         MethodHandle h = getClassFromSize(size);
 
         if (h != null) return h;
 
-        final String clsPath = "org/jruby/runtime/scopes/DynamicScope" + size;
-        final String clsName = clsPath.replace('/', '.');
-
-        // try to load the class, in case we have parallel generation happening
-        Class p;
-
-        try {
-            p = CDCL.loadClass(clsName);
-        } catch (ClassNotFoundException cnfe) {
-            // try again under lock
-            synchronized (CDCL) {
-                try {
-                    p = CDCL.loadClass(clsName);
-                } catch (ClassNotFoundException cnfe2) {
-                    // proceed to actually generate the class
-                    p = generateInternal(size, clsPath, clsName);
-                }
-            }
-        }
+        Class p = loadClassForSize(cdcl, size);
 
         // acquire constructor handle and store it
         try {
@@ -108,9 +100,74 @@ public class DynamicScopeGenerator {
         }
     }
 
-    private static Class generateInternal(final int size, final String clsPath, final String clsName) {
+    /**
+     * Pregenerate a number of scope shapes to the path given.
+     *
+     * @param args args[0] should be the path in which the classes are dumped
+     */
+    public static void main(String[] args) {
+        String targetPath = args[0];
+        Map<String, byte[]> definedClasses = new HashMap<>();
+
+        ClassDefiningClassLoader cdcl = new OneShotClassLoader(DynamicScopeGenerator.class.getClassLoader()) {
+            @Override
+
+            public Class<?> defineClass(String name, byte[] bytes) {
+                definedClasses.put(name, bytes);
+                return super.defineClass(name, bytes, 0, bytes.length, ClassDefiningJRubyClassLoader.DEFAULT_DOMAIN);
+            }
+        };
+
+        // Generate from zero to MAX all dynamic scope sizes we would specialize at runtime
+        for (int i = 0; i <= StaticScope.MAX_SPECIALIZED_SIZE; i++) {
+            generateClassForSize(cdcl, i);
+        }
+
+        new File(targetPath + "/" + SCOPES_PATH).mkdirs();
+
+        definedClasses.forEach((key, value) -> {
+            try {
+                FileOutputStream fos = new FileOutputStream(targetPath + "/" + key.replaceAll("\\.", "/") + ".class");
+                fos.write(value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static Class generateClassForSize(ClassDefiningClassLoader cdcl, int size) {
+        final String clsPath = SCOPES_PATH + "/DynamicScope" + size;
+        final String clsName = clsPath.replace('/', '.');
+
+        return generateInternal(cdcl, size, clsPath, clsName);
+    }
+
+    private static Class loadClassForSize(ClassDefiningClassLoader cdcl, int size) {
+        final String clsPath = SCOPES_PATH + "/DynamicScope" + size;
+        final String clsName = clsPath.replace('/', '.');
+
+        // try to load the class, in case we have parallel generation happening
+        Class p;
+
+        try {
+            p = cdcl.loadClass(clsName);
+        } catch (ClassNotFoundException cnfe) {
+            // try again under lock
+            synchronized (cdcl) {
+                try {
+                    p = cdcl.loadClass(clsName);
+                } catch (ClassNotFoundException cnfe2) {
+                    // proceed to actually generate the class
+                    p = generateInternal(cdcl, size, clsPath, clsName);
+                }
+            }
+        }
+        return p;
+    }
+
+    private static Class generateInternal(final ClassDefiningClassLoader cdcl, final int size, final String clsPath, final String clsName) {
         // ensure only one thread will attempt to generate and define the new class
-        synchronized (CDCL) {
+        synchronized (cdcl) {
             // create a new one
             final String[] newFields = varList(size);
 
@@ -287,7 +344,7 @@ public class DynamicScopeGenerator {
                 }});
             }};
 
-            return defineClass(jiteClass);
+            return defineClass(cdcl, jiteClass);
         }
     }
 
@@ -332,12 +389,8 @@ public class DynamicScopeGenerator {
         return specializedFactories.get(size);
     }
 
-    private static Class defineClass(JiteClass jiteClass) {
-        return CDCL.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_7));
-    }
-
-    private static Class loadClass(JiteClass jiteClass) throws ClassNotFoundException {
-        return CDCL.loadClass(classNameFromJiteClass(jiteClass));
+    private static Class defineClass(ClassDefiningClassLoader cdcl, JiteClass jiteClass) {
+        return cdcl.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_7));
     }
 
     private static String classNameFromJiteClass(JiteClass jiteClass) {
