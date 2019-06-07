@@ -3685,7 +3685,8 @@ public class RubyModule extends RubyObject {
             return ((RubyModule) module).getConstantSkipAutoload(id, inherit, inherit);
         });
 
-        return runtime.newBoolean(value != null);
+        // unset or set to UNDEF for autoload are both false
+        return runtime.newBoolean(value != null && value != UNDEF);
     }
 
     /** rb_mod_const_get
@@ -4182,7 +4183,7 @@ public class RubyModule extends RubyObject {
         return getConstantSkipAutoload(name, true, true);
     }
 
-    // returns UNDEF for un-loaded autoload constants
+    // returns null for autoloads that have failed
     private IRubyObject getConstantSkipAutoload(String name, boolean inherit, boolean includeObject) {
         IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, false);
 
@@ -4200,6 +4201,9 @@ public class RubyModule extends RubyObject {
                     loadConstant ?
                             mod.getConstantWithAutoload(name, null, true) :
                             mod.fetchConstant(name, true);
+
+            // if it's UNDEF and we're not loading and there's no autoload set up, consider it undefined
+            if ( value == UNDEF && !loadConstant && mod.getAutoloadMap().get(name) == null) return null;
 
             if ( value != null ) return value;
 
@@ -4876,14 +4880,12 @@ public class RubyModule extends RubyObject {
         if ( autoload == null ) return null;
         final IRubyObject value = autoload.getValue();
 
-        if (value != null) {
+        if (value != null && value != UNDEF) {
             storeConstant(name, value);
-        } else {
-            deleteConstant(name);
+            invalidateConstantCache(name);
         }
 
         removeAutoload(name);
-        invalidateConstantCache(name);
 
         return value;
     }
