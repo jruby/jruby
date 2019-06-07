@@ -2,6 +2,7 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.operands.UndefinedValue;
@@ -179,7 +180,7 @@ public class ConstantLookupSite extends MutableCallSite {
         // Inheritance lookup
         IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
 
-        if (constant == null) {
+        if (constant == null || constant == RubyBasicObject.UNDEF) {
             constant = UndefinedValue.UNDEFINED;
         }
 
@@ -209,7 +210,7 @@ public class ConstantLookupSite extends MutableCallSite {
 
         IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
 
-        if (constant == null) {
+        if (constant == null || constant == RubyBasicObject.UNDEF) {
             constant = UndefinedValue.UNDEFINED;
         }
 

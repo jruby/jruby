@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
@@ -65,7 +66,7 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
     private Object cache(Ruby runtime, RubyModule module) {
         String id = getId();
         Object constant = module.getConstantNoConstMissingSkipAutoload(id);
-        if (constant == null) {
+        if (constant == null || constant == RubyBasicObject.UNDEF) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache

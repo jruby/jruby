@@ -4398,27 +4398,18 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isConstantDefined(String name) {
-        assert IdUtil.isConstant(name);
-        boolean isObject = this == getRuntime().getObject();
+        IRubyObject value = getConstantNoConstMissingSkipAutoload(name);
 
-        RubyModule module = this;
-
-        do {
-            Object value;
-            if ((value = module.constantTableFetch(name)) != null) {
-                if (value != null) return true;
-            }
-
-        } while (isObject && (module = module.getSuperClass()) != null );
-
-        return false;
+        return value != null && value != UNDEF;
     }
 
+    @Deprecated
     public boolean fastIsConstantDefined(String internedName) {
         assert internedName.equals(internedName.intern()) : internedName + " is not interned";
         return isConstantDefined(internedName);
     }
 
+    @Deprecated
     public boolean fastIsConstantDefined19(String internedName) {
         return fastIsConstantDefined19(internedName, true);
     }
