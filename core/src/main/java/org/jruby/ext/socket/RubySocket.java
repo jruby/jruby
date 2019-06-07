@@ -29,6 +29,7 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -574,7 +575,10 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "connect(2)", addr);
+            // Subclasses of SocketException all indicate failure to connect, which leaves the channel closed.
+            // At this point the socket channel is no longer usable, so we clean up.
+            getOpenFile().cleanup(runtime, true);
+            throw buildSocketException(runtime, e, "connect(2)", addr);
         }
         catch (IOException e) {
             throw sockerr(runtime, "connect(2): name or service not known", e);
@@ -611,7 +615,7 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "bind(2)", iaddr); // throws
+            throw buildSocketException(runtime, e, "bind(2)", iaddr); // throws
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);
@@ -621,14 +625,14 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    static void handleSocketException(final Ruby runtime, final SocketException ex,
+    static RaiseException buildSocketException(final Ruby runtime, final SocketException ex,
         final String caller, final SocketAddress addr) {
 
         final Errno errno = Helpers.errnoFromException(ex);
         final String callerWithAddr = caller + " for " + formatAddress(addr);
 
         if (errno != null) {
-            throw runtime.newErrnoFromErrno(errno, caller);
+            return runtime.newErrnoFromErrno(errno, caller);
         }
 
         final String message = ex.getMessage();
@@ -638,14 +642,14 @@ public class RubySocket extends RubyBasicSocket {
             // for different situations, so we differentiate the errors
             // based on the exception's message.
             if (ALREADY_BOUND_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEINVALError(callerWithAddr);
+                return runtime.newErrnoEINVALError(callerWithAddr);
             }
             if (ADDR_NOT_AVAIL_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEADDRNOTAVAILError(callerWithAddr);
+                return runtime.newErrnoEADDRNOTAVAILError(callerWithAddr);
             }
         }
 
-        throw runtime.newIOError(callerWithAddr);
+        return runtime.newIOError(callerWithAddr);
     }
 
     private static CharSequence formatAddress(final SocketAddress addr) {
@@ -680,6 +684,17 @@ public class RubySocket extends RubyBasicSocket {
         final Ruby runtime = context.runtime;
 
         return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
+    }
+
+    @Override
+    @JRubyMethod
+    public IRubyObject close(final ThreadContext context) {
+        if (getOpenFile() != null) {
+            if (isClosed()) return context.nil;
+            openFile.checkClosed();
+            return rbIoClose(context);
+        }
+        return context.nil;
     }
 
     @Override
