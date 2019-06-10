@@ -249,34 +249,25 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "autoload?")
     public IRubyObject autoload_p(ThreadContext context, IRubyObject symbol) {
-        final Ruby runtime = context.runtime;
         final String name = TypeConverter.checkID(symbol).idString();
 
-        RubyModule mod = this;
-        for (/* RubyModule mod = (RubyModule) self */; mod != null; mod = mod.getSuperClass()) {
+        for (RubyModule mod = this; mod != null; mod = mod.getSuperClass()) {
             final IRubyObject loadedValue = mod.fetchConstant(name);
-            if ( loadedValue != null && loadedValue != UNDEF ) return context.nil;
 
-            final RubyString file;
-            RubyModule target = mod;
-            if ( mod.isIncluded() ) {
-                target = mod.getNonIncludedClass();
-            }
+            if (loadedValue == UNDEF) {
+                final RubyString file;
 
-            Autoload autoload = target.getAutoloadMap().get(name);
+                Autoload autoload = mod.getAutoloadMap().get(name);
 
-            if (autoload == null) return context.nil;
-            if (autoload.getValue() != null) return context.nil;
-            if (autoload.isSelf(context)) return context.nil;
+                if (autoload == null) return context.nil;
+                if (autoload.getValue() != null) return context.nil;
+                if (autoload.isSelf(context)) return context.nil;
 
-            file = autoload.getFile();
+                file = autoload.getFile();
 
-            if ( file != null ) { // due explicit requires still need to :
-//                if ( runtime.getLoadService().featureAlreadyLoaded(file.asJavaString()) ) {
-//                    // TODO in which case the auto-load never finish-es ?!
-//                    return context.nil;
-//                }
-                return file;
+                if (file != null) {
+                    return file;
+                }
             }
         }
         return context.nil;
@@ -353,12 +344,12 @@ public class RubyModule extends RubyObject {
      * For looking up constant, check constantMap first then try to get an Autoload object from autoloadMap.
      * For setting constant, update constantMap first and remove an Autoload object from autoloadMap.
      */
-    private Map<String, Autoload> getAutoloadMap() {
+    protected Map<String, Autoload> getAutoloadMap() {
         return autoloads;
     }
 
-    private synchronized Map<String, Autoload> getAutoloadMapForWrite() {
-        return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
+    protected synchronized Map<String, Autoload> getAutoloadMapForWrite() {
+        return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<>(4, 0.9f, 1) : autoloads;
     }
 
     @SuppressWarnings("unchecked")
