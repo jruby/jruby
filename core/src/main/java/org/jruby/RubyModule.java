@@ -4400,11 +4400,19 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isConstantDefined(String name, boolean inherit) {
+        Ruby runtime = getRuntime();
+
         if (!IdUtil.isValidConstantName(name)) {
-            throw getRuntime().newNameError("bad constant name " + name, name);
+            throw runtime.newNameError("bad constant name " + name, name);
         }
 
+        RubyClass object = runtime.getObject();
+        boolean isObject = this == object;
+
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
+            // skip Object if we aren't starting there
+            if (!isObject && module == object) return false;
+
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
                 if (value != UNDEF) return true;
@@ -4413,10 +4421,11 @@ public class RubyModule extends RubyObject {
 
                 if (autoload == null) return false; // no autoload
                 if (autoload.getValue() != null) return true; // value was defined by autoload
-                if (autoload.isSelf(getRuntime().getCurrentContext())) return false; // autoload is running on this thread
+                if (autoload.isSelf(runtime.getCurrentContext())) return false; // autoload is running on this thread
 
                 return true; // autoload has yet to run
             }
+
             if (!inherit) {
                 break;
             }
