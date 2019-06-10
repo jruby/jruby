@@ -4400,7 +4400,9 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isConstantDefined(String name, boolean inherit) {
-        assert IdUtil.isConstant(name);
+        if (!IdUtil.isValidConstantName(name)) {
+            throw getRuntime().newNameError("bad constant name " + name, name);
+        }
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             Object value;
