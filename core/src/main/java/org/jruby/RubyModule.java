@@ -258,18 +258,24 @@ public class RubyModule extends RubyObject {
             if ( loadedValue != null && loadedValue != UNDEF ) return context.nil;
 
             final RubyString file;
+            RubyModule target = mod;
             if ( mod.isIncluded() ) {
-                file = mod.getNonIncludedClass().getAutoloadFile(name);
-            }
-            else {
-                file = mod.getAutoloadFile(name);
+                target = mod.getNonIncludedClass();
             }
 
+            Autoload autoload = target.getAutoloadMap().get(name);
+
+            if (autoload == null) return context.nil;
+            if (autoload.getValue() != null) return context.nil;
+            if (autoload.isSelf(context)) return context.nil;
+
+            file = autoload.getFile();
+
             if ( file != null ) { // due explicit requires still need to :
-                if ( runtime.getLoadService().featureAlreadyLoaded(file.asJavaString()) ) {
-                    // TODO in which case the auto-load never finish-es ?!
-                    return context.nil;
-                }
+//                if ( runtime.getLoadService().featureAlreadyLoaded(file.asJavaString()) ) {
+//                    // TODO in which case the auto-load never finish-es ?!
+//                    return context.nil;
+//                }
                 return file;
             }
         }
@@ -4400,7 +4406,14 @@ public class RubyModule extends RubyObject {
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
                 if (value != UNDEF) return true;
-                return getAutoloadMap().get(name) != null;
+
+                final RubyModule.Autoload autoload = getAutoloadMap().get(name);
+
+                if (autoload == null) return false; // no autoload
+                if (autoload.getValue() != null) return true; // value was defined by autoload
+                if (autoload.isSelf(getRuntime().getCurrentContext())) return false; // autoload is running on this thread
+
+                return true; // autoload has yet to run
             }
             if (!inherit) {
                 break;
