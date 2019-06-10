@@ -92,6 +92,7 @@ import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
@@ -3641,29 +3642,24 @@ public class RubyModule extends RubyObject {
     ////////////////// CONSTANT RUBY METHODS ////////////////
     //
 
-    /** rb_mod_const_defined
-     *
+    /**
+     * rb_mod_const_defined
      */
-    public RubyBoolean const_defined_p(ThreadContext context, IRubyObject symbol) {
-        return const_defined_p19(context, new IRubyObject[]{symbol});
+    @JRubyMethod(name = "const_defined?")
+    public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name) {
+
+        return constDefined(context.runtime, name, true) ? context.tru : context.fals;
     }
 
-    private RubyBoolean constantDefined(Ruby runtime, RubySymbol symbol, boolean inherit) {
-        if (symbol.validConstantName()) {
-            return runtime.newBoolean(getConstantSkipAutoload(symbol.idString(), inherit, inherit) != null);
-        }
-
-        throw runtime.newNameError(str(runtime, "wrong constant name", ids(runtime, symbol)), symbol.idString());
+    @JRubyMethod(name = "const_defined?")
+    public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name, IRubyObject recurse) {
+        return constDefined(context.runtime, name, recurse.isTrue()) ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
-    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
+    private boolean constDefined(Ruby runtime, IRubyObject name, boolean inherit) {
+        if (name instanceof RubySymbol) return isConstantDefined(((RubySymbol) name).idString(), inherit);
 
-        if (args[0] instanceof RubySymbol) return constantDefined(runtime, ((RubySymbol) args[0]), inherit);
-
-        RubyString fullName = args[0].convertToString();
+        RubyString fullName = name.convertToString();
 
         IRubyObject value = ByteListHelper.split(fullName.getByteList(), CommonByteLists.COLON_COLON, (index, segment, module) -> {
             if (index == 0) {
@@ -3672,7 +3668,7 @@ public class RubyModule extends RubyObject {
             }
 
             String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
-            IRubyObject obj = ((RubyModule) module).getConstantNoConstMissing(id, inherit, inherit);
+            IRubyObject obj = ((RubyModule) module).getConstant(id, inherit, inherit);
 
             if (obj == null) return null;
             if (!(obj instanceof RubyModule)) throw runtime.newTypeError(segment + " does not refer to class/module");
@@ -3686,7 +3682,7 @@ public class RubyModule extends RubyObject {
         });
 
         // unset or set to UNDEF for autoload are both false
-        return runtime.newBoolean(value != null && value != UNDEF);
+        return value != null;
     }
 
     /** rb_mod_const_get
@@ -5256,6 +5252,19 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
         return isConstantDefined(internedName, inherit);
+    }
+
+    @Deprecated
+    public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return const_defined_p(context, args[0]);
+            case 2:
+                return const_defined_p(context, args[0], args[1]);
+        }
+
+        Arity.checkArgumentCount(context, args, 1, 2);
+        return null; // not reached
     }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
