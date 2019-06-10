@@ -4397,32 +4397,14 @@ public class RubyModule extends RubyObject {
     /** rb_const_defined_at
      *
      */
-    public boolean isConstantDefined(String name) {
-        IRubyObject value = getConstantNoConstMissingSkipAutoload(name);
-
-        return value != null && value != UNDEF;
-    }
-
-    @Deprecated
-    public boolean fastIsConstantDefined(String internedName) {
-        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
-        return isConstantDefined(internedName);
-    }
-
-    @Deprecated
-    public boolean fastIsConstantDefined19(String internedName) {
-        return fastIsConstantDefined19(internedName, true);
-    }
-
-    public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
-        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
-        assert IdUtil.isConstant(internedName);
+    public boolean isConstantDefined(String name, boolean inherit) {
+        assert IdUtil.isConstant(name);
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             Object value;
-            if ((value = module.constantTableFetch(internedName)) != null) {
+            if ((value = module.constantTableFetch(name)) != null) {
                 if (value != UNDEF) return true;
-                return getAutoloadMap().get(internedName) != null;
+                return getAutoloadMap().get(name) != null;
             }
             if (!inherit) {
                 break;
@@ -4430,6 +4412,10 @@ public class RubyModule extends RubyObject {
         }
 
         return false;
+    }
+
+    public boolean isConstantDefined(String name) {
+        return isConstantDefined(name, true);
     }
 
     //
@@ -5255,6 +5241,22 @@ public class RubyModule extends RubyObject {
             "binding",
             "local_variables"
     ));
+
+    @Deprecated
+    public boolean fastIsConstantDefined(String internedName) {
+        assert internedName.equals(internedName.intern()) : internedName + " is not interned";
+        return isConstantDefined(internedName, true);
+    }
+
+    @Deprecated
+    public boolean fastIsConstantDefined19(String internedName) {
+        return isConstantDefined(internedName, true);
+    }
+
+    @Deprecated
+    public boolean fastIsConstantDefined19(String internedName, boolean inherit) {
+        return isConstantDefined(internedName, inherit);
+    }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
 
