@@ -4411,19 +4411,13 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             // skip Object if we aren't starting there
-            if (!isObject && module == object) return false;
+            if (!isObject && module == object) break;
 
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
                 if (value != UNDEF) return true;
 
-                final RubyModule.Autoload autoload = getAutoloadMap().get(name);
-
-                if (autoload == null) return false; // no autoload
-                if (autoload.getValue() != null) return true; // value was defined by autoload
-                if (autoload.isSelf(runtime.getCurrentContext())) return false; // autoload is running on this thread
-
-                return true; // autoload has yet to run
+                return module.isAutoloadConstantDefined(runtime, name);
             }
 
             if (!inherit) {
@@ -4432,6 +4426,16 @@ public class RubyModule extends RubyObject {
         }
 
         return false;
+    }
+
+    public boolean isAutoloadConstantDefined(Ruby runtime, String name) {
+        final Autoload autoload = getAutoloadMap().get(name);
+
+        if (autoload == null) return false; // no autoload
+        if (autoload.getValue() != null) return true; // value was defined by autoload
+        if (autoload.isSelf(runtime.getCurrentContext())) return false; // autoload is running on this thread
+
+        return true; // autoload has yet to run
     }
 
     public boolean isConstantDefined(String name) {

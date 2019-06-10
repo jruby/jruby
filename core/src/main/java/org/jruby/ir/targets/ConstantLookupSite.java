@@ -180,7 +180,7 @@ public class ConstantLookupSite extends MutableCallSite {
         // Inheritance lookup
         IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
 
-        if (constant == null || constant == RubyBasicObject.UNDEF) {
+        if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         }
 
@@ -210,7 +210,7 @@ public class ConstantLookupSite extends MutableCallSite {
 
         IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
 
-        if (constant == null || constant == RubyBasicObject.UNDEF) {
+        if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         }
 
