@@ -717,6 +717,10 @@ public class LoadService {
         return librarySearcher.featureAlreadyLoaded(feature, null);
     }
 
+    public boolean featureAlreadyLoaded(String feature, String[] loading) {
+        return librarySearcher.featureAlreadyLoaded(feature, loading);
+    }
+
     protected LibrarySearcher.FoundLibrary findLibraryWithClassloaders(String baseName, SuffixType suffixType) {
         for (LibrarySearcher.Suffix suffix : suffixType.getSuffixSet()) {
             String file = baseName + suffix;

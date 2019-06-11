@@ -259,31 +259,22 @@ public class RubyModule extends RubyObject {
 
                 Autoload autoload = mod.getAutoloadMap().get(name);
 
+                // autoload has been evacuated
                 if (autoload == null) return context.nil;
+
+                // autoload has been completed
                 if (autoload.getValue() != null) return context.nil;
-                if (autoload.isSelf(context)) return context.nil;
 
                 file = autoload.getFile();
 
-                if (file != null) {
-                    return file;
-                }
+                // autoload is in progress on another thread
+                if (autoload.ctx != null && !autoload.isSelf(context)) return file;
+
+                // file load is in progress or file is already loaded
+                if (!getRuntime().getLoadService().featureAlreadyLoaded(file.asJavaString())) return file;
             }
         }
         return context.nil;
-    }
-
-    @Deprecated
-    public static class ModuleKernelMethods {
-        @Deprecated
-        public static IRubyObject autoload(ThreadContext context, IRubyObject self, IRubyObject symbol, IRubyObject file) {
-            return ((RubyModule) self).autoload(context, symbol, file);
-        }
-
-        @Deprecated
-        public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
-            return ((RubyModule) self).autoload_p(context, symbol);
-        }
     }
 
     @Override
@@ -4406,9 +4397,13 @@ public class RubyModule extends RubyObject {
 
             Object value;
             if ((value = module.constantTableFetch(name)) != null) {
-                if (value != UNDEF) return true;
+                // autoload is not in progress and should not appear defined
+                if (value == UNDEF && module.checkAutoloadRequired(runtime, name, null) == null &&
+                        !module.autoloadingValue(runtime, name)) {
+                    return false;
+                }
 
-                return module.isAutoloadConstantDefined(runtime, name);
+                return true;
             }
 
             if (!inherit) {
@@ -4419,14 +4414,54 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
-    public boolean isAutoloadConstantDefined(Ruby runtime, String name) {
+    // MRI: rb_autoloading_value
+    public boolean autoloadingValue(Ruby runtime, String name) {
         final Autoload autoload = getAutoloadMap().get(name);
 
-        if (autoload == null) return false; // no autoload
-        if (autoload.getValue() != null) return true; // value was defined by autoload
-        if (autoload.isSelf(runtime.getCurrentContext())) return false; // autoload is running on this thread
+        // autoload has been evacuated
+        if (autoload == null) return false;
 
-        return true; // autoload has yet to run
+        // autoload is in progress on this thread and has updated the value
+        if (autoload.isSelf(runtime.getCurrentContext())) {
+            if (autoload.getValue() != null) {
+                return true;
+            }
+        }
+
+        return false; // autoload has yet to run
+    }
+
+    // MRI: check_autoload_required
+    private RubyString checkAutoloadRequired(Ruby runtime, String name, String[] autoloadPath) {
+        final Autoload autoload = getAutoloadMap().get(name);
+
+        // autoload has been evacuated
+        if (autoload == null) return null;
+
+        RubyString file = autoload.getFile();
+
+        // autoload filename is empty
+        if (file.length() == 0) {
+            throw runtime.newArgumentError("empty file name");
+        }
+
+        // autoload is in progress on anther thread
+        if (autoload.ctx != null && !autoload.isSelf(runtime.getCurrentContext())) {
+            return file;
+        }
+
+        String[] loading = {null};
+
+        // feature has not been loaded yet
+        if (!runtime.getLoadService().featureAlreadyLoaded(file.asJavaString(), loading)) return file;
+
+        // feature is currently loading
+        if (autoloadPath != null && loading[0] != null) {
+            autoloadPath[0] = loading[0];
+            return file;
+        }
+
+        return null; // autoload has yet to run
     }
 
     public boolean isConstantDefined(String name) {
@@ -5284,6 +5319,19 @@ public class RubyModule extends RubyObject {
 
         Arity.checkArgumentCount(context, args, 1, 2);
         return null; // not reached
+    }
+
+    @Deprecated
+    public static class ModuleKernelMethods {
+        @Deprecated
+        public static IRubyObject autoload(ThreadContext context, IRubyObject self, IRubyObject symbol, IRubyObject file) {
+            return ((RubyModule) self).autoload(context, symbol, file);
+        }
+
+        @Deprecated
+        public static IRubyObject autoload_p(ThreadContext context, IRubyObject self, IRubyObject symbol) {
+            return ((RubyModule) self).autoload_p(context, symbol);
+        }
     }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
