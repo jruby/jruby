@@ -107,4 +107,9 @@ public class ModuleNode extends Node implements IScopingNode {
     public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode);
     }
+
+    @Override
+    public boolean executesOnce() {
+        return true;
+    }
 }

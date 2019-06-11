@@ -1326,6 +1326,9 @@ public abstract class IRScope implements ParseResult {
      * stay for when closures JIT.
      */
     public void cleanupAfterExecution() {
+    }
 
+    public boolean executesOnce() {
+        return false;
     }
 }

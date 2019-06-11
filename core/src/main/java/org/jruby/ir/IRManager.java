@@ -89,7 +89,7 @@ public class IRManager {
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
         this.config = config;
-        object = new IRClassBody(this, null, runtime.newSymbol(OBJECT), 0, null);
+        object = new IRClassBody(this, null, runtime.newSymbol(OBJECT), 0, null, false);
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
@@ -359,9 +359,9 @@ public class IRManager {
             IRScriptBody script = new IRScriptBody(this, runtime.newSymbol(parseResult.getFile()), ((RootNode) parseResult).getStaticScope());
             IRModuleBody containingScope;
             if (scopeNode instanceof ModuleNode) {
-                containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope());
+                containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope(), false);
             } else {
-                containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope());
+                containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope(), false);
             }
             IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method), true, 0, defNode.getScope(), false);
 

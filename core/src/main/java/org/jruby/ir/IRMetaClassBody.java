@@ -5,7 +5,8 @@ import org.jruby.parser.StaticScope;
 
 public class IRMetaClassBody extends IRClassBody {
     public IRMetaClassBody(IRManager manager, IRScope lexicalParent, RubySymbol name, int lineNumber, StaticScope scope) {
-        super(manager, lexicalParent, name, lineNumber, scope);
+        // FIXME: Eliminate obvious one-time use metaclass bodies if not too complicated
+        super(manager, lexicalParent, name, lineNumber, scope, false);
     }
 
     @Override

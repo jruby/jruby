@@ -135,4 +135,9 @@ public class RootNode extends Node implements ParseResult {
     public boolean needsCoverage() {
         return needsCodeCoverage;
     }
+
+    @Override
+    public boolean executesOnce() {
+        return true;
+    }
 }

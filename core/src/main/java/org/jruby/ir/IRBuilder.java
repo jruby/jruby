@@ -301,6 +301,7 @@ public class IRBuilder {
     protected List<Instr> instructions;
     protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
+    private boolean executesOnce = true;
 
     // Current index to put next BEGIN blocks and other things at the front of this scope.
     // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
@@ -313,6 +314,8 @@ public class IRBuilder {
         this.parent = parent;
         instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
+
+        if (parent != null) executesOnce = parent.executesOnce;
     }
 
     private boolean needsCodeCoverage() {
@@ -516,13 +519,20 @@ public class IRBuilder {
     public Operand build(Variable result, Node node) {
         if (node == null) return null;
 
-        if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
+        boolean savedExecuteOnce = executesOnce;
+        try {
+            if (executesOnce) executesOnce = node.executesOnce();
 
-        Operand operand = buildOperand(result, node);
+            if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
 
-        if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
+            Operand operand = buildOperand(result, node);
 
-        return operand;
+            if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
+
+            return operand;
+        } finally {
+            executesOnce = savedExecuteOnce;
+        }
     }
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
@@ -1381,12 +1391,16 @@ public class IRBuilder {
      * Build a new class and add it to the current scope (s).
      */
     public Operand buildClass(ClassNode classNode) {
+        boolean executesOnce = this.executesOnce;
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
         RubySymbol className = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
-        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
+
+        //System.out.println("MODULE IS SINGLE USE:"  + className +  ", " +  scope.getFile() + ":" + classNode.getEndLine());
+
+        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope(), executesOnce);
         Variable bodyResult = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
         newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
@@ -3090,10 +3104,14 @@ public class IRBuilder {
     }
 
     public Operand buildModule(ModuleNode moduleNode) {
+        boolean executesOnce = this.executesOnce;
         Colon3Node cpath = moduleNode.getCPath();
         RubySymbol moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
-        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
+
+        //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
+
+        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
         Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
@@ -3713,6 +3731,7 @@ public class IRBuilder {
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
+        executesOnce = false;
         needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(manager.newLineNumber(scope.getLine()));
 

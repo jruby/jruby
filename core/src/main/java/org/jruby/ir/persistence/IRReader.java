@@ -152,7 +152,8 @@ public class IRReader implements IRPersistenceValues {
 
         switch (type) {
         case CLASS_BODY:
-            return new IRClassBody(manager, lexicalParent, name, line, staticScope);
+            // FIXME: add saving on noe-time usage to writeer/reader
+            return new IRClassBody(manager, lexicalParent, name, line, staticScope, false);
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
@@ -160,7 +161,8 @@ public class IRReader implements IRPersistenceValues {
         case CLASS_METHOD:
             return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope, false);
         case MODULE_BODY:
-            return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
+            // FIXME: add saving on noe-time usage to writeer/reader
+            return new IRModuleBody(manager, lexicalParent, name, line, staticScope, false);
         case SCRIPT_BODY:
             return new IRScriptBody(manager, name, staticScope);
         case FOR:

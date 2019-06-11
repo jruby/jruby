@@ -4,8 +4,9 @@ import org.jruby.RubySymbol;
 import org.jruby.parser.StaticScope;
 
 public class IRClassBody extends IRModuleBody {
-    public IRClassBody(IRManager manager, IRScope lexicalParent, RubySymbol name, int lineNumber, StaticScope scope) {
-        super(manager, lexicalParent, name, lineNumber, scope);
+    public IRClassBody(IRManager manager, IRScope lexicalParent, RubySymbol name, int lineNumber, StaticScope scope,
+                       boolean executesOnce) {
+        super(manager, lexicalParent, name, lineNumber, scope, executesOnce);
     }
 
     @Override
