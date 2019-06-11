@@ -114,6 +114,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
+import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.CommonByteLists;
@@ -3652,29 +3653,67 @@ public class RubyModule extends RubyObject {
         }
 
         RubyString fullName = name.convertToString();
+        ByteList value = fullName.getByteList();
 
-        IRubyObject value = ByteListHelper.split(fullName.getByteList(), CommonByteLists.COLON_COLON, (index, segment, module) -> {
-            if (index == 0) {
-                if (segment.realSize() == 0) return runtime.getObject();  // '::Foo...'
-                module = this;
+        ByteList pattern = CommonByteLists.COLON_COLON;
+
+        Encoding enc = pattern.getEncoding();
+        byte[] bytes = value.getUnsafeBytes();
+        int begin = value.getBegin();
+        int realSize = value.getRealSize();
+        int end = begin + realSize;
+        int currentOffset = 0;
+        int patternIndex;
+        int index = 0;
+        RubyModule mod = this;
+
+        if (value.startsWith(pattern)) {
+            mod = runtime.getObject();
+            currentOffset += 2;
+        }
+
+        for (; currentOffset < realSize && (patternIndex = value.indexOf(pattern, currentOffset)) >= 0; index++) {
+            int t = enc.rightAdjustCharHead(bytes, currentOffset + begin, patternIndex + begin, end) - begin;
+            if (t != patternIndex) {
+                currentOffset = t;
+                continue;
             }
 
+            ByteList segment = value.makeShared(currentOffset, patternIndex - currentOffset);
             String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
-            IRubyObject obj = ((RubyModule) module).getConstant(id, inherit, inherit);
 
-            if (obj == null) return null;
+            IRubyObject obj;
+
+            if (!inherit) {
+                if (!mod.constDefinedAt(id)) {
+                    return false;
+                }
+                obj = mod.getConstantAt(id);
+            } else if (index == 0 && segment.realSize() == 0) {
+                if (!mod.constDefined(id)) {
+                    return false;
+                }
+                obj = mod.getConstant(id);
+            } else {
+                if (!mod.constDefinedFrom(id)) {
+                    return false;
+                }
+                obj = mod.getConstantFrom(id);
+            }
+
             if (!(obj instanceof RubyModule)) throw runtime.newTypeError(segment + " does not refer to class/module");
 
-            return obj;
-        }, (index, segment, module) -> {
-            if (module == null) module = this; // Bare 'Foo'
+            mod = (RubyModule) obj;
+            currentOffset = patternIndex + pattern.getRealSize();
+        }
 
-            String id = RubySymbol.newConstantSymbol(runtime, fullName, segment).idString();
-            return ((RubyModule) module).getConstantSkipAutoload(id, inherit, inherit);
-        });
+        if (mod == null) mod = this; // Bare 'Foo'
 
-        // unset or set to UNDEF for autoload are both false
-        return value != null;
+        ByteList lastSegment = value.makeShared(currentOffset, realSize - currentOffset);
+
+        String id = RubySymbol.newConstantSymbol(runtime, fullName, lastSegment).idString();
+
+        return mod.getConstantSkipAutoload(id, inherit, inherit) != null;
     }
 
     /** rb_mod_const_get
@@ -4393,6 +4432,11 @@ public class RubyModule extends RubyObject {
     // rb_const_defined_at
     public boolean constDefinedAt(String name) {
         return constDefinedInner(name, true, false, false);
+    }
+
+    // rb_const_defined_from
+    public boolean constDefinedFrom(String name) {
+        return constDefinedInner(name, true, true, false);
     }
 
     // Fix for JRUBY-1339 - search hierarchy for constant
