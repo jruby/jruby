@@ -65,6 +65,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -172,7 +173,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "autoload?", required = 1, module = true, visibility = PRIVATE, reads = SCOPE)
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
-        RubyModule module = context.getCurrentStaticScope().getModule();
+        RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, context.getCurrentScope(), recv);
 
         if (module.isNil()) {
             return context.nil;
@@ -183,7 +184,7 @@ public class RubyKernel {
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = SCOPE)
     public static IRubyObject autoload(ThreadContext context, final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        RubyModule module = context.getCurrentStaticScope().getModule();
+        RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, context.getCurrentScope(), recv);
 
         if (module.isNil()) throw context.runtime.newTypeError("Can not set autoload on singleton class");
 
