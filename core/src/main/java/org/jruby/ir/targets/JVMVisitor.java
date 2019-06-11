@@ -1201,6 +1201,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class, Object.class));
 
         jvmStoreLocal(defineclassinstr.getResult());
+
+        ProcessModuleBodyInstr(new ProcessModuleBodyInstr(newIRClassBody.createTemporaryVariable(), defineclassinstr.getResult(), NullBlock.INSTANCE));
     }
 
     @Override
@@ -1316,6 +1318,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class));
 
         jvmStoreLocal(definemoduleinstr.getResult());
+
+        ProcessModuleBodyInstr(new ProcessModuleBodyInstr(newIRModuleBody.createTemporaryVariable(), definemoduleinstr.getResult(), NullBlock.INSTANCE));
     }
 
     @Override

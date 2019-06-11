@@ -1387,11 +1387,10 @@ public class IRBuilder {
         RubySymbol className = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
-        Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
+        Variable bodyResult = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), classVar, NullBlock.INSTANCE));
         newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
-        return processBodyResult;
+        return bodyResult;
     }
 
     // class Foo; class << self; end; end
@@ -3095,11 +3094,10 @@ public class IRBuilder {
         RubySymbol moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath);
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
-        Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
-        return processBodyResult;
+        return bodyResult;
     }
 
     public Operand buildNext(final NextNode nextNode) {

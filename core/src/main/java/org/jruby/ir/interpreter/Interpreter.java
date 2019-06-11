@@ -81,6 +81,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
+            irScope.cleanupAfterExecution();
             dumpStats();
             context.popScope();
         }

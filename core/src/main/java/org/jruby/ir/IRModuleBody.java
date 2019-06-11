@@ -26,4 +26,15 @@ public class IRModuleBody extends IRScope {
     public boolean isModuleBody() {
         return true;
     }
+
+    @Override
+    public void cleanupAfterExecution() {
+        if (getClosures().isEmpty() &&
+                !(getLexicalParent() instanceof IRClosure) &&
+                !(getLexicalParent() instanceof IRMetaClassBody)) {
+            interpreterContext = null;
+            fullInterpreterContext = null;
+            localVars = null;
+        }
+    }
 }

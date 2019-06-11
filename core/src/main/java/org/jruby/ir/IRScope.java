@@ -1316,4 +1316,16 @@ public abstract class IRScope implements ParseResult {
             }
         }
     }
+
+    /**
+     * We are done with execution of this scope and we can cleanup some amount of things
+     * in this scope which will no longer be used.  Sub-classes will be the deciders of what
+     * is no longer needed.  An example, to illustrate the complexity of cleanup:  A class with
+     * no nested closures can remove any ICs created and can remove some other infomrational
+     * data structures like allocated variables unless closures do exist and then the ICs must
+     * stay for when closures JIT.
+     */
+    public void cleanupAfterExecution() {
+
+    }
 }

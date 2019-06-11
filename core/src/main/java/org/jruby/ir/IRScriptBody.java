@@ -55,4 +55,13 @@ public class IRScriptBody extends IRScope {
     public String getFile() {
         return fileName.asJavaString();
     }
+
+    @Override
+    public void cleanupAfterExecution() {
+        if (getClosures().isEmpty()) {
+            interpreterContext = null;
+            fullInterpreterContext = null;
+            localVars = null;
+        }
+    }
 }
