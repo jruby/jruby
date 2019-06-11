@@ -3645,7 +3645,11 @@ public class RubyModule extends RubyObject {
     }
 
     private boolean constDefined(Ruby runtime, IRubyObject name, boolean inherit) {
-        if (name instanceof RubySymbol) return isConstantDefined(((RubySymbol) name).idString(), inherit);
+        if (name instanceof RubySymbol) {
+            String id = ((RubySymbol) name).idString();
+
+            return inherit ? constDefined(id) : constDefinedAt(id);
+        }
 
         RubyString fullName = name.convertToString();
 
@@ -4377,11 +4381,25 @@ public class RubyModule extends RubyObject {
         setConstant(name, value);
     }
 
-    // Fix for JRUBY-1339 - search hierarchy for constant
-    /** rb_const_defined_at
-     *
-     */
     public boolean isConstantDefined(String name, boolean inherit) {
+        return constDefinedInner(name, false, inherit, false);
+    }
+
+    // rb_const_defined
+    public boolean constDefined(String name) {
+        return constDefinedInner(name, false, true, false);
+    }
+
+    // rb_const_defined_at
+    public boolean constDefinedAt(String name) {
+        return constDefinedInner(name, true, false, false);
+    }
+
+    // Fix for JRUBY-1339 - search hierarchy for constant
+    /**
+     * rb_const_defined_0
+     */
+    private boolean constDefinedInner(String name, boolean exclude, boolean recurse, boolean visibility) {
         Ruby runtime = getRuntime();
 
         if (!IdUtil.isValidConstantName(name)) {
@@ -4389,29 +4407,46 @@ public class RubyModule extends RubyObject {
         }
 
         RubyClass object = runtime.getObject();
-        boolean isObject = this == object;
+        boolean moduleRetry = false;
 
-        for (RubyModule module = this; module != null; module = module.getSuperClass()) {
-            // skip Object if we aren't starting there
-            if (!isObject && module == object) break;
+        RubyModule module = this;
 
-            Object value;
-            if ((value = module.constantTableFetch(name)) != null) {
-                // autoload is not in progress and should not appear defined
-                if (value == UNDEF && module.checkAutoloadRequired(runtime, name, null) == null &&
-                        !module.autoloadingValue(runtime, name)) {
-                    return false;
+        retry: while (true) {
+            while (module != null) {
+                ConstantEntry entry;
+                if ((entry = module.constantEntryFetch(name)) != null) {
+                    if (visibility && entry.hidden) {
+                        return false;
+                    }
+
+                    IRubyObject value = entry.value;
+
+                    // autoload is not in progress and should not appear defined
+                    if (value == UNDEF && module.checkAutoloadRequired(runtime, name, null) == null &&
+                            !module.autoloadingValue(runtime, name)) {
+                        return false;
+                    }
+
+                    if (exclude && module == object && this != object) {
+                        return false;
+                    }
+
+                    return true;
                 }
 
-                return true;
+                if (!recurse) break;
+
+                module = module.getSuperClass();
             }
 
-            if (!inherit) {
-                break;
+            if (!exclude && !moduleRetry && this.isModule()) {
+                moduleRetry = true;
+                module = object;
+                continue retry;
             }
+
+            return false;
         }
-
-        return false;
     }
 
     // MRI: rb_autoloading_value
@@ -4465,7 +4500,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean isConstantDefined(String name) {
-        return isConstantDefined(name, true);
+        return constDefinedInner(name, false, true, false);
     }
 
     //
