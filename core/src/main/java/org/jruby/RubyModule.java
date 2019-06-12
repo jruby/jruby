@@ -4439,6 +4439,11 @@ public class RubyModule extends RubyObject {
         return constDefinedInner(name, true, true, false);
     }
 
+    // rb_public_const_defined_from
+    public boolean publicConstDefinedFrom(String name) {
+        return constDefinedInner(name, true, true, true);
+    }
+
     // Fix for JRUBY-1339 - search hierarchy for constant
     /**
      * rb_const_defined_0
