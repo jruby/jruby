@@ -479,7 +479,7 @@ public class RubyClass extends RubyModule {
         return target.makeMetaClass(this);
     }
 
-    public boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
+    static boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return !method.isCallableFrom(caller, callType) && !name.equals("method_missing");
     }
 
@@ -692,7 +692,7 @@ public class RubyClass extends RubyModule {
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
-        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
+        if (!me.isUndefined() && !me.isBuiltin()) {
             int arityValue = me.getArity().getValue();
 
             if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
@@ -709,14 +709,14 @@ public class RubyClass extends RubyModule {
     }
 
     // MRI: check_funcall_callable
-    public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
+    static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return rbMethodCallStatus(context, method, callType, self);
     }
 
     // MRI: rb_method_call_status
     // FIXME: Partial impl because we don't have these "NOEX" flags
-    public static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
-        return method != null && !method.isUndefined() && method.isCallableFrom(self, callType);
+    private static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
+        return !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
     // MRI: check_funcall_missing
@@ -726,7 +726,7 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = klass.searchWithCache("respond_to_missing?");
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
+        if (!me.isUndefined() && !me.isBuiltin()) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
                 ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
@@ -755,7 +755,7 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = respondToMissingSite.retrieveCache(klass);
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
+        if (!me.isUndefined() && !me.isBuiltin()) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
                 ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
@@ -860,10 +860,10 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private boolean shouldCallMethodMissing(DynamicMethod method) {
+    private static boolean shouldCallMethodMissing(DynamicMethod method) {
         return method.isUndefined();
     }
-    private boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
+    private static boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return method.isUndefined() || notVisibleAndNotMethodMissing(method, name, caller, callType);
     }
 
