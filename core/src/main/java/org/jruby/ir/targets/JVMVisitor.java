@@ -1191,18 +1191,18 @@ public class JVMVisitor extends IRVisitor {
     public void DefineClassInstr(DefineClassInstr defineclassinstr) {
         IRClassBody newIRClassBody = defineclassinstr.getNewIRClassBody();
 
+        jvmMethod().loadContext(); // for invokeModuleBody
+
         jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRClassBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
         visit(defineclassinstr.getSuperClass());
-
         jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class, Object.class));
 
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(defineclassinstr.getResult());
-
-        ProcessModuleBodyInstr(new ProcessModuleBodyInstr(newIRClassBody.createTemporaryVariable(), defineclassinstr.getResult(), NullBlock.INSTANCE));
     }
 
     @Override
@@ -1309,17 +1309,17 @@ public class JVMVisitor extends IRVisitor {
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) {
         IRModuleBody newIRModuleBody = definemoduleinstr.getNewIRModuleBody();
 
+        jvmMethod().loadContext(); // for invokeModuleBody
+
         jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRModuleBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemoduleinstr.getContainer());
-
         jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class));
 
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(definemoduleinstr.getResult());
-
-        ProcessModuleBodyInstr(new ProcessModuleBodyInstr(newIRModuleBody.createTemporaryVariable(), definemoduleinstr.getResult(), NullBlock.INSTANCE));
     }
 
     @Override
