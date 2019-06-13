@@ -33,7 +33,6 @@ import java.util.List;
 
 import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;

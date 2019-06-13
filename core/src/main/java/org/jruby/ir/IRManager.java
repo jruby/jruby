@@ -221,6 +221,24 @@ public class IRManager {
         }
     }
 
+    private static int CLOSURE_PREFIX_CACHE_SIZE = 300; // arbtrary.  one library in rails 6 uses over 270 in one scope...
+    private String[] closurePrefixCache = new String[CLOSURE_PREFIX_CACHE_SIZE];
+
+    public String getClosurePrefix(int closureId) {
+        if (closureId >= CLOSURE_PREFIX_CACHE_SIZE) {
+            return "CL" + closureId + "_LBL";
+        }
+
+        String prefix = closurePrefixCache[closureId];
+
+        if (prefix == null) {
+            prefix = "CL" + closureId + "_LBL";
+            closurePrefixCache[closureId] = prefix;
+        }
+
+        return prefix;
+    }
+
 
     private static int FIXNUM_CACHE_HALF_SIZE = 16384;
     private Fixnum fixnums[] = new Fixnum[2 * FIXNUM_CACHE_HALF_SIZE];
