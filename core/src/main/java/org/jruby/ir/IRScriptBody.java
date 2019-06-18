@@ -6,11 +6,10 @@ import org.jruby.runtime.DynamicScope;
 
 public class IRScriptBody extends IRScope {
     private DynamicScope toplevelScope;
-    // FIXME: bytelist_love - This is pretty weird...look at how we use getId in this and consider alternative.
-    private RubySymbol fileName;
+    private String fileName;
 
-    public IRScriptBody(IRManager manager, RubySymbol sourceName, StaticScope staticScope) {
-        super(manager, null, sourceName, 0, staticScope);
+    public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
+        super(manager, null, null, 0, staticScope);
         this.toplevelScope = null;
         this.fileName = sourceName;
 
@@ -49,11 +48,19 @@ public class IRScriptBody extends IRScope {
 
     @Override
     public void setFileName(String fileName) {
-        this.fileName = getManager().runtime.newSymbol(fileName);
+        this.fileName = fileName;
     }
 
     public String getFile() {
-        return fileName.asJavaString();
+        return fileName;
+    }
+
+    public String getId() {
+        return fileName;
+    }
+
+    public RubySymbol getName() {
+        return getManager().getRuntime().newSymbol(fileName);
     }
 
     @Override

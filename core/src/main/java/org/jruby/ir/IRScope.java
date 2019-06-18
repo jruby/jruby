@@ -14,6 +14,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
@@ -1330,5 +1331,15 @@ public abstract class IRScope implements ParseResult {
 
     public boolean executesOnce() {
         return false;
+    }
+
+    public void persistScopeHeader(IRWriterEncoder file) {
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + getScopeType());
+        file.encode(getScopeType()); // type is enum of kind of scope
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + getLine());
+        file.encode(getLine());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getTemporaryVariablesCount());
+        file.encode(getTemporaryVariablesCount());
+        file.encode(getNextLabelIndex());
     }
 }

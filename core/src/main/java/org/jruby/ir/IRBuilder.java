@@ -968,7 +968,7 @@ public class IRBuilder {
                     // We are not in a closure or a loop => bad break instr!
                     throwSyntaxError(breakNode, "Can't escape from eval with redo");
                 } else {
-                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getName()));
+                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getId()));
                 }
             } else {
                 // We are not in a closure or a loop => bad break instr!
@@ -3706,14 +3706,14 @@ public class IRBuilder {
                 if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
                     addInstr(new CheckForLJEInstr(definedWithinMethod));
                 addInstr(new NonlocalReturnInstr(retVal,
-                        definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+                        definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
             }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
+            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getId()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
 
@@ -3747,10 +3747,8 @@ public class IRBuilder {
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        // FIXME: This filename should switch to ByteList
         String file = rootNode.getFile();
-        if (file == null) file = "(anon)";
-        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(file), rootNode.getStaticScope());
+        IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }

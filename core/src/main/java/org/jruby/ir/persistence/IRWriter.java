@@ -77,27 +77,14 @@ public class IRWriter {
     private static void persistScopeHeader(IRWriterEncoder file, IRScope scope) {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Writing Scope Header");
         file.startEncodingScopeHeader(scope);
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + scope.getScopeType());
-        file.encode(scope.getScopeType()); // type is enum of kind of scope
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getName());
-        file.encode(scope.getName());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + scope.getLine());
-        file.encode(scope.getLine());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
-        file.encode(scope.getTemporaryVariablesCount());
+        scope.persistScopeHeader(file);
 
-        if (scope.getScopeType() == IRScopeType.CLOSURE) {
-            file.encode(((IRClosure) scope).isEND());
-        }
-
-        file.encode(scope.getNextLabelIndex());
-
-        if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
-
-        if (scope instanceof IRClosure) {
-            IRClosure closure = (IRClosure) scope;
-
-            file.encode(closure.getSignature());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getId());
+        if (scope instanceof IRScriptBody) {
+            file.encode(scope.getId());
+        } else {
+            file.encode(scope.getName());
+            file.encode(scope.getLexicalParent());
         }
 
         persistStaticScope(file, scope.getStaticScope());

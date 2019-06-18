@@ -11,6 +11,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -387,5 +388,12 @@ public class IRClosure extends IRScope {
      */
     public void setArgumentDescriptors(ArgumentDescriptor[] argDesc) {
         this.argDesc = argDesc;
+    }
+
+    public void persistScopeHeader(IRWriterEncoder file) {
+        super.persistScopeHeader(file);
+
+        file.encode(isEND());
+        file.encode(getSignature());
     }
 }

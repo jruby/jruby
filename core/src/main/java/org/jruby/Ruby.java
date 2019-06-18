@@ -1245,9 +1245,9 @@ public final class Ruby implements Constantizable {
         // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
         irManager = new IRManager(this, getInstanceConfig());
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
-        // relationship handled either more directly or through a descriptice method
+        // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        IRScope top = new IRScriptBody(irManager, newSymbol(""), context.getCurrentScope().getStaticScope());
+        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
         top.allocateInterpreterContext(new ArrayList<Instr>());
 
         // Initialize the "dummy" class used as a marker

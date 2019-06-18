@@ -374,7 +374,7 @@ public class IRManager {
             IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
             scopeNode.getScope().setModule(type);
             DefNode defNode = (DefNode) scopeNode.getBodyNode();
-            IRScriptBody script = new IRScriptBody(this, runtime.newSymbol(parseResult.getFile()), ((RootNode) parseResult).getStaticScope());
+            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), ((RootNode) parseResult).getStaticScope());
             IRModuleBody containingScope;
             if (scopeNode instanceof ModuleNode) {
                 containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope(), false);
