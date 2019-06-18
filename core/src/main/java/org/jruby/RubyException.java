@@ -178,31 +178,29 @@ public class RubyException extends RubyObject {
 
     public static ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
 
-    private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
+    private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+        public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
-            RubyException exc = (RubyException)obj;
-
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>("mesg", exc.getMessage()));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
+            attrs.add(new VariableEntry<>("mesg", exc.getMessage()));
+            attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException)type.allocate();
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type,
+                                           UnmarshalStream unmarshalStream) throws IOException {
+            RubyException exc = (RubyException) type.allocate();
 
             unmarshalStream.registerLinkTarget(exc);
             // FIXME: Can't just pull these off the wire directly? Or maybe we should
             // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
 
-            exc.setMessage((IRubyObject)exc.removeInternalVariable("mesg"));
-            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
+            exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
+            exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));
 
             return exc;
         }
