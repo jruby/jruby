@@ -123,7 +123,7 @@ public class RaiseException extends JumpException {
     }
 
     private void doSetLastError(final ThreadContext context) {
-        context.runtime.getGlobalVariables().set("$!", exception);
+        context.setErrorInfo(exception); // $!
     }
 
     /**
