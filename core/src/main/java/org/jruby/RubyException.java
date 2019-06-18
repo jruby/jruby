@@ -123,9 +123,7 @@ public class RubyException extends RubyObject {
     private final Backtrace backtrace = new Backtrace();
 
     IRubyObject message;
-    // We initialize this to UNDEF to know whether cause has been initialized (from ruby space we will just see nil
-    // but internally we want to know if there was a cause or it was set to nil explicitly).
-    IRubyObject cause = UNDEF;
+    private IRubyObject cause = null;
     private RaiseException throwable;
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
@@ -356,8 +354,7 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
-        assert cause != null;
-        return cause == RubyBasicObject.UNDEF ? context.nil : cause;
+        return cause == null ? context.nil : cause;
     }
 
     /**
@@ -400,7 +397,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause == UNDEF ? null : cause;
+        return cause;
     }
 
     public RubyStackTraceElement[] getBacktraceElements() {
