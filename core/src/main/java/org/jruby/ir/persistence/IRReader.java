@@ -161,16 +161,16 @@ public class IRReader implements IRPersistenceValues {
         switch (type) {
         case CLASS_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader
-            return new IRClassBody(manager, lexicalParent, runtime.newSymbol(byteName), line, staticScope, false);
+            return new IRClassBody(manager, lexicalParent, byteName, line, staticScope, false);
         case METACLASS_BODY:
-            return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
+            return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName().getBytes(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, runtime.newSymbol(byteName), true, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, true, line, staticScope, false);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, runtime.newSymbol(byteName), false, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, false, line, staticScope, false);
         case MODULE_BODY:
             // FIXME: add saving on noe-time usage to writeer/reader
-            return new IRModuleBody(manager, lexicalParent, runtime.newSymbol(byteName), line, staticScope, false);
+            return new IRModuleBody(manager, lexicalParent, byteName, line, staticScope, false);
         case SCRIPT_BODY:
             return new IRScriptBody(manager, file, staticScope);
         case FOR:

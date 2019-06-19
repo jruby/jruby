@@ -56,16 +56,16 @@ public class IRClosure extends IRScope {
         this.closureId = lexicalParent.getNextClosureId();
         ByteList name = prefix.dup();
         name.append(Integer.toString(closureId).getBytes());
-        setName(manager.getRuntime().newSymbol(name));
+        setByteName(name);
         this.body = null;
     }
 
     /** Used by cloning code */
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
-    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, RubySymbol fullName) {
+    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
         super(c, lexicalParent);
         this.closureId = closureId;
-        super.setName(fullName);
+        super.setByteName(fullName);
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
@@ -198,8 +198,7 @@ public class IRClosure extends IRScope {
         return !getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
     }
 
-    // FIXME: this is needs to be ByteList
-    public IRMethod convertToMethod(RubySymbol name) {
+    public IRMethod convertToMethod(ByteList name) {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
             getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES) ||  // Built methods cannot search down past method scope
@@ -212,7 +211,6 @@ public class IRClosure extends IRScope {
         DefNode def = source;
         source = null;
 
-        // FIXME: This should be bytelist from param vs being made (see above).
         return new IRMethod(getManager(), getLexicalParent(), def, name, true,  getLine(), getStaticScope(), getFlags().contains(IRFlags.CODE_COVERAGE));
     }
 
@@ -341,13 +339,13 @@ public class IRClosure extends IRScope {
         IRScope lexicalParent = ii.getScope();
 
         if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo)ii).isEnsureBlockCloneMode()) {
-            clonedClosure = new IRClosure(this, lexicalParent, closureId, getName());
+            clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
         } else {
             int id = lexicalParent.getNextClosureId();
-            ByteList fullName = lexicalParent.getName().getBytes().dup();
+            ByteList fullName = lexicalParent.getByteName().dup();
             fullName.append(CLOSURE_CLONE);
             fullName.append(new Integer(id).toString().getBytes());
-            clonedClosure = new IRClosure(this, lexicalParent, id, getManager().runtime.newSymbol(fullName));
+            clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 
         // WrappedIRClosure should always have a single unique IRClosure in them so we should
@@ -358,12 +356,15 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public void setName(RubySymbol name) {
-        ByteList newName = getLexicalParent().getName().getBytes().dup();
+    public void setByteName(ByteList name) {
+        ByteList newName = getLexicalParent().getByteName();
 
-        newName.append(name.getBytes());
+        if (newName == null) newName = new ByteList();
 
-        super.setName(getManager().getRuntime().newSymbol(newName));
+        newName = newName.dup();
+        newName.append(name);
+
+        super.setByteName(newName);
     }
 
     public Signature getSignature() {

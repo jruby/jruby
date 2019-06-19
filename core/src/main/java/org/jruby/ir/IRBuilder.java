@@ -1395,7 +1395,7 @@ public class IRBuilder {
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        RubySymbol className = cpath.getName();
+        ByteList className = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
 
         //System.out.println("MODULE IS SINGLE USE:"  + className +  ", " +  scope.getFile() + ":" + classNode.getEndLine());
@@ -1413,7 +1413,7 @@ public class IRBuilder {
     public Operand buildSClass(SClassNode sclassNode) {
         Operand receiver = build(sclassNode.getReceiverNode());
         // FIXME: metaclass name should be a bytelist
-        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName(), sclassNode.getLine(), sclassNode.getScope());
+        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName().getBytes(), sclassNode.getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
@@ -2103,7 +2103,7 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(),
+        return new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
                 defNode.getScope(), needsCodeCoverage());
     }
 
@@ -3106,7 +3106,7 @@ public class IRBuilder {
     public Operand buildModule(ModuleNode moduleNode) {
         boolean executesOnce = this.executesOnce;
         Colon3Node cpath = moduleNode.getCPath();
-        RubySymbol moduleName = cpath.getName();
+        ByteList moduleName = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
 
         //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());

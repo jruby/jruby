@@ -74,7 +74,7 @@ public abstract class IRScope implements ParseResult {
     private int scopeId;
 
     /** Name */
-    private RubySymbol name;
+    private ByteList name;
 
     /** Starting line for this scope's definition */
     private final int lineNumber;
@@ -160,7 +160,7 @@ public abstract class IRScope implements ParseResult {
         setupLexicalContainment();
     }
 
-    public IRScope(IRManager manager, IRScope lexicalParent, RubySymbol name,
+    public IRScope(IRManager manager, IRScope lexicalParent, ByteList name,
             int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
@@ -360,14 +360,18 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getId() {
-        return name.idString();
+        return name.toString();
     }
 
     public RubySymbol getName() {
+        return getManager().getRuntime().newSymbol(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 
-    public void setName(RubySymbol name) {
+    public void setByteName(ByteList name) {
         this.name = name;
     }
 
