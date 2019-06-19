@@ -118,7 +118,6 @@ public abstract class IRScope implements ParseResult {
     /** Keeps track of types of prefix indexes for variables and labels */
     private int nextLabelIndex = 0;
 
-    private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
     Map<RubySymbol, LocalVariable> localVars;
@@ -821,16 +820,13 @@ public abstract class IRScope implements ParseResult {
         return Self.SELF;
     }
 
-    public Variable getCurrentModuleVariable() {
+    public Variable createCurrentModuleVariable() {
         // SSS: Used in only 3 cases in generated IR:
         // -> searching a constant in the inheritance hierarchy
         // -> searching a super-method in the inheritance hierarchy
         // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
-        if (currentModuleVariable == null) {
-            temporaryVariableIndex++;
-            currentModuleVariable = TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
-        }
-        return currentModuleVariable;
+        temporaryVariableIndex++;
+        return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
     public Variable getCurrentScopeVariable() {
