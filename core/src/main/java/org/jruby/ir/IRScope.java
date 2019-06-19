@@ -95,12 +95,6 @@ public abstract class IRScope implements ParseResult {
     /** Parser static-scope that this IR scope corresponds to */
     private final StaticScope staticScope;
 
-    /** Local variables defined in this scope */
-    private Set<LocalVariable> definedLocalVars;
-
-    /** Local variables used in this scope */
-    private Set<LocalVariable> usedLocalVars;
-
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
 
@@ -841,7 +835,7 @@ public abstract class IRScope implements ParseResult {
      * Get all variables referenced by this scope.
      */
     public Set<LocalVariable> getUsedLocalVariables() {
-        return usedLocalVars;
+        return getFullInterpreterContext().getUsedLocalVariables();
     }
 
     /**
@@ -985,50 +979,12 @@ public abstract class IRScope implements ParseResult {
         return localVars.size();
     }
 
-    public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new HashSet<>(1);
-        usedLocalVars = new HashSet<>(1);
-        for (BasicBlock bb : getCFG().getBasicBlocks()) {
-            for (Instr i : bb.getInstrs()) {
-                for (Variable v : i.getUsedVariables()) {
-                    if (v instanceof LocalVariable) usedLocalVars.add((LocalVariable) v);
-                }
-
-                if (i instanceof ResultInstr) {
-                    Variable v = ((ResultInstr) i).getResult();
-
-                    if (v instanceof LocalVariable && !((LocalVariable)v).isOuterScopeVar()) {
-                        definedLocalVars.add((LocalVariable) v);
-                    }
-                }
-            }
-        }
-
-        for (IRClosure cl : getClosures()) {
-            cl.setUpUseDefLocalVarMaps();
-        }
-    }
-
     public boolean usesLocalVariable(Variable v) {
-        if (usedLocalVars == null) setUpUseDefLocalVarMaps();
-        if (usedLocalVars.contains(v)) return true;
-
-        for (IRClosure cl : getClosures()) {
-            if (cl.usesLocalVariable(v)) return true;
-        }
-
-        return false;
+        return getFullInterpreterContext().usesLocalVariable(v);
     }
 
     public boolean definesLocalVariable(Variable v) {
-        if (definedLocalVars == null) setUpUseDefLocalVarMaps();
-        if (definedLocalVars.contains(v)) return true;
-
-        for (IRClosure cl : getClosures()) {
-            if (cl.definesLocalVariable(v)) return true;
-        }
-
-        return false;
+        return getFullInterpreterContext().definesLocalVariable(v);
     }
 
     /**
