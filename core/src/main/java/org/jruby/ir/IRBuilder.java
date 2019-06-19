@@ -3443,7 +3443,11 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        List<Instr> beginInstrs = newIRBuilder(manager, scope).buildPreExeInner(preExeNode.getBodyNode());
+        IRBuilder builder = newIRBuilder(manager, scope);
+
+        builder.currentScopeVariable = currentScopeVariable;  // If already made then we use it in temporary builder
+
+        List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
 
         instructions.addAll(afterPrologueIndex, beginInstrs);
 
