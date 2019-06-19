@@ -125,9 +125,6 @@ public abstract class IRScope implements ParseResult {
     /** Have scope flags been computed? */
     private boolean flagsComputed;
 
-    /** # of thread poll instrs added to this scope */
-    protected int threadPollInstrsCount;
-
     private IRManager manager;
 
     private boolean alreadyHasInline;
@@ -140,7 +137,6 @@ public abstract class IRScope implements ParseResult {
         this.manager = s.manager;
         this.lineNumber = s.lineNumber;
         this.staticScope = s.staticScope;
-        this.threadPollInstrsCount = s.threadPollInstrsCount;
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
@@ -162,7 +158,6 @@ public abstract class IRScope implements ParseResult {
         this.name = name;
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
-        this.threadPollInstrsCount = 0;
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
@@ -984,10 +979,6 @@ public abstract class IRScope implements ParseResult {
         } else {*/
             return createTemporaryVariable();
         //}
-    }
-
-    public int getThreadPollInstrsCount() {
-        return threadPollInstrsCount;
     }
 
     public int getLocalVariablesCount() {
