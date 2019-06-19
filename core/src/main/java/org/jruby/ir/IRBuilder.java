@@ -309,6 +309,7 @@ public class IRBuilder {
     protected int afterPrologueIndex = 0;
     private TemporaryVariable yieldClosureVariable = null;
     private Variable currentModuleVariable = null;
+    private Variable currentScopeVariable;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -1483,7 +1484,7 @@ public class IRBuilder {
             return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(new GetClassVarContainerModuleInstr(createTemporaryVariable(),
-                    scope.getCurrentScopeVariable(), declContext ? null : buildSelf()));
+                    getCurrentScopeVariable(), declContext ? null : buildSelf()));
         }
     }
 
@@ -1498,7 +1499,7 @@ public class IRBuilder {
 
     private Operand startingSearchScope() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.INSTANCE;
+        return nearestModuleBodyDepth == -1 ? getCurrentScopeVariable() : CurrentScope.INSTANCE;
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
@@ -2067,7 +2068,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
+        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
@@ -3407,7 +3408,7 @@ public class IRBuilder {
 
     private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
+        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
@@ -3756,7 +3757,7 @@ public class IRBuilder {
     }
 
     private void addCurrentScopeAndModule() {
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
+        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
         addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
@@ -4227,5 +4228,13 @@ public class IRBuilder {
         if (currentModuleVariable == null) currentModuleVariable = scope.createCurrentModuleVariable();
 
         return currentModuleVariable;
+    }
+
+    public Variable getCurrentScopeVariable() {
+        // SSS: Used in only 1 case in generated IR:
+        // -> searching a constant in the lexical scope hierarchy
+        if (currentScopeVariable == null) currentScopeVariable = scope.createCurrentScopeVariable();
+
+        return currentScopeVariable;
     }
 }

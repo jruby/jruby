@@ -118,8 +118,6 @@ public abstract class IRScope implements ParseResult {
     /** Keeps track of types of prefix indexes for variables and labels */
     private int nextLabelIndex = 0;
 
-    private TemporaryLocalVariable currentScopeVariable;
-
     Map<RubySymbol, LocalVariable> localVars;
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
@@ -829,14 +827,11 @@ public abstract class IRScope implements ParseResult {
         return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
-    public Variable getCurrentScopeVariable() {
+    public Variable createCurrentScopeVariable() {
         // SSS: Used in only 1 case in generated IR:
         // -> searching a constant in the lexical scope hierarchy
-        if (currentScopeVariable == null) {
-            temporaryVariableIndex++;
-            currentScopeVariable = TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
-        }
-        return currentScopeVariable;
+        temporaryVariableIndex++;
+        return TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
     }
 
     /**
