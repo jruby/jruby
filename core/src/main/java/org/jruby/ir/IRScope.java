@@ -133,8 +133,6 @@ public abstract class IRScope implements ParseResult {
 
     private IRManager manager;
 
-    private TemporaryVariable yieldClosureVariable;
-
     private boolean alreadyHasInline;
     private String inlineFailed;
     public Compilable compilable;
@@ -941,17 +939,6 @@ public abstract class IRScope implements ParseResult {
 
     public void setTemporaryVariableCount(int count) {
         temporaryVariableIndex = count + 1;
-    }
-
-    /**
-     * Get the variable for accessing the "yieldable" closure in this scope.
-     */
-    public TemporaryVariable getYieldClosureVariable() {
-        if (yieldClosureVariable == null) {
-            return yieldClosureVariable = createTemporaryVariable();
-        }
-
-        return yieldClosureVariable;
     }
 
     public TemporaryLocalVariable getNewUnboxedVariable(Class type) {

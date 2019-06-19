@@ -307,6 +307,7 @@ public class IRBuilder {
     // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
     // execution order
     protected int afterPrologueIndex = 0;
+    private TemporaryVariable yieldClosureVariable = null;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -1417,7 +1418,7 @@ public class IRBuilder {
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, scope.getYieldClosureVariable()));
+        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, getYieldClosureVariable()));
         newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
@@ -1748,7 +1749,7 @@ public class IRBuilder {
                     )
             );
         case YIELDNODE:
-            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), scope.getYieldClosureVariable()), DefinedMessage.YIELD.getText());
+            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), getYieldClosureVariable()), DefinedMessage.YIELD.getText());
         case ZSUPERNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -2287,9 +2288,9 @@ public class IRBuilder {
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
         if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
-            addInstr(new LoadImplicitClosureInstr(scope.getYieldClosureVariable()));
+            addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
         } else {
-            addInstr(new LoadFrameClosureInstr(scope.getYieldClosureVariable()));
+            addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
         }
     }
 
@@ -3824,7 +3825,7 @@ public class IRBuilder {
 
         Operand[] args = setupCallArgs(superNode.getArgsNode());
         Operand block = setupCallClosure(superNode.getIterNode());
-        if (block == null) block = scope.getYieldClosureVariable();
+        if (block == null) block = getYieldClosureVariable();
         return buildSuperInstr(block, args);
     }
 
@@ -3944,11 +3945,9 @@ public class IRBuilder {
         }
 
         Variable ret = result == null ? createTemporaryVariable() : result;
-        if (argNode instanceof ArrayNode && unwrap) {
-            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), buildArray((ArrayNode)argNode, true), unwrap));
-        } else {
-            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), build(argNode), unwrap));
-        }
+        Operand value = argNode instanceof ArrayNode && unwrap ?  buildArray((ArrayNode)argNode, true) : build(argNode);
+        addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, unwrap));
+
         return ret;
     }
 
@@ -4031,7 +4030,7 @@ public class IRBuilder {
         if (scope.isModuleBody()) return buildSuperInScriptBody();
 
         Operand block = setupCallClosure(zsuperNode.getIterNode());
-        if (block == null) block = scope.getYieldClosureVariable();
+        if (block == null) block = getYieldClosureVariable();
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
@@ -4210,5 +4209,16 @@ public class IRBuilder {
         }
 
         throw new RuntimeException("BUG: no BEQ");
+    }
+
+    /**
+     * Get the variable for accessing the "yieldable" closure in this scope.
+     */
+    public TemporaryVariable getYieldClosureVariable() {
+        if (yieldClosureVariable == null) {
+            return yieldClosureVariable = createTemporaryVariable();
+        }
+
+        return yieldClosureVariable;
     }
 }
