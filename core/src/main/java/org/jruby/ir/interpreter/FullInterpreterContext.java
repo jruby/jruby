@@ -50,6 +50,11 @@ public class FullInterpreterContext extends InterpreterContext {
     /** Local variables used in this scope */
     private Set<LocalVariable> usedLocalVars;
 
+    // FIXME: When inlining these unboxed indexes and even defined/used can be cloned as starting point?
+    public int floatVariableIndex = -1;
+    public int fixnumVariableIndex = -1;
+    public int booleanVariableIndex = -1;
+
     // For duplicate()
     public FullInterpreterContext(IRScope scope, CFG cfg, BasicBlock[] linearizedBBList) {
         super(scope, (List<Instr>) null);

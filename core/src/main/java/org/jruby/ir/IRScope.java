@@ -105,9 +105,6 @@ public abstract class IRScope implements ParseResult {
     protected FullInterpreterContext optimizedInterpreterContext;
 
     protected int temporaryVariableIndex;
-    protected int floatVariableIndex;
-    protected int fixnumVariableIndex;
-    protected int booleanVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
     private int nextLabelIndex = 0;
@@ -133,7 +130,6 @@ public abstract class IRScope implements ParseResult {
         this.staticScope = s.staticScope;
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
-        this.floatVariableIndex = s.floatVariableIndex;
         this.interpreterContext = null;
 
         this.flagsComputed = s.flagsComputed;
@@ -154,7 +150,6 @@ public abstract class IRScope implements ParseResult {
         this.staticScope = staticScope;
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
-        this.floatVariableIndex = -1;
         this.interpreterContext = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
@@ -897,16 +892,16 @@ public abstract class IRScope implements ParseResult {
     public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
         switch (type) {
             case FLOAT: {
-                floatVariableIndex++;
-                return new TemporaryFloatVariable(floatVariableIndex);
+                getFullInterpreterContext().floatVariableIndex++;
+                return new TemporaryFloatVariable(getFullInterpreterContext().floatVariableIndex);
             }
             case FIXNUM: {
-                fixnumVariableIndex++;
-                return new TemporaryFixnumVariable(fixnumVariableIndex);
+                getFullInterpreterContext().fixnumVariableIndex++;
+                return new TemporaryFixnumVariable(getFullInterpreterContext().fixnumVariableIndex);
             }
             case BOOLEAN: {
-                booleanVariableIndex++;
-                return new TemporaryBooleanVariable(booleanVariableIndex);
+                getFullInterpreterContext().booleanVariableIndex++;
+                return new TemporaryBooleanVariable(getFullInterpreterContext().booleanVariableIndex);
             }
             case LOCAL: {
                 temporaryVariableIndex++;
@@ -935,27 +930,8 @@ public abstract class IRScope implements ParseResult {
         return getNewTemporaryVariable(varType);
     }
 
-    public void resetTemporaryVariables() {
-        temporaryVariableIndex = -1;
-        floatVariableIndex = -1;
-        fixnumVariableIndex = -1;
-        booleanVariableIndex = -1;
-    }
-
     public int getTemporaryVariablesCount() {
         return temporaryVariableIndex + 1;
-    }
-
-    public int getFloatVariablesCount() {
-        return floatVariableIndex + 1;
-    }
-
-    public int getFixnumVariablesCount() {
-        return fixnumVariableIndex + 1;
-    }
-
-    public int getBooleanVariablesCount() {
-        return booleanVariableIndex + 1;
     }
 
     // Generate a new variable for inlined code
