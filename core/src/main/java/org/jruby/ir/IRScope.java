@@ -113,9 +113,6 @@ public abstract class IRScope implements ParseResult {
 
     EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
 
-    /** Have scope flags been computed? */
-    private boolean flagsComputed;
-
     private IRManager manager;
 
     private boolean alreadyHasInline;
@@ -132,7 +129,6 @@ public abstract class IRScope implements ParseResult {
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.interpreterContext = null;
 
-        this.flagsComputed = s.flagsComputed;
         this.flags = s.flags.clone();
 
         this.localVars = new HashMap<>(s.localVars);
@@ -151,7 +147,7 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.interpreterContext = null;
-        this.flagsComputed = false;
+        flags.remove(FLAGS_COMPUTED);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
         flags.remove(HAS_BREAK_INSTRS);
@@ -746,7 +742,7 @@ public abstract class IRScope implements ParseResult {
         calculateClosureScopeFlags();
         computeNeedsDynamicScopeFlag();
 
-        flagsComputed = true;
+        flags.add(FLAGS_COMPUTED);
     }
 
 
@@ -757,7 +753,7 @@ public abstract class IRScope implements ParseResult {
      *  - also potentially at later times after other opt passes
      */
     public void computeScopeFlags() {
-        if (flagsComputed) return;
+        if (flags.contains(FLAGS_COMPUTED)) return;
 
         initScopeFlags();
         bindingEscapedScopeFlagsCheck();
@@ -771,7 +767,7 @@ public abstract class IRScope implements ParseResult {
         calculateClosureScopeFlags();
         computeNeedsDynamicScopeFlag();
 
-        flagsComputed = true;
+        flags.add(FLAGS_COMPUTED);
     }
 
     public abstract IRScopeType getScopeType();
@@ -996,7 +992,7 @@ public abstract class IRScope implements ParseResult {
         fullInterpreterContext = null;
 
         // reset flags
-        flagsComputed = false;
+        flags.remove(FLAGS_COMPUTED);
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
         flags.add(USES_EVAL);
