@@ -111,7 +111,7 @@ public abstract class IRScope implements ParseResult {
 
     Map<RubySymbol, LocalVariable> localVars;
 
-    EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
+    EnumSet<IRFlags> flags;
 
     private IRManager manager;
 
@@ -147,24 +147,7 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.interpreterContext = null;
-        flags.remove(FLAGS_COMPUTED);
-        flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        flags.remove(HAS_BREAK_INSTRS);
-        flags.remove(HAS_END_BLOCKS);
-        flags.remove(HAS_EXPLICIT_CALL_PROTOCOL);
-        flags.remove(HAS_LOOPS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(RECEIVES_KEYWORD_ARGS);
-
-        // These flags are true by default!
-        flags.add(CAN_CAPTURE_CALLERS_BINDING);
-        flags.add(BINDING_HAS_ESCAPED);
-        flags.add(USES_EVAL);
-        flags.add(REQUIRES_BACKREF);
-        flags.add(REQUIRES_LASTLINE);
-        flags.add(REQUIRES_DYNSCOPE);
-        flags.add(USES_ZSUPER);
+        this.flags = DEFAULT_SCOPE_FLAGS.clone();
 
         // We only can compute this once since 'module X; using A; class B; end; end' vs
         // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
@@ -652,26 +635,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void initScopeFlags() {
-        // CON: why isn't this just clear?
-        flags.remove(CAN_CAPTURE_CALLERS_BINDING);
-        flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        flags.remove(HAS_BREAK_INSTRS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(USES_ZSUPER);
-        flags.remove(USES_EVAL);
-        flags.remove(REQUIRES_DYNSCOPE);
-
-        flags.remove(REQUIRES_LASTLINE);
-        flags.remove(REQUIRES_BACKREF);
-        flags.remove(REQUIRES_VISIBILITY);
-        flags.remove(REQUIRES_BLOCK);
-        flags.remove(REQUIRES_SELF);
-        flags.remove(REQUIRES_METHODNAME);
-        flags.remove(REQUIRES_LINE);
-        flags.remove(REQUIRES_CLASS);
-        flags.remove(REQUIRES_FILENAME);
-        flags.remove(REQUIRES_SCOPE);
+        flags.clear();
     }
 
     private void bindingEscapedScopeFlagsCheck() {
@@ -711,11 +675,12 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
+            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, USES_EVAL, REQUIRES_BACKREF,
+                    REQUIRES_LASTLINE, REQUIRES_DYNSCOPE, USES_ZSUPER);
+
     private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
-            EnumSet.of(
-                    CAN_RECEIVE_BREAKS,
-                    HAS_NONLOCAL_RETURNS,CAN_RECEIVE_NONLOCAL_RETURNS,
-                    BINDING_HAS_ESCAPED);
+            EnumSet.of(CAN_RECEIVE_BREAKS, HAS_NONLOCAL_RETURNS, CAN_RECEIVE_NONLOCAL_RETURNS, BINDING_HAS_ESCAPED);
 
     private void computeNeedsDynamicScopeFlag() {
         for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {
