@@ -635,7 +635,26 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void initScopeFlags() {
-        flags.clear();
+        // .clear() does not work here for unknown reasons.  It is obviously removing something which should not be...
+        flags.remove(CAN_CAPTURE_CALLERS_BINDING);
+        flags.remove(CAN_RECEIVE_BREAKS);
+        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
+        flags.remove(HAS_BREAK_INSTRS);
+        flags.remove(HAS_NONLOCAL_RETURNS);
+        flags.remove(USES_ZSUPER);
+        flags.remove(USES_EVAL);
+        flags.remove(REQUIRES_DYNSCOPE);
+
+        flags.remove(REQUIRES_LASTLINE);
+        flags.remove(REQUIRES_BACKREF);
+        flags.remove(REQUIRES_VISIBILITY);
+        flags.remove(REQUIRES_BLOCK);
+        flags.remove(REQUIRES_SELF);
+        flags.remove(REQUIRES_METHODNAME);
+        flags.remove(REQUIRES_LINE);
+        flags.remove(REQUIRES_CLASS);
+        flags.remove(REQUIRES_FILENAME);
+        flags.remove(REQUIRES_SCOPE);
     }
 
     private void bindingEscapedScopeFlagsCheck() {
