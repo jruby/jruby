@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -51,7 +50,7 @@ public class LibrarySearcher {
 
     protected RubyArray loadPath;
     protected RubyArray loadedFeaturesSnapshot;
-    private final Map<CharBuffer, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
+    private final Map<String, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
 
     public LibrarySearcher(LoadService loadService) {
         Ruby runtime = loadService.runtime;
@@ -297,22 +296,22 @@ public class LibrarySearcher {
 
         snapshotLoadedFeatures();
 
-        addFeatureToIndex(CharBuffer.wrap(name.toString()), name);
+        addFeatureToIndex(name.toString(), name);
     }
 
     protected RubyArray snapshotLoadedFeatures() {
         return (RubyArray) loadedFeaturesSnapshot.replace(this.loadService.loadedFeatures);
     }
 
-    protected void addFeatureToIndex(CharBuffer name, IRubyObject featurePath) {
-        int featureEnd = 0 + name.remaining();
+    protected void addFeatureToIndex(String name, IRubyObject featurePath) {
+        int featureEnd = name.length();
 
         int ext, p;
 
         for (ext = featureEnd - 1; ext > 0; ext--)
-            if (name.get(ext) == '.' || name.get(ext) == '/') break;
+            if (name.charAt(ext) == '.' || name.charAt(ext) == '/') break;
 
-        if (name.get(ext) != '.') ext = -1;
+        if (name.charAt(ext) != '.') ext = -1;
 
         /* Now `ext` points to the only string matching %r{^\.[^./]*$} that is
            at the end of `feature`, or is NULL if there is no such string. */
@@ -322,16 +321,16 @@ public class LibrarySearcher {
             p--;
 
             // Walk back to nearest '/'
-            while (p >= 0 && name.get(p) != '/') p--;
+            while (p >= 0 && name.charAt(p) != '/') p--;
 
             if (p < 0) break;
 
             // Add partial feature to index
-            addSingleFeatureToIndex(name.subSequence(p + 1, featureEnd), featurePath);
+            addSingleFeatureToIndex(name.substring(p + 1, featureEnd), featurePath);
 
             // Add partial feature without extension, if appropriate
             if (ext != -1) {
-                addSingleFeatureToIndex(name.subSequence(p + 1, ext), featurePath);
+                addSingleFeatureToIndex(name.substring(p + 1, ext), featurePath);
             }
         }
 
@@ -340,7 +339,7 @@ public class LibrarySearcher {
 
         // Add version without extension, if appropriate
         if (ext != -1) {
-            addSingleFeatureToIndex(name.subSequence(0, ext), featurePath);
+            addSingleFeatureToIndex(name.substring(0, ext), featurePath);
         }
     }
 
@@ -364,8 +363,8 @@ public class LibrarySearcher {
         final CopyOnWriteArrayList<IRubyObject> featurePaths;
     }
 
-    protected void addSingleFeatureToIndex(CharBuffer key, IRubyObject featurePath) {
-        Map<CharBuffer, Feature> featuresIndex = this.loadedFeaturesIndex;
+    protected void addSingleFeatureToIndex(String key, IRubyObject featurePath) {
+        Map<String, Feature> featuresIndex = this.loadedFeaturesIndex;
 
         Feature thisFeature = featuresIndex.get(key);
 
@@ -403,7 +402,7 @@ public class LibrarySearcher {
         The matches are calculated by taking the given feature path combined with load path entries and file suffixes
         and attempting to match it against any loaded features this path has been associated with.
          */
-        Feature matchingFeature = getLoadedFeature(CharBuffer.wrap(feature));
+        Feature matchingFeature = getLoadedFeature(feature);
         if (matchingFeature != null) {
             for (IRubyObject featurePath : matchingFeature.featurePaths) {
                 RubyString loadedFeaturePath = featurePath.convertToString();
@@ -479,7 +478,7 @@ public class LibrarySearcher {
         return (loadPath == null) ? getExpandedLoadPath() : loadPath;
     }
 
-    Map<CharBuffer, Feature> getLoadedFeaturesIndex() {
+    Map<String, Feature> getLoadedFeaturesIndex() {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
 
         // Compare to see if the snapshot still matches actual.
@@ -493,15 +492,15 @@ public class LibrarySearcher {
                 IRubyObject entry = features.eltOk(i);
                 RubyString asStr = runtime.freezeAndDedupString(entry.convertToString());
                 if (asStr != entry) features.eltSetOk(i, asStr);
-                addFeatureToIndex(CharBuffer.wrap(asStr.toString()), asStr);
+                addFeatureToIndex(asStr.toString(), asStr);
             }
         }
 
         return loadedFeaturesIndex;
     }
 
-    Feature getLoadedFeature(CharBuffer feature) {
-        return getLoadedFeaturesIndex().get(CharBuffer.wrap(feature));
+    Feature getLoadedFeature(String feature) {
+        return getLoadedFeaturesIndex().get(feature);
     }
 
     /* This searches `load_path` for a value such that

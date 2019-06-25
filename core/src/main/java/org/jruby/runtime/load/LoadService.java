@@ -1643,7 +1643,7 @@ public class LoadService {
     protected void addLoadedFeature(String shortName, String name) {
         RubyString strName = runtime.newString(name);
         loadedFeatures.append(strName);
-        librarySearcher.addFeatureToIndex(CharBuffer.wrap(strName), runtime.freezeAndDedupString(strName));
+        librarySearcher.addFeatureToIndex(strName.toString(), runtime.freezeAndDedupString(strName));
     }
     //</editor-fold>
 }
