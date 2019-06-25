@@ -64,10 +64,6 @@ public class MathLinker {
             Binder
                     .from(methodType(boolean.class, IRubyObject.class))
                     .invokeStaticQuiet(lookup(), MathLinker.class, "fixnumTest");
-    public static final MethodHandle FIXNUM_TEST_WITH_GEN =
-            Binder
-                    .from(methodType(boolean.class, IRubyObject.class, RubyClass.class, int.class))
-                    .invokeStaticQuiet(lookup(), MathLinker.class, "fixnumTestWithGen");
     public static final MethodHandle FIXNUM_OPERATOR_FAIL =
             Binder
                     .from(methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, RubyFixnum.class))
@@ -80,10 +76,6 @@ public class MathLinker {
             Binder
                     .from(methodType(boolean.class, IRubyObject.class))
                     .invokeStaticQuiet(lookup(), MathLinker.class, "floatTest");
-    public static final MethodHandle FLOAT_TEST_WITH_GEN =
-            Binder
-                    .from(methodType(boolean.class, IRubyObject.class, RubyClass.class, int.class))
-                    .invokeStaticQuiet(lookup(), MathLinker.class, "floatTestWithGen");
     public static final MethodHandle FLOAT_OPERATOR_FAIL =
             Binder
                     .from(methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, RubyFloat.class))
@@ -157,21 +149,21 @@ public class MathLinker {
         MethodHandle fallback = FIXNUM_OPERATOR_FAIL;
         fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
 
-        RubyClass classFixnum = context.runtime.getFixnum();
-        int gen = classFixnum.getGeneration();
-        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
-        if (entry == null || !entry.method.isBuiltin()) gen--; // invalid - fallback on slow-path
-
-        MethodHandle test = FIXNUM_TEST_WITH_GEN; // NOTE: since we invalidate on Integer change FIXNUM_TEST should be enough?!
-        test = insertArguments(test, 1, classFixnum, gen);
+        MethodHandle test = FIXNUM_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
 
         if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
-        
-        // confirm it's a Fixnum
-        target = guardWithTest(test, target, fallback);
-        target = ((SwitchPoint) classFixnum.getInvalidator().getData()).guardWithTest(target, fallback);
-        site.setTarget(target);
+
+        RubyClass classFixnum = context.runtime.getFixnum();
+        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
+        if (entry == null || !entry.method.isBuiltin()) {
+            site.setTarget(fallback); // invalid - fallback on slow-path
+        } else {
+            // confirm it's a Fixnum
+            target = guardWithTest(test, target, fallback);
+            target = ((SwitchPoint) classFixnum.getInvalidator().getData()).guardWithTest(target, fallback);
+            site.setTarget(target);
+        }
         
         return (IRubyObject) target.invokeWithArguments(context, caller, self);
     }
@@ -187,31 +179,27 @@ public class MathLinker {
         MethodHandle fallback = FIXNUM_BOOLEAN_FAIL;
         fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
 
-        RubyClass classFixnum = context.runtime.getFixnum();
-        int gen = classFixnum.getGeneration();
-        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
-        if (entry == null || !entry.method.isBuiltin()) gen--; // invalid - fallback on slow-path
-
-        MethodHandle test = FIXNUM_TEST_WITH_GEN; // NOTE: since we invalidate on Integer change FIXNUM_TEST should be enough?!
-        test = insertArguments(test, 1, classFixnum, gen);
+        MethodHandle test = FIXNUM_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
 
         if (LOG_BINDING) LOG.debug(name + "\tFixnum boolean operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
-        
-        // confirm it's a Fixnum
-        target = guardWithTest(test, target, fallback);
-        target = ((SwitchPoint) classFixnum.getInvalidator().getData()).guardWithTest(target, fallback);
-        site.setTarget(target);
+
+        RubyClass classFixnum = context.runtime.getFixnum();
+        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
+        if (entry == null || !entry.method.isBuiltin()) {
+            site.setTarget(fallback); // invalid - fallback on slow-path
+        } else {
+            // confirm it's a Fixnum
+            target = guardWithTest(test, target, fallback);
+            target = ((SwitchPoint) classFixnum.getInvalidator().getData()).guardWithTest(target, fallback);
+            site.setTarget(target);
+        }
         
         return (Boolean) target.invokeWithArguments(context, caller, self);
     }
 
     static boolean fixnumTest(IRubyObject self) {
         return self instanceof RubyFixnum;
-    }
-
-    static boolean fixnumTestWithGen(IRubyObject self, RubyClass klass, final int gen) {
-        return self instanceof RubyFixnum && klass.getGeneration() == gen;
     }
 
     static IRubyObject fixnumOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFixnum value) throws Throwable {
@@ -333,30 +321,26 @@ public class MathLinker {
         MethodHandle fallback = FLOAT_OPERATOR_FAIL;
         fallback = insertArguments(fallback, 3, site, value);
 
-        RubyClass classFloat = context.runtime.getFloat();
-        int gen = classFloat.getGeneration();
-        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
-        if (entry == null || !entry.method.isBuiltin()) gen--; // invalid - fallback on slow-path
-
-        MethodHandle test = FLOAT_TEST_WITH_GEN; // NOTE: since we invalidate on Float change FLOAT_TEST should be enough?!
-        test = insertArguments(test, 1, classFloat, gen);
+        MethodHandle test = FLOAT_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
         if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
-        
-        // confirm it's a Float
-        target = guardWithTest(test, target, fallback);
-        target = ((SwitchPoint) classFloat.getInvalidator().getData()).guardWithTest(target, fallback);
-        site.setTarget(target);
+
+        RubyClass classFloat = context.runtime.getFloat();
+        CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
+        if (entry == null || !entry.method.isBuiltin()) {
+            site.setTarget(fallback); // invalid - fallback on slow-path
+        } else {
+            // confirm it's a Float
+            target = guardWithTest(test, target, fallback);
+            target = ((SwitchPoint) classFloat.getInvalidator().getData()).guardWithTest(target, fallback);
+            site.setTarget(target);
+        }
         
         return (IRubyObject) target.invokeWithArguments(context, caller, self);
     }
 
     static boolean floatTest(IRubyObject self) {
         return self instanceof RubyFloat;
-    }
-
-    static boolean floatTestWithGen(IRubyObject self, RubyClass klass, final int gen) {
-        return self instanceof RubyFloat && klass.getGeneration() == gen;
     }
 
     public static IRubyObject float_op_plus(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {
