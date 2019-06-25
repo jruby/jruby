@@ -186,10 +186,10 @@ matrix:
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
 
     - env: PHASE='-Pmain'
-      jdk: oraclejdk11
+      jdk: openjdk11
 
     - env: PHASE='-Pcomplete'
-      jdk: oraclejdk11
+      jdk: openjdk11
 
     - name: -Pmain openj9 jdk8
       env: PHASE='-Ptest'
