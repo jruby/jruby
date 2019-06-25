@@ -632,7 +632,7 @@ public class RubySocket extends RubyBasicSocket {
         final String callerWithAddr = caller + " for " + formatAddress(addr);
 
         if (errno != null) {
-            return runtime.newErrnoFromErrno(errno, caller);
+            return runtime.newErrnoFromErrno(errno, callerWithAddr);
         }
 
         final String message = ex.getMessage();
