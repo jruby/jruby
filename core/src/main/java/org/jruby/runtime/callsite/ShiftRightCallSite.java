@@ -4,7 +4,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ShiftRightCallSite extends NormalCachingCallSite {
+public class ShiftRightCallSite extends MonomorphicCallSite {
 
     public ShiftRightCallSite() {
         super(">>");

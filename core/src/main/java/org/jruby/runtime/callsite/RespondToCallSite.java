@@ -9,7 +9,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 
-public class RespondToCallSite extends NormalCachingCallSite {
+public class RespondToCallSite extends MonomorphicCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
     private final String respondToName;
     private RubySymbol respondToNameSym;

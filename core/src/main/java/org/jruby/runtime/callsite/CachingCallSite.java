@@ -445,7 +445,9 @@ public abstract class CachingCallSite extends CallSite {
         return Helpers.selectMethodMissing(context, selfType, method.getVisibility(), methodName, callType).call(context, self, self.getMetaClass(), methodName, arg0, arg1, arg2, block);
     }
 
-    protected abstract boolean methodMissing(DynamicMethod method, IRubyObject caller);
+    protected boolean methodMissing(DynamicMethod method, IRubyObject caller) {
+        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
+    }
 
     protected static RubyClass getClass(IRubyObject self) {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot

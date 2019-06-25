@@ -5,7 +5,7 @@ import org.jruby.RubyFloat;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class MinusCallSite extends NormalCachingCallSite2 {
+public class MinusCallSite extends BimorphicCallSite {
 
     public MinusCallSite() {
         super("-");
@@ -16,7 +16,7 @@ public class MinusCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_minus(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_minus(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_minus(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
@@ -26,7 +26,7 @@ public class MinusCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_minus(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_minus(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_minus(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
@@ -36,7 +36,7 @@ public class MinusCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_minus(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_minus(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_minus(context, arg);
         }
         return super.call(context, caller, self, arg);
     }

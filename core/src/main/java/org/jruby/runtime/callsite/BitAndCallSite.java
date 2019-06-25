@@ -4,7 +4,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BitAndCallSite extends NormalCachingCallSite {
+public class BitAndCallSite extends MonomorphicCallSite {
 
     public BitAndCallSite() {
         super("&");

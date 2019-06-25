@@ -4,7 +4,7 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class AsetCallSite extends NormalCachingCallSite {
+public class AsetCallSite extends MonomorphicCallSite {
     public AsetCallSite() {
         super("[]=");
     }

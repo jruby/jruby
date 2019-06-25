@@ -5,7 +5,7 @@ import org.jruby.RubyFloat;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class EqCallSite extends NormalCachingCallSite2 {
+public class EqCallSite extends BimorphicCallSite {
 
     public EqCallSite() {
         super("==");
@@ -16,7 +16,7 @@ public class EqCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_equal(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
@@ -26,7 +26,7 @@ public class EqCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_equal(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
@@ -36,7 +36,7 @@ public class EqCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_equal(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_equal(context, arg);
         }
         return super.call(context, caller, self, arg);
     }

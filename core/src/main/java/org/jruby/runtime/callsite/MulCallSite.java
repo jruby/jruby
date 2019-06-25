@@ -5,7 +5,7 @@ import org.jruby.RubyFloat;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class MulCallSite extends NormalCachingCallSite2 {
+public class MulCallSite extends BimorphicCallSite {
 
     public MulCallSite() {
         super("*");
@@ -16,14 +16,14 @@ public class MulCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_mul(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_mul(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_mul(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double arg) {
-        if (self instanceof RubyFloat && isBuiltin2(self.getMetaClass())) {
+        if (self instanceof RubyFloat && isSecondaryBuiltin(self.getMetaClass())) {
             return ((RubyFloat) self).op_mul(context, arg);
         }
         return super.call(context, caller, self, arg);
@@ -34,7 +34,7 @@ public class MulCallSite extends NormalCachingCallSite2 {
         if (self instanceof RubyFixnum) {
             if (isBuiltin(self.getMetaClass())) return ((RubyFixnum) self).op_mul(context, arg);
         } else if (self instanceof RubyFloat) {
-            if (isBuiltin2(self.getMetaClass())) return ((RubyFloat) self).op_mul(context, arg);
+            if (isSecondaryBuiltin(self.getMetaClass())) return ((RubyFloat) self).op_mul(context, arg);
         }
         return super.call(context, caller, self, arg);
     }

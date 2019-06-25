@@ -4,7 +4,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BitOrCallSite extends NormalCachingCallSite {
+public class BitOrCallSite extends MonomorphicCallSite {
 
     public BitOrCallSite() {
         super("|");

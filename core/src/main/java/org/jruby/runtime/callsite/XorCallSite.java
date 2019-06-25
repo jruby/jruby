@@ -4,7 +4,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class XorCallSite extends NormalCachingCallSite {
+public class XorCallSite extends MonomorphicCallSite {
     public XorCallSite() {
         super("^");
     }

@@ -32,7 +32,6 @@ package org.jruby.runtime;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
 import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
@@ -120,7 +119,7 @@ public class MethodIndex {
             callSite = getFastFixnumOpsCallSite(name);
         }
 
-        return callSite != null ? callSite : new NormalCachingCallSite(name);
+        return callSite != null ? callSite : new MonomorphicCallSite(name);
     }
 
     public static CallSite getProfilingCallSite(String name, IRScope scope, long callsiteId) {
