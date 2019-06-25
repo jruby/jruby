@@ -429,13 +429,12 @@ public class RbConfigLibrary implements Library {
             setConfig(context, mkmfHash, "EXEEXT", ".exe");
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
-            cflags = " -fPIC -DTARGET_RT_MAC_CFM=0 " + cflags;
+            cflags = " -DTARGET_RT_MAC_CFM=0 " + cflags;
             archflags = " -arch " + getArchitecture();
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(context, mkmfHash, "DLEXT", "bundle");
 	        setConfig(context, mkmfHash, "EXEEXT", "");
         } else {
-            cflags = " -fPIC " + cflags;
             setConfig(context, mkmfHash, "DLEXT", "so");
 	        setConfig(context, mkmfHash, "EXEEXT", "");
         }
@@ -444,6 +443,7 @@ public class RbConfigLibrary implements Library {
         String objext = "o";
 
         setConfig(context, mkmfHash, "configure_args", "");
+        setConfig(context, mkmfHash, "CCDLFLAGS", "-fPIC");
         setConfig(context, mkmfHash, "CFLAGS", cflags);
         setConfig(context, mkmfHash, "CPPFLAGS", cppflags);
         setConfig(context, mkmfHash, "CXXFLAGS", cxxflags);
@@ -471,6 +471,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "CPP", cpp);
         setConfig(context, mkmfHash, "CXX", cxx);
         setConfig(context, mkmfHash, "OUTFLAG", "-o ");
+        setConfig(context, mkmfHash, "COUTFLAG", "-o ");
         setConfig(context, mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(context, mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(context, mkmfHash, "INSTALL", "install -c ");

@@ -68,7 +68,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * 
  */
 public class StaticScope implements Serializable {
-    private static final int MAX_SPECIALIZED_SIZE = 50;
+    public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
 

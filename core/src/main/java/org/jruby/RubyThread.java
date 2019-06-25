@@ -264,7 +264,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     // if it's a Ruby exception, force the cause through
                     IRubyObject[] args;
                     if (err instanceof RubyException) {
-                        args = Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", ((RubyException) err).cause));
+                        args = Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", ((RubyException) err).cause(context)));
                     } else {
                         args = Helpers.arrayOf(err);
                     }
@@ -2104,7 +2104,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Override
     public int hashCode() {
-        return 97 * 3 + (this.threadImpl != ThreadLike.DUMMY ? this.threadImpl.hashCode() : 0);
+        return 97 * (3 + (this.threadImpl != ThreadLike.DUMMY ? this.threadImpl.hashCode() : 0));
     }
 
     @Override

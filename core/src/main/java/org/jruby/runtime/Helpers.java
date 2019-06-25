@@ -303,6 +303,15 @@ public class Helpers {
                     return Errno.EMSGSIZE;
                 case "Is a directory":
                     return Errno.EISDIR;
+                case "Operation timed out":
+                    return Errno.ETIMEDOUT;
+                case "No route to host":
+                    return Errno.EHOSTUNREACH;
+                case "permission denied":
+                case "Permission denied":
+                    return Errno.EACCES;
+                case "Protocol family unavailable":
+                    return Errno.EADDRNOTAVAIL;
             }
         }
         return null;

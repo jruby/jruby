@@ -753,11 +753,6 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     @JIT
-    public static boolean testMetaclass(RubyClass metaclass, IRubyObject self) {
-        return metaclass == RubyBasicObject.getMetaClass(self);
-    }
-
-    @JIT
     public static boolean testClass(Object object, Class clazz) {
         return object.getClass() == clazz;
     }

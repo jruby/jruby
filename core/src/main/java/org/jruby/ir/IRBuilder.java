@@ -301,6 +301,15 @@ public class IRBuilder {
     protected List<Instr> instructions;
     protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
+    private boolean executesOnce = true;
+
+    // Current index to put next BEGIN blocks and other things at the front of this scope.
+    // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
+    // execution order
+    protected int afterPrologueIndex = 0;
+    private TemporaryVariable yieldClosureVariable = null;
+    private Variable currentModuleVariable = null;
+    private Variable currentScopeVariable;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -308,6 +317,8 @@ public class IRBuilder {
         this.parent = parent;
         instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
+
+        if (parent != null) executesOnce = parent.executesOnce;
     }
 
     private boolean needsCodeCoverage() {
@@ -336,8 +347,6 @@ public class IRBuilder {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
-            if (instr instanceof ThreadPollInstr) scope.threadPollInstrsCount++;
-
             instr.computeScopeFlags(scope);
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, instructions.size());
@@ -511,13 +520,20 @@ public class IRBuilder {
     public Operand build(Variable result, Node node) {
         if (node == null) return null;
 
-        if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
+        boolean savedExecuteOnce = executesOnce;
+        try {
+            if (executesOnce) executesOnce = node.executesOnce();
 
-        Operand operand = buildOperand(result, node);
+            if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
 
-        if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
+            Operand operand = buildOperand(result, node);
 
-        return operand;
+            if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
+
+            return operand;
+        } finally {
+            executesOnce = savedExecuteOnce;
+        }
     }
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
@@ -953,7 +969,7 @@ public class IRBuilder {
                     // We are not in a closure or a loop => bad break instr!
                     throwSyntaxError(breakNode, "Can't escape from eval with redo");
                 } else {
-                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getName()));
+                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getId()));
                 }
             } else {
                 // We are not in a closure or a loop => bad break instr!
@@ -1376,17 +1392,20 @@ public class IRBuilder {
      * Build a new class and add it to the current scope (s).
      */
     public Operand buildClass(ClassNode classNode) {
+        boolean executesOnce = this.executesOnce;
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        RubySymbol className = cpath.getName();
+        ByteList className = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
-        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
-        Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), classVar, NullBlock.INSTANCE));
+        //System.out.println("MODULE IS SINGLE USE:"  + className +  ", " +  scope.getFile() + ":" + classNode.getEndLine());
+
+        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope(), executesOnce);
+        Variable bodyResult = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
+
         newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
-        return processBodyResult;
+        return bodyResult;
     }
 
     // class Foo; class << self; end; end
@@ -1395,11 +1414,11 @@ public class IRBuilder {
     public Operand buildSClass(SClassNode sclassNode) {
         Operand receiver = build(sclassNode.getReceiverNode());
         // FIXME: metaclass name should be a bytelist
-        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName(), sclassNode.getLine(), sclassNode.getScope());
+        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName().getBytes(), sclassNode.getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, scope.getYieldClosureVariable()));
+        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, getYieldClosureVariable()));
         newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
@@ -1463,7 +1482,7 @@ public class IRBuilder {
             return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(new GetClassVarContainerModuleInstr(createTemporaryVariable(),
-                    scope.getCurrentScopeVariable(), declContext ? null : buildSelf()));
+                    getCurrentScopeVariable(), declContext ? null : buildSelf()));
         }
     }
 
@@ -1473,12 +1492,12 @@ public class IRBuilder {
 
     private Operand findContainerModule() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return (nearestModuleBodyDepth == -1) ? scope.getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
+        return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
     }
 
     private Operand startingSearchScope() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.INSTANCE;
+        return nearestModuleBodyDepth == -1 ? getCurrentScopeVariable() : CurrentScope.INSTANCE;
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
@@ -1730,7 +1749,7 @@ public class IRBuilder {
                     )
             );
         case YIELDNODE:
-            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), scope.getYieldClosureVariable()), DefinedMessage.YIELD.getText());
+            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), getYieldClosureVariable()), DefinedMessage.YIELD.getText());
         case ZSUPERNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -2047,8 +2066,8 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE));
+        addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode());
@@ -2085,7 +2104,7 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(),
+        return new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
                 defNode.getScope(), needsCodeCoverage());
     }
 
@@ -2269,9 +2288,9 @@ public class IRBuilder {
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
         if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
-            addInstr(new LoadImplicitClosureInstr(scope.getYieldClosureVariable()));
+            addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
         } else {
-            addInstr(new LoadFrameClosureInstr(scope.getYieldClosureVariable()));
+            addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
         }
     }
 
@@ -2792,7 +2811,9 @@ public class IRBuilder {
         if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode);
 
         addCurrentScopeAndModule();                                // %current_scope/%current_module
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // Start label -- used by redo!
+
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
+        afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode());
@@ -2947,7 +2968,7 @@ public class IRBuilder {
 
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
 
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
+        afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
@@ -3084,15 +3105,18 @@ public class IRBuilder {
     }
 
     public Operand buildModule(ModuleNode moduleNode) {
+        boolean executesOnce = this.executesOnce;
         Colon3Node cpath = moduleNode.getCPath();
-        RubySymbol moduleName = cpath.getName();
+        ByteList moduleName = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
-        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
-        Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
+        //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
+
+        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
+
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
-        return processBodyResult;
+        return bodyResult;
     }
 
     public Operand buildNext(final NextNode nextNode) {
@@ -3382,14 +3406,20 @@ public class IRBuilder {
 
     private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE));
+        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(new Nil()));
 
         return scope.allocateInterpreterContext(instructions);
+    }
+
+    private List<Instr> buildPreExeInner(Node body) {
+        build(body);
+
+        return instructions;
     }
 
     public Operand buildPostExe(PostExeNode postExeNode) {
@@ -3411,13 +3441,16 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRScope topLevel = scope.getRootLexicalScope();
-        IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
-                Signature.from(preExeNode), IRFor._BEGIN_);
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
+        IRBuilder builder = newIRBuilder(manager, scope);
 
-        topLevel.recordBeginBlock(beginClosure);  // Record the begin block at IR build time
+        builder.currentScopeVariable = currentScopeVariable;  // If already made then we use it in temporary builder
+
+        List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
+
+        instructions.addAll(afterPrologueIndex, beginInstrs);
+
+        afterPrologueIndex += beginInstrs.size();
+
         return manager.getNil();
     }
 
@@ -3445,7 +3478,9 @@ public class IRBuilder {
                     throwSyntaxError(redoNode, "Can't escape from eval with redo");
                 } else {
                     addInstr(new ThreadPollInstr(true));
-                    addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                    Label startLabel = new Label(scope.getId() + "_START", 0);
+                    instructions.add(afterPrologueIndex, new LabelInstr(startLabel));
+                    addInstr(new JumpInstr(startLabel));
                 }
             } else {
                 throwSyntaxError(redoNode, "Invalid redo");
@@ -3676,14 +3711,14 @@ public class IRBuilder {
                 if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
                     addInstr(new CheckForLJEInstr(definedWithinMethod));
                 addInstr(new NonlocalReturnInstr(retVal,
-                        definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+                        definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
             }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
+            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getId()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
 
@@ -3701,11 +3736,14 @@ public class IRBuilder {
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
+        executesOnce = false;
         needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(manager.newLineNumber(scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
+
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
@@ -3714,17 +3752,15 @@ public class IRBuilder {
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        // FIXME: This filename should switch to ByteList
         String file = rootNode.getFile();
-        if (file == null) file = "(anon)";
-        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(file), rootNode.getStaticScope());
+        IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
 
     private void addCurrentScopeAndModule() {
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
+        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
+        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
     private InterpreterContext buildRootInner(RootNode rootNode) {
@@ -3732,19 +3768,14 @@ public class IRBuilder {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
+
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
 
         scope.computeScopeFlagsEarly(instructions);
         // Root scope can receive returns now, so we add non-local return logic if necessary (2.5+)
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
-
-        // Run all discovered BEGIN blocks before main body.
-        List<IRClosure> begins = scope.getBeginBlocks();
-        for (int i = begins.size() ; i > 0 ; i--) {
-            IRClosure begin = begins.get(i - 1);
-            addInstrAtBeginning(new RunBeginBlockInstr(scope, new WrappedIRClosure(begin.getSelf(), begin)));
-        }
 
         return scope.allocateInterpreterContext(instructions);
     }
@@ -3778,9 +3809,9 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(scope, ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new InstanceSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(scope, ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -3798,7 +3829,7 @@ public class IRBuilder {
 
         Operand[] args = setupCallArgs(superNode.getArgsNode());
         Operand block = setupCallClosure(superNode.getIterNode());
-        if (block == null) block = scope.getYieldClosureVariable();
+        if (block == null) block = getYieldClosureVariable();
         return buildSuperInstr(block, args);
     }
 
@@ -3918,11 +3949,9 @@ public class IRBuilder {
         }
 
         Variable ret = result == null ? createTemporaryVariable() : result;
-        if (argNode instanceof ArrayNode && unwrap) {
-            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), buildArray((ArrayNode)argNode, true), unwrap));
-        } else {
-            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), build(argNode), unwrap));
-        }
+        Operand value = argNode instanceof ArrayNode && unwrap ?  buildArray((ArrayNode)argNode, true) : build(argNode);
+        addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, unwrap));
+
         return ret;
     }
 
@@ -4005,7 +4034,7 @@ public class IRBuilder {
         if (scope.isModuleBody()) return buildSuperInScriptBody();
 
         Operand block = setupCallClosure(zsuperNode.getIterNode());
-        if (block == null) block = scope.getYieldClosureVariable();
+        if (block == null) block = getYieldClosureVariable();
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
@@ -4184,5 +4213,30 @@ public class IRBuilder {
         }
 
         throw new RuntimeException("BUG: no BEQ");
+    }
+
+    /**
+     * Get the variable for accessing the "yieldable" closure in this scope.
+     */
+    public TemporaryVariable getYieldClosureVariable() {
+        if (yieldClosureVariable == null) {
+            return yieldClosureVariable = createTemporaryVariable();
+        }
+
+        return yieldClosureVariable;
+    }
+
+    public Variable getCurrentModuleVariable() {
+        if (currentModuleVariable == null) currentModuleVariable = scope.createCurrentModuleVariable();
+
+        return currentModuleVariable;
+    }
+
+    public Variable getCurrentScopeVariable() {
+        // SSS: Used in only 1 case in generated IR:
+        // -> searching a constant in the lexical scope hierarchy
+        if (currentScopeVariable == null) currentScopeVariable = scope.createCurrentScopeVariable();
+
+        return currentScopeVariable;
     }
 }

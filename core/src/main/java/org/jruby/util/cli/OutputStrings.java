@@ -1,9 +1,11 @@
 package org.jruby.util.cli;
 
 import com.headius.options.Option;
+import java.time.LocalDate;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
+
 /**
  * Utility methods to generate the command-line output strings for help,
  * extended options, properties, version, and copyright strings.
@@ -130,6 +132,6 @@ public class OutputStrings {
     }
 
     public static String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2016 The JRuby Community (and contribs)";
+        return String.format("JRuby - Copyright (C) 2001-%s The JRuby Community (and contribs)", LocalDate.now().getYear());
     }
 }

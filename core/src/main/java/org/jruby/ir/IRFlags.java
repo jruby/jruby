@@ -67,7 +67,8 @@ public enum IRFlags {
 
     DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
     REUSE_PARENT_DYNSCOPE,        // for closures -- reuse parent's dynscope
-    CODE_COVERAGE;                // Was marked as needing code coverage (only used by lazy methods and converting closures->methods)
+    CODE_COVERAGE,                // Was marked as needing code coverage (only used by lazy methods and converting closures->methods)
+    FLAGS_COMPUTED;               // Have these flags been computed yet?
 
     public static final EnumSet<IRFlags> REQUIRE_ALL_FRAME_FIELDS =
             EnumSet.of(

@@ -109,8 +109,6 @@ public class JavaSites {
         public final CachingCallSite op_cmp_minmax = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt_minmax = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_minmax = new FunctionalCachingCallSite("<");
-        public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
-        public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
         public final CallSite begin = new FunctionalCachingCallSite("begin");
         public final CallSite end = new FunctionalCachingCallSite("end");
         public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
@@ -143,7 +141,6 @@ public class JavaSites {
         public final CallSite to_s = new FunctionalCachingCallSite("to_s");
         public final CallSite op_match = new FunctionalCachingCallSite("=~");
         public final CallSite match = new FunctionalCachingCallSite("match");
-        public final CallSite match_p = new FunctionalCachingCallSite("match?");
         public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
         public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
         public final CallSite begin = new FunctionalCachingCallSite("begin");
@@ -220,8 +217,8 @@ public class JavaSites {
     }
 
     public static class IntegerSites {
-        public final CallSite op_gt = new FunctionalCachingCallSite(">");
-        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");

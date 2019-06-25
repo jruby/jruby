@@ -353,9 +353,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @Override
     public final boolean eql(IRubyObject other) {
-        RubyClass metaclass = getMetaClass();
-        Ruby runtime = metaclass.getClassRuntime();
-        if (metaclass != runtime.getString() || metaclass != other.getMetaClass()) return super.eql(other);
+        RubyClass meta = this.metaClass;
+        if (meta != meta.runtime.getString() || meta != other.getMetaClass()) return super.eql(other);
         return eql19(other);
     }
 
@@ -681,7 +680,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     // str_make_independent, modified to create a new String rather than possibly modifying a frozen one
     public final RubyString makeIndependent() {
         RubyClass klass = metaClass;
-        RubyString str = strDup(klass.getClassRuntime(), klass);
+        RubyString str = strDup(klass.runtime, klass);
         str.modify();
         str.setFrozen(true);
         str.infectBy(this);
@@ -691,7 +690,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     // str_make_independent_expand
     public final RubyString makeIndependent(final int length) {
         RubyClass klass = metaClass;
-        RubyString str = strDup(klass.getClassRuntime(), klass);
+        RubyString str = strDup(klass.runtime, klass);
         str.modify(length);
         str.setFrozen(true);
         str.infectBy(this);
@@ -827,7 +826,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: rb_str_dup
     public final RubyString strDup(Ruby runtime) {
-        return strDup(runtime, getMetaClass().getRealClass());
+        return strDup(runtime, metaClass.getRealClass());
     }
 
     final RubyString strDup(Ruby runtime, RubyClass clazz) {
@@ -1024,8 +1023,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public RubyString newFrozen() {
         if (isFrozen()) return this;
 
-        RubyClass klass = getMetaClass();
-        RubyString str = strDup(klass.getClassRuntime());
+        RubyString str = strDup(metaClass.runtime);
         str.setCodeRange(getCodeRange());
         str.setFrozen(true);
         return str;
@@ -1114,8 +1112,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = {"to_s", "to_str"})
     @Override
     public IRubyObject to_s() {
-        Ruby runtime = getRuntime();
-        if (getMetaClass().getRealClass() != runtime.getString()) {
+        final Ruby runtime = metaClass.runtime;
+        if (metaClass.getRealClass() != runtime.getString()) {
             return strDup(runtime, runtime.getString());
         }
         return this;
@@ -1123,7 +1121,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Override
     public final int compareTo(IRubyObject other) {
-        return (int)op_cmp(getRuntime().getCurrentContext(), other).convertToInteger().getLongValue();
+        return (int) op_cmp(getRuntime().getCurrentContext(), other).convertToInteger().getLongValue();
     }
 
     /* rb_str_cmp_m */
@@ -1132,7 +1130,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         if (other instanceof RubyString) {
-            return runtime.newFixnum(op_cmp((RubyString)other));
+            return runtime.newFixnum(op_cmp((RubyString) other));
         }
         JavaSites.CheckedSites sites = sites(context).to_str_checked;
         if (sites.respond_to_X.respondsTo(context, this, other)) {
@@ -1224,7 +1222,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             System.arraycopy(bytes.getUnsafeBytes(), 0, bytes.getUnsafeBytes(), n, len - n);
         }
-        RubyString result = new RubyString(context.runtime, getMetaClass(), bytes);
+        RubyString result = new RubyString(context.runtime, metaClass, bytes);
         result.infectBy(this);
         return result;
     }
@@ -2073,9 +2071,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "dump")
     public IRubyObject dump() {
-        ByteList outBytes = StringSupport.dumpCommon(getRuntime(), value);
+        final RubyClass metaClass = this.metaClass;
+        ByteList outBytes = StringSupport.dumpCommon(metaClass.runtime, value);
 
-        final RubyString result = new RubyString(getRuntime(), getMetaClass(), outBytes);
+        final RubyString result = new RubyString(metaClass.runtime, metaClass, outBytes);
         Encoding enc = value.getEncoding();
 
         if (!enc.isAsciiCompatible()) {
@@ -2625,7 +2624,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
 
         if (other instanceof RubyFixnum) {
-            cat(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()));
+            cat(ConvertBytes.longToByteList(((RubyFixnum) other).value));
             return this;
         }
         if (other instanceof RubyFloat) {
@@ -2650,7 +2649,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
 
         if (other instanceof RubyFixnum) {
-            cat19(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()), StringSupport.CR_7BIT);
+            cat19(ConvertBytes.longToByteList(((RubyFixnum) other).value), StringSupport.CR_7BIT);
             return this;
         } else if (other instanceof RubyFloat) {
             return cat19((RubyString) ((RubyFloat) other).to_s());
@@ -3125,7 +3124,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = new RubyString(runtime, getMetaClass(), new ByteList(spLen + 30));
+        RubyString dest = new RubyString(runtime, metaClass, new ByteList(spLen + 30));
         final Encoding str_enc = value.getEncoding();
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
@@ -3745,7 +3744,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
         final RubyString str;
         if (value.getRealSize() > 0) {
-            str = new RubyString(runtime, getMetaClass(), StringSupport.succCommon(runtime, value));
+            str = new RubyString(runtime, metaClass, StringSupport.succCommon(runtime, value));
             // TODO: rescan code range ?
         } else {
             str = newEmptyString(runtime, getType(), value.getEncoding());
@@ -4134,7 +4133,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             RubyMatchData match = useBackref ? (RubyMatchData)context.getBackRef() : (RubyMatchData)holder[0];
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0) {
-                    result.append(newEmptyString(runtime, getMetaClass()).infectBy(this));
+                    result.append(newEmptyString(runtime, metaClass).infectBy(this));
                     break;
                 } else if (lastNull) {
                     result.append(makeShared(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
@@ -4711,7 +4710,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         res.setRealSize(p);
 
-        RubyString result = new RubyString(runtime, getMetaClass(), res);
+        RubyString result = new RubyString(runtime, metaClass, res);
         if (result.strLength() > strLength()) result.infectBy(this);
         result.associateEncoding(enc);
         return result;
