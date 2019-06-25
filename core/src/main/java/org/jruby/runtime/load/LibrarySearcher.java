@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 
@@ -50,7 +48,7 @@ public class LibrarySearcher {
 
     protected RubyArray loadPath;
     protected RubyArray loadedFeaturesSnapshot;
-    private final Map<String, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
+    private final Map<StringWrapper, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
 
     public LibrarySearcher(LoadService loadService) {
         Ruby runtime = loadService.runtime;
@@ -261,6 +259,127 @@ public class LibrarySearcher {
                 || file.endsWith(".jar");
     }
 
+    private static class StringWrapper implements CharSequence {
+        private String str;
+        private int beg;
+        private int len;
+        private int hash;
+
+        /**
+         * Construct a wrapper with the given values.
+         *
+         * @param str
+         * @param beg
+         * @param len
+         */
+        StringWrapper(String str, int beg, int len) {
+            this.str = str;
+            this.beg = beg;
+            this.len = len;
+        }
+
+        /**
+         * Populate this wrapper with the given values.
+         *
+         * @param str
+         * @param beg
+         * @param len
+         */
+        void rewrap(String str, int beg, int len) {
+            this.str = str;
+            this.beg = beg;
+            this.len = len;
+            this.hash = 0;
+        }
+
+        /**
+         * Clear this wrapper.
+         */
+        void clear() {
+            str = null;
+            beg = 0;
+            len = 0;
+            hash = 0;
+        }
+
+        StringWrapper dup() {
+            return new StringWrapper(str, beg, len);
+        }
+
+        @Override
+        public int length() {
+            return len;
+        }
+
+        @Override
+        public char charAt(int index) {
+            return str.charAt(beg + index);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            return new StringWrapper(str, beg + start, end - start);
+        }
+
+        @Override
+        public String toString() {
+            return str.substring(beg, beg + len);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            String otherStr;
+            String str;
+            int otherBeg;
+            int otherLen;
+
+            int beg = this.beg;
+            int len = this.len;
+
+            if (other instanceof StringWrapper) {
+                StringWrapper otherWrapper = (StringWrapper) other;
+
+                otherLen = otherWrapper.len;
+
+                if (len != otherLen) return false;
+
+                otherBeg = otherWrapper.beg;
+                str = this.str;
+                otherStr = otherWrapper.str;
+            } else if (other instanceof String) {
+                otherStr = (String) other;
+
+                otherLen = otherStr.length();
+
+                if (len != otherLen) return false;
+
+                otherBeg = 0;
+                str = this.str;
+            } else {
+                return false;
+            }
+
+            if (str == otherStr && beg == otherBeg) return true;
+
+            return str.regionMatches(beg, otherStr, otherBeg, otherLen);
+        }
+
+        @Override
+        public int hashCode() {
+            int h = hash;
+            int len = this.len;
+            if (h == 0 && len > 0) {
+                String str = this.str;
+                int beg = this.beg;
+                for (int i = 0; i < len; i++) {
+                    h = 31 * h + str.charAt(beg + i);
+                }
+                hash = h;
+            }
+            return h;
+        }
+    }
+
     public boolean featureAlreadyLoaded(String feature, String[] loading) {
         int ext = feature.lastIndexOf('.');
 
@@ -326,27 +445,27 @@ public class LibrarySearcher {
             if (p < 0) break;
 
             // Add partial feature to index
-            addSingleFeatureToIndex(name.substring(p + 1, featureEnd), featurePath);
+            addSingleFeatureToIndex(name, p + 1, featureEnd, featurePath);
 
             // Add partial feature without extension, if appropriate
             if (ext != -1) {
-                addSingleFeatureToIndex(name.substring(p + 1, ext), featurePath);
+                addSingleFeatureToIndex(name, p + 1, ext, featurePath);
             }
         }
 
         // Add full feature to index
-        addSingleFeatureToIndex(name, featurePath);
+        addSingleFeatureToIndex(name, 0, name.length(), featurePath);
 
         // Add version without extension, if appropriate
         if (ext != -1) {
-            addSingleFeatureToIndex(name.substring(0, ext), featurePath);
+            addSingleFeatureToIndex(name, 0, ext, featurePath);
         }
     }
 
     static class Feature {
-        Feature(CharSequence key, IRubyObject featurePath) {
+        Feature(StringWrapper key, IRubyObject featurePath) {
             this.key = key;
-            this.featurePaths = new CopyOnWriteArrayList();
+            this.featurePaths = new ArrayList<>();
 
             featurePaths.add(featurePath);
         }
@@ -359,20 +478,58 @@ public class LibrarySearcher {
             featurePaths.clear();
         }
 
-        final CharSequence key;
-        final CopyOnWriteArrayList<IRubyObject> featurePaths;
+        final StringWrapper key;
+        final List<IRubyObject> featurePaths;
     }
 
-    protected void addSingleFeatureToIndex(String key, IRubyObject featurePath) {
-        Map<String, Feature> featuresIndex = this.loadedFeaturesIndex;
+    private final ThreadLocal<StringWrapper> keyWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
+    private final ThreadLocal<StringWrapper> rangeWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
 
-        Feature thisFeature = featuresIndex.get(key);
+    protected void addSingleFeatureToIndex(String key, int beg, int end, IRubyObject featurePath) {
+        Map<StringWrapper, Feature> featuresIndex = this.loadedFeaturesIndex;
 
-        if (thisFeature == null) {
-            featuresIndex.put(key, new Feature(key, featurePath));
-        } else {
-            thisFeature.addFeaturePath(featurePath);
-        }
+        withRangeWrapper(key, beg, end - beg, (wrapper) -> {
+            Feature thisFeature = featuresIndex.get(wrapper);
+
+            if (thisFeature == null) {
+                StringWrapper clone = wrapper.dup();
+                featuresIndex.put(clone, new Feature(clone, featurePath));
+            } else {
+                thisFeature.addFeaturePath(featurePath);
+            }
+
+            return thisFeature;
+        });
+    }
+
+    private void releaseWrapper(StringWrapper wrapper) {
+        wrapper.clear();
+    }
+
+    private StringWrapper keyWrapper(String key) {
+        StringWrapper wrapper = keyWrapper.get();
+        wrapper.rewrap(key, 0, key.length());
+        return wrapper;
+    }
+
+    private StringWrapper rangeWrapper(String key, int beg, int len) {
+        StringWrapper wrapper = rangeWrapper.get();
+        wrapper.rewrap(key, beg, len);
+        return wrapper;
+    }
+
+    private <R> R withKeyWrapper(String key, Function<StringWrapper, R> body) {
+        StringWrapper wrapper = keyWrapper(key);
+        R result = body.apply(wrapper);
+        releaseWrapper(wrapper);
+        return result;
+    }
+
+    private <R> R withRangeWrapper(String key, int beg, int len, Function<StringWrapper, R> body) {
+        StringWrapper wrapper = rangeWrapper(key, beg, len);
+        R result = body.apply(wrapper);
+        releaseWrapper(wrapper);
+        return result;
     }
 
     protected char isFeature(String feature, int ext, boolean rb, boolean expanded, String[] fn) {
@@ -478,7 +635,7 @@ public class LibrarySearcher {
         return (loadPath == null) ? getExpandedLoadPath() : loadPath;
     }
 
-    Map<String, Feature> getLoadedFeaturesIndex() {
+    Map<StringWrapper, Feature> getLoadedFeaturesIndex() {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
 
         // Compare to see if the snapshot still matches actual.
@@ -500,7 +657,7 @@ public class LibrarySearcher {
     }
 
     Feature getLoadedFeature(String feature) {
-        return getLoadedFeaturesIndex().get(feature);
+        return withKeyWrapper(feature, (wrapper) -> getLoadedFeaturesIndex().get(wrapper));
     }
 
     /* This searches `load_path` for a value such that
