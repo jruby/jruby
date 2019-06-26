@@ -162,6 +162,12 @@ public class LibrarySearcher {
     }
 
     public LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
+        if (file.endsWith(".rb")) {
+            // source files need to check both .rb and .class so we use suffix logic
+            return findLibrary(file.substring(0, file.length() - 3), SuffixType.Source);
+        }
+
+        // otherwise we try to load as-is
         FoundLibrary library = findResourceLibrary(file, f -> f, ResourceLibrary::create);
 
         if (library != null) {
