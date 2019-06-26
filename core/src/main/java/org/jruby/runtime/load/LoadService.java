@@ -410,12 +410,13 @@ public class LoadService {
             // Check if lock is already there
             if (lock == null) {
                 RequireLock newLock = new RequireLock();
-                lock = pool.putIfAbsent(requireName, newLock);
-                // Lock is new, lock and return LOCKED
-                if (lock == null) {
-                    lock = newLock;
-                    thread.lock(lock);
+                // If lock is new, lock and return LOCKED
+                lock = pool.computeIfAbsent(requireName, (name) -> {
+                    thread.lock(newLock);
+                    return newLock;
+                });
 
+                if (lock == newLock) {
                     try {
                         RequireState state = ifLocked.apply(requireName);
                         return state;
@@ -427,15 +428,15 @@ public class LoadService {
                 }
             }
 
-//            if (lock carries a function that's supposed to clean up autoload?) ... {
-//                replace entry with a lock, lock it, and return empty file
-            // return defaultResult
+            // Another thread already locked for this require
 
-            if (circularRequireWarning && runtime.isVerbose()) {
-                warnCircularRequire(requireName);
+            if (lock.isHeldByCurrentThread()) {
+                if (circularRequireWarning && runtime.isVerbose()) {
+                    warnCircularRequire(requireName);
+                }
+
+                return null;
             }
-
-            if (lock.isHeldByCurrentThread()) return null;
 
             while (true) {
                 try {
