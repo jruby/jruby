@@ -41,7 +41,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.CharBuffer;
 import java.security.AccessControlException;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -417,20 +416,13 @@ public class LoadService {
                 });
 
                 if (lock == newLock) {
-                    try {
-                        RequireState state = ifLocked.apply(requireName);
-                        return state;
-                    } finally {
-                        lock.destroyed = true;
-                        pool.remove(requireName);
-                        thread.unlock(lock);
-                    }
+                    // Lock is ours, run ifLocked and then clean up
+                    return executeAndClearLock(requireName, (Function<String, RequireState>) ifLocked, thread, lock);
                 }
             }
 
-            // Another thread already locked for this require
-
             if (lock.isHeldByCurrentThread()) {
+                // we hold the lock, which means we're re-locking for the same file; warn about this
                 if (circularRequireWarning && runtime.isVerbose()) {
                     warnCircularRequire(requireName);
                 }
@@ -438,22 +430,32 @@ public class LoadService {
                 return null;
             }
 
+            // Other thread holds the lock, wait to acquire
             while (true) {
                 try {
                     thread.lockInterruptibly(lock);
                     break;
                 } catch (InterruptedException ie) {
                     currentContext.pollThreadEvents();
-                } finally {
-                    thread.exitSleep();
                 }
             }
 
-            try {
-                if (lock.destroyed) return defaultResult;
+            // Lock has been acquired, confirm other thread has completed and return default
+            if (lock.destroyed) {
+                thread.unlock(lock);
+                return defaultResult;
+            }
 
+            // Other thread failed to load, try on this thread instead
+            return executeAndClearLock(requireName, ifLocked, thread, lock);
+        }
+
+        private RequireState executeAndClearLock(String requireName, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
+            try {
                 return ifLocked.apply(requireName);
             } finally {
+                lock.destroyed = true;
+                pool.remove(requireName);
                 thread.unlock(lock);
             }
         }
