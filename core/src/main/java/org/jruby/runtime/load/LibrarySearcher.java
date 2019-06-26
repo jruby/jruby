@@ -11,6 +11,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -161,17 +162,18 @@ public class LibrarySearcher {
     }
 
     public LibrarySearcher.FoundLibrary findLibraryForLoad(String file) {
-        // Determine suffix type and get base file name out
-        String[] fileHolder = {file};
-        SuffixType suffixType = getSuffixTypeForLoad(fileHolder);
-        String baseName = fileHolder[0];
+        FoundLibrary library = findResourceLibrary(file, f -> f, ResourceLibrary::create);
 
-        return findLibrary(baseName, suffixType);
+        if (library != null) {
+            return library;
+        }
+
+        return findServiceLibrary(file);
     }
 
     public LibrarySearcher.FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
         for (Suffix suffix : suffixType.getSuffixSet()) {
-            FoundLibrary library = findResourceLibrary(baseName, suffix);
+            FoundLibrary library = findResourceLibrary(baseName, suffix::forTarget, suffix.libraryFactory);
 
             if (library != null) {
                 return library;
@@ -465,7 +467,7 @@ public class LibrarySearcher {
     static class Feature {
         Feature(StringWrapper key, IRubyObject featurePath) {
             this.key = key;
-            this.featurePaths = new ArrayList<>();
+            this.featurePaths = new Vector<>();
 
             featurePaths.add(featurePath);
         }
@@ -732,19 +734,19 @@ public class LibrarySearcher {
         }
     }
 
-    private FoundLibrary findResourceLibrary(String baseName, Suffix suffix) {
+    private FoundLibrary findResourceLibrary(String baseName, FilenameFactory pathMaker, LibraryFactory libraryMaker) {
         if (baseName.startsWith("./") || baseName.startsWith("../") || isAbsolute(baseName)) {
             // Path should be canonicalized in the findFileResource
-            return nullPathEntry.findFile(baseName, suffix);
+            return nullPathEntry.findFile(baseName, pathMaker, libraryMaker);
         }
 
         if (baseName.startsWith("~/")) {
-            return homePathEntry.findFile(baseName.substring(2), suffix);
+            return homePathEntry.findFile(baseName.substring(2), pathMaker, libraryMaker);
         }
 
         // search the $LOAD_PATH
         for (PathEntry loadPathEntry : getExpandedLoadPath()) {
-            FoundLibrary library = loadPathEntry.findFile(baseName, suffix);
+            FoundLibrary library = loadPathEntry.findFile(baseName, pathMaker, libraryMaker);
             if (library != null) return library;
         }
 
@@ -752,7 +754,7 @@ public class LibrarySearcher {
         if (!runtime.getCurrentDirectory().startsWith(URLResource.URI_CLASSLOADER)) {
 
             // ruby does not load a relative path unless the current working directory is in $LOAD_PATH
-            FoundLibrary library = cwdPathEntry.findFile(baseName, suffix);
+            FoundLibrary library = cwdPathEntry.findFile(baseName, pathMaker, libraryMaker);
 
             // we did not find the file on the $LOAD_PATH but in current directory so we need to treat it
             // as not found (the classloader search below will find it otherwise)
@@ -760,7 +762,7 @@ public class LibrarySearcher {
         }
 
         // load the jruby kernel and all resource added to $CLASSPATH
-        return classloaderPathEntry.findFile(baseName, suffix);
+        return classloaderPathEntry.findFile(baseName, pathMaker, libraryMaker);
     }
 
     private static boolean isAbsolute(String path) {
@@ -810,9 +812,9 @@ public class LibrarySearcher {
 
         private final String extension;
         private final byte[] extensionBytes;
-        private final TriFunction<String, String, FileResource, Library> libraryFactory;
+        private final LibraryFactory libraryFactory;
 
-        Suffix(String extension, TriFunction<String, String, FileResource, Library> libraryFactory) {
+        Suffix(String extension, LibraryFactory libraryFactory) {
             this.extension = extension;
             this.extensionBytes = extension.getBytes();
             this.libraryFactory = libraryFactory;
@@ -1016,11 +1018,14 @@ public class LibrarySearcher {
         R apply(T t, U u, V v);
     }
 
+    interface LibraryFactory extends TriFunction<String, String, FileResource, Library> {}
+    interface FilenameFactory extends Function<String, String> {}
+
     abstract class PathEntry {
-        protected FoundLibrary findFile(String target, Suffix suffix) {
+        protected FoundLibrary findFile(String target, FilenameFactory pathMaker, LibraryFactory libraryMaker) {
             Ruby runtime = LibrarySearcher.this.runtime;
 
-            FileResource fullPath = fullPath(target, suffix);
+            FileResource fullPath = fullPath(target, pathMaker);
 
             // Can't determine a full path for this entry, return no result
             if (fullPath == null) {
@@ -1038,7 +1043,7 @@ public class LibrarySearcher {
 
                         DebugLog.Resource.logFound(fullPath);
 
-                        return new FoundLibrary(target, expandedAbsolute, suffix.constructLibrary(target, expandedAbsolute, fullPath));
+                        return new FoundLibrary(target, expandedAbsolute, libraryMaker.apply(target, expandedAbsolute, fullPath));
                     }
                 }
 
@@ -1046,7 +1051,7 @@ public class LibrarySearcher {
 
                 String resolvedName = absolutePath;
 
-                return new FoundLibrary(target, resolvedName, suffix.constructLibrary(target, resolvedName, fullPath));
+                return new FoundLibrary(target, resolvedName, libraryMaker.apply(target, resolvedName, fullPath));
             }
 
             return null;
@@ -1054,7 +1059,7 @@ public class LibrarySearcher {
 
         protected abstract String path();
 
-        protected abstract FileResource fullPath(String searchName, Suffix suffix);
+        protected abstract FileResource fullPath(String searchName, Function<String, String> pathMaker);
     }
 
     class NormalPathEntry extends PathEntry {
@@ -1072,17 +1077,11 @@ public class LibrarySearcher {
             return expandPathCached().path();
         }
 
-        protected ByteList pathBytes() {
-            expandPathCached();
-
-            return bytes;
-        }
-
-        protected FileResource fullPath(String searchFile, Suffix suffix) {
+        protected FileResource fullPath(String searchFile, Function<String, String> pathMaker) {
             FileResource loadPath = expandPathCached();
 
             String fullPath = loadPath.path() + "/"
-                    + (suffix == null ? searchFile : suffix.forTarget(searchFile));
+                    + pathMaker.apply(searchFile);
 
             DebugLog.Resource.logTry(fullPath);
 
@@ -1136,14 +1135,14 @@ public class LibrarySearcher {
             return new ByteList(ByteList.plain(path()));
         }
 
-        protected FileResource fullPath(String searchFile, Suffix suffix) {
+        protected FileResource fullPath(String searchFile, Function<String, String> pathMaker) {
             String fullPath = resolveHome();
 
             if (fullPath == null) return null;
 
             DebugLog.Resource.logTry(fullPath);
 
-            return JRubyFile.createResourceAsFile(runtime, fullPath + "/" + suffix.forTarget(searchFile));
+            return JRubyFile.createResourceAsFile(runtime, fullPath + "/" + pathMaker.apply(searchFile));
         }
 
         private String resolveHome() {
@@ -1162,12 +1161,8 @@ public class LibrarySearcher {
             return "";
         }
 
-        protected ByteList pathBytes() {
-            return ByteList.EMPTY_BYTELIST;
-        }
-
-        protected FileResource fullPath(String searchFile, Suffix suffix) {
-            return JRubyFile.createResourceAsFile(runtime, suffix.forTarget(searchFile));
+        protected FileResource fullPath(String searchFile, Function<String, String> pathMaker) {
+            return JRubyFile.createResourceAsFile(runtime, pathMaker.apply(searchFile));
         }
     }
 }
