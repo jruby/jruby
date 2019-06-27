@@ -4,7 +4,7 @@ import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ArefCallSite extends NormalCachingCallSite {
+public class ArefCallSite extends MonomorphicCallSite {
     public ArefCallSite() {
         super("[]");
     }

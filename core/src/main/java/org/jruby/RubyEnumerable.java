@@ -41,15 +41,13 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
-import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.EnumerableSites;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
-import org.jruby.util.ArraySupport;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
@@ -1072,7 +1070,7 @@ public class RubyEnumerable {
         final IRubyObject result[] = new IRubyObject[] { init };
 
         callEach(runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
-            final NormalCachingCallSite site = new NormalCachingCallSite(methodId);
+            final MonomorphicCallSite site = new MonomorphicCallSite(methodId);
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 IRubyObject larg = packEnumValues(ctx, largs);
                 result[0] = result[0] == null ? larg : site.call(ctx, self, result[0], larg);
