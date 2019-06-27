@@ -256,7 +256,9 @@ class RegularFileResource implements FileResource {
             throw new ResourceException.FileIsDirectory(absolutePath());
         }
 
-        if (!file.exists()) {
+        // File.exists() returns false on Windows COM port paths, so ignore
+        // them for now and deal with the exception later
+        if (!file.exists() && !JRubyFile.isComPort(file.getPath())) {
             throw new ResourceException.NotFound(absolutePath());
         }
 
