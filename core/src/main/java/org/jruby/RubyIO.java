@@ -894,7 +894,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (fd == null) {
                 if (Platform.IS_WINDOWS) {
-                    // Native channels don't work quite right on Windows yet. See jruby/jruby#3625
+                    // Native channels don't work quite right on Windows yet. Override standard io for better nonblocking support. See jruby/jruby#3625
                     switch (fileno) {
                         case 0:
                             fd = new ChannelFD(Channels.newChannel(runtime.getIn()), runtime.getPosix(), runtime.getFilenoUtil());
@@ -906,7 +906,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             fd = new ChannelFD(Channels.newChannel(runtime.getErr()), runtime.getPosix(), runtime.getFilenoUtil());
                             break;
                         default:
-                            throw runtime.newErrnoEBADFError("Windows does not support wrapping native file descriptor: " + fileno);
+                            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+                            break;
                     }
                 } else {
                     fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
