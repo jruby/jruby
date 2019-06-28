@@ -1212,7 +1212,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
         fd = sysopen(runtime, fname.toString(), oflags, perm);
-        return runtime.newFixnum(fd.bestFileno());
+        return runtime.newFixnum(fd.bestFileno(true));
     }
 
     public static class Sysopen {
@@ -1271,8 +1271,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             data.errno = shim.getErrno();
             return null;
         }
-        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
-        if (fd.realFileno > 0 && runtime.getPosix().isNative()) {
+        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil(), data.oflags);
+        if (fd.realFileno > 0 && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             OpenFile.fdFixCloexec(shim, fd.realFileno);
         }
 

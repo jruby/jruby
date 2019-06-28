@@ -2,10 +2,16 @@ package org.jruby.util.io;
 
 import com.headius.backport9.modules.Modules;
 import jnr.enxio.channels.NativeSelectableChannel;
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.Pointer;
 import jnr.posix.FileStat;
+import jnr.posix.HANDLE;
+import jnr.posix.JavaLibCHelper;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
+
+import org.jruby.platform.Platform;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -125,6 +131,43 @@ public class FilenoUtil {
 
         return -1;
     }
+
+    public static HANDLE handleFrom(Channel channel) {
+        if (channel instanceof NativeSelectableChannel) {
+            return HANDLE.valueOf(((NativeSelectableChannel)channel).getFD()); // TODO: this is an int. Do windows handles ever grow larger?
+        }
+
+        return getHandleUsingReflection(channel);
+    }
+
+    private static HANDLE getHandleUsingReflection(Channel channel) {
+        if (ReflectiveAccess.FILE_DESCRIPTOR_FD != null) {
+            return JavaLibCHelper.gethandle(getDescriptorFromChannel(channel));
+        }
+        return HANDLE.valueOf(-1);
+    }
+
+    public static int filenoFromHandleIn(Channel channel, int flags) {
+        if (winc == null)
+            return -1;
+        HANDLE hndl = handleFrom(channel);
+        if (!hndl.isValid())
+            return -1;
+        return winc._open_osfhandle(hndl.toPointer(), flags); // TODO: don't re-open this handle ever again, or we start to leak?
+    }
+
+    public static int closeFilenoHandle(int fd) {
+        if (fd != -1)
+            return winc._close(fd);// TODO: error handling
+        return -1;
+    }
+
+    public static interface WinC {
+        int _open_osfhandle(Pointer hndl, int flgs);
+        int _close(int fd);
+    }
+
+    private static final WinC winc = Platform.IS_WINDOWS ? LibraryLoader.create(WinC.class).load("msvcrt") : null;// TODO: string
 
     public static final int FIRST_FAKE_FD = 100000;
     protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
