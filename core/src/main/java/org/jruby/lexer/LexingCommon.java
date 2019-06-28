@@ -88,56 +88,56 @@ public abstract class LexingCommon {
     public int tokp = 0;                   // Where last token started
     protected Object yaccValue;               // Value of last token which had a value associated with it.
 
-    public final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCII_ENCODING);
-    public final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCII_ENCODING);
-    public final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCII_ENCODING);
-    protected ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCII_ENCODING);
-    protected ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCII_ENCODING);
-    protected ByteList EQ = new ByteList(new byte[] {'='}, USASCII_ENCODING);
+    public static final ByteList BACKTICK = new ByteList(new byte[] {'`'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_EQ_EQ = new ByteList(new byte[] {'=', '=', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_EQ = new ByteList(new byte[] {'=', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_TILDE = new ByteList(new byte[] {'=', '~'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ_GT = new ByteList(new byte[] {'=', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList EQ = new ByteList(new byte[] {'='}, USASCIIEncoding.INSTANCE);
     public static final ByteList AMPERSAND_AMPERSAND = CommonByteLists.AMPERSAND_AMPERSAND;
-    protected ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCII_ENCODING);
-    public ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCII_ENCODING);
-    public final ByteList BANG = new ByteList(new byte[] {'!'}, USASCII_ENCODING);
-    protected ByteList BANG_EQ = new ByteList(new byte[] {'!', '='}, USASCII_ENCODING);
-    protected ByteList BANG_TILDE = new ByteList(new byte[] {'!', '~'}, USASCII_ENCODING);
-    protected ByteList CARET = new ByteList(new byte[] {'^'}, USASCII_ENCODING);
-    protected ByteList COLON_COLON = new ByteList(new byte[] {':', ':'}, USASCII_ENCODING);
-    protected ByteList COLON = new ByteList(new byte[] {':'}, USASCII_ENCODING);
-    protected ByteList COMMA = new ByteList(new byte[] {','}, USASCII_ENCODING);
-    protected ByteList DOT_DOT_DOT = new ByteList(new byte[] {'.', '.', '.'}, USASCII_ENCODING);
-    protected ByteList DOT_DOT = new ByteList(new byte[] {'.', '.'}, USASCII_ENCODING);
-    public ByteList DOT = new ByteList(new byte[] {'.'}, USASCII_ENCODING);
-    protected ByteList GT_EQ = new ByteList(new byte[] {'>', '='}, USASCII_ENCODING);
-    protected ByteList GT_GT = new ByteList(new byte[] {'>', '>'}, USASCII_ENCODING);
-    protected ByteList GT = new ByteList(new byte[] {'>'}, USASCII_ENCODING);
-    protected ByteList LBRACKET_RBRACKET_EQ = new ByteList(new byte[] {'[', ']', '='}, USASCII_ENCODING);
-    public static ByteList LBRACKET_RBRACKET = new ByteList(new byte[] {'[', ']'}, USASCIIEncoding.INSTANCE);
-    protected ByteList LBRACKET = new ByteList(new byte[] {'['}, USASCII_ENCODING);
-    protected ByteList LCURLY = new ByteList(new byte[] {'{'}, USASCII_ENCODING);
-    protected ByteList LT_EQ_RT = new ByteList(new byte[] {'<', '=', '>'}, USASCII_ENCODING);
-    protected ByteList LT_EQ = new ByteList(new byte[] {'<', '='}, USASCII_ENCODING);
-    protected ByteList LT_LT = new ByteList(new byte[] {'<', '<'}, USASCII_ENCODING);
-    protected ByteList LT = new ByteList(new byte[] {'<'}, USASCII_ENCODING);
-    protected ByteList MINUS_AT = new ByteList(new byte[] {'-', '@'}, USASCII_ENCODING);
-    protected ByteList MINUS = new ByteList(new byte[] {'-'}, USASCII_ENCODING);
-    protected ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCII_ENCODING);
-    protected ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCII_ENCODING);
+    public static final ByteList AMPERSAND = new ByteList(new byte[] {'&'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList AMPERSAND_DOT = new ByteList(new byte[] {'&', '.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BANG = new ByteList(new byte[] {'!'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BANG_EQ = new ByteList(new byte[] {'!', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BANG_TILDE = new ByteList(new byte[] {'!', '~'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList CARET = new ByteList(new byte[] {'^'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COLON_COLON = new ByteList(new byte[] {':', ':'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COLON = new ByteList(new byte[] {':'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList COMMA = new ByteList(new byte[] {','}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOT_DOT_DOT = new ByteList(new byte[] {'.', '.', '.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOT_DOT = new ByteList(new byte[] {'.', '.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList DOT = new ByteList(new byte[] {'.'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList GT_EQ = new ByteList(new byte[] {'>', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList GT_GT = new ByteList(new byte[] {'>', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList GT = new ByteList(new byte[] {'>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LBRACKET_RBRACKET_EQ = new ByteList(new byte[] {'[', ']', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LBRACKET_RBRACKET = new ByteList(new byte[] {'[', ']'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LBRACKET = new ByteList(new byte[] {'['}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LCURLY = new ByteList(new byte[] {'{'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT_EQ_RT = new ByteList(new byte[] {'<', '=', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT_EQ = new ByteList(new byte[] {'<', '='}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT_LT = new ByteList(new byte[] {'<', '<'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList LT = new ByteList(new byte[] {'<'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList MINUS_AT = new ByteList(new byte[] {'-', '@'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList MINUS = new ByteList(new byte[] {'-'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList MINUS_GT = new ByteList(new byte[] {'-', '>'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList PERCENT = new ByteList(new byte[] {'%'}, USASCIIEncoding.INSTANCE);
     public static final ByteList OR_OR = CommonByteLists.OR_OR;
-    protected ByteList OR = new ByteList(new byte[] {'|'}, USASCII_ENCODING);
-    protected ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCII_ENCODING);
-    protected ByteList PLUS = new ByteList(new byte[] {'+'}, USASCII_ENCODING);
-    protected ByteList QUESTION = new ByteList(new byte[] {'?'}, USASCII_ENCODING);
-    protected ByteList RBRACKET = new ByteList(new byte[] {']'}, USASCII_ENCODING);
-    protected ByteList RCURLY = new ByteList(new byte[] {'}'}, USASCII_ENCODING);
-    protected ByteList RPAREN = new ByteList(new byte[] {')'}, USASCII_ENCODING);
-    protected ByteList Q = new ByteList(new byte[] {'\''}, USASCII_ENCODING);
-    protected ByteList SLASH = new ByteList(new byte[] {'/'}, USASCII_ENCODING);
-    protected ByteList STAR = new ByteList(new byte[] {'*'}, USASCII_ENCODING);
-    protected ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'}, USASCII_ENCODING);
-    protected ByteList TILDE = new ByteList(new byte[] {'~'}, USASCII_ENCODING);
-    protected ByteList QQ = new ByteList(new byte[] {'"'}, USASCII_ENCODING);
-    protected ByteList SEMICOLON = new ByteList(new byte[] {';'}, USASCII_ENCODING);
-    protected ByteList BACKSLASH = new ByteList(new byte[] {'\\'}, USASCII_ENCODING);
+    public static final ByteList OR = new ByteList(new byte[] {'|'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList PLUS_AT = new ByteList(new byte[] {'+', '@'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList PLUS = new ByteList(new byte[] {'+'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList QUESTION = new ByteList(new byte[] {'?'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList RBRACKET = new ByteList(new byte[] {']'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList RCURLY = new ByteList(new byte[] {'}'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList RPAREN = new ByteList(new byte[] {')'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList Q = new ByteList(new byte[] {'\''}, USASCIIEncoding.INSTANCE);
+    public static final ByteList SLASH = new ByteList(new byte[] {'/'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList STAR = new ByteList(new byte[] {'*'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList STAR_STAR = new ByteList(new byte[] {'*', '*'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList TILDE = new ByteList(new byte[] {'~'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList QQ = new ByteList(new byte[] {'"'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList SEMICOLON = new ByteList(new byte[] {';'}, USASCIIEncoding.INSTANCE);
+    public static final ByteList BACKSLASH = new ByteList(new byte[] {'\\'}, USASCIIEncoding.INSTANCE);
     public static final ByteList CALL = new ByteList(new byte[] {'c', 'a', 'l', 'l'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_BANG = new ByteList(new byte[] {'$', '!'}, USASCIIEncoding.INSTANCE);
     public static final ByteList DOLLAR_UNDERSCORE = new ByteList(new byte[] {'$', '_'}, USASCIIEncoding.INSTANCE);
@@ -1190,9 +1190,9 @@ public abstract class LexingCommon {
                 mismatchedRegexpEncodingError(optionsEncoding, value.getEncoding());
             }
             value.setEncoding(ASCII8BIT_ENCODING);
-        } else if (getEncoding() == USASCII_ENCODING) {
+        } else if (getEncoding() == USASCIIEncoding.INSTANCE) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(USASCII_ENCODING); // This will raise later
+                value.setEncoding(USASCIIEncoding.INSTANCE); // This will raise later
             } else {
                 value.setEncoding(ASCII8BIT_ENCODING);
             }
@@ -1205,7 +1205,7 @@ public abstract class LexingCommon {
 
     // TODO: Put somewhere more consolidated (similiar
     protected char optionsEncodingChar(Encoding optionEncoding) {
-        if (optionEncoding == USASCII_ENCODING) return 'n';
+        if (optionEncoding == USASCIIEncoding.INSTANCE) return 'n';
         if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
         if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
         if (optionEncoding == UTF8_ENCODING) return 'u';
