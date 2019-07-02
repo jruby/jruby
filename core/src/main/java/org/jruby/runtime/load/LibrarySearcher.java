@@ -1080,7 +1080,6 @@ public class LibrarySearcher {
         final IRubyObject path;
         final boolean cacheExpanded;
         FileResource expanded;
-        ByteList bytes;
 
         NormalPathEntry(IRubyObject path) {
             this.path = path;
@@ -1108,13 +1107,11 @@ public class LibrarySearcher {
                 if (expanded != null) return expanded;
 
                 expanded = this.expanded = expandPath();
-                this.bytes = new ByteList(ByteList.plain(expanded.path()));
 
                 return expanded;
             }
 
             FileResource expanded = expandPath();
-            bytes = null;
 
             return expanded;
         }
@@ -1136,7 +1133,7 @@ public class LibrarySearcher {
 
             FileResource resource = JRubyFile.createResourceAsFile(runtime, pathAsString);
 
-            return resource.isDirectory() && resource.path() == resource.canonicalPath();
+            return resource.isDirectory();
         }
     }
 
