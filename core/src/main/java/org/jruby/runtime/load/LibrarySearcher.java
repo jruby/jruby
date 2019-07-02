@@ -1142,10 +1142,6 @@ public class LibrarySearcher {
             return resolveHome();
         }
 
-        protected ByteList pathBytes() {
-            return new ByteList(ByteList.plain(path()));
-        }
-
         protected FileResource fullPath(String searchFile, Function<String, String> pathMaker) {
             String fullPath = resolveHome();
 
