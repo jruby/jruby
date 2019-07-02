@@ -647,18 +647,26 @@ public class LibrarySearcher {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
 
         // Compare to see if the snapshot still matches actual.
-        if (loadedFeaturesSnapshot.toJavaArrayUnsafe() != loadedFeatures.toJavaArrayUnsafe()) {
+        if (!loadedFeaturesSnapshot.isSharedJavaArray(loadedFeatures)) {
             loadedFeaturesIndex.forEach((name, feature) -> feature.clear());
 
-            RubyArray features = snapshotLoadedFeatures();
             Ruby runtime = this.runtime;
+
+            // defensive copy for iteration; if original is modified we snapshot again below
+            RubyArray features = snapshotLoadedFeatures();
+            boolean modified = false;
 
             for (int i = 0; i < features.size(); i++) {
                 IRubyObject entry = features.eltOk(i);
                 RubyString asStr = runtime.freezeAndDedupString(entry.convertToString());
-                if (asStr != entry) features.eltSetOk(i, asStr);
+                if (asStr != entry) {
+                    modified = true;
+                    loadedFeatures.eltSetOk(i, asStr);
+                }
                 addFeatureToIndex(asStr.toString(), asStr);
             }
+
+            if (modified) snapshotLoadedFeatures();
         }
 
         return loadedFeaturesIndex;
