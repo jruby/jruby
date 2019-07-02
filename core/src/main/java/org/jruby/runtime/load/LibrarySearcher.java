@@ -1021,7 +1021,7 @@ public class LibrarySearcher {
         }
 
         boolean isCurrent() {
-            return loadPath.toJavaArrayUnsafe() == loadPathSnapshot.toJavaArrayUnsafe();
+            return loadPathSnapshot.isSharedJavaArray(loadPath);
         }
     }
 
