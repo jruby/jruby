@@ -1133,7 +1133,7 @@ public class LibrarySearcher {
 
             FileResource resource = JRubyFile.createResourceAsFile(runtime, pathAsString);
 
-            return resource.isDirectory();
+            return !resource.isFile();
         }
     }
 
