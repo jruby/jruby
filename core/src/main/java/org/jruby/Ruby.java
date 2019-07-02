@@ -4685,6 +4685,7 @@ public final class Ruby implements Constantizable {
     /**
      * Mark Fixnum as reopened
      */
+    @Deprecated
     public void reopenFixnum() {
         fixnumInvalidator.invalidate();
         fixnumReopened = true;
@@ -4693,6 +4694,7 @@ public final class Ruby implements Constantizable {
     /**
      * Retrieve the invalidator for Fixnum reopening
      */
+    @Deprecated
     public Invalidator getFixnumInvalidator() {
         return fixnumInvalidator;
     }
@@ -4700,6 +4702,7 @@ public final class Ruby implements Constantizable {
     /**
      * Whether the Float class has been reopened and modified
      */
+    @Deprecated
     public boolean isFixnumReopened() {
         return fixnumReopened;
     }
@@ -4707,6 +4710,7 @@ public final class Ruby implements Constantizable {
     /**
      * Mark Float as reopened
      */
+    @Deprecated
     public void reopenFloat() {
         floatInvalidator.invalidate();
         floatReopened = true;
@@ -4715,6 +4719,7 @@ public final class Ruby implements Constantizable {
     /**
      * Retrieve the invalidator for Float reopening
      */
+    @Deprecated
     public Invalidator getFloatInvalidator() {
         return floatInvalidator;
     }
@@ -4722,6 +4727,7 @@ public final class Ruby implements Constantizable {
     /**
      * Whether the Float class has been reopened and modified
      */
+    @Deprecated
     public boolean isFloatReopened() {
         return floatReopened;
     }

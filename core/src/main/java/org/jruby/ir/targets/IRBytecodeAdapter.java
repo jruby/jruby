@@ -17,7 +17,6 @@ import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -26,7 +25,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -95,7 +94,7 @@ public abstract class IRBytecodeAdapter {
                         profiled = true;
                         siteClass = ProfilingCachingCallSite.class;
                     } else {
-                        siteClass = NormalCachingCallSite.class;
+                        siteClass = MonomorphicCallSite.class;
                     }
                     break;
                 case FUNCTIONAL:

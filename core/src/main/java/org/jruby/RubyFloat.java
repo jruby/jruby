@@ -396,15 +396,14 @@ public class RubyFloat extends RubyNumeric {
         switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
         case FLOAT:
-            double y = ((RubyNumeric) other).getDoubleValue();
-            if (y == 0) throw context.runtime.newZeroDivisionError();
-            return op_mod(context, y);
+            return op_mod(context, ((RubyNumeric) other).getDoubleValue());
         default:
             return coerceBin(context, sites(context).op_mod, other);
         }
     }
 
     public IRubyObject op_mod(ThreadContext context, double other) {
+        if (other == 0) throw context.runtime.newZeroDivisionError();
         // Modelled after c ruby implementation (java /,% not same as ruby)
         double x = value;
 

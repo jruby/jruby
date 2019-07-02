@@ -4,14 +4,15 @@ import org.jruby.RubyFixnum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ShiftRightCallSite extends NormalCachingCallSite {
+public class ShiftRightCallSite extends MonomorphicCallSite {
 
     public ShiftRightCallSite() {
         super(">>");
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
+        if (self instanceof RubyFixnum && isBuiltin(self.getMetaClass())) {
             return ((RubyFixnum) self).op_rshift(context, fixnum);
         }
         return super.call(context, caller, self, fixnum);
@@ -19,9 +20,10 @@ public class ShiftRightCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
-        if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
+        if (self instanceof RubyFixnum && isBuiltin(self.getMetaClass())) {
             return ((RubyFixnum) self).op_rshift(context, arg);
         }
         return super.call(context, caller, self, arg);
     }
+
 }

@@ -1265,7 +1265,7 @@ public class Pack {
             }
             lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
         }
-        appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), tainted);
+        appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), tainted);
     }
 
     private static void unpack_h(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
@@ -1282,7 +1282,7 @@ public class Pack {
             }
             lElem[lCurByte] = sHexDigits[bits & 15];
         }
-        appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), tainted);
+        appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), tainted);
     }
 
     private static void unpack_B(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
