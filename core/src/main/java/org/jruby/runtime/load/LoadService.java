@@ -70,6 +70,7 @@ import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StandardError;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
@@ -451,11 +452,24 @@ public class LoadService {
         }
 
         private RequireState executeAndClearLock(String requireName, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
+            boolean destroyLock = false;
             try {
-                return ifLocked.apply(requireName);
+                RequireState state = ifLocked.apply(requireName);
+
+                // successful load, destroy lock
+                destroyLock = true;
+
+                return state;
+            } catch (StandardError se) {
+                // standard error, consider file not loaded
+                destroyLock = false;
+
+                throw se;
             } finally {
-                lock.destroyed = true;
-                pool.remove(requireName);
+                if (destroyLock) {
+                    lock.destroyed = true;
+                    pool.remove(requireName);
+                }
                 thread.unlock(lock);
             }
         }
