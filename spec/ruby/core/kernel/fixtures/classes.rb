@@ -435,7 +435,7 @@ module KernelSpecs
   CustomRangeFloat = Struct.new(:value) do
     def to_f; value; end
     def <=>(other); to_f <=> other.to_f; end
-    def -(other); self.class.new(to_f - other.to_f); end
+    def -(other); to_f - other.to_f; end
     def +(other); self.class.new(to_f + other.to_f); end
   end
 end
