@@ -513,7 +513,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public boolean isSharedJavaArray(RubyArray other) {
-        return values == other.values;
+        return values == other.values && begin == other.begin && realLength == other.realLength;
     }
 
     /** rb_ary_make_shared
