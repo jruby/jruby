@@ -1131,6 +1131,8 @@ public class LibrarySearcher {
 
             if (isURI(pathAsString)) return false;
 
+            if (!new File(pathAsString).isAbsolute()) return false;
+
             FileResource resource = JRubyFile.createResourceAsFile(runtime, pathAsString);
 
             return !resource.isFile();
