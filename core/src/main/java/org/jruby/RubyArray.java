@@ -4547,7 +4547,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         IRubyObject value = null;
 
         if (is_fixnum) {
-            long sum = ((RubyFixnum) result).getLongValue();
+            long sum = ((RubyFixnum) result).value;
 fixnum_loop:
             for (; i < realLength; value=null, i++) {
                 if (value == null) {
@@ -4560,7 +4560,7 @@ fixnum_loop:
                 if (value instanceof RubyFixnum) {
                     /* should not overflow long type */
                     try {
-                        sum = Math.addExact(sum, ((RubyFixnum) value).getLongValue());
+                        sum = Math.addExact(sum, ((RubyFixnum) value).value);
                     } catch (ArithmeticException ae) {
                         is_bignum = true;
                         break fixnum_loop;
@@ -4588,7 +4588,7 @@ fixnum_loop:
             }
         }
         if (is_bignum) {
-            BigInteger sum = ((RubyBignum) result).getBigIntegerValue();
+            BigInteger sum = ((RubyBignum) result).value;
 bignum_loop:
             for (; i < realLength; value=null, i++) {
                 if (value == null) {
@@ -4599,14 +4599,10 @@ bignum_loop:
                 }
 
                 if (value instanceof RubyFixnum) {
-                    final RubyFixnum ival = (RubyFixnum) value;
-                    final long lval = ival.getLongValue();
-                    final BigInteger bval = BigInteger.valueOf(lval);
-                    sum = sum.add(bval);
+                    final long val = ((RubyFixnum) value).value;
+                    sum = sum.add(BigInteger.valueOf(val));
                 } else if (value instanceof RubyBignum) {
-                    final RubyBignum ival = (RubyBignum) value;
-                    final BigInteger bval = ival.getBigIntegerValue();
-                    sum = sum.add(bval);
+                    sum = sum.add(((RubyBignum) value).value);
                 } else if (value instanceof RubyRational) {
                     is_rational = true;
                     break bignum_loop;
@@ -4617,7 +4613,7 @@ bignum_loop:
             }
 
             if (is_rational) {
-                result = RubyRational.newRationalConvert(context, RubyBignum.newBignum(runtime, sum), RubyFixnum.one(runtime));
+                result = RubyRational.newInstance(context, RubyBignum.newBignum(runtime, sum));
             } else if (is_float) {
                 result = RubyFloat.newFloat(runtime, sum.doubleValue());
             } else {
@@ -4656,7 +4652,7 @@ rational_loop:
              * Kahan-Babuska balancing compensated summation algorithm
              * See http://link.springer.com/article/10.1007/s00607-005-0139-x
              */
-            double f = ((RubyFloat) result).getDoubleValue();
+            double f = ((RubyFloat) result).value;
             double c = 0.0;
             double x, t;
 float_loop:
@@ -4669,13 +4665,13 @@ float_loop:
                 }
 
                 if (value instanceof RubyFixnum) {
-                    x = ((RubyFixnum) value).getDoubleValue();
+                    x = ((RubyFixnum) value).value;
                 } else if (value instanceof RubyBignum) {
                     x = ((RubyBignum) value).getDoubleValue();
                 } else if (value instanceof RubyRational) {
                     x = ((RubyRational) value).getDoubleValue(context);
                 } else if (value instanceof RubyFloat) {
-                    x = ((RubyFloat) value).getDoubleValue();
+                    x = ((RubyFloat) value).value;
                 } else {
                     break float_loop;
                 }
