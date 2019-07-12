@@ -418,7 +418,7 @@ public class LoadService {
 
                 if (lock == newLock) {
                     // Lock is ours, run ifLocked and then clean up
-                    return executeAndClearLock(requireName, (Function<String, RequireState>) ifLocked, thread, lock);
+                    return executeAndClearLock(requireName, ifLocked, thread, lock);
                 }
             }
 
