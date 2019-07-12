@@ -503,6 +503,10 @@ public class LoadService {
         } else {
             String loadName = library.getLoadName();
             return requireLocks.lock(loadName, circularRequireWarning, RequireState.ALREADY_LOADED, (name) -> {
+                if (librarySearcher.getLoadedFeature(name) != null) {
+                    return RequireState.ALREADY_LOADED;
+                }
+
                 if (name.length() == 0) {
                     // logic for load_lock returning a blank string, apparently for autoload func?
                     provide(loadName);

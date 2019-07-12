@@ -647,7 +647,7 @@ public class LibrarySearcher {
 
         // Compare to see if the snapshot still matches actual.
         if (!loadedFeaturesSnapshot.isSharedJavaArray(loadedFeatures)) {
-            loadedFeaturesIndex.forEach((name, feature) -> feature.clear());
+            loadedFeaturesIndex.clear();
 
             Ruby runtime = this.runtime;
 
