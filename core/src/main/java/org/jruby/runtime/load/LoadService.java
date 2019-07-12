@@ -503,20 +503,28 @@ public class LoadService {
         } else {
             String loadName = library.getLoadName();
             return requireLocks.lock(loadName, circularRequireWarning, RequireState.ALREADY_LOADED, (name) -> {
+                searchForRequire(name, libraryHolder);
+
+                LibrarySearcher.FoundLibrary library2 = libraryHolder[0];
+
+                if (library2 == null) {
+                    return RequireState.ALREADY_LOADED;
+                }
+
                 if (name.length() == 0) {
                     // logic for load_lock returning a blank string, apparently for autoload func?
                     provide(loadName);
                     return RequireState.LOADED;
-                } else {
-                    // numbers from loadTimer does not include lock waiting time.
-                    long startTime = loadTimer.startLoad(loadName);
-                    try {
-                        tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
-                        provide(loadName);
-                        return RequireState.LOADED;
-                    } finally {
-                        loadTimer.endLoad(loadName, startTime);
-                    }
+                }
+
+                // numbers from loadTimer does not include lock waiting time.
+                long startTime = loadTimer.startLoad(loadName);
+                try {
+                    tryLoadingLibraryOrScript(runtime, library2, library2.getSearchName());
+                    provide(loadName);
+                    return RequireState.LOADED;
+                } finally {
+                    loadTimer.endLoad(loadName, startTime);
                 }
             });
         }
