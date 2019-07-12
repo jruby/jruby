@@ -626,9 +626,8 @@ public class LibrarySearcher {
         }
 
         if (suffixGiven && ext == feature.length()) return 0;
-        // FIXME: using Iterator
         String baseName = feature.substring(0, len);
-        for (LibrarySearcher.Suffix suffix : Suffix.ALL) {
+        for (LibrarySearcher.Suffix suffix : Suffix.ALL_ARY) {
             String withExt = suffix.forTarget(baseName);
             if (loadingTable.containsKey(withExt)) {
                 if (fn != null) fn[0] = withExt;
@@ -823,6 +822,7 @@ public class LibrarySearcher {
                 Options.AOT_LOADCLASSES.load() ?
                         EnumSet.of(RUBY, CLASS, JAR) :
                         EnumSet.of(RUBY, JAR);
+        static final Suffix[] ALL_ARY = ALL.stream().toArray(i -> new Suffix[i]);
 
         private final String extension;
         private final byte[] extensionBytes;
