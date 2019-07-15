@@ -388,7 +388,7 @@ public class LibrarySearcher {
         }
     }
 
-    public boolean featureAlreadyLoaded(String feature, String[] loading) {
+    public synchronized boolean featureAlreadyLoaded(String feature, String[] loading) {
         int ext = feature.lastIndexOf('.');
 
         if (feature.charAt(0) == '.' &&
@@ -410,7 +410,7 @@ public class LibrarySearcher {
         return false;
     }
 
-    protected void provideFeature(RubyString name) {
+    protected synchronized void provideFeature(RubyString name) {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
 
         if (loadedFeatures.isFrozen()) {
@@ -426,11 +426,11 @@ public class LibrarySearcher {
         addFeatureToIndex(name.toString(), name);
     }
 
-    protected RubyArray snapshotLoadedFeatures() {
+    protected synchronized RubyArray snapshotLoadedFeatures() {
         return (RubyArray) loadedFeaturesSnapshot.replace(this.loadService.loadedFeatures);
     }
 
-    protected void addFeatureToIndex(String name, IRubyObject featurePath) {
+    protected synchronized void addFeatureToIndex(String name, IRubyObject featurePath) {
         int featureEnd = name.length();
 
         int ext, p;
@@ -535,7 +535,7 @@ public class LibrarySearcher {
     private final ThreadLocal<StringWrapper> keyWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
     private final ThreadLocal<StringWrapper> rangeWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
 
-    protected void addSingleFeatureToIndex(String key, int beg, int end, IRubyObject featurePath) {
+    protected synchronized void addSingleFeatureToIndex(String key, int beg, int end, IRubyObject featurePath) {
         Map<StringWrapper, Feature> featuresIndex = this.loadedFeaturesIndex;
 
         withRangeWrapper(key, beg, end - beg, (wrapper) -> {
@@ -552,30 +552,30 @@ public class LibrarySearcher {
         });
     }
 
-    private void releaseWrapper(StringWrapper wrapper) {
+    private synchronized void releaseWrapper(StringWrapper wrapper) {
         wrapper.clear();
     }
 
-    private StringWrapper keyWrapper(String key) {
+    private synchronized StringWrapper keyWrapper(String key) {
         StringWrapper wrapper = keyWrapper.get();
         wrapper.rewrap(key, 0, key.length());
         return wrapper;
     }
 
-    private StringWrapper rangeWrapper(String key, int beg, int len) {
+    private synchronized StringWrapper rangeWrapper(String key, int beg, int len) {
         StringWrapper wrapper = rangeWrapper.get();
         wrapper.rewrap(key, beg, len);
         return wrapper;
     }
 
-    private <R> R withKeyWrapper(String key, Function<StringWrapper, R> body) {
+    private synchronized <R> R withKeyWrapper(String key, Function<StringWrapper, R> body) {
         StringWrapper wrapper = keyWrapper(key);
         R result = body.apply(wrapper);
         releaseWrapper(wrapper);
         return result;
     }
 
-    private <R> R withRangeWrapper(String key, int beg, int len, Function<StringWrapper, R> body) {
+    private synchronized <R> R withRangeWrapper(String key, int beg, int len, Function<StringWrapper, R> body) {
         StringWrapper wrapper = rangeWrapper(key, beg, len);
         R result = body.apply(wrapper);
         releaseWrapper(wrapper);
@@ -653,7 +653,7 @@ public class LibrarySearcher {
         return (loadPath == null) ? getExpandedLoadPath() : loadPath;
     }
 
-    Map<StringWrapper, Feature> getLoadedFeaturesIndex() {
+    synchronized Map<StringWrapper, Feature> getLoadedFeaturesIndex() {
         StringArraySet loadedFeatures = this.loadService.loadedFeatures;
 
         // Compare to see if the snapshot still matches actual.
@@ -697,7 +697,7 @@ public class LibrarySearcher {
        if 'r', then only if IS_RBEXT(ext); otherwise `ext` may be absent
        or have any value matching `%r{^\.[^./]*$}`.
     */
-    String loadedFeatureWithPath(String name, String feature,
+    static String loadedFeatureWithPath(String name, String feature,
                                  LibrarySearcher.Suffix suffix, List<LibrarySearcher.PathEntry> loadPath) {
         final int nameLength = name.length();
         final int featureLength = feature.length();
