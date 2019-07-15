@@ -392,40 +392,41 @@ public class LoadService {
          * for the requireName from the pool, then try to lock it. NOTE: This
          * lock is not fair for now.
          *
-         * @param requireName
+         * @param path
          *            just a name for the lock.
          * @return If the sync object already locked by current thread, it just
          *         returns false without getting a lock. Otherwise true.
          */
         private RequireState lock(
-                String requireName,
+                String path,
                 boolean circularRequireWarning,
                 RequireState defaultResult,
                 Function<String, RequireState> ifLocked) {
             ThreadContext currentContext = runtime.getCurrentContext();
             RubyThread thread = currentContext.getThread();
 
-            RequireLock lock = pool.get(requireName);
+            RequireLock lock = pool.get(path);
 
             // Check if lock is already there
             if (lock == null) {
                 RequireLock newLock = new RequireLock();
+
                 // If lock is new, lock and return LOCKED
-                lock = pool.computeIfAbsent(requireName, (name) -> {
+                lock = pool.computeIfAbsent(path, (name) -> {
                     thread.lock(newLock);
                     return newLock;
                 });
 
                 if (lock == newLock) {
                     // Lock is ours, run ifLocked and then clean up
-                    return executeAndClearLock(requireName, ifLocked, thread, lock);
+                    return executeAndClearLock(path, ifLocked, thread, lock);
                 }
             }
 
             if (lock.isHeldByCurrentThread()) {
                 // we hold the lock, which means we're re-locking for the same file; warn about this
                 if (circularRequireWarning && runtime.isVerbose()) {
-                    warnCircularRequire(requireName);
+                    warnCircularRequire(path);
                 }
 
                 return null;
@@ -448,13 +449,13 @@ public class LoadService {
             }
 
             // Other thread failed to load, try on this thread instead
-            return executeAndClearLock(requireName, ifLocked, thread, lock);
+            return executeAndClearLock(path, ifLocked, thread, lock);
         }
 
-        private RequireState executeAndClearLock(String requireName, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
+        private RequireState executeAndClearLock(String path, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
             boolean destroyLock = false;
             try {
-                RequireState state = ifLocked.apply(requireName);
+                RequireState state = ifLocked.apply(path);
 
                 // successful load, destroy lock
                 destroyLock = true;
@@ -468,7 +469,7 @@ public class LoadService {
             } finally {
                 if (destroyLock) {
                     lock.destroyed = true;
-                    pool.remove(requireName);
+                    pool.remove(path);
                 }
                 thread.unlock(lock);
             }
@@ -503,23 +504,24 @@ public class LoadService {
         } else {
             String loadName = library.getLoadName();
             return requireLocks.lock(loadName, circularRequireWarning, RequireState.ALREADY_LOADED, (name) -> {
+                // double-check features in case it was added and lock removed before we saw either
                 if (librarySearcher.getLoadedFeature(name) != null) {
                     return RequireState.ALREADY_LOADED;
                 }
 
                 if (name.length() == 0) {
                     // logic for load_lock returning a blank string, apparently for autoload func?
-                    provide(loadName);
+                    provide(name);
                     return RequireState.LOADED;
                 } else {
                     // numbers from loadTimer does not include lock waiting time.
-                    long startTime = loadTimer.startLoad(loadName);
+                    long startTime = loadTimer.startLoad(name);
                     try {
                         tryLoadingLibraryOrScript(runtime, library, library.getSearchName());
-                        provide(loadName);
+                        provide(name);
                         return RequireState.LOADED;
                     } finally {
-                        loadTimer.endLoad(loadName, startTime);
+                        loadTimer.endLoad(name, startTime);
                     }
                 }
             });
