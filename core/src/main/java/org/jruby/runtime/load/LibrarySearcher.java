@@ -470,24 +470,66 @@ public class LibrarySearcher {
         }
     }
 
-    static class Feature {
+    class Feature {
         Feature(StringWrapper key, IRubyObject featurePath) {
             this.key = key;
-            this.featurePaths = new Vector<>();
+            this.featurePaths = new ArrayList<>();
 
             featurePaths.add(featurePath);
         }
 
-        void addFeaturePath(IRubyObject offset) {
+        synchronized void addFeaturePath(IRubyObject offset) {
             featurePaths.add(offset);
         }
 
-        public void clear() {
+        public synchronized void clear() {
             featurePaths.clear();
         }
 
+        public synchronized char matches(String feature, Suffix suffix, int len, boolean rb, boolean expanded, boolean suffixGiven) {
+            List<IRubyObject> featurePaths = this.featurePaths;
+            for (int i = 0; i < featurePaths.size(); i++) {
+                IRubyObject featurePath = featurePaths.get(i);
+
+                RubyString loadedFeaturePath = featurePath.convertToString();
+
+                if (loadedFeaturePath.length() < len) continue;
+
+                String featureString = loadedFeaturePath.asJavaString();
+
+                int expandedPathLength = 0;
+
+                if (!featureString.regionMatches(0, feature, 0, len)) {
+                    if (expanded) continue; // already given expanded path
+
+                    List<LibrarySearcher.PathEntry> loadPath = getExpandedLoadPath();
+                    String withPath = loadedFeatureWithPath(featureString, feature, suffix, loadPath);
+
+                    if (withPath == null) continue; // no match with expanded path, try next
+
+                    expanded = true;
+                    expandedPathLength = withPath.length() + 1;
+                }
+
+                int e = expandedPathLength + len;
+                if (e == featureString.length()) {
+                    if (suffixGiven) continue;
+                    return UNKNOWN_TYPE;
+                }
+                if (featureString.charAt(e) != '.') continue;
+                if ((!rb || !suffixGiven) && isLibraryExt(featureString)) {
+                    return EXTENSION_TYPE;
+                }
+                if ((rb || !suffixGiven) && isSourceExt(featureString)) {
+                    return SOURCE_TYPE;
+                }
+            }
+
+            return 0;
+        }
+
         final StringWrapper key;
-        final List<IRubyObject> featurePaths;
+        private final List<IRubyObject> featurePaths;
     }
 
     private final ThreadLocal<StringWrapper> keyWrapper = ThreadLocal.withInitial(() -> new StringWrapper(null, 0, 0));
@@ -543,7 +585,7 @@ public class LibrarySearcher {
     protected char isFeature(String feature, int ext, boolean rb, boolean expanded, String[] fn) {
         List<LibrarySearcher.PathEntry> loadPath = null;
 
-        final LibrarySearcher.Suffix suffixType;
+        final LibrarySearcher.Suffix suffix;
 
         if (fn != null) fn[0] = null;
 
@@ -552,10 +594,10 @@ public class LibrarySearcher {
         final int len;
         if (suffixGiven) {
             len = ext;
-            suffixType = rb ? LibrarySearcher.Suffix.RUBY : LibrarySearcher.Suffix.JAR;
+            suffix = rb ? LibrarySearcher.Suffix.RUBY : LibrarySearcher.Suffix.JAR;
         } else {
             len = feature.length();
-            suffixType = null;
+            suffix = null;
         }
 
         /*
@@ -569,40 +611,9 @@ public class LibrarySearcher {
          */
         Feature matchingFeature = getLoadedFeature(feature);
         if (matchingFeature != null) {
-            for (IRubyObject featurePath : matchingFeature.featurePaths) {
-                RubyString loadedFeaturePath = featurePath.convertToString();
+            char matches = matchingFeature.matches(feature, suffix, len, rb, expanded, suffixGiven);
 
-                if (loadedFeaturePath.length() < len) continue;
-
-                String featureString = loadedFeaturePath.asJavaString();
-
-                int expandedPathLength = 0;
-
-                if (!featureString.regionMatches(0, feature, 0, len)) {
-                    if (expanded) continue; // already given expanded path
-
-                    loadPath = lazyLoadPath(loadPath);
-                    String withPath = loadedFeatureWithPath(featureString, feature, suffixType, loadPath);
-
-                    if (withPath == null) continue; // no match with expanded path, try next
-
-                    expanded = true;
-                    expandedPathLength = withPath.length() + 1;
-                }
-
-                int e = expandedPathLength + len;
-                if (e == featureString.length()) {
-                    if (suffixGiven) continue;
-                    return UNKNOWN_TYPE;
-                }
-                if (featureString.charAt(e) != '.') continue;
-                if ((!rb || !suffixGiven) && isLibraryExt(featureString)) {
-                    return EXTENSION_TYPE;
-                }
-                if ((rb || !suffixGiven) && isSourceExt(featureString)) {
-                    return SOURCE_TYPE;
-                }
-            }
+            if (matches != 0) return matches;
         }
 
         // Check load locks to see if another thread is currently loading this file
@@ -610,7 +621,7 @@ public class LibrarySearcher {
         if (!expanded) {
             loadPath = lazyLoadPath(loadPath);
             for (Map.Entry<String, LoadService.RequireLocks.RequireLock> entry : loadingTable.entrySet()) {
-                if (loadedFeatureWithPath(entry.getKey(), feature, suffixType, loadPath) != null) {
+                if (loadedFeatureWithPath(entry.getKey(), feature, suffix, loadPath) != null) {
                     if (fn != null) fn[0] = entry.getKey();
                     if (!suffixGiven) return UNKNOWN_TYPE;
                     return !isSourceExt(feature) ? EXTENSION_TYPE : SOURCE_TYPE;
@@ -627,11 +638,11 @@ public class LibrarySearcher {
 
         if (suffixGiven && ext == feature.length()) return 0;
         String baseName = feature.substring(0, len);
-        for (LibrarySearcher.Suffix suffix : Suffix.ALL_ARY) {
-            String withExt = suffix.forTarget(baseName);
+        for (LibrarySearcher.Suffix suffix2 : Suffix.ALL_ARY) {
+            String withExt = suffix2.forTarget(baseName);
             if (loadingTable.containsKey(withExt)) {
                 if (fn != null) fn[0] = withExt;
-                return suffix != LibrarySearcher.Suffix.RUBY ? EXTENSION_TYPE : SOURCE_TYPE;
+                return suffix2 != LibrarySearcher.Suffix.RUBY ? EXTENSION_TYPE : SOURCE_TYPE;
             }
         }
 
@@ -687,7 +698,7 @@ public class LibrarySearcher {
        or have any value matching `%r{^\.[^./]*$}`.
     */
     String loadedFeatureWithPath(String name, String feature,
-                                 LibrarySearcher.Suffix type, List<LibrarySearcher.PathEntry> loadPath) {
+                                 LibrarySearcher.Suffix suffix, List<LibrarySearcher.PathEntry> loadPath) {
         final int nameLength = name.length();
         final int featureLength = feature.length();
 
@@ -710,8 +721,8 @@ public class LibrarySearcher {
             return null;
         }
         if (
-                (type == LibrarySearcher.Suffix.JAR && !LibrarySearcher.isLibraryExt(name)) ||
-                        (type == LibrarySearcher.Suffix.RUBY && !LibrarySearcher.isSourceExt(name))) {
+                (suffix == LibrarySearcher.Suffix.JAR && !LibrarySearcher.isLibraryExt(name)) ||
+                        (suffix == LibrarySearcher.Suffix.RUBY && !LibrarySearcher.isSourceExt(name))) {
 
             return null;
         }
