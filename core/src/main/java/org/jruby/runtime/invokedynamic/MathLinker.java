@@ -37,6 +37,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
 import com.headius.invokebinder.Binder;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -146,15 +147,17 @@ public class MathLinker {
         }
         if (target == null) target = findTargetImpl(name, IRubyObject.class, value);
 
+        Ruby runtime = context.runtime;
         MethodHandle fallback = FIXNUM_OPERATOR_FAIL;
-        fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
+
+        fallback = insertArguments(fallback, 3, site, runtime.newFixnum(value));
 
         MethodHandle test = FIXNUM_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
 
         if (LOG_BINDING) LOG.debug(name + "\tFixnum operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
 
-        RubyClass classFixnum = context.runtime.getFixnum();
+        RubyClass classFixnum = runtime.getFixnum();
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
         if (entry == null || !entry.method.isBuiltin()) {
             site.setTarget(fallback); // invalid - fallback on slow-path
@@ -318,14 +321,16 @@ public class MathLinker {
 
         if (target == null) target = findTargetImpl(name, IRubyObject.class, value);
 
+        Ruby runtime = context.runtime;
         MethodHandle fallback = FLOAT_OPERATOR_FAIL;
-        fallback = insertArguments(fallback, 3, site, value);
+
+        fallback = insertArguments(fallback, 3, site, RubyFloat.newFloat(runtime, value));
 
         MethodHandle test = FLOAT_TEST;
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), ARG_2_TO_0);
         if (LOG_BINDING) LOG.debug(name + "\tFloat operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound directly");
 
-        RubyClass classFloat = context.runtime.getFloat();
+        RubyClass classFloat = runtime.getFloat();
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
         if (entry == null || !entry.method.isBuiltin()) {
             site.setTarget(fallback); // invalid - fallback on slow-path
