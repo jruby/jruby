@@ -3619,8 +3619,7 @@ public class IRBuilder {
         Label caughtLabel = getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-                Node [] exceptionNodes = ((ListNode) exceptionList).children();
-                Operand[] exceptionTypes = new Operand[exceptionNodes.length];
+                Node[] exceptionNodes = ((ListNode) exceptionList).children();
                 for (int i = 0; i < exceptionNodes.length; i++) {
                     outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
