@@ -248,7 +248,7 @@ class Tracer
   #   })
 
   def Tracer.set_get_line_procs(file_name, &p)
-    Single.set_get_line_procs(file_name, p)
+    Single.set_get_line_procs(file_name, &p)
   end
 
   ##
@@ -261,7 +261,7 @@ class Tracer
   #   end
 
   def Tracer.add_filter(&p)
-    Single.add_filter(p)
+    Single.add_filter(&p)
   end
 end
 
