@@ -115,7 +115,6 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHelper;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.IdUtil;
@@ -220,31 +219,18 @@ public class RubyModule extends RubyObject {
 
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
 
-        final String nonInternedName = symbol.asJavaString();
+        final String symbolStr = symbol.asJavaString();
 
-        if (!IdUtil.isValidConstantName(nonInternedName)) {
-            throw runtime.newNameError("autoload must be constant name", nonInternedName);
+        if (!IdUtil.isValidConstantName(symbolStr)) {
+            throw runtime.newNameError("autoload must be constant name", symbolStr);
         }
 
-        final String baseName = nonInternedName.intern(); // interned, OK for "fast" methods
+        IRubyObject existingValue = fetchConstant(symbolStr);
 
-        IRubyObject existingValue = fetchConstant(baseName);
         if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
-        defineAutoload(baseName, new RubyModule.AutoloadMethod() {
+        defineAutoload(symbolStr, fileString);
 
-            public RubyString getFile() { return fileString; }
-
-            public void load(final Ruby runtime) {
-                LoadService loadService = runtime.getLoadService();
-                if (!loadService.featureAlreadyLoaded(fileString.asJavaString())) {
-                    if (loadService.autoloadRequire(fileString)) {
-                        // Do not finish autoloading by cyclic autoload
-                        finishAutoload(baseName);
-                    }
-                }
-            }
-        });
         return context.nil;
     }
 
@@ -4979,11 +4965,11 @@ public class RubyModule extends RubyObject {
     /**
      * Define an autoload. ConstantMap holds UNDEF for the name as an autoload marker.
      */
-    protected final void defineAutoload(String name, AutoloadMethod loadMethod) {
-        final Autoload existingAutoload = getAutoloadMap().get(name);
+    protected final void defineAutoload(String symbol, RubyString path) {
+        final Autoload existingAutoload = getAutoloadMap().get(symbol);
         if (existingAutoload == null || existingAutoload.getValue() == null) {
-            storeConstant(name, RubyObject.UNDEF);
-            getAutoloadMapForWrite().put(name, new Autoload(loadMethod));
+            storeConstant(symbol, RubyObject.UNDEF);
+            getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path));
         }
     }
 
@@ -5171,6 +5157,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    @Deprecated
     public interface AutoloadMethod {
         void load(Ruby runtime);
         RubyString getFile();
@@ -5182,64 +5169,73 @@ public class RubyModule extends RubyObject {
      * 'Module#autoload' creates this object and stores it in autoloadMap.
      * This object can be shared with multiple threads so take care to change volatile and synchronized definitions.
      */
-    public static final class Autoload {
+    public final class Autoload {
         // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
-        // The lock for test-and-set the ctx.
-        private final Object ctxLock = new Object();
         // An object defined for the constant while autoloading.
         private volatile IRubyObject value;
-        // A method which actually requires a defined feature.
-        private final AutoloadMethod loadMethod;
+        // The symbol ID for the autoload constant
+        private final String symbol;
+        // The Ruby string representing the path to load
+        private final RubyString path;
 
-        Autoload(AutoloadMethod loadMethod) {
+        Autoload(String symbol, RubyString path) {
             this.ctx = null;
             this.value = null;
-            this.loadMethod = loadMethod;
+            this.symbol = symbol;
+            this.path = path;
         }
 
         // Returns an object for the constant if the caller is the autoloading thread.
         // Otherwise, try to start autoloading and returns the defined object by autoload.
-        IRubyObject load(ThreadContext ctx) {
-            synchronized (ctxLock) {
-                if (this.ctx == null) {
-                    this.ctx = ctx;
-                } else if (isSelf(ctx)) {
-                    return getValue();
-                }
+        synchronized IRubyObject load(ThreadContext ctx) {
+            if (this.ctx == null) {
+                this.ctx = ctx;
+            } else if (isSelf(ctx)) {
+                return getValue();
+            }
 
-                try {
-                    // This method needs to be synchronized for removing Autoload
-                    // from autoloadMap when it's loaded.
-                    loadMethod.load(ctx.runtime);
-                } catch (LoadError | RuntimeError lre) {
-                    // reset ctx to null for a future attempt to load
-                    this.ctx = null;
-                    throw lre;
-                }
+            try {
+                // This method needs to be synchronized for removing Autoload
+                // from autoloadMap when it's loaded.
+                load(ctx.runtime);
+            } catch (LoadError | RuntimeError lre) {
+                // reset ctx to null for a future attempt to load
+                this.ctx = null;
+                throw lre;
             }
 
             return getValue();
         }
 
         // Update an object for the constant if the caller is the autoloading thread.
-        boolean setConstant(ThreadContext ctx, IRubyObject newValue) {
-            synchronized(ctxLock) {
-                boolean isSelf = isSelf(ctx);
+        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue) {
+            boolean isSelf = isSelf(ctx);
 
-                if (isSelf) value = newValue;
+            if (isSelf) value = newValue;
 
-                return isSelf;
-            }
+            return isSelf;
         }
 
         // Returns an object for the constant defined by autoload.
-        IRubyObject getValue() {
+        synchronized IRubyObject getValue() {
             return value;
         }
 
+        private void load(Ruby runtime) {
+            LoadService loadService = runtime.getLoadService();
+            if (!loadService.featureAlreadyLoaded(path.asJavaString())) {
+                if (loadService.autoloadRequire(path)) {
+                    // Do not finish autoloading by cyclic autoload
+                    finishAutoload(symbol);
+                }
+            }
+        }
+
         // Returns the assigned feature.
-        RubyString getFile() { return loadMethod.getFile(); }
+        RubyString getFile() {
+            return path;
+        }
 
         private boolean isSelf(ThreadContext rhs) {
             ThreadContext ctx = this.ctx;
