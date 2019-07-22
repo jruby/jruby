@@ -318,7 +318,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getId() {
-        return name.toString();
+        return getName().idString();
     }
 
     public RubySymbol getName() {

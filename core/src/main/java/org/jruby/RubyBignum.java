@@ -186,11 +186,11 @@ public class RubyBignum extends RubyInteger {
     /** rb_big2long
      *
      */
-    public static long big2long(RubyBignum value) {
-        BigInteger big = value.getValue();
+    public static long big2long(RubyBignum val) {
+        BigInteger big = val.value;
 
         if (big.compareTo(LONG_MIN) < 0 || big.compareTo(LONG_MAX) > 0) {
-            throw value.getRuntime().newRangeError("bignum too big to convert into `long'");
+            throw val.getRuntime().newRangeError("bignum too big to convert into `long'");
         }
         return big.longValue();
     }
@@ -210,11 +210,11 @@ public class RubyBignum extends RubyInteger {
     /** rb_big2dbl
      *
      */
-    public static double big2dbl(RubyBignum value) {
-        BigInteger big = value.getValue();
+    public static double big2dbl(RubyBignum val) {
+        BigInteger big = val.value;
         double dbl = convertToDouble(big);
         if (dbl == Double.NEGATIVE_INFINITY || dbl == Double.POSITIVE_INFINITY) {
-            value.getRuntime().getWarnings().warn(ID.BIGNUM_FROM_FLOAT_RANGE, "Bignum out of Float range");
+            val.getRuntime().getWarnings().warn(ID.BIGNUM_FROM_FLOAT_RANGE, "Bignum out of Float range");
     }
         return dbl;
     }
@@ -343,7 +343,7 @@ public class RubyBignum extends RubyInteger {
 
         BigInteger bigBase;
         if (base instanceof RubyBignum) {
-            bigBase = ((RubyBignum) base).getValue();
+            bigBase = ((RubyBignum) base).value;
         } else {
             bigBase = long2big( ((RubyFixnum) base).value );
         }
@@ -387,7 +387,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyString to_s() {
-        return RubyString.newUSASCIIString(getRuntime(), getValue().toString(10));
+        return RubyString.newUSASCIIString(getRuntime(), value.toString(10));
     }
 
     @Override
@@ -396,7 +396,7 @@ public class RubyBignum extends RubyInteger {
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-        return RubyString.newUSASCIIString(getRuntime(), getValue().toString(base));
+        return RubyString.newUSASCIIString(getRuntime(), value.toString(base));
     }
 
     /** rb_big_coerce
@@ -406,10 +406,10 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = getRuntime();
         if (other instanceof RubyFixnum) {
-            return runtime.newArray(newBignum(runtime, ((RubyFixnum) other).getLongValue()), this);
+            return runtime.newArray(newBignum(runtime, ((RubyFixnum) other).value), this);
         }
         if (other instanceof RubyBignum) {
-            return runtime.newArray(newBignum(runtime, ((RubyBignum) other).getValue()), this);
+            return runtime.newArray(newBignum(runtime, ((RubyBignum) other).value), this);
         }
 
         return RubyArray.newArray(runtime, RubyKernel.new_float(runtime, other), RubyKernel.new_float(runtime, this));
@@ -429,7 +429,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            return op_plus(context, ((RubyFixnum) other).getLongValue());
+            return op_plus(context, ((RubyFixnum) other).value);
         }
         if (other instanceof RubyBignum) {
             return op_plus(context, ((RubyBignum) other).value);
@@ -736,7 +736,7 @@ public class RubyBignum extends RubyInteger {
         if (other == RubyFixnum.zero(runtime)) return RubyFixnum.one(runtime);
         final double d;
         if (other instanceof RubyFloat) {
-            d = ((RubyFloat) other).getDoubleValue();
+            d = ((RubyFloat) other).value;
             if (compareTo(RubyFixnum.zero(runtime)) == -1 && d != Math.round(d)) {
                 RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                 return sites(context).op_exp.call(context, complex, complex, other);
@@ -992,7 +992,7 @@ public class RubyBignum extends RubyInteger {
             otherValue = ((RubyBignum) other).value;
         } else if (other instanceof RubyFloat) {
             RubyFloat flt = (RubyFloat) other;
-            if (flt.infinite_p().isTrue()) {
+            if (flt.isInfinite()) {
                 if (flt.value > 0.0) return RubyFixnum.minus_one(context.runtime);
                 return RubyFixnum.one(context.runtime);
             }
@@ -1197,7 +1197,7 @@ public class RubyBignum extends RubyInteger {
 
     // MRI: big_fdiv_float
     public IRubyObject fdivFloat(ThreadContext context, RubyFloat y) {
-        return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.getValue())).doubleValue());
+        return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.value)).doubleValue());
     }
 
     @Override

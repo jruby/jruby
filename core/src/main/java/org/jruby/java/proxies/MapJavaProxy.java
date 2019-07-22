@@ -104,6 +104,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
     private static final class RubyHashMap extends RubyHash {
         static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
+        private static final Map.Entry[] NULL_MAP_ENTRY = new Map.Entry[0];
 
         private final MapJavaProxy receiver;
 
@@ -264,7 +265,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             // NOTE: this is here to make maps act similar to Hash-es which allow modifications while
             // iterating (meant from the same thread) ... thus we avoid iterating entrySet() directly
             final Map<Object, Object> map = mapDelegate();
-            final Map.Entry[] entries = map.entrySet().toArray( new Map.Entry[map.size() ] );
+            final Map.Entry[] entries = map.entrySet().toArray(NULL_MAP_ENTRY);
             int index = 0;
             for ( Map.Entry entry : entries ) {
                 IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());

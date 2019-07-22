@@ -212,7 +212,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                 args = Arrays.copyOfRange(args, 1, args.length);
 
                 if ( ! (size.isNil() || size.respondsTo("call")) &&
-                     ! (runtime.getFloat().isInstance(size) && ((RubyFloat) size).getDoubleValue() == Float.POSITIVE_INFINITY) &&
+                     ! (size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
                      ! (size instanceof RubyInteger) ) {
                     throw runtime.newTypeError(size, runtime.getInteger());
                 }

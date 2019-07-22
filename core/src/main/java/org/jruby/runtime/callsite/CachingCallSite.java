@@ -1,6 +1,5 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -63,7 +62,7 @@ public abstract class CachingCallSite extends CallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {
-        RubyClass selfType = getMetaClass(self);;
+        RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
@@ -372,8 +371,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2,
-        IRubyObject arg3) {
+        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -384,8 +382,7 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
-        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2,
-        IRubyObject arg3) {
+        ThreadContext context, IRubyObject self, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
@@ -451,6 +448,6 @@ public abstract class CachingCallSite extends CallSite {
 
     protected static RubyClass getClass(IRubyObject self) {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot
-        return ((RubyBasicObject) self).getMetaClass();
+        return getMetaClass(self);
     }
 }

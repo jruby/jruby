@@ -180,13 +180,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static final RubyArray newArray(final Ruby runtime, final int len) {
-        IRubyObject[] values = len == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[len];
+        IRubyObject[] values = IRubyObject.array(len);
         Helpers.fillNil(values, 0, len, runtime);
         return new RubyArray(runtime, values, 0, 0);
     }
 
     public static final RubyArray newArrayLight(final Ruby runtime, final int len) {
-        IRubyObject[] values = len == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[len];
+        IRubyObject[] values = IRubyObject.array(len);
         Helpers.fillNil(values, 0, len, runtime);
         return new RubyArray(runtime, values, 0, 0, false);
     }
@@ -410,7 +410,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
-        this.values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
+        this.values = IRubyObject.array(length);
     }
 
     /* NEWOBJ and OBJSETUP equivalent
@@ -429,7 +429,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     private RubyArray(Ruby runtime, RubyClass klass, int length) {
         super(runtime, klass);
-        values = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
+        values = IRubyObject.array(length);
     }
 
     private RubyArray(Ruby runtime, RubyClass klass, IRubyObject[] vals, boolean objectspace) {
@@ -455,7 +455,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private void alloc(int length) {
-        IRubyObject[] newValues = length == 0 ? IRubyObject.NULL_ARRAY : new IRubyObject[length];
+        IRubyObject[] newValues = IRubyObject.array(length);
         Helpers.fillNil(newValues, getRuntime());
         values = newValues;
         begin = 0;
@@ -463,7 +463,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private void realloc(int newLength, int valuesLength) {
         unpack();
-        IRubyObject[] reallocated = new IRubyObject[newLength];
+        IRubyObject[] reallocated = IRubyObject.array(newLength);
         if (newLength > valuesLength) {
             Helpers.fillNil(reallocated, valuesLength, newLength, getRuntime());
             safeArrayCopy(values, begin, reallocated, 0, valuesLength); // elements and trailing nils
@@ -497,7 +497,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public IRubyObject[] toJavaArray() {
-        IRubyObject[] copy = new IRubyObject[realLength];
+        IRubyObject[] copy = IRubyObject.array(realLength);
         copyInto(copy, 0);
         return copy;
     }
@@ -571,7 +571,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     protected void modify() {
         modifyCheck();
         if (isShared) {
-            IRubyObject[] vals = new IRubyObject[realLength];
+            IRubyObject[] vals = IRubyObject.array(realLength);
             safeArrayCopy(values, begin, vals, 0, realLength);
             begin = 0;
             values = vals;
@@ -652,7 +652,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modify();
 
         if (ilen > values.length - begin) {
-            values = new IRubyObject[ilen];
+            values = IRubyObject.array(ilen);
             begin = 0;
         }
 
@@ -721,9 +721,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack();
         modifyCheck();
 
-        RubyArray origArr = orig.convertToArray();
-
         if (this == orig) return this;
+
+        RubyArray origArr = orig.convertToArray();
 
         origArr.unpack();
 
@@ -741,11 +741,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     @JRubyMethod(name = "to_s")
-    @Override
-    public IRubyObject to_s() {
-        return inspect();
+    public RubyString to_s(ThreadContext context) {
+        return inspect(context);
     }
 
+    @Override
+    public IRubyObject to_s() {
+        return to_s(getRuntime().getCurrentContext());
+    }
 
     public boolean includes(ThreadContext context, IRubyObject item) {
         int myBegin = this.begin;
@@ -760,6 +763,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return false;
     }
 
+    @Deprecated
     public RubyFixnum hash19(ThreadContext context) {
         return hash(context);
     }
@@ -1037,7 +1041,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private void spliceRealloc(int length, int valuesLength) {
         int tryLength = valuesLength + (valuesLength >> 1);
         int len = length > tryLength ? length : tryLength;
-        IRubyObject[] vals = new IRubyObject[len];
+        IRubyObject[] vals = IRubyObject.array(len);
         System.arraycopy(values, begin, vals, 0, realLength);
 
         // only fill if there actually will remain trailing storage
@@ -1154,7 +1158,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             RubyArray tmp = elt(i).convertToArray();
             if (elen < 0) {
                 elen = tmp.realLength;
-                result = new IRubyObject[elen];
+                result = IRubyObject.array(elen);
                 for (int j = 0; j < elen; j++) {
                     result[j] = newBlankArray(runtime, alen);
                 }
@@ -1396,7 +1400,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
                 newLength += valuesLength;
-                IRubyObject[] vals = new IRubyObject[newLength];
+                IRubyObject[] vals = IRubyObject.array(newLength);
                 safeArrayCopy(values, begin, vals, 1, valuesLength);
                 Helpers.fillNil(vals, valuesLength + 1, newLength, getRuntime());
                 values = vals;
@@ -1679,17 +1683,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     *
     */
     @JRubyMethod(name = "inspect")
-    @Override
-    public IRubyObject inspect() {
-        if (realLength == 0) return RubyString.newStringShared(getRuntime(), EMPTY_ARRAY_BYTELIST);
-        if (getRuntime().isInspecting(this)) return  RubyString.newStringShared(getRuntime(), RECURSIVE_ARRAY_BYTELIST);
+    public RubyString inspect(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BYTELIST);
+        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BYTELIST);
 
         try {
-            getRuntime().registerInspecting(this);
-            return inspectAry(getRuntime().getCurrentContext());
+            runtime.registerInspecting(this);
+            return (RubyString) inspectAry(context);
         } finally {
-            getRuntime().unregisterInspecting(this);
+            runtime.unregisterInspecting(this);
         }
+    }
+
+    @Override
+    public IRubyObject inspect() {
+        return inspect(getRuntime().getCurrentContext());
     }
 
     /**
@@ -2536,7 +2545,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int length = realLength;
         int myBegin = this.begin;
         IRubyObject[] myValues = this.values;
-        IRubyObject[] vals = new IRubyObject[length];
+        IRubyObject[] vals = IRubyObject.array(length);
 
         try {
             for (int i = 0; i <= length >> 1; i++) {
@@ -2556,7 +2565,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!block.isGiven()) return makeShared();
 
         final Ruby runtime = context.runtime;
-        IRubyObject[] arr = new IRubyObject[realLength];
+        IRubyObject[] arr = IRubyObject.array(realLength);
 
         int i = 0;
         for (; i < realLength; i++) {
@@ -2880,7 +2889,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyClass array = runtime.getArray();
         ArraySites sites = sites(context);
 
-        final IRubyObject[] newArgs = new IRubyObject[args.length];
+        final IRubyObject[] newArgs = IRubyObject.array(args.length);
 
         boolean hasUncoercible = false;
         JavaSites.CheckedSites to_ary_checked = sites.to_ary_checked;
@@ -2927,7 +2936,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (block.isGiven()) {
             for (int i = 0; i < realLength; i++) {
-                IRubyObject[] tmp = new IRubyObject[args.length + 1];
+                IRubyObject[] tmp = IRubyObject.array(args.length + 1);
                 // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
                 // See JRUBY-5434
                 tmp[0] = eltInternal(i);
@@ -2939,10 +2948,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return runtime.getNil();
         }
 
-        IRubyObject[] result = new IRubyObject[realLength];
+        IRubyObject[] result = IRubyObject.array(realLength);
         try {
             for (int i = 0; i < realLength; i++) {
-                IRubyObject[] tmp = new IRubyObject[args.length + 1];
+                IRubyObject[] tmp = IRubyObject.array(args.length + 1);
                 tmp[0] = eltInternal(i);
                 for (int j = 0; j < args.length; j++) {
                     tmp[j + 1] = visitor.visit(context, args[j], i);
@@ -3693,7 +3702,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     protected IRubyObject sortInternal(final ThreadContext context, final Block block) {
         // block code can modify, so we need to iterate
         unpack();
-        IRubyObject[] newValues = new IRubyObject[realLength];
+        IRubyObject[] newValues = IRubyObject.array(realLength);
         int length = realLength;
 
         copyInto(newValues, 0);
@@ -4334,13 +4343,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                     System.arraycopy(sorted, j, sorted, j + 1, i - j);
                     sorted[j] = idx[i] = k;
                 }
-                IRubyObject[] result = new IRubyObject[n];
+                IRubyObject[] result = IRubyObject.array(n);
                 for (i = 0; i < n; i++) {
                     result[i] = eltOk(idx[i]);
                 }
                 return RubyArray.newArrayMayCopy(runtime, result);
             } else {
-                IRubyObject[] result = new IRubyObject[len];
+                IRubyObject[] result = IRubyObject.array(len);
                 System.arraycopy(values, begin, result, 0, len);
                 for (i = 0; i < n; i++) {
                     j = (int) RubyRandom.randomLongLimited(context, randgen, len - i - 1) + i;
@@ -4542,7 +4551,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         IRubyObject value = null;
 
         if (is_fixnum) {
-            long sum = ((RubyFixnum) result).getLongValue();
+            long sum = ((RubyFixnum) result).value;
 fixnum_loop:
             for (; i < realLength; value=null, i++) {
                 if (value == null) {
@@ -4555,7 +4564,7 @@ fixnum_loop:
                 if (value instanceof RubyFixnum) {
                     /* should not overflow long type */
                     try {
-                        sum = Math.addExact(sum, ((RubyFixnum) value).getLongValue());
+                        sum = Math.addExact(sum, ((RubyFixnum) value).value);
                     } catch (ArithmeticException ae) {
                         is_bignum = true;
                         break fixnum_loop;
@@ -4583,7 +4592,7 @@ fixnum_loop:
             }
         }
         if (is_bignum) {
-            BigInteger sum = ((RubyBignum) result).getBigIntegerValue();
+            BigInteger sum = ((RubyBignum) result).value;
 bignum_loop:
             for (; i < realLength; value=null, i++) {
                 if (value == null) {
@@ -4594,14 +4603,10 @@ bignum_loop:
                 }
 
                 if (value instanceof RubyFixnum) {
-                    final RubyFixnum ival = (RubyFixnum) value;
-                    final long lval = ival.getLongValue();
-                    final BigInteger bval = BigInteger.valueOf(lval);
-                    sum = sum.add(bval);
+                    final long val = ((RubyFixnum) value).value;
+                    sum = sum.add(BigInteger.valueOf(val));
                 } else if (value instanceof RubyBignum) {
-                    final RubyBignum ival = (RubyBignum) value;
-                    final BigInteger bval = ival.getBigIntegerValue();
-                    sum = sum.add(bval);
+                    sum = sum.add(((RubyBignum) value).value);
                 } else if (value instanceof RubyRational) {
                     is_rational = true;
                     break bignum_loop;
@@ -4612,7 +4617,7 @@ bignum_loop:
             }
 
             if (is_rational) {
-                result = RubyRational.newRationalConvert(context, RubyBignum.newBignum(runtime, sum), RubyFixnum.one(runtime));
+                result = RubyRational.newInstance(context, RubyBignum.newBignum(runtime, sum));
             } else if (is_float) {
                 result = RubyFloat.newFloat(runtime, sum.doubleValue());
             } else {
@@ -4651,7 +4656,7 @@ rational_loop:
              * Kahan-Babuska balancing compensated summation algorithm
              * See http://link.springer.com/article/10.1007/s00607-005-0139-x
              */
-            double f = ((RubyFloat) result).getDoubleValue();
+            double f = ((RubyFloat) result).value;
             double c = 0.0;
             double x, t;
 float_loop:
@@ -4664,13 +4669,13 @@ float_loop:
                 }
 
                 if (value instanceof RubyFixnum) {
-                    x = ((RubyFixnum) value).getDoubleValue();
+                    x = ((RubyFixnum) value).value;
                 } else if (value instanceof RubyBignum) {
                     x = ((RubyBignum) value).getDoubleValue();
                 } else if (value instanceof RubyRational) {
                     x = ((RubyRational) value).getDoubleValue(context);
                 } else if (value instanceof RubyFloat) {
-                    x = ((RubyFloat) value).getDoubleValue();
+                    x = ((RubyFloat) value).value;
                 } else {
                     break float_loop;
                 }
@@ -5413,7 +5418,7 @@ float_loop:
         if ( isShared || (values.length - begin) < minCapacity ) {
             final int len = this.realLength;
             int newCapacity = minCapacity > len ? minCapacity : len;
-            IRubyObject[] values = new IRubyObject[newCapacity];
+            IRubyObject[] values = IRubyObject.array(newCapacity);
             ArraySupport.copy(this.values, begin, values, 0, len);
             this.values = values;
             this.begin = 0;

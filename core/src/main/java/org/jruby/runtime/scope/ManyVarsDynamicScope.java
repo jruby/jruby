@@ -47,10 +47,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
     }
 
     private void allocate() {
-        if(variableValues == null) {
-            int size = staticScope.getNumberOfVariables();
-            variableValues = new IRubyObject[size];
-        }
+        if(variableValues == null) variableValues = IRubyObject.array(staticScope.getNumberOfVariables());
     }
 
     public IRubyObject[] getValues() {
