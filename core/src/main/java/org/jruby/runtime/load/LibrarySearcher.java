@@ -622,18 +622,14 @@ public class LibrarySearcher {
             loadPath = lazyLoadPath(loadPath);
             for (Map.Entry<String, LoadService.RequireLocks.RequireLock> entry : loadingTable.entrySet()) {
                 if (loadedFeatureWithPath(entry.getKey(), feature, suffix, loadPath) != null) {
-                    if (fn != null) fn[0] = entry.getKey();
-                    if (!suffixGiven) return UNKNOWN_TYPE;
-                    return !isSourceExt(feature) ? EXTENSION_TYPE : SOURCE_TYPE;
+                    return setLoadingAndReturn(feature, fn, suffixGiven, entry.getKey());
                 }
             }
         }
 
         if (loadingTable.containsKey(feature)) {
             // FIXME: use key from the actual table?
-            if (fn != null) fn[0] = feature;
-            if (!suffixGiven) return UNKNOWN_TYPE;
-            return !isSourceExt(feature) ? EXTENSION_TYPE : SOURCE_TYPE;
+            return setLoadingAndReturn(feature, fn, suffixGiven, feature);
         }
 
         if (suffixGiven && ext == feature.length()) return 0;
@@ -647,6 +643,12 @@ public class LibrarySearcher {
         }
 
         return NOT_FOUND;
+    }
+
+    private char setLoadingAndReturn(String feature, String[] fn, boolean suffixGiven, String key) {
+        if (fn != null) fn[0] = key;
+        if (!suffixGiven) return UNKNOWN_TYPE;
+        return !isSourceExt(feature) ? EXTENSION_TYPE : SOURCE_TYPE;
     }
 
     private List<LibrarySearcher.PathEntry> lazyLoadPath(List<LibrarySearcher.PathEntry> loadPath) {

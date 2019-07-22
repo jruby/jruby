@@ -5242,6 +5242,7 @@ public class RubyModule extends RubyObject {
         RubyString getFile() { return loadMethod.getFile(); }
 
         private boolean isSelf(ThreadContext rhs) {
+            ThreadContext ctx = this.ctx;
             return ctx != null && ctx.getThread() == rhs.getThread();
         }
     }
