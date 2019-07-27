@@ -105,3 +105,12 @@ module JRuby
   autoload :ASM, 'jruby/asm.rb'
 
 end
+
+# Remove this once irb 1.1 is released without RubyVM dependency
+module RubyVM
+  module InstructionSequence
+    def self.compile(src)
+      JRuby.compile_ir(src)
+    end
+  end
+end
