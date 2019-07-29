@@ -1961,7 +1961,8 @@ public class RubyModule extends RubyObject {
 
     private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
         CacheEntry entry = deepMethodSearch(id, runtime);
-        final DynamicMethod method = entry.method;
+        // Dig down to original method before inspecting and aliasing
+        final DynamicMethod method = entry.method.getRealMethod();
 
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
