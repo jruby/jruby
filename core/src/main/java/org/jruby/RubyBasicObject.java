@@ -41,6 +41,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -2462,32 +2463,30 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         RubyClass klass = metaClass;
         RubyModule origin = klass.getMethodLocation();
 
+        Set<RubySymbol> names = (klass.isSingleton() || all) ? new HashSet<>() : Collections.EMPTY_SET;
+
         if (klass.isSingleton()) {
-            Set<RubySymbol> names = new HashSet<>();
-            for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
-                if (entry.getValue().getVisibility() == PRIVATE) continue;
-                // TODO: needs to use method_entry_i logic from MRI
-                names.add(runtime.newSymbol(entry.getKey()));
-            }
-
-            if (all) {
-                klass = klass.getSuperClass();
-                while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
-                    if (klass != origin) {
-                        for (Map.Entry<String, DynamicMethod> entry : klass.getMethods().entrySet()) {
-                            if (entry.getValue().getVisibility() == PRIVATE) continue;
-                            // TODO: needs to use method_entry_i logic from MRI
-                            names.add(runtime.newSymbol(entry.getKey()));
-                        }
-                    }
-                    klass = klass.getSuperClass();
-                }
-            }
-
-            return RubyArray.newArray(runtime, names);
+            // TODO: needs to use method_entry_i logic from MRI
+            origin.getMethods().forEach((k, v) -> {
+                if (v.getVisibility() != PRIVATE) names.add(runtime.newSymbol(k));
+            });
+            klass = klass.getSuperClass();
         }
 
-        return context.runtime.newEmptyArray();
+        if (all) {
+            while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
+                if (klass != origin) {
+                    klass.getMethods().forEach((k, v) -> {
+                        if (v.getVisibility() != PRIVATE) names.add(runtime.newSymbol(k));
+                    });
+                }
+                klass = klass.getSuperClass();
+            }
+        }
+
+        if (names.isEmpty()) return runtime.newEmptyArray();
+
+        return RubyArray.newArray(runtime, names);
     }
 
     public IRubyObject singleton_method(IRubyObject name) {
