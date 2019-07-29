@@ -1904,7 +1904,8 @@ public class RubyModule extends RubyObject {
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
 
-        putAlias(name, searchForAliasMethod(getRuntime(), oldName), oldName);
+        CacheEntry entry = searchForAliasMethod(getRuntime(), oldName);
+        putAlias(name, entry, entry.method.getName());
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
