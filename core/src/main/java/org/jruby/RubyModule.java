@@ -1904,8 +1904,7 @@ public class RubyModule extends RubyObject {
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
 
-        CacheEntry entry = searchForAliasMethod(getRuntime(), oldName);
-        putAlias(name, entry, entry.method.getName());
+        putAlias(name, searchForAliasMethod(getRuntime(), oldName), oldName);
 
         methodLocation.invalidateCoreClasses();
         methodLocation.invalidateCacheDescendants();
@@ -1962,8 +1961,7 @@ public class RubyModule extends RubyObject {
 
     private CacheEntry searchForAliasMethod(Ruby runtime, String id) {
         CacheEntry entry = deepMethodSearch(id, runtime);
-        // Dig down to original method before inspecting and aliasing
-        final DynamicMethod method = entry.method.getRealMethod();
+        final DynamicMethod method = entry.method;
 
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
