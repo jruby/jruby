@@ -578,9 +578,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
-        // No kwarg because required args slurp them up.
+        // FIXME: JIT on block circular args test in spec:compiler is passing in a null value for args.  It does not do this for methods so a bandaid for now.
+        if (args == null) return args;
+
         int length = args.length;
 
+        // No kwarg because required args slurp them up.
         if (length <= requiredArgsCount) return args;
 
         final IRubyObject maybeKwargs = toHash(context, args[length - 1]);
