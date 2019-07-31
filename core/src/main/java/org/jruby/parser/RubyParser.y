@@ -755,6 +755,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     support.backrefAssignError($1);
                 }
 
+// [!null or throws]
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
@@ -1695,6 +1696,7 @@ opt_else        : none
                     $$ = $2;
                 }
 
+// [!null]
 for_var         : lhs
                 | mlhs {
                 }
