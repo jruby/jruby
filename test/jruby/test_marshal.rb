@@ -1,9 +1,7 @@
 require 'test/unit'
-require 'date'
 
 # This test demonstrates and verifies the marshalling fix for JRUBY-3289
-
-class JRubyHashSubclassTest < Test::Unit::TestCase
+class TestMarshal3289 < Test::Unit::TestCase
 
   private
 
@@ -24,6 +22,7 @@ class JRubyHashSubclassTest < Test::Unit::TestCase
   class SubHashTwo < Hash; end
 
   def setup
+    require 'date'
     @common_hash = {:date => Date.today, "key" => "value", 1 => 10, :other =>[]}
   end
 
