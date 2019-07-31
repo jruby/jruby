@@ -1,9 +1,17 @@
 require 'test/unit'
-require 'date'
+
+class TestMarshal < Test::Unit::TestCase
+
+  def test_range_compatibility_with_mri
+    assert_equal "\x04\bo:\nRange\b:\texclF:\nbegini\x06:\bendi\a".b, Marshal.dump(1..2)
+    assert_equal "\x04\bo:\nRange\b:\texclT:\nbegini\xFA:\bendi\x00".b, Marshal.dump(-1...0)
+    assert_equal "\x04\bo:\nRange\b:\texclF:\nbeginI\"\x06a\x06:\x06ET:\bendI\"\x06z\x06;\bT".b, Marshal.dump('a'..'z')
+  end
+
+end
 
 # This test demonstrates and verifies the marshalling fix for JRUBY-3289
-
-class JRubyHashSubclassTest < Test::Unit::TestCase
+class TestMarshal3289 < Test::Unit::TestCase
 
   private
 
@@ -24,6 +32,7 @@ class JRubyHashSubclassTest < Test::Unit::TestCase
   class SubHashTwo < Hash; end
 
   def setup
+    require 'date'
     @common_hash = {:date => Date.today, "key" => "value", 1 => 10, :other =>[]}
   end
 

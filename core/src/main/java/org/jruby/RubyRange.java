@@ -120,6 +120,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newRange(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(context.runtime, context.runtime.getRange());
         range.init(context, begin, end, isExclusive);
+        range.isInited = true;
         return range;
     }
 
@@ -265,7 +266,6 @@ public class RubyRange extends RubyObject {
         this.begin = begin;
         this.end = end;
         this.isExclusive = isExclusive;
-        this.isInited = true;
     }
 
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
@@ -275,6 +275,7 @@ public class RubyRange extends RubyObject {
         }
         checkFrozen();
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
+        this.isInited = true;
         return context.nil;
     }
 
@@ -286,6 +287,7 @@ public class RubyRange extends RubyObject {
 
         RubyRange other = (RubyRange) original;
         init(context, other.begin, other.end, other.isExclusive);
+        this.isInited = true;
         return context.nil;
     }
 
@@ -885,9 +887,9 @@ public class RubyRange extends RubyObject {
             marshalStream.registerLinkTarget(range);
             List<Variable<Object>> attrs = range.getVariableList();
 
-            attrs.add(new VariableEntry<Object>("begini", range.begin));
-            attrs.add(new VariableEntry<Object>("endi", range.end));
             attrs.add(new VariableEntry<Object>("excl", range.isExclusive ? runtime.getTrue() : runtime.getFalse()));
+            attrs.add(new VariableEntry<Object>("begin", range.begin));
+            attrs.add(new VariableEntry<Object>("end", range.end));
 
             marshalStream.dumpVariables(attrs);
         }
@@ -902,22 +904,19 @@ public class RubyRange extends RubyObject {
             // FIXME: Maybe we can just gank these off the line directly?
             unmarshalStream.defaultVariablesUnmarshal(range);
 
-            IRubyObject begin = (IRubyObject) range.removeInternalVariable("begini");
-            IRubyObject end = (IRubyObject) range.removeInternalVariable("endi");
             IRubyObject excl = (IRubyObject) range.removeInternalVariable("excl");
+            IRubyObject begin = (IRubyObject) range.removeInternalVariable("begin");
+            IRubyObject end = (IRubyObject) range.removeInternalVariable("end");
 
             // try old names as well
-            if (begin == null) begin = (IRubyObject) range.removeInternalVariable("begin");
-            if (end == null) end = (IRubyObject) range.removeInternalVariable("end");
+            if (begin == null) begin = (IRubyObject) range.removeInternalVariable("begini");
+            if (end == null) end = (IRubyObject) range.removeInternalVariable("endi");
 
             if (begin == null || end == null || excl == null) {
                 throw runtime.newArgumentError("bad value for range");
             }
 
-            range.begin = begin;
-            range.end = end;
-            range.isExclusive = excl.isTrue();
-
+            range.init(runtime.getCurrentContext(), begin, end, excl.isTrue());
             return range;
         }
     };
