@@ -120,6 +120,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newRange(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(context.runtime, context.runtime.getRange());
         range.init(context, begin, end, isExclusive);
+        range.isInited = true;
         return range;
     }
 
@@ -265,7 +266,6 @@ public class RubyRange extends RubyObject {
         this.begin = begin;
         this.end = end;
         this.isExclusive = isExclusive;
-        this.isInited = true;
     }
 
     @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
@@ -275,6 +275,7 @@ public class RubyRange extends RubyObject {
         }
         checkFrozen();
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
+        this.isInited = true;
         return context.nil;
     }
 
@@ -286,6 +287,7 @@ public class RubyRange extends RubyObject {
 
         RubyRange other = (RubyRange) original;
         init(context, other.begin, other.end, other.isExclusive);
+        this.isInited = true;
         return context.nil;
     }
 
@@ -914,10 +916,7 @@ public class RubyRange extends RubyObject {
                 throw runtime.newArgumentError("bad value for range");
             }
 
-            range.begin = begin;
-            range.end = end;
-            range.isExclusive = excl.isTrue();
-
+            range.init(runtime.getCurrentContext(), begin, end, excl.isTrue());
             return range;
         }
     };
