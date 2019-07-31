@@ -2804,32 +2804,12 @@ public class IRBuilder {
         return result;
     }
 
-    private InterpreterContext buildForIterInner(ForNode forNode) {
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-
-        Node varNode = forNode.getVarNode();
-        if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode);
-
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
-
-        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
-        afterPrologueIndex = instructions.size() - 1;
-
-        // Build closure body and return the result of the closure
-        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode());
-        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
-            addInstr(new ReturnInstr(closureRetVal));
-        }
-
-        return scope.allocateInterpreterContext(instructions);
-    }
-
     public Operand buildForIter(final ForNode forNode) {
         // Create a new closure context
         IRClosure closure = new IRFor(manager, scope, forNode.getLine(), forNode.getScope(), Signature.from(forNode));
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, closure).buildForIterInner(forNode);
+        newIRBuilder(manager, closure).buildIterInner(forNode);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2963,29 +2943,30 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
+        boolean forNode = iterNode instanceof ForNode;
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        if (!forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
+        receiveBlockArgs(iterNode);
+        // for adds these after processing binding block args because and operations at that point happen relative
+        // to the previous scope.
+        if (forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
-
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
-        if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
-            addInstr(new ReturnInstr(closureRetVal));
-        }
 
-        // Always add break/return handling even though this
-        // is only required for lambdas, but we don't know at this time,
-        // if this is a lambda or not.
-        //
-        // SSS FIXME: At a later time, see if we can optimize this and
-        // do this on demand.
-        handleBreakAndReturnsInLambdas();
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
+        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
+        if (!forNode) handleBreakAndReturnsInLambdas();
 
         return scope.allocateInterpreterContext(instructions);
     }
+
     public Operand buildIter(final IterNode iterNode) {
         IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), needsCodeCoverage);
 
