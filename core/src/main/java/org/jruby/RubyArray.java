@@ -3354,8 +3354,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** ary_make_hash
      *
      */
-    private RubyHash makeHash() {
-        return makeHash(new RubyHash(getRuntime(), false));
+    private RubyHash makeHash(Ruby runtime) {
+        return makeHash(new RubyHash(runtime, false));
     }
 
     private RubyHash makeHash(RubyHash hash) {
@@ -3365,12 +3365,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return hash;
     }
 
-    private RubyHash makeHash(RubyArray ary2) {
-        return ary2.makeHash(makeHash());
-    }
-
     private RubyHash makeHash(ThreadContext context, Block block) {
-        return makeHash(context, new RubyHash(getRuntime(), false), block);
+        return makeHash(context, new RubyHash(context.runtime, false), block);
     }
 
     private RubyHash makeHash(ThreadContext context, RubyHash hash, Block block) {
@@ -3386,7 +3382,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject uniq_bang(ThreadContext context) {
-        RubyHash hash = makeHash();
+        RubyHash hash = makeHash(context.runtime);
         if (realLength == hash.size()) return context.nil;
 
         // TODO: (CON) This could be a no-op for packed arrays if size does not change
@@ -3402,7 +3398,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     @JRubyMethod(name = "uniq!")
-    public IRubyObject uniq_bang19(ThreadContext context, Block block) {
+    public IRubyObject uniq_bang(ThreadContext context, Block block) {
         modifyCheck();
 
         if (!block.isGiven()) return uniq_bang(context);
@@ -3421,11 +3417,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
+    @Deprecated
+    public IRubyObject uniq_bang19(ThreadContext context, Block block) {
+        return uniq_bang(context, block);
+    }
+
     /** rb_ary_uniq
      *
      */
     public IRubyObject uniq(ThreadContext context) {
-        RubyHash hash = makeHash();
+        RubyHash hash = makeHash(context.runtime);
         if (realLength == hash.size()) return makeShared();
 
         RubyArray result = new RubyArray(context.runtime, getMetaClass(), hash.size());
@@ -3444,7 +3445,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     @JRubyMethod(name = "uniq")
-    public IRubyObject uniq19(ThreadContext context, Block block) {
+    public IRubyObject uniq(ThreadContext context, Block block) {
         if (!block.isGiven()) return uniq(context);
         RubyHash hash = makeHash(context, block);
 
@@ -3453,13 +3454,18 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
+    @Deprecated
+    public IRubyObject uniq19(ThreadContext context, Block block) {
+        return uniq(context, block);
+    }
+
     /** rb_ary_diff
      *
      */
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_diff(IRubyObject other) {
         Ruby runtime = getRuntime();
-        RubyHash hash = other.convertToArray().makeHash();
+        RubyHash hash = other.convertToArray().makeHash(runtime);
         RubyArray ary3 = newArray(runtime);
 
         try {
@@ -3487,7 +3493,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         int maxSize = realLength < ary2.realLength ? realLength : ary2.realLength;
         RubyArray ary3 = newBlankArray(runtime, maxSize);
-        RubyHash hash = ary2.makeHash();
+        RubyHash hash = ary2.makeHash(runtime);
 
         int index = 0;
         for (int i = 0; i < realLength; i++) {
@@ -3514,7 +3520,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (maxSize == 0) return newEmptyArray(runtime);
 
         RubyArray ary3 = newBlankArray(runtime, maxSize);
-        RubyHash set = makeHash(ary2);
+        RubyHash set = ary2.makeHash(makeHash(runtime));
 
         int index = 0;
         for (int i = 0; i < realLength; i++) {
