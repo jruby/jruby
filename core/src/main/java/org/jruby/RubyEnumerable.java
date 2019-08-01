@@ -559,31 +559,36 @@ public class RubyEnumerable {
         return grep(context, self, pattern, block, false);
     }
 
-    private static IRubyObject grep(ThreadContext context, IRubyObject self, final IRubyObject pattern, final Block block, final boolean isPresent) {
+    private static IRubyObject grep(ThreadContext context, IRubyObject self, final IRubyObject pattern, final Block block,
+                                    final boolean isPresent) {
         final Ruby runtime = context.runtime;
         final RubyArray result = runtime.newArray();
 
         if (block.isGiven()) {
             callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                final MonomorphicCallSite site = new MonomorphicCallSite("===");
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(ctx, largs);
-                    if (pattern.callMethod(ctx, "===", larg).isTrue() == isPresent) {
+                    return call(ctx, packEnumValues(ctx, largs), blk);
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
+                    if (site.call(ctx, pattern, pattern, larg).isTrue() == isPresent) { // pattern === arg
                         IRubyObject value = block.yield(ctx, larg);
-                        synchronized (result) {
-                            result.append(value);
-                        }
+                        synchronized (result) { result.append(value); }
                     }
                     return ctx.nil;
                 }
             });
         } else {
             callEach(runtime, context, self, Signature.ONE_REQUIRED, new BlockCallback() {
+                final MonomorphicCallSite site = new MonomorphicCallSite("===");
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(ctx, largs);
-                    if (pattern.callMethod(ctx, "===", larg).isTrue() == isPresent) {
-                        synchronized (result) {
-                            result.append(larg);
-                        }
+                    return call(ctx, packEnumValues(ctx, largs), blk);
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
+                    if (site.call(ctx, pattern, pattern, larg).isTrue() == isPresent) { // pattern === arg
+                        synchronized (result) { result.append(larg); }
                     }
                     return ctx.nil;
                 }
