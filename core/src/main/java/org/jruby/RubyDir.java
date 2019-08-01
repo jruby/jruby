@@ -1052,7 +1052,7 @@ public class RubyDir extends RubyObject implements Closeable {
             throw runtime.newArgumentError("user.home/LOGDIR not set");
         }
 
-        return (RubyString) home;
+        return (RubyString) home.dup();
     }
 
     @Override

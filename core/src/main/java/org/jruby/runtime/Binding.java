@@ -44,14 +44,6 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  *  Internal live representation of a block ({...} or do ... end).
  */
 public class Binding {
-
-    public static final Binding DUMMY =
-            new Binding(
-                    RubyBasicObject.NEVER,
-                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
-                    new Frame(),
-                    Visibility.PUBLIC);
-    
     /**
      * frame of method which defined this block
      */
@@ -90,7 +82,8 @@ public class Binding {
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
-        assert frame != null;
+        frame.getClass(); // null check
+
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -102,7 +95,8 @@ public class Binding {
 
     private Binding(IRubyObject self, Frame frame,
                     Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
-        assert frame != null;
+        frame.getClass(); // null check
+
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -114,7 +108,8 @@ public class Binding {
     }
     
     public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
-        assert frame != null;
+        frame.getClass(); // null check
+
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
@@ -126,13 +121,14 @@ public class Binding {
 
     public Binding(IRubyObject self) {
         this.self = self;
-        this.frame = Frame.DUMMY;
+        this.frame = Block.NULL_BLOCK.getFrame();
         this.dynamicScope = null;
     }
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility) {
-        assert frame != null;
+        frame.getClass(); // null check
+
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -141,13 +137,14 @@ public class Binding {
 
     public Binding(IRubyObject self, DynamicScope dynamicScope) {
         this.self = self;
-        this.frame = Frame.DUMMY;
+        this.frame = Block.NULL_BLOCK.getFrame();
         this.dynamicScope = dynamicScope;
     }
 
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope) {
-        assert frame != null;
+        frame.getClass(); // null check
+
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
@@ -310,4 +307,12 @@ public class Binding {
     public BacktraceElement getBacktrace() {
         return new BacktraceElement(method, filename, line);
     }
+
+    @Deprecated
+    public static final Binding DUMMY =
+            new Binding(
+                    RubyBasicObject.NEVER,
+                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
+                    new Frame(),
+                    Visibility.PUBLIC);
 }

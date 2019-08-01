@@ -62,8 +62,6 @@ import java.io.ByteArrayInputStream;
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
-        runtime.getLoadService().require("java");
-
         // load Ruby parts of the 'jruby' library
         runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
 
@@ -196,17 +194,6 @@ public class JRubyLibrary implements Library {
         return context.runtime.newFixnum(System.identityHashCode(obj));
     }
 
-    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
-    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
-                                                   IRubyObject status, IRubyObject pid) {
-        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
-                status.convertToInteger().getLongValue(),
-                pid.convertToInteger().getLongValue()
-        );
-        context.setLastExitStatus(processStatus);
-        return processStatus;
-    }
-
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
@@ -294,7 +281,7 @@ public class JRubyLibrary implements Library {
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
         return CompiledScript.newInstance(context, new IRubyObject[] {
                 filename,
-                scope.getName(),
+                runtime.newSymbol(scope.getId()),
                 content,
                 Java.getInstance(runtime, bytes)
         }, Block.NULL_BLOCK);

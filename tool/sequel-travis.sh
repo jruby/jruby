@@ -4,7 +4,7 @@ set -v -e
 # set up JRuby
 mvn clean package
 export PATH=`pwd`/bin:$PATH
-gem install bundler
+gem install bundler -v "~>1.17.3"
 
 # set up databases
 mysql -e 'create database sequel_test;'

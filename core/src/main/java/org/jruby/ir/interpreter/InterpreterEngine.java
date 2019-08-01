@@ -117,8 +117,7 @@ public class InterpreterEngine {
         Object    exception = null;
         boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        // Blocks with explicit call protocol shouldn't do this before args are prepared
-        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+        if (acceptsKeywordArgument) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
         }
 

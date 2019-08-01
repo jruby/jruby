@@ -1,1 +1,0 @@
-fails:Thread#join coerces timeout to a Float if it is not nil

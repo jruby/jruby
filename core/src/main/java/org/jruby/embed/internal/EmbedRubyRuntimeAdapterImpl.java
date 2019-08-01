@@ -207,7 +207,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             throw new ParseFailedException(e);
         } finally {
             try {
-                if (input instanceof InputStream) {
+                if (input instanceof FileInputStream) {
                     ((InputStream)input).close();
                 }
             } catch (IOException ex) {

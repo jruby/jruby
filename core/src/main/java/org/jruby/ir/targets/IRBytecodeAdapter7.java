@@ -153,7 +153,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
-    public void invokeArrayDeref(String file, int line, CallBase call) {
+    public void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call) {
         adapter.invokedynamic("aref", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, 1)), ArrayDerefInvokeSite.BOOTSTRAP, file, line);
     }
 
@@ -162,11 +162,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         String id = call.getId();
         if (!MethodIndex.hasFastFixnumOps(id)) {
             pushFixnum(fixnum);
-            if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, null, call, 1);
-            } else {
-                invokeSelf(file, line, null, call, 1);
-            }
+            invokeOtherOrSelfArity1(file, line, call);
             return;
         }
 
@@ -187,11 +183,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         String id = call.getId();
         if (!MethodIndex.hasFastFloatOps(id)) {
             pushFloat(flote);
-            if (call.getCallType() == CallType.NORMAL) {
-                invokeOther(file, line, null, call, 1);
-            } else {
-                invokeSelf(file, line, null, call, 1);
-            }
+            invokeOtherOrSelfArity1(file, line, call);
             return;
         }
 
@@ -207,6 +199,14 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             0);
     }
 
+    private void invokeOtherOrSelfArity1(String file, int line, CallBase call) {
+        if (call.getCallType() == CallType.NORMAL) {
+            invokeOther(file, line, null, call, 1);
+        } else {
+            invokeSelf(file, line, null, call, 1);
+        }
+    }
+
     @Override
     public void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
@@ -220,15 +220,15 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         if (blockPassType != BlockPassType.NONE) {
             if (arity == -1) {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             } else {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), file, line);
             }
         } else {
             if (arity == -1) {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), SelfInvokeSite.BOOTSTRAP, false, file, line);
             } else {
-                adapter.invokedynamic(action + ":" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, line);
+                adapter.invokedynamic(action + ':' + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, file, line);
             }
         }
     }
@@ -271,9 +271,9 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
         String splatmapString = IRRuntimeHelpers.encodeSplatmap(splatmap);
         if (hasClosure) {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity, Block.class)), Bootstrap.invokeSuper(), splatmapString, file, line);
         } else {
-            adapter.invokedynamic("invokeUnresolvedSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
+            adapter.invokedynamic("invokeZSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, RubyClass.class, JVM.OBJECT, arity)), Bootstrap.invokeSuper(), splatmapString, file, line);
         }
     }
 
@@ -289,7 +289,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     public void pushBignum(BigInteger bigint) {
         loadContext();
-        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint);
+        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint.toString());
     }
 
     public void putField(String name) {

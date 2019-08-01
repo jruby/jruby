@@ -144,7 +144,7 @@ public class RubyProc extends RubyObject implements DataType {
 
         // This metaclass == recv check seems gross, but MRI seems to do the same:
         // if (!proc && ruby_block->block_obj && CLASS_OF(ruby_block->block_obj) == klass) {
-        if (block.isGiven() && block.getProcObject() != null && block.getProcObject().getMetaClass() == recv) {
+        if (block.isGiven() && block.getProcObject() != null && block.getProcObject().metaClass == recv) {
             return block.getProcObject();
         }
 
@@ -271,16 +271,25 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
+        return call(context, args, self, null, passedBlock);
+    }
+
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule sourceModule, Block passedBlock) {
         assert args != null;
 
         Block newBlock;
 
-        // bind to new self, if given
-        if (self == null) {
+        // bind to new self and source module, if given
+        if (self == null || sourceModule == null) {
             newBlock = block;
         } else {
             newBlock = block.cloneBlockAndFrame();
-            newBlock.getBinding().setSelf(self);
+            if (self != null) {
+                newBlock.getBinding().setSelf(self);
+            }
+            if (sourceModule != null) {
+                newBlock.getFrame().setKlazz(sourceModule);
+            }
         }
 
         return newBlock.call(context, args, passedBlock);

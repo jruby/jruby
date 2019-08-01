@@ -875,475 +875,528 @@ public class Pack {
 
             // Otherwise the unpack should be here...
             switch (type) {
-                case '@' :
-                    try {
-                        if (occurrences == IS_STAR) {
-                            positionBuffer(encode, encodedString.begin() + encode.remaining());
-                        } else {
-                            positionBuffer(encode, encodedString.begin() + occurrences);
-                        }
-                    } catch (IllegalArgumentException iae) {
-                        throw runtime.newArgumentError("@ outside of string");
-                    }
+                case '@':
+                    unpack_at(runtime, encodedString, encode, occurrences);
                     break;
-                case '%' :
+                case '%':
                     throw runtime.newArgumentError("% is not supported");
-                case 'A' : {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                            occurrences = encode.remaining();
-                        }
-
-                        byte[] potential = new byte[occurrences];
-                        encode.get(potential);
-
-                        for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
-                            byte c = potential[t];
-                            if (c != '\0' && c != ' ') {
-                               break;
-                            }
-                        }
-
-                        appendOrYield(context, block, result, new ByteList(potential, 0, occurrences, ASCII, false), tainted);
-
+                case 'A':
+                    unpack_A(context, block, result, tainted, encode, occurrences);
                     break;
-                    }
-                case 'Z' : {
-                        boolean isStar = (occurrences == IS_STAR);
-
-                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                            occurrences = encode.remaining();
-                        }
-
-                        byte[] potential = new byte[occurrences];
-                        int t = 0;
-
-                        while (t < occurrences) {
-                            byte b = encode.get();
-                            if (b == 0) {
-                                break;
-                            }
-                            potential[t] = b;
-                            t++;
-                        }
-
-                        appendOrYield(context, block, result, new ByteList(potential, 0, t, ASCII, false), tainted);
-
-                        // When the number of occurrences is
-                        // explicitly specified, we have to read up
-                        // the remaining garbage after the '\0' to
-                        // satisfy the requested pattern.
-                        if (!isStar) {
-                            if (t < occurrences) {
-                                // We encountered '\0' when
-                                // reading the buffer above,
-                                // increment the number of read bytes.
-                                t++;
-                            }
-
-                            while (t < occurrences) {
-                                encode.get();
-                                t++;
-                            }
-                        }
-                    }
+                case 'Z':
+                    unpack_Z(context, block, result, tainted, encode, occurrences);
                     break;
-                case 'a' : {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                            occurrences = encode.remaining();
-                        }
-                        byte[] potential = new byte[occurrences];
-                        encode.get(potential);
-                        appendOrYield(context, block, result, new ByteList(potential, ASCII, false), tainted);
-                    }
+                case 'a':
+                    unpack_a(context, block, result, tainted, encode, occurrences);
                     break;
-                case 'b' : {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
-                            occurrences = encode.remaining() * 8;
-                        }
-                        int bits = 0;
-                        byte[] lElem = new byte[occurrences];
-                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                            if ((lCurByte & 7) != 0) {
-                                bits >>>= 1;
-                            } else {
-                                bits = encode.get();
-                            }
-                            lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
-                        }
-                        appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), tainted);
-                    }
+                case 'b':
+                    unpack_b(context, block, result, tainted, encode, occurrences);
                     break;
-                case 'B' : {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
-                            occurrences = encode.remaining() * 8;
-                        }
-                        int bits = 0;
-                        byte[] lElem = new byte[occurrences];
-                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                            if ((lCurByte & 7) != 0) {
-                                bits <<= 1;
-                            } else {
-                                bits = encode.get();
-                            }
-                            lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
-                        }
-
-                        appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), tainted);
-                    }
+                case 'B':
+                    unpack_B(context, block, result, tainted, encode, occurrences);
                     break;
-                case 'h' : {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
-                            occurrences = encode.remaining() * 2;
-                        }
-                        int bits = 0;
-                        byte[] lElem = new byte[occurrences];
-                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                            if ((lCurByte & 1) != 0) {
-                                bits >>>= 4;
-                            } else {
-                                bits = encode.get();
-                            }
-                            lElem[lCurByte] = sHexDigits[bits & 15];
-                        }
-                        appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), tainted);
-                    }
+                case 'h':
+                    unpack_h(context, block, result, tainted, encode, occurrences);
                     break;
-                case 'H' : {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
-                            occurrences = encode.remaining() * 2;
-                        }
-                        int bits = 0;
-                        byte[] lElem = new byte[occurrences];
-                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
-                            if ((lCurByte & 1) != 0) {
-                                bits <<= 4;
-                            } else {
-                                bits = encode.get();
-                            }
-                            lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
-                        }
-                        appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), tainted);
-                    }
+                case 'H':
+                    unpack_H(context, block, result, tainted, encode, occurrences);
                     break;
-
-                case 'u': {
-                    int length = encode.remaining() * 3 / 4;
-                    byte[] lElem = new byte[length];
-                    int index = 0;
-                    int s = 0;
-                    int total = 0;
-                    if (length > 0) s = encode.get();
-                    while (encode.hasRemaining() && s > ' ' && s < 'a') {
-                        int a, b, c, d;
-                        byte[] hunk = new byte[3];
-
-                        int len = (s - ' ') & 077;
-                        s = safeGet(encode);
-                        total += len;
-                        if (total > length) {
-                            len -= total - length;
-                            total = length;
-                        }
-
-                        while (len > 0) {
-                            int mlen = len > 3 ? 3 : len;
-
-                            if (encode.hasRemaining() && s >= ' ') {
-                                a = (s - ' ') & 077;
-                                s = safeGet(encode);
-                            } else
-                                a = 0;
-                            if (encode.hasRemaining() && s >= ' ') {
-                                b = (s - ' ') & 077;
-                                s = safeGet(encode);
-                            } else
-                                b = 0;
-                            if (encode.hasRemaining() && s >= ' ') {
-                                c = (s - ' ') & 077;
-                                s = safeGet(encode);
-                            } else
-                                c = 0;
-                            if (encode.hasRemaining() && s >= ' ') {
-                                d = (s - ' ') & 077;
-                                s = safeGet(encode);
-                            } else
-                                d = 0;
-                            hunk[0] = (byte)((a << 2 | b >> 4) & 255);
-                            hunk[1] = (byte)((b << 4 | c >> 2) & 255);
-                            hunk[2] = (byte)((c << 6 | d) & 255);
-
-                            for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
-                            len -= mlen;
-                        }
-                        if (s == '\r') {
-                            s = safeGet(encode);
-                        }
-                        if (s == '\n') {
-                            s = safeGet(encode);
-                        }
-                        else if (encode.hasRemaining()) {
-                            if (safeGet(encode) == '\n') {
-                                safeGet(encode); // Possible Checksum Byte
-                            } else if (encode.hasRemaining()) {
-                                positionBuffer(encode, encode.position() - 1);
-                            }
-                        }
-                    }
-                    appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), tainted);
-                }
-                break;
-
-                case 'm': {
-                    int length = encode.remaining()*3/4;
-                    byte[] lElem = new byte[length];
-                    int a = -1, b = -1, c = 0, d;
-                    int index = 0;
-                    int s = -1;
-
-                    if (occurrences == 0){
-                        if (encode.remaining()%4 != 0) {
-                            throw runtime.newArgumentError("invalid base64");
-                        }
-                        while (encode.hasRemaining() && s != '=') {
-                            a = b = c = -1;
-                            d = -2;
-
-                            // obtain a
-                            s = safeGet(encode);
-                            a = b64_xtable[s];
-                            if (a == -1) throw runtime.newArgumentError("invalid base64");
-
-                            // obtain b
-                            s = safeGet(encode);
-                            b = b64_xtable[s];
-                            if (b == -1) throw runtime.newArgumentError("invalid base64");
-
-                            // obtain c
-                            s = safeGet(encode);
-                            c = b64_xtable[s];
-                            if (s == '=') {
-                                if (safeGet(encode) != '=') throw runtime.newArgumentError("invalid base64");
-                                break;
-                            }
-                            if (c == -1) throw runtime.newArgumentError("invalid base64");
-
-                            // obtain d
-                            s = safeGet(encode);
-                            d = b64_xtable[s];
-                            if (s == '=') break;
-                            if (d == -1) throw runtime.newArgumentError("invalid base64");
-
-                            // calculate based on a, b, c and d
-                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                            lElem[index++] = (byte)((c << 6 | d) & 255);
-                        }
-
-                        if (encode.hasRemaining()) throw runtime.newArgumentError("invalid base64");
-
-                        if (a != -1 && b != -1) {
-                            if (c == -1 && s == '=') {
-                                if ((b & 15) > 0) throw runtime.newArgumentError("invalid base64");
-                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                            } else if(c != -1 && s == '=') {
-                                if ((c & 3) > 0) throw runtime.newArgumentError("invalid base64");
-                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                            }
-                        }
-                    }
-                    else {
-
-                        while (encode.hasRemaining()) {
-                            a = b = c = d = -1;
-
-                            // obtain a
-                            s = safeGet(encode);
-                            while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                                s = safeGet(encode);
-                            }
-                            if (a == -1) break;
-
-                            // obtain b
-                            s = safeGet(encode);
-                            while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                                s = safeGet(encode);
-                            }
-                            if (b == -1) break;
-
-                            // obtain c
-                            s = safeGet(encode);
-                            while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                                if (s == '=') break;
-                                s = safeGet(encode);
-                            }
-                            if ((s == '=') || c == -1) {
-                                if (s == '=') {
-                                    positionBuffer(encode, encode.position() - 1);
-                                }
-                                break;
-                            }
-
-                            // obtain d
-                            s = safeGet(encode);
-                            while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                                if (s == '=') break;
-                                s = safeGet(encode);
-                            }
-                            if ((s == '=') || d == -1) {
-                                if (s == '=') {
-                                    positionBuffer(encode, encode.position() - 1);
-                                }
-                                break;
-                            }
-
-                            // calculate based on a, b, c and d
-                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                            lElem[index++] = (byte)((c << 6 | d) & 255);
-                            a = -1;
-                        }
-
-                        if (a != -1 && b != -1) {
-                            if (c == -1) {
-                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                            } else {
-                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                            }
-                        }
-                    }
-                    appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), tainted);
-                }
-                break;
-
-                case 'M' :
-                    {
-                        byte[] lElem = new byte[Math.max(encode.remaining(),0)];
-                        int index = 0;
-                        for(;;) {
-                            if (!encode.hasRemaining()) break;
-                            int c = safeGet(encode);
-                            if (c != '=') {
-                                lElem[index++] = (byte)c;
-                            } else {
-                                if (!encode.hasRemaining()) break;
-                                markBuffer(encode);
-                                int c1 = safeGet(encode);
-                                if (c1 == '\n' || (c1 == '\r' && (c1 = safeGet(encode)) == '\n')) continue;
-                                int d1 = Character.digit(c1, 16);
-                                if (d1 == -1) {
-                                    encode.reset();
-                                    break;
-                                }
-                                markBuffer(encode);
-                                if (!encode.hasRemaining()) break;
-                                int c2 = safeGet(encode);
-                                int d2 = Character.digit(c2, 16);
-                                if (d2 == -1) {
-                                    encode.reset();
-                                    break;
-                                }
-                                byte value = (byte)(d1 << 4 | d2);
-                                lElem[index++] = value;
-                            }
-                        }
-                        appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), tainted);
-                    }
+                case 'u':
+                    unpack_u(context, block, result, tainted, encode);
                     break;
-                case 'U' :
-                    {
-                        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                            occurrences = encode.remaining();
-                        }
-
-                        while (occurrences-- > 0 && encode.remaining() > 0) {
-                            try {
-                                // TODO: for now, we use a faithful
-                                // reimplementation of MRI's algorithm,
-                                // but should use UTF8Encoding facilities
-                                // from Joni, once it starts prefroming
-                                // UTF-8 content validation.
-                                RubyFixnum item = runtime.newFixnum(utf8Decode(encode));
-                                appendOrYield(context, block, result, item);
-                            } catch (IllegalArgumentException e) {
-                                throw runtime.newArgumentError(e.getMessage());
-                            }
-                        }
-                    }
+                case 'm':
+                    unpack_m(context, block, runtime, result, tainted, encode, occurrences);
                     break;
-                 case 'X':
-                     if (occurrences == IS_STAR) {
-                         // MRI behavior: Contrary to what seems to be logical,
-                         // when '*' is given, MRI calculates the distance
-                         // to the end, in order to go backwards.
-                         occurrences = /*encode.limit() - */encode.remaining();
-                     }
-
-                     try {
-                         positionBuffer(encode, encode.position() - occurrences);
-                     } catch (IllegalArgumentException e) {
-                         throw runtime.newArgumentError("in `unpack': X outside of string");
-                     }
-                     break;
-                 case 'x':
-                      if (occurrences == IS_STAR) {
-                           occurrences = encode.remaining();
-                      }
-
-                      try {
-                          positionBuffer(encode, encode.position() + occurrences);
-                      } catch (IllegalArgumentException e) {
-                          throw runtime.newArgumentError("in `unpack': x outside of string");
-                      }
-
-                     break;
+                case 'M':
+                    unpack_M(context, block, result, tainted, encode);
+                    break;
+                case 'U':
+                    unpack_U(context, block, runtime, result, encode, occurrences);
+                    break;
+                case 'X':
+                    unpack_X(runtime, encode, occurrences);
+                    break;
+                case 'x':
+                    unpack_x(runtime, encode, occurrences);
+                    break;
                 case 'w':
-                    if (occurrences == IS_STAR || occurrences > encode.remaining()) {
-                        occurrences = encode.remaining();
-                    }
-
-                    long ul = 0;
-                    long ulmask = (0xfeL << 56) & 0xffffffff;
-                    RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
-                    int pos = encode.position();
-
-                    while (occurrences > 0 && pos < encode.limit()) {
-                        ul <<= 7;
-                        ul |= encode.get(pos) & 0x7f;
-                        if((encode.get(pos++) & 0x80) == 0) {
-                            appendOrYield(context, block, result, RubyFixnum.newFixnum(runtime, ul));
-                            occurrences--;
-                            ul = 0;
-                        } else if((ul & ulmask) == 0) {
-                            RubyBignum big = RubyBignum.newBignum(runtime, ul);
-                            while(occurrences > 0 && pos < encode.limit()) {
-                                IRubyObject mulResult = big.op_mul(runtime.getCurrentContext(), big128);
-                                IRubyObject v = mulResult.callMethod(runtime.getCurrentContext(), "+",
-                                        RubyBignum.newBignum(runtime, encode.get(pos) & 0x7f));
-                                if(v instanceof RubyFixnum) {
-                                    big = RubyBignum.newBignum(runtime, RubyNumeric.fix2long(v));
-                                } else if (v instanceof RubyBignum) {
-                                    big = (RubyBignum)v;
-                                }
-                                if((encode.get(pos++) & 0x80) == 0) {
-                                    appendOrYield(context, block, result, RubyBignum.bignorm(runtime, big.getValue()));
-                                    occurrences--;
-                                    ul = 0;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    try {
-                        positionBuffer(encode, pos);
-                    } catch (IllegalArgumentException e) {
-                        throw runtime.newArgumentError("in `unpack': poorly encoded input");
-                    }
+                    unpack_w(context, block, runtime, result, encode, occurrences);
                     break;
             }
         }
         return result;
+    }
+
+    private static void unpack_w(ThreadContext context, Block block, Ruby runtime, RubyArray result, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+            occurrences = encode.remaining();
+        }
+
+        long ul = 0;
+        long ulmask = (0xfeL << 56) & 0xffffffff;
+        RubyBignum big128 = RubyBignum.newBignum(runtime, 128);
+        int pos = encode.position();
+
+        while (occurrences > 0 && pos < encode.limit()) {
+            ul <<= 7;
+            ul |= encode.get(pos) & 0x7f;
+            if((encode.get(pos++) & 0x80) == 0) {
+                appendOrYield(context, block, result, RubyFixnum.newFixnum(runtime, ul));
+                occurrences--;
+                ul = 0;
+            } else if((ul & ulmask) == 0) {
+                RubyBignum big = RubyBignum.newBignum(runtime, ul);
+                while(occurrences > 0 && pos < encode.limit()) {
+                    IRubyObject mulResult = big.op_mul(runtime.getCurrentContext(), big128);
+                    IRubyObject v = mulResult.callMethod(runtime.getCurrentContext(), "+",
+                            RubyBignum.newBignum(runtime, encode.get(pos) & 0x7f));
+                    if(v instanceof RubyFixnum) {
+                        big = RubyBignum.newBignum(runtime, RubyNumeric.fix2long(v));
+                    } else if (v instanceof RubyBignum) {
+                        big = (RubyBignum)v;
+                    }
+                    if((encode.get(pos++) & 0x80) == 0) {
+                        appendOrYield(context, block, result, RubyBignum.bignorm(runtime, big.getValue()));
+                        occurrences--;
+                        ul = 0;
+                        break;
+                    }
+                }
+            }
+        }
+        try {
+            positionBuffer(encode, pos);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError("in `unpack': poorly encoded input");
+        }
+    }
+
+    private static void unpack_x(Ruby runtime, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR) {
+             occurrences = encode.remaining();
+        }
+
+        try {
+            positionBuffer(encode, encode.position() + occurrences);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError("in `unpack': x outside of string");
+        }
+    }
+
+    private static void unpack_X(Ruby runtime, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR) {
+            // MRI behavior: Contrary to what seems to be logical,
+            // when '*' is given, MRI calculates the distance
+            // to the end, in order to go backwards.
+            occurrences = /*encode.limit() - */encode.remaining();
+        }
+
+        try {
+            positionBuffer(encode, encode.position() - occurrences);
+        } catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError("in `unpack': X outside of string");
+        }
+    }
+
+    private static void unpack_U(ThreadContext context, Block block, Ruby runtime, RubyArray result, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+            occurrences = encode.remaining();
+        }
+
+        while (occurrences-- > 0 && encode.remaining() > 0) {
+            try {
+                // TODO: for now, we use a faithful
+                // reimplementation of MRI's algorithm,
+                // but should use UTF8Encoding facilities
+                // from Joni, once it starts prefroming
+                // UTF-8 content validation.
+                RubyFixnum item = runtime.newFixnum(utf8Decode(encode));
+                appendOrYield(context, block, result, item);
+            } catch (IllegalArgumentException e) {
+                throw runtime.newArgumentError(e.getMessage());
+            }
+        }
+    }
+
+    private static void unpack_M(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode) {
+        byte[] lElem = new byte[Math.max(encode.remaining(),0)];
+        int index = 0;
+        for(;;) {
+            if (!encode.hasRemaining()) break;
+            int c = safeGet(encode);
+            if (c != '=') {
+                lElem[index++] = (byte)c;
+            } else {
+                if (!encode.hasRemaining()) break;
+                markBuffer(encode);
+                int c1 = safeGet(encode);
+                if (c1 == '\n' || (c1 == '\r' && (c1 = safeGet(encode)) == '\n')) continue;
+                int d1 = Character.digit(c1, 16);
+                if (d1 == -1) {
+                    encode.reset();
+                    break;
+                }
+                markBuffer(encode);
+                if (!encode.hasRemaining()) break;
+                int c2 = safeGet(encode);
+                int d2 = Character.digit(c2, 16);
+                if (d2 == -1) {
+                    encode.reset();
+                    break;
+                }
+                byte value = (byte)(d1 << 4 | d2);
+                lElem[index++] = value;
+            }
+        }
+        appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), tainted);
+    }
+
+    private static void unpack_m(ThreadContext context, Block block, Ruby runtime, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        int length = encode.remaining()*3/4;
+        byte[] lElem = new byte[length];
+        int a = -1, b = -1, c = 0, d;
+        int index = 0;
+        int s = -1;
+
+        if (occurrences == 0){
+            index = unpack_m_zeroOccurrences(runtime, encode, lElem, a, b, c, index, s);
+        } else {
+            index = unpack_m_nonzeroOccurrences(encode, lElem, a, b, c, index);
+        }
+        appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), tainted);
+    }
+
+    private static int unpack_m_nonzeroOccurrences(ByteBuffer encode, byte[] lElem, int a, int b, int c, int index) {
+        int d;
+        int s;
+        while (encode.hasRemaining()) {
+            a = b = c = d = -1;
+
+            // obtain a
+            s = safeGet(encode);
+            while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                s = safeGet(encode);
+            }
+            if (a == -1) break;
+
+            // obtain b
+            s = safeGet(encode);
+            while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                s = safeGet(encode);
+            }
+            if (b == -1) break;
+
+            // obtain c
+            s = safeGet(encode);
+            while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                if (s == '=') break;
+                s = safeGet(encode);
+            }
+            if ((s == '=') || c == -1) {
+                if (s == '=') {
+                    positionBuffer(encode, encode.position() - 1);
+                }
+                break;
+            }
+
+            // obtain d
+            s = safeGet(encode);
+            while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                if (s == '=') break;
+                s = safeGet(encode);
+            }
+            if ((s == '=') || d == -1) {
+                if (s == '=') {
+                    positionBuffer(encode, encode.position() - 1);
+                }
+                break;
+            }
+
+            // calculate based on a, b, c and d
+            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+            lElem[index++] = (byte)((c << 6 | d) & 255);
+            a = -1;
+        }
+
+        if (a != -1 && b != -1) {
+            if (c == -1) {
+                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+            } else {
+                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+            }
+        }
+        return index;
+    }
+
+    private static int unpack_m_zeroOccurrences(Ruby runtime, ByteBuffer encode, byte[] lElem, int a, int b, int c, int index, int s) {
+        int d;
+        if (encode.remaining()%4 != 0) {
+            throw runtime.newArgumentError("invalid base64");
+        }
+        while (encode.hasRemaining() && s != '=') {
+            a = b = c = -1;
+            d = -2;
+
+            // obtain a
+            s = safeGet(encode);
+            a = b64_xtable[s];
+            if (a == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain b
+            s = safeGet(encode);
+            b = b64_xtable[s];
+            if (b == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain c
+            s = safeGet(encode);
+            c = b64_xtable[s];
+            if (s == '=') {
+                if (safeGet(encode) != '=') throw runtime.newArgumentError("invalid base64");
+                break;
+            }
+            if (c == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain d
+            s = safeGet(encode);
+            d = b64_xtable[s];
+            if (s == '=') break;
+            if (d == -1) throw runtime.newArgumentError("invalid base64");
+
+            // calculate based on a, b, c and d
+            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+            lElem[index++] = (byte)((c << 6 | d) & 255);
+        }
+
+        if (encode.hasRemaining()) throw runtime.newArgumentError("invalid base64");
+
+        if (a != -1 && b != -1) {
+            if (c == -1 && s == '=') {
+                if ((b & 15) > 0) throw runtime.newArgumentError("invalid base64");
+                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+            } else if(c != -1 && s == '=') {
+                if ((c & 3) > 0) throw runtime.newArgumentError("invalid base64");
+                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+            }
+        }
+        return index;
+    }
+
+    private static void unpack_u(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode) {
+        int length = encode.remaining() * 3 / 4;
+        byte[] lElem = new byte[length];
+        int index = 0;
+        int s = 0;
+        int total = 0;
+        if (length > 0) s = encode.get();
+        while (encode.hasRemaining() && s > ' ' && s < 'a') {
+            int a, b, c, d;
+            byte[] hunk = new byte[3];
+
+            int len = (s - ' ') & 077;
+            s = safeGet(encode);
+            total += len;
+            if (total > length) {
+                len -= total - length;
+                total = length;
+            }
+
+            while (len > 0) {
+                int mlen = len > 3 ? 3 : len;
+
+                if (encode.hasRemaining() && s >= ' ') {
+                    a = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    a = 0;
+                if (encode.hasRemaining() && s >= ' ') {
+                    b = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    b = 0;
+                if (encode.hasRemaining() && s >= ' ') {
+                    c = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    c = 0;
+                if (encode.hasRemaining() && s >= ' ') {
+                    d = (s - ' ') & 077;
+                    s = safeGet(encode);
+                } else
+                    d = 0;
+                hunk[0] = (byte)((a << 2 | b >> 4) & 255);
+                hunk[1] = (byte)((b << 4 | c >> 2) & 255);
+                hunk[2] = (byte)((c << 6 | d) & 255);
+
+                for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
+                len -= mlen;
+            }
+            if (s == '\r') {
+                s = safeGet(encode);
+            }
+            if (s == '\n') {
+                s = safeGet(encode);
+            }
+            else if (encode.hasRemaining()) {
+                if (safeGet(encode) == '\n') {
+                    safeGet(encode); // Possible Checksum Byte
+                } else if (encode.hasRemaining()) {
+                    positionBuffer(encode, encode.position() - 1);
+                }
+            }
+        }
+        appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), tainted);
+    }
+
+    private static void unpack_H(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
+            occurrences = encode.remaining() * 2;
+        }
+        int bits = 0;
+        byte[] lElem = new byte[occurrences];
+        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
+            if ((lCurByte & 1) != 0) {
+                bits <<= 4;
+            } else {
+                bits = encode.get();
+            }
+            lElem[lCurByte] = sHexDigits[(bits >>> 4) & 15];
+        }
+        appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), tainted);
+    }
+
+    private static void unpack_h(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining() * 2) {
+            occurrences = encode.remaining() * 2;
+        }
+        int bits = 0;
+        byte[] lElem = new byte[occurrences];
+        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
+            if ((lCurByte & 1) != 0) {
+                bits >>>= 4;
+            } else {
+                bits = encode.get();
+            }
+            lElem[lCurByte] = sHexDigits[bits & 15];
+        }
+        appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), tainted);
+    }
+
+    private static void unpack_B(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
+            occurrences = encode.remaining() * 8;
+        }
+        int bits = 0;
+        byte[] lElem = new byte[occurrences];
+        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
+            if ((lCurByte & 7) != 0) {
+                bits <<= 1;
+            } else {
+                bits = encode.get();
+            }
+            lElem[lCurByte] = (bits & 128) != 0 ? (byte)'1' : (byte)'0';
+        }
+
+        appendOrYield(context, block, result, new ByteList(lElem, ASCII, false), tainted);
+    }
+
+    private static void unpack_b(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining() * 8) {
+            occurrences = encode.remaining() * 8;
+        }
+        int bits = 0;
+        byte[] lElem = new byte[occurrences];
+        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
+            if ((lCurByte & 7) != 0) {
+                bits >>>= 1;
+            } else {
+                bits = encode.get();
+            }
+            lElem[lCurByte] = (bits & 1) != 0 ? (byte)'1' : (byte)'0';
+        }
+        appendOrYield(context, block, result, new ByteList(lElem, USASCII, false), tainted);
+    }
+
+    private static void unpack_a(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+            occurrences = encode.remaining();
+        }
+        byte[] potential = new byte[occurrences];
+        encode.get(potential);
+        appendOrYield(context, block, result, new ByteList(potential, ASCII, false), tainted);
+    }
+
+    private static void unpack_Z(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        boolean isStar = (occurrences == IS_STAR);
+
+        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+            occurrences = encode.remaining();
+        }
+
+        byte[] potential = new byte[occurrences];
+        int t = 0;
+
+        while (t < occurrences) {
+            byte b = encode.get();
+            if (b == 0) {
+                break;
+            }
+            potential[t] = b;
+            t++;
+        }
+
+        appendOrYield(context, block, result, new ByteList(potential, 0, t, ASCII, false), tainted);
+
+        // When the number of occurrences is
+        // explicitly specified, we have to read up
+        // the remaining garbage after the '\0' to
+        // satisfy the requested pattern.
+        if (!isStar) {
+            if (t < occurrences) {
+                // We encountered '\0' when
+                // reading the buffer above,
+                // increment the number of read bytes.
+                t++;
+            }
+
+            while (t < occurrences) {
+                encode.get();
+                t++;
+            }
+        }
+    }
+
+    private static void unpack_A(ThreadContext context, Block block, RubyArray result, boolean tainted, ByteBuffer encode, int occurrences) {
+        if (occurrences == IS_STAR || occurrences > encode.remaining()) {
+            occurrences = encode.remaining();
+        }
+
+        byte[] potential = new byte[occurrences];
+        encode.get(potential);
+
+        for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
+            byte c = potential[t];
+            if (c != '\0' && c != ' ') {
+               break;
+            }
+        }
+
+        appendOrYield(context, block, result, new ByteList(potential, 0, occurrences, ASCII, false), tainted);
+    }
+
+    private static void unpack_at(Ruby runtime, ByteList encodedString, ByteBuffer encode, int occurrences) {
+        try {
+            if (occurrences == IS_STAR) {
+                positionBuffer(encode, encodedString.begin() + encode.remaining());
+            } else {
+                positionBuffer(encode, encodedString.begin() + occurrences);
+            }
+        } catch (IllegalArgumentException iae) {
+            throw runtime.newArgumentError("@ outside of string");
+        }
     }
 
     @Deprecated
@@ -1664,16 +1717,25 @@ public class Pack {
         return (RubyString) pack.infectBy(formatString);
     }
 
+    /**
+     * Introduced to allow outlining cases in #packCommon that update both of these values.
+     */
+    private static class PackInts {
+        PackInts(int listSize, int idx) {
+            this.listSize = listSize;
+            this.idx = idx;
+        }
+        int listSize;
+        int idx;
+    }
+
     private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
         ByteList result = new ByteList();
         boolean taintOutput = tainted;
-        int listSize = list.size();
+        PackInts packInts = new PackInts(list.size(), 0);
         int type;
         int next = safeGet(format);
-
-        int idx = 0;
-        ByteList lCurElemString;
 
         int enc_info = 1;
 
@@ -1734,7 +1796,7 @@ public class Pack {
                         occurrences = 0;
                         ignoreStar = true;
                     } else {
-                        occurrences = list.size() - idx;
+                        occurrences = list.size() - packInts.idx;
                         isStar = true;
                     }
                     next = safeGet(format);
@@ -1747,327 +1809,49 @@ public class Pack {
                 }
             }
 
-            switch (type) {
-                case 'U':
-                    if (enc_info == 1) enc_info = 2;
-                    break;
-                case 'm':
-                case 'M':
-                case 'u':
-                    break;
-                default:
-                    enc_info = 0;
-                    break;
-            }
+            enc_info = adjustEncInfo(type, enc_info);
 
             Converter converter = converters[type];
 
             if (converter != null) {
                 executor.setConverter(converter);
-                idx = encode(context.runtime, occurrences, result, list, idx, executor);
+                packInts.idx = encode(context.runtime, occurrences, result, list, packInts.idx, executor);
                 continue;
             }
 
             switch (type) {
-                case '%' :
+                case '%':
                     throw context.runtime.newArgumentError("% is not supported");
-                case 'A' :
-                case 'a' :
-                case 'Z' :
-                case 'B' :
-                case 'b' :
-                case 'H' :
-                case 'h' : {
-                        if (listSize-- <= 0) {
-                            throw context.runtime.newArgumentError(sTooFew);
-                        }
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
-                        if (from.isTaint()) taintOutput = true;
-
-                        if (isStar) {
-                            occurrences = lCurElemString.length();
-                            // 'Z' adds extra null pad (versus 'a')
-                            if (type == 'Z') occurrences++;
-                        }
-
-                        switch (type) {
-                            case 'a' :
-                            case 'A' :
-                            case 'Z' :
-                                if (lCurElemString.length() >= occurrences) {
-                                    result.append(lCurElemString.getUnsafeBytes(), lCurElemString.getBegin(), occurrences);
-                                } else {//need padding
-                                    //I'm fairly sure there is a library call to create a
-                                    //string filled with a given char with a given length but I couldn't find it
-                                    result.append(lCurElemString);
-                                    occurrences -= lCurElemString.length();
-
-                                    switch (type) {
-                                      case 'a':
-                                      case 'Z':
-                                          grow(result, sNil10, occurrences);
-                                          break;
-                                      default:
-                                          grow(result, sSp10, occurrences);
-                                          break;
-                                    }
-                                }
-                            break;
-                            case 'b' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
-                                            currentByte |= 128; //set the high bit of the result
-                                        }
-
-                                        if ((i & 7) == 0) {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                            continue;
-                                        }
-
-                                           //if the index is not a multiple of 8, we are not on a byte boundary
-                                           currentByte >>= 1; //shift the byte
-                                    }
-
-                                    if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                                        currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
-                                        result.append((byte) (currentByte & 0xff));
-                                    }
-
-                                    //do some padding, I don't understand the padding strategy
-                                    result.length(result.length() + padLength);
-                                }
-                            break;
-                            case 'B' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        currentByte |= lCurElemString.charAt(i++) & 1;
-
-                                        // we filled up current byte; append it and create next one
-                                        if ((i & 7) == 0) {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                            continue;
-                                        }
-
-                                        //if the index is not a multiple of 8, we are not on a byte boundary
-                                        currentByte <<= 1;
-                                    }
-
-                                    if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
-                                        currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
-                                        result.append((byte) (currentByte & 0xff));
-                                    }
-
-                                    result.length(result.length() + padLength);
-                                }
-                            break;
-                            case 'h' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length() + 1;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        byte currentChar = (byte)lCurElemString.charAt(i++);
-
-                                        if (Character.isJavaIdentifierStart(currentChar)) {
-                                            //this test may be too lax but it is the same as in MRI
-                                            currentByte |= (((currentChar & 15) + 9) & 15) << 4;
-                                        } else {
-                                            currentByte |= (currentChar & 15) << 4;
-                                        }
-
-                                        if ((i & 1) != 0) {
-                                            currentByte >>= 4;
-                                        } else {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                        }
-                                    }
-
-                                    if ((occurrences & 1) != 0) {
-                                        result.append((byte) (currentByte & 0xff));
-                                        if (padLength > 0) padLength--;
-                                    }
-
-                                    result.length(result.length() + padLength / 2);
-                                }
-                            break;
-                            case 'H' :
-                                {
-                                    int currentByte = 0;
-                                    int padLength = 0;
-
-                                    if (occurrences > lCurElemString.length()) {
-                                        padLength = occurrences - lCurElemString.length() + 1;
-                                        occurrences = lCurElemString.length();
-                                    }
-
-                                    for (int i = 0; i < occurrences;) {
-                                        byte currentChar = (byte)lCurElemString.charAt(i++);
-
-                                        if (Character.isJavaIdentifierStart(currentChar)) {
-                                            //this test may be too lax but it is the same as in MRI
-                                            currentByte |= ((currentChar & 15) + 9) & 15;
-                                        } else {
-                                            currentByte |= currentChar & 15;
-                                        }
-
-                                        if ((i & 1) != 0) {
-                                            currentByte <<= 4;
-                                        } else {
-                                            result.append((byte) (currentByte & 0xff));
-                                            currentByte = 0;
-                                        }
-                                    }
-
-                                    if ((occurrences & 1) != 0) {
-                                        result.append((byte) (currentByte & 0xff));
-                                        if (padLength > 0) padLength--;
-                                    }
-
-                                    result.length(result.length() + padLength / 2);
-                                }
-                            break;
-                        }
-                        break;
-                    }
-
-                case 'x' :
+                case 'A':
+                case 'a':
+                case 'Z':
+                case 'B':
+                case 'b':
+                case 'H':
+                case 'h':
+                    taintOutput = pack_h(context, list, result, taintOutput, packInts, type, occurrences, isStar);
+                    break;
+                case 'x':
                     grow(result, sNil10, occurrences);
                     break;
-                case 'X' :
-                    try {
-                        shrink(result, occurrences);
-                    } catch (IllegalArgumentException e) {
-                        throw context.runtime.newArgumentError("in `pack': X outside of string");
-                    }
+                case 'X':
+                    pack_X(context, result, occurrences);
                     break;
-                case '@' :
-                    occurrences -= result.length();
-                    if (occurrences > 0) {
-                        grow(result, sNil10, occurrences);
-                    }
-                    occurrences = -occurrences;
-                    if (occurrences > 0) {
-                        shrink(result, occurrences);
-                    }
+                case '@':
+                    pack_at(result, occurrences);
                     break;
-                case 'u' :
-                case 'm' : {
-                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
-                        lCurElemString = from.convertToString().getByteList();
-                        if (from.isTaint()) taintOutput = true;
-                        encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
-                    }
+                case 'u':
+                case 'm':
+                    taintOutput = pack_m(context, list, result, taintOutput, packInts, (char) type, occurrences, ignoreStar);
                     break;
-                case 'M' : {
-                       if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                       IRubyObject from = list.eltInternal(idx++);
-                       if (from.isTaint()) taintOutput = true;
-                       lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
-
-                       if (occurrences <= 1) {
-                           occurrences = 72;
-                       }
-
-                       PackUtils.qpencode(result, lCurElemString, occurrences);
-                    }
+                case 'M':
+                    taintOutput = pack_M(context, list, result, taintOutput, packInts, occurrences);
                     break;
-                case 'U' :
-                    while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
-
-                        if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
-
-                        int len = result.getRealSize();
-                        result.ensure(len + 6);
-                        result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
-                    }
+                case 'U':
+                    pack_U(context, list, result, packInts, occurrences);
                     break;
-                case 'w' :
-                    while (occurrences-- > 0) {
-                        if (listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
-
-                        IRubyObject from = list.eltInternal(idx++);
-                        if (from == context.nil) throw context.runtime.newTypeError("pack('w') does not take nil");
-
-                        final ByteList buf = new ByteList();
-
-                        if (from instanceof RubyBignum) {
-                            RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
-                            while (from instanceof RubyBignum) {
-                                RubyArray ary = (RubyArray) ((RubyBignum) from).divmod(context, big128);
-                                buf.append((byte) (RubyNumeric.fix2int(ary.eltInternal(1)) | 0x80) & 0xff);
-                                from = ary.eltInternal(0);
-                            }
-                        }
-
-                        long l = RubyNumeric.num2long(from);
-
-                        // we don't deal with negatives.
-                        if (l >= 0) {
-
-                            while(l != 0) {
-                                buf.append((byte)(((l & 0x7f) | 0x80) & 0xff));
-                                l >>= 7;
-                            }
-
-                            int left = 0;
-                            int right = buf.getRealSize() - 1;
-
-                            if (right >= 0) {
-                                buf.getUnsafeBytes()[0] &= 0x7F;
-                            } else {
-                                buf.append(0);
-                            }
-
-                            while (left < right) {
-                                byte tmp = buf.getUnsafeBytes()[left];
-                                buf.getUnsafeBytes()[left] = buf.getUnsafeBytes()[right];
-                                buf.getUnsafeBytes()[right] = tmp;
-
-                                left++;
-                                right--;
-                            }
-
-                            result.append(buf);
-                        } else {
-                            throw context.runtime.newArgumentError("can't compress negative numbers");
-                        }
-                    }
-
+                case 'w':
+                    pack_w(context, list, result, packInts, occurrences);
                     break;
             }
         }
@@ -2087,6 +1871,334 @@ public class Pack {
         }
 
         return output;
+    }
+
+    private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
+        while (occurrences-- > 0) {
+            if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+            IRubyObject from = list.eltInternal(packInts.idx++);
+            if (from == context.nil) throw context.runtime.newTypeError("pack('w') does not take nil");
+
+            final ByteList buf = new ByteList();
+
+            if (from instanceof RubyBignum) {
+                RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
+                while (from instanceof RubyBignum) {
+                    RubyArray ary = (RubyArray) ((RubyBignum) from).divmod(context, big128);
+                    buf.append((byte) (RubyNumeric.fix2int(ary.eltInternal(1)) | 0x80) & 0xff);
+                    from = ary.eltInternal(0);
+                }
+            }
+
+            long l = RubyNumeric.num2long(from);
+
+            // we don't deal with negatives.
+            if (l >= 0) {
+
+                while(l != 0) {
+                    buf.append((byte)(((l & 0x7f) | 0x80) & 0xff));
+                    l >>= 7;
+                }
+
+                int left = 0;
+                int right = buf.getRealSize() - 1;
+
+                if (right >= 0) {
+                    buf.getUnsafeBytes()[0] &= 0x7F;
+                } else {
+                    buf.append(0);
+                }
+
+                while (left < right) {
+                    byte tmp = buf.getUnsafeBytes()[left];
+                    buf.getUnsafeBytes()[left] = buf.getUnsafeBytes()[right];
+                    buf.getUnsafeBytes()[right] = tmp;
+
+                    left++;
+                    right--;
+                }
+
+                result.append(buf);
+            } else {
+                throw context.runtime.newArgumentError("can't compress negative numbers");
+            }
+        }
+    }
+
+    private static void pack_U(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
+        while (occurrences-- > 0) {
+            if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+            IRubyObject from = list.eltInternal(packInts.idx++);
+            int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
+
+            if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
+
+            int len = result.getRealSize();
+            result.ensure(len + 6);
+            result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
+        }
+    }
+
+    private static boolean pack_M(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, int occurrences) {
+        ByteList lCurElemString;
+        if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+        IRubyObject from = list.eltInternal(packInts.idx++);
+        if (from.isTaint()) taintOutput = true;
+        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.asString().getByteList();
+
+        if (occurrences <= 1) {
+            occurrences = 72;
+        }
+
+        PackUtils.qpencode(result, lCurElemString, occurrences);
+        return taintOutput;
+    }
+
+    private static boolean pack_h(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, int type, int occurrences, boolean isStar) {
+        ByteList lCurElemString;
+        if (packInts.listSize-- <= 0) {
+            throw context.runtime.newArgumentError(sTooFew);
+        }
+
+        IRubyObject from = list.eltInternal(packInts.idx++);
+        lCurElemString = from == context.nil ? ByteList.EMPTY_BYTELIST : from.convertToString().getByteList();
+        if (from.isTaint()) taintOutput = true;
+
+        if (isStar) {
+            occurrences = lCurElemString.length();
+            // 'Z' adds extra null pad (versus 'a')
+            if (type == 'Z') occurrences++;
+        }
+
+        pack_h_inner(result, type, lCurElemString, occurrences);
+        return taintOutput;
+    }
+
+    private static boolean pack_m(ThreadContext context, RubyArray list, ByteList result, boolean taintOutput, PackInts packInts, char type, int occurrences, boolean ignoreStar) {
+        ByteList lCurElemString;
+        if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+
+        IRubyObject from = list.eltInternal(packInts.idx++);
+        if (from == context.nil) throw context.runtime.newTypeError(from, "Integer");
+        lCurElemString = from.convertToString().getByteList();
+        if (from.isTaint()) taintOutput = true;
+        encodeUM(context.runtime, lCurElemString, occurrences, ignoreStar, type, result);
+        return taintOutput;
+    }
+
+    private static void pack_at(ByteList result, int occurrences) {
+        occurrences -= result.length();
+        if (occurrences > 0) {
+            grow(result, sNil10, occurrences);
+        }
+        occurrences = -occurrences;
+        if (occurrences > 0) {
+            shrink(result, occurrences);
+        }
+    }
+
+    private static void pack_X(ThreadContext context, ByteList result, int occurrences) {
+        try {
+            shrink(result, occurrences);
+        } catch (IllegalArgumentException e) {
+            throw context.runtime.newArgumentError("in `pack': X outside of string");
+        }
+    }
+
+    private static void pack_h_inner(ByteList result, int type, ByteList lCurElemString, int occurrences) {
+        switch (type) {
+            case 'a' :
+            case 'A' :
+            case 'Z' :
+                pack_h_aAZ(result, type, lCurElemString, occurrences);
+                break;
+            case 'b' :
+                    pack_h_b(result, lCurElemString, occurrences);
+            break;
+            case 'B' :
+                    pack_h_B(result, lCurElemString, occurrences);
+            break;
+            case 'h' :
+                    pack_h_h(result, lCurElemString, occurrences);
+            break;
+            case 'H' :
+                    pack_h_H(result, lCurElemString, occurrences);
+            break;
+        }
+    }
+
+    private static void pack_h_H(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = occurrences - lCurElemString.length() + 1;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            byte currentChar = (byte)lCurElemString.charAt(i++);
+
+            if (Character.isJavaIdentifierStart(currentChar)) {
+                //this test may be too lax but it is the same as in MRI
+                currentByte |= ((currentChar & 15) + 9) & 15;
+            } else {
+                currentByte |= currentChar & 15;
+            }
+
+            if ((i & 1) != 0) {
+                currentByte <<= 4;
+            } else {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+            }
+        }
+
+        if ((occurrences & 1) != 0) {
+            result.append((byte) (currentByte & 0xff));
+            if (padLength > 0) padLength--;
+        }
+
+        result.length(result.length() + padLength / 2);
+    }
+
+    private static void pack_h_h(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = occurrences - lCurElemString.length() + 1;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            byte currentChar = (byte)lCurElemString.charAt(i++);
+
+            if (Character.isJavaIdentifierStart(currentChar)) {
+                //this test may be too lax but it is the same as in MRI
+                currentByte |= (((currentChar & 15) + 9) & 15) << 4;
+            } else {
+                currentByte |= (currentChar & 15) << 4;
+            }
+
+            if ((i & 1) != 0) {
+                currentByte >>= 4;
+            } else {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+            }
+        }
+
+        if ((occurrences & 1) != 0) {
+            result.append((byte) (currentByte & 0xff));
+            if (padLength > 0) padLength--;
+        }
+
+        result.length(result.length() + padLength / 2);
+    }
+
+    private static void pack_h_B(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            currentByte |= lCurElemString.charAt(i++) & 1;
+
+            // we filled up current byte; append it and create next one
+            if ((i & 7) == 0) {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+                continue;
+            }
+
+            //if the index is not a multiple of 8, we are not on a byte boundary
+            currentByte <<= 1;
+        }
+
+        if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+            currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+            result.append((byte) (currentByte & 0xff));
+        }
+
+        result.length(result.length() + padLength);
+    }
+
+    private static void pack_h_b(ByteList result, ByteList lCurElemString, int occurrences) {
+        int currentByte = 0;
+        int padLength = 0;
+
+        if (occurrences > lCurElemString.length()) {
+            padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
+            occurrences = lCurElemString.length();
+        }
+
+        for (int i = 0; i < occurrences;) {
+            if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                currentByte |= 128; //set the high bit of the result
+            }
+
+            if ((i & 7) == 0) {
+                result.append((byte) (currentByte & 0xff));
+                currentByte = 0;
+                continue;
+            }
+
+               //if the index is not a multiple of 8, we are not on a byte boundary
+               currentByte >>= 1; //shift the byte
+        }
+
+        if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+            currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+            result.append((byte) (currentByte & 0xff));
+        }
+
+        //do some padding, I don't understand the padding strategy
+        result.length(result.length() + padLength);
+    }
+
+    private static void pack_h_aAZ(ByteList result, int type, ByteList lCurElemString, int occurrences) {
+        if (lCurElemString.length() >= occurrences) {
+            result.append(lCurElemString.getUnsafeBytes(), lCurElemString.getBegin(), occurrences);
+        } else {//need padding
+            //I'm fairly sure there is a library call to create a
+            //string filled with a given char with a given length but I couldn't find it
+            result.append(lCurElemString);
+            occurrences -= lCurElemString.length();
+
+            switch (type) {
+              case 'a':
+              case 'Z':
+                  grow(result, sNil10, occurrences);
+                  break;
+              default:
+                  grow(result, sSp10, occurrences);
+                  break;
+            }
+        }
+    }
+
+    private static int adjustEncInfo(int type, int enc_info) {
+        switch (type) {
+            case 'U':
+                if (enc_info == 1) enc_info = 2;
+                break;
+            case 'm':
+            case 'M':
+            case 'u':
+                break;
+            default:
+                enc_info = 0;
+                break;
+        }
+        return enc_info;
     }
 
     /**

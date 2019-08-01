@@ -50,7 +50,6 @@ public class NativeException extends RubyException {
     private final Throwable cause;
     private final String messageAsJavaString;
     public static final String CLASS_NAME = "NativeException";
-    private static final StackWalker WALKER = StackWalker.getInstance();
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         this(runtime, rubyClass, cause, buildMessage(cause));
@@ -82,14 +81,6 @@ public class NativeException extends RubyException {
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 
         return exceptionClass;
-    }
-
-    @Override
-    public void prepareBacktrace(ThreadContext context) {
-        // if it's null, use cause's trace to build a raw stack trace
-        if (backtraceData == null) {
-            backtraceData = WALKER.walk(cause.getStackTrace(), stream -> TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), stream));
-        }
     }
 
     @JRubyMethod

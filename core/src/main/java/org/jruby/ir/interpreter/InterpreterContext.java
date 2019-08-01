@@ -172,7 +172,7 @@ public class InterpreterContext {
     }
 
     public RubySymbol getName() {
-        return scope.getName();
+        return scope.getManager().getRuntime().newSymbol(scope.getId());
     }
 
     public Instr[] getInstructions() {

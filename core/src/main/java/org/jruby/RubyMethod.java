@@ -49,6 +49,7 @@ import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -90,7 +91,7 @@ public class RubyMethod extends AbstractRubyMethod {
         String methodName,
         RubyModule originModule,
         String originName,
-        DynamicMethod method,
+        CacheEntry entry,
         IRubyObject receiver) {
         Ruby runtime = implementationModule.getRuntime();
         RubyMethod newMethod = new RubyMethod(runtime, runtime.getMethod());
@@ -99,7 +100,9 @@ public class RubyMethod extends AbstractRubyMethod {
         newMethod.methodName = methodName;
         newMethod.originModule = originModule;
         newMethod.originName = originName;
-        newMethod.method = method;
+        newMethod.entry = entry;
+        newMethod.method = entry.method;
+        newMethod.sourceModule = entry.sourceModule;
         newMethod.receiver = receiver;
 
         return newMethod;
@@ -110,23 +113,23 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, block);
+        return method.call(context, receiver, sourceModule, methodName, block);
     }
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, arg, block);
+        return method.call(context, receiver, sourceModule, methodName, arg, block);
     }
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, arg0, arg1, block);
+        return method.call(context, receiver, sourceModule, methodName, arg0, arg1, block);
     }
     @JRubyMethod(name = {"call", "[]"})
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, arg0, arg1, arg2, block);
+        return method.call(context, receiver, sourceModule, methodName, arg0, arg1, arg2, block);
     }
     @JRubyMethod(name = {"call", "[]"}, rest = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        return method.call(context, receiver, implementationModule, methodName, args, block);
+        return method.call(context, receiver, sourceModule, methodName, args, block);
     }
 
     /** Returns the number of arguments a method accepted.
@@ -159,7 +162,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "===", required = 1)
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return method.call(context, receiver, implementationModule, methodName, other, Block.NULL_BLOCK);
+        return method.call(context, receiver, sourceModule, methodName, other, Block.NULL_BLOCK);
     }
 
     @Override
@@ -205,7 +208,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod(name = "clone")
     @Override
     public RubyMethod rbClone() {
-        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, method, receiver);
+        RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
         newMethod.setMetaClass(getMetaClass());
         return newMethod;
     }
@@ -229,7 +232,7 @@ public class RubyMethod extends AbstractRubyMethod {
         }
 
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
-        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, method, argsDesc,
+        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
         
@@ -239,7 +242,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyUnboundMethod unbind() {
         RubyUnboundMethod unboundMethod =
-        	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, entry);
         unboundMethod.infectBy(this);
         
         return unboundMethod;
@@ -354,8 +357,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject super_method(ThreadContext context) {
-        RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), implementationModule).getSuperClass();
-        return super_method(context, receiver, superClass);
+        return super_method(context, receiver, sourceModule.getSuperClass());
     }
 
     @JRubyMethod

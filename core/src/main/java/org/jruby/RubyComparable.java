@@ -80,7 +80,7 @@ public class RubyComparable {
 
             return 0;
         }
-        if (val instanceof RubyBignum) return ((RubyBignum) val).getValue().signum() == -1 ? -1 : 1;
+        if (val instanceof RubyBignum) return ((RubyBignum) val).signum() == -1 ? -1 : 1;
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 

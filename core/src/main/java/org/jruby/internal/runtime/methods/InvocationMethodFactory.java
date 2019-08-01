@@ -480,7 +480,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         switch (callConfig.framing()) {
         case Full:
-            mv.aloadMany(RECEIVER_INDEX, NAME_INDEX); // self, name
+            mv.aloadMany(RECEIVER_INDEX, CLASS_INDEX, NAME_INDEX); // self, name
             loadBlockForPre(mv, specificArity, block);
             break;
         case Backtrace:
@@ -509,9 +509,9 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
     private static String getPreSignature(CallConfiguration callConfig) {
         switch (callConfig) {
-        case FrameFullScopeFull: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
-        case FrameFullScopeDummy: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
-        case FrameFullScopeNone: return sig(void.class, params(ThreadContext.class, IRubyObject.class, String.class, Block.class));
+        case FrameFullScopeFull: return sig(void.class, params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
+        case FrameFullScopeDummy: return sig(void.class, params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
+        case FrameFullScopeNone: return sig(void.class, params(ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
         case FrameBacktraceScopeFull: return sig(void.class, params(ThreadContext.class, String.class));
         case FrameBacktraceScopeDummy: return sig(void.class, params(ThreadContext.class, String.class));
         case FrameBacktraceScopeNone:  return sig(void.class, params(ThreadContext.class, String.class));

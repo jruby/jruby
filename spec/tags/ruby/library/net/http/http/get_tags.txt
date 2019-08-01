@@ -1,0 +1,2 @@
+critical(setup hangs on travis):Net::HTTP.get when passed URI when passed URI returns the body of the specified uri
+critical(setup hangs on travis):Net::HTTP.get when passed URI when passed URI when passed host, path, port

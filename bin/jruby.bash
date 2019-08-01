@@ -11,7 +11,9 @@
 #
 # -----------------------------------------------------------------------------
 
+# ----- Set some default conditions for how we'll eventually run --------------
 cygwin=false
+use_exec=true
 
 # ----- Identify OS we are running under --------------------------------------
 case "`uname`" in
@@ -238,6 +240,7 @@ do
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
+                java_args=("${java_args[@]}" "${1:2}")
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=${val:16}
             elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
@@ -295,6 +298,8 @@ do
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
+     --record)
+        java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
      --ng-server)
         # Start up as Nailgun server
         java_class=$JAVA_CLASS_NGSERVER
@@ -344,6 +349,7 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 if $cygwin; then
+  use_exec=false
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 
@@ -368,10 +374,9 @@ if [ "$JRUBY_JSA" == "" ]; then
 fi
 
 # Determine whether to pass module-related flags
-classmod_flag="-classpath"
 if [ -d $JAVA_HOME/jmods ]; then
-  # Use module path instead of classpath
-  classmod_flag="--module-path"
+  # Use module path instead of classpath for the jruby libs
+  classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
 
   # Switch to non-boot path since we can't use bootclasspath on 9+
   NO_BOOTCLASSPATH=1
@@ -382,72 +387,57 @@ if [ -d $JAVA_HOME/jmods ]; then
   fi
 
   # Add base opens we need for Ruby compatibility
-  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist"
+  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist --add-opens java.base/sun.nio.ch=org.jruby.dist"
+else
+  classpath_args=(-classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH")
 fi
 
 # Run JRuby!
 if [ "$nailgun_client" != "" ]; then
+
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
     exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
   else
     echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
     exit 1
   fi
-else
-if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Running with instrumented profiler"
-  fi
+
+elif [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
 
   if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
     echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
+    use_exec=false
     JRUBY_OPTS=''
   fi
 
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" "${classpath_args[@]}" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $mode "$@"
+    $java_class $mode "$@")
+
+else
+
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "-Djruby.home=$JRUBY_HOME" \
+    "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+    "-Djruby.shell=$JRUBY_SHELL" \
+    $java_class $mode "$@")
+
+fi
+
+# Run JRuby!
+if $use_exec; then
+  exec "${jvm_command[@]}"
+else
+  "${jvm_command[@]}"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?
-
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Profiling results:"
-      cat profile.txt
-      rm profile.txt
-  fi
 
   if $cygwin; then
     stty icanon echo > /dev/null 2>&1
   fi
 
   exit $JRUBY_STATUS
-else
-  if $cygwin; then
-    # exec doed not work correctly with cygwin bash
-    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
-
-    # Record the exit status immediately, or it will be overridden.
-    JRUBY_STATUS=$?
-
-    stty icanon echo > /dev/null 2>&1
-
-    exit $JRUBY_STATUS
-  else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
-  fi
 fi
-fi
-
-# Be careful adding code down here, you might override the exit
-# status of the jruby invocation.

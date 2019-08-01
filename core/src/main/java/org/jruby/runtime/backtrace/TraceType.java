@@ -48,16 +48,6 @@ public class TraceType {
         return gather.getBacktraceData(context);
     }
 
-    public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
-        // NOTE: could be optimized not to walk the whole stack
-        RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);
-
-        // User can ask for level higher than stack
-        if (elements.length <= uplevel + 1) uplevel = -1;
-
-        return elements[uplevel + 1];
-    }
-
     /**
      * Get an integrated Ruby/Java backtrace if the current Gather type is NORMAL
      *
@@ -238,7 +228,7 @@ public class TraceType {
         };
 
         /**
-         * Gather backtrace data for a normal Ruby trace.
+         * Gather current-stack backtrace data for a normal Ruby trace.
          *
          * @param context
          * @return
@@ -248,8 +238,9 @@ public class TraceType {
                 BacktraceData data = getBacktraceData(context, stream);
 
                 context.runtime.incrementBacktraceCount();
-                if (RubyInstanceConfig.LOG_BACKTRACES)
+                if (RubyInstanceConfig.LOG_BACKTRACES) {
                     logBacktrace(context.runtime, data.getBacktrace(context.runtime));
+                }
 
                 return data;
             });
@@ -483,6 +474,20 @@ public class TraceType {
         }
     }
 
+    private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
+        if (context.getFile() != null && context.getFile().length() > 0) {
+            if (context.getFrameName() != null) {
+                errorStream.print(context.getFile() + ':' + context.getLine());
+                errorStream.print(":in '" + context.getFrameName() + '\'');
+            } else if (context.getLine() != 0) {
+                errorStream.print(context.getFile() + ':' + context.getLine());
+            } else {
+                errorStream.print(context.getFile());
+            }
+        }
+    }
+
+    @Deprecated
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
         if (trace == null) return runtime.getNil();
 
@@ -496,16 +501,14 @@ public class TraceType {
         return RubyArray.newArrayMayCopy(runtime, traceArray);
     }
 
-    private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
-        if (context.getFile() != null && context.getFile().length() > 0) {
-            if (context.getFrameName() != null) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
-                errorStream.print(":in '" + context.getFrameName() + '\'');
-            } else if (context.getLine() != 0) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
-            } else {
-                errorStream.print(context.getFile());
-            }
-        }
+    @Deprecated
+    public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
+        // NOTE: could be optimized not to walk the whole stack
+        RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);
+
+        // User can ask for level higher than stack
+        if (elements.length <= uplevel + 1) uplevel = -1;
+
+        return elements[uplevel + 1];
     }
 }

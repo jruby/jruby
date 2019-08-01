@@ -296,9 +296,6 @@ public class Main {
             if (in == null) {
                 // no script to run, return success
                 return new Status();
-            } else if (config.isXFlag() && !config.hasShebangLine()) {
-                // no shebang was found and x option is set
-                throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
             } else if (config.getShouldCheckSyntax()) {
                 // check syntax only and exit
                 return doCheckSyntax(runtime, in, filename);

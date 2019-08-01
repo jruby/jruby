@@ -1,5 +1,6 @@
 package org.jruby.compiler;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 
 /**
@@ -16,7 +17,11 @@ class FullBuildTask implements Runnable {
 
     public void run() {
         try {
-            method.getIRScope().getRootLexicalScope().prepareFullBuild();
+            IRScope hardScope = method.getIRScope().getNearestTopLocalVariableScope();
+
+            // define_method may capture something outside itself and we need parents and children to compile
+            // to agreement with respect to local variable access (e.g. dynscopes).
+            if (hardScope != method.getIRScope()) hardScope.prepareFullBuild();
 
             method.completeBuild(method.getIRScope().prepareFullBuild());
 

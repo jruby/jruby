@@ -32,7 +32,6 @@ package org.jruby.runtime;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,12 +41,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.anno.FrameField;
 import org.jruby.ir.IRScope;
+import org.jruby.runtime.callsite.DivCallSite;
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
 import org.jruby.runtime.callsite.ModCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.GtCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.GeCallSite;
@@ -119,7 +119,7 @@ public class MethodIndex {
             callSite = getFastFixnumOpsCallSite(name);
         }
 
-        return callSite != null ? callSite : new NormalCachingCallSite(name);
+        return callSite != null ? callSite : new MonomorphicCallSite(name);
     }
 
     public static CallSite getProfilingCallSite(String name, IRScope scope, long callsiteId) {
@@ -136,107 +136,96 @@ public class MethodIndex {
         return callSite != null ? callSite : new ProfilingCachingCallSite(name, scope, callsiteId);
     }
 
-    private static final Map<String, String> FIXNUM_OPS;
-
-    static {
-        String[][] fastFixnumOps = {
-                {"+", "op_plus"},
-                {"-", "op_minus"},
-                {"*", "op_mul"},
-                {"%", "op_mod"},
-                {"==", "op_equal"},
-                {"<", "op_lt"},
-                {"<=", "op_le"},
-                {">", "op_gt"},
-                {">=", "op_ge"},
-                {"<=>", "op_cmp"},
-                {"&", "op_and"},
-                {"|", "op_or"},
-                {"^", "op_xor"},
-                {">>", "op_rshift"},
-                {"<<", "op_lshift"}
-        };
-        FIXNUM_OPS = new HashMap<>(fastFixnumOps.length + 1, 1);
-        for (String[] fastOp : fastFixnumOps) FIXNUM_OPS.put(fastOp[0], fastOp[1]);
-    }
-
-    private static final Map<String, String> FLOAT_OPS;
-
-    static {
-        final String[][] fastFloatOps = {
-                {"+", "op_plus"},
-                {"-", "op_minus"},
-                {"*", "op_mul"},
-                {"==", "op_equal"},
-                {"<", "op_lt"},
-                {"<=", "op_le"},
-                {">", "op_gt"},
-                {">=", "op_ge"},
-                {"<=>", "op_cmp"}
-        };
-        FLOAT_OPS = new HashMap<>(fastFloatOps.length + 1, 1);
-        for (String[] fastOp : fastFloatOps) FLOAT_OPS.put(fastOp[0], fastOp[1]);
-    }
-
     public static boolean hasFastFixnumOps(String name) {
-        return FIXNUM_OPS.containsKey(name);
+        return getFastFixnumOpsMethod(name) != null;
     }
 
     public static String getFastFixnumOpsMethod(String name) {
-        return FIXNUM_OPS.get(name);
+        switch (name) {
+            case "+"  : return "op_plus";
+            case "-"  : return "op_minus";
+            case "*"  : return "op_mul";
+            case "%"  : return "op_mod";
+            case "/"  : return "op_div";
+
+            case "&"  : return "op_and";
+            case "|"  : return "op_or";
+            case "^"  : return "op_xor";
+            case ">>" : return "op_rshift";
+            case "<<" : return "op_lshift";
+
+            case "==" : return "op_equal";
+            case "<"  : return "op_lt";
+            case "<=" : return "op_le";
+            case ">"  : return "op_gt";
+            case ">=" : return "op_ge";
+            case "<=>": return "op_cmp";
+        }
+        return null;
     }
 
     public static CallSite getFastFixnumOpsCallSite(String name) {
         switch (name) {
-            case "+" : return new PlusCallSite();
-            case "-" : return new MinusCallSite();
-            case "*" : return new MulCallSite();
-            case "%" : return new ModCallSite();
-            case "<" : return new LtCallSite();
-            case "<=" : return new LeCallSite();
-            case ">" : return new GtCallSite();
-            case ">=" : return new GeCallSite();
-            case "==" : return new EqCallSite();
+            case "+"   : return new PlusCallSite();
+            case "-"   : return new MinusCallSite();
+            case "*"   : return new MulCallSite();
+            case "%"   : return new ModCallSite();
+            case "/"   : return new DivCallSite();
+
+            case "&"   : return new BitAndCallSite();
+            case "|"   : return new BitOrCallSite();
+            case "^"   : return new XorCallSite();
+            case ">>"  : return new ShiftRightCallSite();
+            case "<<"  : return new ShiftLeftCallSite();
+
+            case "=="  : return new EqCallSite();
+            case "<"   : return new LtCallSite();
+            case "<="  : return new LeCallSite();
+            case ">"   : return new GtCallSite();
+            case ">="  : return new GeCallSite();
             case "<=>" : return new CmpCallSite();
-            case "&" : return new BitAndCallSite();
-            case "|" : return new BitOrCallSite();
-            case "^" : return new XorCallSite();
-            case ">>" : return new ShiftRightCallSite();
-            case "<<" : return new ShiftLeftCallSite();
         }
         return null;
     }
 
     public static boolean hasFastFloatOps(String name) {
-        return FLOAT_OPS.containsKey(name);
+        return getFastFloatOpsMethod(name) != null;
     }
 
     public static String getFastFloatOpsMethod(String name) {
-        return FLOAT_OPS.get(name);
+        switch (name) {
+            case "+"  : return "op_plus";
+            case "-"  : return "op_minus";
+            case "*"  : return "op_mul";
+            case "%"  : return "op_mod";
+            case "/"  : return "op_div";
+
+            case "==" : return "op_equal";
+            case "<"  : return "op_lt";
+            case "<=" : return "op_le";
+            case ">"  : return "op_gt";
+            case ">=" : return "op_ge";
+            case "<=>": return "op_cmp";
+        }
+        return null;
     }
 
     public static CallSite getFastFloatOpsCallSite(String name) {
-        if (name.equals("+")) {
-            return new PlusCallSite();
-        } else if (name.equals("-")) {
-            return new MinusCallSite();
-        } else if (name.equals("*")) {
-            return new MulCallSite();
-        } else if (name.equals("<")) {
-            return new LtCallSite();
-        } else if (name.equals("<=")) {
-            return new LeCallSite();
-        } else if (name.equals(">")) {
-            return new GtCallSite();
-        } else if (name.equals(">=")) {
-            return new GeCallSite();
-        } else if (name.equals("==")) {
-            return new EqCallSite();
-        } else if (name.equals("<=>")) {
-            return new CmpCallSite();
-        }
+        switch (name) {
+            case "+"   : return new PlusCallSite();
+            case "-"   : return new MinusCallSite();
+            case "*"   : return new MulCallSite();
+            case "%"   : return new ModCallSite();
+            case "/"   : return new DivCallSite();
 
-        return new NormalCachingCallSite(name);
+            case "=="  : return new EqCallSite();
+            case "<"   : return new LtCallSite();
+            case "<="  : return new LeCallSite();
+            case ">"   : return new GtCallSite();
+            case ">="  : return new GeCallSite();
+            case "<=>" : return new CmpCallSite();
+        }
+        return null;
     }
 
     public static CallSite getFunctionalCallSite(String name) {

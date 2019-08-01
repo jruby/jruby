@@ -453,7 +453,7 @@ public class RubyRandom extends RubyObject {
         } else if ((v = checkMaxInt(context, vmax)) != null) {
             v = randInt(context, random, (RubyInteger) v, true);
         } else if ((v = TypeConverter.checkFloatType(context.runtime, vmax)) != nil) {
-            double max = ((RubyFloat) v).getDoubleValue();
+            double max = ((RubyFloat) v).value;
             if (max > 0.0) {
                 v = context.runtime.newFloat(max * random.genrandReal());
             } else {
@@ -462,7 +462,7 @@ public class RubyRandom extends RubyObject {
         } else if ((range = rangeValues(context, vmax)) != null) {
             if ((v = checkMaxInt(context, range.range)) != null) {
                 if (v instanceof RubyFixnum) {
-                    long max = ((RubyFixnum) v).getLongValue();
+                    long max = ((RubyFixnum) v).value;
                     if (range.excl) {
                         max -= 1;
                     }
@@ -472,8 +472,8 @@ public class RubyRandom extends RubyObject {
                         v = nil;
                     }
                 } else if (v instanceof RubyBignum) {
-                    BigInteger big = ((RubyBignum) v).getBigIntegerValue();
-                    if (!big.equals(BigInteger.ZERO) && (big.signum() > 0)) {
+                    BigInteger big = ((RubyBignum) v).value;
+                    if (big.signum() > 0) {
                         if (range.excl) {
                             big = big.subtract(BigInteger.ONE);
                         }
@@ -486,7 +486,7 @@ public class RubyRandom extends RubyObject {
                 }
             } else if ((v = TypeConverter.checkFloatType(context.runtime, range.range)) != nil) {
                 int scale = 1;
-                double max = ((RubyFloat) v).getDoubleValue();
+                double max = ((RubyFloat) v).value;
                 double mid = 0.5;
                 double r;
                 if (Double.isInfinite(max)) {
@@ -537,7 +537,7 @@ public class RubyRandom extends RubyObject {
 
     // c: float_value
     private static double floatValue(ThreadContext context, RubyFloat v) {
-        final double x = v.getDoubleValue();
+        final double x = v.value;
         checkFloatValue(context, x);
         return x;
     }

@@ -77,14 +77,13 @@ public class TracePoint extends RubyObject {
             }
         }
         
-        EnumSet<RubyEvent> _eventSet;
+        final EnumSet<RubyEvent> eventSet;
         if (events.size() > 0) {
-            _eventSet = EnumSet.copyOf(events);
+            eventSet = EnumSet.copyOf(events);
         } else {
-            _eventSet = EnumSet.of(RubyEvent.LINE);
+            eventSet = EnumSet.of(RubyEvent.LINE);
         }
-        
-        final EnumSet<RubyEvent> eventSet = _eventSet;
+
         hook = new EventHook() {
             @Override
             public synchronized void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
@@ -124,6 +123,11 @@ public class TracePoint extends RubyObject {
             @Override
             public boolean isInterestedInEvent(RubyEvent event) {
                 return eventSet.contains(event);
+            }
+
+            @Override
+            public EnumSet<RubyEvent> eventSet() {
+                return eventSet;
             }
         };
                 

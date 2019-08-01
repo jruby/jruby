@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'time'
 
 class TestTime < Test::Unit::TestCase
 
@@ -46,6 +47,21 @@ class TestTime < Test::Unit::TestCase
     assert_false t1 == t2
   end
 
+  def test_usec_as_rational
+    # 8.123456 is known to fail with Rational.to_f
+    sec = 8 + Rational(123456, 1_000_000)
+    t1 = Time.utc(2019,1,18,19,37, sec)
+    assert_equal 8, t1.sec
+    assert_equal 123456000, t1.nsec
+  end
+
+  def test_nsec_as_rational
+    sec = 8 + Rational(123456789, 1_000_000_000)
+    t1 = Time.utc(2019,1,18,19,37, sec)
+    assert_equal 8, t1.sec
+    assert_equal 123456789, t1.nsec
+  end
+
   def test_large_add # GH-1779
     t = Time.local(2000, 1, 1) + (400 * 366 * 24 * 60 * 60)
     assert_equal 2400, t.year
@@ -73,6 +89,12 @@ class TestTime < Test::Unit::TestCase
     assert_equal 999999999, time.nsec
   end
 
+  def test_parse_and_change
+    t = Time.parse '2003-07-16t15:28:11.2233+01:00'
+    t1 = time_change t, usec: 223000
+    assert_equal '2003-07-16 14:28:11 UTC', t1.dup.utc.to_s
+  end
+
   @@tz = ENV['TZ']
 
   def test_local_zone
@@ -91,6 +113,22 @@ class TestTime < Test::Unit::TestCase
     assert_equal 'UTC', time.zone
   ensure
     @@tz.nil? ? ENV.delete('TZ') : ENV['TZ'] = @@tz
+  end
+
+  def test_preserve_relative_tz
+    time =  Time.new(2000, 1, 1, 0, 0, 0, 0)
+    assert_false time.utc?
+    assert_false time.clone.utc?
+    assert_false time.succ.utc?
+    assert_false time.succ.utc?
+    assert_false (time + 1).utc?
+    assert_false (time - 1).utc?
+  end
+
+  def test_relative_tz_to_non_relative
+    time =  Time.new(2000, 1, 1, 0, 0, 0, 0)
+    assert_false time.utc?
+    assert_true time.clone.utc.utc?
   end
 
   def time_change(time, options) # from ActiveSupport

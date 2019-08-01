@@ -12,9 +12,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Operand {
-    public static final Operand[] EMPTY_ARRAY = new Operand[0];
+import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 
+public abstract class Operand {
+    public static final Operand[] EMPTY_ARRAY = EMPTY_OPERANDS;
     public Operand() {
     }
 

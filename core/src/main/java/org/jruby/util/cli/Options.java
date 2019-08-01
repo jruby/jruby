@@ -167,7 +167,6 @@ public class Options {
     public static final Option<String> BACKTRACE_STYLE = string(MISCELLANEOUS, "backtrace.style", new String[]{"normal", "raw", "full", "mri"}, "normal", "Set the style of exception backtraces.");
     public static final Option<Boolean> BACKTRACE_MASK = bool(MISCELLANEOUS, "backtrace.mask", false, "Mask .java lines in Ruby backtraces.");
     public static final Option<String> THREAD_DUMP_SIGNAL = string(MISCELLANEOUS, "thread.dump.signal", new String[]{"USR1", "USR2", "etc"}, "USR2", "Set the signal used for dumping thread stacks.");
-    public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
     public static final Option<Boolean> FIBER_COROUTINES = bool(MISCELLANEOUS, "fiber.coroutines", false, "Use JVM coroutines for Fiber.");
     public static final Option<Boolean> GLOBAL_REQUIRE_LOCK = bool(MISCELLANEOUS, "global.require.lock", false, "Use a single global lock for requires.");
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
@@ -175,6 +174,7 @@ public class Options {
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", false, "Always ensure volatile semantics for instance variables.");
     public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Attempt to expand instance vars into Java fields");
+    public static final Option<Integer> REIFY_VARIABLES_MAX = integer(MISCELLANEOUS, "reify.variables.max", 50, "Maximum number of reified instance variable fields");
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
     public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
     public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");
@@ -251,7 +251,7 @@ public class Options {
 
     public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
 
-    // After PROPERTIES so these doesn't show up in --properties
+    // After PROPERTIES so these don't show up in --properties
 
     @Deprecated
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");
@@ -259,6 +259,10 @@ public class Options {
     // Most (all?) OpenJDK default this to false. See jruby/jruby#4869
     @Deprecated
     public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", false, "(DEPRECATED) Prefer IPv4 network stack");
+
+    // internal IO mimics what this was doing, and this has been untested and unsupported for many years
+    @Deprecated
+    public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
 
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
         Option<String> option = Option.string("jruby", name, category, options, defval, description);

@@ -70,12 +70,13 @@ public abstract class DynamicMethod {
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
 
-    private static final int BUILTIN_FLAG = 0x1;
-    private static final int NOTIMPL_FLAG = 0x2;
+    private static final int BUILTIN_FLAG = 0b1;
+    private static final int NOTIMPL_FLAG = 0b10;
+    private static final int REFINED_FLAG = 0b100;
 
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Version {
-        int version = 0;
+        public int version() default 0;
     }
 
     /**
@@ -536,6 +537,10 @@ public abstract class DynamicMethod {
         } else {
             flags &= ~NOTIMPL_FLAG;
         }
+    }
+
+    public boolean isRefined() {
+        return false;
     }
 
     @Deprecated

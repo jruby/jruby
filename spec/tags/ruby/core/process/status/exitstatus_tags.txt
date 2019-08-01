@@ -1,0 +1,1 @@
+fails:Process::Status#exitstatus for a child that raised SignalException returns nil

@@ -53,6 +53,11 @@ import org.jruby.runtime.ThreadContext;
  * therefore available to all objects unless explicitly overridden.
  */
 public interface IRubyObject {
+    // Create an array instance of IRubyObjects.  It is so easy to miss using NULL_ARRAY in our
+    // codebase this array method is a helper to prevent that pattern.
+    static IRubyObject[] array(int length) {
+        return length == 0 ? NULL_ARRAY : new IRubyObject[length];
+    }
 
     IRubyObject[] NULL_ARRAY = new IRubyObject[0];
 

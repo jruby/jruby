@@ -58,4 +58,9 @@ public class BlockNode extends ListNode {
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitBlockNode(this);
     }
+
+    @Override
+    public boolean executesOnce() {
+        return true;
+    }
 }

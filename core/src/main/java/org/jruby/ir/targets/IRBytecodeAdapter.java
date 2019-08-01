@@ -25,7 +25,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -84,7 +84,8 @@ public abstract class IRBytecodeAdapter {
         boolean profiled = false;
         if (call.isPotentiallyRefined()) {
             siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, String.class);
+            signature = sig(siteClass, String.class, IRScope.class, String.class);
+            method.getstatic(className, scopeFieldName, ci(IRScope.class));
             method.ldc(callType.name());
         } else {
             switch (callType) {
@@ -93,7 +94,7 @@ public abstract class IRBytecodeAdapter {
                         profiled = true;
                         siteClass = ProfilingCachingCallSite.class;
                     } else {
-                        siteClass = NormalCachingCallSite.class;
+                        siteClass = MonomorphicCallSite.class;
                     }
                     break;
                 case FUNCTIONAL:
@@ -401,7 +402,16 @@ public abstract class IRBytecodeAdapter {
      * @param file
      * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line, CallBase call);
+    public abstract void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
+
+    /**
+     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
+     *
+     * Stack required: context, self, target
+     * @param file
+     * @param line
+     */
+    public abstract void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.

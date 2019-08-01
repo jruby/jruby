@@ -178,8 +178,16 @@ class RegularFileResource implements FileResource {
     @Override
     public FileStat lstat() {
         FileStat stat = posix.allocateStat();
+        String absolutePath = file.getAbsolutePath();
 
-        return posix.lstat(file.getAbsolutePath(), stat) < 0 ? null : stat;
+        if (!Platform.IS_WINDOWS && isSymLink() && filePath.endsWith("/")) {
+            // According to POSIX, when the final component of a pathname is a symbolic link,
+            // the standard requires that a trailing '/' causes the link to be followed.
+            // In this case, the trailing '/' is reappended, so the syscall can work as expected.
+            absolutePath += "/";
+        }
+
+        return posix.lstat(absolutePath, stat) < 0 ? null : stat;
     }
 
     @Override

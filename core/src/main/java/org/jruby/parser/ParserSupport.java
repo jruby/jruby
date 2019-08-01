@@ -147,7 +147,7 @@ public class ParserSupport {
         case LOCALASGNNODE:
             RubySymbol name = ((INameNode) node).getName();
             if (name.equals(lexer.getCurrentArg())) {
-                warn(ID.AMBIGUOUS_ARGUMENT, node.getPosition(), "circular argument reference - " + name);
+                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), node.getLine(), "circular argument reference - " + name);
             }
             return currentScope.declare(node.getPosition(), name);
         case CONSTDECLNODE: // CONSTANT
@@ -167,7 +167,7 @@ public class ParserSupport {
 
     public Node declareIdentifier(ByteList name) {
         if (name.equals(lexer.getCurrentArg())) {
-            warn(ID.AMBIGUOUS_ARGUMENT, lexer.getPosition(), "circular argument reference - " + name);
+            warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), lexer.getPosition().getLine(), "circular argument reference - " + name);
         }
 
         return currentScope.declare(lexer.tokline, symbolID(name));
@@ -245,7 +245,7 @@ public class ParserSupport {
         }
 
         if (warnings.isVerbose() && isBreakStatement(((ListNode) head).getLast()) && Options.PARSER_WARN_NOT_REACHED.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, tail.getPosition(), "statement not reached");
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), tail.getLine(), "statement not reached");
         }
 
         // Assumption: tail is never a list node
@@ -416,13 +416,13 @@ public class ParserSupport {
     
     public void warnUnlessEOption(ID id, Node node, String message) {
         if (!configuration.isInlineSource()) {
-            warnings.warn(id, node.getPosition(), message);
+            warnings.warn(id, lexer.getFile(), node.getLine(), message);
         }
     }
 
     public void warningUnlessEOption(ID id, Node node, String message) {
         if (warnings.isVerbose() && !configuration.isInlineSource()) {
-            warnings.warning(id, node.getPosition(), message);
+            warnings.warning(id, lexer.getFile(), node.getLine(), message);
         }
     }
 
@@ -479,7 +479,7 @@ public class ParserSupport {
 
     private void handleUselessWarn(Node node, String useless) {
         if (Options.PARSER_WARN_USELESSS_USE_OF.load()) {
-            warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
+            warnings.warn(ID.USELESS_EXPRESSION, lexer.getFile(), node.getLine(), "Useless use of " + useless + " in void context.");
         }
     }
 
@@ -1156,13 +1156,13 @@ public class ParserSupport {
                                         ByteList keywordRestArgName, BlockArgNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
-        ByteList restKwargsName = keywordRestArgName;
-        String raw = restKwargsName.toString();
+        RubySymbol restKwargsName = symbolID(keywordRestArgName);
+        String id = restKwargsName.idString();
 
-        int slot = currentScope.exists(raw);
-        if (slot == -1) slot = currentScope.addVariable(raw);
+        int slot = currentScope.exists(id);
+        if (slot == -1) slot = currentScope.addVariable(id);
 
-        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, symbolID(restKwargsName), slot);
+        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
 
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }
@@ -1175,7 +1175,7 @@ public class ParserSupport {
             if (key == null) continue;
             int index = encounteredKeys.indexOf(key);
             if (index >= 0) {
-                warn(ID.AMBIGUOUS_ARGUMENT, hash.getPosition(), "key " + key +
+                warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), "key " + key +
                         " is duplicated and overwritten on line " + (encounteredKeys.get(index).getLine() + 1));
             } else {
                 encounteredKeys.add(key);
@@ -1213,12 +1213,15 @@ public class ParserSupport {
         return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
+    // FIXME: Replace this with file/line version and stop using ISourcePosition
+    @Deprecated
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warnings.warn(id, position, message);
+        warnings.warn(id, lexer.getFile(), position.getLine(), message);
     }
 
+    // FIXME: Replace this with file/line version and stop using ISourcePosition
     public void warning(ID id, ISourcePosition position, String message, Object... data) {
-        if (warnings.isVerbose()) warnings.warning(id, position, message);
+        if (warnings.isVerbose()) warnings.warning(id, lexer.getFile(), position.getLine(), message);
     }
 
     // ENEBO: Totally weird naming (in MRI is not allocated and is a local var name) [1.9]
@@ -1293,7 +1296,7 @@ public class ParserSupport {
 
         if (current.isBlockScope() && warnings.isVerbose() && current.isDefined(name) >= 0 &&
                 Options.PARSER_WARN_LOCAL_SHADOWING.load()) {
-            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getPosition(), "shadowing outer local variable - " + name);
+            warnings.warning(ID.STATEMENT_NOT_REACHED, lexer.getFile(), lexer.getPosition().getLine(), "shadowing outer local variable - " + name);
         }
 
         return name;
@@ -1348,15 +1351,15 @@ public class ParserSupport {
         List<Integer> locals = new ArrayList<Integer>();
         StaticScope scope = getCurrentScope();
 
+        Ruby runtime = getConfiguration().getRuntime();
         for (int i = 0; i < length; i++) {
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
-                String id = names[i];
+                String id = runtime.newSymbol(names[i]).idString();
                 int slot = scope.isDefined(id);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
-                        Ruby runtime = getConfiguration().getRuntime();
-                        warn(ID.AMBIGUOUS_ARGUMENT, getPosition(regexpNode), str(runtime, "named capture conflicts a local variable - " , ids(runtime, names[i])));
+                        warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), getPosition(regexpNode).getLine(), str(runtime, "named capture conflicts a local variable - " , ids(runtime, names[i])));
                     }
                     locals.add(slot);
                 } else {

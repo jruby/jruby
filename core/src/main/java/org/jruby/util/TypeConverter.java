@@ -297,6 +297,7 @@ public class TypeConverter {
     // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
+        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
         TypeConverterSites sites = sites(context);

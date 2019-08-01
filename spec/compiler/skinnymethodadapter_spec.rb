@@ -27,7 +27,10 @@ describe "SkinnyMethodAdapter" do
       when "INVOKEDYNAMIC_OWNER"
         false
 
-      when "V_PREVIEW_EXPERIMENTAL"
+      when "SOURCE_MASK", "SOURCE_DEPRECATED" # since ASM 7.1
+        false
+
+      when /^V_PREVIEW/ # 'V_PREVIEW_EXPERIMENTAL' in ASM 6.x, 'V_PREVIEW' since 7.0
         false
 
       else

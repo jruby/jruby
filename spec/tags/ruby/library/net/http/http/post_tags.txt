@@ -1,0 +1,1 @@
+critical(hangs on travis):Net::HTTP#post sends an post request to the passed path and returns the response

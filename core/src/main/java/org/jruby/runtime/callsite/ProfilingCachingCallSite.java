@@ -98,7 +98,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, args);
+            return cache.method.call(context, self, cache.sourceModule, methodName, args);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, args, context, self);
@@ -111,7 +111,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, args, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, args, block);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, block, args, context, self);
@@ -125,7 +125,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName);
+            return cache.method.call(context, self, cache.sourceModule, methodName);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, context, self);
@@ -138,7 +138,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, block);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, block, context, self);
@@ -152,7 +152,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, arg1);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, context, self, arg1);
@@ -165,7 +165,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, arg1, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, block);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, block, context, self, arg1);
@@ -179,7 +179,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, context, self, arg1, arg2);
@@ -192,7 +192,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, block);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, block, context, self, arg1, arg2);
@@ -206,7 +206,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, context, self, arg1, arg2, arg3);
@@ -219,7 +219,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             if ((totalMonomorphicCalls++ % IRManager.IR_INLINER_THRESHOLD) == 0) inlineCheck(context, self, cache);
-            return cache.method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            return cache.method.call(context, self, cache.sourceModule, methodName, arg1, arg2, arg3, block);
         } else {
             totalMonomorphicCalls = 1;
             return cacheAndCall(caller, selfType, block, context, self, arg1, arg2, arg3);
@@ -234,7 +234,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, args, block);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, args, block);
+            return method.call(context, self, entry.sourceModule, methodName, args, block);
         }
     }
 
@@ -246,7 +246,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, args);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, args);
+            return method.call(context, self, entry.sourceModule, methodName, args);
         }
     }
 
@@ -258,7 +258,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName);
+            return method.call(context, self, entry.sourceModule, methodName);
         }
     }
 
@@ -270,7 +270,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, block);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, block);
+            return method.call(context, self, entry.sourceModule, methodName, block);
         }
     }
 
@@ -281,7 +281,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, arg);
+            return method.call(context, self, entry.sourceModule, methodName, arg);
         }
     }
 
@@ -293,7 +293,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg, block);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, arg, block);
+            return method.call(context, self, entry.sourceModule, methodName, arg, block);
         }
     }
 
@@ -304,7 +304,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, arg1, arg2);
+            return method.call(context, self, entry.sourceModule, methodName, arg1, arg2);
         }
     }
 
@@ -316,7 +316,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, block);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, arg1, arg2, block);
+            return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, block);
         }
     }
 
@@ -329,7 +329,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, arg1, arg2, arg3);
+            return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3);
         }
     }
 
@@ -342,7 +342,7 @@ public class ProfilingCachingCallSite extends CachingCallSite {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3, block);
         } else {
             cache = entry;
-            return method.call(context, self, selfType, methodName, arg1, arg2, arg3, block);
+            return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3, block);
         }
     }
 }

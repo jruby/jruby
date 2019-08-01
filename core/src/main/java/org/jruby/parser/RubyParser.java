@@ -123,6 +123,7 @@ import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
@@ -162,7 +163,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 166 "-"
+					// line 167 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -5494,7 +5495,7 @@ states[601] = new ParserState() {
 states[602] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
   /* FIXME: bytelist_love: somewhat silly to remake the empty bytelist over and over but this type should change (using null vs "" is a strange distinction).*/
-  yyVal = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(new ByteList(new byte[] {})), support.getCurrentScope().addVariable("*"));
+  yyVal = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(CommonByteLists.EMPTY), support.getCurrentScope().addVariable("*"));
     return yyVal;
   }
 };
@@ -5730,7 +5731,7 @@ states[649] = new ParserState() {
   }
 };
 }
-					// line 2766 "RubyParser.y"
+					// line 2767 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5745,4 +5746,4 @@ states[649] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 10614 "-"
+					// line 10615 "-"

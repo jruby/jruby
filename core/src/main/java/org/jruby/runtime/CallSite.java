@@ -52,6 +52,7 @@ public abstract class CallSite {
     }
 
     // binary typed calls
+
     /**
      * Call the site's method against the target object, passing a literal long
      * value.
@@ -77,6 +78,7 @@ public abstract class CallSite {
     public abstract IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote);
     
     // no block
+
     /**
      * Call the site's method against the target object passing no args.
      *

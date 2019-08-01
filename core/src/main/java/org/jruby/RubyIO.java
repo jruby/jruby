@@ -1267,7 +1267,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         PosixShim shim = new PosixShim(runtime);
         ret = shim.open(runtime.getCurrentDirectory(), data.fname, data.oflags, data.perm);
         if (ret == null) {
-            data.errno = shim.errno;
+            data.errno = shim.getErrno();
             return null;
         }
         ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
@@ -1389,14 +1389,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             n = fptr.posix.write(fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize(), true);
 
             if (n == -1) {
-                if (fptr.posix.errno == Errno.EWOULDBLOCK || fptr.posix.errno == Errno.EAGAIN) {
+                if (fptr.posix.getErrno() == Errno.EWOULDBLOCK || fptr.posix.getErrno() == Errno.EAGAIN) {
                     if (no_exception) {
                         return runtime.newSymbol("wait_writable");
                     } else {
                         throw runtime.newErrnoEAGAINWritableError("write would block");
                     }
                 }
-                throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+                throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
             }
         } finally {
             if (locked) fptr.unlock();
@@ -2039,8 +2039,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (fptr == null) return context.nil;
             if (fptr.fd() == null) return context.nil;
             final Ruby runtime = context.runtime;
-
-            fptr.finalizeFlush(context, false);
 
             fptr.finalizeFlush(context, false);
 
@@ -4133,7 +4131,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         PosixShim posix = new PosixShim(runtime);
         Channel[] fds = posix.pipe();
         if (fds == null)
-            throw runtime.newErrnoFromErrno(posix.errno, "opening pipe");
+            throw runtime.newErrnoFromErrno(posix.getErrno(), "opening pipe");
 
 //        args[0] = klass;
 //        args[1] = INT2NUM(pipes[0]);
