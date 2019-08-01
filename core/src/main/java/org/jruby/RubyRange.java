@@ -406,7 +406,7 @@ public class RubyRange extends RubyObject {
         IRubyObject iter;
         final IRubyObject step;
 
-        StepBlockCallBack(Block block, IRubyObject iter, IRubyObject step) {
+        StepBlockCallBack(Block block, RubyFixnum iter, IRubyObject step) {
             this.block = block;
             this.iter = iter;
             this.step = step;
@@ -420,12 +420,13 @@ public class RubyRange extends RubyObject {
 
         @Override
         void call(ThreadContext context, IRubyObject arg) {
-            if (iter instanceof RubyFixnum) {
-                iter = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) iter).getLongValue() - 1);
+            if (iter instanceof RubyInteger) {
+                iter = ((RubyInteger) iter).op_minus(context, 1);
             } else {
                 iter = iter.callMethod(context, "-", RubyFixnum.one(context.runtime));
             }
-            if (iter == RubyFixnum.zero(context.runtime)) {
+            IRubyObject i = this.iter;
+            if ((i instanceof RubyInteger) && ((RubyInteger) i).isZero()) {
                 block.yield(context, arg);
                 iter = step;
             }
