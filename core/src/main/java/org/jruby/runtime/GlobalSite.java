@@ -35,16 +35,21 @@ package org.jruby.runtime;
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MutableCallSite;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class GlobalSite extends MutableCallSite {
     public static final Function IDENTITY = Function.identity();
     public static final Runnable NOP = () -> {};
+
+    private final AtomicInteger setCount = new AtomicInteger(0);
+    private volatile IRubyObject fallbackValue;
 
     public static class Copy extends GlobalSite {
         private GlobalSite other;
@@ -114,6 +119,23 @@ public class GlobalSite extends MutableCallSite {
     }
 
     public IRubyObject set(IRubyObject value) {
+        int setCount = this.setCount.get();
+
+        if (setCount > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load()) {
+            // fall back on slow path logic so we're not constantly invalidating
+            if (fallbackValue == null) {
+                // rebind gets to simple volatile field access
+                fallbackValue = setFilter(value);
+                setTarget(getter(() -> fallbackValue));
+            } else {
+                // just update
+                fallbackValue = setFilter(value);
+            }
+            return value;
+        }
+
+        this.setCount.incrementAndGet();
+
         value = setFilter(value);
         setTarget(MethodHandles.constant(IRubyObject.class, value));
         return value;
@@ -139,7 +161,7 @@ public class GlobalSite extends MutableCallSite {
     }
 
     protected IRubyObject setFilter(IRubyObject value) {
-        assert value != null;
+        value.getClass(); // null check
         return value;
     }
 
