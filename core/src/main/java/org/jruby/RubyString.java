@@ -6108,7 +6108,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject b(ThreadContext context) {
         Encoding encoding = ASCIIEncoding.INSTANCE;
         RubyString dup = strDup(context.runtime);
-        dup.modify19();
+        dup.clearCodeRange();
         dup.setEncoding(encoding);
         return dup;
     }
