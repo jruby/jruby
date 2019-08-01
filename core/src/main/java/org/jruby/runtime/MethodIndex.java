@@ -58,6 +58,7 @@ import org.jruby.runtime.callsite.BitOrCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
+import org.jruby.runtime.callsite.SendCallSite;
 import org.jruby.runtime.callsite.ShiftLeftCallSite;
 import org.jruby.runtime.callsite.ShiftRightCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
@@ -111,6 +112,9 @@ public class MethodIndex {
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
         if (name.equals("respond_to?")) return new RespondToCallSite();
+
+        // optimize sends
+        if (name.equals("send")) return new SendCallSite();
 
         CallSite callSite = null;
 
@@ -229,6 +233,7 @@ public class MethodIndex {
     }
 
     public static CallSite getFunctionalCallSite(String name) {
+        if (name.equals("send")) return new SendCallSite();
         return new FunctionalCachingCallSite(name);
     }
 

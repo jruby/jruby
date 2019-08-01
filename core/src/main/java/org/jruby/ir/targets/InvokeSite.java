@@ -457,6 +457,39 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
+    MethodHandle buildSendHandle(CacheEntry entry, IRubyObject self) {
+        MethodHandle mh = null;
+        DynamicMethod method = entry.method;
+
+        if (method.getName() == "send"
+                && method.isBuiltin()
+                && method.getImplementationClass() == self.getRuntime().getKernel()) {
+            RubyClass recvClass = (RubyClass) self;
+
+            // Bind a second site as a dynamic invoker
+            CallSite initSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:initialize", type(), literalClosure ? 1 : 0, file, line);
+            MethodHandle initHandle = initSite.dynamicInvoker();
+
+            MethodHandle allocFilter = Binder.from(IRubyObject.class, IRubyObject.class)
+                    .cast(IRubyObject.class, RubyClass.class)
+                    .insert(0, new Class[] {ObjectAllocator.class, Ruby.class}, recvClass.getAllocator(), self.getRuntime())
+                    .invokeVirtualQuiet(LOOKUP, "allocate");
+
+            mh = SmartBinder.from(LOOKUP, signature)
+                    .filter("self", allocFilter)
+                    .fold("dummy", initHandle)
+                    .permute("self")
+                    .identity()
+                    .handle();
+
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info(name() + "\tbound as new instance creation " + Bootstrap.logMethod(method));
+            }
+        }
+
+        return mh;
+    }
+
     MethodHandle buildNotEqualHandle(CacheEntry entry, IRubyObject self) {
         MethodHandle mh = null;
         DynamicMethod method = entry.method;

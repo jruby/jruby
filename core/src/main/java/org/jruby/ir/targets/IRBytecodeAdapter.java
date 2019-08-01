@@ -28,6 +28,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.callsite.SendCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
@@ -93,6 +94,8 @@ public abstract class IRBytecodeAdapter {
                     if (profileCandidate && IRManager.IR_INLINER) {
                         profiled = true;
                         siteClass = ProfilingCachingCallSite.class;
+                    } else if (call.getId().equals("send")) {
+                        siteClass = SendCallSite.class;
                     } else {
                         siteClass = MonomorphicCallSite.class;
                     }

@@ -70,6 +70,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.callsite.SendCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ArraySupport;
@@ -1771,6 +1772,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static FunctionalCachingCallSite newFunctionalCachingCallSite(String name) {
+        if (name.equals("send")) return new SendCallSite();
         return new FunctionalCachingCallSite(name);
     }
 
@@ -1781,6 +1783,11 @@ public class IRRuntimeHelpers {
     @JIT
     public static MonomorphicCallSite newMonomorphicCallSite(String name) {
         return new MonomorphicCallSite(name);
+    }
+
+    @JIT
+    public static SendCallSite newSendCallSite(String name) {
+        return new SendCallSite(name);
     }
 
     @JIT
