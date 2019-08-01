@@ -48,7 +48,7 @@ public class ChannelFD implements Closeable {
         if (Platform.IS_WINDOWS && realFileno == -1 && openflags >= 0) {
             if (allocate) {
                 // TODO: ensure we aren't leaking multiple handles for the same channel/handle
-                realFileno = FilenoUtil.filenoFromHandleIn(ch, openflags); // TODO: ensure these flags are correct for windows
+                realFileno = filenoUtil.filenoFromHandleIn(ch, openflags); // TODO: ensure these flags are correct for windows
                 needsClosing = realFileno != -1;
                 maybeHandle = false;
             } else {
@@ -142,7 +142,7 @@ public class ChannelFD implements Closeable {
                 try {
                     ch.close();
                     if (needsClosing) {
-                        FilenoUtil.closeFilenoHandle(realFileno);
+                        filenoUtil.closeFilenoHandle(realFileno);
                     }
                 } finally {
                     filenoUtil.unregisterWrapper(realFileno);

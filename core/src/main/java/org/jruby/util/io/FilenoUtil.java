@@ -12,6 +12,7 @@ import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 
 import org.jruby.platform.Platform;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -28,6 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FilenoUtil {
     public FilenoUtil(POSIX posix) {
         this.posix = posix;
+        if (posix.isNative() && Platform.IS_WINDOWS) {
+            winc = LibraryLoader.create(WinC.class).load("msvcrt");// TODO: string
+        } else {
+            winc = null;
+        }
     }
 
     public static FileDescriptor getDescriptorFromChannel(Channel channel) {
@@ -147,7 +153,7 @@ public class FilenoUtil {
         return HANDLE.valueOf(-1);
     }
 
-    public static int filenoFromHandleIn(Channel channel, int flags) {
+    public int filenoFromHandleIn(Channel channel, int flags) {
         if (winc == null)
             return -1;
         HANDLE hndl = handleFrom(channel);
@@ -156,7 +162,7 @@ public class FilenoUtil {
         return winc._open_osfhandle(hndl.toPointer(), flags); // TODO: don't re-open this handle ever again, or we start to leak?
     }
 
-    public static int closeFilenoHandle(int fd) {
+    public int closeFilenoHandle(int fd) {
         if (fd != -1)
             return winc._close(fd);// TODO: error handling
         return -1;
@@ -167,12 +173,11 @@ public class FilenoUtil {
         int _close(int fd);
     }
 
-    private static final WinC winc = Platform.IS_WINDOWS ? LibraryLoader.create(WinC.class).load("msvcrt") : null;// TODO: string
-
     public static final int FIRST_FAKE_FD = 100000;
     protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
     private final NonBlockingHashMapLong<ChannelFD> filenoMap = new NonBlockingHashMapLong<ChannelFD>();
     private final POSIX posix;
+    private final WinC winc;
 
     static final Logger LOG = LoggerFactory.getLogger(FilenoUtil.class);
 
