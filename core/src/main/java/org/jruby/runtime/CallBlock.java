@@ -84,12 +84,12 @@ public class CallBlock extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        return callback.call(context, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
+        return callback.call(context, arg0, Block.NULL_BLOCK);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
+        return callback.call(context, value, Block.NULL_BLOCK);
     }
 
     @Override

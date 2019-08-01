@@ -398,6 +398,7 @@ public class RubyRange extends RubyObject {
     private static abstract class RangeCallBack {
 
         abstract void call(ThreadContext context, IRubyObject arg);
+
     }
 
     private static final class StepBlockCallBack extends RangeCallBack implements BlockCallback {
@@ -412,9 +413,14 @@ public class RubyRange extends RubyObject {
             this.step = step;
         }
 
-        @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block originalBlock) {
             call(context, args[0]);
+            return context.nil;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg, Block originalBlock) {
+            call(context, arg);
             return context.nil;
         }
 
@@ -838,13 +844,14 @@ public class RubyRange extends RubyObject {
             RubyEnumerable.callEach(runtime, context, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
 
-                @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    if (n-- <= 0) {
-                        throw JumpException.SPECIAL_JUMP;
-                    }
-                    result.append(largs[0]);
-                    return runtime.getNil();
+                    return call(ctx, largs[0], blk);
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
+                    if (n-- <= 0) throw JumpException.SPECIAL_JUMP;
+                    result.append(larg);
+                    return ctx.nil;
                 }
             });
         } catch (JumpException.SpecialJump sj) {

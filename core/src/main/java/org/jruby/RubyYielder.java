@@ -75,14 +75,29 @@ public class RubyYielder extends RubyObject {
                 yielder,
                 yielder.metaClass,
                 Signature.NO_ARGUMENTS,
-                new BlockCallback() {
-            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
-                return block.call(context, args, inner);
-            }
-        },
+                new BlockCallbackImpl(block),
                 context));
 
         return yielder;
+    }
+
+    private static class BlockCallbackImpl implements BlockCallback {
+
+        private final Block block;
+
+        BlockCallbackImpl(Block block) {
+            this.block = block;
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
+            return block.call(context, args, inner);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg, Block inner) {
+            return block.call(context, arg, inner);
+        }
+
     }
 
     private void checkInit() {

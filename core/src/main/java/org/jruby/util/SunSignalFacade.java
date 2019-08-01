@@ -90,7 +90,7 @@ public class SunSignalFacade implements SignalFacade {
                 if (block != null) {
                     block.callMethod(context, "call", signum);
                 } else {
-                    blockCallback.call(context, new IRubyObject[] {signum}, Block.NULL_BLOCK);
+                    blockCallback.call(context, signum, Block.NULL_BLOCK);
                 }
             } catch(RaiseException e) {
                 try {
