@@ -86,32 +86,34 @@ public class TracePoint extends RubyObject {
 
         hook = new EventHook() {
             @Override
-            public synchronized void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
+            public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
                 if (!enabled || context.isWithinTrace()) return;
-                
-                inside = true;
 
-                if (file == null) file = "(ruby)";
-                if (type == null) type = context.fals;
+                synchronized (this) {
+                    inside = true;
 
-                IRubyObject binding;
-                if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
-                    binding = context.nil;
-                } else {
-                    binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
-                }
+                    if (file == null) file = "(ruby)";
+                    if (type == null) type = context.fals;
 
-                context.preTrace();
+                    IRubyObject binding;
+                    if (event == RubyEvent.THREAD_BEGIN || event == RubyEvent.THREAD_END) {
+                        binding = context.nil;
+                    } else {
+                        binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
+                    }
 
-                // FIXME: get return value
-                update( event.getName(), file, line, name, type, context.getErrorInfo(), context.nil, binding);
+                    context.preTrace();
 
-                try {
-                    block.yieldSpecific(context, TracePoint.this);
-                } finally {
-                    update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
-                    context.postTrace();
-                    inside = false;
+                    // FIXME: get return value
+                    update(event.getName(), file, line, name, type, context.getErrorInfo(), context.nil, binding);
+
+                    try {
+                        block.yieldSpecific(context, TracePoint.this);
+                    } finally {
+                        update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
+                        context.postTrace();
+                        inside = false;
+                    }
                 }
             }
 

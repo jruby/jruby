@@ -17,6 +17,7 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 public abstract class CachingCallSite extends CallSite {
 
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
+    protected CacheEntry builtinCache = CacheEntry.NULL_CACHE;
 
     public CachingCallSite(String methodName, CallType callType) {
         super(methodName, callType);
@@ -271,16 +272,19 @@ public abstract class CachingCallSite extends CallSite {
 
     public final boolean isBuiltin(RubyClass selfType) {
         // This must be retrieved *once* to avoid racing with other threads.
-        CacheEntry cache = this.cache;
+        CacheEntry cache = this.builtinCache;
         if (cache.typeOk(selfType)) {
-            return cache.method.isBuiltin();
+            return true;
         }
         return cacheAndGet(selfType, methodName).method.isBuiltin(); // false for method.isUndefined()
     }
 
     private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
-        if (!entry.method.isUndefined()) this.cache = entry;
+        if (!entry.method.isUndefined()) {
+            this.cache = entry;
+            if (entry.method.isBuiltin()) builtinCache = entry;
+        }
         return entry;
     }
     
