@@ -84,14 +84,32 @@ public class RubyObjectSpecializer {
         // clamp to max object width (jruby/jruby#
         size = Math.min(size, Options.REIFY_VARIABLES_MAX.load());
 
-        ClassAndAllocator cna = getClassForSize(size);
+        ClassAndAllocator cna = null;
+        String className = null;
 
-        // Generate class for specified size
-        if (cna == null) {
-            final String clsPath = "org/jruby/gen/RubyObject" + size;
+        if (Options.REIFY_VARIABLES_NAME.load()) {
+            className = klass.getName();
 
-            Class specialized;
+            if (className.startsWith("#")) {
+                className = "Anonymous" + Integer.toHexString(System.identityHashCode(klass));
+            } else {
+                className = className.replace("::", "/");
+            }
+        } else {
+            // Generate class for specified size
+            cna = getClassForSize(size);
+
+            if (cna == null) {
+                className = "RubyObject" + size;
+            }
+        }
+
+        // if we have a className, proceed to generate
+        if (className != null) {
+            final String clsPath = "org/jruby/gen/" + className;
+
             synchronized (LOADER) {
+                Class specialized;
                 try {
                     // try loading class without generating
                     specialized = LOADER.loadClass(clsPath.replace('/', '.'));
@@ -103,7 +121,11 @@ public class RubyObjectSpecializer {
                 try {
                     ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].newInstance();
 
-                    SPECIALIZED_CLASSES.put(size, cna = new ClassAndAllocator(specialized, allocator));
+                    cna = new ClassAndAllocator(specialized, allocator);
+
+                    if (!Options.REIFY_VARIABLES_NAME.load()) {
+                        SPECIALIZED_CLASSES.put(size, cna);
+                    }
                 } catch (Throwable t) {
                     throw new RuntimeException(t);
                 }
