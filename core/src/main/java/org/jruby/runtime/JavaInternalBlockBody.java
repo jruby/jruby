@@ -47,10 +47,10 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         }
     }
 
-    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
+    private static IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
         Signature signature = block.getSignature();
         int required = signature.required();
-        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+        if (signature.isFixed() && required > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
 
         return args;
     }
