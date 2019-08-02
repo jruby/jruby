@@ -2,10 +2,17 @@ package org.jruby.util.io;
 
 import com.headius.backport9.modules.Modules;
 import jnr.enxio.channels.NativeSelectableChannel;
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.Pointer;
 import jnr.posix.FileStat;
+import jnr.posix.HANDLE;
+import jnr.posix.JavaLibCHelper;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
+
+import org.jruby.platform.Platform;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -22,6 +29,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FilenoUtil {
     public FilenoUtil(POSIX posix) {
         this.posix = posix;
+        if (posix.isNative() && Platform.IS_WINDOWS) {
+            winc = LibraryLoader.create(WinC.class).load("msvcrt");// TODO: string
+        } else {
+            winc = null;
+        }
     }
 
     public static FileDescriptor getDescriptorFromChannel(Channel channel) {
@@ -126,10 +138,46 @@ public class FilenoUtil {
         return -1;
     }
 
+    public static HANDLE handleFrom(Channel channel) {
+        if (channel instanceof NativeSelectableChannel) {
+            return HANDLE.valueOf(((NativeSelectableChannel)channel).getFD()); // TODO: this is an int. Do windows handles ever grow larger?
+        }
+
+        return getHandleUsingReflection(channel);
+    }
+
+    private static HANDLE getHandleUsingReflection(Channel channel) {
+        if (ReflectiveAccess.FILE_DESCRIPTOR_FD != null) {
+            return JavaLibCHelper.gethandle(getDescriptorFromChannel(channel));
+        }
+        return HANDLE.valueOf(-1);
+    }
+
+    public int filenoFromHandleIn(Channel channel, int flags) {
+        if (winc == null)
+            return -1;
+        HANDLE hndl = handleFrom(channel);
+        if (!hndl.isValid())
+            return -1;
+        return winc._open_osfhandle(hndl.toPointer(), flags); // TODO: don't re-open this handle ever again, or we start to leak?
+    }
+
+    public int closeFilenoHandle(int fd) {
+        if (fd != -1)
+            return winc._close(fd);// TODO: error handling
+        return -1;
+    }
+
+    public static interface WinC {
+        int _open_osfhandle(Pointer hndl, int flgs);
+        int _close(int fd);
+    }
+
     public static final int FIRST_FAKE_FD = 100000;
     protected final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
     private final NonBlockingHashMapLong<ChannelFD> filenoMap = new NonBlockingHashMapLong<ChannelFD>();
     private final POSIX posix;
+    private final WinC winc;
 
     static final Logger LOG = LoggerFactory.getLogger(FilenoUtil.class);
 
