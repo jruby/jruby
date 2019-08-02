@@ -65,7 +65,6 @@ import org.jruby.util.TypeConverter;
 import java.io.IOException;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;

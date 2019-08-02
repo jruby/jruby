@@ -30,29 +30,18 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StopIteration;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
-import java.util.NoSuchElementException;
 import java.util.Spliterator;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
 import java.util.stream.Stream;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
