@@ -14,33 +14,79 @@ public class EqCallSite extends BimorphicCallSite {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long arg) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg1) {
         if (self instanceof RubyFixnum) {
-            if (isBuiltin(getMetaClass(self))) return ((RubyFixnum) self).op_equal(context, arg);
+            if (cache instanceof FixnumEntry) return ((RubyFixnum) self).op_equal(context, arg1);
         } else if (self instanceof RubyFloat) {
-            if (isSecondaryBuiltin(getMetaClass(self))) return ((RubyFloat) self).op_equal(context, arg);
+            if (secondaryCache instanceof FloatEntry) return ((RubyFloat) self).op_equal(context, arg1);
         }
-        return super.call(context, caller, self, arg);
+        return super.call(context, caller, self, arg1);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double arg) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long arg1) {
         if (self instanceof RubyFixnum) {
-            if (isBuiltin(getMetaClass(self))) return ((RubyFixnum) self).op_equal(context, arg);
+            if (cache instanceof FixnumEntry) return ((RubyFixnum) self).op_equal(context, arg1);
         } else if (self instanceof RubyFloat) {
-            if (isSecondaryBuiltin(getMetaClass(self))) return ((RubyFloat) self).op_equal(context, arg);
+            if (secondaryCache instanceof FloatEntry) return ((RubyFloat) self).op_equal(context, arg1);
         }
-        return super.call(context, caller, self, arg);
+        return super.call(context, caller, self, arg1);
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
+    public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double arg1) {
         if (self instanceof RubyFixnum) {
-            if (isBuiltin(getMetaClass(self))) return ((RubyFixnum) self).op_equal(context, arg);
+            if (cache instanceof FixnumEntry) return ((RubyFixnum) self).op_equal(context, arg1);
         } else if (self instanceof RubyFloat) {
-            if (isSecondaryBuiltin(getMetaClass(self))) return ((RubyFloat) self).op_equal(context, arg);
+            if (secondaryCache instanceof FloatEntry) return ((RubyFloat) self).op_equal(context, arg1);
         }
-        return super.call(context, caller, self, arg);
+        return super.call(context, caller, self, arg1);
+    }
+
+    @Override
+    protected CacheEntry setCache(final CacheEntry entry, final IRubyObject self) {
+        // used as a primary cache - for Fixnum targets
+        if (self instanceof RubyFixnum && entry.method.isBuiltin()) {
+            return cache = new FixnumEntry(entry); // tagged entry replacement - a (costly) isBuiltin replacement
+        }
+        return cache = entry;
+    }
+
+    @Override
+    protected CacheEntry setSecondaryCache(final CacheEntry entry, final IRubyObject self) {
+        // used as a primary cache - for Float targets
+        if (self instanceof RubyFloat && entry.method.isBuiltin()) {
+            return secondaryCache = new FloatEntry(entry); // tagged entry replacement - a (costly) isBuiltin replacement
+        }
+        return secondaryCache = entry;
+    }
+
+    @Override
+    public boolean isBuiltin(final IRubyObject self) {
+        if (self instanceof RubyFixnum && cache instanceof FixnumEntry) return true;
+        return super.isBuiltin(self);
+    }
+
+    @Override
+    public boolean isSecondaryBuiltin(final IRubyObject self) {
+        if (self instanceof RubyFloat && secondaryCache instanceof FloatEntry) return true;
+        return super.isSecondaryBuiltin(self);
+    }
+
+    private static class FixnumEntry extends CacheEntry {
+
+        FixnumEntry(CacheEntry entry) {
+            super(entry.method, entry.sourceModule, entry.token);
+        }
+
+    }
+
+    private static class FloatEntry extends CacheEntry {
+
+        FloatEntry(CacheEntry entry) {
+            super(entry.method, entry.sourceModule, entry.token);
+        }
+
     }
 
 }
