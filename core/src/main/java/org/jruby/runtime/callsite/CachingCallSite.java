@@ -26,14 +26,18 @@ public abstract class CachingCallSite extends CallSite {
         return cache;
     }
 
+    protected CacheEntry setCache(CacheEntry entry, IRubyObject self) {
+        return cache = entry;
+    }
+
     public final boolean isOptimizable() {
-        return cache != CacheEntry.NULL_CACHE;// && !isPolymorphic.get();
+        return cache != CacheEntry.NULL_CACHE;
     }
 
     public final int getCachedClassIndex() {
-        CacheEntry cacheEntry = cache;
-        if (cacheEntry != CacheEntry.NULL_CACHE) {
-            return cacheEntry.method.getImplementationClass().getClassIndex().ordinal();
+        CacheEntry cache = this.cache;
+        if (cache != CacheEntry.NULL_CACHE) {
+            return cache.method.getImplementationClass().getClassIndex().ordinal();
         }
         return ClassIndex.NO_INDEX.ordinal();
     }
@@ -43,9 +47,9 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public final long getCachedMethodSerial() {
-        CacheEntry cacheEntry = cache;
-        if (cacheEntry != CacheEntry.NULL_CACHE) {
-            return cacheEntry.method.getSerialNumber();
+        CacheEntry cache = this.cache;
+        if (cache != CacheEntry.NULL_CACHE) {
+            return cache.method.getSerialNumber();
         }
         return -1;
     }
@@ -251,6 +255,17 @@ public abstract class CachingCallSite extends CallSite {
         }
     }
 
+    public final CacheEntry retrieveCache(IRubyObject self) {
+        RubyClass selfType = getMetaClass(self);
+        // This must be retrieved *once* to avoid racing with other threads.
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache;
+        }
+        return cacheAndGet(self, selfType, methodName);
+    }
+
+    @Deprecated
     public final CacheEntry retrieveCache(RubyClass selfType) {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
@@ -260,6 +275,7 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(selfType, methodName);
     }
 
+    @Deprecated
     public final CacheEntry retrieveCache(RubyClass selfType, String methodName) {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
@@ -269,21 +285,38 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(selfType, methodName);
     }
 
-    public final boolean isBuiltin(RubyClass selfType) {
+    public boolean isBuiltin(IRubyObject self) {
+        RubyClass selfType = getMetaClass(self);
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
         if (cache.typeOk(selfType)) {
             return cache.method.isBuiltin();
         }
-        return cacheAndGet(selfType, methodName).method.isBuiltin(); // false for method.isUndefined()
+        return cacheAndGet(self, selfType, methodName).method.isBuiltin(); // false for method.isUndefined()
     }
 
+    @Deprecated
+    public final boolean isBuiltin(RubyClass selfType) {
+        CacheEntry cache = this.cache;
+        if (cache.typeOk(selfType)) {
+            return cache.method.isBuiltin();
+        }
+        return cacheAndGet(selfType, methodName).method.isBuiltin();
+    }
+
+    @Deprecated
     private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         if (!entry.method.isUndefined()) this.cache = entry;
         return entry;
     }
-    
+
+    private CacheEntry cacheAndGet(IRubyObject self, RubyClass selfType, String methodName) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        if (!entry.method.isUndefined()) entry = setCache(entry, self);
+        return entry;
+    }
+
     private IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block,
         IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
@@ -291,7 +324,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, args, block);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, args, block);
     }
 
@@ -302,7 +335,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, args);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, args);
     }
 
@@ -313,7 +346,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName);
     }
 
@@ -324,7 +357,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, block);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, block);
     }
 
@@ -334,7 +367,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
@@ -345,7 +378,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg, block);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, arg, block);
     }
 
@@ -355,7 +388,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg1, arg2);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2);
     }
 
@@ -366,7 +399,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, block);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, block);
     }
 
@@ -377,7 +410,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3);
     }
 
@@ -388,7 +421,7 @@ public abstract class CachingCallSite extends CallSite {
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg1, arg2, arg3, block);
         }
-        cache = entry;
+        entry = setCache(entry, self);
         return method.call(context, self, entry.sourceModule, methodName, arg1, arg2, arg3, block);
     }
 
