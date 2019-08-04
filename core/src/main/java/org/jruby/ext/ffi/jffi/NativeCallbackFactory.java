@@ -65,7 +65,7 @@ public class NativeCallbackFactory {
     }
 
     NativeCallbackPointer newCallback(IRubyObject callable, CachingCallSite callSite) {
-        if (callSite.retrieveCache(callable.getMetaClass(), callSite.getMethodName()).method.isUndefined()) {
+        if (callSite.retrieveCache(callable).method.isUndefined()) {
             throw runtime.newArgumentError("callback does not respond to :" + callSite.getMethodName());
         }
 
