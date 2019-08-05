@@ -167,24 +167,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(context, NULL_ARRAY, block);
     }
 
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, Block block) {
-        return initialize(context, block);
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, Block block) {
         return initialize(context, new IRubyObject[]{ object }, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, Block block) {
-        return initialize(context, object, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
@@ -222,31 +207,12 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(runtime, object, method, args, size, null);
     }
 
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
-        return initialize(context, args, block);
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
         if (block.isGiven()) {
             throw context.runtime.newArgumentError(2, 1);
         }
         return initialize(context.runtime, object, method, NULL_ARRAY);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
-        return initialize(context, object, method, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize(context, object, method, block);
-    }
-
-    @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
-        return initialize(context, object, method, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -261,18 +227,52 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
     }
 
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        return initialize(context, args, Block.NULL_BLOCK);
+    }
+
+    public IRubyObject initialize(ThreadContext context, IRubyObject object, IRubyObject method) {
+        return initialize(context, object, method, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        return initialize(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, Block block) {
+        return initialize(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, IRubyObject object, Block block) {
+        return initialize(context, object, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, IRubyObject[] args, Block block) {
+        return initialize(context, args, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
+        return initialize(context, object, method, block);
+    }
+
     @Deprecated
     public IRubyObject initialize19(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
         return initialize(context, object, method, methodArg, Block.NULL_BLOCK);
     }
 
     @Deprecated
-    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
-        return initialize(context, object, method, methodArg, block);
+    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, Block block) {
+        return initialize(context, object, method, block);
     }
 
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        return initialize(context, args, Block.NULL_BLOCK);
+    @Deprecated
+    public IRubyObject initialize20(ThreadContext context, IRubyObject object, IRubyObject method, IRubyObject methodArg, Block block) {
+        return initialize(context, object, method, methodArg, block);
     }
 
     @Deprecated
@@ -284,7 +284,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return initialize(runtime, object, method, methodArgs, null, null);
     }
 
-    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
+    private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs,
+                                   IRubyObject size, SizeFn sizeFn) {
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
