@@ -129,6 +129,7 @@ class Enumerator
 
   class Lazy < Enumerator
     LAZY_WITH_NO_BLOCK = Struct.new(:object, :method, :args) # used internally to create lazy without block
+    private_constant :LAZY_WITH_NO_BLOCK
 
     def initialize(obj)
       if obj.is_a?(LAZY_WITH_NO_BLOCK)

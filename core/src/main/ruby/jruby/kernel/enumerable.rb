@@ -106,9 +106,11 @@ module Enumerable
   end
   private :__slicey_chunky
 
+  LAZY_WITH_NO_BLOCK = Enumerator::Lazy.const_get :LAZY_WITH_NO_BLOCK
+  private_constant :LAZY_WITH_NO_BLOCK
+
   def lazy
-    klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
-    Enumerator::Lazy.new(klass.new(self, :each, []))
+    Enumerator::Lazy.new(LAZY_WITH_NO_BLOCK.new(self, :each))
   end
 
 end
