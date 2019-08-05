@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#map keeps size
-fails:Enumerator::Lazy#map on a nested Lazy keeps size
