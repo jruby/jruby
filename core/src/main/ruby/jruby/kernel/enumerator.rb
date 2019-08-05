@@ -55,7 +55,7 @@ class Enumerator
   end
 
   def peek_values
-    [*self.peek]
+    Array(self.peek).dup
   end
 
   def rewind
@@ -179,7 +179,7 @@ class Enumerator
 
     def map
       _block_error(:map) unless block_given?
-      Lazy.new(self) do |yielder, *values|
+      Lazy.new(self, enumerator_size) do |yielder, *values|
         yielder << yield(*values)
       end.__set_inspect :map
     end
