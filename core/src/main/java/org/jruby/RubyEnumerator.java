@@ -195,7 +195,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         } else {
             Arity.checkArgumentCount(runtime, args, 1, -1);
-            runtime.getWarnings().warn("Enumerator.new without a block is deprecated; use Object#to_enum");
+            // NOTE: no warnings as we use Enumerator.new(object, method, *args) internally
+            //runtime.getWarnings().warn("Enumerator.new without a block is deprecated; use Object#to_enum");
             object = args[0];
             args = ArraySupport.newCopy(args, 1, args.length - 1);
             if (args.length > 0) {
