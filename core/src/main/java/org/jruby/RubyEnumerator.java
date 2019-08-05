@@ -40,7 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 
-import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
@@ -71,8 +70,6 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     /** Function object for lazily computing size (used for internally created enumerators) */
     private SizeFn sizeFn;
-
-    private IRubyObject feedValue;
 
     public static void defineEnumerator(Ruby runtime) {
         final RubyModule Enumerable = runtime.getModule("Enumerable");
@@ -292,7 +289,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         this.methodArgs = methodArgs;
         this.size = size;
         this.sizeFn = sizeFn;
-        this.feedValue = runtime.getNil();
+
         setInstanceVariable(OBJECT, object);
         setInstanceVariable(METHOD, method);
         setInstanceVariable(ARGS, RubyArray.newArrayMayCopy(runtime, methodArgs));
@@ -313,7 +310,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         copy.methodArgs = this.methodArgs;
         copy.size       = this.size;
         copy.sizeFn     = this.sizeFn;
-        copy.feedValue  = getRuntime().getNil();
+
         return copy;
     }
 
@@ -328,21 +325,19 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             return this;
         }
 
-        return object.callMethod(context, method, methodArgs, block);
+        return callMethod(context, "__each__", IRubyObject.NULL_ARRAY, block);
     }
 
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        if (args.length == 0) {
-            return each(context, block);
-        }
+        if (args.length == 0) return each(context, block);
 
         final int mlen = methodArgs.length;
         IRubyObject[] newArgs = new IRubyObject[mlen + args.length];
         ArraySupport.copy(methodArgs, newArgs, 0, mlen);
         ArraySupport.copy(args, newArgs, mlen, args.length);
 
-        return new RubyEnumerator(context.runtime, getType(), object, context.runtime.newSymbol("each"), newArgs);
+        return new RubyEnumerator(context.runtime, getType(), object, context.runtime.newSymbol("each"), newArgs, size).each(context, block);
     }
 
     @JRubyMethod(name = "inspect")

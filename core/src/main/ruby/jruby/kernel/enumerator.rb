@@ -7,6 +7,17 @@ class Enumerator
     # or http://bugs.ruby-lang.org/issues/7696
     attr_accessor :backports_memo
   end
+
+  def __each__
+    @__object__.__send__ @__method__, *@__args__ do |*args|
+      ret = yield(*args)
+      unless @__feedvalue__.nil?
+        ret, @__feedvalue__ = @__feedvalue__, nil
+      end
+      ret
+    end
+  end
+
   def next
     return @__lookahead__.shift unless @__lookahead__.empty?
 
@@ -17,9 +28,7 @@ class Enumerator
         @__generator__ = @__object__.to_generator(@__method__, *@__args__)
       end
 
-      if !@__generator__
-        @__generator__ = FiberGenerator.new(@__object__, @__method__, @__args__)
-      end
+      @__generator__ = FiberGenerator.new(self) unless @__generator__
     end
 
     begin
@@ -50,7 +59,7 @@ class Enumerator
   end
 
   def rewind
-    @object.rewind if @object.respond_to? :rewind
+    @__object__.rewind if @__object__.respond_to? :rewind
     @__generator__.rewind if @__generator__
     @__lookahead__ = []
     @__feedvalue__ = nil
@@ -64,39 +73,19 @@ class Enumerator
   end
 
   class FiberGenerator
-    class State
-      attr_reader :object, :method, :args, :to_proc
-      attr_accessor :done, :result
+    FIBER_YIELD_PROC = Fiber.method(:yield).to_proc
+    private_constant :FIBER_YIELD_PROC
 
-      def initialize(object, method, args)
-        @object = object
-        @method = method
-        @args = args
-        @done = false
-        @result = nil
-
-        @to_proc = proc do
-          obj = @object
-          @result = obj.send(@method, *@args, &FIBER_YIELD_PROC)
-          @done = true
-        end
-      end
-
-      FIBER_YIELD_PROC = Fiber.method(:yield).to_proc
-    end
-
-    def initialize(obj, method, args)
-      @state = State.new(obj, method, args)
+    def initialize(enum)
+      @object = enum
       @fiber = nil
       rewind
     end
 
-    def result
-      @state.result
-    end
+    attr_reader :result
 
     def next?
-      !@state.done
+      !@done
     end
 
     def next
@@ -104,7 +93,7 @@ class Enumerator
 
       val = @fiber.resume
 
-      raise StopIteration, 'iteration has ended' if @state.done
+      raise StopIteration, 'iteration has ended' if @done
 
       val
     end
@@ -112,13 +101,16 @@ class Enumerator
     def rewind
       fiber, @fiber = @fiber, nil
       fiber.send(:__finalize__) if fiber&.__alive__
-      @state.done = false
+      @done = false
     end
 
     def reset
-      @state.done = false
-      @state.result = nil
-      @fiber = Fiber.new(&@state)
+      @done = false
+      @fiber = Fiber.new do
+        obj = @object
+        @result = obj.__each__(&FIBER_YIELD_PROC)
+        @done = true
+      end
     end
   end
 
