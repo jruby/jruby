@@ -2213,7 +2213,7 @@ public class RubyEnumerable {
         }
     }
 
-    private static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
+    static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {

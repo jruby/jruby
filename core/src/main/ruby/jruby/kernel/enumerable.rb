@@ -106,11 +106,8 @@ module Enumerable
   end
   private :__slicey_chunky
 
-  LAZY_WITH_NO_BLOCK = Enumerator::Lazy.const_get :LAZY_WITH_NO_BLOCK
-  private_constant :LAZY_WITH_NO_BLOCK
-
   def lazy
-    Enumerator::Lazy.new(LAZY_WITH_NO_BLOCK.new(self, :each))
+    Enumerator::Lazy.send :__from, self, :each, []
   end
 
   def enumerator_size

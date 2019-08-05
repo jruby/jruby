@@ -154,6 +154,43 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return new RubyEnumerator(runtime, type, object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
     }
 
+    // used internally to create lazy without block (from Enumerator/Enumerable)
+    @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, visibility = PRIVATE)
+    public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+        // Lazy.__from(enum, method, *args, size)
+        IRubyObject object = args[0];
+        IRubyObject method = args[1];
+        IRubyObject[] methodArgs;
+        IRubyObject size = null; SizeFn sizeFn = null;
+        if (args.length > 2) {
+            methodArgs = ((RubyArray) args[2]).toJavaArrayMaybeUnsafe();
+            if (args.length > 3) size = args[3];
+        } else {
+            methodArgs = IRubyObject.NULL_ARRAY;
+        }
+
+        RubyEnumerator instance = (RubyEnumerator) ((RubyClass) klass).allocate();
+
+        if (size == null) {
+            if (object instanceof RubyEnumerator) {
+                size = ((RubyEnumerator) object).size;
+                if (size != null && !size.respondsTo("call")) size = null;
+                sizeFn = ((RubyEnumerator) object).sizeFn;
+            } else {
+                sizeFn = RubyEnumerable.enumSizeFn(context, object);
+            }
+        }
+
+        instance.initialize(context.runtime, object, method, methodArgs, size, sizeFn);
+        // set: @receiver = obj.object, @method = obj.method || :each, *@args = obj.args || []
+        // (for Lazy#inspect)
+        instance.setInstanceVariable("@receiver", object);
+        instance.setInstanceVariable("@method", method);
+        instance.setInstanceVariable("@args", RubyArray.newArrayNoCopyLight(context.runtime, methodArgs));
+
+        return instance;
+    }
+
     @Override
     public IRubyObject initialize(ThreadContext context) {
         return initialize(context, Block.NULL_BLOCK);
@@ -192,8 +229,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         } else {
             Arity.checkArgumentCount(runtime, args, 1, -1);
-            // NOTE: no warnings as we use Enumerator.new(object, method, *args) internally
-            //runtime.getWarnings().warn("Enumerator.new without a block is deprecated; use Object#to_enum");
+            runtime.getWarnings().warn("Enumerator.new without a block is deprecated; use Object#to_enum");
             object = args[0];
             args = ArraySupport.newCopy(args, 1, args.length - 1);
             if (args.length > 0) {

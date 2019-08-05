@@ -115,14 +115,8 @@ class Enumerator
   end
 
   class Lazy < Enumerator
-    LAZY_WITH_NO_BLOCK = Struct.new(:object, :method, :args) # used internally to create lazy without block
-    private_constant :LAZY_WITH_NO_BLOCK
 
     def initialize(obj, size = nil)
-      if obj.is_a?(LAZY_WITH_NO_BLOCK)
-        return super(@receiver = obj.object, @method = obj.method || :each, *@args = obj.args || [])
-      end
-
       _block_error(:new) unless block_given?
       @receiver = obj
       super(size) do |yielder, *args|
@@ -140,8 +134,8 @@ class Enumerator
       self
     end
 
-    def to_enum(method = :each, *args)
-      Lazy.new(LAZY_WITH_NO_BLOCK.new(self, method, args))
+    def to_enum(method = :each, *args, &size)
+      Lazy.send :__from, self, method, args, size # sets @receiver, @method, @args
     end
     alias_method :enum_for, :to_enum
 
