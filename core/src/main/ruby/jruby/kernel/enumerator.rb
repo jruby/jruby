@@ -29,7 +29,7 @@ class Enumerator
     end
 
     exception = StopIteration.new 'iteration reached an end'
-    JRuby.ref(exception).result = @__generator__.result
+    exception.send(:__set_result__, @__generator__.result)
 
     raise exception
   end
@@ -111,12 +111,7 @@ class Enumerator
 
     def rewind
       fiber, @fiber = @fiber, nil
-      if fiber
-        fiber_ref = JRuby.ref(fiber)
-        if fiber_ref.alive?
-          fiber_ref.finalize rescue nil
-        end
-      end
+      fiber.send(:__finalize__) if fiber&.__alive__
       @state.done = false
     end
 

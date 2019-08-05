@@ -32,6 +32,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -75,6 +76,11 @@ public class RubyStopIteration extends RubyIndexError {
     @JRubyMethod
     public IRubyObject result() {
         return result == null ? getRuntime().getNil() : result;
+    }
+
+    @JRubyMethod(name = "__set_result__", visibility = Visibility.PRIVATE)
+    public IRubyObject __set_result__(IRubyObject result) {
+        return this.result = result;
     }
 
     public void setResult(IRubyObject result) {
