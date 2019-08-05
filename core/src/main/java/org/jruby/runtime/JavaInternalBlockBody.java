@@ -47,22 +47,14 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         }
     }
 
-    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
-        Signature signature = block.getSignature();
-        int required = signature.required();
-        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
-
-        return args;
-    }
-
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args) {
-        return yield(context, block, adjustArgs(block, args), null);
+        return yield(context, block, CallBlock.adjustArgs(block, args), null);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
-        return yield(context, block, adjustArgs(block, args), null, blockArg);
+        return yield(context, block, CallBlock.adjustArgs(block, args), null, blockArg);
     }
 
     @Override
@@ -76,7 +68,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         threadCheck(context);
 
-        return yield(context, adjustArgs(block, args));
+        return yield(context, CallBlock.adjustArgs(block, args));
     }
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);

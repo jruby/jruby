@@ -406,7 +406,7 @@ public class RubyEnumerable {
         final IRubyObject[] holder = new IRubyObject[]{ context.nil };
 
         try {
-            each(context, self, new JavaInternalBlockBody(context.runtime, context, null, Signature.ONE_REQUIRED) {
+            each(context, self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#first", Signature.OPTIONAL) {
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     IRubyObject packedArg = packEnumValues(context.runtime, args);
                     holder[0] = packedArg;
@@ -428,7 +428,7 @@ public class RubyEnumerable {
         final RubyArray result = RubyArray.newArray(runtime, firstCount);
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, context, null, Signature.ONE_REQUIRED) {
+            each(context, self, new JavaInternalBlockBody(runtime, context, "Enumerable#first", Signature.OPTIONAL) {
                 private long iter = firstCount;
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     IRubyObject packedArg = packEnumValues(context.runtime, args);

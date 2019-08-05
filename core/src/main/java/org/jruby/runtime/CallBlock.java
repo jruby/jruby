@@ -59,10 +59,10 @@ public class CallBlock extends BlockBody {
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
 
-    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
+    static IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
         Signature signature = block.getSignature();
         int required = signature.required();
-        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+        if (required > 0 && required < args.length && signature.isFixed()) args = ArraySupport.newCopy(args, required);
 
         return args;
     }

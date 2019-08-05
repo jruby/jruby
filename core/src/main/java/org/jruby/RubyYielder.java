@@ -28,7 +28,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
@@ -113,17 +112,13 @@ public class RubyYielder extends RubyObject {
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
         checkInit();
-        return proc.call(context, args, Block.NULL_BLOCK);
+        return proc.call(context, args);
     }
 
     @JRubyMethod(name = "<<", rest = true)
-    public IRubyObject op_lshift(ThreadContext context, IRubyObject[]args) {
-        if (args.length == 1 &&
-                args[0] instanceof RubyArray &&
-                ((RubyArray) args[0]).getLength() == 1)
-            args[0] = RubyArray.newArray(context.runtime, args[0]);
+    public IRubyObject op_lshift(ThreadContext context, IRubyObject[] args) {
         yield(context, args);
         return this;
     }
