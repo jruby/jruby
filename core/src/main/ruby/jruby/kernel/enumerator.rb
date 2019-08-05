@@ -126,14 +126,14 @@ class Enumerator
     LAZY_WITH_NO_BLOCK = Struct.new(:object, :method, :args) # used internally to create lazy without block
     private_constant :LAZY_WITH_NO_BLOCK
 
-    def initialize(obj)
+    def initialize(obj, size = nil)
       if obj.is_a?(LAZY_WITH_NO_BLOCK)
-        @inspect_info = obj
-        return super(@receiver = obj.object, @method = obj.method || :each, * @args = obj.args)
+        return super(@receiver = obj.object, @method = obj.method || :each, *@args = obj.args || [])
       end
+
       _block_error(:new) unless block_given?
       @receiver = obj
-      super() do |yielder, *args|
+      super(size) do |yielder, *args|
         catch yielder do
           obj.each(*args) do |*x|
             yield yielder, *x
@@ -242,7 +242,12 @@ class Enumerator
 
     def drop(n)
       n = JRuby::Type.coerce_to_int(n)
-      Lazy.new(self) do |yielder, *values|
+      raise ArgumentError, 'attempt to drop negative size' if n < 0
+
+      size = enumerator_size
+      size = n < size ? size - n : 0 if size.kind_of?(Integer)
+
+      Lazy.new(self, size) do |yielder, *values|
         data = yielder.backports_memo ||= {:remain => n}
         if data[:remain] > 0
           data[:remain] -= 1
@@ -263,7 +268,13 @@ class Enumerator
     def take(n)
       n = JRuby::Type.coerce_to_int(n)
       raise ArgumentError, 'attempt to take negative size' if n < 0
-      Lazy.new(n == 0 ? [] : self) do |yielder, *values|
+
+      return to_enum(:cycle, 0).lazy if n.zero?
+
+      size = enumerator_size
+      size = n < size ? n : size if size.kind_of?(Integer)
+
+      Lazy.new(self, size) do |yielder, *values|
         data = yielder.backports_memo ||= {:remain => n}
         yielder.yield(*values)
         throw yielder if (data[:remain] -= 1) == 0

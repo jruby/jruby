@@ -113,4 +113,8 @@ module Enumerable
     Enumerator::Lazy.new(LAZY_WITH_NO_BLOCK.new(self, :each))
   end
 
+  def enumerator_size
+    respond_to?(:size) ? size : nil
+  end
+  private :enumerator_size
 end
