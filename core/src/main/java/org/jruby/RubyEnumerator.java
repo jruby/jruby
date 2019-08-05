@@ -128,7 +128,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return enumeratorizeWithSize(context, object, method, NULL_ARRAY, sizeFn);
     }
 
-    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method,IRubyObject arg, IRubyObject size) {
+    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, IRubyObject arg, IRubyObject size) {
         Ruby runtime = context.runtime;
         return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size);
     }
@@ -169,7 +169,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject object, Block block) {
-        return initialize(context, new IRubyObject[]{ object }, block);
+        return initialize(context, new IRubyObject[] { object }, block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
@@ -183,7 +183,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             Arity.checkArgumentCount(runtime, args, 0, 1);
             if (args.length > 0) {
                 size = args[0];
-                args = Arrays.copyOfRange(args, 1, args.length);
+                args = ArraySupport.newCopy(args, 1, args.length - 1);
 
                 if ( ! (size.isNil() || size.respondsTo("call")) &&
                      ! (size instanceof RubyFloat && ((RubyFloat) size).value == Float.POSITIVE_INFINITY) &&
@@ -195,12 +195,12 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         } else {
             Arity.checkArgumentCount(runtime, args, 1, -1);
-            // TODO need a deprecation WARN here, but can't add it until ruby/jruby/kernel20/enumerable.rb is deleted or stops calling this without a block
+            runtime.getWarnings().warn("Enumerator.new without a block is deprecated; use Object#to_enum");
             object = args[0];
-            args = Arrays.copyOfRange(args, 1, args.length);
+            args = ArraySupport.newCopy(args, 1, args.length - 1);
             if (args.length > 0) {
                 method = args[0];
-                args = Arrays.copyOfRange(args, 1, args.length);
+                args = ArraySupport.newCopy(args, 1, args.length - 1);
             }
         }
 
