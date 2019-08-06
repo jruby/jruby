@@ -83,6 +83,11 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         RubyGenerator.createGeneratorClass(runtime);
         RubyYielder.createYielderClass(runtime);
+
+        final RubyClass FeedValue;
+        FeedValue = runtime.defineClassUnder("FeedValue", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, Enumerator);
+        FeedValue.defineAnnotatedMethods(FeedValue.class);
+        Enumerator.setConstantVisibility(runtime, "FeedValue", true);
     }
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
@@ -91,6 +96,40 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             return new RubyEnumerator(runtime, klass);
         }
     };
+
+    /**
+     * Internal Enumerator::FeedValue class to be shared between enumerator and its next-er Fiber.
+     * In essence, a `Struct.new(:value)` like container but for finer control implemented as native.
+     */
+    public static class FeedValue extends RubyObject {
+
+        private volatile IRubyObject value;
+
+        private FeedValue(Ruby runtime, RubyClass type) {
+            super(runtime, type);
+            value = runtime.getNil();
+        }
+
+        FeedValue(Ruby runtime) {
+            this(runtime, (RubyClass) runtime.getEnumerator().getConstantAt("FeedValue", true));
+        }
+
+        @JRubyMethod
+        public IRubyObject value() { return value; }
+
+        @JRubyMethod(name = "value=")
+        public IRubyObject set_value(IRubyObject value) {
+            return this.value = value;
+        }
+
+        @JRubyMethod
+        public IRubyObject use_value(ThreadContext context) {
+            IRubyObject value = this.value;
+            this.value = context.nil;
+            return value;
+        }
+
+    }
 
     private RubyEnumerator(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -331,7 +370,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         setInstanceVariable(ARGS, RubyArray.newArrayMayCopy(runtime, methodArgs));
         setInstanceVariable(GENERATOR, runtime.getNil());
         setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime));
-        setInstanceVariable(FEEDVALUE, runtime.getNil());
+        setInstanceVariable(FEEDVALUE, new FeedValue(runtime));
 
         return this;
     }
