@@ -1,12 +1,4 @@
 class Enumerator
-  class Yielder
-    # Current API for Lazy Enumerator does not provide an easy way
-    # to handle internal state. We "cheat" and use yielder to hold it for us.
-    # A new yielder is created when generating or after a `rewind`.
-    # This way we avoid issues like http://bugs.ruby-lang.org/issues/7691
-    # or http://bugs.ruby-lang.org/issues/7696
-    attr_accessor :backports_memo
-  end
 
   def __each__
     @__object__.__send__ @__method__, *@__args__ do |*args|
@@ -234,9 +226,9 @@ class Enumerator
       size = n < size ? size - n : 0 if size.kind_of?(Integer)
 
       Lazy.new(self, size) do |yielder, *values|
-        data = yielder.backports_memo ||= {:remain => n}
-        if data[:remain] > 0
-          data[:remain] -= 1
+        dropped = __memo(yielder) || 0
+        if dropped < n
+          __memo_set(yielder, dropped + 1)
         else
           yielder.yield(*values)
         end
@@ -245,9 +237,17 @@ class Enumerator
 
     def drop_while
       _block_error(:drop_while) unless block_given?
+
       Lazy.new(self) do |yielder, *values|
-        data = yielder.backports_memo ||= {:dropping => true}
-        yielder.yield(*values) unless data[:dropping] &&= yield(*values)
+        if (dropping = __memo(yielder)).nil?
+          __memo_set(yielder, dropping = true)
+        end
+        yielder.yield(*values) unless dropping && (begin
+          dropping = yield(*values)
+          __memo_set(yielder, false) unless dropping
+          dropping
+        end)
+        dropping
       end.__set_inspect :drop_while
     end
 
@@ -261,9 +261,13 @@ class Enumerator
       size = n < size ? n : size if size.kind_of?(Integer)
 
       Lazy.new(self, size) do |yielder, *values|
-        data = yielder.backports_memo ||= {:remain => n}
-        yielder.yield(*values)
-        throw yielder if (data[:remain] -= 1) == 0
+        taken = __memo(yielder) || 0
+
+        if taken < n
+          yielder.yield(*values)
+          __memo_set(yielder, taken += 1)
+        end
+        throw yielder unless taken < n
       end.__set_inspect :take, [n], self
     end
 
@@ -291,50 +295,60 @@ class Enumerator
 
     def zip(*args)
       return super if block_given?
-      arys = args.map{ |arg| JRuby::Type.is_array?(arg) }
-      if arys.all?
+
+      arys = args.map do |arg|
+        if ary = JRuby::Type.is_array?(arg)
+          ary
+        else
+          unless JRuby::Type.object_respond_to?(arg, :each)
+            raise TypeError, "wrong argument type #{arg.class} (must respond to :each)"
+          end
+          arg
+        end
+      end
+
+      if arys.all? { |arg| arg.is_a?(Array) }
         # Handle trivial case of multiple array arguments separately
         # by avoiding Enumerator#next for efficiency & compatibility
-        Lazy.new(self) do |yielder, *values|
-          data = yielder.backports_memo ||= {:iter => 0}
+        Lazy.new(self, enumerator_size) do |yielder, *values|
           values = values.first unless values.size > 1
-          yielder << arys.map{|ary| ary[data[:iter]]}.unshift(values)
-          data[:iter] += 1
+          index = __memo(yielder) || 0
+          __memo_set(yielder, index + 1)
+          yielder << arys.map { |ary| ary[index] }.unshift(values)
         end
       else
-        args.each do |a|
-          raise TypeError, "wrong argument type #{a.class} (must respond to :each)" unless a.respond_to? :each
-        end
-        Lazy.new(self) do |yielder, *values|
-          enums = yielder.backports_memo ||= args.map(&:to_enum)
+        Lazy.new(self, enumerator_size) do |yielder, *values|
           values = values.first unless values.size > 1
-          others = enums.map do |arg|
+          enums = __memo(yielder) || __memo_set(yielder, args.map(&:to_enum))
+          rests = enums.map do |arg|
             begin
               arg.next
             rescue StopIteration
               nil
             end
           end
-          yielder << others.unshift(values)
+          yielder << rests.unshift(values)
         end
       end.__set_inspect :zip, args
     end
 
     def uniq
       if block_given?
-        Lazy.new(self) do |yielder, obj|
-          hash = yielder.backports_memo ||= {}
+        Lazy.new(self) do |yielder, *obj|
+          hash = __memo(yielder) || __memo_set(yielder, {})
           ret = yield(*obj)
-          next if hash.key? ret
-          hash[ret] = obj
-          yielder << obj
+          unless hash.key?(ret)
+            hash[ret] = true
+            yielder.yield(*obj)
+          end
         end
       else
-        Lazy.new(self) do |yielder, obj|
-          hash = yielder.backports_memo ||= {}
-          next if hash.key? obj
-          hash[obj] = obj unless hash.key? obj
-          yielder << obj
+        Lazy.new(self) do |yielder, *obj|
+          hash = __memo(yielder) || __memo_set(yielder, {})
+          unless hash.key?(obj)
+            hash[obj] = true
+            yielder.yield(*obj)
+          end
         end
       end
     end
@@ -349,6 +363,15 @@ class Enumerator
 
     def _block_error(name)
       raise ArgumentError.new("tried to call lazy #{name} without a block")
+    end
+
+    private
+    def __memo(yielder)
+      yielder.instance_variable_get :@__memo
+    end
+
+    def __memo_set(yielder, value)
+      yielder.instance_variable_set :@__memo, value
     end
   end
 end
