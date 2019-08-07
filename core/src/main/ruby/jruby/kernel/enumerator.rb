@@ -288,7 +288,7 @@ class Enumerator
       return to_enum(:cycle, 0).lazy.__set_inspect(:take, [n], self) if n.zero?
 
       size = enumerator_size
-      size = n < size ? n : size if size.kind_of?(Integer)
+      size = n < size ? n : size if size.kind_of?(Numeric)
 
       Lazy.new(self, size) do |yielder, *values|
         taken = __memo(yielder) || 0
