@@ -156,15 +156,25 @@ class Enumerator
       "#<#{self.class}: #{@receiver.inspect}#{suff}>"
     end
 
+    def each_with_object(obj)
+      return to_enum(:each_with_object, obj) unless block_given?
+      super(obj)
+    end
+
+    def cycle(n = nil)
+      n = JRuby::Type.coerce_to_int(n) unless n.nil?
+      unless block_given?
+        size = enumerator_size
+        if size.kind_of?(Integer)
+          size = size > 0 ? (n || Float::INFINITY) * size : 0
+        end
+        return to_enum(:cycle, *(n ? [n] : [])) { size }
+      end
+      super(n)
+    end
+
     [
-        :slice_before,
-        :slice_after,
-        :slice_when,
-        :chunk_while,
-        :chunk,
         :with_index,
-        :cycle,
-        :each_with_object,
         :each_slice,
         :each_entry,
         :each_cons,
@@ -177,7 +187,26 @@ class Enumerator
       EOT
     end
 
-    def chunk(*)
+    [
+        :slice_after,
+        :slice_before
+    ].each do |method|
+      module_eval <<-EOT, __FILE__, __LINE__ + 1
+        def #{method}(*)
+          super.lazy
+        end
+      EOT
+    end
+
+    def slice_when
+      super.lazy
+    end
+
+    def chunk
+      super.lazy
+    end
+
+    def chunk_while
       super.lazy
     end
 
