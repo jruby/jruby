@@ -521,8 +521,9 @@ public class RubyHash extends RubyObject implements Map {
 
     // put implementation
 
-    private final void internalPut(final IRubyObject key, final IRubyObject value) {
-        internalPut(key, value, true);
+    final IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
+        checkResize();
+        return internalPutNoResize(key, value, true);
     }
 
     private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {

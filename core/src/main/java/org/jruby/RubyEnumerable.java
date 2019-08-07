@@ -2169,6 +2169,41 @@ public class RubyEnumerable {
         return enumerator;
     }
 
+    @JRubyMethod
+    public static IRubyObject uniq(ThreadContext context, IRubyObject self, final Block block) {
+        final RubyHash hash = new RubyHash(context.runtime, false);
+
+        if (block.isGiven()) {
+            callEach(context.runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    return call(ctx, packEnumValues(ctx, largs), blk);
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject obj, Block blk) {
+                    IRubyObject key = block.yield(ctx, obj);
+                    if (hash.getEntry(key) == RubyHash.NO_ENTRY) {
+                        hash.internalPut(key, obj);
+                    }
+                    return obj;
+                }
+            });
+            return hash.values(context);
+        } else {
+            callEach(context.runtime, context, self, Signature.OPTIONAL, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
+                    return call(ctx, packEnumValues(ctx, largs), blk);
+                }
+                @Override
+                public IRubyObject call(ThreadContext ctx, IRubyObject obj, Block blk) {
+                    // relying on Hash order - if obj key existed it stays at the same place
+                    hash.internalPut(obj, obj);
+                    return obj;
+                }
+            });
+            return hash.keys(context);
+        }
+    }
+
     private static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
