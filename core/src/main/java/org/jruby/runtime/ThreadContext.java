@@ -855,11 +855,6 @@ public final class ThreadContext {
         eventHooksEnabled = flag;
     }
 
-    @Deprecated
-//    public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-//        return getBacktrace();
-//    }
-
     /**
      * Create a snapshot Array with current backtrace information.
      * @return the backtrace
