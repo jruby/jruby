@@ -181,22 +181,34 @@ class Enumerator
       super.lazy
     end
 
-    def map
-      _block_error(:map) unless block_given?
-      Lazy.new(self, enumerator_size) do |yielder, *values|
-        yielder << yield(*values)
-      end.__set_inspect :map
+    [
+        :map,
+        :collect
+    ].each do |method|
+      module_eval <<-EOT, __FILE__, __LINE__ + 1
+        def #{method}
+          _block_error(:#{method}) unless block_given?
+          Lazy.new(self, enumerator_size) do |yielder, *values|
+            yielder << yield(*values)
+          end.__set_inspect :#{method}
+        end
+      EOT
     end
-    alias_method :collect, :map
 
-    def select
-      _block_error(:select) unless block_given?
-      Lazy.new(self) do |yielder, *values|
-        values = values.first unless values.size > 1
-        yielder.yield values if yield values
-      end.__set_inspect :select
+    [
+        :select,
+        :find_all
+    ].each do |method|
+      module_eval <<-EOT, __FILE__, __LINE__ + 1
+        def #{method}
+          _block_error(:#{method}) unless block_given?
+          Lazy.new(self) do |yielder, *values|
+            values = values.first unless values.size > 1
+            yielder.yield values if yield values
+          end.__set_inspect :#{method}
+        end
+      EOT
     end
-    alias_method :find_all, :select
 
     def reject
       _block_error(:reject) unless block_given?
@@ -273,7 +285,7 @@ class Enumerator
       n = JRuby::Type.coerce_to_int(n)
       raise ArgumentError, 'attempt to take negative size' if n < 0
 
-      return to_enum(:cycle, 0).lazy if n.zero?
+      return to_enum(:cycle, 0).lazy.__set_inspect(:take, [n], self) if n.zero?
 
       size = enumerator_size
       size = n < size ? n : size if size.kind_of?(Integer)
@@ -297,19 +309,26 @@ class Enumerator
       end.__set_inspect :take_while
     end
 
-    def flat_map
-      _block_error(:flat_map) unless block_given?
-      Lazy.new(self) do |yielder, *values|
-        result = yield(*values)
-        ary = JRuby::Type.is_array?(result)
-        if ary || (result.respond_to?(:each) && result.respond_to?(:force))
-          (ary || result).each{|x| yielder << x }
-        else
-          yielder << result
+    [
+        :flat_map,
+        :collect_concat
+    ].each do |method|
+      module_eval <<-EOT, __FILE__, __LINE__ + 1
+        def #{method}
+          _block_error(:#{method}) unless block_given?
+          Lazy.new(self) do |yielder, *values|
+            res = yield(*values)
+            if ary = JRuby::Type.is_array?(res)
+              ary.each { |x| yielder << x }
+            elsif res.respond_to?(:each) && res.respond_to?(:force)
+              res.each { |x| yielder << x }
+            else
+              yielder << res
+            end
+          end.__set_inspect :#{method}
         end
-      end.__set_inspect :flat_map
+      EOT
     end
-    alias_method :collect_concat, :flat_map
 
     def zip(*args)
       return super if block_given?
