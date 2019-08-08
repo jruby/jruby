@@ -928,7 +928,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray to_a() {
         final Ruby runtime = getRuntime();
         try {
-            final RubyArray result = RubyArray.newBlankArray(runtime, size);
+            final RubyArray result = RubyArray.newBlankArrayInternal(runtime, size);
 
             visitAll(runtime.getCurrentContext(), RubyHash.StoreKeyValueVisitor, result);
 
@@ -1088,7 +1088,8 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
+    // returns null when not found to avoid unnecessary getRuntime().getNil() call
+    public final IRubyObject fastARef(IRubyObject key) {
         return internalGet(key);
     }
 
@@ -1641,7 +1642,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "keys")
     public RubyArray keys(final ThreadContext context) {
         try {
-            RubyArray keys = RubyArray.newBlankArray(context.runtime, size);
+            RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size);
 
             visitAll(context, StoreKeyVisitor, keys);
 
@@ -1669,7 +1670,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "values")
     public RubyArray values(final ThreadContext context) {
         try {
-            RubyArray values = RubyArray.newBlankArray(context.runtime, size);
+            RubyArray values = RubyArray.newBlankArrayInternal(context.runtime, size);
 
             visitAll(context, StoreValueVisitor, values);
 
