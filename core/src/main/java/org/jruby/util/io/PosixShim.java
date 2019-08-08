@@ -424,6 +424,9 @@ public class PosixShim {
 
     public int fcntlGetFD(int fd) {
         int ret = posix.fcntl(fd, Fcntl.F_GETFD);
+        if (ret == -1) {
+            setErrno(Errno.valueOf(posix.errno()));
+        }
         return ret;
     }
 
