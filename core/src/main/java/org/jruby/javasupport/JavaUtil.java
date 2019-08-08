@@ -254,6 +254,10 @@ public class JavaUtil {
     public static <T> T convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class<T> targetType) {
         final Ruby runtime = context.runtime;
 
+        // Capture original class; we only detach the singleton for natural Proc instances
+        RubyClass procClass = rubyObject.getMetaClass();
+
+        // Extend the interfaces into the proc's class. This creates a singleton class to connect up the Java proxy.
         final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, targetType));
         if ( ! ifaceModule.isInstance(rubyObject) ) {
             ifaceModule.callMethod(context, "extend_object", rubyObject);
@@ -265,9 +269,11 @@ public class JavaUtil {
             // no matter what method is called on the interface
             final RubyClass singletonClass = rubyObject.getSingletonClass();
 
-            // We clear the "attached" proc so the singleton class and by extension the method cache in the interface
-            // impl does not root the proc and its binding in the host classloader. See GH-4968.
-            ((MetaClass) singletonClass).setAttached(singletonClass.getSuperClass());
+            if (procClass == runtime.getProc()) {
+                // We reattach the singleton class to the Proc class object to prevent the method cache in the interface
+                // impl from rooting the proc and its binding in the host classloader. See GH-4968.
+                ((MetaClass) singletonClass).setAttached(runtime.getProc());
+            }
 
             final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
             singletonClass.addMethod("method_missing", procToIface);
