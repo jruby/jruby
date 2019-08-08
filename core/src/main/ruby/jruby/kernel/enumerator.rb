@@ -1,16 +1,5 @@
 class Enumerator
 
-  # @private Internal API
-  def __each__
-    @__object__.__send__ @__method__, *@__args__ do |*args|
-      ret = yield(*args)
-      val = @__feedvalue__.use_value
-      ret = val unless val.nil?
-      ret
-    end
-  end
-  private :__each__
-
   def next
     return @__lookahead__.shift unless @__lookahead__.empty?
 
