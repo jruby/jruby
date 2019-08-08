@@ -535,6 +535,15 @@ public class RubyHash extends RubyObject implements Map {
         internalPutNoResize(key, value, checkForExisting);
     }
 
+    final boolean internalPutIfNoKey(final IRubyObject key, final IRubyObject value) {
+        if (internalGetEntry(key) == NO_ENTRY) {
+            internalPut(key, value);
+            return true;
+        }
+        return false;
+    }
+
+    @Deprecated // no longer used
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
         checkResize();
 
@@ -1678,6 +1687,13 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray values) {
             values.store(index, value);
+        }
+    };
+
+    // like RubyHash.StoreValueVisitor but 'unsafe' - user needs to assure array capacity and adjust length
+    static final VisitorWithState SetValueVisitor = new VisitorWithState<RubyArray>() {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject val, int index, RubyArray target) {
+            target.eltInternalSet(index, val);
         }
     };
 
