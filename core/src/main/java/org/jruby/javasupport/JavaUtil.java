@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -262,6 +264,11 @@ public class JavaUtil {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
             final RubyClass singletonClass = rubyObject.getSingletonClass();
+
+            // We clear the "attached" proc so the singleton class and by extension the method cache in the interface
+            // impl does not root the proc and its binding in the host classloader. See GH-4968.
+            ((MetaClass) singletonClass).setAttached(singletonClass.getSuperClass());
+
             final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
             singletonClass.addMethod("method_missing", procToIface);
             // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
