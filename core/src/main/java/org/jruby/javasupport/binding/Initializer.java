@@ -540,7 +540,7 @@ public abstract class Initializer {
             if ( Modifier.isPrivate(mod) ) continue;
 
             // Skip protected methods if we can't set accessible
-            if ( !Modifier.isPublic(mod) && !Modules.trySetAccessible(method)) continue;
+            if ( !Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) continue;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)
