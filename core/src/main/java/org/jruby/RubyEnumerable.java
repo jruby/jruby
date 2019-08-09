@@ -999,15 +999,15 @@ public class RubyEnumerable {
         double x = 0.0, t;
         if (lhs instanceof RubyFloat) {
             if (rhs instanceof RubyFloat) {
-                f = ((RubyFloat) lhs).getValue();
-                x = ((RubyFloat) rhs).getValue();
+                f = ((RubyFloat) lhs).value;
+                x = ((RubyFloat) rhs).value;
                 floats = true;
             } else if (rhs instanceof RubyFixnum) {
-                f = ((RubyFloat) lhs).getValue();
-                x = ((RubyFixnum) rhs).getDoubleValue();
+                f = ((RubyFloat) lhs).value;
+                x = ((RubyFixnum) rhs).value;
                 floats = true;
             } else if (rhs instanceof RubyBignum) {
-                f = ((RubyFloat) lhs).getValue();
+                f = ((RubyFloat) lhs).value;
                 x = ((RubyBignum) rhs).getDoubleValue();
                 floats = true;
             } else if (rhs instanceof RubyRational) {
@@ -1018,18 +1018,18 @@ public class RubyEnumerable {
         } else if (rhs instanceof RubyFloat) {
             if (lhs instanceof RubyFixnum) {
                 c[0] = 0.0;
-                f = ((RubyFixnum) lhs).getDoubleValue();
-                x = ((RubyFloat) rhs).getValue();
+                f = ((RubyFixnum) lhs).value;
+                x = ((RubyFloat) rhs).value;
                 floats = true;
             } else if (lhs instanceof RubyBignum) {
                 c[0] = 0.0;
                 f = ((RubyBignum) lhs).getDoubleValue();
-                x = ((RubyFloat) rhs).getValue();
+                x = ((RubyFloat) rhs).value;
                 floats = true;
             } else if (lhs instanceof RubyRational) {
                 c[0] = 0.0;
                 f = ((RubyRational) lhs).getDoubleValue();
-                x = ((RubyFloat) rhs).getValue();
+                x = ((RubyFloat) rhs).value;
                 floats = true;
             }
         }
