@@ -489,7 +489,9 @@ public abstract class Initializer {
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add class's methods if it's public or we can set accessible
             // (see JRUBY-4799)
-            if (Modifier.isPublic(klass.getModifiers()) || JavaUtil.CAN_SET_ACCESSIBLE) {
+            if (Modifier.isPublic(klass.getModifiers())
+                    || JavaUtil.CAN_SET_ACCESSIBLE
+                    || Modules.isOpen(klass, Ruby.class)) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
