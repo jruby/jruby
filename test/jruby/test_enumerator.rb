@@ -212,6 +212,8 @@ class TestEnumerator < Test::Unit::TestCase
   end
 
   def test_yield_map # GH-4108
+    ary = Enumerator.new { |y| y.yield([1]) }.to_a
+    assert_equal [[1]], ary
     ary = Enumerator.new { |y| y.yield([1]) }.map { |e| e }.to_a
     assert_equal [[1]], ary
     ary = Enumerator.new { |y| y.yield([1]) }.lazy.map { |e| e }.to_a
@@ -226,6 +228,63 @@ class TestEnumerator < Test::Unit::TestCase
     assert_equal [[2], [3], [4]], a
     a = [[1], [2], [3]].lazy.map(&:itself).to_a
     assert_equal [[1], [2], [3]], a
+  end
+
+  def test_each_arg
+    enum = Enumerator.new { |y, arg| y.yield([1]); y.yield(arg) }
+    assert_equal [[1], :foo], enum.each(:foo).to_a
+    assert_equal [[1], :foo], enum.each(:foo, :bar).to_a
+    assert_equal [[1], []], enum.each([]).to_a
+    assert_equal [[1], [2]], enum.each([2]).to_a
+    assert_equal [[1], nil], enum.each.to_a
+    enum = Enumerator.new { |y, *arg| y.yield([1]); y.yield(*arg) }
+    assert_equal [[1], :foo], enum.each(:foo).to_a
+    assert_equal [[1], []], enum.each([]).to_a
+    assert_equal [[1], [2]], enum.each([2]).to_a
+    assert_equal [[1], nil], enum.each.to_a
+    assert_equal [[1], [:foo, :bar]], enum.each(:foo, :bar).to_a
+  end
+
+  def test_zip # from MRI suite -> JRuby disabled the test (due very last assert)
+    @obj = Object.new
+    class << @obj
+      include Enumerable
+      def each
+        yield 1
+        yield 2
+        yield 3
+        yield 1
+        yield 2
+        self
+      end
+    end
+
+    assert_equal([[1,1],[2,2],[3,3],[1,1],[2,2]], @obj.zip(@obj))
+    assert_equal([["a",1],["b",2],["c",3]], ["a", "b", "c"].zip(@obj))
+
+    a = []
+    result = @obj.zip([:a, :b, :c]) {|x,y| a << [x, y] }
+    assert_nil result
+    assert_equal([[1,:a],[2,:b],[3,:c],[1,nil],[2,nil]], a)
+
+    a = []
+    cond = ->((x, i), y) { a << [x, y, i] }
+    @obj.each_with_index.zip([:a, :b, :c], &cond)
+    assert_equal([[1,:a,0],[2,:b,1],[3,:c,2],[1,nil,3],[2,nil,4]], a)
+
+    a = []
+    @obj.zip({a: "A", b: "B", c: "C"}) {|x,y| a << [x, y] }
+    assert_equal([[1,[:a,"A"]],[2,[:b,"B"]],[3,[:c,"C"]],[1,nil],[2,nil]], a)
+
+    ary = Object.new
+    def ary.to_a;   [1, 2]; end
+    assert_raise(TypeError) {%w(a b).zip(ary)}
+    def ary.each; [3, 4].each{|e|yield e}; end
+    assert_equal([[1, 3], [2, 4], [3, nil], [1, nil], [2, nil]], @obj.zip(ary))
+    def ary.to_ary; [5, 6]; end
+    assert_equal([[1, 5], [2, 6], [3, nil], [1, nil], [2, nil]], @obj.zip(ary))
+    # obj = eval("class C\u{1f5ff}; self; end").new
+    # assert_raise_with_message(TypeError, /C\u{1f5ff}/) {(1..1).zip(obj)}
   end
 
 end
