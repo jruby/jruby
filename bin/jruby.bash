@@ -59,9 +59,25 @@ else
   JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
 fi
 
+# We include options on the java command line in the following order:
+# * user directory .jruby.java_opts
+# * current directory .jruby.java_opts
+# * JAVA_OPTS environment variable
+# * command line flags
+
 if [ -z "$JRUBY_OPTS" ] ; then
   JRUBY_OPTS=""
 fi
+
+# Add local and global .jruby.java_opts
+jruby_java_opts=""
+if [ -f "$HOME/.jruby.java_opts" ]; then
+  jruby_java_opts="@$HOME/.jruby.java_opts"
+fi
+if [ -f "./.jruby.java_opts" ]; then
+  jruby_java_opts="$jruby_java_opts @./.jruby.java_opts"
+fi
+JAVA_OPTS="$jruby_java_opts $JAVA_OPTS"
 
 JRUBY_OPTS_SPECIAL="--ng" # space-separated list of special flags
 unset JRUBY_OPTS_TEMP
