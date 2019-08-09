@@ -290,12 +290,7 @@ class Enumerator
         if (dropping = __memo(yielder)).nil?
           __memo_set(yielder, dropping = true)
         end
-        yielder.yield(*values) unless dropping && (begin
-          dropping = yield(*values)
-          __memo_set(yielder, false) unless dropping
-          dropping
-        end)
-        dropping
+        yielder.yield(*values) unless dropping && __memo_set(yielder, yield(*values))
       end.__set_inspect :drop_while
     end
 
