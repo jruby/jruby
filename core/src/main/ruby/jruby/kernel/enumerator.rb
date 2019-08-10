@@ -43,7 +43,7 @@ class Enumerator
   def rewind
     @__object__.rewind if @__object__.respond_to? :rewind
     @__generator__.rewind if @__generator__
-    @__lookahead__ = []
+    @__lookahead__.clear
     @__feedvalue__.value = nil
     self
   end
