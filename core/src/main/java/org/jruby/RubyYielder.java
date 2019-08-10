@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Enumerator::Yielder")
 public class RubyYielder extends RubyObject {
-    private RubyProc proc; 
+    private Block block;
 
     public static RubyClass createYielderClass(Ruby runtime) {
         RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
@@ -100,21 +100,21 @@ public class RubyYielder extends RubyObject {
     }
 
     private void checkInit() {
-        if (proc == null) throw getRuntime().newArgumentError("uninitializer yielder");
+        if (block == null) throw getRuntime().newArgumentError("uninitialized yielder");
     }
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) throw runtime.newLocalJumpErrorNoBlock();
-        proc = runtime.newProc(Block.Type.PROC, block);
+        this.block = block;
         return this;
     }
 
     @JRubyMethod(rest = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
         checkInit();
-        return proc.call(context, args);
+        return block.call(context, args);
     }
 
     @JRubyMethod(name = "<<", rest = true)
