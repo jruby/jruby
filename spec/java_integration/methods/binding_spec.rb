@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 java_import "java_integration.fixtures.SuperWithInterface"
+java_import "java_integration.fixtures.PublicClassExtendsNonpublicClass"
 
 describe "A private subclass of a public superclass with interfaces" do
   it "defines all methods from those interfaces" do
@@ -46,5 +47,13 @@ describe "A public subclass with interfaces extending a superclass that duplicat
     # once-upon-a-time change caused child classes to only bind
     # unique methods, which in this case would be private boolean add(String)
     expect(sub_with.add(1)).to eq(true)
+  end
+end
+
+describe "A non-public superclass of a public class" do
+  it "should bind methods if the package is open" do
+    pubclass = PublicClassExtendsNonpublicClass.new
+
+    expect(pubclass.publicMethod).to be true
   end
 end

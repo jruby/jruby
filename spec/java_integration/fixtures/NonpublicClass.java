@@ -1,6 +1,6 @@
 package java_integration.fixtures;
 
-protected class ProtectedClass {
+class NonpublicClass {
     public boolean publicMethod() {
         return true;
     }

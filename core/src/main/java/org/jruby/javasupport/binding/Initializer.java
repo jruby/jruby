@@ -496,7 +496,7 @@ public abstract class Initializer {
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
+                    addNewMethods(klass, nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -507,7 +507,7 @@ public abstract class Initializer {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    addNewMethods(nameMethods, METHODS.get(iface), false, false);
+                    addNewMethods(iface, nameMethods, METHODS.get(iface), false, false);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -529,10 +529,14 @@ public abstract class Initializer {
     }
 
     private static int addNewMethods(
+            final Class fromClass,
             final HashMap<String, List<Method>> nameMethods,
             final Method[] methods,
             final boolean includeStatic,
             final boolean removeDuplicate) {
+
+        final int classMod = fromClass.getModifiers();
+        final boolean classPublic = Modifier.isPublic(classMod);
 
         int added = 0;
 
@@ -542,7 +546,7 @@ public abstract class Initializer {
             if ( Modifier.isPrivate(mod) ) continue;
 
             // Skip protected methods if we can't set accessible
-            if ( !Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) continue;
+            if ( (!Modifier.isPublic(mod) || !classPublic) && !Modules.trySetAccessible(method, Java.class)) continue;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)
