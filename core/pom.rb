@@ -41,7 +41,7 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.21', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.22', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.23', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-posix:3.0.50', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.12', :exclusions => ['com.github.jnr:jnr-ffi']
