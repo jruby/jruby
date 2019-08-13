@@ -42,8 +42,12 @@ public class CallBlock extends BlockBody {
     private final StaticScope dummyScope;
 
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Signature signature, BlockCallback callback, ThreadContext context) {
+        return newCallClosure(context, self, signature, callback);
+    }
+
+    public static Block newCallClosure(ThreadContext context, IRubyObject self, Signature signature, BlockCallback callback) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock(signature, callback, context);
+        BlockBody body = new CallBlock(context, signature, callback);
 
         return new Block(body, binding);
     }
@@ -53,7 +57,7 @@ public class CallBlock extends BlockBody {
         return newCallClosure(self, imClass, Signature.from(arity), callback, context);
     }
 
-    private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
+    private CallBlock(ThreadContext context, Signature signature, BlockCallback callback) {
         super(signature);
         this.callback = callback;
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
