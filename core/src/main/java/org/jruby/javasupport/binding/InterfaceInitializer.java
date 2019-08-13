@@ -48,13 +48,11 @@ final class InterfaceInitializer extends Initializer {
         handleScalaSingletons(javaClass, state);
 
         // Now add all aliases for the static methods (fields) as appropriate
-        final Map<String, NamedInstaller> installers = state.getStaticInstallers();
-        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
-            final NamedInstaller installer = entry.getValue();
+        state.getStaticInstallers().forEach(($, installer) -> {
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
                 assignAliases((MethodInstaller) installer, state.staticNames);
             }
-        }
+        });
 
         runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(state.staticNames);
         runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).clear();
@@ -69,20 +67,16 @@ final class InterfaceInitializer extends Initializer {
     }
 
     private static void setupInterfaceMethods(Class<?> javaClass, Initializer.State state) {
-        // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-        final Map<String, List<Method>> nameMethods = getMethods(javaClass);
-
-        for (List<Method> methods : nameMethods.values()) {
+        getMethods(javaClass).forEach((name, methods) -> {
             for (int i = methods.size(); --i >= 0; ) {
                 // Java 8 introduced static methods on interfaces, so we just look for those
                 Method method = methods.get(i);
-                String name = method.getName();
 
                 if (!Modifier.isStatic(method.getModifiers())) continue;
 
                 state.prepareStaticMethod(javaClass, method, name);
             }
-        }
+        });
 
         // now iterate over all installers and make sure they also have appropriate aliases
         assignStaticAliases(state);

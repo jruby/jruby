@@ -84,10 +84,7 @@ final class ClassInitializer extends Initializer {
 
     private static void installClassInstanceMethods(final RubyClass proxy, final Initializer.State state) {
         installClassStaticMethods(proxy, state);
-        //assert state.instanceInstallers != null;
-        for ( Map.Entry<String, NamedInstaller> entry : state.getInstanceInstallers().entrySet() ) {
-            entry.getValue().install(proxy);
-        }
+        state.getInstanceInstallers().forEach(($, value) -> value.install(proxy));
     }
 
     private static void setupClassFields(Class<?> javaClass, Initializer.State state) {
@@ -112,10 +109,7 @@ final class ClassInitializer extends Initializer {
     }
 
     private void setupClassMethods(Class<?> javaClass, State state) {
-        // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-        final Map<String, List<Method>> nameMethods = getMethods(javaClass);
-
-        nameMethods.forEach((name, methods) -> {
+        getMethods(javaClass).forEach((name, methods) -> {
             for (int i = methods.size(); --i >= 0; ) {
                 // we need to collect all methods, though we'll only
                 // install the ones that are named in this class
@@ -155,13 +149,12 @@ final class ClassInitializer extends Initializer {
     }
 
     private static void assignInstanceAliases(State state) {
-        final Map<String, NamedInstaller> installers = state.getInstanceInstallers();
-        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
-            if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
-                MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
+        state.getInstanceInstallers().forEach((name, value) -> {
+            if (value.type == NamedInstaller.INSTANCE_METHOD) {
+                MethodInstaller methodInstaller = (MethodInstaller) value;
 
                 // no aliases for __method methods
-                if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
+                if (name.endsWith(METHOD_MANGLE)) return;
 
                 if (methodInstaller.hasLocalMethod()) {
                     assignAliases(methodInstaller, state.instanceNames);
@@ -169,13 +162,13 @@ final class ClassInitializer extends Initializer {
 
                 // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to
                 // java.lang.Object.equals. We force an alias here to ensure we always use equals.
-                if (entry.getKey().equals("equals")) {
+                if (name.equals("equals")) {
                     // we only install "local" methods, but need to force this so it will bind
                     methodInstaller.setLocalMethod(true);
                     methodInstaller.addAlias("==");
                 }
             }
-        }
+        });
     }
 
     private static void installClassConstructors(final RubyModule proxy, final State state) {

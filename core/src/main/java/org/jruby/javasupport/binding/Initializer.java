@@ -141,15 +141,14 @@ public abstract class Initializer {
     }
 
     protected static void assignStaticAliases(final State state) {
-        final Map<String, NamedInstaller> installers = state.getStaticInstallers();
-        for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
+        state.getStaticInstallers().forEach((name, value) -> {
             // no aliases for __method methods
-            if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
+            if (name.endsWith(METHOD_MANGLE)) return;
 
-            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
+            if (value.type == NamedInstaller.STATIC_METHOD && value.hasLocalMethod()) {
+                assignAliases((MethodInstaller) value, state.staticNames);
             }
-        }
+        });
     }
 
     static void assignAliases(final MethodInstaller installer,
@@ -290,12 +289,9 @@ public abstract class Initializer {
             final Object singleton = field.get(null);
             if ( singleton == null ) return;
 
-            final Map<String, List<Method>> scalaMethods = getMethods(companionClass);
-            for (Map.Entry<String, List<Method>> entry : scalaMethods.entrySet()) {
-                final List<Method> methods = entry.getValue();
+            getMethods(companionClass).forEach((name, methods) -> {
                 for (int j = 0; j < methods.size(); j++) {
                     final Method method = methods.get(j);
-                    String name = method.getName();
 
                     if (DEBUG_SCALA) LOG.debug("Companion object method {} for {}", name, companionClass);
 
@@ -329,7 +325,7 @@ public abstract class Initializer {
                         if (DEBUG_SCALA) LOG.debug("Method {} is sadly static", method);
                     }
                 }
-            }
+            });
         }
         catch (ClassNotFoundException e) { /* there's no companion object */ }
         catch (NoSuchFieldException e) { /* no MODULE$ field in companion */ }
@@ -348,17 +344,11 @@ public abstract class Initializer {
     }
 
     protected static void installClassFields(final RubyModule proxy, final State state) {
-        //assert state.constantFields != null;
-        for (ConstantField field : state.constantFields) {
-            field.install(proxy);
-        }
+        state.constantFields.forEach(field -> field.install(proxy));
     }
 
     protected static void installClassStaticMethods(final RubyModule proxy, final State state) {
-        //assert state.staticInstallers != null;
-        for ( Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet() ) {
-            entry.getValue().install(proxy);
-        }
+        state.getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
     protected static void installClassClasses(final Class<?> javaClass, final RubyModule proxy) {
