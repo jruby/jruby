@@ -140,37 +140,6 @@ public abstract class Initializer {
         }
     }
 
-    protected static void prepareStaticMethod(Class<?> javaClass, State state, Method method, String name) {
-        AssignedName assignedName = state.staticNames.get(name);
-
-        // For JRUBY-4505, restore __method methods for reserved names
-        if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
-            setupStaticMethods(state.staticInstallers, javaClass, method, name + METHOD_MANGLE);
-            return;
-        }
-
-        if (assignedName == null) {
-            state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-        } else {
-            if (Priority.METHOD.lessImportantThan(assignedName)) return;
-            if (!Priority.METHOD.asImportantAs(assignedName)) {
-                state.staticInstallers.remove(name);
-                state.staticInstallers.remove(name + '=');
-                state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-            }
-        }
-        setupStaticMethods(state.staticInstallers, javaClass, method, name);
-    }
-
-    private static void setupStaticMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
-        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
-        if (invoker == null) {
-            invoker = new StaticMethodInvokerInstaller(name);
-            methodCallbacks.put(name, invoker);
-        }
-        invoker.addMethod(method, javaClass);
-    }
-
     protected static void assignStaticAliases(final State state) {
         final Map<String, NamedInstaller> installers = state.staticInstallers;
         for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
@@ -458,19 +427,126 @@ public abstract class Initializer {
             instanceNames.putAll(INSTANCE_RESERVED_NAMES);
         }
 
+        protected void prepareStaticMethod(Class<?> javaClass, Method method, String name) {
+            // For JRUBY-4505, restore __method methods for reserved names
+            if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
+                name = name + METHOD_MANGLE;
+            } else {
+                AssignedName assignedName = staticNames.get(name);
+                if (assignedName == null) {
+                    staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                } else {
+                    if (Priority.METHOD.lessImportantThan(assignedName)) return;
+                    if (!Priority.METHOD.asImportantAs(assignedName)) {
+                        staticInstallers.remove(name);
+                        staticInstallers.remove(name + '=');
+                        staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                    }
+                }
+            }
+
+            MethodInstaller invoker = (MethodInstaller) staticInstallers.get(name);
+            if (invoker == null) {
+                invoker = new StaticMethodInvokerInstaller(name);
+                staticInstallers.put(name, invoker);
+            }
+            invoker.addMethod(method, javaClass);
+        }
+
+        protected void prepareInstanceMethod(Class<?> javaClass, Method method, String name) {
+            // For JRUBY-4505, restore __method methods for reserved names
+            if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+                name = name + METHOD_MANGLE;
+            } else {
+                AssignedName assignedName = instanceNames.get(name);
+
+                if (assignedName == null) {
+                    instanceNames.put(name, new AssignedName(name, Priority.METHOD));
+                } else {
+                    if (Priority.METHOD.lessImportantThan(assignedName)) return;
+                    if (!Priority.METHOD.asImportantAs(assignedName)) {
+                        instanceInstallers.remove(name);
+                        instanceInstallers.remove(name + '=');
+                        instanceNames.put(name, new AssignedName(name, Priority.METHOD));
+                    }
+                }
+            }
+
+            MethodInstaller invoker = (MethodInstaller) instanceInstallers.get(name);
+            if (invoker == null) {
+                invoker = new InstanceMethodInvokerInstaller(name);
+                instanceInstallers.put(name, invoker);
+            }
+            invoker.addMethod(method, javaClass);
+        }
+
     }
 
-    public static final java.lang.ClassValue<Method[]> DECLARED_METHODS = new java.lang.ClassValue<Method[]>() {
+    public static final ClassValue<Method[]> DECLARED_METHODS = new ClassValue<Method[]>() {
         @Override
         public Method[] computeValue(Class cls) {
             return cls.getDeclaredMethods();
         }
     };
 
-    public static final java.lang.ClassValue<Method[]> METHODS = new java.lang.ClassValue<Method[]>() {
+    private static class PartitionedMethods {
+        final Method[] instanceMethods;
+        final Method[] staticMethods;
+
+        PartitionedMethods(Method[] methods) {
+            List<Method> instanceMethods = Collections.EMPTY_LIST;
+            List<Method> staticMethods = Collections.EMPTY_LIST;
+
+            for (Method m : methods) {
+                int modifiers = m.getModifiers();
+                if (filterAccessible(m, modifiers)) {
+                    if (Modifier.isStatic(modifiers)) {
+                        if (staticMethods == Collections.EMPTY_LIST) staticMethods = new ArrayList<>();
+                        staticMethods.add(m);
+                    } else {
+                        if (instanceMethods == Collections.EMPTY_LIST) instanceMethods = new ArrayList<>();
+                        instanceMethods.add(m);
+                    }
+                }
+            }
+
+            this.instanceMethods = instanceMethods.toArray(new Method[instanceMethods.size()]);
+            this.staticMethods = staticMethods.toArray(new Method[staticMethods.size()]);
+        }
+    }
+
+    public static final ClassValue<PartitionedMethods> FILTERED_DECLARED_METHODS = new ClassValue<PartitionedMethods>() {
+        @Override
+        public PartitionedMethods computeValue(Class cls) {
+            return new PartitionedMethods(DECLARED_METHODS.get(cls));
+        }
+    };
+
+    private static boolean filterAccessible(Method method, int mod) {
+        // Skip private methods, since they may mess with dispatch
+        if (Modifier.isPrivate(mod)) return false;
+
+        // Skip protected methods if we can't set accessible
+        if (!Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) return false;
+
+        // ignore bridge methods because we'd rather directly call methods that this method
+        // is bridging (and such methods are by definition always available.)
+        if ((mod & ACC_BRIDGE) != 0) return false;
+
+        return true;
+    }
+
+    public static final ClassValue<Method[]> METHODS = new ClassValue<Method[]>() {
         @Override
         public Method[] computeValue(Class cls) {
             return cls.getMethods();
+        }
+    };
+
+    public static final ClassValue<PartitionedMethods> FILTERED_METHODS = new ClassValue<PartitionedMethods>() {
+        @Override
+        public PartitionedMethods computeValue(Class cls) {
+            return new PartitionedMethods(METHODS.get(cls));
         }
     };
 
@@ -494,7 +570,13 @@ public abstract class Initializer {
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    addNewMethods(nameMethods, DECLARED_METHODS.get(klass), klass == javaClass, true);
+                    PartitionedMethods filteredMethods = FILTERED_DECLARED_METHODS.get(klass);
+
+                    addNewMethods(nameMethods, filteredMethods.instanceMethods, true);
+
+                    if (klass == javaClass) {
+                        addNewMethods(nameMethods, filteredMethods.staticMethods, true);
+                    }
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -505,7 +587,9 @@ public abstract class Initializer {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    addNewMethods(nameMethods, METHODS.get(iface), false, false);
+                    PartitionedMethods filteredMethods = FILTERED_METHODS.get(klass);
+
+                    addNewMethods(nameMethods, filteredMethods.instanceMethods, false);
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -526,38 +610,17 @@ public abstract class Initializer {
                 && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
 
-    private static int addNewMethods(
+    private static void addNewMethods(
             final HashMap<String, List<Method>> nameMethods,
             final Method[] methods,
-            final boolean includeStatic,
             final boolean removeDuplicate) {
 
-        int added = 0;
-
-        Methods: for (final Method method : methods) {
-            final int mod = method.getModifiers();
-            // Skip private methods, since they may mess with dispatch
-            if ( Modifier.isPrivate(mod) ) continue;
-
-            // Skip protected methods if we can't set accessible
-            if ( !Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) continue;
-
-            // ignore bridge methods because we'd rather directly call methods that this method
-            // is bridging (and such methods are by definition always available.)
-            if ( ( mod & ACC_BRIDGE ) != 0 ) continue;
-
-            if ( ! includeStatic && Modifier.isStatic(mod) ) {
-                // Skip static methods if we're not suppose to include them.
-                // Generally for superclasses; we only bind statics from the actual
-                // class.
-                continue;
-            }
-
+        Methods: for (Method method : methods) {
             List<Method> childMethods = nameMethods.get(method.getName());
             if (childMethods == null) {
                 // first method of this name, add a collection for it
                 childMethods = new ArrayList<>(4);
-                childMethods.add(method); added++;
+                childMethods.add(method);
                 nameMethods.put(method.getName(), childMethods);
             }
             else {
@@ -580,10 +643,9 @@ public abstract class Initializer {
                     }
                 }
                 // no equivalent; add it
-                childMethods.add(method); added++;
+                childMethods.add(method);
             }
         }
-        return added;
     }
 
 }

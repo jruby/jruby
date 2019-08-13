@@ -80,7 +80,7 @@ final class InterfaceInitializer extends Initializer {
 
                 if (!Modifier.isStatic(method.getModifiers())) continue;
 
-                prepareStaticMethod(javaClass, state, method, name);
+                state.prepareStaticMethod(javaClass, method, name);
             }
         }
 

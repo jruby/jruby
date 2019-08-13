@@ -115,21 +115,19 @@ final class ClassInitializer extends Initializer {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
         final Map<String, List<Method>> nameMethods = getMethods(javaClass);
 
-        for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
-            final List<Method> methods = entry.getValue();
+        nameMethods.forEach((name, methods) -> {
             for (int i = methods.size(); --i >= 0; ) {
                 // we need to collect all methods, though we'll only
                 // install the ones that are named in this class
                 Method method = methods.get(i);
-                String name = method.getName();
 
                 if (Modifier.isStatic(method.getModifiers())) {
-                    prepareStaticMethod(javaClass, state, method, name);
+                    state.prepareStaticMethod(javaClass, method, name);
                 } else {
-                    prepareInstanceMethod(javaClass, state, method, name);
+                    state.prepareInstanceMethod(javaClass, method, name);
                 }
             }
-        }
+        });
 
         // try to wire up Scala singleton logic if present
         handleScalaSingletons(javaClass, state);
@@ -154,37 +152,6 @@ final class ClassInitializer extends Initializer {
         }
 
         state.constructorInstaller = constructorInstaller;
-    }
-
-    private void prepareInstanceMethod(Class<?> javaClass, State state, Method method, String name) {
-        // For JRUBY-4505, restore __method methods for reserved names
-        if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-            setupInstanceMethods(state.instanceInstallers, javaClass, method, name + METHOD_MANGLE);
-            return;
-        }
-
-        AssignedName assignedName = state.instanceNames.get(name);
-
-        if (assignedName == null) {
-            state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-        } else {
-            if (Priority.METHOD.lessImportantThan(assignedName)) return;
-            if (!Priority.METHOD.asImportantAs(assignedName)) {
-                state.instanceInstallers.remove(name);
-                state.instanceInstallers.remove(name + '=');
-                state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-            }
-        }
-        setupInstanceMethods(state.instanceInstallers, javaClass, method, name);
-    }
-
-    private static void setupInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
-        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
-        if (invoker == null) {
-            invoker = new InstanceMethodInvokerInstaller(name);
-            methodCallbacks.put(name, invoker);
-        }
-        invoker.addMethod(method, javaClass);
     }
 
     private static void assignInstanceAliases(State state) {
