@@ -3,12 +3,23 @@
 # Add steps that analyze code, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/java
 
+strategy:
+  matrix:
+    linux:
+      imageName: 'Ubuntu-16.04'
+    mac:
+      imageName: 'macos-10.13'
+    windows:
+      imageName: 'windows-2019'
+
 trigger:
 - master
+- test_windows
 
 pool:
-  vmImage: 'Ubuntu-16.04'
+  vmImage: $(imageName)
 
 steps:
 - script: ./mvnw -B package -Ptest -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
   displayName: -Ptest
+
