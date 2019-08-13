@@ -966,6 +966,41 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(dt.getDayOfYear());
     }
 
+    @JRubyMethod(name = "sunday?")
+    public RubyBoolean sunday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 0);
+    }
+
+    @JRubyMethod(name = "monday?")
+    public RubyBoolean monday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 1);
+    }
+
+    @JRubyMethod(name = "tuesday?")
+    public RubyBoolean tuesday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 2);
+    }
+
+    @JRubyMethod(name = "wednesday?")
+    public RubyBoolean wednesday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 3);
+    }
+
+    @JRubyMethod(name = "thursday?")
+    public RubyBoolean thursday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 4);
+    }
+
+    @JRubyMethod(name = "friday?")
+    public RubyBoolean friday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 5);
+    }
+
+    @JRubyMethod(name = "saturday?")
+    public RubyBoolean saturday_p(ThreadContext context) {
+        return context.runtime.newBoolean((dt.getDayOfWeek() % 7) == 6);
+    }
+
     @Deprecated
     public IRubyObject subsec() {
         return subsec(getRuntime().getCurrentContext());
