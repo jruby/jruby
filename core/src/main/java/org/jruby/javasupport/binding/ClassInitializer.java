@@ -85,7 +85,7 @@ final class ClassInitializer extends Initializer {
     private static void installClassInstanceMethods(final RubyClass proxy, final Initializer.State state) {
         installClassStaticMethods(proxy, state);
         //assert state.instanceInstallers != null;
-        for ( Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet() ) {
+        for ( Map.Entry<String, NamedInstaller> entry : state.getInstanceInstallers().entrySet() ) {
             entry.getValue().install(proxy);
         }
     }
@@ -104,9 +104,9 @@ final class ClassInitializer extends Initializer {
 
             int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers)) {
-                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(modifiers), true, false);
+                addField(state.getStaticInstallersForWrite(), state.staticNames, field, Modifier.isFinal(modifiers), true, false);
             } else {
-                addField(state.instanceInstallers, state.instanceNames, field, Modifier.isFinal(modifiers), false, false);
+                addField(state.getInstanceInstallersForWrite(), state.instanceNames, field, Modifier.isFinal(modifiers), false, false);
             }
         }
     }
@@ -155,7 +155,7 @@ final class ClassInitializer extends Initializer {
     }
 
     private static void assignInstanceAliases(State state) {
-        final Map<String, NamedInstaller> installers = state.instanceInstallers;
+        final Map<String, NamedInstaller> installers = state.getInstanceInstallers();
         for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
                 MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
@@ -164,7 +164,7 @@ final class ClassInitializer extends Initializer {
                 if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
                 if (methodInstaller.hasLocalMethod()) {
-                    assignAliases(methodInstaller, state.instanceNames, installers);
+                    assignAliases(methodInstaller, state.instanceNames);
                 }
 
                 // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to

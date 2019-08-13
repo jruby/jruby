@@ -141,19 +141,19 @@ public abstract class Initializer {
     }
 
     protected static void assignStaticAliases(final State state) {
-        final Map<String, NamedInstaller> installers = state.staticInstallers;
+        final Map<String, NamedInstaller> installers = state.getStaticInstallers();
         for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             // no aliases for __method methods
             if (entry.getKey().endsWith(METHOD_MANGLE)) continue;
 
             if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller) entry.getValue(), state.staticNames, installers);
+                assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
             }
         }
     }
 
     static void assignAliases(final MethodInstaller installer,
-        final Map<String, AssignedName> assignedNames, final Map<String, NamedInstaller> installers) {
+        final Map<String, AssignedName> assignedNames) {
 
         final String name = installer.name;
         String rubyCasedName = JavaUtil.getRubyCasedName(name);
@@ -409,25 +409,36 @@ public abstract class Initializer {
 
         final Map<String, AssignedName> staticNames;
         final Map<String, AssignedName> instanceNames;
-        final Map<String, NamedInstaller> staticInstallers = new HashMap<>();
-        final Map<String, NamedInstaller> instanceInstallers = new HashMap<>();
+        private Map<String, NamedInstaller> staticInstallers = Collections.EMPTY_MAP;
+        private Map<String, NamedInstaller> instanceInstallers = Collections.EMPTY_MAP;
         final List<ConstantField> constantFields = new ArrayList<>();
 
         ConstructorInvokerInstaller constructorInstaller;
 
         State(final Ruby runtime, final Class superClass) {
             if (superClass == null) {
-                staticNames = new HashMap<>(8);
-                instanceNames = new HashMap<>(26);
+                staticNames = new HashMap<>(STATIC_RESERVED_NAMES);
+                instanceNames = new HashMap<>(INSTANCE_RESERVED_NAMES);
             } else {
-                staticNames = new HashMap<>(runtime.getJavaSupport().getStaticAssignedNames().get(superClass));
-                instanceNames = new HashMap<>(runtime.getJavaSupport().getInstanceAssignedNames().get(superClass));
+                JavaSupport javaSupport = runtime.getJavaSupport();
+
+                Map<String, AssignedName> staticAssignedNames = javaSupport.getStaticAssignedNames().get(superClass);
+                staticNames = new HashMap<>(staticAssignedNames.size() + STATIC_RESERVED_NAMES.size());
+
+                Map<String, AssignedName> instanceAssignedNames = javaSupport.getInstanceAssignedNames().get(superClass);
+                instanceNames = new HashMap<>(instanceAssignedNames.size() + INSTANCE_RESERVED_NAMES.size());
+
+                staticNames.putAll(STATIC_RESERVED_NAMES);
+                staticNames.putAll(staticAssignedNames);
+                instanceNames.putAll(INSTANCE_RESERVED_NAMES);
+                instanceNames.putAll(instanceAssignedNames);
             }
-            staticNames.putAll(STATIC_RESERVED_NAMES);
-            instanceNames.putAll(INSTANCE_RESERVED_NAMES);
         }
 
         protected void prepareStaticMethod(Class<?> javaClass, Method method, String name) {
+            // lazy instantiation
+            Map<String, NamedInstaller> staticInstallers = getStaticInstallersForWrite();
+
             // For JRUBY-4505, restore __method methods for reserved names
             if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
                 name = name + METHOD_MANGLE;
@@ -454,6 +465,9 @@ public abstract class Initializer {
         }
 
         protected void prepareInstanceMethod(Class<?> javaClass, Method method, String name) {
+            // lazy instantiation
+            Map<String, NamedInstaller> instanceInstallers = getInstanceInstallersForWrite();
+
             // For JRUBY-4505, restore __method methods for reserved names
             if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
                 name = name + METHOD_MANGLE;
@@ -478,6 +492,24 @@ public abstract class Initializer {
                 instanceInstallers.put(name, invoker);
             }
             invoker.addMethod(method, javaClass);
+        }
+
+        Map<String, NamedInstaller> getStaticInstallers() {
+            return staticInstallers;
+        }
+
+        Map<String, NamedInstaller> getStaticInstallersForWrite() {
+            Map<String, NamedInstaller> staticInstallers = this.staticInstallers;
+            return staticInstallers == Collections.EMPTY_MAP ? this.staticInstallers = new HashMap() : staticInstallers;
+        }
+
+        Map<String, NamedInstaller> getInstanceInstallers() {
+            return instanceInstallers;
+        }
+
+        Map<String, NamedInstaller> getInstanceInstallersForWrite() {
+            Map<String, NamedInstaller> instanceInstallers = this.instanceInstallers;
+            return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
         }
 
     }

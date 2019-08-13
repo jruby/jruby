@@ -38,7 +38,7 @@ final class InterfaceInitializer extends Initializer {
             if ( Modifier.isStatic(mod) ) {
                 // If we already are adding it as a constant, make the accessors warn about deprecated behavior.
                 // See jruby/jruby#5730.
-                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(mod), true, isConstant);
+                addField(state.getStaticInstallersForWrite(), state.staticNames, field, Modifier.isFinal(mod), true, isConstant);
             }
         }
 
@@ -48,11 +48,11 @@ final class InterfaceInitializer extends Initializer {
         handleScalaSingletons(javaClass, state);
 
         // Now add all aliases for the static methods (fields) as appropriate
-        final Map<String, NamedInstaller> installers = state.staticInstallers;
+        final Map<String, NamedInstaller> installers = state.getStaticInstallers();
         for (Map.Entry<String, NamedInstaller> entry : installers.entrySet()) {
             final NamedInstaller installer = entry.getValue();
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                assignAliases((MethodInstaller) installer, state.staticNames, installers);
+                assignAliases((MethodInstaller) installer, state.staticNames);
             }
         }
 
