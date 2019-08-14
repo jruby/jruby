@@ -1925,7 +1925,10 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         String expResult = System.getProperty("user.dir");
         String result = instance.getCurrentDirectory();
-        assertEquals(expResult, result);
+
+        try {
+            assertEquals(new File(expResult).getCanonicalFile(), new File(result).getCanonicalFile());
+        } catch (Exception e) {}
 
         instance.terminate();
     }
@@ -1992,7 +1995,10 @@ public class ScriptingContainerTest {
             expResult = System.getProperty("java.io.tmpdir");
         }
         String result = instance.getHomeDirectory();
-        assertEquals(expResult, result);
+
+        try {
+            assertEquals(new File(expResult).getCanonicalFile(), new File(result).getCanonicalFile());
+        } catch (Exception e) {}
 
         instance.terminate();
     }
