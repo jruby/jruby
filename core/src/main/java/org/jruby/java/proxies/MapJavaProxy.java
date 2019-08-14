@@ -178,8 +178,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
-            internalPutNoResize(key, value, checkForExisting);
+        public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
+            return internalPutNoResize(key, value, true);
         }
 
         @Override
