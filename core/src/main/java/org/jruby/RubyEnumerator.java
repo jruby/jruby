@@ -385,6 +385,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         copy.methodArgs = this.methodArgs;
         copy.size       = this.size;
         copy.sizeFn     = this.sizeFn;
+        copy.feedValue  = new FeedValue(getRuntime());
 
         return copy;
     }
