@@ -35,7 +35,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -403,14 +402,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private IRubyObject __each__(ThreadContext context, final Block block) {
         return object.callMethod(context, method, methodArgs,
-                CallBlock.newCallClosure(this, context.runtime.getEnumerator(), Signature.OPTIONAL, new BlockCallback() {
+                CallBlock.newCallClosure(context, this, Signature.OPTIONAL, new BlockCallback() {
                     @Override
                     public IRubyObject call(final ThreadContext context, final IRubyObject[] args, final Block blk) {
                         IRubyObject ret = block.yieldValues(context, args);
                         IRubyObject val = feedValue.use_value(context);
                         return val.isNil() ? ret : val;
                     }
-                }, context)
+                })
         );
     }
 
