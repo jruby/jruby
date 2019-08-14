@@ -95,4 +95,8 @@ public class TestRubyBase extends junit.framework.TestCase {
         }
         super.tearDown();
     }
+
+    public static String CRLFToNL(String line) {
+        return line.replaceAll("\r\n", "\n");
+    }
 }
