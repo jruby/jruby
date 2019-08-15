@@ -169,7 +169,7 @@ public class JavaClass extends JavaObject {
      * @return class
      */
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
-        return ((JavaClass) java_class(context, proxy)).javaClass();
+        return getJavaClassIfProxy(context, proxy);
     }
 
     /**
