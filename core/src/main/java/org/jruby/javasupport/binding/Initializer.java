@@ -268,21 +268,28 @@ public abstract class Initializer {
         SCALA_OPERATORS = Collections.unmodifiableMap(scalaOperators);
     }
 
+    private static final ClassValue<Boolean> IS_SCALA = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            boolean scalaAnno = false;
+            for (Annotation anno : type.getDeclaredAnnotations()) {
+                Package pkg = anno.annotationType().getPackage();
+                if (pkg != null && pkg.getName() != null && pkg.getName().startsWith("scala.")) {
+                    scalaAnno = true;
+                    break;
+                }
+            }
+            return scalaAnno;
+        }
+    };
+
     protected static void handleScalaSingletons(final Class<?> javaClass, final State state) {
         // check for Scala companion object
         try {
             final ClassLoader loader = javaClass.getClassLoader();
             if ( loader == null ) return; //this is a core class, bail
 
-            // scan annotations for "scala" packages; if none present, it's not scala
-            boolean scalaAnno = false;
-            for ( Annotation anno : javaClass.getAnnotations() ) {
-                Package pkg = anno.annotationType().getPackage();
-                if ( pkg != null && pkg.getName() != null && pkg.getName().startsWith("scala.") ) {
-                    scalaAnno = true; break;
-                }
-            }
-            if ( ! scalaAnno ) return;
+            if (!IS_SCALA.get(javaClass)) return;
 
             Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
             final Field field = companionClass.getField("MODULE$");
