@@ -4,10 +4,12 @@ import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
@@ -22,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -34,8 +38,7 @@ public class MethodGatherer {
     private Map<String, NamedInstaller> instanceInstallers = Collections.EMPTY_MAP;
     final List<ConstantField> constantFields = new ArrayList<>();
     final Ruby runtime;
-
-    ConstructorInvokerInstaller constructorInstaller;
+    public static final String CONSTRUCTOR_NAME = "__jcreate!";
 
     MethodGatherer(final Ruby runtime, final Class superClass) {
         this.runtime = runtime;
@@ -62,7 +65,6 @@ public class MethodGatherer {
     void initializeClass(Class<?> javaClass, RubyModule proxy) {
         setupClassFields(javaClass);
         setupClassMethods(javaClass);
-        setupClassConstructors(javaClass);
 
         runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(staticNames);
         runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).putAll(instanceNames);
@@ -70,7 +72,7 @@ public class MethodGatherer {
         installClassFields(proxy);
         installClassStaticMethods(proxy);
         installClassInstanceMethods(proxy);
-        installClassConstructors(proxy);
+        installClassConstructors(javaClass, proxy);
         installClassClasses(javaClass, proxy);
     }
 
@@ -354,8 +356,33 @@ public class MethodGatherer {
         });
     }
 
-    void installClassConstructors(final RubyModule proxy) {
-        if ( constructorInstaller != null ) constructorInstaller.install(proxy);
+    void installClassConstructors(Class<?> javaClass, final RubyModule proxy) {
+        Constructor[] constructors = JavaClass.getConstructors(javaClass);
+
+        boolean localConstructor = false;
+        for (Constructor constructor : constructors) {
+            localConstructor |= javaClass == constructor.getDeclaringClass();
+        }
+
+        if (localConstructor) {
+            // we need to collect all methods, though we'll only
+            // install the ones that are named in this class
+            proxy.addMethod(CONSTRUCTOR_NAME, new ConstructorInvoker(proxy, javaClass::getConstructors, CONSTRUCTOR_NAME));
+        } else {
+            // if there's no constructor, we must prevent construction
+            proxy.addMethod(CONSTRUCTOR_NAME, new NoConstructorMethod(proxy, CONSTRUCTOR_NAME));
+        }
+    }
+
+    static class NoConstructorMethod extends JavaMethod {
+        NoConstructorMethod(RubyModule proxy, String name) {
+            super(proxy, PUBLIC, name);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            throw context.runtime.newTypeError("no public constructors for " + clazz);
+        }
     }
 
     protected void prepareStaticMethod(Class<?> javaClass, Method method, String name) {
@@ -477,23 +504,6 @@ public class MethodGatherer {
         // now iterate over all installers and make sure they also have appropriate aliases
         assignStaticAliases();
         assignInstanceAliases();
-    }
-
-    void setupClassConstructors(final Class<?> javaClass) {
-        // TODO: protected methods.  this is going to require a rework
-        // of some of the mechanism.
-        final Constructor[] constructors = JavaClass.getConstructors(javaClass);
-
-        // create constructorInstaller; if there are no constructors, it will disable construction
-        ConstructorInvokerInstaller constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
-
-        for ( int i = constructors.length; --i >= 0; ) {
-            // we need to collect all methods, though we'll only
-            // install the ones that are named in this class
-            constructorInstaller.addConstructor(constructors[i], javaClass);
-        }
-
-        this.constructorInstaller = constructorInstaller;
     }
 
     private void setupSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
