@@ -89,7 +89,7 @@ public class TestRubyInstanceConfig extends TestRubyBase {
 
       String scriptSource = inputStreamToString(config.getScriptSource());
 
-      assertEquals(scriptSource, "puts \"Hello World\"\n");
+      assertTrue(scriptSource.startsWith("puts \"Hello World\""));
     }
 
     public void testGetScriptSourceWithSTDIN() throws Exception {
