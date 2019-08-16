@@ -250,7 +250,7 @@ public class IRBuilder {
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) builder.scope.addClosure(((WrappedIRClosure)block).getClosure());
+                    if (block instanceof WrappedIRClosure) builder.scope.addChildScope(((WrappedIRClosure)block).getClosure());
                 }
                 builder.addInstr(clonedInstr);
             }

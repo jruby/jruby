@@ -65,7 +65,7 @@ public class IRScriptBody extends IRScope {
 
     @Override
     public void cleanupAfterExecution() {
-        if (getClosures().isEmpty()) {
+        if (!getClosures().findFirst().isPresent()) {
             interpreterContext = null;
             fullInterpreterContext = null;
             localVars = null;

@@ -36,7 +36,7 @@ public class OptimizeDynScopesPass extends CompilerPass {
     }
 
     public void eliminateLocalVars(IRScope s) {
-        assert s.getClosures().isEmpty() : "We assume that if a scope has nested closures, it uses a dynamic scoope.";
+        assert !s.getClosures().findFirst().isPresent() : "We assume that if a scope has nested closures, it uses a dynamic scoope.";
 
         Map<Operand, Operand> varRenameMap = new HashMap<>();
         EnumSet<IRFlags> flags = s.getExecutionContext().getFlags();

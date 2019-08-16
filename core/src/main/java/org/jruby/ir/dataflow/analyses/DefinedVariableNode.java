@@ -87,6 +87,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
     }
 
     private void identifyUndefinedVarsInClosure(Set<Variable> undefinedVars, IRClosure cl, int nestingLevel) {
+
         int clBaseDepth = nestingLevel + (cl.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1);
         cl.getFullInterpreterContext().setUpUseDefLocalVarMaps();
         for (LocalVariable lv: cl.getUsedLocalVariables()) {
@@ -106,9 +107,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
         }
 
         // Recurse
-        for (IRClosure nestedCl: cl.getClosures()) {
-            identifyUndefinedVarsInClosure(undefinedVars, nestedCl, nestingLevel + 1);
-        }
+        cl.getClosures().forEach(nested -> identifyUndefinedVarsInClosure(undefinedVars, nested, nestingLevel + 1));
     }
 
     public void identifyInits(Set<Variable> undefinedVars) {

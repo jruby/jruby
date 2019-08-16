@@ -404,11 +404,9 @@ public class JVMVisitor extends IRVisitor {
         return handle;
     }
 
+    // Emit code for all nested closures
     private void emitClosures(IRScope s, boolean print) {
-        // Emit code for all nested closures
-        for (IRClosure c: s.getClosures()) {
-            c.setHandle(emitClosure(c, print));
-        }
+        s.getClosures().forEach(c -> c.setHandle(emitClosure(c, print)));
     }
 
     protected Handle emitClosure(IRClosure closure, boolean print) {
