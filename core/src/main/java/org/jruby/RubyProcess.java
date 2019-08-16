@@ -1373,7 +1373,7 @@ public class RubyProcess {
         return RubyThread.startWaiterThread(
                 runtime,
                 pid,
-                CallBlock.newCallClosure(recv, (RubyModule)recv, Signature.NO_ARGUMENTS, callback, context));
+                CallBlock.newCallClosure(context, recv, Signature.NO_ARGUMENTS, callback));
     }
 
     @Deprecated

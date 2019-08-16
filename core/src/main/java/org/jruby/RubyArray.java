@@ -3360,7 +3360,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private RubyHash makeHash(RubyHash hash) {
         for (int i = 0; i < realLength; i++) {
-            hash.fastASet(elt(i), NEVER);
+            IRubyObject v = elt(i);
+            hash.internalPutIfNoKey(v, v);
         }
         return hash;
     }
@@ -3373,27 +3374,42 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
             IRubyObject k = block.yield(context, v);
-            if (hash.fastARef(k) == null) hash.fastASet(k, v);
+            hash.internalPutIfNoKey(k, v);
         }
         return hash;
+    }
+
+    private void setValuesFrom(ThreadContext context, RubyHash hash) {
+        try {
+            hash.visitAll(context, RubyHash.SetValueVisitor, this);
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            throw concurrentModification(context.runtime, ex);
+        }
+    }
+
+    private void clearValues(final int from, final int to) {
+        try {
+            Helpers.fillNil(values, begin + from, begin + to, getRuntime());
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            throw concurrentModification(getRuntime(), ex);
+        }
     }
 
     /** rb_ary_uniq_bang
      *
      */
     public IRubyObject uniq_bang(ThreadContext context) {
-        RubyHash hash = makeHash(context.runtime);
-        if (realLength == hash.size()) return context.nil;
+        final RubyHash hash = makeHash(context.runtime);
+        final int newLength = hash.size;
+        if (realLength == newLength) return context.nil;
 
-        // TODO: (CON) This could be a no-op for packed arrays if size does not change
+        modify(); // in case array isShared
         unpack();
 
-        int j = 0;
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) store(j++, v);
-        }
-        realLength = j;
+        setValuesFrom(context, hash);
+        clearValues(newLength, realLength);
+        realLength = newLength;
+
         return this;
     }
 
@@ -3402,18 +3418,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modifyCheck();
 
         if (!block.isGiven()) return uniq_bang(context);
-        RubyHash hash = makeHash(context, block);
-        if (realLength == hash.size()) return context.nil;
+
+        final RubyHash hash = makeHash(context, block);
+        final int newLength = hash.size;
+        if (realLength == newLength) return context.nil;
 
         // after evaluating the block, a new modify check is needed
-        modifyCheck();
-
-        // TODO: (CON) This could be a no-op for packed arrays if size does not change
+        modify(); // in case array isShared
         unpack();
 
-        realLength = 0;
+        setValuesFrom(context, hash);
+        clearValues(newLength, realLength);
+        realLength = newLength;
 
-        hash.visitAll(context, RubyHash.StoreValueVisitor, this);
         return this;
     }
 
@@ -3427,20 +3444,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     public IRubyObject uniq(ThreadContext context) {
         RubyHash hash = makeHash(context.runtime);
-        if (realLength == hash.size()) return makeShared();
+        final int newLength = hash.size;
+        if (realLength == newLength) return makeShared();
 
-        RubyArray result = new RubyArray(context.runtime, getMetaClass(), hash.size());
-
-        int j = 0;
-        try {
-            for (int i = 0; i < realLength; i++) {
-                IRubyObject v = elt(i);
-                if (hash.fastDelete(v)) result.values[j++] = v;
-            }
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(context.runtime, ex);
-        }
-        result.realLength = j;
+        RubyArray result = newBlankArrayInternal(context.runtime, getMetaClass(), newLength);
+        result.setValuesFrom(context, hash);
+        result.realLength = newLength;
         return result;
     }
 
@@ -3448,9 +3457,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject uniq(ThreadContext context, Block block) {
         if (!block.isGiven()) return uniq(context);
         RubyHash hash = makeHash(context, block);
+        final int newLength = hash.size;
+        if (realLength == newLength) return makeShared();
 
-        RubyArray result = new RubyArray(context.runtime, getMetaClass(), hash.size());
-        hash.visitAll(context, RubyHash.StoreValueVisitor, result);
+        RubyArray result = newBlankArrayInternal(context.runtime, getMetaClass(), newLength);
+        result.setValuesFrom(context, hash);
+        result.realLength = newLength;
         return result;
     }
 
@@ -4819,18 +4831,23 @@ float_loop:
 
     // when caller is sure to set all elements (avoids nil elements initialization)
     static RubyArray newBlankArrayInternal(Ruby runtime, int size) {
+        return newBlankArrayInternal(runtime, runtime.getArray(), size);
+    }
+
+    // when caller is sure to set all elements (avoids nil elements initialization)
+    static RubyArray newBlankArrayInternal(Ruby runtime, RubyClass metaClass, int size) {
         switch (size) {
             case 0:
                 return newEmptyArray(runtime);
             case 1:
-                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(runtime, null);
+                if (USE_PACKED_ARRAYS) return new RubyArrayOneObject(metaClass, null);
                 break;
             case 2:
-                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(runtime, null, null);
+                if (USE_PACKED_ARRAYS) return new RubyArrayTwoObject(metaClass, null, null);
                 break;
         }
 
-        return new RubyArray(runtime, size);
+        return new RubyArray(runtime, metaClass, size);
     }
 
     @JRubyMethod(name = "try_convert", meta = true)
