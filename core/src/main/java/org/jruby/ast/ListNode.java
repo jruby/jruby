@@ -102,6 +102,8 @@ public class ListNode extends Node implements Iterable<Node> {
     }
 
     protected void addAllInternal(ListNode other) {
+        if (other.size == 0) return;
+
         Node[] list;
 
         Node single = this.single;
@@ -114,7 +116,15 @@ public class ListNode extends Node implements Iterable<Node> {
 
         if (size + other.size() >= list.length) list = growList(other.size);
 
+        Node otherSingle = other.single;
+
+        if (otherSingle != null) {
+            list[size++] = otherSingle;
+            return;
+        }
+
         System.arraycopy(other.list, 0, list, size, other.size);
+
         size += other.size;
     }
 
