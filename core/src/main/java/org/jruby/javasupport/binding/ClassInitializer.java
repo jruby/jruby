@@ -60,7 +60,7 @@ final class ClassInitializer extends Initializer {
 
         final MethodGatherer state = new MethodGatherer(runtime, javaClass.getSuperclass());
 
-        state.initializeClass(javaClass, proxy);
+        state.initialize(javaClass, proxy);
 
         return proxyClass;
     }

@@ -150,6 +150,8 @@ public abstract class Initializer {
     static final ClassValue<Boolean> IS_SCALA = new ClassValue<Boolean>() {
         @Override
         protected Boolean computeValue(Class<?> type) {
+            if (type.isInterface()) return false;
+
             boolean scalaAnno = false;
             for (Annotation anno : type.getDeclaredAnnotations()) {
                 Package pkg = anno.annotationType().getPackage();

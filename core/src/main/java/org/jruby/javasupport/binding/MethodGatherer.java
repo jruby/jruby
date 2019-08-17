@@ -24,8 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.function.Function;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -62,40 +61,32 @@ public class MethodGatherer {
         }
     }
 
-    void initializeClass(Class<?> javaClass, RubyModule proxy) {
-        setupClassFields(javaClass);
-        setupClassMethods(javaClass);
+    void initialize(Class<?> javaClass, RubyModule proxy) {
+        setupFieldsAndConstants(javaClass);
+        setupMethods(javaClass);
+        setupScalaSingleton(javaClass);
 
-        runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(staticNames);
-        runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).putAll(instanceNames);
+        assignStaticAliases();
 
-        installClassFields(proxy);
-        installClassStaticMethods(proxy);
-        installClassInstanceMethods(proxy);
-        installClassConstructors(javaClass, proxy);
-        installClassClasses(javaClass, proxy);
-    }
+        JavaSupport javaSupport = runtime.getJavaSupport();
 
-    void initializeInterface(Class javaClass, RubyModule proxy) {
-        setupInterfaceFields(javaClass);
-        setupInterfaceMethods(javaClass);
+        javaSupport.getStaticAssignedNames().get(javaClass).putAll(staticNames);
 
-        // Add in any Scala singleton methods
-        handleScalaSingletons(javaClass);
+        Map<String, AssignedName> instanceAssignedNames = javaSupport.getInstanceAssignedNames().get(javaClass);
+        if (javaClass.isInterface()) {
+            instanceAssignedNames.clear();
+        } else {
+            assignInstanceAliases();
 
-        // Now add all aliases for the static methods (fields) as appropriate
-        getStaticInstallers().forEach(($, installer) -> {
-            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                ((MethodInstaller) installer).assignAliases(staticNames);
-            }
-        });
+            instanceAssignedNames.putAll(instanceNames);
 
-        runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(staticNames);
-        runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).clear();
+            installInstanceMethods(proxy);
+            installConstructors(javaClass, proxy);
+        }
 
-        installClassFields(proxy);
-        installClassStaticMethods(proxy);
-        installClassClasses(javaClass, proxy);
+        installConstants(proxy);
+        installClassMethods(proxy);
+        installInnerClasses(javaClass, proxy);
     }
 
     static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
@@ -214,7 +205,7 @@ public class MethodGatherer {
         }
     };
 
-    protected void installClassClasses(final Class<?> javaClass, final RubyModule proxy) {
+    protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = JavaClass.getDeclaredClasses(javaClass);
 
@@ -251,23 +242,9 @@ public class MethodGatherer {
         }
     }
 
-    void setupInterfaceMethods(Class<?> javaClass) {
-        getMethods(javaClass).forEach((name, methods) -> {
-            for (int i = methods.size(); --i >= 0; ) {
-                // Java 8 introduced static methods on interfaces, so we just look for those
-                Method method = methods.get(i);
+    protected void setupScalaSingleton(final Class<?> javaClass) {
+        if (javaClass.isInterface()) return;
 
-                if (!Modifier.isStatic(method.getModifiers())) continue;
-
-                prepareStaticMethod(javaClass, method, name);
-            }
-        });
-
-        // now iterate over all installers and make sure they also have appropriate aliases
-        assignStaticAliases();
-    }
-
-    protected void handleScalaSingletons(final Class<?> javaClass) {
         // check for Scala companion object
         try {
             final ClassLoader loader = javaClass.getClassLoader();
@@ -325,38 +302,15 @@ public class MethodGatherer {
         }
     }
 
-    protected void installClassFields(final RubyModule proxy) {
+    protected void installConstants(final RubyModule proxy) {
         constantFields.forEach(field -> field.install(proxy));
     }
 
-    protected void installClassStaticMethods(final RubyModule proxy) {
+    protected void installClassMethods(final RubyModule proxy) {
         getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
-    private void assignInstanceAliases() {
-        getInstanceInstallers().forEach((name, value) -> {
-            if (value.type == NamedInstaller.INSTANCE_METHOD) {
-                MethodInstaller methodInstaller = (MethodInstaller) value;
-
-                // no aliases for __method methods
-                if (name.endsWith(Initializer.METHOD_MANGLE)) return;
-
-                if (methodInstaller.hasLocalMethod()) {
-                    methodInstaller.assignAliases(instanceNames);
-                }
-
-                // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to
-                // java.lang.Object.equals. We force an alias here to ensure we always use equals.
-                if (name.equals("equals")) {
-                    // we only install "local" methods, but need to force this so it will bind
-                    methodInstaller.setLocalMethod(true);
-                    methodInstaller.addAlias("==");
-                }
-            }
-        });
-    }
-
-    void installClassConstructors(Class<?> javaClass, final RubyModule proxy) {
+    void installConstructors(Class<?> javaClass, final RubyModule proxy) {
         Constructor[] constructors = JavaClass.getConstructors(javaClass);
 
         boolean localConstructor = false;
@@ -386,62 +340,42 @@ public class MethodGatherer {
     }
 
     protected void prepareStaticMethod(Class<?> javaClass, Method method, String name) {
-        // lazy instantiation
-        Map<String, NamedInstaller> staticInstallers = getStaticInstallersForWrite();
+        prepareMethod(javaClass, method, name, getStaticInstallersForWrite(), Initializer.STATIC_RESERVED_NAMES, staticNames, StaticMethodInvokerInstaller::new);
+    }
 
+    protected void prepareInstanceMethod(Class<?> javaClass, Method method, String name) {
+        prepareMethod(javaClass, method, name, getInstanceInstallersForWrite(), Initializer.INSTANCE_RESERVED_NAMES, instanceNames, InstanceMethodInvokerInstaller::new);
+    }
+
+    protected void prepareMethod(Class<?> javaClass, Method method, String name, Map<String, NamedInstaller> installers, Map<String, AssignedName> reservedNames, Map<String, AssignedName> names, Function<String, NamedInstaller> constructor) {
         // For JRUBY-4505, restore __method methods for reserved names
-        if (Initializer.STATIC_RESERVED_NAMES.containsKey(method.getName())) {
+        if (reservedNames.containsKey(method.getName())) {
             name = name + Initializer.METHOD_MANGLE;
         } else {
-            AssignedName assignedName = staticNames.get(name);
-            if (assignedName == null) {
-                staticNames.put(name, new AssignedName(name, Priority.METHOD));
-            } else {
-                if (Priority.METHOD.lessImportantThan(assignedName)) return;
-                if (!Priority.METHOD.asImportantAs(assignedName)) {
-                    staticInstallers.remove(name);
-                    staticInstallers.remove(name + '=');
-                    staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                }
-            }
+            if (lowerPriority(name, installers, names)) return;
         }
 
-        NamedInstaller invoker = staticInstallers.get(name);
+        NamedInstaller invoker = installers.get(name);
         if (invoker == null) {
-            invoker = new StaticMethodInvokerInstaller(name);
-            staticInstallers.put(name, invoker);
+            invoker = constructor.apply(name);
+            installers.put(name, invoker);
         }
         ((MethodInstaller) invoker).addMethod(method, javaClass);
     }
 
-    protected void prepareInstanceMethod(Class<?> javaClass, Method method, String name) {
-        // lazy instantiation
-        Map<String, NamedInstaller> instanceInstallers = getInstanceInstallersForWrite();
-
-        // For JRUBY-4505, restore __method methods for reserved names
-        if (Initializer.INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-            name = name + Initializer.METHOD_MANGLE;
+    private boolean lowerPriority(String name, Map<String, NamedInstaller> installers, Map<String, AssignedName> names) {
+        AssignedName assignedName = names.get(name);
+        if (assignedName == null) {
+            names.put(name, new AssignedName(name, Priority.METHOD));
         } else {
-            AssignedName assignedName = instanceNames.get(name);
-
-            if (assignedName == null) {
-                instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-            } else {
-                if (Priority.METHOD.lessImportantThan(assignedName)) return;
-                if (!Priority.METHOD.asImportantAs(assignedName)) {
-                    instanceInstallers.remove(name);
-                    instanceInstallers.remove(name + '=');
-                    instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-                }
+            if (Priority.METHOD.lessImportantThan(assignedName)) return true;
+            if (!Priority.METHOD.asImportantAs(assignedName)) {
+                installers.remove(name);
+                installers.remove(name + '=');
+                names.put(name, new AssignedName(name, Priority.METHOD));
             }
         }
-
-        NamedInstaller invoker = instanceInstallers.get(name);
-        if (invoker == null) {
-            invoker = new InstanceMethodInvokerInstaller(name);
-            instanceInstallers.put(name, invoker);
-        }
-        ((MethodInstaller) invoker).addMethod(method, javaClass);
+        return false;
     }
 
     Map<String, NamedInstaller> getStaticInstallers() {
@@ -462,48 +396,54 @@ public class MethodGatherer {
         return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
     }
 
-    void setupClassFields(Class<?> javaClass) {
-        Field[] fields = JavaClass.getFields(javaClass);
+    void setupFieldsAndConstants(Class<?> javaClass) {
+        boolean isInterface = javaClass.isInterface();
+        Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
-        for (int i = fields.length; --i >= 0;) {
-            Field field = fields[i];
+        for (Field field : fields) {
             if (javaClass != field.getDeclaringClass()) continue;
 
-            if (ConstantField.isConstant(field)) {
+            int modifiers = field.getModifiers();
+
+            boolean isPublic = Modifier.isPublic(modifiers);
+
+            if (!isPublic) continue;
+
+            boolean isStatic = Modifier.isStatic(modifiers);
+            boolean isFinal = Modifier.isFinal(modifiers);
+
+            boolean constant = isPublic && isStatic && isFinal && Character.isUpperCase(field.getName().charAt(0));
+            if (constant) {
                 constantFields.add(new ConstantField(field));
-                continue;
+
+                // If we already are adding it as a constant, make the accessors warn about deprecated behavior.
+                // See jruby/jruby#5730.
+                if (!isInterface) continue;
             }
 
-            int modifiers = field.getModifiers();
-            if (Modifier.isStatic(modifiers)) {
-                addField(getStaticInstallersForWrite(), staticNames, field, Modifier.isFinal(modifiers), true, false);
+            if (isStatic) {
+                addField(getStaticInstallersForWrite(), staticNames, field, isFinal, true, constant);
             } else {
-                addField(getInstanceInstallersForWrite(), instanceNames, field, Modifier.isFinal(modifiers), false, false);
+                addField(getInstanceInstallersForWrite(), instanceNames, field, isFinal, false, false);
             }
         }
     }
 
-    void setupClassMethods(Class<?> javaClass) {
+    void setupMethods(Class<?> javaClass) {
+        boolean isInterface = javaClass.isInterface();
+
         getMethods(javaClass).forEach((name, methods) -> {
             for (int i = methods.size(); --i >= 0; ) {
-                // we need to collect all methods, though we'll only
-                // install the ones that are named in this class
+                // Java 8 introduced static methods on interfaces, so we just look for those
                 Method method = methods.get(i);
 
                 if (Modifier.isStatic(method.getModifiers())) {
                     prepareStaticMethod(javaClass, method, name);
-                } else {
+                } else if (!isInterface) {
                     prepareInstanceMethod(javaClass, method, name);
                 }
             }
         });
-
-        // try to wire up Scala singleton logic if present
-        handleScalaSingletons(javaClass);
-
-        // now iterate over all installers and make sure they also have appropriate aliases
-        assignStaticAliases();
-        assignInstanceAliases();
     }
 
     private void setupSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
@@ -515,13 +455,38 @@ public class MethodGatherer {
         ((MethodInstaller) invoker).addMethod(method, javaClass);
     }
 
-    protected void assignStaticAliases() {
-        getStaticInstallers().forEach((name, value) -> {
-            // no aliases for __method methods
-            if (name.endsWith(Initializer.METHOD_MANGLE)) return;
+    private void assignStaticAliases() {
+        getStaticInstallers().forEach((name, installer) -> {
+            if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
+                // no aliases for __method methods
+                if (name.endsWith(Initializer.METHOD_MANGLE)) return;
 
-            if (value.type == NamedInstaller.STATIC_METHOD && value.hasLocalMethod()) {
-                ((MethodInstaller) value).assignAliases(staticNames);
+                MethodInstaller methodInstaller = (MethodInstaller) installer;
+
+                methodInstaller.assignAliases(staticNames);
+            }
+        });
+    }
+
+    private void assignInstanceAliases() {
+        getInstanceInstallers().forEach((name, installer) -> {
+            if (installer.type == NamedInstaller.INSTANCE_METHOD) {
+                // no aliases for __method methods
+                if (name.endsWith(Initializer.METHOD_MANGLE)) return;
+
+                MethodInstaller methodInstaller = (MethodInstaller) installer;
+
+                if (installer.hasLocalMethod()) {
+                    methodInstaller.assignAliases(instanceNames);
+                }
+
+                // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to
+                // java.lang.Object.equals. We force an alias here to ensure we always use equals.
+                if (name.equals("equals")) {
+                    // we only install "local" methods, but need to force this so it will bind
+                    methodInstaller.setLocalMethod(true);
+                    methodInstaller.addAlias("==");
+                }
             }
         });
     }
@@ -549,29 +514,8 @@ public class MethodGatherer {
         }
     }
 
-    void installClassInstanceMethods(final RubyModule proxy) {
+    void installInstanceMethods(final RubyModule proxy) {
         getInstanceInstallers().forEach(($, value) -> value.install(proxy));
-    }
-
-    private void setupInterfaceFields(Class javaClass) {
-        Field[] fields = JavaClass.getDeclaredFields(javaClass);
-
-        for (int i = fields.length; --i >= 0; ) {
-            final Field field = fields[i];
-            if ( javaClass != field.getDeclaringClass() ) continue;
-
-            boolean isConstant = ConstantField.isConstant(field);
-            if (isConstant) {
-                constantFields.add(new ConstantField(field));
-            }
-
-            final int mod = field.getModifiers();
-            if ( Modifier.isStatic(mod) ) {
-                // If we already are adding it as a constant, make the accessors warn about deprecated behavior.
-                // See jruby/jruby#5730.
-                addField(getStaticInstallersForWrite(), staticNames, field, Modifier.isFinal(mod), true, isConstant);
-            }
-        }
     }
 
     private static class PartitionedMethods {

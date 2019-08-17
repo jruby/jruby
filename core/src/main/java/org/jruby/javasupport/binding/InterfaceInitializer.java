@@ -16,7 +16,7 @@ final class InterfaceInitializer extends Initializer {
     public RubyModule initialize(RubyModule proxy) {
         final MethodGatherer state = new MethodGatherer(runtime, null);
 
-        state.initializeInterface(javaClass, proxy);
+        state.initialize(javaClass, proxy);
 
         proxy.getName(); // trigger calculateName()
 
