@@ -1306,7 +1306,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
-        return new ByteList(str.getBytes(RubyEncoding.ISO), runtime.getEncodingService().getEncodingFromString(encoding), false);
+        return new ByteList(RubyEncoding.encodeISO(str), runtime.getEncodingService().getEncodingFromString(encoding), false);
     }
 
     @JIT

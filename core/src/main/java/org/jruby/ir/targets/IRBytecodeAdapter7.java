@@ -61,16 +61,16 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
     public void pushString(ByteList bl, int cr) {
         loadContext();
-        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr);
+        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr);
     }
 
     public void pushFrozenString(ByteList bl, int cr, String file, int line) {
         loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString(), cr, file, line);
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushByteList(ByteList bl) {
-        adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().toString());
+        adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString());
     }
 
     public void pushRegexp(ByteList source, int options) {
