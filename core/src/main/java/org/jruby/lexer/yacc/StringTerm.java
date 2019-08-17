@@ -97,7 +97,7 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setState(EXPR_END | EXPR_ENDARG);
-        lexer.setValue("" + end);
+        lexer.setValue(String.valueOf(end));
         return RubyParser.tSTRING_END;
     }
 
@@ -108,7 +108,7 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_TERM) != 0) {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
             lexer.setState(EXPR_END|EXPR_ENDARG);
-            lexer.setValue("" + end);
+            lexer.setValue(String.valueOf(end));
             lexer.setStrTerm(null);
             return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
         }
