@@ -94,7 +94,7 @@ public class AutoPointer extends Pointer {
         ClassData classData = (ClassData) ffiHandle;
 
         // If no release method is defined, then memory leaks will result.
-        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache(getMetaClass().getMetaClass(), classData.releaseCallSite.getMethodName()).method;
+        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache((IRubyObject) getMetaClass()).method;
         if (releaseMethod.isUndefined()) {
             throw runtime.newRuntimeError("release method undefined");
 
@@ -130,7 +130,7 @@ public class AutoPointer extends Pointer {
         }
 
         ReleaserData releaserData = (ReleaserData) ffiHandle;
-        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser.getMetaClass(), releaserData.releaseCallSite.getMethodName()).method;
+        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser).method;
         // If no release method is defined, then memory leaks will result.
         if (releaseMethod.isUndefined()) {
             throw context.runtime.newRuntimeError("call method undefined");

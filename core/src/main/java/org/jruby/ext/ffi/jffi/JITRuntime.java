@@ -499,7 +499,7 @@ public final class JITRuntime {
         } else if (parameter instanceof RubyNil) {
             return NilPointerParameterStrategy.NullMemoryIO.INSTANCE;
 
-        } else if (!(conversionMethod = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method).isUndefined()) {
+        } else if (!(conversionMethod = callSite.retrieveCache(parameter).method).isUndefined()) {
             IRubyObject convertedParameter = conversionMethod.call(context, parameter, parameter.getMetaClass(), callSite.getMethodName(), Block.NULL_BLOCK);
             if (convertedParameter instanceof RubyString) {
                 return StringParameterStrategy.getMemoryIO((RubyString) convertedParameter, isDirect, checkStringSafety);
@@ -573,7 +573,7 @@ public final class JITRuntime {
     }
 
     public static DynamicMethod getConversionMethod(IRubyObject parameter, CachingCallSite callSite) {
-        DynamicMethod method = callSite.retrieveCache(parameter.getMetaClass(), callSite.getMethodName()).method;
+        DynamicMethod method = callSite.retrieveCache(parameter).method;
         if (method.isUndefined()) {
             throw parameter.getRuntime().newTypeError("cannot convert parameter of type " + parameter.getMetaClass()
                     + " to native pointer; does not respond to :" + callSite.getMethodName());

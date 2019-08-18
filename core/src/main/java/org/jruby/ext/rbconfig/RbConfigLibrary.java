@@ -58,6 +58,7 @@ public class RbConfigLibrary implements Library {
     private static final String RUBY_WIN32 = "mswin32";
     private static final String RUBY_SOLARIS = "solaris";
     private static final String RUBY_FREEBSD = "freebsd";
+    private static final String RUBY_DRAGONFLYBSD = "dragonflybsd";
     private static final String RUBY_AIX = "aix";
 
     private static String normalizedHome;
@@ -83,6 +84,7 @@ public class RbConfigLibrary implements Library {
         RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("SunOS", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
+        RUBY_OS_NAMES.put("DragonFlyBSD", RUBY_DRAGONFLYBSD);
         RUBY_OS_NAMES.put("AIX", RUBY_AIX);
     }
 

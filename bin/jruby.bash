@@ -222,6 +222,9 @@ JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
+# Options we pass for "--dev" mode, to reduce JRuby startup time
+dev_mode_opts="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false -Djnr.ffi.asm.enabled=false -Xverify:none"
+
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 set -- $JRUBY_OPTS "$@"
@@ -309,7 +312,7 @@ do
         JAVA_VM=-server ;;
      --dev)
         JAVA_VM=-client
-        JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false" ;;
+        JAVA_OPTS="$JAVA_OPTS $dev_mode_opts" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)

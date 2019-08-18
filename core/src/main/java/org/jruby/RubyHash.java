@@ -521,20 +521,29 @@ public class RubyHash extends RubyObject implements Map {
 
     // put implementation
 
-    private final void internalPut(final IRubyObject key, final IRubyObject value) {
-        internalPut(key, value, true);
+    public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
+        checkResize();
+        return internalPutNoResize(key, value, true);
     }
 
-    private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {
+    private void internalPutSmall(final IRubyObject key, final IRubyObject value) {
         internalPutNoResize(key, value, true);
     }
 
-    protected void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
+    private void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         checkResize();
-
         internalPutNoResize(key, value, checkForExisting);
     }
 
+    final boolean internalPutIfNoKey(final IRubyObject key, final IRubyObject value) {
+        if (internalGetEntry(key) == NO_ENTRY) {
+            internalPut(key, value);
+            return true;
+        }
+        return false;
+    }
+
+    @Deprecated // no longer used
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
         checkResize();
 
@@ -919,7 +928,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray to_a() {
         final Ruby runtime = getRuntime();
         try {
-            final RubyArray result = RubyArray.newBlankArray(runtime, size);
+            final RubyArray result = RubyArray.newBlankArrayInternal(runtime, size);
 
             visitAll(runtime.getCurrentContext(), RubyHash.StoreKeyValueVisitor, result);
 
@@ -1079,7 +1088,8 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    public final IRubyObject fastARef(IRubyObject key) { // retuns null when not found to avoid unnecessary getRuntime().getNil() call
+    // returns null when not found to avoid unnecessary getRuntime().getNil() call
+    public final IRubyObject fastARef(IRubyObject key) {
         return internalGet(key);
     }
 
@@ -1632,7 +1642,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "keys")
     public RubyArray keys(final ThreadContext context) {
         try {
-            RubyArray keys = RubyArray.newBlankArray(context.runtime, size);
+            RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size);
 
             visitAll(context, StoreKeyVisitor, keys);
 
@@ -1660,7 +1670,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "values")
     public RubyArray values(final ThreadContext context) {
         try {
-            RubyArray values = RubyArray.newBlankArray(context.runtime, size);
+            RubyArray values = RubyArray.newBlankArrayInternal(context.runtime, size);
 
             visitAll(context, StoreValueVisitor, values);
 
@@ -1678,6 +1688,13 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray values) {
             values.store(index, value);
+        }
+    };
+
+    // like RubyHash.StoreValueVisitor but 'unsafe' - user needs to assure array capacity and adjust length
+    static final VisitorWithState SetValueVisitor = new VisitorWithState<RubyArray>() {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject val, int index, RubyArray target) {
+            target.eltInternalSet(index, val);
         }
     };
 

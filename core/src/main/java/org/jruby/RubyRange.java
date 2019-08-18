@@ -600,7 +600,7 @@ public class RubyRange extends RubyObject {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
                 StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
-                Block blockCallback = CallBlock.newCallClosure(this, runtime.getRange(), Signature.ONE_ARGUMENT, callback, context);
+                Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
                 ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
             } else {
                 if (!begin.respondsTo("succ")) {
@@ -841,7 +841,7 @@ public class RubyRange extends RubyObject {
         // TODO (CON): this could be packed if we know there are at least num elements in range
         final RubyArray result = runtime.newArray(num);
         try {
-            RubyEnumerable.callEach(runtime, context, this, Signature.ONE_ARGUMENT, new BlockCallback() {
+            RubyEnumerable.callEach(context, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
