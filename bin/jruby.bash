@@ -49,7 +49,7 @@ while [ -h "$SELF_PATH" ]; do
     SELF_PATH="$(cd "$BASE_DIR" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
 done
 
-JRUBY_HOME="$SELF_PATH"
+JRUBY_HOME="${SELF_PATH%/*/*}"
 
 if [ -z "$JRUBY_OPTS" ] ; then
   JRUBY_OPTS=""
