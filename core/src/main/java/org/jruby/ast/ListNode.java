@@ -255,7 +255,6 @@ public class ListNode extends Node implements Iterable<Node> {
 
     @Override
     public Iterator<Node> iterator() {
-        Thread.dumpStack();
         return new Iterator<Node>() {
             int i = 0;
 
