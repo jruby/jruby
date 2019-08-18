@@ -36,28 +36,20 @@ if [ -z "$JAVA_VM" ]; then
 fi
 
 # get the absolute path of the executable
-SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+BASE_DIR=$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)
+SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
 
 # resolve symlinks
 while [ -h "$SELF_PATH" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
-    # 3) get the pwd
+    # 3) get the physical pwd
     # 4) append the basename
-    DIR=$(dirname -- "$SELF_PATH")
-    SYM=$(readlink "$SELF_PATH")
-    SELF_PATH=$(cd "$DIR" && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
+    SYM="$(readlink "$SELF_PATH")"
+    SELF_PATH="$(cd "$BASE_DIR" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
 done
 
-PRG=$SELF_PATH
-
-JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
-if [ "$JRUBY_HOME_1" = '.' ] ; then
-  cwd=`pwd`
-  JRUBY_HOME=`dirname $cwd` # JRUBY-2699
-else
-  JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
-fi
+JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
