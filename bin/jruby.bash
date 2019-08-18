@@ -72,9 +72,9 @@ if [ -z "$JAVACMD" ] ; then
     fi
   fi
 else
-  expand_javacmd=`which $JAVACMD`
-  if [[ -z "$JAVA_HOME" && -x $expand_javacmd ]] ; then
-    JAVA_HOME=$(dirname $(dirname $expand_javacmd))
+  expanded_javacmd=`which $JAVACMD`
+  if [[ -z "$JAVA_HOME" && -x $expanded_javacmd ]] ; then
+    JAVA_HOME=$(dirname $(dirname $expanded_javacmd))
   fi
 fi
 
@@ -123,7 +123,8 @@ if [ -r $cwd_jruby_java_opts_file ]; then
 fi
 JAVA_OPTS="$jruby_java_opts $JAVA_OPTS"
 
-JRUBY_OPTS_SPECIAL="--ng" # space-separated list of special flags
+# space-separated list of special flags
+JRUBY_OPTS_SPECIAL="--ng"
 unset JRUBY_OPTS_TEMP
 function process_special_opts {
     case $1 in
