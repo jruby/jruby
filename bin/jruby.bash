@@ -59,7 +59,32 @@ else
   JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
 fi
 
+# Determine where the java command is and ensure we have a good JAVA_HOME
+if [ -z "$JAVACMD" ] ; then
+  if [ -z "$JAVA_HOME" ] ; then
+    JAVACMD='java'
+    JAVA_HOME=$(dirname $(dirname `which java`))
+  else
+    if $cygwin; then
+      JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+    fi
+  fi
+else
+  expand_javacmd=`which $JAVACMD`
+  if [[ -z "$JAVA_HOME" && -x $expand_javacmd ]] ; then
+    JAVA_HOME=$(dirname $(dirname $expand_javacmd))
+  fi
+fi
+
+# Detect Java 9+ by the presence of a jmods directory in JAVA_HOME
+if [ -d $JAVA_HOME/jmods ]; then
+  is_java9=1
+fi
+
 # We include options on the java command line in the following order:
+# * JRuby installed bin/.jruby.java_opts (empty by default)
 # * user directory .jruby.java_opts
 # * current directory .jruby.java_opts
 # * JAVA_OPTS environment variable
@@ -70,12 +95,31 @@ if [ -z "$JRUBY_OPTS" ] ; then
 fi
 
 # Add local and global .jruby.java_opts
+installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
+home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+cwd_jruby_java_opts_file="$cwd/.jruby.java_opts"
+
 jruby_java_opts=""
-if [ -f "$HOME/.jruby.java_opts" ]; then
-  jruby_java_opts="@$HOME/.jruby.java_opts"
+if [ -r $installed_jruby_java_opts_file ]; then
+  if [[ $is_java9 ]]; then
+    jruby_java_opts="@$installed_jruby_java_opts_file"
+  else
+    jruby_java_opts=`cat $installed_jruby_java_opts_file`
+  fi
 fi
-if [ -f "./.jruby.java_opts" ]; then
-  jruby_java_opts="$jruby_java_opts @./.jruby.java_opts"
+if [ -r $home_jruby_java_opts_file ]; then
+  if [[ $is_java9 ]]; then
+    jruby_java_opts="$jruby_java_opts @$home_jruby_java_opts_file"
+  else
+    jruby_java_opts="$jruby_java_opts $(cat $home_jruby_java_opts_file)"
+  fi
+fi
+if [ -r $cwd_jruby_java_opts_file ]; then
+  if [[ $is_java9 ]]; then
+    jruby_java_opts="$jruby_java_opts @$cwd_jruby_java_opts_file"
+  else
+    jruby_java_opts="$jruby_java_opts $(cat $cwd_jruby_java_opts_file)"
+  fi
 fi
 JAVA_OPTS="$jruby_java_opts $JAVA_OPTS"
 
@@ -104,18 +148,6 @@ for opt in ${JRUBY_OPTS[@]}; do
     fi
 done
 JRUBY_OPTS=${JRUBY_OPTS_TEMP}
-
-if [ -z "$JAVACMD" ] ; then
-  if [ -z "$JAVA_HOME" ] ; then
-    JAVACMD='java'
-  else
-    if $cygwin; then
-      JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/java"
-    else
-      JAVACMD="$JAVA_HOME/bin/java"
-    fi
-  fi
-fi
 
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
@@ -222,8 +254,13 @@ JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
-# Options we pass for "--dev" mode, to reduce JRuby startup time
-dev_mode_opts="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false -Djnr.ffi.asm.enabled=false -Xverify:none"
+# Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
+dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
+if [[ $is_java9 ]]; then
+  dev_mode_opts="@$dev_mode_opts_file"
+else
+  dev_mode_opts=`cat $dev_mode_opts_file`
+fi
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
@@ -393,7 +430,7 @@ if [ "$JRUBY_JSA" == "" ]; then
 fi
 
 # Determine whether to pass module-related flags
-if [ -d $JAVA_HOME/jmods ]; then
+if [[ $is_java9 ]]; then
   # Use module path instead of classpath for the jruby libs
   classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
 
