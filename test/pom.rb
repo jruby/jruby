@@ -1,6 +1,8 @@
 version = ENV['JRUBY_VERSION'] ||
   File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
+is_windows = RbConfig::CONFIG['host_os'] =~ /mswin/
+
 project 'JRuby Integration Tests' do
 
   model_version '4.0.0'
@@ -140,24 +142,25 @@ project 'JRuby Integration Tests' do
     plugin :antrun do
       [ 'jruby', 'objectspace', 'slow' ].each do |index|
         files = []
-        File.open(File.join(basedir, index + '.index')) do |file|
-          file.each_line do |line|
-            next if line =~ /^#/ || line.strip.empty?
-            filename = "mri/#{line.chomp}"
-            filename = "jruby/#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
-            filename = "#{line.chomp}.rb" unless File.exist? File.join(basedir, filename)
-            next if filename =~ /mri\/psych\//
-            next if filename =~ /mri\/net\/http\//
-            next unless File.exist? File.join(basedir, filename)
-            files << "<arg value='test/#{filename}'/>"
-          end
+        File.readlines(File.join(basedir, index + '.index')).each do |line|
+          next if line =~ /^#/ || line.strip.empty?
+          filename = "#{line.chomp}.rb"
+          next unless File.exist? File.join(basedir, filename)
+          files << "<arg value='#{File.join('test', filename)}'/>"
         end
+
         files = files.join('')
+
+        rake_command = "lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb"
+        rake_command.tr!('/', '\\\\') if is_windows
+
+        classpath = 'core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'
+        classpath.tr!('/:', '\\\\;') if is_windows
 
         execute_goals( 'run',
                        :id => "jruby_complete_jar_#{index}",
                        :phase => 'test',
-                       :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='-Djruby.home=${jruby.home}'/><arg value='-Djruby.aot.loadClasses=true'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest'/><arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>#{files}<arg value='-v'/></exec></target>" ) ] )
+                       :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='#{classpath}'/><arg value='-Djruby.home=${jruby.home}'/><arg value='-Djruby.aot.loadClasses=true'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest'/><arg value='#{rake_command}'/>#{files}<arg value='-v'/></exec></target>" ) ] )
       end
     end
 
