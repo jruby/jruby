@@ -94,33 +94,28 @@ if [ -z "$JRUBY_OPTS" ] ; then
   JRUBY_OPTS=""
 fi
 
+# On Java 9+, add an @argument for the given file if it exists.
+# On earlier versions the file will be read and expanded
+function process_java_opts {
+  java_opts_file=$1
+  if [[ -r $java_opts_file ]]; then
+    if [[ $is_java9 ]]; then
+      jruby_java_opts="$jruby_java_opts @$java_opts_file"
+    else
+      jruby_java_opts="$jruby_java_opts $(cat $java_opts_file)"
+    fi
+  fi
+}
+
 # Add local and global .jruby.java_opts
 installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
 home_jruby_java_opts_file="$HOME/.jruby.java_opts"
-cwd_jruby_java_opts_file="$cwd/.jruby.java_opts"
+pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 
-jruby_java_opts=""
-if [ -r $installed_jruby_java_opts_file ]; then
-  if [[ $is_java9 ]]; then
-    jruby_java_opts="@$installed_jruby_java_opts_file"
-  else
-    jruby_java_opts=`cat $installed_jruby_java_opts_file`
-  fi
-fi
-if [ -r $home_jruby_java_opts_file ]; then
-  if [[ $is_java9 ]]; then
-    jruby_java_opts="$jruby_java_opts @$home_jruby_java_opts_file"
-  else
-    jruby_java_opts="$jruby_java_opts $(cat $home_jruby_java_opts_file)"
-  fi
-fi
-if [ -r $cwd_jruby_java_opts_file ]; then
-  if [[ $is_java9 ]]; then
-    jruby_java_opts="$jruby_java_opts @$cwd_jruby_java_opts_file"
-  else
-    jruby_java_opts="$jruby_java_opts $(cat $cwd_jruby_java_opts_file)"
-  fi
-fi
+unset jruby_java_opts
+process_java_opts $installed_jruby_java_opts_file
+process_java_opts $home_jruby_java_opts_file
+process_java_opts $pwd_jruby_java_opts_file
 JAVA_OPTS="$jruby_java_opts $JAVA_OPTS"
 
 # space-separated list of special flags
