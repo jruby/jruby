@@ -119,7 +119,7 @@ public class MethodGatherer {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    PartitionedMethods filteredMethods = FILTERED_METHODS.get(klass);
+                    PartitionedMethods filteredMethods = FILTERED_METHODS.get(iface);
 
                     addNewMethods(nameMethods, filteredMethods.instanceMethods, false);
                 }
