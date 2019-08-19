@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IdUtil;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,34 +30,89 @@ import java.util.function.Function;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 public class MethodGatherer {
+    private static final boolean DEBUG_SCALA = false;
+    private static final String METHOD_MANGLE = "__method";
+    private static final String CONSTRUCTOR_NAME = "__jcreate!";
+    private static final Method[] EMPTY_METHODS = new Method[0];
     private static final int ACC_BRIDGE = 0x00000040;
 
-    final Map<String, AssignedName> staticNames;
-    final Map<String, AssignedName> instanceNames;
+    private static final Map<String, String> SCALA_OPERATORS;
+
+    static {
+        HashMap<String, String> scalaOperators = new HashMap<>(24, 1);
+        scalaOperators.put("\\$plus", "+");
+        scalaOperators.put("\\$minus", "-");
+        scalaOperators.put("\\$colon", ":");
+        scalaOperators.put("\\$div", "/");
+        scalaOperators.put("\\$eq", "=");
+        scalaOperators.put("\\$less", "<");
+        scalaOperators.put("\\$greater", ">");
+        scalaOperators.put("\\$bslash", "\\\\");
+        scalaOperators.put("\\$hash", "#");
+        scalaOperators.put("\\$times", "*");
+        scalaOperators.put("\\$bang", "!");
+        scalaOperators.put("\\$at", "@");
+        scalaOperators.put("\\$percent", "%");
+        scalaOperators.put("\\$up", "^");
+        scalaOperators.put("\\$amp", "&");
+        scalaOperators.put("\\$tilde", "~");
+        scalaOperators.put("\\$qmark", "?");
+        scalaOperators.put("\\$bar", "|");
+        SCALA_OPERATORS = Collections.unmodifiableMap(scalaOperators);
+    }
+
+    private final Map<String, AssignedName> staticNames;
+    private final Map<String, AssignedName> instanceNames;
+
+    private static final Map<String, AssignedName> STATIC_RESERVED_NAMES;
+    private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES;
+
+    static {
+        STATIC_RESERVED_NAMES = newReservedNamesMap(1);
+        STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
+    }
+
+    static {
+        INSTANCE_RESERVED_NAMES = newReservedNamesMap(2);
+        // only possible for "getClass" to be an instance method in Java
+        INSTANCE_RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
+        // "initialize" has meaning only for an instance (as opposed to a class)
+        INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
+    }
+
+    // TODO: other reserved names?
+    private static Map<String, AssignedName> newReservedNamesMap(final int size) {
+        HashMap<String, AssignedName> RESERVED_NAMES = new HashMap<>(size + 4, 1);
+        RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
+        RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
+        // JRUBY-5132: java.awt.Component.instance_of?() expects 2 args
+        RESERVED_NAMES.put("instance_of?", new AssignedName("instance_of?", Priority.RESERVED));
+        return RESERVED_NAMES;
+    }
+
     private Map<String, NamedInstaller> staticInstallers = Collections.EMPTY_MAP;
     private Map<String, NamedInstaller> instanceInstallers = Collections.EMPTY_MAP;
     final List<ConstantField> constantFields = new ArrayList<>();
     final Ruby runtime;
-    public static final String CONSTRUCTOR_NAME = "__jcreate!";
 
     MethodGatherer(final Ruby runtime, final Class superClass) {
         this.runtime = runtime;
         
         if (superClass == null) {
-            staticNames = new HashMap<>(Initializer.STATIC_RESERVED_NAMES);
-            instanceNames = new HashMap<>(Initializer.INSTANCE_RESERVED_NAMES);
+            staticNames = new HashMap<>(STATIC_RESERVED_NAMES);
+            instanceNames = new HashMap<>(INSTANCE_RESERVED_NAMES);
         } else {
             JavaSupport javaSupport = runtime.getJavaSupport();
 
             Map<String, AssignedName> staticAssignedNames = javaSupport.getStaticAssignedNames().get(superClass);
-            staticNames = new HashMap<>(staticAssignedNames.size() + Initializer.STATIC_RESERVED_NAMES.size());
+            staticNames = new HashMap<>(staticAssignedNames.size() + STATIC_RESERVED_NAMES.size());
 
             Map<String, AssignedName> instanceAssignedNames = javaSupport.getInstanceAssignedNames().get(superClass);
-            instanceNames = new HashMap<>(instanceAssignedNames.size() + Initializer.INSTANCE_RESERVED_NAMES.size());
+            instanceNames = new HashMap<>(instanceAssignedNames.size() + INSTANCE_RESERVED_NAMES.size());
 
-            staticNames.putAll(Initializer.STATIC_RESERVED_NAMES);
+            staticNames.putAll(STATIC_RESERVED_NAMES);
             staticNames.putAll(staticAssignedNames);
-            instanceNames.putAll(Initializer.INSTANCE_RESERVED_NAMES);
+            instanceNames.putAll(INSTANCE_RESERVED_NAMES);
             instanceNames.putAll(instanceAssignedNames);
         }
     }
@@ -180,28 +236,59 @@ public class MethodGatherer {
         }
     }
 
-    public static final ClassValue<PartitionedMethods> FILTERED_DECLARED_METHODS = new ClassValue<PartitionedMethods>() {
-        @Override
-        public PartitionedMethods computeValue(Class cls) {
-            return new PartitionedMethods(Initializer.DECLARED_METHODS.get(cls));
-        }
-    };
-    public static final ClassValue<Method[]> METHODS = new ClassValue<Method[]>() {
+    public static final ClassValue<Method[]> DECLARED_METHODS = new ClassValue<Method[]>() {
         @Override
         public Method[] computeValue(Class cls) {
-            return cls.getMethods();
+            try {
+                return cls.getDeclaredMethods();
+            } catch (SecurityException se) {
+                return EMPTY_METHODS;
+            }
         }
     };
-    public static final ClassValue<PartitionedMethods> FILTERED_METHODS = new ClassValue<PartitionedMethods>() {
+
+    private static final ClassValue<PartitionedMethods> FILTERED_DECLARED_METHODS = new ClassValue<PartitionedMethods>() {
+        @Override
+        public PartitionedMethods computeValue(Class cls) {
+            return new PartitionedMethods(DECLARED_METHODS.get(cls));
+        }
+    };
+    private static final ClassValue<Method[]> METHODS = new ClassValue<Method[]>() {
+        @Override
+        public Method[] computeValue(Class cls) {
+            try {
+                return cls.getMethods();
+            } catch (SecurityException se) {
+                return EMPTY_METHODS;
+            }
+        }
+    };
+    private static final ClassValue<PartitionedMethods> FILTERED_METHODS = new ClassValue<PartitionedMethods>() {
         @Override
         public PartitionedMethods computeValue(Class cls) {
             return new PartitionedMethods(METHODS.get(cls));
         }
     };
-    public static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
+    private static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
         @Override
         public Class<?>[] computeValue(Class cls) {
             return cls.getInterfaces();
+        }
+    };
+    private static final ClassValue<Boolean> IS_SCALA = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            if (type.isInterface()) return false;
+
+            boolean scalaAnno = false;
+            for (Annotation anno : type.getDeclaredAnnotations()) {
+                Package pkg = anno.annotationType().getPackage();
+                if (pkg != null && pkg.getName() != null && pkg.getName().startsWith("scala.")) {
+                    scalaAnno = true;
+                    break;
+                }
+            }
+            return scalaAnno;
         }
     };
 
@@ -250,7 +337,7 @@ public class MethodGatherer {
             final ClassLoader loader = javaClass.getClassLoader();
             if ( loader == null ) return; //this is a core class, bail
 
-            if (!Initializer.IS_SCALA.get(javaClass)) return;
+            if (!IS_SCALA.get(javaClass)) return;
 
             Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
             final Field field = companionClass.getField("MODULE$");
@@ -261,24 +348,24 @@ public class MethodGatherer {
                 for (int j = 0; j < methods.size(); j++) {
                     final Method method = methods.get(j);
 
-                    if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("Companion object method {} for {}", name, companionClass);
+                    if (DEBUG_SCALA) Initializer.LOG.debug("Companion object method {} for {}", name, companionClass);
 
-                    if (name.indexOf('$') >= 0) name = Initializer.fixScalaNames(name);
+                    if (name.indexOf('$') >= 0) name = fixScalaNames(name);
 
                     if (!Modifier.isStatic(method.getModifiers())) {
                         AssignedName assignedName = staticNames.get(name);
                         // For JRUBY-4505, restore __method methods for reserved names
-                        if (Initializer.INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-                            if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("in reserved " + name);
-                            setupSingletonMethods(staticInstallers, javaClass, singleton, method, name + Initializer.METHOD_MANGLE);
+                        if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+                            if (DEBUG_SCALA) Initializer.LOG.debug("in reserved " + name);
+                            setupSingletonMethods(staticInstallers, javaClass, singleton, method, name + METHOD_MANGLE);
                             continue;
                         }
                         if (assignedName == null) {
                             staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                            if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("Assigned name is null");
+                            if (DEBUG_SCALA) Initializer.LOG.debug("Assigned name is null");
                         } else {
                             if (Priority.METHOD.lessImportantThan(assignedName)) {
-                                if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("Less important");
+                                if (DEBUG_SCALA) Initializer.LOG.debug("Less important");
                                 continue;
                             }
                             if (!Priority.METHOD.asImportantAs(assignedName)) {
@@ -287,10 +374,10 @@ public class MethodGatherer {
                                 staticNames.put(name, new AssignedName(name, Priority.METHOD));
                             }
                         }
-                        if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("Installing {} {} {}", name, method, singleton);
+                        if (DEBUG_SCALA) Initializer.LOG.debug("Installing {} {} {}", name, method, singleton);
                         setupSingletonMethods(staticInstallers, javaClass, singleton, method, name);
                     } else {
-                        if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("Method {} is sadly static", method);
+                        if (DEBUG_SCALA) Initializer.LOG.debug("Method {} is sadly static", method);
                     }
                 }
             });
@@ -298,8 +385,16 @@ public class MethodGatherer {
         catch (ClassNotFoundException e) { /* there's no companion object */ }
         catch (NoSuchFieldException e) { /* no MODULE$ field in companion */ }
         catch (Exception e) {
-            if (Initializer.DEBUG_SCALA) Initializer.LOG.debug("Failed with {}", e);
+            if (DEBUG_SCALA) Initializer.LOG.debug("Failed with {}", e);
         }
+    }
+
+    protected static String fixScalaNames(final String name) {
+        String s = name;
+        for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
+            s = s.replaceAll(entry.getKey(), entry.getValue());
+        }
+        return s;
     }
 
     protected void installConstants(final RubyModule proxy) {
@@ -340,17 +435,17 @@ public class MethodGatherer {
     }
 
     protected void prepareStaticMethod(Class<?> javaClass, Method method, String name) {
-        prepareMethod(javaClass, method, name, getStaticInstallersForWrite(), Initializer.STATIC_RESERVED_NAMES, staticNames, StaticMethodInvokerInstaller::new);
+        prepareMethod(javaClass, method, name, getStaticInstallersForWrite(), STATIC_RESERVED_NAMES, staticNames, StaticMethodInvokerInstaller::new);
     }
 
     protected void prepareInstanceMethod(Class<?> javaClass, Method method, String name) {
-        prepareMethod(javaClass, method, name, getInstanceInstallersForWrite(), Initializer.INSTANCE_RESERVED_NAMES, instanceNames, InstanceMethodInvokerInstaller::new);
+        prepareMethod(javaClass, method, name, getInstanceInstallersForWrite(), INSTANCE_RESERVED_NAMES, instanceNames, InstanceMethodInvokerInstaller::new);
     }
 
     protected void prepareMethod(Class<?> javaClass, Method method, String name, Map<String, NamedInstaller> installers, Map<String, AssignedName> reservedNames, Map<String, AssignedName> names, Function<String, NamedInstaller> constructor) {
         // For JRUBY-4505, restore __method methods for reserved names
         if (reservedNames.containsKey(method.getName())) {
-            name = name + Initializer.METHOD_MANGLE;
+            name = name + METHOD_MANGLE;
         } else {
             if (lowerPriority(name, installers, names)) return;
         }
@@ -459,7 +554,7 @@ public class MethodGatherer {
         getStaticInstallers().forEach((name, installer) -> {
             if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
                 // no aliases for __method methods
-                if (name.endsWith(Initializer.METHOD_MANGLE)) return;
+                if (name.endsWith(METHOD_MANGLE)) return;
 
                 MethodInstaller methodInstaller = (MethodInstaller) installer;
 
@@ -472,7 +567,7 @@ public class MethodGatherer {
         getInstanceInstallers().forEach((name, installer) -> {
             if (installer.type == NamedInstaller.INSTANCE_METHOD) {
                 // no aliases for __method methods
-                if (name.endsWith(Initializer.METHOD_MANGLE)) return;
+                if (name.endsWith(METHOD_MANGLE)) return;
 
                 MethodInstaller methodInstaller = (MethodInstaller) installer;
 

@@ -62,7 +62,7 @@ public abstract class MethodInstaller extends NamedInstaller {
             } else if (argCount == 2 && name.equals("update")) {
                 addUnassignedAlias("[]=", assignedNames, Priority.ALIAS);
             } else if (startsWith(name, '$')) { // Scala aliases for $ method names
-                addUnassignedAlias(ClassInitializer.fixScalaNames(name), assignedNames, Priority.ALIAS);
+                addUnassignedAlias(MethodGatherer.fixScalaNames(name), assignedNames, Priority.ALIAS);
             }
 
             String rubyPropertyName = null;

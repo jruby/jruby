@@ -88,7 +88,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.binding.Initializer;
+import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -1151,7 +1151,7 @@ public class RubyModule extends RubyObject {
 
         @SuppressWarnings("deprecation")
         public void clump(final Class klass) {
-            Method[] declaredMethods = Initializer.DECLARED_METHODS.get(klass);
+            Method[] declaredMethods = MethodGatherer.DECLARED_METHODS.get(klass);
             for (Method method: declaredMethods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
