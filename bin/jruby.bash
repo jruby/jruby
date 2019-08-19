@@ -35,6 +35,12 @@ if [ -z "$JAVA_VM" ]; then
   JAVA_VM=-client
 fi
 
+# Gather environment information as we go
+environment_log="JRuby Environment\n================="
+function add_log() {
+    printf -v environment_log "$environment_log\n$1"
+}
+
 # get the absolute path of the executable
 BASE_DIR=$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)
 SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
@@ -50,6 +56,9 @@ while [ -h "$SELF_PATH" ]; do
 done
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
+
+add_log "JRuby executable: $BASH_SOURCE"
+add_log "JRUBY_HOME: $JRUBY_HOME"
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
@@ -70,10 +79,15 @@ else
   fi
 fi
 
+add_log "JAVACMD: $JAVACMD"
+add_log "JAVA_HOME: $JAVA_HOME"
+
 # Detect Java 9+ by the presence of a jmods directory in JAVA_HOME
 if [ -d $JAVA_HOME/jmods ]; then
   is_java9=1
+  add_log "Java modules detected"
 fi
+
 
 # We include options on the java command line in the following order:
 # * JRuby installed bin/.jruby.java_opts (empty by default)
@@ -91,6 +105,7 @@ fi
 function process_java_opts {
   java_opts_file=$1
   if [[ -r $java_opts_file ]]; then
+    add_log "Adding Java options from: $java_opts_file"
     if [[ $is_java9 ]]; then
       jruby_java_opts="$jruby_java_opts @$java_opts_file"
     else
@@ -127,11 +142,13 @@ for opt in ${JRUBY_OPTS[@]}; do
             # make sure flags listed in JRUBY_OPTS_SPECIAL are processed
             case "$opt" in
             --ng)
+                add_log "Enabling Nailgun client"
                 process_special_opts $opt;;
             esac
         fi
     done
     if [ $opt == "-server" ]; then # JRUBY-4204
+        add_log "Enabling -server mode"
         JAVA_VM="-server"
     fi
 done
@@ -140,6 +157,8 @@ JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
+
+add_log "JAVA_STACK: $JAVA_STACK"
 
 # Capture some Java options to be passed separately
 unset JAVA_OPTS_TEMP
@@ -253,6 +272,7 @@ fi
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 set -- $JRUBY_OPTS "$@"
+add_log "JRuby command line options: $@"
 while [ $# -gt 0 ]
 do
     case "$1" in
@@ -337,7 +357,8 @@ do
         JAVA_VM=-server ;;
      --dev)
         JAVA_VM=-client
-        JAVA_OPTS="$JAVA_OPTS $dev_mode_opts" ;;
+        JAVA_OPTS="$JAVA_OPTS $dev_mode_opts"
+        add_log "Adding Java options from: $dev_mode_opts_file" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
@@ -353,6 +374,7 @@ do
      --ng)
         # Use native Nailgun client to toss commands to server
         process_special_opts "--ng" ;;
+     --environment) print_environment_log=1 ;;
      # warn but ignore
      --1.8) echo "warning: --1.8 ignored" ;;
      # warn but ignore
@@ -427,6 +449,7 @@ if [[ $is_java9 ]]; then
 
   # If we have a jruby.jsa file, enable AppCDS
   if [ -f $JRUBY_JSA ]; then
+    add_log "AppCDS archive: $JRUBY_JSA"
     JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
   fi
 
@@ -440,7 +463,7 @@ fi
 if [ "$nailgun_client" != "" ]; then
 
   if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
+    jvm_command=$JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
   else
     echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
     exit 1
@@ -468,6 +491,14 @@ else
     "-Djruby.shell=$JRUBY_SHELL" \
     $java_class $mode "$@")
 
+fi
+
+full_java_command="${jvm_command[@]}"
+add_log "Full Java command line: $full_java_command"
+
+if [[ $print_environment_log ]]; then
+  echo "$environment_log"
+  exit 0
 fi
 
 # Run JRuby!
