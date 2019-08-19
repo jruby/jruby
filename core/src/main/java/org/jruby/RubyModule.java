@@ -265,7 +265,7 @@ public class RubyModule extends RubyObject {
         public boolean isKindOf(IRubyObject obj, RubyModule type) {
             RubyModule cl = obj.getMetaClass();
 
-            return cl.searchAncestor(type.getMethodLocation()) != null;
+            return cl.searchAncestor(type.getDelegate().getNonIncludedClass()) != null;
         }
     }
 
@@ -1014,19 +1014,10 @@ public class RubyModule extends RubyObject {
      *
      * MRI: rb_prepend_module
      *
-     * @param arg The module to include
+     * @param module The module to include
      */
-    public synchronized void prependModule(IRubyObject arg) {
-        assert arg != null;
-
+    public void prependModule(RubyModule module) {
         testFrozen("module");
-
-        if (!(arg instanceof RubyModule)) {
-            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
-                    " (expected Module).");
-        }
-
-        RubyModule module = (RubyModule) arg;
 
         if (module.refinedClass != null) {
             throw getRuntime().newArgumentError("refinement module is not allowed");
@@ -1035,18 +1026,30 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicInclude(module);
 
-        if (hasModuleInPrepends(module)) {
+        synchronized (this) {
+            if (hasModuleInPrepends(module)) {
+                invalidateCacheDescendants();
+                return;
+            }
+
+            infectBy(module);
+
+            doPrependModule(module);
+
+            invalidateCoreClasses();
             invalidateCacheDescendants();
-            return;
+            invalidateConstantCacheForModuleInclusion(module);
         }
+    }
 
-        infectBy(module);
-
-        doPrependModule(module);
-
-        invalidateCoreClasses();
-        invalidateCacheDescendants();
-        invalidateConstantCacheForModuleInclusion(module);
+    @Deprecated
+    public void prependModule(IRubyObject arg) {
+        assert arg != null;
+        if (!(arg instanceof RubyModule)) {
+            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
+                    " (expected Module).");
+        }
+        prependModule((RubyModule) arg);
     }
 
     /**
@@ -1821,6 +1824,7 @@ public class RubyModule extends RubyObject {
         methodInvalidator.invalidateAll(invalidators);
     }
 
+    @SuppressWarnings("deprecation")
     protected void invalidateCoreClasses() {
         if (!getRuntime().isBootingCore()) {
             if (this == getRuntime().getFixnum()) {
@@ -2296,7 +2300,7 @@ public class RubyModule extends RubyObject {
             IRClosure closure = body.getScope();
 
             // Ask closure to give us a method equivalent.
-            IRMethod method = closure.convertToMethod(name);
+            IRMethod method = closure.convertToMethod(name.getBytes());
             if (method != null) {
                 newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
                 Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
@@ -2639,7 +2643,7 @@ public class RubyModule extends RubyObject {
     protected RubyModule searchAncestor(RubyModule c) {
         RubyModule cl = this;
         while (cl != null) {
-            if (cl == c || cl.isSame(c) || cl.getNonIncludedClass() == c) {
+            if (cl == c || cl.isSame(c) || cl.getDelegate().getNonIncludedClass() == c) {
                 return cl;
             }
             cl = cl.getSuperClass();
@@ -4082,7 +4086,10 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
-        assert IdUtil.isConstant(name);
+        assert name != null : "null name";
+        //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
+        // NOTE: can not assert IdUtil.isConstant(name) until unmarshal-ing is using this for Java classes
+        // since some classes won't assert the upper case first char (anonymous classes start with a digit)
 
         IRubyObject value = getConstantNoConstMissing(name, inherit, includeObject);
         Ruby runtime = getRuntime();
@@ -4586,7 +4593,6 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
-        assert IdUtil.isConstant(name);
         ConstantEntry entry = constantEntryFetch(name);
 
         if (entry == null) return null;
@@ -4615,16 +4621,17 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
-        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
         assert value != null : "value is null";
+        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value);
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value, boolean hidden) {
-        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
         assert value != null : "value is null";
+        //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
+        // NOTE used to setup (store) Java class names
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden);
@@ -4632,8 +4639,8 @@ public class RubyModule extends RubyObject {
 
     // NOTE: private for now - not sure about the API - maybe an int mask would be better?
     private IRubyObject storeConstant(String name, IRubyObject value, boolean hidden, boolean deprecated) {
-        assert IdUtil.isConstant(name) : name + " is not a valid constant name";
         assert value != null : "value is null";
+        assert IdUtil.isConstant(name) : "invalid constant name: " + name;
 
         ensureConstantsSettable();
         return constantTableStore(name, value, hidden, deprecated);

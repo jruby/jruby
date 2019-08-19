@@ -894,7 +894,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (fd == null) {
                 if (Platform.IS_WINDOWS) {
-                    // Native channels don't work quite right on Windows yet. See jruby/jruby#3625
+                    // Native channels don't work quite right on Windows yet. Override standard io for better nonblocking support. See jruby/jruby#3625
                     switch (fileno) {
                         case 0:
                             fd = new ChannelFD(Channels.newChannel(runtime.getIn()), runtime.getPosix(), runtime.getFilenoUtil());
@@ -906,7 +906,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             fd = new ChannelFD(Channels.newChannel(runtime.getErr()), runtime.getPosix(), runtime.getFilenoUtil());
                             break;
                         default:
-                            throw runtime.newErrnoEBADFError("Windows does not support wrapping native file descriptor: " + fileno);
+                            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+                            break;
                     }
                 } else {
                     fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
@@ -1211,7 +1212,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
         fd = sysopen(runtime, fname.toString(), oflags, perm);
-        return runtime.newFixnum(fd.bestFileno());
+        return runtime.newFixnum(fd.bestFileno(true));
     }
 
     public static class Sysopen {
@@ -1267,11 +1268,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         PosixShim shim = new PosixShim(runtime);
         ret = shim.open(runtime.getCurrentDirectory(), data.fname, data.oflags, data.perm);
         if (ret == null) {
-            data.errno = shim.errno;
+            data.errno = shim.getErrno();
             return null;
         }
-        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
-        if (fd.realFileno > 0 && runtime.getPosix().isNative()) {
+        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil(), data.oflags);
+        if (fd.realFileno > 0 && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             OpenFile.fdFixCloexec(shim, fd.realFileno);
         }
 
@@ -1389,14 +1390,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             n = fptr.posix.write(fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize(), true);
 
             if (n == -1) {
-                if (fptr.posix.errno == Errno.EWOULDBLOCK || fptr.posix.errno == Errno.EAGAIN) {
+                if (fptr.posix.getErrno() == Errno.EWOULDBLOCK || fptr.posix.getErrno() == Errno.EAGAIN) {
                     if (no_exception) {
                         return runtime.newSymbol("wait_writable");
                     } else {
                         throw runtime.newErrnoEAGAINWritableError("write would block");
                     }
                 }
-                throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+                throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
             }
         } finally {
             if (locked) fptr.unlock();
@@ -2039,8 +2040,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (fptr == null) return context.nil;
             if (fptr.fd() == null) return context.nil;
             final Ruby runtime = context.runtime;
-
-            fptr.finalizeFlush(context, false);
 
             fptr.finalizeFlush(context, false);
 
@@ -4133,7 +4132,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         PosixShim posix = new PosixShim(runtime);
         Channel[] fds = posix.pipe();
         if (fds == null)
-            throw runtime.newErrnoFromErrno(posix.errno, "opening pipe");
+            throw runtime.newErrnoFromErrno(posix.getErrno(), "opening pipe");
 
 //        args[0] = klass;
 //        args[1] = INT2NUM(pipes[0]);

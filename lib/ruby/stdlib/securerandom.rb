@@ -182,10 +182,6 @@ module Random::Formatter
     "%08x-%04x-%04x-%04x-%04x%08x" % ary
   end
 
-  private def gen_random(n)
-    self.bytes(n)
-  end
-
   # SecureRandom.choose generates a string that randomly draws from a
   # source array of characters.
   #

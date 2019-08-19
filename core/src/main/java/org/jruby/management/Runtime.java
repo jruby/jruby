@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
@@ -41,6 +42,7 @@ import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.BacktraceData;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Format;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 
@@ -107,10 +109,14 @@ public class Runtime implements RuntimeMBean {
         pw.println("Thread: " + th.getNativeThread().getName());
         pw.println("Stack:");
         ThreadContext tc = th.getContext();
+        StringBuilder builder = new StringBuilder();
         if (tc != null) {
-            RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
-            exc.toThrowable();
-            pw.println(Format.MRI.printBacktrace(exc, false));
+            Format.JRUBY.renderBacktrace(
+                    WALKER.walk(th.getNativeThread().getStackTrace(), stream -> gather.getBacktraceData(tc, stream)).getBacktrace(ruby),
+                    builder,
+                    false);
+            pw.println(builder);
+            builder.setLength(0);
         } else {
             pw.println("    [no longer alive]");
         }

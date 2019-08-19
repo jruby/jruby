@@ -232,7 +232,7 @@ public class RubyTime extends RubyObject {
             dtz = getTimeZoneFromHHMM(runtime, "", !sign.equals("-"), hours, minutes, seconds);
         } else {
             RubyNumeric numericOffset = numExact(context, utcOffset);
-            int newOffset = (int) Math.round(numericOffset.convertToFloat().getDoubleValue() * 1000);
+            int newOffset = (int) Math.round(numericOffset.convertToFloat().value * 1000);
             dtz = getTimeZoneWithOffset(runtime, "", newOffset);
         }
 
@@ -1219,7 +1219,7 @@ public class RubyTime extends RubyObject {
             if (arg instanceof RubyFloat) {
                 // use integral and decimal forms to calculate nanos
                 long seconds = RubyNumeric.float2long((RubyFloat) arg);
-                double dbl = ((RubyFloat) arg).getDoubleValue();
+                double dbl = ((RubyFloat) arg).value;
 
                 long nano = (long)((dbl - seconds) * 1000000000);
 
@@ -1526,7 +1526,10 @@ public class RubyTime extends RubyObject {
      * @since 9.2
      */
     public java.time.Instant toInstant() {
-        return java.time.Instant.ofEpochMilli(getTimeInMillis()).plusNanos(getNSec());
+        final long millis = getTimeInMillis();
+        long sec = Math.floorDiv(millis, 1000);
+        long nanoAdj = getNSec() + (Math.floorMod(millis, 1000) * 1_000_000);
+        return java.time.Instant.ofEpochSecond(sec, nanoAdj);
     }
 
     /**
@@ -1577,7 +1580,7 @@ public class RubyTime extends RubyObject {
             seconds = 0; boolean raise = true;
             if ( sec instanceof JavaProxy ) {
                 try { // support java.lang.Number proxies
-                    seconds = sec.convertToFloat().getDoubleValue(); raise = false;
+                    seconds = sec.convertToFloat().value; raise = false;
                 } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
             }
 
@@ -1822,7 +1825,7 @@ public class RubyTime extends RubyObject {
                 if (flo.isNegative()) {
                     throw runtime.newArgumentError("argument out of range.");
                 }
-                double micros = flo.getDoubleValue();
+                double micros = flo.value;
                 dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {

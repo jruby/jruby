@@ -19,11 +19,14 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.ext.nkf.RubyNKF;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
@@ -44,6 +47,7 @@ public final class EncodingService {
     private static final ByteList EXTERNAL_BL = ByteList.create("external");
     private static final ByteList INTERNAL_BL = ByteList.create("internal");
     private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
+    private static final Pattern MS_CP_PATTERN = Pattern.compile("^MS([0-9]+)$");
 
     public EncodingService(Ruby runtime) {
         this.runtime = runtime;
@@ -351,7 +355,9 @@ public final class EncodingService {
 
         SpecialEncoding special = SpecialEncoding.valueOf(name);
         if (special != null) {
-            return special.toEncoding(runtime);
+            Encoding specialEncoding = special.toEncoding(runtime);
+            if (specialEncoding == null) specialEncoding = ASCIIEncoding.INSTANCE;
+            return specialEncoding;
         }
 
         if (error) return findEncodingWithError(name);
@@ -418,6 +424,28 @@ public final class EncodingService {
         if (!name.getEncoding().isAsciiCompatible()) {
             throw runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
+    }
+
+    public Encoding getWindowsFilesystemEncoding(Ruby ruby) {
+        String encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+        Encoding filesystemEncoding = loadEncoding(ByteList.create(encoding));
+
+        // Use default external if file.encoding does not point at an encoding we recognize
+        if (filesystemEncoding == null) {
+            // if the encoding name matches /^MS[0-9]+/ we can assume it's a Windows code page and use CP### to look it up.
+            Matcher match = MS_CP_PATTERN.matcher(encoding);
+            if (match.find()) {
+                String cpEncoding = "CP" + match.group(1);
+                filesystemEncoding = loadEncoding(ByteList.create(cpEncoding));
+            }
+        }
+
+        if (filesystemEncoding == null) {
+            ruby.getWarnings().warn("unrecognized system encoding \"" + encoding + "\", using default external");
+            filesystemEncoding = ruby.getDefaultExternalEncoding();
+        }
+
+        return filesystemEncoding;
     }
 
     /**

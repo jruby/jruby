@@ -783,7 +783,7 @@ public class Bootstrap {
 
     public static boolean testType(RubyClass original, IRubyObject self) {
         // naive test
-        return ((RubyBasicObject)self).getMetaClass() == original;
+        return original == RubyBasicObject.getMetaClass(self);
     }
 
 
@@ -1035,7 +1035,7 @@ public class Bootstrap {
     }
 
     public static Handle getFixnumOperatorHandle() {
-        return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_STRING_INT_SIG);
+        return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_STRING_INT_SIG);  
     }
 
     public static Handle getFloatOperatorHandle() {

@@ -64,11 +64,9 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
-import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
 import org.jruby.parser.StaticScope;
@@ -1247,9 +1245,9 @@ public final class Ruby implements Constantizable {
         // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
         irManager = new IRManager(this, getInstanceConfig());
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
-        // relationship handled either more directly or through a descriptice method
+        // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
-        IRScope top = new IRScriptBody(irManager, newSymbol(""), context.getCurrentScope().getStaticScope());
+        IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
         top.allocateInterpreterContext(new ArrayList<Instr>());
 
         // Initialize the "dummy" class used as a marker
@@ -1385,6 +1383,7 @@ public final class Ruby implements Constantizable {
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
+        objectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
@@ -1485,10 +1484,7 @@ public final class Ruby implements Constantizable {
 
         // Filesystem should always have a value
         if (Platform.IS_WINDOWS) {
-            encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
-            Encoding filesystemEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-            if (filesystemEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-            setDefaultFilesystemEncoding(filesystemEncoding);
+            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(this));
         } else {
             setDefaultFilesystemEncoding(getDefaultExternalEncoding());
         }
@@ -3100,19 +3096,20 @@ public final class Ruby implements Constantizable {
         return javaProxyClassFactory;
     }
 
-    public class CallTraceFuncHook extends EventHook {
+    private static final EnumSet<RubyEvent> interest =
+            EnumSet.of(
+                    RubyEvent.C_CALL,
+                    RubyEvent.C_RETURN,
+                    RubyEvent.CALL,
+                    RubyEvent.CLASS,
+                    RubyEvent.END,
+                    RubyEvent.LINE,
+                    RubyEvent.RAISE,
+                    RubyEvent.RETURN
+            );
+
+    public static class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
-        private EnumSet<RubyEvent> interest =
-                EnumSet.of(
-                        RubyEvent.C_CALL,
-                        RubyEvent.C_RETURN,
-                        RubyEvent.CALL,
-                        RubyEvent.CLASS,
-                        RubyEvent.END,
-                        RubyEvent.LINE,
-                        RubyEvent.RAISE,
-                        RubyEvent.RETURN
-                );
 
         public void setTraceFunc(RubyProc traceFunc) {
             this.traceFunc = traceFunc;
@@ -3121,19 +3118,20 @@ public final class Ruby implements Constantizable {
         public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
             if (!context.isWithinTrace()) {
                 if (file == null) file = "(ruby)";
-                if (type == null) type = getNil();
+                if (type == null) type = context.nil;
 
-                RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
+                Ruby runtime = context.runtime;
+                RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
 
                 context.preTrace();
                 try {
-                    traceFunc.call(context, new IRubyObject[] {
-                        newString(eventName), // event name
-                        newString(file), // filename
-                        newFixnum(line), // line numbers should be 1-based
-                        name != null ? newSymbol(name) : getNil(),
-                        binding,
-                        type
+                    traceFunc.call(context, new IRubyObject[]{
+                            runtime.newString(eventName), // event name
+                            runtime.newString(file), // filename
+                            runtime.newFixnum(line), // line numbers should be 1-based
+                            name != null ? runtime.newSymbol(name) : runtime.getNil(),
+                            binding,
+                            type
                     });
                 } finally {
                     context.postTrace();
@@ -3145,12 +3143,17 @@ public final class Ruby implements Constantizable {
         public boolean isInterestedInEvent(RubyEvent event) {
             return interest.contains(event);
         }
+
+        @Override
+        public EnumSet<RubyEvent> eventSet() {
+            return interest;
+        }
     };
 
-    private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
+    private static final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook();
 
     public synchronized void addEventHook(EventHook hook) {
-        if (!RubyInstanceConfig.FULL_TRACE_ENABLED) {
+        if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {
             // without full tracing, many events will not fire
             getWarnings().warn("tracing (e.g. set_trace_func) will not capture all events without --debug flag");
         }
@@ -4679,6 +4682,7 @@ public final class Ruby implements Constantizable {
     /**
      * Mark Fixnum as reopened
      */
+    @Deprecated
     public void reopenFixnum() {
         fixnumInvalidator.invalidate();
         fixnumReopened = true;
@@ -4687,6 +4691,7 @@ public final class Ruby implements Constantizable {
     /**
      * Retrieve the invalidator for Fixnum reopening
      */
+    @Deprecated
     public Invalidator getFixnumInvalidator() {
         return fixnumInvalidator;
     }
@@ -4694,6 +4699,7 @@ public final class Ruby implements Constantizable {
     /**
      * Whether the Float class has been reopened and modified
      */
+    @Deprecated
     public boolean isFixnumReopened() {
         return fixnumReopened;
     }
@@ -4701,6 +4707,7 @@ public final class Ruby implements Constantizable {
     /**
      * Mark Float as reopened
      */
+    @Deprecated
     public void reopenFloat() {
         floatInvalidator.invalidate();
         floatReopened = true;
@@ -4709,6 +4716,7 @@ public final class Ruby implements Constantizable {
     /**
      * Retrieve the invalidator for Float reopening
      */
+    @Deprecated
     public Invalidator getFloatInvalidator() {
         return floatInvalidator;
     }
@@ -4716,6 +4724,7 @@ public final class Ruby implements Constantizable {
     /**
      * Whether the Float class has been reopened and modified
      */
+    @Deprecated
     public boolean isFloatReopened() {
         return floatReopened;
     }

@@ -114,12 +114,12 @@ public final class BasicObjectStub {
 
     public static RubyClass getMetaClass(IRubyObject self) {
         if (self instanceof RubyBasicObject) {
-            return ((RubyBasicObject)self).getMetaClass();
-        } else if (self instanceof RubyJavaObject) {
-            return ((RubyJavaObject)self).getMetaClass();
-        } else {
-            throw new RuntimeException("unknown object type in BasicObjectStuff.getMetaClass: " + self.getClass());
+            return RubyBasicObject.getMetaClass(self);
         }
+        if (self instanceof RubyJavaObject) {
+            return ((RubyJavaObject) self).getMetaClass();
+        }
+        throw new RuntimeException("unknown object type in BasicObjectStuff.getMetaClass: " + self.getClass());
     }
 
     public static RubyClass getSingletonClass(IRubyObject self) {
@@ -131,15 +131,16 @@ public final class BasicObjectStub {
     }
 
     public static boolean respondsTo(IRubyObject self, String name) {
-        if(getMetaClass(self).searchMethod("respond_to?").equals(getRuntime(self).getRespondToMethod())) {
-            return getMetaClass(self).isMethodBound(name, false);
-        } else {
-            return callMethod(self, getRuntime(self).getCurrentContext(), "respond_to?", getRuntime(self).newSymbol(name)).isTrue();
+        final RubyClass metaClass = getMetaClass(self);
+        if (metaClass.searchMethod("respond_to?").equals(metaClass.runtime.getRespondToMethod())) {
+            return metaClass.isMethodBound(name, false);
         }
+        final Ruby runtime = metaClass.runtime;
+        return callMethod(self, runtime.getCurrentContext(), "respond_to?", runtime.newSymbol(name)).isTrue();
     }
 
     public static Ruby getRuntime(IRubyObject self) {
-        return getMetaClass(self).getClassRuntime();
+        return getMetaClass(self).runtime;
     }
 
     public static Class getJavaClass(IRubyObject self) {
@@ -156,7 +157,7 @@ public final class BasicObjectStub {
     public static RubyString asString(IRubyObject self) {
         IRubyObject str = Helpers.invoke(getRuntime(self).getCurrentContext(), self, "to_s");
 
-        if (!(str instanceof RubyString)) return (RubyString)anyToString(self);
+        if (!(str instanceof RubyString)) return (RubyString) anyToString(self);
         if (isTaint(self)) str.setTaint(true);
         return (RubyString) str;
     }
@@ -184,7 +185,7 @@ public final class BasicObjectStub {
     public static RubyInteger convertToInteger(IRubyObject self, String convertMethod) {
         IRubyObject val = TypeConverter.convertToType(self, getRuntime(self).getInteger(), convertMethod, true);
         if (!(val instanceof RubyInteger)) throw getRuntime(self).newTypeError(getMetaClass(self).getName() + '#' + convertMethod + " should return Integer");
-        return (RubyInteger)val;
+        return (RubyInteger) val;
     }
 
     public static RubyString convertToString(IRubyObject self) {
@@ -192,17 +193,19 @@ public final class BasicObjectStub {
     }
 
     public static IRubyObject anyToString(IRubyObject self) {
-        String cname = getMetaClass(self).getRealClass().getName();
+        final RubyClass metaClass = getMetaClass(self);
+        String cname = metaClass.getRealClass().getName();
         /* 6:tags 16:addr 1:eos */
-        RubyString str = getRuntime(self).newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + '>');
+        RubyString str = metaClass.runtime.newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + '>');
         str.setTaint(isTaint(self));
         return str;
     }
 
     public static IRubyObject checkStringType(IRubyObject self) {
-        IRubyObject str = TypeConverter.convertToTypeWithCheck(self, getRuntime(self).getString(), "to_str");
-        if(!str.isNil() && !(str instanceof RubyString)) {
-            str = RubyString.newEmptyString(getRuntime(self));
+        final Ruby runtime = getRuntime(self);
+        IRubyObject str = TypeConverter.convertToTypeWithCheck(self, runtime.getString(), "to_str");
+        if (!str.isNil() && !(str instanceof RubyString)) {
+            str = RubyString.newEmptyString(runtime);
         }
         return str;
     }
@@ -212,11 +215,8 @@ public final class BasicObjectStub {
     }
 
     public static Object toJava(IRubyObject self, Class cls) {
-        if (cls.isAssignableFrom(self.getClass())) {
-            return self;
-        } else {
-            throw getRuntime(self).newTypeError("could not convert " + self.getClass() + " to " + cls);
-        }
+        if (cls.isAssignableFrom(self.getClass())) return self;
+        throw getRuntime(self).newTypeError("could not convert " + self.getClass() + " to " + cls);
     }
 
     public static IRubyObject dup(IRubyObject self) {
@@ -225,7 +225,7 @@ public final class BasicObjectStub {
     }
 
     public static IRubyObject inspect(IRubyObject self) {
-        Ruby runtime = getRuntime(self);
+        final Ruby runtime = getRuntime(self);
         if (hasVariables(self)) {
             StringBuilder part = new StringBuilder();
             String cname = getMetaClass(self).getRealClass().getName();

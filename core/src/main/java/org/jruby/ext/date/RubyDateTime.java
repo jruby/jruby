@@ -37,6 +37,7 @@ import org.joda.time.chrono.GJChronology;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -53,6 +54,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
 import java.time.*;
 
 /**
@@ -238,12 +242,35 @@ public class RubyDateTime extends RubyDate {
 
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational();
-            long num = rat.getNumerator().getLongValue();
-            long den = rat.getDenominator().getLongValue();
-            rest[0] = (num - d * den); rest[1] = den;
+            if (rat.getNumerator() instanceof RubyBignum || rat.getDenominator() instanceof RubyBignum) {
+                calcBigIntDayRest(rat, d, rest);
+            } else {
+                long num = rat.getNumerator().getLongValue();
+                long den = rat.getDenominator().getLongValue();
+                rest[0] = num - d * den; rest[1] = den;
+            }
         }
 
         return d;
+    }
+
+    private static void calcBigIntDayRest(final RubyRational day, final long d, final long[] rest) {
+        BigInteger num = day.getNumerator().getBigIntegerValue();
+        BigInteger den = day.getDenominator().getBigIntegerValue();
+        BigInteger r0 = num.subtract(den.multiply(BigInteger.valueOf(d)));
+        BigInteger r1 = den;
+        BigInteger gcd = r0.gcd(r1);
+        r0 = r0.divide(gcd);
+        r1 = r1.divide(gcd);
+        try {
+            rest[0] = r0.longValueExact();
+            rest[1] = r1.longValueExact();
+        } catch (ArithmeticException e) {
+            BigDecimal r = new BigDecimal(r0).divide(new BigDecimal(r1), 18, BigDecimal.ROUND_HALF_UP);
+            r = r.setScale(18, BigDecimal.ROUND_HALF_UP);
+            rest[0] = r.unscaledValue().longValue();
+            rest[1] = (long) Math.pow(10, r.scale());
+        }
     }
 
     static int getHour(ThreadContext context, IRubyObject hour, final long[] rest) {

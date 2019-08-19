@@ -9,7 +9,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 
-public class RespondToCallSite extends NormalCachingCallSite {
+public class RespondToCallSite extends MonomorphicCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
     private final String respondToName;
     private RubySymbol respondToNameSym;
@@ -112,7 +112,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
 
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg) {
-        final CacheEntry entry = selfType.searchWithCache(methodName);
+        CacheEntry entry = selfType.searchWithCache(methodName);
         final DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg);
@@ -132,13 +132,13 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // normal logic if it's not the builtin respond_to? method
-        cache = entry;
+        entry = setCache(entry, self); // cache = entry;
         return method.call(context, self, entry.sourceModule, methodName, arg);
     }
 
     @Override
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        final CacheEntry entry = selfType.searchWithCache(methodName);
+        CacheEntry entry = selfType.searchWithCache(methodName);
         final DynamicMethod method = entry.method;
         if (methodMissing(method, caller)) {
             return callMethodMissing(context, self, selfType, method, arg0, arg1);
@@ -158,7 +158,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // normal logic if it's not the builtin respond_to? method
-        cache = entry;
+        entry = setCache(entry, self); // cache = entry;
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
     }
 

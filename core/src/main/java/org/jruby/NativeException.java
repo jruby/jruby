@@ -50,7 +50,6 @@ public class NativeException extends RubyException {
     private final Throwable cause;
     private final String messageAsJavaString;
     public static final String CLASS_NAME = "NativeException";
-    private static final StackWalker WALKER = StackWalker.getInstance();
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
         this(runtime, rubyClass, cause, buildMessage(cause));

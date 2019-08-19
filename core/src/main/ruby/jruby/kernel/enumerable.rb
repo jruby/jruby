@@ -111,23 +111,4 @@ module Enumerable
     Enumerator::Lazy.new(klass.new(self, :each, []))
   end
 
-  def uniq
-    values = []
-    hash = {}
-    if block_given?
-      each_entry do |obj|
-        ret = yield(*obj)
-        next if hash.key? ret
-        hash[ret] = obj
-        values << obj
-      end
-    else
-      each_entry do |obj|
-        next if hash.key? obj
-        hash[obj] = obj unless hash.key? obj
-        values << obj
-      end
-    end
-    values
-  end
 end

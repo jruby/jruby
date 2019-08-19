@@ -187,4 +187,45 @@ class TestEnumerator < Test::Unit::TestCase
     super
   end
 
+  public
+
+  def test_yielder
+    ary = Enumerator.new { |y| y.yield([1]) }.to_a
+    assert_equal [[1]], ary
+    ary = Enumerator.new { |y| y.yield([1]) }.lazy.to_a
+    assert_equal [[1]], ary
+    ary = Enumerator.new { |y| y << [1] }.to_a
+    assert_equal [[1]], ary
+
+    yields = []
+    y = Enumerator::Yielder.new { |args| yields << args }
+    y << [1]
+    assert_equal [[1]], yields
+
+    assert_equal 42, Enumerator.new { |y| y << 42 }.first
+    assert_equal [42], Enumerator.new { |y| y << [42] }.first
+    assert_equal [[42]], Enumerator.new { |y| y << [42] }.first(1)
+
+    assert_equal [], Enumerator.new { |y| y << [] }.first
+    assert_equal [], Enumerator.new { |y| y.yield [] }.first
+    assert_equal [1], Enumerator.new { |y| y.yield [1] }.first
+  end
+
+  def test_yield_map # GH-4108
+    ary = Enumerator.new { |y| y.yield([1]) }.map { |e| e }.to_a
+    assert_equal [[1]], ary
+    ary = Enumerator.new { |y| y.yield([1]) }.lazy.map { |e| e }.to_a
+    # NOTE: this one seems still failing (enumerable.lazy.map works)
+    # assert_equal [[1]], ary
+  end
+
+  def test_lazy_map_enumerable # GH-5044
+    a = [1, 2, 3].map { |a| [a + 1] }.to_a
+    assert_equal [[2], [3], [4]], a
+    a = [1, 2, 3].lazy.map { |a| [a + 1] }.to_a
+    assert_equal [[2], [3], [4]], a
+    a = [[1], [2], [3]].lazy.map(&:itself).to_a
+    assert_equal [[1], [2], [3]], a
+  end
+
 end

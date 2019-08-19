@@ -164,11 +164,6 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
         } else if (scope instanceof IRClosure) {
-//            // just load scope from context
-//            // FIXME: don't do this if we won't need the scope
-//            jvmMethod().loadContext();
-//            jvmAdapter().invokevirtual(p(ThreadContext.class), "getCurrentScope", sig(DynamicScope.class));
-
             // just load null so it is initialized; if we need it, we'll set it later
             jvmAdapter().aconst_null();
             jvmStoreLocal(DYNAMIC_SCOPE);
@@ -209,15 +204,13 @@ public class JVMVisitor extends IRVisitor {
             syntheticEndForStart.put(currentBlockStart, syntheticEnd);
         }
 
-        if (scope instanceof IRMethod) {
-            if (scope.receivesKeywordArgs()) {
-                // pre-frobnicate the args on the way in
-                m.loadContext();
-                m.loadArgs();
-                m.adapter.pushInt(scope.getStaticScope().getSignature().required());
-                m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class));
-                m.storeArgs();
-            }
+        if (scope.receivesKeywordArgs()) {
+            // pre-frobnicate the args on the way in
+            m.loadContext();
+            m.loadArgs();
+            m.adapter.pushInt(scope.getStaticScope().getSignature().required());
+            m.invokeIRHelper("frobnicateKwargsArgument", sig(IRubyObject[].class, ThreadContext.class, IRubyObject[].class, int.class));
+            m.storeArgs();
         }
 
         for (BasicBlock bb: bbs) {
@@ -1196,15 +1189,17 @@ public class JVMVisitor extends IRVisitor {
     public void DefineClassInstr(DefineClassInstr defineclassinstr) {
         IRClassBody newIRClassBody = defineclassinstr.getNewIRClassBody();
 
+        jvmMethod().loadContext(); // for invokeModuleBody
+
         jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRClassBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
         visit(defineclassinstr.getSuperClass());
-
         jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class, Object.class));
 
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(defineclassinstr.getResult());
     }
 
@@ -1312,14 +1307,16 @@ public class JVMVisitor extends IRVisitor {
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) {
         IRModuleBody newIRModuleBody = definemoduleinstr.getNewIRModuleBody();
 
+        jvmMethod().loadContext(); // for invokeModuleBody
+
         jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRModuleBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemoduleinstr.getContainer());
-
         jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class));
 
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(definemoduleinstr.getResult());
     }
 
@@ -1560,7 +1557,6 @@ public class JVMVisitor extends IRVisitor {
 
     public void oneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = oneFloatArgNoBlockCallInstr.getId();
         double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
         Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
         Variable result = oneFloatArgNoBlockCallInstr.getResult();

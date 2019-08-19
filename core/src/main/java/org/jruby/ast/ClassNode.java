@@ -117,4 +117,9 @@ public class ClassNode extends Node implements IScopingNode {
     public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode, superNode);
     }
+
+    @Override
+    public boolean executesOnce() {
+        return true;
+    }
 }

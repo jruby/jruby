@@ -7,6 +7,125 @@ class Enumerator
     # or http://bugs.ruby-lang.org/issues/7696
     attr_accessor :backports_memo
   end
+  def next
+    return @__lookahead__.shift unless @__lookahead__.empty?
+
+    unless @__generator__
+      # Allow #to_generator to return nil, indicating it has none for
+      # this method.
+      if @__object__.respond_to? :to_generator
+        @__generator__ = @__object__.to_generator(@__method__, *@__args__)
+      end
+
+      if !@__generator__
+        @__generator__ = FiberGenerator.new(@__object__, @__method__, @__args__)
+      end
+    end
+
+    begin
+      return @__generator__.next if @__generator__.next?
+    rescue StopIteration
+      nil # the enumerator could change between next? and next leading to StopIteration
+    end
+
+    exception = StopIteration.new 'iteration reached an end'
+    JRuby.ref(exception).result = @__generator__.result
+
+    raise exception
+  end
+
+  def next_values
+    Array(self.next)
+  end
+
+  def peek
+    return @__lookahead__.first unless @__lookahead__.empty?
+    item = self.next
+    @__lookahead__ << item
+    item
+  end
+
+  def peek_values
+    [*self.peek]
+  end
+
+  def rewind
+    @object.rewind if @object.respond_to? :rewind
+    @__generator__.rewind if @__generator__
+    @__lookahead__ = []
+    @__feedvalue__ = nil
+    self
+  end
+
+  def feed(val)
+    raise TypeError, 'Feed value already set' unless @__feedvalue__.nil?
+    @__feedvalue__ = val
+    nil
+  end
+
+  class FiberGenerator
+    class State
+      attr_reader :object, :method, :args, :to_proc
+      attr_accessor :done, :result
+
+      def initialize(object, method, args)
+        @object = object
+        @method = method
+        @args = args
+        @done = false
+        @result = nil
+
+        @to_proc = proc do
+          obj = @object
+          @result = obj.send(@method, *@args, &FIBER_YIELD_PROC)
+          @done = true
+        end
+      end
+
+      FIBER_YIELD_PROC = Fiber.method(:yield).to_proc
+    end
+
+    def initialize(obj, method, args)
+      @state = State.new(obj, method, args)
+      @fiber = nil
+      rewind
+    end
+
+    def result
+      @state.result
+    end
+
+    def next?
+      !@state.done
+    end
+
+    def next
+      reset unless @fiber
+
+      val = @fiber.resume
+
+      raise StopIteration, 'iteration has ended' if @state.done
+
+      val
+    end
+
+    def rewind
+      fiber, @fiber = @fiber, nil
+      if fiber
+        fiber_ref = JRuby.ref(fiber)
+        if fiber_ref.alive?
+          fiber_ref.finalize rescue nil
+        end
+      end
+      @state.done = false
+    end
+
+    def reset
+      @state.done = false
+      @state.result = nil
+      @fiber = Fiber.new(&@state)
+    end
+  end
 
   class Lazy < Enumerator
     LAZY_WITH_NO_BLOCK = Struct.new(:object, :method, :args) # used internally to create lazy without block

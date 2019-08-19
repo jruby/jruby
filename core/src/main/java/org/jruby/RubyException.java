@@ -72,6 +72,12 @@ public class RubyException extends RubyObject {
         private BacktraceData backtraceData;
         private IRubyObject backtraceObject;
         private IRubyObject backtraceLocations;
+
+        public void copy(Backtrace clone) {
+            this.backtraceData = clone.backtraceData;
+            this.backtraceObject = clone.backtraceObject;
+            this.backtraceLocations = clone.backtraceLocations;
+        }
         
         /**
          * Get the Ruby-facing representation of this backtrace, or a previously-set backtrace object.
@@ -87,15 +93,6 @@ public class RubyException extends RubyObject {
             if (backtraceData == null || backtraceData == BacktraceData.EMPTY) return runtime.getNil();
 
             return this.backtraceObject = TraceType.generateMRIBacktrace(runtime, backtraceData.getBacktrace(runtime));
-        }
-
-        /**
-         * Set the Ruby-facing backtrace object for this backtrace.
-         *
-         * @param backtraceObject the object to return for future backtrace requests
-         */
-        public final void setBacktraceObject(IRubyObject backtraceObject) {
-            this.backtraceObject = backtraceObject;
         }
 
         /**
@@ -126,9 +123,7 @@ public class RubyException extends RubyObject {
     private final Backtrace backtrace = new Backtrace();
 
     IRubyObject message;
-    // We initialize this to UNDEF to know whether cause has been initialized (from ruby space we will just see nil
-    // but internally we want to know if there was a cause or it was set to nil explicitly).
-    IRubyObject cause = UNDEF;
+    private IRubyObject cause = null;
     private RaiseException throwable;
 
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
@@ -183,31 +178,29 @@ public class RubyException extends RubyObject {
 
     public static ObjectAllocator EXCEPTION_ALLOCATOR = (runtime, klass) -> new RubyException(runtime, klass);
 
-    private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
+    private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+        public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
-            RubyException exc = (RubyException)obj;
-
             marshalStream.registerLinkTarget(exc);
             List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>("mesg", exc.getMessage()));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
+            attrs.add(new VariableEntry<>("mesg", exc.getMessage()));
+            attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException)type.allocate();
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type,
+                                           UnmarshalStream unmarshalStream) throws IOException {
+            RubyException exc = (RubyException) type.allocate();
 
             unmarshalStream.registerLinkTarget(exc);
             // FIXME: Can't just pull these off the wire directly? Or maybe we should
             // just use real vars all the time for these?
             unmarshalStream.defaultVariablesUnmarshal(exc);
 
-            exc.setMessage((IRubyObject)exc.removeInternalVariable("mesg"));
-            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
+            exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
+            exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));
 
             return exc;
         }
@@ -359,8 +352,7 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "cause")
     public IRubyObject cause(ThreadContext context) {
-        assert cause != null;
-        return cause == RubyBasicObject.UNDEF ? context.nil : cause;
+        return cause == null ? context.nil : cause;
     }
 
     /**
@@ -403,7 +395,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause == UNDEF ? null : cause;
+        return cause;
     }
 
     public RubyStackTraceElement[] getBacktraceElements() {
@@ -432,7 +424,7 @@ public class RubyException extends RubyObject {
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
-        exception.backtrace.backtraceData = backtrace.backtraceData;
+        exception.backtrace.copy(backtrace);
         exception.message = message;
     }
 

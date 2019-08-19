@@ -42,8 +42,12 @@ public class CallBlock extends BlockBody {
     private final StaticScope dummyScope;
 
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Signature signature, BlockCallback callback, ThreadContext context) {
+        return newCallClosure(context, self, signature, callback);
+    }
+
+    public static Block newCallClosure(ThreadContext context, IRubyObject self, Signature signature, BlockCallback callback) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
-        BlockBody body = new CallBlock(signature, callback, context);
+        BlockBody body = new CallBlock(context, signature, callback);
 
         return new Block(body, binding);
     }
@@ -53,16 +57,16 @@ public class CallBlock extends BlockBody {
         return newCallClosure(self, imClass, Signature.from(arity), callback, context);
     }
 
-    private CallBlock(Signature signature, BlockCallback callback, ThreadContext context) {
+    private CallBlock(ThreadContext context, Signature signature, BlockCallback callback) {
         super(signature);
         this.callback = callback;
         this.dummyScope = context.runtime.getStaticScopeFactory().getDummyScope();
     }
 
-    private IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
+    static IRubyObject[] adjustArgs(Block block, IRubyObject[] args) {
         Signature signature = block.getSignature();
         int required = signature.required();
-        if (signature.isFixed() && required  > 0 && required < args.length) args = ArraySupport.newCopy(args, required);
+        if (required > 0 && required < args.length && signature.isFixed()) args = ArraySupport.newCopy(args, required);
 
         return args;
     }
@@ -84,12 +88,12 @@ public class CallBlock extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
-        return callback.call(context, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
+        return callback.call(context, arg0, Block.NULL_BLOCK);
     }
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        return callback.call(context, new IRubyObject[]{value}, Block.NULL_BLOCK);
+        return callback.call(context, value, Block.NULL_BLOCK);
     }
 
     @Override

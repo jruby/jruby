@@ -425,8 +425,26 @@ EOM
     raise Gem::Package::PathError.new(destination, destination_dir) unless
       destination.start_with? destination_dir + '/'
 
+    begin
+      real_destination = File.expand_path(File.realpath(destination))
+    rescue
+      # it's fine if the destination doesn't exist, because rm -rf'ing it can't cause any damage
+      nil
+    else
+      raise Gem::Package::PathError.new(real_destination, destination_dir) unless
+        real_destination.start_with? destination_dir + '/'
+    end
+
     destination.untaint
     destination
+  end
+
+  def normalize_path(pathname)
+    if Gem.win_platform?
+      pathname.downcase
+    else
+      pathname
+    end
   end
 
   def mkdir_p_safe mkdir, mkdir_options, destination_dir, file_name
@@ -437,7 +455,7 @@ EOM
       path = File.expand_path(path + File::SEPARATOR + basename)
       lstat = File.lstat path rescue nil
       if !lstat || !lstat.directory?
-        unless path.start_with? destination_dir and (FileUtils.mkdir path, mkdir_options rescue false)
+        unless normalize_path(path).start_with? normalize_path(destination_dir) and (FileUtils.mkdir path, mkdir_options rescue false)
           raise Gem::Package::PathError.new(file_name, destination_dir)
         end
       end
@@ -591,7 +609,7 @@ EOM
     end
 
     case file_name
-    when /^metadata(.gz)?$/ then
+    when "metadata", "metadata.gz" then
       load_spec entry
     when 'data.tar.gz' then
       verify_gz entry

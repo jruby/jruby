@@ -224,7 +224,7 @@ public class RubyStruct extends RubyObject {
         if (name == null || nilName) {
             newStruct = RubyClass.newClass(runtime, superClass);
             newStruct.setAllocator(STRUCT_INSTANCE_ALLOCATOR);
-            newStruct.makeMetaClass(superClass.getMetaClass());
+            newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
             if (!IdUtil.isConstant(name)) {
@@ -471,7 +471,7 @@ public class RubyStruct extends RubyObject {
             result[i] = member.eltInternal(i);
         }
 
-        return RubyArray.newArrayNoCopy(type.getClassRuntime(), result);
+        return RubyArray.newArrayNoCopy(type.runtime, result);
     }
 
     @Deprecated // NOTE: no longer used ... should it get deleted?
@@ -567,7 +567,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
         if (!(other instanceof RubyStruct)) return context.fals;
-        if (getMetaClass() != other.getMetaClass()) {
+        if (metaClass != getMetaClass(other)) {
             return context.fals;
         }
 

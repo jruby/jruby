@@ -1,2 +1,0 @@
-fails:Mutex#synchronize blocks the caller if already locked
-fails:Mutex#synchronize blocks the caller if another thread is also in the synchronize block

@@ -120,6 +120,7 @@ import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
@@ -754,6 +755,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     support.backrefAssignError($1);
                 }
 
+// [!null or throws]
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
@@ -1694,6 +1696,7 @@ opt_else        : none
                     $$ = $2;
                 }
 
+// [!null]
 for_var         : lhs
                 | mlhs {
                 }
@@ -2604,7 +2607,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                 }
                 | restarg_mark {
   // FIXME: bytelist_love: somewhat silly to remake the empty bytelist over and over but this type should change (using null vs "" is a strange distinction).
-  $$ = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(new ByteList(new byte[] {})), support.getCurrentScope().addVariable("*"));
+  $$ = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(CommonByteLists.EMPTY), support.getCurrentScope().addVariable("*"));
                 }
 
 // [!null]

@@ -35,4 +35,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public interface BlockCallback {
     IRubyObject call(ThreadContext context, IRubyObject[] args, Block block);
+
+    default IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+        return call(context, new IRubyObject[] { arg }, block);
+    }
  }

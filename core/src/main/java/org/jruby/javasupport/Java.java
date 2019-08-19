@@ -114,6 +114,8 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
         org.jruby.javasupport.ext.JavaIo.define(runtime);
         org.jruby.javasupport.ext.JavaNet.define(runtime);
+        org.jruby.javasupport.ext.JavaMath.define(runtime);
+        org.jruby.javasupport.ext.JavaTime.define(runtime);
 
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
@@ -1180,6 +1182,8 @@ public class Java implements Library {
         if ( name.length() == 0 ) throw runtime.newArgumentError("empty class name");
 
         Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
+
+        if (enclosing == null) return null;
 
         final String fullName = enclosing.getName() + '$' + name;
 

@@ -61,7 +61,7 @@ public class RubyGenerator extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        final IRubyObject proc;
+        final RubyProc proc;
 
         if (args.length == 0) {
             proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
@@ -70,7 +70,7 @@ public class RubyGenerator extends RubyObject {
                 throw runtime.newTypeError(args[0], runtime.getProc());
             }
 
-            proc = args[0];
+            proc = (RubyProc) args[0];
 
             if (block.isGiven()) {
                 runtime.getWarnings().warn(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
@@ -102,5 +102,9 @@ public class RubyGenerator extends RubyObject {
         return ((RubyProc) proc).call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
     }
 
-    private IRubyObject proc;
+    public RubyProc getProc() {
+        return proc;
+    }
+
+    private RubyProc proc;
 }

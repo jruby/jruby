@@ -729,7 +729,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         BlockBody body = new SymbolProcBody(context.runtime, symbol);
 
         return RubyProc.newProc(context.runtime,
-                                new Block(body, Binding.DUMMY),
+                                new Block(body, Block.NULL_BLOCK.getBinding()),
                                 Block.Type.PROC);
     }
 
@@ -737,7 +737,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         BlockBody body = new SymbolProcBody(context.runtime, symbol, scope);
 
         return RubyProc.newProc(context.runtime,
-                new Block(body, Binding.DUMMY),
+                new Block(body, Block.NULL_BLOCK.getBinding()),
                 Block.Type.PROC);
     }
 

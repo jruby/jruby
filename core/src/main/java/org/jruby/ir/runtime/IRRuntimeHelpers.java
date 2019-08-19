@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
-import java.util.Map;
+
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
 import org.jruby.MetaClass;
@@ -38,7 +38,6 @@ import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -68,7 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -579,9 +578,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject[] frobnicateKwargsArgument(ThreadContext context, IRubyObject[] args, int requiredArgsCount) {
-        // No kwarg because required args slurp them up.
+        // FIXME: JIT on block circular args test in spec:compiler is passing in a null value for args.  It does not do this for methods so a bandaid for now.
+        if (args == null) return args;
+
         int length = args.length;
 
+        // No kwarg because required args slurp them up.
         if (length <= requiredArgsCount) return args;
 
         final IRubyObject maybeKwargs = toHash(context, args[length - 1]);
@@ -1446,7 +1448,8 @@ public class IRRuntimeHelpers {
         return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule);
     }
 
-    private static RubyModule newRubyModuleFromIR(ThreadContext context, IRScope irModule, Object rubyContainer) {
+    @Interp @JIT
+    public static RubyModule newRubyModuleFromIR(ThreadContext context, IRScope irModule, Object rubyContainer) {
         if (!(rubyContainer instanceof RubyModule)) {
             throw context.runtime.newTypeError("no outer class/module");
         }
@@ -1473,6 +1476,7 @@ public class IRRuntimeHelpers {
         return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
     }
 
+    @Interp @JIT
     public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
         if (!(container instanceof RubyModule)) {
             throw runtime.newTypeError("no outer class/module");
@@ -1616,6 +1620,14 @@ public class IRRuntimeHelpers {
         RubyModule implClass = method.getImplementationClass();
 
         return method.call(context, implClass, implClass, "", block);
+    }
+
+    // FIXME: Temporary until CompiledIRMethod part of this is removed.
+    @JIT
+    public static IRubyObject invokeModuleBody(ThreadContext context, DynamicMethod method) {
+        RubyModule implClass = method.getImplementationClass();
+
+        return method.call(context, implClass, implClass, "", Block.NULL_BLOCK);
     }
 
     @JIT
@@ -1767,8 +1779,8 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static NormalCachingCallSite newNormalCachingCallSite(String name) {
-        return new NormalCachingCallSite(name);
+    public static MonomorphicCallSite newMonomorphicCallSite(String name) {
+        return new MonomorphicCallSite(name);
     }
 
     @JIT

@@ -122,14 +122,15 @@ public abstract class Initializer {
             final Map<String, AssignedName> names,
             final Field field,
             final boolean isFinal,
-            final boolean isStatic) {
+            final boolean isStatic,
+            final boolean isConstant) {
 
         final String name = field.getName();
 
         if ( Priority.FIELD.lessImportantThan( names.get(name) ) ) return;
 
         names.put(name, new AssignedName(name, Priority.FIELD));
-        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
+        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field, isConstant) :
                 new InstanceFieldGetterInstaller(name, field));
 
         if (!isFinal) {
@@ -539,7 +540,7 @@ public abstract class Initializer {
             if ( Modifier.isPrivate(mod) ) continue;
 
             // Skip protected methods if we can't set accessible
-            if ( !Modifier.isPublic(mod) && !Modules.trySetAccessible(method)) continue;
+            if ( !Modifier.isPublic(mod) && !Modules.trySetAccessible(method, Java.class)) continue;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)

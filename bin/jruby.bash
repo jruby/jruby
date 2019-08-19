@@ -36,28 +36,20 @@ if [ -z "$JAVA_VM" ]; then
 fi
 
 # get the absolute path of the executable
-SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+BASE_DIR=$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)
+SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
 
 # resolve symlinks
 while [ -h "$SELF_PATH" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
-    # 3) get the pwd
+    # 3) get the physical pwd
     # 4) append the basename
-    DIR=$(dirname -- "$SELF_PATH")
-    SYM=$(readlink "$SELF_PATH")
-    SELF_PATH=$(cd "$DIR" && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
+    SYM="$(readlink "$SELF_PATH")"
+    SELF_PATH="$(cd "$BASE_DIR" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
 done
 
-PRG=$SELF_PATH
-
-JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
-if [ "$JRUBY_HOME_1" = '.' ] ; then
-  cwd=`pwd`
-  JRUBY_HOME=`dirname $cwd` # JRUBY-2699
-else
-  JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
-fi
+JRUBY_HOME="${SELF_PATH%/*/*}"
 
 if [ -z "$JRUBY_OPTS" ] ; then
   JRUBY_OPTS=""
@@ -206,6 +198,9 @@ JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
+# Options we pass for "--dev" mode, to reduce JRuby startup time
+dev_mode_opts="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false -Djnr.ffi.asm.enabled=false -Xverify:none"
+
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 set -- $JRUBY_OPTS "$@"
@@ -240,6 +235,7 @@ do
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
+                java_args=("${java_args[@]}" "${1:2}")
             elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
                 JAVA_ENCODING=${val:16}
             elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
@@ -292,7 +288,7 @@ do
         JAVA_VM=-server ;;
      --dev)
         JAVA_VM=-client
-        JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false" ;;
+        JAVA_OPTS="$JAVA_OPTS $dev_mode_opts" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
@@ -373,10 +369,9 @@ if [ "$JRUBY_JSA" == "" ]; then
 fi
 
 # Determine whether to pass module-related flags
-classmod_flag="-classpath"
 if [ -d $JAVA_HOME/jmods ]; then
-  # Use module path instead of classpath
-  classmod_flag="--module-path"
+  # Use module path instead of classpath for the jruby libs
+  classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
 
   # Switch to non-boot path since we can't use bootclasspath on 9+
   NO_BOOTCLASSPATH=1
@@ -387,7 +382,9 @@ if [ -d $JAVA_HOME/jmods ]; then
   fi
 
   # Add base opens we need for Ruby compatibility
-  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist"
+  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist --add-opens java.base/sun.nio.ch=org.jruby.dist"
+else
+  classpath_args=(-classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH")
 fi
 
 # Run JRuby!
@@ -408,7 +405,7 @@ elif [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
     JRUBY_OPTS=''
   fi
 
-  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" "${classpath_args[@]}" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \

@@ -53,7 +53,7 @@ public class CallableSelectorTest {
         final Method list2 = java.io.File.class.getMethod("listFiles", java.io.FilenameFilter.class);
 
         JavaMethod[] methods;
-        Binding binding = Binding.DUMMY;
+        Binding binding = Block.NULL_BLOCK.getBinding();
         JavaMethod result; IRubyObject[] args;
 
         // arity 1 :

@@ -4,6 +4,7 @@ package org.jruby.util;
  * Values which are referenced in multiple places.  A ByteList warehouse!
  */
 public class CommonByteLists {
+    public static final ByteList EMPTY = new ByteList(new byte[] {});
     public static final ByteList AMPERSAND_AMPERSAND = new ByteList(new byte[] {'&', '&'});
     public static final ByteList AREF_METHOD = new ByteList(new byte[] {'[', ']'});
     public static final ByteList ASET_METHOD = new ByteList(new byte[] {'[', ']', '='});

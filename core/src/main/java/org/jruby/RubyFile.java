@@ -229,6 +229,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             fileClass.searchMethod("mkfifo").setNotImplemented(true);
         }
 
+        if (!Platform.IS_BSD) {
+            // lchmod appears to be mostly a BSD-ism, not supported on Linux.
+            // See https://github.com/jruby/jruby/issues/5547
+            fileClass.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
+        }
+
         return fileClass;
     }
 
@@ -480,7 +486,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (fptr.posix.ftruncate(fptr.fd(), pos) < 0) {
-            throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+            throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
         }
 
         return RubyFixnum.zero(runtime);
