@@ -141,7 +141,7 @@ if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
 
-# process JAVA_OPTS
+# Capture some Java options to be passed separately
 unset JAVA_OPTS_TEMP
 JAVA_OPTS_TEMP=""
 for opt in ${JAVA_OPTS[@]}; do
