@@ -58,7 +58,12 @@ done
 JRUBY_HOME="${SELF_PATH%/*/*}"
 
 add_log "JRuby executable: $BASH_SOURCE"
+command_line_options="$@"
+add_log "JRuby command line options: $command_line_options"
+
 add_log "JRUBY_HOME: $JRUBY_HOME"
+add_log "JRUBY_OPTS: $JRUBY_OPTS"
+add_log "JAVA_OPTS: $JAVA_OPTS"
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
@@ -85,7 +90,6 @@ add_log "JAVA_HOME: $JAVA_HOME"
 # Detect Java 9+ by the presence of a jmods directory in JAVA_HOME
 if [ -d $JAVA_HOME/jmods ]; then
   is_java9=1
-  add_log "Java modules detected"
 fi
 
 
@@ -157,8 +161,6 @@ JRUBY_OPTS=${JRUBY_OPTS_TEMP}
 if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
-
-add_log "JAVA_STACK: $JAVA_STACK"
 
 # Capture some Java options to be passed separately
 unset JAVA_OPTS_TEMP
@@ -272,7 +274,6 @@ fi
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 set -- $JRUBY_OPTS "$@"
-add_log "JRuby command line options: $@"
 while [ $# -gt 0 ]
 do
     case "$1" in
@@ -453,8 +454,11 @@ if [[ $is_java9 ]]; then
     JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
   fi
 
+  jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
+
   # Add base opens we need for Ruby compatibility
-  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist --add-opens java.base/sun.nio.ch=org.jruby.dist"
+  JAVA_OPTS="$JAVA_OPTS @$jruby_module_opts_file"
+  add_log "Adding module flags from: $jruby_module_opts_file"
 else
   classpath_args=(-classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH")
 fi
@@ -494,7 +498,7 @@ else
 fi
 
 full_java_command="${jvm_command[@]}"
-add_log "Full Java command line: $full_java_command"
+add_log "Java command line: $full_java_command"
 
 if [[ $print_environment_log ]]; then
   echo "$environment_log"
