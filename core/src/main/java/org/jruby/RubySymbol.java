@@ -176,7 +176,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     @Override
     public final String toString() {
-        return StringSupport.byteListAsString(symbolBytes);
+        return RubyEncoding.decodeISO(symbolBytes);
     }
 
     public final ByteList getBytes() {
@@ -1017,7 +1017,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                symbol = createSymbol(bytes.toString(), bytes, hash, hard);
+                symbol = createSymbol(
+                        RubyEncoding.decodeISO(bytes),
+                        bytes,
+                        hash,
+                        hard);
             }
 
             return symbol;
