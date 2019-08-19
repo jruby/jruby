@@ -104,9 +104,9 @@ public class TestRubyException extends TestCase {
 		String output = new String(byteArrayOutputStream.toByteArray());
 		if (output.trim().length() == 0) {
 		    return new String[0];
-	    	} else {
-		    return output.split("\n");
-        	}
+		} else {
+		    return output.split(System.lineSeparator());
+		}
 	}
 
 	private void setBackTrace(int lineCount) {

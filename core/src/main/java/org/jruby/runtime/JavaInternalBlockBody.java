@@ -61,7 +61,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
         threadCheck(context);
         
-        return yield(context, new IRubyObject[] { value });
+        return yield(context, value);
     }
 
     @Override
@@ -72,6 +72,10 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     }
     
     public abstract IRubyObject yield(ThreadContext context, IRubyObject[] args);
+
+    public IRubyObject yield(ThreadContext context, IRubyObject arg) {
+        return yield(context, new IRubyObject[] { arg });
+    }
 
     @Override
     public StaticScope getStaticScope() {

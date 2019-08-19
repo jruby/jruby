@@ -36,28 +36,20 @@ if [ -z "$JAVA_VM" ]; then
 fi
 
 # get the absolute path of the executable
-SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+BASE_DIR=$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)
+SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
 
 # resolve symlinks
 while [ -h "$SELF_PATH" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
-    # 3) get the pwd
+    # 3) get the physical pwd
     # 4) append the basename
-    DIR=$(dirname -- "$SELF_PATH")
-    SYM=$(readlink "$SELF_PATH")
-    SELF_PATH=$(cd "$DIR" && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
+    SYM="$(readlink "$SELF_PATH")"
+    SELF_PATH="$(cd "$BASE_DIR" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
 done
 
-PRG=$SELF_PATH
-
-JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
-if [ "$JRUBY_HOME_1" = '.' ] ; then
-  cwd=`pwd`
-  JRUBY_HOME=`dirname $cwd` # JRUBY-2699
-else
-  JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
-fi
+JRUBY_HOME="${SELF_PATH%/*/*}"
 
 if [ -z "$JRUBY_OPTS" ] ; then
   JRUBY_OPTS=""
@@ -206,6 +198,9 @@ JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
+# Options we pass for "--dev" mode, to reduce JRuby startup time
+dev_mode_opts="-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false -Djnr.ffi.asm.enabled=false -Xverify:none"
+
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
 set -- $JRUBY_OPTS "$@"
@@ -293,7 +288,7 @@ do
         JAVA_VM=-server ;;
      --dev)
         JAVA_VM=-client
-        JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false" ;;
+        JAVA_OPTS="$JAVA_OPTS $dev_mode_opts" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)

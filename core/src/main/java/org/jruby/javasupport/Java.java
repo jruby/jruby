@@ -1184,6 +1184,8 @@ public class Java implements Library {
 
         Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
 
+        if (enclosing == null) return null;
+
         final String fullName = enclosing.getName() + '$' + name;
 
         final RubyModule result = getProxyClassOrNull(runtime, fullName);
