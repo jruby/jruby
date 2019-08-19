@@ -1,1 +1,0 @@
-fails(new Ruby impl of Enumerator#next brought some bugs with):Enumerator#rewind calls the enclosed object's rewind method if one exists

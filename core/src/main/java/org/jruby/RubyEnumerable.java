@@ -378,7 +378,7 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
+            each(context, self, new JavaInternalBlockBody(runtime, Signature.OPTIONAL) {
                 long i = len; // Atomic ?
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
@@ -2213,7 +2213,7 @@ public class RubyEnumerable {
         }
     }
 
-    private static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
+    static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
         return new SizeFn() {
             @Override
             public IRubyObject size(IRubyObject[] args) {

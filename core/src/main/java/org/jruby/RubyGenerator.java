@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Block;
@@ -37,6 +38,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+@JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
     public static void createGeneratorClass(Ruby runtime) {
         RubyClass genc = runtime.defineClassUnder("Generator", runtime.getObject(), new ObjectAllocator() {
@@ -91,7 +93,7 @@ public class RubyGenerator extends RubyObject {
 
         checkFrozen();
 
-        this.proc = ((RubyGenerator)other).proc;
+        this.proc = ((RubyGenerator) other).proc;
 
         return this;
     }
@@ -99,7 +101,7 @@ public class RubyGenerator extends RubyObject {
     // generator_each
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return ((RubyProc) proc).call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
+        return proc.call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args));
     }
 
     public RubyProc getProc() {

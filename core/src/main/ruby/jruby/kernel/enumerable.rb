@@ -107,8 +107,11 @@ module Enumerable
   private :__slicey_chunky
 
   def lazy
-    klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
-    Enumerator::Lazy.new(klass.new(self, :each, []))
+    Enumerator::Lazy.send :__from, self, :each, []
   end
 
+  def enumerator_size
+    respond_to?(:size) ? size : nil
+  end
+  private :enumerator_size
 end

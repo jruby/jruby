@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#zip keeps size
-fails:Enumerator::Lazy#zip on a nested Lazy keeps size
