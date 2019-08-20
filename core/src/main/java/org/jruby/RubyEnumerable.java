@@ -253,7 +253,7 @@ public class RubyEnumerable {
                 return doYield(context, null, packEnumValues(context, args));
             }
             @Override
-            public IRubyObject doYield(ThreadContext context, Block _, IRubyObject value) {
+            public IRubyObject doYield(ThreadContext context, Block unused, IRubyObject value) {
                 synchronized (result) { result.append(value); }
                 block.yield(context, value);
                 return context.nil;
@@ -322,7 +322,7 @@ public class RubyEnumerable {
                     return doYield(context, null, packEnumValues(context, args));
                 }
                 @Override
-                protected IRubyObject doYield(ThreadContext context, Block _, IRubyObject value) {
+                protected IRubyObject doYield(ThreadContext context, Block unused, IRubyObject value) {
                     synchronized (result) {
                         result.append(value);
                         if (--i == 0) throw JumpException.SPECIAL_JUMP;
@@ -351,7 +351,7 @@ public class RubyEnumerable {
 
         try {
             callEach(context, self, Signature.OPTIONAL, new BlockCallback() {
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block _) {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block unused) {
                     final IRubyObject larg; boolean ary = false;
                     switch (largs.length) {
                         case 0:  larg = ctx.nil; break;
@@ -546,7 +546,7 @@ public class RubyEnumerable {
                     return doYield(context, null, packEnumValues(context, args));
                 }
                 @Override
-                protected IRubyObject doYield(ThreadContext context, Block _, IRubyObject value) {
+                protected IRubyObject doYield(ThreadContext context, Block unused, IRubyObject value) {
                     IRubyObject[] myVandC = valuesAndCriteriaArray[i.getAndIncrement()];
                     myVandC[0] = value;
                     myVandC[1] = block.yield(context, value);
@@ -559,11 +559,11 @@ public class RubyEnumerable {
             final ArrayList<IRubyObject[]> valuesAndCriteriaList = new ArrayList<>();
 
             callEach(context, self, Signature.OPTIONAL, new BlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block _) {
-                    return call(context, packEnumValues(context, args), _);
+                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block unused) {
+                    return call(context, packEnumValues(context, args), unused);
                 }
                 @Override
-                public IRubyObject call(ThreadContext context, IRubyObject arg, Block _) {
+                public IRubyObject call(ThreadContext context, IRubyObject arg, Block unused) {
                     valuesAndCriteriaList.add(new IRubyObject[] { arg, block.yield(context, arg) });
                     return context.nil;
                 }
@@ -605,11 +605,11 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
                 final MonomorphicCallSite site = new MonomorphicCallSite("===");
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block _) {
-                    return call(ctx, packEnumValues(ctx, args), _);
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block unused) {
+                    return call(ctx, packEnumValues(ctx, args), unused);
                 }
                 @Override
-                public IRubyObject call(ThreadContext ctx, IRubyObject arg, Block _) {
+                public IRubyObject call(ThreadContext ctx, IRubyObject arg, Block unused) {
                     if (site.call(ctx, pattern, pattern, arg).isTrue() == isPresent) { // pattern === arg
                         IRubyObject value = block.yield(ctx, arg);
                         synchronized (result) { result.append(value); }
@@ -620,11 +620,11 @@ public class RubyEnumerable {
         } else {
             callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
                 final MonomorphicCallSite site = new MonomorphicCallSite("===");
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block _) {
-                    return call(ctx, packEnumValues(ctx, args), _);
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block unused) {
+                    return call(ctx, packEnumValues(ctx, args), unused);
                 }
                 @Override
-                public IRubyObject call(ThreadContext ctx, IRubyObject arg, Block _) {
+                public IRubyObject call(ThreadContext ctx, IRubyObject arg, Block unused) {
                     if (site.call(ctx, pattern, pattern, arg).isTrue() == isPresent) { // pattern === arg
                         synchronized (result) { result.append(arg); }
                     }
