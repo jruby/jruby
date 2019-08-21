@@ -1509,7 +1509,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
-            ary.store(index++, name);
+            ary.storeInternal(index++, name);
         }
         return ary;
     }
@@ -1530,7 +1530,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RubyArray ary = RubyArray.newBlankArrayInternal(runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
-                ary.store(idx, RubyFixnum.newFixnum(runtime, backrefs[idx]));
+                ary.storeInternal(idx, RubyFixnum.newFixnum(runtime, backrefs[idx]));
             }
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);

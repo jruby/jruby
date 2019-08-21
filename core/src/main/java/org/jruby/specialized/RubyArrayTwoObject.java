@@ -285,16 +285,16 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject store(long index, IRubyObject value) {
-        if (!packed()) return super.store(index, value);
-
-        switch ((int) index) {
-            case 0: return car = value;
-            case 1: return cdr = value;
+    protected void storeInternal(final int index, final IRubyObject value) {
+        if (packed()) {
+            switch (index) {
+                case 0: car = value; return;
+                case 1: cdr = value; return;
+            }
+            unpack();
         }
 
-        unpack();
-        return super.store(index, value);
+        super.storeInternal(index, value);
     }
 
     @Override

@@ -660,12 +660,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (block.getSignature() == Signature.NO_ARGUMENTS) {
                 IRubyObject nil = runtime.getNil();
                 for (int i = 0; i < ilen; i++) {
-                    store(i, block.yield(context, nil));
+                    storeInternal(i, block.yield(context, nil));
                     realLength = i + 1;
                 }
             } else {
                 for (int i = 0; i < ilen; i++) {
-                    store(i, block.yield(context, RubyFixnum.newFixnum(runtime, i)));
+                    storeInternal(i, block.yield(context, RubyFixnum.newFixnum(runtime, i)));
                     realLength = i + 1;
                 }
             }
@@ -805,27 +805,36 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (index < 0 && (index += realLength) < 0) {
             throw getRuntime().newIndexError("index " + (index - realLength) + " out of array");
         }
+        if (index >= Integer.MAX_VALUE) {
+            throw getRuntime().newIndexError("index " + index  + " too big");
+        }
 
         modify();
 
-        if (index >= realLength) {
-            int valuesLength = values.length - begin;
-            if (index >= valuesLength) storeRealloc(index, valuesLength);
-            realLength = (int) index + 1;
-        }
-
-        safeArraySet(values, begin + (int) index, value);
+        storeInternal((int) index, value);
 
         return value;
     }
 
-    private void storeRealloc(long index, int valuesLength) {
+    protected void storeInternal(final int index, final IRubyObject value) {
+        assert index >= 0;
+
+        if (index >= realLength) {
+            int valuesLength = values.length - begin;
+            if (index >= valuesLength) storeRealloc(index, valuesLength);
+            realLength = index + 1;
+        }
+
+        safeArraySet(values, begin + index, value);
+    }
+
+    private void storeRealloc(final int index, final int valuesLength) {
         long newLength = valuesLength >> 1;
 
         if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
         newLength += index;
-        if (index >= Integer.MAX_VALUE || newLength >= Integer.MAX_VALUE) {
+        if (newLength >= Integer.MAX_VALUE) {
             throw getRuntime().newIndexError("index " + index  + " too big");
         }
         realloc((int) newLength, valuesLength);
@@ -1163,7 +1172,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                         + " should be " + elen + ")");
             }
             for (int j = 0; j < elen; j++) {
-                ((RubyArray) result[j]).store(i, tmp.elt(j));
+                ((RubyArray) result[j]).storeInternal(i, tmp.elt(j));
             }
         }
         return new RubyArray(runtime, result);
@@ -2594,7 +2603,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0, len = realLength; i < len; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield
             // See JRUBY-5434
-            store(i, block.yield(context, eltOk(i)));
+            storeInternal(i, block.yield(context, eltOk(i)));
         }
 
         return this;
@@ -3510,7 +3519,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int index = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) ary3.store(index++, v);
+            if (hash.fastDelete(v)) ary3.storeInternal(index++, v);
         }
 
         // if index is 1 and we made a size 2 array, repack
@@ -3537,11 +3546,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int index = 0;
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
-            if (set.fastDelete(v)) ary3.store(index++, v);
+            if (set.fastDelete(v)) ary3.storeInternal(index++, v);
         }
         for (int i = 0; i < ary2.realLength; i++) {
             IRubyObject v = ary2.elt(i);
-            if (set.fastDelete(v)) ary3.store(index++, v);
+            if (set.fastDelete(v)) ary3.storeInternal(index++, v);
         }
 
         // if index is 1 and we made a size 2 array, repack
@@ -4791,12 +4800,12 @@ float_loop:
         int size = input.unmarshalInt();
 
         // we create this now with an empty, nulled array so it's available for links in the marshal data
-        RubyArray result = newBlankArray(runtime, size);
+        RubyArray result = newBlankArrayInternal(runtime, size);
 
         input.registerLinkTarget(result);
 
         for (int i = 0; i < size; i++) {
-            result.store(i, input.unmarshalObject());
+            result.storeInternal(i, input.unmarshalObject());
         }
 
         return result;

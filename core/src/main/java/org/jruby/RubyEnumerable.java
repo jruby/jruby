@@ -2006,9 +2006,9 @@ public class RubyEnumerable {
                     RubyArray array = RubyArray.newBlankArray(runtime, len);
                     int myIx = ix.getAndIncrement();
                     int index = 0;
-                    array.store(index++, larg);
+                    array.storeInternal(index++, larg);
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.store(index++, ((RubyArray) args[i]).entry(myIx));
+                        array.storeInternal(index++, ((RubyArray) args[i]).entry(myIx));
                     }
                     block.yield(ctx, array);
                     return ctx.nil;
@@ -2024,10 +2024,10 @@ public class RubyEnumerable {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     RubyArray array = RubyArray.newBlankArray(runtime, len);
                     int index = 0;
-                    array.store(index++, larg);
+                    array.storeInternal(index++, larg);
                     int myIx = ix.getAndIncrement();
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.store(index++, ((RubyArray) args[i]).entry(myIx));
+                        array.storeInternal(index++, ((RubyArray) args[i]).entry(myIx));
                     }
                     synchronized (zip) { zip.append(array); }
                     return ctx.nil;
@@ -2050,9 +2050,9 @@ public class RubyEnumerable {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     RubyArray array = RubyArray.newBlankArray(runtime, len);
                     int index = 0;
-                    array.store(index++, larg);
+                    array.storeInternal(index++, larg);
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.store(index++, zipEnumNext(ctx, args[i]));
+                        array.storeInternal(index++, zipEnumNext(ctx, args[i]));
                     }
                     block.yield(ctx, array);
                     return ctx.nil;
@@ -2066,9 +2066,9 @@ public class RubyEnumerable {
                     IRubyObject larg = packEnumValues(ctx, largs);
                     RubyArray array = RubyArray.newBlankArray(runtime, len);
                     int index = 0;
-                    array.store(index++, larg);
+                    array.storeInternal(index++, larg);
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.store(index++, zipEnumNext(ctx, args[i]));
+                        array.storeInternal(index++, zipEnumNext(ctx, args[i]));
                     }
                     synchronized (zip) { zip.append(array); }
                     return ctx.nil;
