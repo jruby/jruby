@@ -1395,7 +1395,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "unshift", alias = "prepend")
     public IRubyObject unshift(IRubyObject item) {
         unpack();
-        modifyCheck();
 
         if (begin == 0 || isShared) {
             modify();
@@ -1430,15 +1429,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "unshift", alias = "prepend",  rest = true)
     public IRubyObject unshift(IRubyObject[] items) {
         unpack();
-        modifyCheck();
 
-        long len = realLength;
-        if (items.length == 0) return this;
+        if (items.length == 0) {
+            modifyCheck();
+            return this;
+        }
 
-        store(len + items.length - 1, getRuntime().getNil());
+        final int len = realLength;
+        store(((long) len) + items.length - 1, getRuntime().getNil());
 
         try {
-            System.arraycopy(values, begin, values, begin + items.length, (int) len);
+            System.arraycopy(values, begin, values, begin + items.length, len);
             ArraySupport.copy(items, 0, values, begin, items.length);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(getRuntime(), e);
