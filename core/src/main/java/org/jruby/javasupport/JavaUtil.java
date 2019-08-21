@@ -94,35 +94,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 
 public class JavaUtil {
-
-    public static final boolean CAN_SET_ACCESSIBLE;
-
-    static {
-        boolean canSetAccessible = false;
-
-        if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
-            try {
-                // We want to check if we can access a commonly-existing private field through reflection.
-                // If so, we're probably able to access some other fields too later on.
-                Field f = Java.class.getDeclaredField(Java.HIDDEN_STATIC_FIELD_NAME);
-                f.setAccessible(true);
-                canSetAccessible = f.getByte(null) == 72;
-            }
-            catch (Exception t) {
-                // added this so if things are weird in the future we can debug without
-                // spinning a new binary
-                if (Options.JI_LOGCANSETACCESSIBLE.load()) {
-                    t.printStackTrace();
-                }
-
-                // assume any exception means we can't suppress access checks
-                canSetAccessible = false;
-            }
-        }
-
-        CAN_SET_ACCESSIBLE = canSetAccessible;
-    }
-
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
         if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
 
@@ -1643,4 +1614,7 @@ public class JavaUtil {
         }
         return (JavaObject)obj;
     }
+
+    @Deprecated
+    public static final boolean CAN_SET_ACCESSIBLE = true;
 }

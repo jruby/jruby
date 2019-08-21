@@ -11,8 +11,8 @@ import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 
+import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
-import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -198,7 +198,7 @@ public class FilenoUtil {
                 selChImpl = Class.forName("sun.nio.ch.SelChImpl");
                 try {
                     getFD = selChImpl.getMethod("getFD");
-                    if (!Modules.trySetAccessible(getFD, ReflectiveAccess.class)) {
+                    if (!Java.trySetAccessible(getFD)) {
                         getFD = null;
                     }
                 } catch (Exception e) {
@@ -217,7 +217,7 @@ public class FilenoUtil {
                 fileChannelImpl = Class.forName("sun.nio.ch.FileChannelImpl");
                 try {
                     fd = fileChannelImpl.getDeclaredField("fd");
-                    if (!Modules.trySetAccessible(fd, ReflectiveAccess.class)) {
+                    if (!Java.trySetAccessible(fd)) {
                         fd = null;
                     }
                 } catch (Exception e) {
@@ -233,7 +233,7 @@ public class FilenoUtil {
             Field ffd;
             try {
                 ffd = FileDescriptor.class.getDeclaredField("fd");
-                if (!Modules.trySetAccessible(ffd, ReflectiveAccess.class)) {
+                if (!Java.trySetAccessible(ffd)) {
                     ffd = null;
                 }
             } catch (Exception e) {
