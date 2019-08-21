@@ -100,6 +100,10 @@ public class RubyEnumerable {
         return Helpers.invoke(context, self, "each", CallBlock.newCallClosure(context, self, signature, callback));
     }
 
+    public static IRubyObject callEach(ThreadContext context, IRubyObject self, BlockCallback callback) {
+        return Helpers.invoke(context, self, "each", CallBlock.newCallClosure(context, self, Signature.OPTIONAL, callback));
+    }
+
     public static IRubyObject callEach(ThreadContext context, IRubyObject self, IRubyObject[] args, Signature signature,
                                        BlockCallback callback) {
         return Helpers.invoke(context, self, "each", args, CallBlock.newCallClosure(context, self, signature, callback));
@@ -1998,18 +2002,17 @@ public class RubyEnumerable {
         final int len = args.length + 1;
 
         if (block.isGiven()) {
-            callEach(context, self, block.getSignature(), new BlockCallback() {
+            callEach(context, self, new BlockCallback() {
                 final AtomicInteger ix = new AtomicInteger(0);
 
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(ctx, largs);
-                    RubyArray array = RubyArray.newBlankArray(runtime, len);
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block unused) {
+                    RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
                     int myIx = ix.getAndIncrement();
-                    int index = 0;
-                    array.storeInternal(index++, larg);
+                    array.eltInternalSet(0, packEnumValues(ctx, largs));
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.storeInternal(index++, ((RubyArray) args[i]).entry(myIx));
+                        array.eltInternalSet(i + 1, ((RubyArray) args[i]).entry(myIx));
                     }
+                    array.realLength = len;
                     block.yield(ctx, array);
                     return ctx.nil;
                 }
@@ -2020,15 +2023,14 @@ public class RubyEnumerable {
             callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
                 final AtomicInteger ix = new AtomicInteger(0);
 
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(ctx, largs);
-                    RubyArray array = RubyArray.newBlankArray(runtime, len);
-                    int index = 0;
-                    array.storeInternal(index++, larg);
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block unused) {
+                    RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
+                    array.eltInternalSet(0, packEnumValues(ctx, largs));
                     int myIx = ix.getAndIncrement();
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.storeInternal(index++, ((RubyArray) args[i]).entry(myIx));
+                        array.eltInternalSet(i + 1, ((RubyArray) args[i]).entry(myIx));
                     }
+                    array.realLength = len;
                     synchronized (zip) { zip.append(array); }
                     return ctx.nil;
                 }
@@ -2045,15 +2047,14 @@ public class RubyEnumerable {
         final int len = args.length + 1;
 
         if (block.isGiven()) {
-            callEach(context, self, block.getSignature(), new BlockCallback() {
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(ctx, largs);
-                    RubyArray array = RubyArray.newBlankArray(runtime, len);
-                    int index = 0;
-                    array.storeInternal(index++, larg);
+            callEach(context, self, new BlockCallback() {
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block unused) {
+                    RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
+                    array.eltInternalSet(0, packEnumValues(ctx, largs));
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.storeInternal(index++, zipEnumNext(ctx, args[i]));
+                        array.eltInternalSet(i + 1, zipEnumNext(ctx, args[i]));
                     }
+                    array.realLength = len;
                     block.yield(ctx, array);
                     return ctx.nil;
                 }
@@ -2062,14 +2063,13 @@ public class RubyEnumerable {
         } else {
             final RubyArray zip = runtime.newArray();
             callEach(context, self, Signature.ONE_REQUIRED, new BlockCallback() {
-                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    IRubyObject larg = packEnumValues(ctx, largs);
-                    RubyArray array = RubyArray.newBlankArray(runtime, len);
-                    int index = 0;
-                    array.storeInternal(index++, larg);
+                public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block unused) {
+                    RubyArray array = RubyArray.newBlankArrayInternal(runtime, len);
+                    array.eltInternalSet(0, packEnumValues(ctx, largs));
                     for (int i = 0, j = args.length; i < j; i++) {
-                        array.storeInternal(index++, zipEnumNext(ctx, args[i]));
+                        array.eltInternalSet(i + 1, zipEnumNext(ctx, args[i]));
                     }
+                    array.realLength = len;
                     synchronized (zip) { zip.append(array); }
                     return ctx.nil;
                 }
