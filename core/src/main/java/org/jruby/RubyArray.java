@@ -3919,12 +3919,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         for (int i = 0; i < resultLen; i++) {
             RubyArray sub = newBlankArrayInternal(runtime, n);
-            for (int j = 0; j < n; j++) sub.store(j, arrays[j].entry(counters[j]));
+            for (int j = 0; j < n; j++) sub.eltInternalSet(j, arrays[j].entry(counters[j]));
+            sub.realLength = n;
 
             if (useBlock) {
                 block.yieldSpecific(context, sub);
             } else {
-                result.store(i, sub);
+                result.eltInternalSet(i, sub);
             }
             int m = n - 1;
             counters[m]++;
@@ -3935,7 +3936,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 counters[m]++;
             }
         }
-        return useBlock ? this : result;
+
+        if (useBlock) return this;
+        result.realLength = resultLen;
+        return result;
     }
 
     @Deprecated
@@ -4107,12 +4111,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private static void yieldValues(ThreadContext context, int r, int[] p, int pStart, RubyArray values, Block block) {
         RubyArray result = newBlankArrayInternal(context.runtime, r);
-
         for (int j = 0; j < r; j++) {
-            result.store(j, values.eltInternal(p[j + pStart]));
+            result.eltInternalSet(j, values.eltInternal(p[j + pStart]));
         }
-
         result.realLength = r;
+
         block.yield(context, result);
     }
 
