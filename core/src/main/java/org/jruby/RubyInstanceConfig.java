@@ -1837,7 +1837,7 @@ public class RubyInstanceConfig {
 
     public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
-    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
+    public static final boolean SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
@@ -2044,4 +2044,6 @@ public class RubyInstanceConfig {
      */
     @Deprecated
     public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
+    @Deprecated
+    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 }

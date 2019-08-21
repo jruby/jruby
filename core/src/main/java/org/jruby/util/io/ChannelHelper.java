@@ -11,6 +11,7 @@
 package org.jruby.util.io;
 
 import com.headius.backport9.modules.Modules;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
 import java.io.ByteArrayInputStream;
@@ -112,7 +113,9 @@ public abstract class ChannelHelper {
             while (filteredStream instanceof FilterOutputStream) {
                 try {
                     OutputStream tmpStream =
-                            Modules.trySetAccessible(filterOutField) ? (OutputStream) filterOutField.get(filteredStream) : null;
+                            Modules.trySetAccessible(filterOutField, Ruby.class)
+                                    ? (OutputStream) filterOutField.get(filteredStream)
+                                    : null;
 
                     // try to unwrap as a Drip stream
                     if (!(tmpStream instanceof FilterOutputStream)) {
@@ -151,7 +154,9 @@ public abstract class ChannelHelper {
             while (filteredStream instanceof FilterInputStream) {
                 try {
                     InputStream tmpStream =
-                            Modules.trySetAccessible(filterInField) ? (InputStream) filterInField.get(filteredStream) : null;
+                            Modules.trySetAccessible(filterInField, Ruby.class)
+                                    ? (InputStream) filterInField.get(filteredStream)
+                                    : null;
 
                     // could not acquire
                     if (tmpStream == null) break;
@@ -181,7 +186,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field out = stream.getClass().getDeclaredField("out");
-                return Modules.trySetAccessible(out) ? (OutputStream) out.get(stream) : null;
+                return Modules.trySetAccessible(out, Ruby.class) ? (OutputStream) out.get(stream) : null;
             } catch (Exception e) {
             }
         }
@@ -192,7 +197,7 @@ public abstract class ChannelHelper {
         if (isDripSwitchable(stream)) {
             try {
                 Field in = stream.getClass().getDeclaredField("in");
-                return Modules.trySetAccessible(in) ? (InputStream) in.get(stream) : null;
+                return Modules.trySetAccessible(in, Ruby.class) ? (InputStream) in.get(stream) : null;
             } catch (Exception e) {
             }
         }

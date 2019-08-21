@@ -28,6 +28,7 @@
 
 package org.jruby.javasupport.ext;
 
+import com.headius.backport9.modules.Modules;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -44,7 +45,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 
-import static org.jruby.javasupport.JavaUtil.CAN_SET_ACCESSIBLE;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
@@ -603,7 +603,7 @@ public abstract class JavaUtil {
                 }
             }
             if ( best != null ) {
-                if ( CAN_SET_ACCESSIBLE ) best.setAccessible(true);
+                if ( RubyInstanceConfig.SET_ACCESSIBLE ) Modules.trySetAccessible(best, Ruby.class);
                 return (java.util.Collection) best.newInstance(coll);
             }
         }

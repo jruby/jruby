@@ -1,5 +1,6 @@
 package org.jruby.runtime.encoding;
 
+import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
@@ -78,7 +79,7 @@ public final class EncodingService {
             if (console != null) {
                 final String CONSOLE_CHARSET = "cs";
                 Field fcs = Console.class.getDeclaredField(CONSOLE_CHARSET);
-                fcs.setAccessible(true);
+                Modules.trySetAccessible(fcs, Ruby.class);
                 Charset cs = (Charset) fcs.get(console);
                 consoleEncoding = loadEncoding(ByteList.create(cs.name()));
             }

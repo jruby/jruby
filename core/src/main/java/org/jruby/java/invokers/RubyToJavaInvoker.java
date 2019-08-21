@@ -349,7 +349,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 !Ruby.isSecurityRestricted() &&
                 Options.JI_SETACCESSIBLE.load() &&
                 accessible instanceof Member) {
-            try { Modules.trySetAccessible(accessible); }
+            try { Modules.trySetAccessible(accessible, Ruby.class); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
@@ -368,13 +368,18 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
     }
 
-    static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+    static <T extends AccessibleObject & Member> T[] setAccessible(T[] accessibles) {
         // TODO: Replace flag that's false on 9 with proper module checks
-        if (!allAreAccessible(accessibles) &&
-                !Ruby.isSecurityRestricted() &&
-                Options.JI_SETACCESSIBLE.load() &&
-                allAreMember(accessibles)) {
-            try { AccessibleObject.setAccessible(accessibles, true); }
+        if (!Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load()) {
+            try {
+                for (T accessible : accessibles) {
+                    if (accessible.isAccessible()) continue;
+                    if (!(accessible instanceof Member)) continue;
+
+                    Modules.trySetAccessible(accessible, Ruby.class);
+                }
+            }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);

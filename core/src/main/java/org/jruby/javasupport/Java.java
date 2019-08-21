@@ -1641,10 +1641,4 @@ public class Java implements Library {
         return single;
     }
 
-    /**
-     * @see JavaUtil#CAN_SET_ACCESSIBLE
-     */
-    @SuppressWarnings("unused") private static final byte HIDDEN_STATIC_FIELD = 72;
-    public static final String HIDDEN_STATIC_FIELD_NAME = "HIDDEN_STATIC_FIELD";
-
 }
