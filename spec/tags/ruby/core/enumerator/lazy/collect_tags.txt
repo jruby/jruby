@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#collect keeps size
-fails:Enumerator::Lazy#collect on a nested Lazy keeps size

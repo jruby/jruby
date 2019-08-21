@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#take_while sets #size to nil
-fails:Enumerator::Lazy#take_while on a nested Lazy sets #size to nil

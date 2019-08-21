@@ -942,7 +942,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<RubyArray> StoreKeyValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray result) {
-            result.store(index, RubyArray.newArray(context.runtime, key, value));
+            result.storeInternal(index, RubyArray.newArray(context.runtime, key, value));
         }
     };
 
@@ -1659,7 +1659,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<RubyArray> StoreKeyVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray keys) {
-            keys.store(index, key);
+            keys.storeInternal(index, key);
         }
     };
 
@@ -1687,7 +1687,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final VisitorWithState<RubyArray> StoreValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray values) {
-            values.store(index, value);
+            values.storeInternal(index, value);
         }
     };
 
@@ -2004,7 +2004,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
         RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
-            result.store(i, op_aref(context, args[i]));
+            result.storeInternal(i, op_aref(context, args[i]));
         }
         return result;
     }
@@ -2013,7 +2013,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
         RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
-            result.store(i, fetch(context, args[i], block));
+            result.storeInternal(i, fetch(context, args[i], block));
         }
         return result;
     }

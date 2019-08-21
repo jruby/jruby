@@ -29,7 +29,6 @@
 
 package org.jruby.util.cli;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -202,7 +201,7 @@ public class Options {
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
     // TODO: Replace flag that's false on 9 with proper module checks
-    public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", calculateSetAccessibleDefault(), "Try to set inaccessible Java methods to be accessible.");
+    public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");
     public static final Option<Boolean> JI_UPPER_CASE_PACKAGE_NAME_ALLOWED = bool(JAVA_INTEGRATION, "ji.upper.case.package.name.allowed", false, "Allow Capitalized Java package names.");
     public static final Option<Boolean> INTERFACES_USEPROXY = bool(JAVA_INTEGRATION, "interfaces.useProxy", false, "Use java.lang.reflect.Proxy for interface impl.");
@@ -310,15 +309,6 @@ public class Options {
     private static boolean calculateInvokedynamicDefault() {
         // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
         return false;
-    }
-
-    /**
-     * Java 9 has much more restrictive reflection access to e.g. java.lang classes, and raises a Java 9-specific
-     * error. For now we default ji.setAccessible to false so we don't attempt it.
-     */
-    private static boolean calculateSetAccessibleDefault() {
-        String version = SafePropertyAccessor.getProperty("java.specification.version", "1.7");
-        return new BigDecimal(version).compareTo(new BigDecimal("1.9")) < 0;
     }
 
     private enum SearchMode { PREFIX,  CONTAINS }

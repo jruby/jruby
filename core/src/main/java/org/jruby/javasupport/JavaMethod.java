@@ -47,6 +47,7 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -105,12 +106,12 @@ public class JavaMethod extends JavaCallable {
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but
         // implement public interfaces.  Their methods are all public methods for the public
         // interface.  Let these public methods execute via setAccessible(true).
-        if (JavaUtil.CAN_SET_ACCESSIBLE) {
+        if (RubyInstanceConfig.SET_ACCESSIBLE) {
             // we should be able to setAccessible ok...
             try {
                 if ( Modifier.isPublic(method.getModifiers()) &&
                     ! Modifier.isPublic(method.getDeclaringClass().getModifiers()) ) {
-                    method.setAccessible(true);
+                    Java.trySetAccessible(method);
                 }
             } catch (SecurityException se) {
                 // we shouldn't get here if JavaClass.CAN_SET_ACCESSIBLE is doing

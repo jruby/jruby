@@ -169,7 +169,7 @@ public class Bootstrap {
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
         if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
         encoding = entry.getEncoding();
-        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
+        ByteList byteList = new ByteList(RubyEncoding.encodeISO(value), encoding, false);
         return byteList;
     }
 

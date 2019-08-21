@@ -496,7 +496,7 @@ public class TypeConverter {
         // grab it's string representation without calling a method which properly encodes
         // the string.
         if (obj instanceof RubyString) {
-            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
+            return RubyEncoding.decodeISO(((RubyString) obj).getByteList()).intern();
         }
         return obj.asJavaString().intern();
     }

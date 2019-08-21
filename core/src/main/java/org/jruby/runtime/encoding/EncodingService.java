@@ -10,6 +10,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -78,7 +79,7 @@ public final class EncodingService {
             if (console != null) {
                 final String CONSOLE_CHARSET = "cs";
                 Field fcs = Console.class.getDeclaredField(CONSOLE_CHARSET);
-                fcs.setAccessible(true);
+                Java.trySetAccessible(fcs);
                 Charset cs = (Charset) fcs.get(console);
                 consoleEncoding = loadEncoding(ByteList.create(cs.name()));
             }

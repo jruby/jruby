@@ -223,15 +223,14 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject store(long index, IRubyObject value) {
-        if (!packed()) return super.store(index, value);
-
-        if (index == 0) {
-            return this.value = value;
+    protected void storeInternal(final int index, final IRubyObject value) {
+        if (index == 0 && packed()) {
+            this.value = value;
+            return;
         }
 
-        unpack();
-        return super.store(index, value);
+        if (packed()) unpack(); // index > 0
+        super.storeInternal(index, value);
     }
 
     @Override

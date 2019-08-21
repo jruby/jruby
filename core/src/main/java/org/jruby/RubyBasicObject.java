@@ -2943,8 +2943,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         RubyArray array = RubyArray.newBlankArrayInternal(runtime, size);
 
         for (int i = 0; i < size; i++) {
-            array.store(i, runtime.newSymbol(nameList.get(i)));
+            array.eltInternalSet(i, runtime.newSymbol(nameList.get(i)));
         }
+        array.realLength = size;
 
         return array;
     }

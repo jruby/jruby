@@ -35,7 +35,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.function.Supplier;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -44,6 +43,7 @@ import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ParameterTypes;
@@ -342,7 +342,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 !Ruby.isSecurityRestricted() &&
                 Options.JI_SETACCESSIBLE.load() &&
                 accessible instanceof Member) {
-            try { Modules.trySetAccessible(accessible); }
+            try { Java.trySetAccessible(accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
@@ -351,13 +351,18 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         return accessible;
     }
 
-    static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+    static <T extends AccessibleObject & Member> T[] setAccessible(T[] accessibles) {
         // TODO: Replace flag that's false on 9 with proper module checks
-        if (!allAreAccessible(accessibles) &&
-                !Ruby.isSecurityRestricted() &&
-                Options.JI_SETACCESSIBLE.load() &&
-                allAreMember(accessibles)) {
-            try { AccessibleObject.setAccessible(accessibles, true); }
+        if (!Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load()) {
+            try {
+                for (T accessible : accessibles) {
+                    if (accessible.isAccessible()) continue;
+                    if (!(accessible instanceof Member)) continue;
+
+                    Java.trySetAccessible(accessible);
+                }
+            }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
