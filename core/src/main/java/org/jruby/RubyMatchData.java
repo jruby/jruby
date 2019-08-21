@@ -530,11 +530,12 @@ public class RubyMatchData extends RubyObject {
 
     // MRI: match_ary_subseq
     private IRubyObject matchArySubseq(ThreadContext context, int beg, int len, RubyArray result) {
+        assert result != null;
+
         int olen = regs.numRegs;
         int wantedEnd = beg + len;
         int j, end = olen < wantedEnd ? olen : wantedEnd;
 
-        if (result == null) result = RubyArray.newArray(context.runtime);
         if (len == 0) return result;
 
         for (j = beg; j < end; j++) {
@@ -564,7 +565,7 @@ public class RubyMatchData extends RubyObject {
             IRubyObject nthMatch = RubyRegexp.nth_match(index.convertToInteger().getIntValue(), this);
 
             // this should never happen here, but MRI allows any VALUE for result
-            if (result.isNil()) return nthMatch;
+            // if (result.isNil()) return nthMatch;
 
             return result.push(nthMatch);
         }
