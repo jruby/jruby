@@ -14,9 +14,9 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.compiler.JITCompilerMBean;
+import org.jruby.javasupport.Java;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class BeanManagerImpl implements BeanManager {
         try {
             Class agent = Class.forName("sun.management.Agent");
             Method shutdown = agent.getDeclaredMethod("stopRemoteManagementAgent");
-            Modules.trySetAccessible(shutdown, Ruby.class);
+            Java.trySetAccessible(shutdown);
             shutdown.invoke(null);
             return true;
         } catch (Exception e) {
@@ -88,7 +88,7 @@ public class BeanManagerImpl implements BeanManager {
         try {
             Class agent = Class.forName("sun.management.Agent");
             Method start = agent.getMethod("startAgent");
-            Modules.trySetAccessible(start, Ruby.class);
+            Java.trySetAccessible(start);
             start.invoke(null);
             return true;
         } catch (Exception e) {

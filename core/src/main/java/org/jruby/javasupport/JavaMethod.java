@@ -44,7 +44,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -112,7 +111,7 @@ public class JavaMethod extends JavaCallable {
             try {
                 if ( Modifier.isPublic(method.getModifiers()) &&
                     ! Modifier.isPublic(method.getDeclaringClass().getModifiers()) ) {
-                    Modules.trySetAccessible(method, Ruby.class);
+                    Java.trySetAccessible(method);
                 }
             } catch (SecurityException se) {
                 // we shouldn't get here if JavaClass.CAN_SET_ACCESSIBLE is doing

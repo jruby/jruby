@@ -1,11 +1,9 @@
 package org.jruby.javasupport.binding;
 
-import com.headius.backport9.modules.Modules;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.java.invokers.ConstructorInvoker;
-import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -30,7 +28,7 @@ public class ConstructorInvokerInstaller extends MethodInstaller {
     void addConstructor(final Constructor ctor, final Class<?> clazz) {
         if (RubyInstanceConfig.SET_ACCESSIBLE) {
             try {
-                Modules.trySetAccessible(ctor, Ruby.class);
+                Java.trySetAccessible(ctor);
             } catch(SecurityException e) {}
         }
         this.constructors.add(ctor);

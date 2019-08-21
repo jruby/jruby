@@ -34,7 +34,9 @@
 
 package org.jruby.javasupport;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -51,6 +53,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
@@ -1639,6 +1642,18 @@ public class Java implements Library {
             else return null; // not a functional iface
         }
         return single;
+    }
+
+    /**
+     * Try to set the given member to be accessible, considering open modules and avoiding the actual setAccessible
+     * call when it would produce a JPMS warning. All classes on Java 8 are considered open, allowing setAccessible
+     * to proceed.
+     *
+     * The open check is based on this class, Java.java, which will be in whatever core or dist JRuby module you are
+     * using.
+     */
+    public static <T extends AccessibleObject & Member> boolean trySetAccessible(T member) {
+        return Modules.trySetAccessible(member, Java.class);
     }
 
 }

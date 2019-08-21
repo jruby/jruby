@@ -1,7 +1,6 @@
 package org.jruby.javasupport.binding;
 
-import com.headius.backport9.modules.Modules;
-import org.jruby.Ruby;
+import org.jruby.javasupport.Java;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -19,6 +18,6 @@ public abstract class FieldInstaller extends NamedInstaller {
     }
 
     public boolean isAccessible() {
-        return Modifier.isPublic(field.getModifiers()) || Modules.trySetAccessible(field, Ruby.class);
+        return Modifier.isPublic(field.getModifiers()) || Java.trySetAccessible(field);
     }
 }
