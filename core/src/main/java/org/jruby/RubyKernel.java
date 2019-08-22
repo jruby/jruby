@@ -685,6 +685,7 @@ public class RubyKernel {
         final long startTime = System.currentTimeMillis();
         final RubyThread rubyThread = context.getThread();
 
+        boolean interrupted = false;
         try {
             // Spurious wakeup-loop
             do {
@@ -696,6 +697,11 @@ public class RubyKernel {
             } while (milliseconds > 0);
         } catch (InterruptedException ie) {
             // ignore; sleep gets interrupted
+            interrupted = true;
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
