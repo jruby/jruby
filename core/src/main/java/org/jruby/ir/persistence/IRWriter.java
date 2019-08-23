@@ -10,6 +10,7 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,8 +37,11 @@ public class IRWriter {
     private static void persistScopeInstructions(IRWriterEncoder file, IRScope parent) {
         persistScopeInstrs(file, parent);
 
-        for (IRScope scope: parent.getChildScopes()) {
-            persistScopeInstructions(file, scope);
+        List<IRScope> children = parent.getChildScopes();
+        if (children != null) {
+            for (IRScope scope : children) {
+                persistScopeInstructions(file, scope);
+            }
         }
     }
 
@@ -62,8 +66,11 @@ public class IRWriter {
     private static void persistScopeHeaders(IRWriterEncoder file, IRScope parent) {
         persistScopeHeader(file, parent);
 
-        for (IRScope scope: parent.getChildScopes()) {
-            persistScopeHeaders(file, scope);
+        List<IRScope> children = parent.getChildScopes();
+        if (children != null) {
+            for (IRScope scope : children) {
+                persistScopeHeaders(file, scope);
+            }
         }
     }
 
