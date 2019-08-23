@@ -183,7 +183,7 @@ public class ListNode extends Node implements Iterable<Node> {
         Node single = this.single;
 
         if (single != null) {
-            Node[] list = new Node[length + 1];
+            list = new Node[length + 1];
             list[0] = single;
             this.single = null;
             System.arraycopy(other, index, list, 1, length);
