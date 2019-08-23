@@ -184,7 +184,7 @@ public abstract class IRScope implements ParseResult {
 
     public void addChildScope(IRScope closure) {
         if (childScopes == null) childScopes = new ArrayList<>(1);
-        childScopes.add(closure);
+        if (!childScopes.contains(closure)) childScopes.add(closure);
     }
 
     public Stream<IRClosure> getClosures() {
