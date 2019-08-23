@@ -34,7 +34,7 @@ public class IRModuleBody extends IRScope {
 
     @Override
     public void cleanupAfterExecution() {
-        if (executesOnce && !getClosures().findFirst().isPresent()) {
+        if (executesOnce && getClosures().isEmpty()) {
             interpreterContext = null;
             fullInterpreterContext = null;
             localVars = null;

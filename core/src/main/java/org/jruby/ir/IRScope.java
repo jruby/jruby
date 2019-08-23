@@ -25,7 +25,6 @@ import org.jruby.parser.StaticScope;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -67,7 +66,7 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class IRScope implements ParseResult {
     public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
-    private static final Collection<IRScope> NO_CLOSURES = Collections.EMPTY_LIST;
+    private static final Collection<IRClosure> NO_CLOSURES = Collections.EMPTY_LIST;
 
     private static final AtomicInteger globalScopeCount = new AtomicInteger();
 
@@ -83,13 +82,15 @@ public abstract class IRScope implements ParseResult {
     /** Lexical parent scope */
     private IRScope lexicalParent;
 
-    /** List of (nested) scopes in this scope.  This is used for nested closure all the time but additionally
-     * other contained scopes if we are doing dry-run or other diagnostic activities.
-     */
-    private List<IRScope> childScopes = null;
+    /** List of (nested) closures in this scope */
+    private List<IRClosure> nestedClosures;
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex;
+
+    // List of all scopes this scope contains lexically.  This is not used
+    // for execution, but is used during dry-runs for debugging.
+    private List<IRScope> lexicalChildren;
 
     /** Parser static-scope that this IR scope corresponds to */
     private final StaticScope staticScope;
@@ -160,6 +161,7 @@ public abstract class IRScope implements ParseResult {
 
     private void setupLexicalContainment() {
         if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING || RubyInstanceConfig.RECORD_LEXICAL_HIERARCHY) {
+            lexicalChildren = new ArrayList<>(1);
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
     }
@@ -182,22 +184,23 @@ public abstract class IRScope implements ParseResult {
         return (other != null) && (getClass() == other.getClass()) && (scopeId == ((IRScope) other).scopeId);
     }
 
-    public void addChildScope(IRScope closure) {
-        if (childScopes == null) childScopes = new ArrayList<>(1);
-        childScopes.add(closure);
+    protected void addChildScope(IRScope scope) {
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+        lexicalChildren.add(scope);
     }
 
-    public Stream<IRClosure> getClosures() {
-        Collection<IRScope> scopes = childScopes == null ? NO_CLOSURES : childScopes;
-        return scopes.stream().filter(IRClosure.class::isInstance).map(IRClosure.class::cast);
+    public List<IRScope> getLexicalScopes() {
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+        return lexicalChildren;
     }
 
-    public List<IRScope> getChildScopes() {
-        return childScopes;
+    public void addClosure(IRClosure closure) {
+        if (nestedClosures == null) nestedClosures = new ArrayList<>(1);
+        nestedClosures.add(closure);
     }
 
-    public void removeChildScope(IRClosure closure) {
-        if (childScopes != null) childScopes.remove(closure);
+    public void removeClosure(IRClosure closure) {
+        if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
     public Label getNewLabel(String prefix) {
@@ -206,6 +209,10 @@ public abstract class IRScope implements ParseResult {
 
     public Label getNewLabel() {
         return getNewLabel("LBL");
+    }
+
+    public Collection<IRClosure> getClosures() {
+        return nestedClosures == null ? NO_CLOSURES : nestedClosures;
     }
 
     public IRManager getManager() {
@@ -544,7 +551,10 @@ public abstract class IRScope implements ParseResult {
         // or generated instructions.
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
 
-        getClosures().forEach(cl -> cl.prepareFullBuild());
+        for (IRScope scope: getClosures()) {
+            scope.prepareFullBuild();
+        }
+
         prepareFullBuildCommon();
         runCompilerPasses(getManager().getCompilerPasses(this), dumpToIGV());
         getManager().optimizeIfSimpleScope(this);
@@ -588,7 +598,10 @@ public abstract class IRScope implements ParseResult {
         // or generated instructions.
         if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext.getLinearizedBBList();
 
-        getClosures().forEach(cl -> cl.prepareForCompilation());
+        for (IRScope scope: getClosures()) {
+            scope.prepareForCompilation();
+        }
+
         prepareFullBuildCommon();
 
         runCompilerPasses(getManager().getJITPasses(this), dumpToIGV());
@@ -661,7 +674,7 @@ public abstract class IRScope implements ParseResult {
 
     private void calculateClosureScopeFlags() {
         // Compute flags for nested closures (recursively) and set derived flags.
-        getClosures().forEach(cl -> {
+        for (IRClosure cl: getClosures()) {
             cl.computeScopeFlags();
             if (cl.usesEval()) {
                 flags.add(CAN_RECEIVE_BREAKS);
@@ -678,7 +691,7 @@ public abstract class IRScope implements ParseResult {
                     flags.add(USES_ZSUPER);
                 }
             }
-        });
+        }
     }
 
     private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
@@ -1010,7 +1023,7 @@ public abstract class IRScope implements ParseResult {
         // are IR methods (or are native but can be substituted with IR methods).
         //
         // Note: we can look for scoped methods and make this less conservative.
-        if (methodToInline.getClosures().findFirst().isPresent()) return inlineFailed("inline a method which contains nested closures");
+        if (!methodToInline.getClosures().isEmpty()) return inlineFailed("inline a method which contains nested closures");
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield

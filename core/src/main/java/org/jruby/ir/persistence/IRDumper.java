@@ -197,10 +197,14 @@ public class IRDumper extends IRVisitor {
             }
         }
 
-        if (recurse && scope.getClosures().findFirst().isPresent()) {
+        if (recurse && !scope.getClosures().isEmpty()) {
             println();
 
-            scope.getClosures().filter(cl -> cl != scope).forEach(cl -> visit(cl, full, true));
+            for (IRClosure closure : scope.getClosures()) {
+                if (closure == scope) continue;
+
+                visit(closure, full, true);
+            }
         }
     }
 

@@ -518,7 +518,7 @@ public class CFG {
         for (Instr instr: bb.getInstrs()) {
             for (Operand oper: instr.getOperands()) {
                 if (oper instanceof WrappedIRClosure) {
-                    scope.removeChildScope(((WrappedIRClosure) oper).getClosure());
+                    scope.removeClosure(((WrappedIRClosure) oper).getClosure());
                     break; // Only one WrappedIRClosure possible per instr
                 }
             }

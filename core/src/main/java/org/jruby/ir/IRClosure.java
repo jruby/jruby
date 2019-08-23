@@ -102,7 +102,7 @@ public class IRClosure extends IRScope {
                      Signature signature, ByteList prefix, boolean isBeginEndBlock, boolean needsCoverage) {
         this(manager, lexicalParent, lineNumber, staticScope, prefix);
         this.signature = signature;
-        lexicalParent.addChildScope(this);
+        lexicalParent.addClosure(this);
 
         if (getManager().isDryRun()) {
             this.body = null;
@@ -191,7 +191,9 @@ public class IRClosure extends IRScope {
     // FIXME: This is too strict.  We can use any closure which does not dip below the define_method closure.  This
     // will deopt any nested block which dips out of itself.
     public boolean isNestedClosuresSafeForMethodConversion() {
-        if (!getClosures().anyMatch(closure -> !closure.isNestedClosuresSafeForMethodConversion())) return false;
+        for (IRClosure closure: getClosures()) {
+            if (!closure.isNestedClosuresSafeForMethodConversion()) return false;
+        }
 
         return !getFlags().contains(IRFlags.ACCESS_PARENTS_LOCAL_VARIABLES);
     }
@@ -349,7 +351,7 @@ public class IRClosure extends IRScope {
 
         // WrappedIRClosure should always have a single unique IRClosure in them so we should
         // not end up adding n copies of the same closure as distinct clones...
-        lexicalParent.addChildScope(clonedClosure);
+        lexicalParent.addClosure(clonedClosure);
 
         return cloneForInlining(ii, clonedClosure);
     }

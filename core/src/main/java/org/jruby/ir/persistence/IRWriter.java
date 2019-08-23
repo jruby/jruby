@@ -2,12 +2,15 @@ package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.ByteList;
 
 import java.io.IOException;
 import java.util.Map;
@@ -36,7 +39,7 @@ public class IRWriter {
     private static void persistScopeInstructions(IRWriterEncoder file, IRScope parent) {
         persistScopeInstrs(file, parent);
 
-        for (IRScope scope: parent.getChildScopes()) {
+        for (IRScope scope: parent.getLexicalScopes()) {
             persistScopeInstructions(file, scope);
         }
     }
@@ -62,7 +65,7 @@ public class IRWriter {
     private static void persistScopeHeaders(IRWriterEncoder file, IRScope parent) {
         persistScopeHeader(file, parent);
 
-        for (IRScope scope: parent.getChildScopes()) {
+        for (IRScope scope: parent.getLexicalScopes()) {
             persistScopeHeaders(file, scope);
         }
     }
