@@ -36,10 +36,10 @@ module IRB
     # See +lib/tracer.rb+ for more information.
     def use_tracer=(opt)
       if opt
-        Tracer.set_get_line_procs(@irb_path) {
+        Tracer.set_get_line_procs(@irb_path, proc {
           |line_no, *rests|
           @io.line(line_no)
-        }
+        })
       elsif !opt && @use_tracer
         Tracer.off
       end
