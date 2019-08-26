@@ -54,7 +54,7 @@ public class GlobalVariable extends AbstractVariable {
      * @param runtime Ruby runtime
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
-     * @return the instance of GlobalVariable
+     * @return the instance of GlobalSite
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
         if (name.matches(VALID_NAME)) {
@@ -157,7 +157,7 @@ public class GlobalVariable extends AbstractVariable {
     /**
      * Returns enum type of this variable defined in {@link BiVariable}.
      *
-     * @return this enum type, BiVariable.Type.GlobalVariable.
+     * @return this enum type, BiVariable.Type.GlobalSite.
      */
     @Override
     public Type getType() {

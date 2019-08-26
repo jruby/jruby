@@ -34,6 +34,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * 
  * @author jpetersen
+ * @deprecated See {@link org.jruby.runtime.GlobalSite}
  */
 public class ValueAccessor implements IAccessor {
     private volatile IRubyObject value;

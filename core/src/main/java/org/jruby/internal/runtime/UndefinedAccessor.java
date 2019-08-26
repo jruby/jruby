@@ -29,49 +29,52 @@
 
 package org.jruby.internal.runtime;
 
+import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 /**
- * 
- * @author jpetersen
+ * A specialized {@link GlobalSite} that warns when accessed until a value is set.
+ *
+ * Once a value is set, behavior reverts to a normal GlobalSite.
  */
-public class UndefinedAccessor implements IAccessor {
-    private final Ruby runtime;
-    private final GlobalVariable globalVariable;
-    private final String name;
+public class UndefinedAccessor extends GlobalSite {
+    volatile boolean defined = false;
 
     /**
      * Constructor for UndefinedAccessor.
      */
-    public UndefinedAccessor(Ruby runtime, GlobalVariable globalVariable, String name) {
-        assert runtime != null;
-        assert globalVariable != null;
-        assert name != null;
+    public UndefinedAccessor(Ruby runtime, String name) {
+        super(runtime, name, runtime.getNil());
 
-        this.runtime = runtime;
-        this.globalVariable = globalVariable;
-        this.name = name;
+        IRubyObject nil = runtime.getNil();
+
+        setTarget(getter(() -> {
+            if (runtime.isVerbose()) {
+                runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
+            }
+
+            return nil;
+        }));
     }
 
-    /**
-     * @see org.jruby.runtime.IAccessor#getValue()
-     */
-    public IRubyObject getValue() {
-        if (runtime.isVerbose()) {
-            runtime.getWarnings().warning(ID.ACCESSOR_NOT_INITIALIZED, "global variable `" + name + "' not initialized");
-        }
-        return runtime.getNil();
+    @Override
+    public IRubyObject set(IRubyObject value) {
+        if (defined) return super.set(value);
+        super.set(value);
+        defined = true;
+        return value;
     }
 
-    /**
-     * @see org.jruby.runtime.IAccessor#setValue(IRubyObject)
-     */
-    public IRubyObject setValue(IRubyObject newValue) {
-        assert newValue != null;
-        globalVariable.setAccessor(new ValueAccessor(newValue));
-        return newValue;
+    public boolean isDefined() {
+        return defined;
     }
 }

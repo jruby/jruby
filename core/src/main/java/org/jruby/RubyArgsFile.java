@@ -35,6 +35,7 @@ package org.jruby;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
@@ -58,6 +59,8 @@ import org.jruby.util.TypeConverter;
 
 public class RubyArgsFile extends RubyObject {
 
+    public static final String FILENAME_GLOBAL = "$FILENAME";
+
     public RubyArgsFile(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
     }
@@ -71,13 +74,12 @@ public class RubyArgsFile extends RubyObject {
         IRubyObject argsFile = argfClass.newInstance(runtime.getCurrentContext(), new IRubyObject[] { null }, (Block) null);
 
         runtime.setArgsFile(argsFile);
-        runtime.getGlobalVariables().defineReadonly("$<", new ArgsFileAccessor(runtime), GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().defineReadonly("$<", argsFile, GlobalVariable.Scope.GLOBAL);
         runtime.defineGlobalConstant("ARGF", argsFile);
         runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
     }
 
-
-    private static class ArgsFileAccessor implements IAccessor {
+    private static class ArgsFileAccessor  {
 
         private final Ruby runtime;
         ArgsFileAccessor(Ruby runtime) { this.runtime = runtime; }
@@ -166,7 +168,7 @@ public class RubyArgsFile extends RubyObject {
                 if (argv.getLength() > 0) {
                     final RubyString filename = argv.shift(context).convertToString();
                     if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
-                        runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
+                        runtime.getGlobalVariables().getVariable(FILENAME_GLOBAL).getAccessor().setTarget(MethodHandles.constant(IRubyObject.class, filename));
                     }
 
                     if (filenameEqlDash(filename)) {

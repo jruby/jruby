@@ -165,9 +165,9 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             filename = container.getScriptFilename();
         }
         final Ruby runtime = container.getProvider().getRuntime();
-        IAccessor $0 = new ValueAccessor(RubyString.newString(runtime, filename));
-        runtime.getGlobalVariables().define("$PROGRAM_NAME", $0, GlobalVariable.Scope.GLOBAL);
-        runtime.getGlobalVariables().define("$0", $0, GlobalVariable.Scope.GLOBAL);
+        IRubyObject $0 = RubyString.newString(runtime, filename);
+        runtime.getGlobalVariables().defineReadonly("$PROGRAM_NAME", $0, GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().defineReadonly("$0", $0, GlobalVariable.Scope.GLOBAL);
 
         int line = 0;
         if (lines != null && lines.length > 0) {

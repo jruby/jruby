@@ -132,7 +132,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.EventHook;
-import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ObjectAllocator;
@@ -558,10 +558,6 @@ public final class Ruby implements Constantizable {
      * and $0 ruby global variables.
      */
     public void runFromMain(InputStream inputStream, String filename) {
-        IAccessor d = new ValueAccessor(newString(filename));
-        getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
-        getGlobalVariables().define("$0", d, GLOBAL);
-
         for (Map.Entry<String, String> entry : config.getOptionGlobals().entrySet()) {
             final IRubyObject varvalue;
             if (entry.getValue() != null) {
@@ -1234,7 +1230,7 @@ public final class Ruby implements Constantizable {
         context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
-        bootstrap();
+        bootstrap(context);
 
         // set up defined messages
         initDefinedMessages();
@@ -1253,9 +1249,6 @@ public final class Ruby implements Constantizable {
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
         dummyClass.freeze(context);
-
-        // Create global constants and variables
-        RubyGlobal.createGlobals(context, this);
 
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
@@ -1313,6 +1306,9 @@ public final class Ruby implements Constantizable {
         // Done booting JRuby runtime
         bootingRuntime = false;
 
+        setVerbose(config.getVerbosity().toRuby(this));
+        setDebug(config.isDebug() ? trueObject : falseObject);
+
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
@@ -1336,10 +1332,30 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void bootstrap() {
+    private void bootstrap(ThreadContext context) {
         initCore();
+
+        // Create global constants and variables
+        RubyGlobal.createGlobals(context, this);
+        initVerboseAndDebug();
+
         initExceptions();
         initLibraries();
+    }
+
+    private void initVerboseAndDebug() {
+        // Set verbose to false until after boot
+        verbose = new RubyGlobal.TristateGlobalVariable(this, "$VERBOSE", nilObject);
+        defineVariable(verbose, GLOBAL);
+        getGlobalVariables().define("$-v", verbose, GLOBAL);
+        getGlobalVariables().define("$-w", verbose, GLOBAL);
+
+        defineVariable(new RubyGlobal.WarningGlobalVariable(this, "$-W", verbose.dynamicInvoker()), GLOBAL);
+
+        // Set debug to false until after boot
+        debug = new GlobalSite(this, "$DEBUG", falseObject);
+        defineVariable(debug, GLOBAL);
+        getGlobalVariables().define("$-d", debug, GLOBAL);
     }
 
     private void initDefinedMessages() {
@@ -2557,42 +2573,40 @@ public final class Ruby implements Constantizable {
      * @return Value of property isVerbose.
      */
     public IRubyObject getVerbose() {
-        return verboseValue;
+        return verbose.get();
     }
 
     public boolean isVerbose() {
-        return verbose;
+        return getVerbose().isTrue();
     }
 
     public boolean warningsEnabled() {
-        return warningsEnabled;
+        return !getVerbose().isNil();
     }
 
     /** Setter for property isVerbose.
      * @param verbose New value of property isVerbose.
      */
     public void setVerbose(IRubyObject verbose) {
-        this.verbose = verbose.isTrue();
-        this.verboseValue = verbose;
-        warningsEnabled = !verbose.isNil();
+        this.verbose.set(verbose);
     }
 
     /** Getter for property isDebug.
      * @return Value of property isDebug.
      */
     public IRubyObject getDebug() {
-        return debug ? trueObject : falseObject;
+        return debug.get();
     }
 
     public boolean isDebug() {
-        return debug;
+        return getDebug().isTrue();
     }
 
     /** Setter for property isDebug.
      * @param debug New value of property isDebug.
      */
     public void setDebug(IRubyObject debug) {
-        this.debug = debug.isTrue();
+        this.debug.set(debug);
     }
 
     public JavaSupport getJavaSupport() {
@@ -2615,25 +2629,15 @@ public final class Ruby implements Constantizable {
 
     /** Defines a global variable
      */
-    public void defineVariable(final GlobalVariable variable, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
-        globalVariables.define(variable.name(), new IAccessor() {
-            @Override
-            public IRubyObject getValue() {
-                return variable.get();
-            }
-
-            @Override
-            public IRubyObject setValue(IRubyObject newValue) {
-                return variable.set(newValue);
-            }
-        }, scope);
+    public void defineVariable(final GlobalSite variable, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
+        globalVariables.define(variable, scope);
     }
 
     /** defines a readonly global variable
      *
      */
     public void defineReadonlyVariable(String name, IRubyObject value, org.jruby.internal.runtime.GlobalVariable.Scope scope) {
-        globalVariables.defineReadonly(name, new ValueAccessor(value), scope);
+        globalVariables.defineReadonly(name, value, scope);
     }
 
     // Obsolete parseFile function
@@ -4485,11 +4489,11 @@ public final class Ruby implements Constantizable {
         return posix;
     }
 
-    public void setRecordSeparatorVar(GlobalVariable recordSeparatorVar) {
+    public void setRecordSeparatorVar(GlobalSite recordSeparatorVar) {
         this.recordSeparatorVar = recordSeparatorVar;
     }
 
-    public GlobalVariable getRecordSeparatorVar() {
+    public GlobalSite getRecordSeparatorVar() {
         return recordSeparatorVar;
     }
 
@@ -5120,8 +5124,8 @@ public final class Ruby implements Constantizable {
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 
-    private boolean verbose, warningsEnabled, debug;
-    private IRubyObject verboseValue;
+    private GlobalSite verbose;
+    private GlobalSite debug;
 
     private RubyThreadGroup defaultThreadGroup;
 
@@ -5164,7 +5168,7 @@ public final class Ruby implements Constantizable {
             respondTo, respondToMissing;
 
     // record separator var, to speed up io ops that use it
-    private GlobalVariable recordSeparatorVar;
+    private GlobalSite recordSeparatorVar;
 
     // former java.lang.System concepts now internalized for MVM
     private volatile String currentDirectory;

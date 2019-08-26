@@ -45,19 +45,15 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.GlobalVariables;
-import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.Helpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.KCode;
-import org.jruby.util.Numeric;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
@@ -75,12 +71,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /** This class initializes global variables and constants.
@@ -101,7 +95,9 @@ public class RubyGlobal {
             ((RubyArray)runtime.getObject().getConstant("ARGV")).replace(argvArray);
         } else {
             runtime.getObject().setConstantQuiet("ARGV", argvArray);
-            runtime.getGlobalVariables().define("$*", new ValueAccessor(argvArray), GLOBAL);
+            runtime.getGlobalVariables().define("$*", new GlobalSite(runtime, "$*", argvArray) {
+
+            }, GLOBAL);
         }
     }
 
@@ -120,10 +116,9 @@ public class RubyGlobal {
 
         initARGV(runtime);
 
-        IAccessor d = new ValueAccessor(runtime.newString(
-                runtime.getInstanceConfig().displayedFileName()));
-        globals.define("$PROGRAM_NAME", d, GLOBAL);
-        globals.define("$0", d, GLOBAL);
+        GlobalSite programName = new RubyGlobal.StringCoerceGlobalVariable(runtime, "$PROGRAM_NAME", runtime.newString(runtime.getInstanceConfig().displayedFileName()));
+        runtime.getGlobalVariables().define(programName, GLOBAL);
+        runtime.getGlobalVariables().define("$0", programName, GLOBAL);
 
         // Version information:
         IRubyObject version = null;
@@ -158,16 +153,13 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
-        RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
-        runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
-
-        final GlobalVariable kcodeGV;
+        final GlobalSite kcodeGV;
         kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
 
         runtime.defineVariable(kcodeGV, GLOBAL);
-        runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
+        runtime.defineVariable(new GlobalSite.Copy(runtime, "$-K", kcodeGV), GLOBAL);
         IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze(context);
-        GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
+        GlobalSite rs = new StringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
@@ -178,7 +170,7 @@ public class RubyGlobal {
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
         runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"), THREAD);
 
-        runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()), THREAD);
+        runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!"), THREAD);
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
         if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
@@ -186,23 +178,6 @@ public class RubyGlobal {
         } else {
             runtime.defineVariable(new StringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
-
-        RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
-        IRubyObject verboseValue;
-        if (verbose == RubyInstanceConfig.Verbosity.NIL) {
-            verboseValue = runtime.getNil();
-        } else if(verbose == RubyInstanceConfig.Verbosity.TRUE) {
-            verboseValue = runtime.getTrue();
-        } else {
-            verboseValue = runtime.getFalse();
-        }
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue), GLOBAL);
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v", verboseValue), GLOBAL);
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w", verboseValue), GLOBAL);
-
-        IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
-        runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
-        runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
 
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
@@ -223,27 +198,27 @@ public class RubyGlobal {
         runtime.defineVariable(new LastMatchGlobalVariable(runtime, "$+"), FRAME);
         runtime.defineVariable(new BackRefGlobalVariable(runtime, "$~"), FRAME);
 
-        // On platforms without a c-library accessible through JNA, getpid will return hashCode
+        // On platforms without a c-library accessible through JNR, getpid will return hashCode
         // as $$ used to. Using $$ to kill processes could take down many runtimes, but by basing
         // $$ on getpid() where available, we have the same semantics as MRI.
-        globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);
+        globals.defineReadonly("$$", runtime.newFixnum(runtime.getPosix().getpid()), GLOBAL);
 
         // after defn of $stderr as the call may produce warnings
         defineGlobalEnvConstants(runtime);
 
-        // Fixme: Do we need the check or does Main.java not call this...they should consolidate
+        // if $* is nil by this point, make it read-only
         if (globals.get("$*").isNil()) {
-            globals.defineReadonly("$*", new ValueAccessor(runtime.newArray()), GLOBAL);
+            globals.defineReadonly("$*", runtime.newArray(), GLOBAL);
         }
 
         globals.defineReadonly("$-p",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
+                () -> runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting()),
                 GLOBAL);
         globals.defineReadonly("$-a",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())),
+                () -> runtime.newBoolean(runtime.getInstanceConfig().isSplit()),
                 GLOBAL);
         globals.defineReadonly("$-l",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isProcessLineEnds())),
+                () -> runtime.newBoolean(runtime.getInstanceConfig().isProcessLineEnds()),
                 GLOBAL);
 
         // ARGF, $< object
@@ -590,93 +565,51 @@ public class RubyGlobal {
         }
     }
 
-    private static class NonEffectiveGlobalVariable extends GlobalVariable {
+    /**
+     * A GlobalSite that never updates and always warns about ineffective variable.
+     */
+    private static class NonEffectiveGlobalVariable extends GlobalSite {
         public NonEffectiveGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
         @Override
-        public IRubyObject set(IRubyObject value) {
+        public void getFold() {
+            runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective");
+        }
+
+        @Override
+        public IRubyObject setFilter(IRubyObject value) {
             runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective; ignored");
+
             return value;
         }
 
         @Override
-        public IRubyObject get() {
-            runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective");
-            return value;
+        public void setTarget(MethodHandle target) {
+            // ignored; keep initial value forever
         }
     }
 
-    private static class LastExitStatusVariable extends GlobalVariable {
+    private static class LastExitStatusVariable extends GlobalSite {
         public LastExitStatusVariable(Ruby runtime, String name) {
-            super(runtime, name, runtime.getNil());
+            super(runtime, name, () -> runtime.getCurrentContext().getLastExitStatus());
         }
 
         @Override
-        public IRubyObject get() {
-            IRubyObject lastExitStatus = runtime.getCurrentContext().getLastExitStatus();
+        public IRubyObject getFilter(IRubyObject lastExitStatus) {
             return lastExitStatus == null ? runtime.getNil() : lastExitStatus;
         }
 
         @Override
-        public IRubyObject set(IRubyObject lastExitStatus) {
+        public IRubyObject setFilter(IRubyObject lastExitStatus) {
             throw runtime.newNameError("$? is a read-only variable", "$?");
         }
     }
 
-    private static class MatchMatchGlobalVariable extends GlobalVariable {
-        public MatchMatchGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, runtime.getNil());
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyRegexp.last_match(runtime.getCurrentContext().getBackRef());
-        }
-    }
-
-    private static class PreMatchGlobalVariable extends GlobalVariable {
-        public PreMatchGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, runtime.getNil());
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyRegexp.match_pre(runtime.getCurrentContext().getBackRef());
-        }
-    }
-
-    private static class PostMatchGlobalVariable extends GlobalVariable {
-        public PostMatchGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, runtime.getNil());
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyRegexp.match_post(runtime.getCurrentContext().getBackRef());
-        }
-    }
-
-    private static class LastMatchGlobalVariable extends GlobalVariable {
-        public LastMatchGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, runtime.getNil());
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyRegexp.match_last(runtime.getCurrentContext().getBackRef());
-        }
-    }
-
-    private static class BackRefGlobalVariable extends GlobalVariable {
+    private static class BackRefGlobalVariable extends GlobalSite {
         public BackRefGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, runtime.getNil());
-        }
-
-        @Override
-        public IRubyObject get() {
-            return Helpers.getBackref(runtime, runtime.getCurrentContext());
+            super(runtime, name, () -> Helpers.backref(runtime.getCurrentContext()));
         }
 
         @Override
@@ -686,11 +619,55 @@ public class RubyGlobal {
         }
     }
 
+    private static class MatchMatchGlobalVariable extends BackRefGlobalVariable {
+        public MatchMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name);
+        }
+
+        @Override
+        public IRubyObject getFilter(IRubyObject backref) {
+            return RubyRegexp.last_match(backref);
+        }
+    }
+
+    private static class PreMatchGlobalVariable extends BackRefGlobalVariable {
+        public PreMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name);
+        }
+
+        @Override
+        public IRubyObject getFilter(IRubyObject backref) {
+            return RubyRegexp.match_pre(backref);
+        }
+    }
+
+    private static class PostMatchGlobalVariable extends BackRefGlobalVariable {
+        public PostMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name);
+        }
+
+        @Override
+        public IRubyObject getFilter(IRubyObject backref) {
+            return RubyRegexp.match_post(backref);
+        }
+    }
+
+    private static class LastMatchGlobalVariable extends BackRefGlobalVariable {
+        public LastMatchGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name);
+        }
+
+        @Override
+        public IRubyObject get() {
+            return RubyRegexp.match_last(runtime.getCurrentContext().getBackRef());
+        }
+    }
+
     // Accessor methods.
 
-    private static class LineNumberGlobalVariable extends GlobalVariable {
+    private static class LineNumberGlobalVariable extends GlobalSite {
         public LineNumberGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, null);
+            super(runtime, name, () -> runtime.newFixnum(runtime.getCurrentLine()));
         }
 
         @Override
@@ -699,191 +676,142 @@ public class RubyGlobal {
             runtime.setCurrentLine(line);
             return value;
         }
-
-        @Override
-        public IRubyObject get() {
-            return runtime.newFixnum(runtime.getCurrentLine());
-        }
     }
 
-    private static class ErrorInfoGlobalVariable extends GlobalVariable {
-        public ErrorInfoGlobalVariable(Ruby runtime, String name, IRubyObject value) {
-            super(runtime, name, null);
-            set(value);
+    private static class ErrorInfoGlobalVariable extends GlobalSite {
+        public ErrorInfoGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, () -> runtime.getCurrentContext().getErrorInfo());
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() &&
-                    !runtime.getException().isInstance(value) &&
+                    !(value instanceof RubyException) &&
                     !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
                 throw runtime.newTypeError("assigning non-exception to $!");
             }
 
             return runtime.getCurrentContext().setErrorInfo(value);
         }
+    }
+
+    private static class BacktraceGlobalVariable extends GlobalSite {
+        public BacktraceGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, () -> {
+                ThreadContext context = runtime.getCurrentContext();
+                IRubyObject errorInfo = context.getErrorInfo();
+                IRubyObject nil = context.nil;
+
+                IRubyObject backtrace = errorInfo.isNil() ? nil : errorInfo.callMethod(context, "backtrace");
+
+                //$@ returns nil if $!.backtrace is not an array
+                if (!(backtrace instanceof RubyArray)) {
+                    backtrace = nil;
+                }
+
+                return backtrace;
+            });
+        }
 
         @Override
-        public IRubyObject get() {
-            return runtime.getCurrentContext().getErrorInfo();
+        public IRubyObject set(IRubyObject value) {
+            ThreadContext context = runtime.getCurrentContext();
+            IRubyObject errorInfo = context.getErrorInfo();
+
+            if (errorInfo.isNil()) {
+                throw runtime.newArgumentError("$! not set");
+            }
+
+            errorInfo.callMethod(context, "set_backtrace", value);
+
+            return value;
         }
     }
 
     // FIXME: move out of this class!
-    public static class StringGlobalVariable extends GlobalVariable {
+    public static class StringGlobalVariable extends GlobalSite {
         public StringGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
         @Override
-        public IRubyObject set(IRubyObject value) {
-            if (!value.isNil() && ! (value instanceof RubyString)) {
+        public IRubyObject setFilter(IRubyObject value) {
+            if (!value.isNil() && !(value instanceof RubyString)) {
                 throw runtime.newTypeError("value of " + name() + " must be a String");
             }
-            return super.set(value);
+
+            return value;
         }
     }
 
-    public static class StringOrRegexpGlobalVariable extends GlobalVariable {
+    public static class StringCoerceGlobalVariable extends GlobalSite {
+        public StringCoerceGlobalVariable(Ruby runtime, String name, RubyString value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject setFilter(IRubyObject value) {
+            return value.convertToString();
+        }
+    }
+
+    public static class StringOrRegexpGlobalVariable extends GlobalSite {
         public StringOrRegexpGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
         @Override
-        public IRubyObject set(IRubyObject value) {
-            if (!value.isNil() && ! (value instanceof RubyString) && ! (value instanceof RubyRegexp)) {
+        public IRubyObject setFilter(IRubyObject value) {
+            if (!value.isNil() && !(value instanceof RubyString) && !(value instanceof RubyRegexp)) {
                 throw runtime.newTypeError("value of " + name() + " must be String or Regexp");
             }
-            return super.set(value);
-        }
-    }
 
-    public static class KCodeGlobalVariable extends GlobalVariable {
-        public KCodeGlobalVariable(Ruby runtime, String name, IRubyObject value) {
-            super(runtime, name, value);
-        }
-
-        @Override
-        public IRubyObject get() {
-            String kcode = runtime.getKCode().getKCode();
-            return kcode == null ? runtime.getNil() : runtime.newString(kcode);
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject value) {
-            runtime.setKCode(KCode.create(value.convertToString().toString()));
             return value;
         }
     }
 
-    private static class SafeGlobalVariable extends GlobalVariable {
+    private static class SafeGlobalVariable extends GlobalSite {
         public SafeGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, null);
-        }
-
-        @Override
-        public IRubyObject get() {
-            return RubyFixnum.zero(runtime);
+            super(runtime, name, RubyFixnum.zero(runtime));
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
             runtime.getWarnings().warnOnce(ID.SAFE_NOT_SUPPORTED, "SAFE levels are not supported in JRuby");
-            return RubyFixnum.zero(runtime);
-        }
-    }
 
-    private static class VerboseGlobalVariable extends GlobalVariable {
-        public VerboseGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
-            super(runtime, name, initialValue);
-            set(initialValue);
-        }
-
-        @Override
-        public IRubyObject get() {
-            return runtime.getVerbose();
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject newValue) {
-            if (newValue.isNil()) {
-                runtime.setVerbose(newValue);
-            } else {
-                runtime.setVerbose(runtime.newBoolean(newValue.isTrue()));
-            }
-
-            return newValue;
-        }
-    }
-
-    private static class WarningGlobalVariable extends ReadonlyGlobalVariable {
-        public WarningGlobalVariable(Ruby runtime, String name, RubyInstanceConfig.Verbosity verbosity) {
-            super(runtime, name,
-                    verbosity == RubyInstanceConfig.Verbosity.NIL   ? RubyFixnum.newFixnum(runtime, 0) :
-                    verbosity == RubyInstanceConfig.Verbosity.FALSE ? RubyFixnum.newFixnum(runtime, 1) :
-                    verbosity == RubyInstanceConfig.Verbosity.TRUE  ? RubyFixnum.newFixnum(runtime, 2) :
-                    runtime.getNil()
-                    );
-        }
-    }
-
-    private static class DebugGlobalVariable extends GlobalVariable {
-        public DebugGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
-            super(runtime, name, initialValue);
-            set(initialValue);
-        }
-
-        @Override
-        public IRubyObject get() {
-            return runtime.getDebug();
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject newValue) {
-            if (newValue.isNil()) {
-                runtime.setDebug(newValue);
-            } else {
-                runtime.setDebug(runtime.newBoolean(newValue.isTrue()));
-            }
-
-            return newValue;
-        }
-    }
-
-    private static class BacktraceGlobalVariable extends GlobalVariable {
-        public BacktraceGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, null);
-        }
-
-        @Override
-        public IRubyObject get() {
-            IRubyObject errorInfo = runtime.getGlobalVariables().get("$!");
-            IRubyObject backtrace = errorInfo.isNil() ? runtime.getNil() : errorInfo.callMethod(errorInfo.getRuntime().getCurrentContext(), "backtrace");
-            //$@ returns nil if $!.backtrace is not an array
-            if (!(backtrace instanceof RubyArray)) {
-                backtrace = runtime.getNil();
-            }
-            return backtrace;
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject value) {
-            if (runtime.getGlobalVariables().get("$!").isNil()) {
-                throw runtime.newArgumentError("$! not set");
-            }
-            runtime.getGlobalVariables().get("$!").callMethod(value.getRuntime().getCurrentContext(), "set_backtrace", value);
             return value;
         }
     }
 
-    private static class LastlineGlobalVariable extends GlobalVariable {
-        public LastlineGlobalVariable(Ruby runtime, String name) {
-            super(runtime, name, null);
+    static class TristateGlobalVariable extends GlobalSite {
+        public TristateGlobalVariable(Ruby runtime, String name, IRubyObject initial) {
+            super(runtime, name, initial);
         }
 
         @Override
-        public IRubyObject get() {
-            return Helpers.getLastLine(runtime, runtime.getCurrentContext());
+        public IRubyObject setFilter(IRubyObject newValue) {
+            if (!newValue.isNil()) return runtime.newBoolean(newValue.isTrue());
+
+            return newValue;
+        }
+    }
+
+    public static class WarningGlobalVariable extends ReadonlyGlobalVariable {
+        public WarningGlobalVariable(Ruby runtime, String name, MethodHandle reader) {
+            super(runtime, name, reader);
+        }
+
+        @Override
+        public IRubyObject getFilter(IRubyObject verbose) {
+            if (verbose.isNil()) return RubyFixnum.zero(runtime);
+            if (verbose.isTrue()) return RubyFixnum.two(runtime);
+            else return RubyFixnum.one(runtime);
+        }
+    }
+
+    private static class LastlineGlobalVariable extends GlobalSite {
+        public LastlineGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, () -> Helpers.getLastLine(runtime, runtime.getCurrentContext()));
         }
 
         @Override
@@ -893,7 +821,7 @@ public class RubyGlobal {
         }
     }
 
-    public static class InputGlobalVariable extends GlobalVariable {
+    public static class InputGlobalVariable extends GlobalSite {
         public InputGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
@@ -908,13 +836,13 @@ public class RubyGlobal {
         }
     }
 
-    public static class OutputGlobalVariable extends GlobalVariable {
+    public static class OutputGlobalVariable extends GlobalSite {
         public OutputGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, value);
         }
 
         @Override
-        public IRubyObject set(IRubyObject value) {
+        public IRubyObject setFilter(IRubyObject value) {
             if (value == get()) {
                 return value;
             }
@@ -924,66 +852,20 @@ public class RubyGlobal {
                                     value.getType().getName() + " given");
             }
 
-            return super.set(value);
+            return value;
         }
     }
 
     private static class LoadPath extends ReadonlyGlobalVariable {
         public LoadPath(Ruby runtime, String name) {
-            super(runtime, name, null);
-        }
-
-        /**
-         * @see org.jruby.runtime.GlobalVariable#get()
-         */
-        @Override
-        public IRubyObject get() {
-            return runtime.getLoadService().getLoadPath();
+            super(runtime, name, () -> runtime.getLoadService().getLoadPath());
         }
     }
 
     private static class LoadedFeatures extends ReadonlyGlobalVariable {
         public LoadedFeatures(Ruby runtime, String name) {
-            super(runtime, name, null);
-        }
-
-        /**
-         * @see org.jruby.runtime.GlobalVariable#get()
-         */
-        @Override
-        public IRubyObject get() {
-            return runtime.getLoadService().getLoadedFeatures();
+            super(runtime, name, () -> runtime.getLoadService().getLoadedFeatures());
         }
     }
 
-    /**
-     * A special accessor for getpid, to avoid loading the posix subsystem until
-     * it is needed.
-     */
-    private static final class PidAccessor implements IAccessor {
-        private final Ruby runtime;
-        private volatile IRubyObject pid = null;
-
-        public PidAccessor(Ruby runtime) {
-            this.runtime = runtime;
-        }
-
-        public IRubyObject getValue() {
-            return pid != null ? pid : (pid = runtime.newFixnum(runtime.getPosix().getpid()));
-        }
-
-        public IRubyObject setValue(IRubyObject newValue) {
-            throw runtime.newRuntimeError("cannot assign to $$");
-        }
-    }
-
-    /**
-     * Globals that generally should not be cached, because they are expected to change frequently if used.
-     *
-     * See jruby/jruby#4508.
-     */
-    public static final List<String> UNCACHED_GLOBALS = Collections.unmodifiableList(Arrays.asList(
-            "$.", "$INPUT_LINE_NUMBER", // ARGF current line number
-            "$FILENAME" // ARGF current file name
-    ));
 }

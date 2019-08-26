@@ -63,6 +63,7 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.GlobalSite;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -158,7 +159,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 setVariable(bean);
             }
         }
-        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(manager, this)), GlobalVariable.Scope.GLOBAL);
+        runtime.getGlobalVariables().defineReadonly("$bsf", JavaUtil.convertJavaToRuby(runtime, new BSFFunctions(manager, this), BSFFunctions.class), GlobalVariable.Scope.GLOBAL);
     }
 
     private void setVariable(BSFDeclaredBean bean) {
@@ -213,26 +214,6 @@ public class JRubyEngine extends BSFEngineImpl {
     private static void printException(Ruby runtime, Exception exception) {
         assert exception != null;
     	if (exception instanceof RaiseException) runtime.printError(((RaiseException)exception).getException());
-    }
-
-    private static class FunctionsGlobalVariable implements IAccessor {
-        private final Ruby runtime;
-        private final BSFFunctions functions;
-
-        public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
-            this.runtime = runtime;
-            this.functions = functions;
-        }
-
-        public IRubyObject getValue() {
-            IRubyObject result = JavaUtil.convertJavaToRuby(runtime, functions, BSFFunctions.class);
-
-            return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
-        }
-
-        public IRubyObject setValue(IRubyObject value) {
-            return value;
-        }
     }
 
     /**

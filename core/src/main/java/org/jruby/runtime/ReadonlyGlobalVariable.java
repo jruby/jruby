@@ -33,10 +33,20 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ReadonlyGlobalVariable extends GlobalVariable {
+import java.lang.invoke.MethodHandle;
+import java.util.function.Supplier;
 
+public class ReadonlyGlobalVariable extends GlobalSite {
     public ReadonlyGlobalVariable(Ruby runtime, String name, IRubyObject value) {
         super(runtime, name, value);
+    }
+
+    public ReadonlyGlobalVariable(Ruby runtime, String name, Supplier<IRubyObject> supplier) {
+        this(runtime, name, getter(supplier));
+    }
+
+    public ReadonlyGlobalVariable(Ruby runtime, String name, MethodHandle verbose) {
+        super(runtime, name, verbose);
     }
 
     @Override
