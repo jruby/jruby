@@ -23,8 +23,6 @@ test_syslog.rb
 test_tempfile.rb
 test_time.rb
 test_timeout.rb
-# all tests fail
-#test_tracer.rb
 test_tsort.rb
 
 base64/test_base64.rb
