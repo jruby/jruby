@@ -3207,7 +3207,15 @@ public final class Ruby implements Constantizable {
                 EventHook eventHook = eventHooks[i];
 
                 if (eventHook.isInterestedInEvent(event)) {
-                    eventHook.event(context, event, file, line, name, type);
+                    IRubyObject klass = context.nil;
+                    if (type instanceof RubyModule) {
+                        if (((RubyModule) type).isIncluded()) {
+                            klass = ((RubyModule) type).getNonIncludedClass();
+                        } else if (((RubyModule) type).isSingleton()) {
+                            klass = ((MetaClass) type).getAttached();
+                        }
+                    }
+                    eventHook.event(context, event, file, line, name, klass);
                 }
             }
         }
