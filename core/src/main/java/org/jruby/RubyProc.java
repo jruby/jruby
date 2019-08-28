@@ -266,8 +266,12 @@ public class RubyProc extends RubyObject implements DataType {
         return call(context, preppedArgs, null, blockCallArg);
     }
 
-    public final IRubyObject call(ThreadContext context, IRubyObject[] args) {
-        return call(context, args, null, Block.NULL_BLOCK);
+    public final IRubyObject call(ThreadContext context, IRubyObject arg) {
+        return block.call(context, arg);
+    }
+
+    public final IRubyObject call(ThreadContext context, IRubyObject... args) {
+        return block.call(context, args);
     }
 
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
