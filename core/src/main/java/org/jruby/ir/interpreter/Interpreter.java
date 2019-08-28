@@ -74,6 +74,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         IRRuntimeHelpers.prepareScriptScope(context, scope);
 
+        context.preNodeEval(self);
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
@@ -84,6 +85,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             irScope.cleanupAfterExecution();
             dumpStats();
             context.popScope();
+            context.postNodeEval();
         }
     }
 
