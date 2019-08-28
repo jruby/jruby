@@ -1,1 +1,0 @@
-exclude :test_tracer_with_require, "Top frame from interpreter gets wrong filename (GH-5849)"
