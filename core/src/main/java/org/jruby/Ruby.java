@@ -3775,11 +3775,11 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newErrnoEAGAINReadableError(String message) {
-        return newLightweightErrnoException(getModule("IO").getClass("EAGAINWaitReadable"), message);
+        return newLightweightErrnoException(getIO().getClass("EAGAINWaitReadable"), message);
     }
 
     public RaiseException newErrnoEAGAINWritableError(String message) {
-        return newLightweightErrnoException(getModule("IO").getClass("EAGAINWaitWritable"), message);
+        return newLightweightErrnoException(getIO().getClass("EAGAINWaitWritable"), message);
     }
 
     public RaiseException newErrnoEISDirError(String message) {
