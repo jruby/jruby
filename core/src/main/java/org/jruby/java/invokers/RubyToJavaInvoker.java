@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
-import com.headius.backport9.modules.Modules;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -43,11 +42,11 @@ import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
@@ -57,7 +56,6 @@ import org.jruby.util.collections.NonBlockingHashMapLong;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
-    // implements CallableCache<T> {
 
     static final NonBlockingHashMapLong NULL_CACHE = new NullHashMapLong();
 
@@ -349,7 +347,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
                 !Ruby.isSecurityRestricted() &&
                 Options.JI_SETACCESSIBLE.load() &&
                 accessible instanceof Member) {
-            try { Modules.trySetAccessible(accessible); }
+            try { Java.trySetAccessible(accessible); }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);
@@ -368,13 +366,18 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
     }
 
-    static <T extends AccessibleObject> T[] setAccessible(T[] accessibles) {
+    static <T extends AccessibleObject & Member> T[] setAccessible(T[] accessibles) {
         // TODO: Replace flag that's false on 9 with proper module checks
-        if (!allAreAccessible(accessibles) &&
-                !Ruby.isSecurityRestricted() &&
-                Options.JI_SETACCESSIBLE.load() &&
-                allAreMember(accessibles)) {
-            try { AccessibleObject.setAccessible(accessibles, true); }
+        if (!Ruby.isSecurityRestricted() &&
+                Options.JI_SETACCESSIBLE.load()) {
+            try {
+                for (T accessible : accessibles) {
+                    if (accessible.isAccessible()) continue;
+                    if (!(accessible instanceof Member)) continue;
+
+                    Java.trySetAccessible(accessible);
+                }
+            }
             catch (SecurityException e) {}
             catch (RuntimeException re) {
                 rethrowIfNotInaccessibleObject(re);

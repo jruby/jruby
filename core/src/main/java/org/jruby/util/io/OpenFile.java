@@ -2518,9 +2518,7 @@ public class OpenFile implements Finalizable {
     }
 
     public int getFileno() {
-        int fileno = fd.realFileno;
-        if (fileno != -1) return fileno;
-        return fd.fakeFileno;
+        return fd.bestFileno(true);
     }
 
     // rb_thread_flock

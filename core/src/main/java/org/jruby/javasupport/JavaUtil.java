@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -92,35 +94,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 
 public class JavaUtil {
-
-    public static final boolean CAN_SET_ACCESSIBLE;
-
-    static {
-        boolean canSetAccessible = false;
-
-        if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
-            try {
-                // We want to check if we can access a commonly-existing private field through reflection.
-                // If so, we're probably able to access some other fields too later on.
-                Field f = Java.class.getDeclaredField(Java.HIDDEN_STATIC_FIELD_NAME);
-                f.setAccessible(true);
-                canSetAccessible = f.getByte(null) == 72;
-            }
-            catch (Exception t) {
-                // added this so if things are weird in the future we can debug without
-                // spinning a new binary
-                if (Options.JI_LOGCANSETACCESSIBLE.load()) {
-                    t.printStackTrace();
-                }
-
-                // assume any exception means we can't suppress access checks
-                canSetAccessible = false;
-            }
-        }
-
-        CAN_SET_ACCESSIBLE = canSetAccessible;
-    }
-
     public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
         if ( objects == null || objects.length == 0 ) return IRubyObject.NULL_ARRAY;
 
@@ -252,6 +225,10 @@ public class JavaUtil {
     public static <T> T convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class<T> targetType) {
         final Ruby runtime = context.runtime;
 
+        // Capture original class; we only detach the singleton for natural Proc instances
+        RubyClass procClass = rubyObject.getMetaClass();
+
+        // Extend the interfaces into the proc's class. This creates a singleton class to connect up the Java proxy.
         final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, targetType));
         if ( ! ifaceModule.isInstance(rubyObject) ) {
             ifaceModule.callMethod(context, "extend_object", rubyObject);
@@ -262,6 +239,13 @@ public class JavaUtil {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
             final RubyClass singletonClass = rubyObject.getSingletonClass();
+
+            if (procClass == runtime.getProc()) {
+                // We reattach the singleton class to the Proc class object to prevent the method cache in the interface
+                // impl from rooting the proc and its binding in the host classloader. See GH-4968.
+                ((MetaClass) singletonClass).setAttached(runtime.getProc());
+            }
+
             final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
             singletonClass.addMethod("method_missing", procToIface);
             // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
@@ -1630,4 +1614,7 @@ public class JavaUtil {
         }
         return (JavaObject)obj;
     }
+
+    @Deprecated
+    public static final boolean CAN_SET_ACCESSIBLE = true;
 }

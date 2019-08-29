@@ -63,6 +63,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,20 +105,23 @@ public class IRDumper extends IRVisitor {
         Map<RubySymbol, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
-            println("declared variables");
+            println("declared variables:");
 
             for (Map.Entry<RubySymbol, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
 
-        Set<LocalVariable> usedVariables = ic.getScope().getUsedLocalVariables();
+        FullInterpreterContext fullInterpreterContext = ic.getScope().getFullInterpreterContext();
+        if (fullInterpreterContext != null) {
+            Collection<LocalVariable> usedVariables = fullInterpreterContext.getUsedLocalVariables();
 
-        if (usedVariables != null && !usedVariables.isEmpty()) {
-            println("used variables");
+            println("used variables:");
 
-            for (LocalVariable var : usedVariables) {
-                println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+            if (usedVariables != null && !usedVariables.isEmpty()) {
+                for (LocalVariable var : usedVariables) {
+                    println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+                }
             }
         }
 
@@ -155,6 +159,8 @@ public class IRDumper extends IRVisitor {
         String ipcFormat = "  %0" + instrLog + "d: ";
 
         if (instrs != null) {
+            println();
+
             for (int i = 0; i < instrs.length; i++) {
                 formatInstr(instrs[i], varFormat, varSpaces, ipcFormat, instrs[i], i);
             }

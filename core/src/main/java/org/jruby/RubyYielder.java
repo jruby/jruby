@@ -28,7 +28,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock19;
@@ -41,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Enumerator::Yielder")
 public class RubyYielder extends RubyObject {
-    private RubyProc proc; 
+    private Block block;
 
     public static RubyClass createYielderClass(Ruby runtime) {
         RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), YIELDER_ALLOCATOR, runtime.getEnumerator());
@@ -75,40 +74,51 @@ public class RubyYielder extends RubyObject {
                 yielder,
                 yielder.metaClass,
                 Signature.NO_ARGUMENTS,
-                new BlockCallback() {
-            public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
-                return block.call(context, args, inner);
-            }
-        },
+                new BlockCallbackImpl(block),
                 context));
 
         return yielder;
     }
 
+    private static class BlockCallbackImpl implements BlockCallback {
+
+        private final Block block;
+
+        BlockCallbackImpl(Block block) {
+            this.block = block;
+        }
+
+        public IRubyObject call(ThreadContext context, IRubyObject[] args, Block inner) {
+            return block.call(context, args, inner);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject arg, Block inner) {
+            return block.call(context, arg, inner);
+        }
+
+    }
+
     private void checkInit() {
-        if (proc == null) throw getRuntime().newArgumentError("uninitializer yielder");
+        if (block == null) throw getRuntime().newArgumentError("uninitialized yielder");
     }
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         if (!block.isGiven()) throw runtime.newLocalJumpErrorNoBlock();
-        proc = runtime.newProc(Block.Type.PROC, block);
+        this.block = block;
         return this;
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject yield(ThreadContext context, IRubyObject[]args) {
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
         checkInit();
-        return proc.call(context, args, Block.NULL_BLOCK);
+        return block.call(context, args);
     }
 
     @JRubyMethod(name = "<<", rest = true)
-    public IRubyObject op_lshift(ThreadContext context, IRubyObject[]args) {
-        if (args.length == 1 &&
-                args[0] instanceof RubyArray &&
-                ((RubyArray) args[0]).getLength() == 1)
-            args[0] = RubyArray.newArray(context.runtime, args[0]);
+    public IRubyObject op_lshift(ThreadContext context, IRubyObject[] args) {
         yield(context, args);
         return this;
     }

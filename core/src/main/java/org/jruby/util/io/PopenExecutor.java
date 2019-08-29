@@ -1853,14 +1853,19 @@ public class PopenExecutor {
             checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
         // add chdir if necessary
-        if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
+        String virtualCWD = runtime.getCurrentDirectory();
+        if (!virtualCWD.equals(runtime.getPosix().getcwd())) {
             String arg = prog.toString();
+
+            // if we're launching org.jruby.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
                 prog = RubyString.newString(runtime, arg);
-            }
-            else if (!eargp.chdir_given()) { // only if :chdir is not specified
+            } else if (virtualCWD.startsWith("uri:classloader:")) {
+                // can't switch to uri:classloader URL, so just run in cwd
+            } else if (!eargp.chdir_given()) {
+                // only if :chdir is not specified
                 eargp.chdir_given_set();
-                eargp.chdir_dir = runtime.getCurrentDirectory();
+                eargp.chdir_dir = virtualCWD;
             }
         }
 

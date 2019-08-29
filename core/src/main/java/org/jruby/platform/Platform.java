@@ -62,6 +62,7 @@ public abstract class Platform {
     private static final String WINDOWS = "windows";
     private static final String LINUX = "linux";
     private static final String FREEBSD = "freebsd";
+    private static final String DRAGONFLYBSD = "dragonflybsd";
     private static final String OPENBSD = "openbsd";
     private static final String SOLARIS = "solaris";
     private static final String OPENVMS = "openvms";
@@ -115,11 +116,12 @@ public abstract class Platform {
 
     public static final boolean IS_MAC = OS.equals(DARWIN);
     public static final boolean IS_FREEBSD = OS.equals(FREEBSD);
+    public static final boolean IS_DRAGONFLYBSD = OS.equals(DRAGONFLYBSD);
     public static final boolean IS_OPENBSD = OS.equals(OPENBSD);
     public static final boolean IS_LINUX = OS.equals(LINUX);
     public static final boolean IS_WSL = IS_LINUX && OS_VERSION.contains("Microsoft");
     public static final boolean IS_SOLARIS = OS.equals(SOLARIS);
-    public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD;
+    public static final boolean IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD || IS_DRAGONFLYBSD;
     public static final boolean IS_OPENVMS = OS.equals(OPENVMS);
     public static final String NAME = String.format("%s-%s", ARCH, OS);
     public static final int BIG_ENDIAN = 4321;

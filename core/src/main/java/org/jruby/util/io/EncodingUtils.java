@@ -1258,7 +1258,7 @@ public class EncodingUtils {
     private static final AbstractTranscodeFallback PROC_FALLBACK = new AbstractTranscodeFallback() {
         @Override
         protected IRubyObject innerCall(ThreadContext context, IRubyObject fallback, IRubyObject c) {
-            return ((RubyProc)fallback).call(context, new IRubyObject[]{c});
+            return ((RubyProc)fallback).call(context, c);
         }
     };
 

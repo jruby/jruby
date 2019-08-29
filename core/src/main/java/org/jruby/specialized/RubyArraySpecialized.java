@@ -37,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * RubyArray{@link #safeReverse()}
  * RubyArray{@link #sortInternal(org.jruby.runtime.ThreadContext, org.jruby.runtime.Block)}
  * RubyArray{@link #sortInternal(org.jruby.runtime.ThreadContext, boolean)}
- * RubyArray{@link #store(long, IRubyObject)}
+ * RubyArray{@link #storeInternal(int, IRubyObject)}
  * RubyArray{@link #subseq(RubyClass, long, long, boolean)}
  * RubyArray{@link #toJavaArray()}
  * RubyArray{@link #uniq(org.jruby.runtime.ThreadContext)}

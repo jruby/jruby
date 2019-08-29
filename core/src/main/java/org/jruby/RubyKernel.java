@@ -1299,8 +1299,7 @@ public class RubyKernel {
         }
         if (args.length == 1) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
-        }
-        if (args.length == 2) {
+        } else if (args.length == 2) {
             proc = (RubyProc)TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
         }
 
@@ -1845,7 +1844,7 @@ public class RubyKernel {
     @JRubyMethod(module = true)
     public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
         if (block.getProcObject() != null) {
-            block.getProcObject().call(context, Helpers.arrayOf(recv));
+            block.getProcObject().call(context, recv);
         } else {
             block.yield(context, recv);
         }

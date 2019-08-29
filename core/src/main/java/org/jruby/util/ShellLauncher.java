@@ -1345,7 +1345,8 @@ public class ShellLauncher {
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
-        File pwd = new File(runtime.getCurrentDirectory());
+        String virtualCWD = runtime.getCurrentDirectory();
+        File pwd = new File(virtualCWD);
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
@@ -1366,13 +1367,16 @@ public class ShellLauncher {
                     cfg.verifyExecutableForDirect();
                 }
                 String[] args = cfg.getExecArgs();
-                // only if we inside a jar and spawning org.jruby.Main we
-                // change to the current directory inside the jar
-                if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
-                        args[args.length - 1].contains("org.jruby.Main")) {
+                if (virtualCWD.startsWith("uri:classloader:")) {
+                    // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
-                    args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                            "org.jruby.Main -C " + runtime.getCurrentDirectory());
+
+                    // only if we inside a jar and spawning org.jruby.Main we
+                    // change to the current directory inside the jar
+                    if (args[args.length - 1].contains("org.jruby.Main")) {
+                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
+                                "org.jruby.Main -C " + virtualCWD);
+                    }
                 }
                 aProcess = buildProcess(runtime, args, getCurrentEnv(runtime), pwd);
             }

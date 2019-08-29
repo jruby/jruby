@@ -1,8 +1,9 @@
 package org.jruby.javasupport.binding;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.java.invokers.ConstructorInvoker;
-import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -25,9 +26,9 @@ public class ConstructorInvokerInstaller extends MethodInstaller {
 
     // called only by initializing thread; no synchronization required
     void addConstructor(final Constructor ctor, final Class<?> clazz) {
-        if (JavaUtil.CAN_SET_ACCESSIBLE) {
+        if (RubyInstanceConfig.SET_ACCESSIBLE) {
             try {
-                ctor.setAccessible(true);
+                Java.trySetAccessible(ctor);
             } catch(SecurityException e) {}
         }
         this.constructors.add(ctor);

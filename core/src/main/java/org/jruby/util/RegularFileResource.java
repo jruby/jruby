@@ -261,7 +261,9 @@ class RegularFileResource implements FileResource {
             throw new ResourceException.FileIsDirectory(absolutePath());
         }
 
-        if (!file.exists()) {
+        // File.exists() returns false on Windows COM port paths, so ignore
+        // them for now and deal with the exception later
+        if (!file.exists() && !JRubyFile.isComPort(file.getPath())) {
             throw new ResourceException.NotFound(absolutePath());
         }
 
@@ -309,6 +311,7 @@ class RegularFileResource implements FileResource {
     static IOException mapFileNotFoundOnGetChannel(final FileResource file, final FileNotFoundException ex) {
         // Java throws FileNotFoundException both if the file doesn't exist or there were
         // permission issues, but Ruby needs to disambiguate those two cases
+    	// TODO: add windows serial port check
         return file.exists() ?
                 new ResourceException.PermissionDenied(file.absolutePath()) :
                 new ResourceException.NotFound(file.absolutePath());

@@ -117,8 +117,7 @@ public class InterpreterEngine {
         Object    exception = null;
         boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        // Blocks with explicit call protocol shouldn't do this before args are prepared
-        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+        if (acceptsKeywordArgument) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
         }
 
@@ -412,17 +411,9 @@ public class InterpreterEngine {
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
                 break;
-            case TRACE: {
-                if (context.runtime.hasEventHooks()) {
-                    TraceInstr trace = (TraceInstr) instr;
-                    // FIXME: Try and statically generate END linenumber instead of hacking it.
-                    int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
-
-                    context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                            trace.getFilename(), linenumber);
-                }
+            case TRACE:
+                instr.interpret(context, currScope, currDynScope, self, temp);
                 break;
-            }
         }
     }
 

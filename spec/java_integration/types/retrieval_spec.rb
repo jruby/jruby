@@ -187,6 +187,13 @@ describe "A Java class with inner classes" do
     end
   end
 
+  # jruby/jruby#5835 and ruboto/JRuby9K_POC#7
+  it "allows const_missing on a Java class to trigger properly" do
+    expect {
+      InnerClasses::NonExistentClass
+    }.to raise_error(NameError)
+  end
+
   it "raises error importing lower-case names" do
     expect do
       java_import InnerClasses::lowerInnerClass

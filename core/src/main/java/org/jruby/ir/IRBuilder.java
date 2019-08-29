@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
@@ -83,7 +84,6 @@ import static org.jruby.ir.operands.ScopeModule.*;
 // this is not a big deal.  Think this through!
 
 public class IRBuilder {
-    static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
@@ -2797,31 +2797,11 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, NO_ARGS,
+        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, EMPTY_OPERANDS,
                 forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
-    }
-
-    private InterpreterContext buildForIterInner(ForNode forNode) {
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-
-        Node varNode = forNode.getVarNode();
-        if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode);
-
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
-
-        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
-        afterPrologueIndex = instructions.size() - 1;
-
-        // Build closure body and return the result of the closure
-        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode());
-        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
-            addInstr(new ReturnInstr(closureRetVal));
-        }
-
-        return scope.allocateInterpreterContext(instructions);
     }
 
     public Operand buildForIter(final ForNode forNode) {
@@ -2829,7 +2809,7 @@ public class IRBuilder {
         IRClosure closure = new IRFor(manager, scope, forNode.getLine(), forNode.getScope(), Signature.from(forNode));
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, closure).buildForIterInner(forNode);
+        newIRBuilder(manager, closure).buildIterInner(forNode);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2963,29 +2943,30 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
+        boolean forNode = iterNode instanceof ForNode;
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        if (!forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
+        receiveBlockArgs(iterNode);
+        // for adds these after processing binding block args because and operations at that point happen relative
+        // to the previous scope.
+        if (forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
-
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
-        if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
-            addInstr(new ReturnInstr(closureRetVal));
-        }
 
-        // Always add break/return handling even though this
-        // is only required for lambdas, but we don't know at this time,
-        // if this is a lambda or not.
-        //
-        // SSS FIXME: At a later time, see if we can optimize this and
-        // do this on demand.
-        handleBreakAndReturnsInLambdas();
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
+        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
+        if (!forNode) handleBreakAndReturnsInLambdas();
 
         return scope.allocateInterpreterContext(instructions);
     }
+
     public Operand buildIter(final IterNode iterNode) {
         IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), needsCodeCoverage);
 
@@ -3176,7 +3157,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, EMPTY_OPERANDS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -3619,8 +3600,7 @@ public class IRBuilder {
         Label caughtLabel = getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-                Node [] exceptionNodes = ((ListNode) exceptionList).children();
-                Operand[] exceptionTypes = new Operand[exceptionNodes.length];
+                Node[] exceptionNodes = ((ListNode) exceptionList).children();
                 for (int i = 0; i < exceptionNodes.length; i++) {
                     outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
@@ -3834,7 +3814,7 @@ public class IRBuilder {
     }
 
     private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
+        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), EMPTY_OPERANDS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -3924,7 +3904,7 @@ public class IRBuilder {
     public Operand buildVCall(Variable result, VCallNode node) {
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), NO_ARGS, null));
+        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), EMPTY_OPERANDS, null));
     }
 
     public Operand buildWhile(final WhileNode whileNode) {

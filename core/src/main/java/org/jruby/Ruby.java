@@ -2950,10 +2950,8 @@ public final class Ruby implements Constantizable {
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
-        String file = context.getFile();
 
         try {
-            ThreadContext.pushBacktrace(context, ROOT_FRAME_NAME, file, 0);
             context.preNodeEval(self);
             ParseResult parseResult = parseFile(scriptName, in, null);
 
@@ -2963,53 +2961,33 @@ public final class Ruby implements Constantizable {
             runInterpreter(context, parseResult, self);
         } finally {
             context.postNodeEval();
-            ThreadContext.popBacktrace(context);
         }
     }
 
     public void loadScope(IRScope scope, boolean wrap) {
         IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
-        ThreadContext context = getCurrentContext();
-        String file = context.getFile();
 
-        try {
-            ThreadContext.pushBacktrace(context, ROOT_FRAME_NAME, file, 0);
-            context.preNodeEval(self);
-
-            if (wrap) {
-                // toss an anonymous module into the search path
-                scope.getStaticScope().setModule(RubyModule.newModule(this));
-            }
-
-            runInterpreter(context, scope, self);
-        } finally {
-            context.postNodeEval();
-            ThreadContext.popBacktrace(context);
+        if (wrap) {
+            // toss an anonymous module into the search path
+            scope.getStaticScope().setModule(RubyModule.newModule(this));
         }
+
+        runInterpreter(getCurrentContext(), scope, self);
     }
 
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
-        ThreadContext context = getCurrentContext();
-        InputStream readStream = in;
 
-        String oldFile = context.getFile();
-        int oldLine = context.getLine();
-        try {
-            context.preNodeEval(self);
-            ParseResult parseResult = parseFile(filename, in, null);
-            RootNode root = (RootNode) parseResult;
+        ParseResult parseResult = parseFile(filename, in, null);
+        RootNode root = (RootNode) parseResult;
 
-            if (wrap) {
-                wrapWithModule((RubyBasicObject) self, root);
-            } else {
-                root.getStaticScope().setModule(getObject());
-            }
-
-            runNormally(root, wrap);
-        } finally {
-            context.postNodeEval();
+        if (wrap) {
+            wrapWithModule((RubyBasicObject) self, root);
+        } else {
+            root.getStaticScope().setModule(getObject());
         }
+
+        runNormally(root, wrap);
     }
 
     private void wrapWithModule(RubyBasicObject self, ParseResult result) {
@@ -3206,7 +3184,15 @@ public final class Ruby implements Constantizable {
                 EventHook eventHook = eventHooks[i];
 
                 if (eventHook.isInterestedInEvent(event)) {
-                    eventHook.event(context, event, file, line, name, type);
+                    IRubyObject klass = context.nil;
+                    if (type instanceof RubyModule) {
+                        if (((RubyModule) type).isIncluded()) {
+                            klass = ((RubyModule) type).getNonIncludedClass();
+                        } else if (((RubyModule) type).isSingleton()) {
+                            klass = ((MetaClass) type).getAttached();
+                        }
+                    }
+                    eventHook.event(context, event, file, line, name, klass);
                 }
             }
         }
@@ -3770,11 +3756,11 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newErrnoEAGAINReadableError(String message) {
-        return newLightweightErrnoException(getModule("IO").getClass("EAGAINWaitReadable"), message);
+        return newLightweightErrnoException(getIO().getClass("EAGAINWaitReadable"), message);
     }
 
     public RaiseException newErrnoEAGAINWritableError(String message) {
-        return newLightweightErrnoException(getModule("IO").getClass("EAGAINWaitWritable"), message);
+        return newLightweightErrnoException(getIO().getClass("EAGAINWaitWritable"), message);
     }
 
     public RaiseException newErrnoEISDirError(String message) {

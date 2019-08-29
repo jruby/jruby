@@ -211,9 +211,8 @@ public abstract class RubyInteger extends RubyNumeric {
                 duckUpto(context, this, to, block);
             }
             return this;
-        } else {
-            return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(context, this, to));
         }
+        return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(context, this, to));
     }
 
     static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
@@ -264,7 +263,6 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_downto
      *
      */
-    // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     @JRubyMethod
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
@@ -274,9 +272,8 @@ public abstract class RubyInteger extends RubyNumeric {
                 duckDownto(context, this, to, block);
             }
             return this;
-        } else {
-            return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(context, this, to));
         }
+        return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(context, this, to));
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {

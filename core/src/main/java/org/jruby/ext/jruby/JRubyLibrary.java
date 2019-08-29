@@ -116,7 +116,7 @@ public class JRubyLibrary implements Library {
 
     @JRubyMethod(module = true)
     public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
-        return Java.wrapJavaObject(context.runtime, context.runtime); // context.nil.getRuntime()
+        return Java.wrapJavaObject(context.runtime, context.runtime);
     }
 
     /**

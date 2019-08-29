@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.RubyEncoding;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection
@@ -1172,14 +1173,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return a byte[]
      */
     public static byte[] plain(CharSequence s) {
-        if (s instanceof String) return ISO_LATIN_1.encode((String) s).array();
-
-        // Not a String...get it the slow way
-        byte[] bytes = new byte[s.length()];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) s.charAt(i);
-        }
-        return bytes;
+        return RubyEncoding.encodeISO(s);
     }
 
     /**

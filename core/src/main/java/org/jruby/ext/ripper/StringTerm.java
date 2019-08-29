@@ -55,6 +55,9 @@ public class StringTerm extends StrTerm {
     private List<ByteList> regexpFragments;
     private boolean regexpDynamic;
 
+    // Out variable for parse methods that update encoding
+    protected Encoding encodingOut;
+
     public StringTerm(int flags, int begin, int end) {
         this.flags = flags;
         this.begin = (char) begin;
@@ -164,10 +167,7 @@ public class StringTerm extends StrTerm {
         }
         lexer.pushback(c);
 
-        Encoding enc[] = new Encoding[1];
-        enc[0] = lexer.getEncoding();
-
-        if (parseStringIntoBuffer(lexer, src, buffer, enc) == EOF) {
+        if (parseStringIntoBuffer(lexer, src, buffer, lexer.getEncoding()) == EOF) {
             if ((flags & STR_FUNC_REGEXP) != 0) {
                 lexer.compile_error("unterminated regexp meets end of file");
             } else {
@@ -180,7 +180,7 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_REGEXP) != 0) {
             regexpFragments.add(buffer);
         }
-        lexer.flush_string_content(enc[0]);
+        lexer.flush_string_content(encodingOut);
         return RipperParser.tSTRING_CONTENT;
     }
 
@@ -189,7 +189,7 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer, Encoding enc[]) throws IOException {
+    public int parseStringIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer, Encoding enc) throws IOException {
         boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
@@ -245,8 +245,8 @@ public class StringTerm extends StrTerm {
                         lexer.readUTFEscape(buffer, true, symbol);
                     }
 
-                    if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                        mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    if (hasNonAscii && buffer.getEncoding() != enc) {
+                        mixedEscape(lexer, buffer.getEncoding(), enc);
                     }
 
                     continue;
@@ -259,13 +259,13 @@ public class StringTerm extends StrTerm {
                         // goto non_ascii
                         hasNonAscii = true;
 
-                        if (buffer.getEncoding() != enc[0]) {
-                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                        if (buffer.getEncoding() != enc) {
+                            mixedEscape(lexer, buffer.getEncoding(), enc);
                             continue;
                         }
 
                         if (!lexer.tokenAddMBC(c, buffer)) {
-                            lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
+                            lexer.compile_error("invalid multibyte char (" + enc + ")");
                             return EOF;
                         }
 
@@ -280,8 +280,8 @@ public class StringTerm extends StrTerm {
                         lexer.pushback(c);
                         parseEscapeIntoBuffer(lexer, src, buffer);
 
-                        if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                        if (hasNonAscii && buffer.getEncoding() != enc) {
+                            mixedEscape(lexer, buffer.getEncoding(), enc);
                         }
                         
                         continue;
@@ -298,13 +298,13 @@ public class StringTerm extends StrTerm {
             } else if (!lexer.isASCII()) {
 nonascii:       hasNonAscii = true; // Label for comparison with MRI only
 
-                if (buffer.getEncoding() != enc[0]) {
-                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                if (buffer.getEncoding() != enc) {
+                    mixedEscape(lexer, buffer.getEncoding(), enc);
                     continue;
                 }
 
                 if (!lexer.tokenAddMBC(c, buffer)) {
-                    lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
+                    lexer.compile_error("invalid multibyte char (" + enc + ")");
                     return EOF;
                 }
 
@@ -321,15 +321,15 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only
                             * } else*/
             if ((c & 0x80) != 0) {
                 hasNonAscii = true;
-                if (buffer.getEncoding() != enc[0]) {
-                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                if (buffer.getEncoding() != enc) {
+                    mixedEscape(lexer, buffer.getEncoding(), enc);
                     continue;
                 }
             }
             buffer.append(c);
         }
         
-        enc[0] = buffer.getEncoding();
+        encodingOut = buffer.getEncoding();
 
         return c;
     }

@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#drop sets difference of given count with old size to new size
-fails:Enumerator::Lazy#drop on a nested Lazy sets difference of given count with old size to new size

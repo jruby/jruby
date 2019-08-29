@@ -363,28 +363,41 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return fiberThread.get();
     }
 
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject __finalize__(ThreadContext context) {
+        try {
+            doFinalize();
+        } catch (Exception ignore) { return context.fals; }
+        return context.nil;
+    }
+
+    private void doFinalize() {
+        FiberData data = this.data;
+        this.data = null;
+        if (data != null) {
+            // we never interrupt or shutdown root fibers
+            if (data.parent == null) return;
+
+            data.queue.shutdown();
+        }
+
+        RubyThread thread = this.thread;
+        this.thread = null;
+        if (thread != null) {
+            thread.dieFromFinalizer();
+
+            // interrupt Ruby thread to break out of queue sleep, blocking IO
+            thread.interrupt();
+
+            // null out references to aid GC
+            data = null; thread = null;
+        }
+    }
+
     @Override
     protected void finalize() throws Throwable {
         try {
-            FiberData data = this.data;
-            if (data != null) {
-                // we never interrupt or shutdown root fibers
-                if (data.parent == null) return;
-                
-                data.queue.shutdown();
-            }
-
-            RubyThread thread = this.thread;
-            if (thread != null) {
-                thread.dieFromFinalizer();
-
-                // interrupt Ruby thread to break out of queue sleep, blocking IO
-                thread.interrupt();
-
-                // null out references to aid GC
-                data = null;
-                thread = null;
-            }
+            doFinalize();
         } finally {
             super.finalize();
         }
