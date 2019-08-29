@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
@@ -2379,6 +2380,15 @@ public class Helpers {
 
     public static void throwException(final Throwable e) {
         Helpers.<RuntimeException>throwsUnchecked(e);
+    }
+
+    public static <T> T tryThrow(Callable<T> call) {
+        try {
+            return call.call();
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
     }
 
     @SuppressWarnings("unchecked")
