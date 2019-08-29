@@ -1341,7 +1341,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             fptr.checkWritable(context);
 
-            str = str.convertToString().dupFrozen();
+            str = str.convertToString().newFrozen();
 
             if (fptr.wbuf.len != 0) {
                 runtime.getWarnings().warn("syswrite for buffered IO");
@@ -4468,6 +4468,139 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ( arg instanceof RubyObject &&
                 sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ) ?
                     convertToIO(context, arg) : context.nil;
+    }
+
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject len, IRubyObject offset) {
+        int count = len.convertToInteger().getIntValue();
+        return pread(context, len, offset, null);
+    }
+
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject len, IRubyObject offset, IRubyObject str) {
+        Ruby runtime = context.runtime;
+
+        int count = len.convertToInteger().getIntValue();
+        long off = offset.convertToInteger().getIntValue();
+
+        RubyString string = EncodingUtils.setStrBuf(runtime, str, count);
+        if (count == 0) return string;
+
+        OpenFile fptr = getOpenFile();
+        fptr.checkByteReadable(context);
+
+        ChannelFD fd = fptr.fd();
+        fptr.checkClosed();
+
+        ByteList strByteList = string.getByteList();
+
+        try {
+            return context.getThread().executeTask(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
+                @Override
+                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
+                    Ruby runtime = context.runtime;
+
+                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), count);
+                    int read = 0;
+
+                    try {
+                        if (fd.chFile != null) {
+                            read = fd.chFile.read(wrap, off);
+
+                            if (read == -1) {
+                                throw runtime.newEOFError();
+                            }
+                        } else if (fd.chNative != null) {
+                            read = (int) runtime.getPosix().pread(fd.chNative.getFD(), wrap, count, off);
+
+                            if (read == 0) {
+                                throw runtime.newEOFError();
+                            } else if (read == -1) {
+                                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+                            }
+                        } else if (fd.chRead != null) {
+                            read = fd.chRead.read(wrap);
+                        } else {
+                            throw runtime.newIOError("not opened for reading");
+                        }
+                    } catch (IOException ioe) {
+                        throw Helpers.newIOErrorFromException(runtime, ioe);
+                    }
+
+                    string.setReadLength(read);
+
+                    return string;
+                }
+
+                @Override
+                public void wakeup(RubyThread thread, ChannelFD channelFD) {
+                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+                    thread.getNativeThread().interrupt();
+                }
+            });
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    @JRubyMethod(name = "pwrite")
+    public IRubyObject pwrite(ThreadContext context, IRubyObject str, IRubyObject offset) {
+        OpenFile fptr;
+        RubyString buf;
+        RubyString string;
+
+        if (str instanceof RubyString) {
+            string = (RubyString) str;
+        } else {
+            string = str.convertToString();
+        }
+
+        long off = offset.convertToInteger().getLongValue();
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFile();
+        fptr.checkWritable(context);
+        ChannelFD fd = fptr.fd();
+
+        buf = string.newFrozen();
+
+        ByteList strByteList = buf.getByteList();
+
+        try {
+            return context.getThread().executeTask(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
+                @Override
+                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
+                    Ruby runtime = context.runtime;
+
+                    int length = strByteList.realSize();
+                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
+                    int written = 0;
+
+                    try {
+                        if (fd.chFile != null) {
+                            written = fd.chFile.write(wrap, off);
+                        } else if (fd.chNative != null) {
+                            written = (int) runtime.getPosix().pwrite(fd.chNative.getFD(), wrap, length, off);
+                        } else if (fd.chWrite != null) {
+                            written = fd.chWrite.write(wrap);
+                        } else {
+                            throw runtime.newIOError("not opened for writing");
+                        }
+                    } catch (IOException ioe) {
+                        throw Helpers.newIOErrorFromException(runtime, ioe);
+                    }
+                    return runtime.newFixnum(written);
+                }
+
+                @Override
+                public void wakeup(RubyThread thread, ChannelFD channelFD) {
+                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+                    thread.getNativeThread().interrupt();
+                }
+            });
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
     }
 
     /**
