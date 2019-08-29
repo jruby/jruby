@@ -1,5 +1,0 @@
-fails:IO#pwrite returns the number of bytes written
-fails:IO#pwrite accepts a string and an offset
-fails:IO#pwrite does not advance the pointer in the file
-fails:IO#pwrite raises IOError when file is not open in write mode
-fails:IO#pwrite raises IOError when file is closed
