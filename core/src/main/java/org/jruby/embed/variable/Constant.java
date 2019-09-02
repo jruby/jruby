@@ -204,10 +204,10 @@ public class Constant extends AbstractVariable {
             // SSS FIXME: With rubyclass stack gone, this needs a replacement
             if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
             if (rubyModule == null) return;
-            rubyModule.storeConstant(name, irubyObject);
+            rubyModule.storeConstant(name, rubyObject);
         }
         else {
-            receiver.getMetaClass().storeConstant(name, irubyObject);
+            receiver.getMetaClass().storeConstant(name, rubyObject);
         }
         runtime.getConstantInvalidator(name).invalidate();
         //initialized = true;
