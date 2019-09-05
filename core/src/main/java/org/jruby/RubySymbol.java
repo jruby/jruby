@@ -108,7 +108,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
-        if (codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
+        if (symbolBytes.getEncoding() != USASCIIEncoding.INSTANCE &&
+                codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
             symbolBytes = symbolBytes.dup();
             symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
         }
