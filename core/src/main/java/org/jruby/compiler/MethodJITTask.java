@@ -26,20 +26,22 @@
 
 package org.jruby.compiler;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
+
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.IntHashMap;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 
 class MethodJITTask implements Runnable {
     private JITCompiler jitCompiler;
@@ -61,25 +63,13 @@ class MethodJITTask implements Runnable {
         synchronized (jitCompiler) {
             try {
                 // Check if the method has been explicitly excluded
-                if (jitCompiler.config.getExcludedMethods().size() > 0) {
-                    String excludeModuleName = className;
-                    if (method.getImplementationClass().getMethodLocation().isSingleton()) {
-                        IRubyObject possibleRealClass = ((MetaClass) method.getImplementationClass()).getAttached();
-                        if (possibleRealClass instanceof RubyModule) {
-                            excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();
-                        }
+                String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
+                if (excludeModuleName != null) {
+                    method.setCallCount(-1);
+                    if (jitCompiler.config.isJitLogging()) {
+                        JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + '#' + methodName);
                     }
-
-                    if ((jitCompiler.config.getExcludedMethods().contains(excludeModuleName)
-                            || jitCompiler.config.getExcludedMethods().contains(excludeModuleName + '#' + methodName)
-                            || jitCompiler.config.getExcludedMethods().contains(methodName))) {
-                        method.setCallCount(-1);
-
-                        if (jitCompiler.config.isJitLogging()) {
-                            JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + '#' + methodName);
-                        }
-                        return;
-                    }
+                    return;
                 }
 
                 String key = SexpMaker.sha1(method.getIRScope());
@@ -158,4 +148,26 @@ class MethodJITTask implements Runnable {
             }
         }
     }
+
+    static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,
+                                      final AbstractIRMethod method) {
+        if (config.getExcludedMethods().size() > 0) {
+            String excludeModuleName = className;
+            if (method.getImplementationClass().getMethodLocation().isSingleton()) {
+                RubyBasicObject possibleRealClass = ((MetaClass) method.getImplementationClass()).getAttached();
+                if (possibleRealClass instanceof RubyModule) {
+                    excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();
+                }
+            }
+
+            if ((config.getExcludedMethods().contains(excludeModuleName)
+                    || config.getExcludedMethods().contains(excludeModuleName + '#' + methodName)
+                    || config.getExcludedMethods().contains(methodName))) {
+
+                return excludeModuleName; // true - excluded
+            }
+        }
+        return null;
+    }
+
 }
