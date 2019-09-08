@@ -97,11 +97,10 @@ public class RaiseException extends JumpException {
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
         context.runtime.incrementExceptionCount();
-        
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
+
         doSetLastError(context);
         doCallEventHook(context);
-
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         if (backtrace == null) {
             backtrace = Helpers.invokeChecked(context, exception, sites(context).backtrace);
