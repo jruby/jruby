@@ -177,9 +177,6 @@ public class JITCompiler implements JITCompilerMBean {
     public void buildThresholdReached(ThreadContext context, final Compilable method) {
         final RubyInstanceConfig config = context.runtime.getInstanceConfig();
 
-        // Disable any other jit tasks from entering queue
-        method.setCallCount(-1);
-
         Runnable jitTask = getTaskFor(context, method);
 
         try {

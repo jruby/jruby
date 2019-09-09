@@ -29,14 +29,11 @@ package org.jruby.compiler;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.IntHashMap;
 
