@@ -30,11 +30,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         this.pushScope = true;
         this.reuseParentScope = false;
 
-        // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
-        // promote to full build here if we are -X-C.
-        if (closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() || Options.JIT_THRESHOLD.load() == -1) {
-            callCount = -1;
-        }
+        // JIT currently JITs blocks along with their method and no on-demand by themselves.
+        // We only promote to full build here if we are -X-C.
+        if (closure.getManager().getInstanceConfig().isJitDisabled()) setCallCount(-1);
     }
 
     @Override
