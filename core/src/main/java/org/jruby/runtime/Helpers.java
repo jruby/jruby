@@ -1453,12 +1453,14 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not-used
     public static IRubyObject getErrorInfo(Ruby runtime) {
-        return runtime.getGlobalVariables().get("$!");
+        return runtime.getCurrentContext().getErrorInfo();
     }
 
+    @Deprecated // not-used
     public static void setErrorInfo(Ruby runtime, IRubyObject error) {
-        runtime.getGlobalVariables().set("$!", error);
+        runtime.getCurrentContext().setErrorInfo(error);
     }
 
     public static IRubyObject setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
