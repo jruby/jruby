@@ -177,21 +177,28 @@ public class JITCompiler implements JITCompilerMBean {
     public void buildThresholdReached(ThreadContext context, final Compilable method) {
         final RubyInstanceConfig config = context.runtime.getInstanceConfig();
 
-        Runnable jitTask = getTaskFor(context, method);
+        final Runnable task = getTaskFor(context, method);
+
+        if (task instanceof Task && config.getJitMax() >= 0 && config.getJitMax() < getSuccessCount()) {
+            if (config.isJitLogging()) {
+                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(), "skipping: jit.max threshold reached");
+            }
+            return;
+        }
 
         try {
             if (config.getJitBackground() && config.getJitThreshold() > 0) {
                 try {
-                    executor.submit(jitTask);
+                    executor.submit(task);
                 } catch (RejectedExecutionException ree) {
                     // failed to submit, just run it directly
-                    jitTask.run();
+                    task.run();
                 }
             } else {
                 // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
                 method.ensureInstrsReady();
                 // just run directly
-                jitTask.run();
+                task.run();
             }
         } catch (Exception e) {
             throw new NotCompilableException(e);
@@ -236,4 +243,24 @@ public class JITCompiler implements JITCompilerMBean {
 
         LOG.info(builder.toString());
     }
+
+    static abstract class Task implements Runnable {
+
+        protected final JITCompiler jitCompiler;
+
+        public Task(JITCompiler jitCompiler) {
+            this.jitCompiler = jitCompiler;
+        }
+
+        public void run() {
+            // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
+            // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
+            // See #4739 for a reproduction script that produced various errors without this.
+            synchronized (jitCompiler) { exec(); }
+        }
+
+        protected abstract void exec() ;
+
+    }
+
 }
