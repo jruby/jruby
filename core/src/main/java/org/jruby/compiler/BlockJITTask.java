@@ -34,6 +34,8 @@ import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.util.OneShotClassLoader;
 
+import static org.jruby.compiler.MethodJITTask.*;
+
 class BlockJITTask extends JITCompiler.Task {
 
     private final String className;
@@ -50,6 +52,16 @@ class BlockJITTask extends JITCompiler.Task {
     @Override
     public void exec() {
         try {
+            // Check if the method has been explicitly excluded
+            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body.getImplementationClass());
+            if (excludeModuleName != null) {
+                body.setCallCount(-1);
+                if (jitCompiler.config.isJitLogging()) {
+                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, "skipping block in method: " + excludeModuleName + '#' + methodName);
+                }
+                return;
+            }
+
             String key = SexpMaker.sha1(body.getIRScope());
             JVMVisitor visitor = new JVMVisitor(jitCompiler.runtime);
             BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, jitCompiler.runtime, body, visitor);

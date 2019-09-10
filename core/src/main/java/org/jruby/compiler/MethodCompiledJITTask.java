@@ -59,7 +59,7 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     public void exec() {
         try {
             // Check if the method has been explicitly excluded
-            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
+            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
             if (excludeModuleName != null) {
                 method.setCallCount(-1);
                 if (jitCompiler.config.isJitLogging()) {

@@ -60,7 +60,7 @@ class MethodJITTask extends JITCompiler.Task {
     public void exec() {
         try {
             // Check if the method has been explicitly excluded
-            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
+            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
             if (excludeModuleName != null) {
                 method.setCallCount(-1);
                 if (jitCompiler.config.isJitLogging()) {
@@ -146,11 +146,11 @@ class MethodJITTask extends JITCompiler.Task {
     }
 
     static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,
-                                      final AbstractIRMethod method) {
+                                      final RubyModule implementationClass) {
         if (config.getExcludedMethods().size() > 0) {
             String excludeModuleName = className;
-            if (method.getImplementationClass().getMethodLocation().isSingleton()) {
-                RubyBasicObject possibleRealClass = ((MetaClass) method.getImplementationClass()).getAttached();
+            if (implementationClass.getMethodLocation().isSingleton()) {
+                RubyBasicObject possibleRealClass = ((MetaClass) implementationClass).getAttached();
                 if (possibleRealClass instanceof RubyModule) {
                     excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();
                 }
