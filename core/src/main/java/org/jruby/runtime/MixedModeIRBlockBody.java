@@ -24,6 +24,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private volatile int callCount = 0;
+    private volatile long time;
     private InterpreterContext interpreterContext;
     private volatile CompiledIRBlockBody jittedBody;
 
@@ -37,6 +38,8 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() ||
                 Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
+        } else {
+            time = System.nanoTime();
         }
     }
 
@@ -164,6 +167,14 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                 if (callCount < 0) return;
 
                 if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+                    long newTime = System.nanoTime();
+
+                    if ((newTime - time) >= Options.JIT_TIME_DELTA.load()) {
+                        callCount = 0;
+                        time = newTime;
+                        return;
+                    }
+
                     callCount = -1;
 
                     // ensure we've got code ready for JIT

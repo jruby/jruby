@@ -20,6 +20,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
+    private long time;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
 
@@ -32,6 +33,8 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         // promote to full build here if we are -X-C.
         if (closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() || Options.JIT_THRESHOLD.load() == -1) {
             callCount = -1;
+        } else {
+            time = System.nanoTime();
         }
     }
 
@@ -147,6 +150,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+            long newTime = System.nanoTime();
+
+            if ((newTime - time) >= Options.JIT_TIME_DELTA.load()) {
+                callCount = 0;
+                time = newTime;
+                return;
+            }
+            
             context.runtime.getJITCompiler().buildThresholdReached(context, this);
         }
     }

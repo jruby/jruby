@@ -26,6 +26,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
     private volatile int callCount = 0;
+    protected volatile long time;
     private volatile DynamicMethod actualMethod;
 
     public MixedModeIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
@@ -35,6 +36,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT() ||
                 Options.JIT_THRESHOLD.load() < 0) {
             callCount = -1;
+        } else {
+            time = System.nanoTime();
         }
 
         // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
@@ -271,6 +274,14 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         synchronized (this) {
             if (callCount >= 0 && callCount++ >= Options.JIT_THRESHOLD.load()) {
+                long newTime = System.nanoTime();
+
+                if ((newTime - time) >= Options.JIT_TIME_DELTA.load()) {
+                    callCount = 0;
+                    time = newTime;
+                    return;
+                }
+
                 context.runtime.getJITCompiler().buildThresholdReached(context, this);
             }
         }

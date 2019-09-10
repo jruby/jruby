@@ -30,12 +30,17 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
     protected InterpreterContext interpreterContext = null;
     protected int callCount = 0;
+    protected long time;
 
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
 
         // -1 jit.threshold is way of having interpreter not promote full builds.
-        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
+        if (Options.JIT_THRESHOLD.load() == -1) {
+            callCount = -1;
+        } else {
+            time = System.nanoTime();
+        }
 
         // If we are printing, do the build right at creation time so we can see it
         if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
@@ -296,7 +301,17 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
         if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return;   // don't Promote to full build during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
+        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
+            long newTime = System.nanoTime();
+
+            if ((newTime - time) >= Options.JIT_TIME_DELTA.load()) {
+                callCount = 0;
+                time = newTime;
+                return;
+            }
+
+            runtime.getJITCompiler().buildThresholdReached(context, this);
+        }
 
         if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
             ByteArrayOutputStream baos = IRDumper.printIR(method, true, true);
