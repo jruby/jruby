@@ -32,7 +32,7 @@ class FullBuildTask implements Runnable {
         } catch (Throwable t) {
             if (jitCompiler.config.isJitLogging()) {
                 JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
-                        "Could not build; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
+                        "Could not build; passes run: " + method.getIRScope().getExecutedPasses(), t.toString());
                 if (jitCompiler.config.isJitLoggingVerbose()) {
                     t.printStackTrace();
                 }

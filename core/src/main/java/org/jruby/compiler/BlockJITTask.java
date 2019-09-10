@@ -57,7 +57,7 @@ class BlockJITTask extends JITCompiler.Task {
             if (excludeModuleName != null) {
                 body.setCallCount(-1);
                 if (jitCompiler.config.isJitLogging()) {
-                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, "skipping block in method: " + excludeModuleName + '#' + methodName);
+                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, "skipping block in " + excludeModuleName);
                 }
                 return;
             }
@@ -100,7 +100,7 @@ class BlockJITTask extends JITCompiler.Task {
             }
         } catch (Throwable t) {
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + '.' + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.getMessage());
+                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + '.' + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.toString());
                 if (jitCompiler.config.isJitLoggingVerbose()) {
                     t.printStackTrace();
                 }
