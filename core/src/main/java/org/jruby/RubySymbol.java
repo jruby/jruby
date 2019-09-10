@@ -94,6 +94,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final ByteList symbolBytes;
     private final int hashCode;
     private Object constant;
+    private RubyString rubyString;
 
     /**
      *
@@ -484,6 +485,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     final RubyString to_s(Ruby runtime) {
+        if (true) { // Add check for runtime flag here?
+            if (rubyString == null) rubyString = runtime.freezeAndDedupString(RubyString.newStringShared(runtime, symbolBytes));
+            return rubyString;
+        }
         return RubyString.newStringShared(runtime, symbolBytes);
     }
 
