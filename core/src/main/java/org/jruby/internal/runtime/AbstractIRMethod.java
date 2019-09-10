@@ -31,6 +31,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected final IRScope method;
     protected final StaticScope staticScope;
     protected int callCount = 0;
+    protected volatile long time;
     protected transient InterpreterContext interpreterContext; // cached from method
     private transient MethodData methodData;
 
@@ -56,6 +57,13 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         // we don't synchronize callCount++ it does not matter if count isn't accurate
         if (self.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
             synchronized (self) { // disable same jit tasks from entering queue twice
+                long newTime = System.nanoTime();
+                if ((newTime - self.time) >= Options.JIT_TIME_DELTA.load()) {
+                    self.callCount = 0;
+                    self.time = newTime;
+                    return;
+                }
+
                 if (self.callCount >= 0) {
                     self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 

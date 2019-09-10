@@ -23,6 +23,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private int callCount = 0;
+    private long time;
     private InterpreterContext interpreterContext;
     private InterpreterContext fullInterpreterContext;
 
@@ -34,6 +35,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         // -1 jit.threshold is way of having interpreter not promote full builds
         // regardless of compile mode (even when OFF full-builds are promoted)
         if (closure.getManager().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
+        else {
+            time = System.nanoTime();
+        }
     }
 
     @Override
@@ -154,6 +158,13 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         // we don't synchronize callCount++ it does not matter if count isn't accurate
         if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
             synchronized (this) { // disable same jit tasks from entering queue twice
+                long newTime = System.nanoTime();
+                if ((newTime - time) >= Options.JIT_TIME_DELTA.load()) {
+                    callCount = 0;
+                    time = newTime;
+                    return;
+                }
+
                 if (this.callCount >= 0) {
                     this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
