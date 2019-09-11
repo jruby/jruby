@@ -37,6 +37,7 @@
 package org.jruby.runtime;
 
 import com.headius.backport9.stack.StackWalker;
+import com.headius.backport9.stack.impl.StackWalker8;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -746,11 +747,8 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
-    private static final StackWalker WALKER = StackWalker.getInstance();
-
-    public IRubyObject createCallerBacktrace(int level, Integer length) {
-        return WALKER.walk(stream -> createCallerBacktrace(level, length, stream));
-    }
+    public static final StackWalker WALKER = StackWalker.getInstance();
+    public static final StackWalker WALKER8 = new StackWalker8();
 
     /**
      * Create an Array with backtrace information for Kernel#caller
@@ -777,10 +775,6 @@ public final class ThreadContext {
         RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
         return backTrace;
-    }
-
-    public IRubyObject createCallerLocations(int level, Integer length) {
-        return WALKER.walk(stream -> createCallerLocations(level, length, stream));
     }
 
     /**
