@@ -1,17 +1,14 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.Instr;
@@ -167,7 +164,7 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         instructions = linearizedInstrArray;
-        temporaryVariablecount = getScope().getTemporaryVariablesCount();
+        temporaryVariableCount = getScope().getTemporaryVariablesCount();
 
         // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());

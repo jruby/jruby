@@ -506,11 +506,7 @@ public abstract class IRScope implements ParseResult {
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
     public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
-        try {
-            interpreterContext = new InterpreterContext(this, instructions);
-        } catch (Exception e) {
-            Helpers.throwException(e);
-        }
+        interpreterContext = new InterpreterContext(this, instructions);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
