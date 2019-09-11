@@ -359,7 +359,9 @@ do
      --dev)
         JAVA_VM=-client
         JAVA_OPTS="$JAVA_OPTS $dev_mode_opts"
-        add_log "Adding Java options from: $dev_mode_opts_file" ;;
+        add_log "Adding Java options from: $dev_mode_opts_file"
+        # For OpenJ9 use environment variable to enable quickstart and shareclasses
+        export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
