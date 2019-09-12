@@ -103,6 +103,7 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", false, "Use MethodHandles rather than generated code to bind Ruby methods.");
     public static final Option<Boolean> INVOKEDYNAMIC_YIELD = bool(INVOKEDYNAMIC, "invokedynamic.yield", false, "Bind yields directly using invokedynamic.");
 
+    // NOTE: -1 jit.threshold is way of having interpreter not promote full builds
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
     public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
     public static final Option<Integer> JIT_MAXSIZE = integer(JIT, "jit.maxsize", Constants.JIT_MAX_SIZE_LIMIT, "Set the max size (in IR instructions) for a method to be eligible to JIT.");

@@ -29,6 +29,10 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
 
+        // -1 jit.threshold is way of having interpreter not promote full builds
+        // regardless of compile mode (even when OFF full-builds are promoted)
+        if (implementationClass.getRuntime().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
+
         // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
         method.compilable = this;
     }

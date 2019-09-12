@@ -2,6 +2,7 @@ package org.jruby.internal.runtime.methods;
 
 import java.io.ByteArrayOutputStream;
 
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
@@ -28,6 +29,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     public MixedModeIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
 
+        if (!implementationClass.getRuntime().getInstanceConfig().isJitEnabled()) setCallCount(-1);
         // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
         method.compilable = this;
     }

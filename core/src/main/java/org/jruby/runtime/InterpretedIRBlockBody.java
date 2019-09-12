@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import java.io.ByteArrayOutputStream;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -30,9 +31,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         this.pushScope = true;
         this.reuseParentScope = false;
 
-        // JIT currently JITs blocks along with their method and no on-demand by themselves.
-        // We only promote to full build here if we are -X-C.
-        if (!closure.getManager().getInstanceConfig().isJitEnabled()) setCallCount(-1);
+        // -1 jit.threshold is way of having interpreter not promote full builds
+        // regardless of compile mode (even when OFF full-builds are promoted)
+        if (closure.getManager().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
     }
 
     @Override
