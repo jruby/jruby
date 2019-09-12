@@ -19,12 +19,18 @@ import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.invokedynamic.GlobalSite;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.MathLinker;
@@ -171,6 +177,30 @@ public class Bootstrap {
         encoding = entry.getEncoding();
         ByteList byteList = new ByteList(RubyEncoding.encodeISO(value), encoding, false);
         return byteList;
+    }
+
+    public static final Handle CALLSITE = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "callSite",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class),
+            false);
+
+    public static CallSite callSite(Lookup lookup, String name, MethodType type, String id, int callType) {
+        return new ConstantCallSite(constant(CachingCallSite.class, callSite(id, callType)));
+    }
+
+    private static CachingCallSite callSite(String id, int callType) {
+        switch (CallType.fromOrdinal(callType)) {
+            case NORMAL:
+                return new MonomorphicCallSite(id);
+            case FUNCTIONAL:
+                return new FunctionalCachingCallSite(id);
+            case VARIABLE:
+                return new VariableCachingCallSite(id);
+            default:
+                throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+        }
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {
