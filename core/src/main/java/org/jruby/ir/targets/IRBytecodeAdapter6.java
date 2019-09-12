@@ -17,8 +17,6 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -59,9 +57,7 @@ import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 
 /**
- * Java 6 and lower-compatible version of bytecode adapter for IR JIT.
- *
- * CON FIXME: These are all dirt-stupid impls that will not be as efficient.
+ * Baseline JIT backend for literals, calls, etc that uses indy sparingly to reduce warmup/startup hit.
  */
 public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
@@ -74,294 +70,73 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         super(adapter, signature, classData);
     }
 
-    public void pushFixnum(final long l) {
-        cacheValuePermanentlyLoadContext("fixnum", RubyFixnum.class, keyFor("fixnum", l), new Runnable() {
-            @Override
-            public void run() {
-                loadRuntime();
-                adapter.ldc(l);
-                adapter.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
-            }
-        });
+    public void pushFixnum(long l) {
+        loadContext();
+        adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), FixnumObjectSite.BOOTSTRAP, l);
     }
 
-    public void pushFloat(final double d) {
-        cacheValuePermanentlyLoadContext("float", RubyFloat.class, keyFor("float", Double.doubleToLongBits(d)), new Runnable() {
-            @Override
-            public void run() {
-                loadRuntime();
-                adapter.ldc(d);
-                adapter.invokevirtual(p(Ruby.class), "newFloat", sig(RubyFloat.class, double.class));
-            }
-        });
+    public void pushFloat(double d) {
+        loadContext();
+        adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), FloatObjectSite.BOOTSTRAP, d);
     }
 
     public void pushString(ByteList bl, int cr) {
-        loadRuntime();
-        pushByteList(bl);
-        adapter.ldc(cr);
-        adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
+        loadContext();
+        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr);
     }
 
-    private String newFieldName(String baseName) {
-        return baseName + getClassData().cacheFieldCount.getAndIncrement();
+    public void pushFrozenString(ByteList bl, int cr, String file, int line) {
+        loadContext();
+        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr, file, line);
     }
 
-    /**
-     * Stack required: none
-     *
-     * @param bl ByteList for the String to push
-     */
-    public void pushFrozenString(final ByteList bl, final int cr, final String file, final int line) {
-        cacheValuePermanentlyLoadContext("fstring", RubyString.class, keyFor("fstring", bl), new Runnable() {
-            @Override
-            public void run() {
-                loadContext();
-                adapter.ldc(bl.toString());
-                adapter.ldc(bl.getEncoding().toString());
-                adapter.ldc(cr);
-                adapter.ldc(file);
-                adapter.ldc(line);
-                invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, ThreadContext.class, String.class, String.class, int.class, String.class, int.class));
-            }
-        });
+    public void pushByteList(ByteList bl) {
+        adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString());
     }
 
-    public void pushByteList(final ByteList bl) {
-        cacheValuePermanentlyLoadContext("bytelist", ByteList.class, keyFor("bytelist", bl), new Runnable() {
-            @Override
-            public void run() {
-                loadRuntime();
-                adapter.ldc(bl.toString());
-                adapter.ldc(bl.getEncoding().toString());
-                invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
-            }
-        });
+    public void pushRegexp(ByteList source, int options) {
+        loadContext();
+        pushByteList(source);
+        adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class), RegexpObjectSite.BOOTSTRAP, options);
     }
 
-    public String cacheValuePermanentlyLoadContext(String what, Class type, Object key, Runnable construction) {
-        return cacheValuePermanently(what, type, key, false, sig(type, ThreadContext.class), this::loadContext, construction);
-    }
-
-    public String cacheValuePermanently(String what, Class type, Object key, boolean sync, Runnable construction) {
-        return cacheValuePermanently(what, type, key, sync, sig(type), null, construction);
-    }
-
-    public String cacheValuePermanently(String what, Class type, Object key, boolean sync, String signature, Runnable loadState, Runnable construction) {
-        String cacheName = key == null ? null : cacheFieldNames.get(key);
-        String clsName = getClassData().clsName;
-
-        if (cacheName == null) {
-            cacheName = newFieldName(what);
-            cacheFieldNames.put(key, cacheName);
-
-            SkinnyMethodAdapter tmp = adapter;
-            adapter = new SkinnyMethodAdapter(
-                    adapter.getClassVisitor(),
-                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    cacheName,
-                    signature,
-                    null,
-                    null);
-
-            Label done = new Label();
-            Label before = sync ? new Label() : null;
-            Label after = sync ? new Label() : null;
-            Label catchbody = sync ? new Label() : null;
-            Label done2 = sync ? new Label() : null;
-
-            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheName, ci(type), null, null).visitEnd();
-            adapter.getstatic(clsName, cacheName, ci(type));
-            adapter.dup();
-            adapter.ifnonnull(done);
-            adapter.pop();
-
-            // lock class and check static field again
-            Type classType = Type.getType("L" + clsName.replace('.', '/') + ';');
-            int tempIndex = Type.getMethodType(signature).getArgumentsAndReturnSizes() >> 2 + 1;
-            if (sync) {
-                adapter.ldc(classType);
-                adapter.dup();
-                adapter.astore(tempIndex);
-                adapter.monitorenter();
-
-                adapter.trycatch(before, after, catchbody, null);
-
-                adapter.label(before);
-                adapter.getstatic(clsName, cacheName, ci(type));
-                adapter.dup();
-                adapter.ifnonnull(done2);
-                adapter.pop();
-            }
-
-            construction.run();
-            adapter.dup();
-            adapter.putstatic(clsName, cacheName, ci(type));
-
-            // unlock class along normal and exceptional exits
-            if (sync) {
-                adapter.label(done2);
-                adapter.aload(tempIndex);
-                adapter.monitorexit();
-                adapter.go_to(done);
-                adapter.label(after);
-
-                adapter.label(catchbody);
-                adapter.aload(tempIndex);
-                adapter.monitorexit();
-                adapter.athrow();
-            }
-
-            adapter.label(done);
-            adapter.areturn();
-            adapter.end();
-            adapter = tmp;
-        }
-
-        if (loadState != null) loadState.run();
-
-        adapter.invokestatic(clsName, cacheName, signature);
-
-        return cacheName;
-    }
-
-    public void pushRegexp(final ByteList source, final int options) {
-        cacheValuePermanentlyLoadContext("regexp", RubyRegexp.class, keyFor("regexp", source, options), new Runnable() {
-            @Override
-            public void run() {
-                loadContext();
-                pushByteList(source);
-                adapter.pushInt(options);
-                invokeIRHelper("newLiteralRegexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class, int.class));
-            }
-        });
-    }
-
-    private static String keyFor(Object obj1, Object obj2) {
-        StringBuilder sb = new StringBuilder(16);
-        keyFor(sb, obj1);
-        keyFor(sb, obj2);
-        return sb.toString();
-    }
-
-    private static String keyFor(Object obj1, Object obj2, Object obj3) {
-        StringBuilder sb = new StringBuilder(24);
-        keyFor(sb, obj1);
-        keyFor(sb, obj2);
-        keyFor(sb, obj3);
-        return sb.toString();
-    }
-
-    private static void keyFor(StringBuilder builder, Object obj) {
-        builder.append(obj.toString());
-        if (obj instanceof ByteList) builder.append('_').append(((ByteList) obj).getEncoding());
-        builder.append('_');
-    }
-
-    public void pushDRegexp(final Runnable callback, final RegexpOptions options, final int arity) {
+    public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
 
-        String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, IRubyObject.class, arity, int.class));
-        ClassData classData = getClassData();
-        String className = classData.clsName;
-
-        String cacheField = "dregexp" + classData.cacheFieldCount.getAndIncrement();
-        String atomicRefField = null;
-        Label done = new Label();
+        String cacheField = null;
+        Label done = null;
 
         if (options.isOnce()) {
-            // need to cache result forever, but do it atomically so first one wins
-
-            // TODO: this might be better in a static initializer than lazy + sync to construct?
-            atomicRefField = cacheValuePermanently("atomicref", AtomicReference.class, cacheField, true, new Runnable() {
-                @Override
-                public void run() {
-                    adapter.newobj(p(AtomicReference.class));
-                    adapter.dup();
-                    adapter.invokespecial(p(AtomicReference.class), "<init>", sig(void.class));
-                }
-            });
-
-            adapter.invokevirtual(p(AtomicReference.class), "get", sig(Object.class));
+            // need to cache result forever
+            cacheField = "dregexp" + getClassData().cacheFieldCount.getAndIncrement();
+            done = new Label();
+            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
+            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
             adapter.dup();
             adapter.ifnonnull(done);
             adapter.pop();
-
-            // load ref again plus null expected value for CAS, below regexp we are about to construct
-            adapter.getstatic(className.replace('.', '/'), atomicRefField, ci(AtomicReference.class));
-            adapter.aconst_null();
         }
 
         // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
-        // However, the atomic reference will ensure we only cache the first dregexp to win.
+        // However, only one dregexp will ever come out of the indy call.
         callback.run();
-        adapter.ldc(options.toEmbeddedOptions());
+        adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options.toEmbeddedOptions());
 
-        if (arity >= 1 && arity <= 5) {
-            // use pre-made version from IR helpers
-            invokeIRHelper("newDynamicRegexp", incomingSig);
-        } else {
-            String methodName = "dregexp" + arity;
-
-            if (!classData.dregexpMethodsDefined.contains(arity)) {
-                // generate a new one
-                SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
-                        adapter.getClassVisitor(),
-                        Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                        methodName,
-                        incomingSig,
-                        null,
-                        null);
-
-                adapter2.aload(0);
-                buildArrayFromLocals(adapter2, 1, arity);
-                adapter2.iload(1 + arity);
-
-                adapter2.invokestatic(p(IRRuntimeHelpers.class), "newDynamicRegexp", sig(RubyRegexp.class, ThreadContext.class, IRubyObject[].class, int.class));
-                adapter2.areturn();
-                adapter2.end();
-
-                classData.dregexpMethodsDefined.add(arity);
-            }
-
-            adapter.invokestatic(className, methodName, incomingSig);
-        }
-
-        if (options.isOnce()) {
-            // do the CAS
-            adapter.invokevirtual(p(AtomicReference.class), "compareAndSet", sig(boolean.class, Object.class, Object.class));
-            adapter.pop();
-
-            // get the value again
-            adapter.getstatic(className.replace('.', '/'), atomicRefField, ci(AtomicReference.class));
-            adapter.invokevirtual(p(AtomicReference.class), "get", sig(Object.class));
-
+        if (done != null) {
+            adapter.dup();
+            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
             adapter.label(done);
-
-            adapter.checkcast(p(RubyRegexp.class));
         }
     }
 
     public void pushSymbol(final ByteList bytes) {
-        cacheValuePermanentlyLoadContext("symbol", RubySymbol.class, keyFor("symbol", bytes, bytes.getEncoding()), new Runnable() {
-            @Override
-            public void run() {
-                loadRuntime();
-                pushByteList(bytes);
-                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, ByteList.class));
-            }
-        });
+        loadContext();
+        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, RubyEncoding.decodeISO(bytes), bytes.getEncoding().toString());
     }
 
-    public void pushSymbolProc(final String id) {
-        cacheValuePermanentlyLoadContext("symbolProc", RubyProc.class, null, new Runnable() {
-            @Override
-            public void run() {
-                loadContext();
-                adapter.ldc(id);
-                invokeIRHelper("newSymbolProc", sig(RubyProc.class, ThreadContext.class, String.class));
-            }
-        });
+    public void pushSymbolProc(final ByteList bytes) {
+        loadContext();
+        adapter.invokedynamic("symbolProc", sig(JVM.OBJECT, ThreadContext.class), SymbolProcObjectSite.BOOTSTRAP, RubyEncoding.decodeISO(bytes), bytes.getEncoding().toString());
     }
 
     public void loadRuntime() {
@@ -369,15 +144,9 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
 
-    public void pushEncoding(final Encoding encoding) {
-        cacheValuePermanentlyLoadContext("encoding", RubySymbol.class, keyFor("encoding", encoding), new Runnable() {
-            @Override
-            public void run() {
-                loadContext();
-                adapter.ldc(encoding.toString());
-                invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
-            }
-        });
+    public void pushEncoding(Encoding encoding) {
+        loadContext();
+        adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
     }
 
     @Override
@@ -783,20 +552,17 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     public void pushNil() {
         loadContext();
-        adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+        adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushBoolean(boolean b) {
-        loadRuntime();
-        adapter.invokevirtual(p(Ruby.class), b ? "getTrue" : "getFalse", sig(RubyBoolean.class));
+        loadContext();
+        adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushBignum(BigInteger bigint) {
-        String bigintStr = bigint.toString();
-
-        loadRuntime();
-        adapter.ldc(bigintStr);
-        adapter.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, Ruby.class, String.class));
+        loadContext();
+        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint.toString());
     }
 
     public void putField(String name) {
@@ -1047,6 +813,4 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.ldc(call.isSplattedValue());
         invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }
-
-    private final Map<Object, String> cacheFieldNames = new HashMap<>();
 }
