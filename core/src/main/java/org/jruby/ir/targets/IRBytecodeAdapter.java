@@ -122,7 +122,7 @@ public abstract class IRBytecodeAdapter {
     }
 
     public String getUniqueSiteName(String name) {
-        return "invokeOther" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        return "invokeOther" + getClassData().cacheFieldCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
     }
 
     public ClassData getClassData() {

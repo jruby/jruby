@@ -87,7 +87,7 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
 
         if (options.isOnce()) {
             // need to cache result forever
-            cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
+            cacheField = "dregexp" + getClassData().cacheFieldCount.getAndIncrement();
             done = new Label();
             adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
             adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));

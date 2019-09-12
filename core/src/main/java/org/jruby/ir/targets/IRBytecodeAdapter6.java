@@ -104,7 +104,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     private String newFieldName(String baseName) {
-        return baseName + getClassData().callSiteCount.getAndIncrement();
+        return baseName + getClassData().cacheFieldCount.getAndIncrement();
     }
 
     /**
@@ -139,15 +139,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    private final Runnable LOAD_CONTEXT = new Runnable() {
-        @Override
-        public void run() {
-            loadContext();
-        }
-    };
-
     public String cacheValuePermanentlyLoadContext(String what, Class type, Object key, Runnable construction) {
-        return cacheValuePermanently(what, type, key, false, sig(type, ThreadContext.class), LOAD_CONTEXT, construction);
+        return cacheValuePermanently(what, type, key, false, sig(type, ThreadContext.class), this::loadContext, construction);
     }
 
     public String cacheValuePermanently(String what, Class type, Object key, boolean sync, Runnable construction) {
@@ -155,27 +148,30 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public String cacheValuePermanently(String what, Class type, Object key, boolean sync, String signature, Runnable loadState, Runnable construction) {
-        String cacheField = key == null ? null : cacheFieldNames.get(key);
+        String cacheName = key == null ? null : cacheFieldNames.get(key);
         String clsName = getClassData().clsName;
-        if (cacheField == null) {
-            cacheField = newFieldName(what);
-            cacheFieldNames.put(key, cacheField);
+
+        if (cacheName == null) {
+            cacheName = newFieldName(what);
+            cacheFieldNames.put(key, cacheName);
 
             SkinnyMethodAdapter tmp = adapter;
             adapter = new SkinnyMethodAdapter(
                     adapter.getClassVisitor(),
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    cacheField,
+                    cacheName,
                     signature,
                     null,
                     null);
+
             Label done = new Label();
             Label before = sync ? new Label() : null;
             Label after = sync ? new Label() : null;
             Label catchbody = sync ? new Label() : null;
             Label done2 = sync ? new Label() : null;
-            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(type), null, null).visitEnd();
-            adapter.getstatic(clsName, cacheField, ci(type));
+
+            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheName, ci(type), null, null).visitEnd();
+            adapter.getstatic(clsName, cacheName, ci(type));
             adapter.dup();
             adapter.ifnonnull(done);
             adapter.pop();
@@ -192,7 +188,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 adapter.trycatch(before, after, catchbody, null);
 
                 adapter.label(before);
-                adapter.getstatic(clsName, cacheField, ci(type));
+                adapter.getstatic(clsName, cacheName, ci(type));
                 adapter.dup();
                 adapter.ifnonnull(done2);
                 adapter.pop();
@@ -200,7 +196,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
             construction.run();
             adapter.dup();
-            adapter.putstatic(clsName, cacheField, ci(type));
+            adapter.putstatic(clsName, cacheName, ci(type));
 
             // unlock class along normal and exceptional exits
             if (sync) {
@@ -223,9 +219,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
 
         if (loadState != null) loadState.run();
-        adapter.invokestatic(clsName, cacheField, signature);
 
-        return cacheField;
+        adapter.invokestatic(clsName, cacheName, signature);
+
+        return cacheName;
     }
 
     public void pushRegexp(final ByteList source, final int options) {
@@ -268,7 +265,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         ClassData classData = getClassData();
         String className = classData.clsName;
 
-        String cacheField = "dregexp" + classData.callSiteCount.getAndIncrement();
+        String cacheField = "dregexp" + classData.cacheFieldCount.getAndIncrement();
         String atomicRefField = null;
         Label done = new Label();
 
@@ -571,7 +568,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
 
-        String methodName = "invokeOtherOneFixnum" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(id);
+        String methodName = "invokeOtherOneFixnum" + getClassData().cacheFieldCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(id);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -629,7 +626,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
 
-        String methodName = "invokeOtherOneFloat" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(id);
+        String methodName = "invokeOtherOneFloat" + getClassData().cacheFieldCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(id);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -727,7 +724,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             }
         }
 
-        String methodName = "invokeSuper" + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
+        String methodName = "invokeSuper" + getClassData().cacheFieldCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
@@ -826,7 +823,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(VariableAccessor.class, params(JVM.OBJECT));
 
-        String methodName = (write ? "ivarSet" : "ivarGet") + getClassData().callSiteCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
+        String methodName = (write ? "ivarSet" : "ivarGet") + getClassData().cacheFieldCount.getAndIncrement() + ':' + JavaNameMangler.mangleMethodName(name);
 
         adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -1020,7 +1017,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     @Override
     public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
         // FIXME: too much bytecode
-        String cacheField = "blockBody" + getClassData().callSiteCount.getAndIncrement();
+        String cacheField = "blockBody" + getClassData().cacheFieldCount.getAndIncrement();
         Label done = new Label();
         adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
         adapter.getstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
