@@ -45,7 +45,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         this.signature = staticScope.getSignature();
 
         final Ruby runtime = implementationClass.getRuntime();
-        if (runtime.getInstanceConfig().isJitDisabled()) setCallCount(-1);
+        if (!runtime.getInstanceConfig().isJitEnabled()) setCallCount(-1);
 
         // If we are printing, do the build right at creation time so we can see it
         if (IRRuntimeHelpers.shouldPrintIR(runtime)) {

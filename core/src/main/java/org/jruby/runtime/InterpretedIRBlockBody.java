@@ -32,7 +32,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.
         // We only promote to full build here if we are -X-C.
-        if (closure.getManager().getInstanceConfig().isJitDisabled()) setCallCount(-1);
+        if (!closure.getManager().getInstanceConfig().isJitEnabled()) setCallCount(-1);
     }
 
     @Override

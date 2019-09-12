@@ -584,9 +584,11 @@ public class RubyInstanceConfig {
         this.jitMaxSize = jitMaxSize;
     }
 
-    public boolean isJitDisabled() {
-        // -1 jit.threshold is way of having interpreter not promote full builds
-        return getJitThreshold() < 0 || !getCompileMode().shouldJIT();
+    /**
+     * @return true if JIT compilation is enabled
+     */
+    public boolean isJitEnabled() {
+        return getJitThreshold() >= 0 && getCompileMode().shouldJIT();
     }
 
     /**
