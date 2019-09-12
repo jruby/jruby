@@ -24,7 +24,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     private InterpreterContext interpreterContext;
-    private volatile int callCount = 0;
+    private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {

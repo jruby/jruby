@@ -34,7 +34,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected final IRScope method;
     protected final StaticScope staticScope;
     protected InterpreterContext interpreterContext = null;
-    protected volatile int callCount = 0;
+    protected int callCount = 0;
     private transient MethodData methodData;
 
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
