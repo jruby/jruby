@@ -245,18 +245,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
     }
 
     @Override
-    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
-        Handle scopeHandle = new Handle(
-                Opcodes.H_GETSTATIC,
-                getClassData().clsName,
-                handle.getName() + "_IRScope",
-                ci(IRScope.class),
-                false);
-        long encodedSignature = signature.encode();
-        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
-    }
-
-    @Override
     public void branchIfNil(Label label) {
         adapter.invokedynamic("isNil", sig(boolean.class, IRubyObject.class), Bootstrap.isNilBoot());
         adapter.iftrue(label);

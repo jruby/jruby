@@ -782,29 +782,14 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
-        // FIXME: too much bytecode
-        String cacheField = "blockBody" + getClassData().cacheFieldCount.getAndIncrement();
-        Label done = new Label();
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
-        adapter.getstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
-        adapter.dup();
-        adapter.ifnonnull(done);
-        {
-            adapter.pop();
-            adapter.newobj(p(CompiledIRBlockBody.class));
-            adapter.dup();
-
-            adapter.ldc(handle);
-            adapter.getstatic(className, handle.getName() + "_IRScope", ci(IRScope.class));
-            adapter.ldc(signature.encode());
-
-            adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, IRScope.class, long.class));
-            adapter.dup();
-            adapter.putstatic(getClassData().clsName, cacheField, ci(CompiledIRBlockBody.class));
-        }
-        adapter.label(done);
-
-        invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, BlockBody.class));
+        Handle scopeHandle = new Handle(
+                Opcodes.H_GETSTATIC,
+                getClassData().clsName,
+                handle.getName() + "_IRScope",
+                ci(IRScope.class),
+                false);
+        long encodedSignature = signature.encode();
+        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
 
     @Override
