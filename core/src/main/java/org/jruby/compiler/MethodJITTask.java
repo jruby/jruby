@@ -55,80 +55,70 @@ class MethodJITTask extends JITCompiler.Task {
     }
 
     @Override
-    public void exec() {
-        try {
-            // Check if the method has been explicitly excluded
-            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
-            if (excludeModuleName != null) {
-                method.setCallCount(-1);
-                if (jitCompiler.config.isJitLogging()) {
-                    JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method in " + excludeModuleName);
-                }
-                return;
-            }
-
-            String key = SexpMaker.sha1(method.getIRScope());
-            Ruby runtime = jitCompiler.runtime;
-            JVMVisitor visitor = new JVMVisitor(runtime);
-            MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
-
-            JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-            generator.compile(context);
-
-            Class<?> sourceClass = defineClass(generator, visitor, method.getIRScope(), method.ensureInstrsReady());
-            if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
-
-            // successfully got back a jitted method
-            long methodCount = jitCompiler.counts.successCount.incrementAndGet();
-
-            // logEvery n methods based on configuration
-            if (jitCompiler.config.getJitLogEvery() > 0) {
-                if (methodCount % jitCompiler.config.getJitLogEvery() == 0) {
-                    JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "live compiled methods: " + methodCount);
-                }
-            }
-
+    public void exec() throws NoSuchMethodException, IllegalAccessException {
+        // Check if the method has been explicitly excluded
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
+        if (excludeModuleName != null) {
+            method.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "done jitting");
+                logImpl("skipping method in " + excludeModuleName);
             }
+            return;
+        }
 
-            String variableName = context.getVariableName();
-            MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
-            IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+        String key = SexpMaker.sha1(method.getIRScope());
+        Ruby runtime = jitCompiler.runtime;
+        JVMVisitor visitor = new JVMVisitor(runtime);
+        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
 
-            if (signatures.size() == 0) {
-                // only variable-arity
+        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+        generator.compile(context);
+
+        Class<?> sourceClass = defineClass(generator, visitor, method.getIRScope(), method.ensureInstrsReady());
+        if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
+
+        String variableName = context.getVariableName();
+        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
+        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+
+        if (signatures.size() == 0) {
+            // only variable-arity
+            method.completeBuild(
+                    new CompiledIRMethod(
+                            variable,
+                            method.getIRScope(),
+                            method.getVisibility(),
+                            method.getImplementationClass()));
+
+        } else {
+            // also specific-arity
+            for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
                 method.completeBuild(
                         new CompiledIRMethod(
                                 variable,
+                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
+                                entry.getKey(),
                                 method.getIRScope(),
                                 method.getVisibility(),
                                 method.getImplementationClass()));
-
-            } else {
-                // also specific-arity
-                for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                    method.completeBuild(
-                            new CompiledIRMethod(
-                                    variable,
-                                    JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
-                                    entry.getKey(),
-                                    method.getIRScope(),
-                                    method.getVisibility(),
-                                    method.getImplementationClass()));
-                    break; // FIXME: only supports one arity
-                }
+                break; // FIXME: only supports one arity
             }
-        } catch (Throwable t) {
-            if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), className + '.' + methodName, "Could not compile; passes run: " + method.getIRScope().getExecutedPasses(), t.toString());
-                if (jitCompiler.config.isJitLoggingVerbose()) {
-                    t.printStackTrace();
-                }
-            }
-
-            jitCompiler.counts.failCount.incrementAndGet();
         }
+    }
+
+    @Override
+    protected void logJitted() {
+        logImpl("method done jitting");
+    }
+
+    @Override
+    protected void logFailed(final Throwable ex) {
+        logImpl("could not compile; passes run: " + method.getIRScope().getExecutedPasses(), ex);
+    }
+
+    @Override
+    protected void logImpl(String message, Object... reason) {
+        JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, message, reason);
     }
 
     static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,

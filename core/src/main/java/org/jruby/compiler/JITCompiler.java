@@ -231,19 +231,19 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
+    static void log(RubyModule implementationClass, String file, int line, String name, String message, Object... reason) {
         boolean isBlock = implementationClass == null;
         String className = isBlock ? "<block>" : implementationClass.getBaseName();
         if (className == null) className = "<anon class>";
 
         StringBuilder builder = new StringBuilder(32);
-        builder.append(message).append(": ").append(className)
-               .append(' ').append(name == null ? "" : name)
-               .append(" at ").append(file).append(':').append(line);
+        builder.append(message).append(": ").append(className);
+        if (name != null) builder.append(' ').append(name);
+        builder.append(" at ").append(file).append(':').append(line);
 
         if (reason.length > 0) {
             builder.append(" because of: \"");
-            for (String aReason : reason) builder.append(aReason);
+            for (Object aReason : reason) builder.append(aReason);
             builder.append('"');
         }
 
@@ -262,12 +262,29 @@ public class JITCompiler implements JITCompilerMBean {
             // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
             // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
             // See #4739 for a reproduction script that produced various errors without this.
-            synchronized (jitCompiler) { exec(); }
+            synchronized (jitCompiler) {
+                try {
+                    exec();
+                } catch (Throwable ex) {
+                    jitFailed(ex);
+                }
+            }
         }
 
-        protected abstract void exec() ;
+        protected abstract void exec() throws Exception ;
 
         // shared helper methods :
+
+        protected void jitFailed(final Throwable ex) {
+            if (jitCompiler.config.isJitLogging()) {
+                logFailed(ex);
+                if (jitCompiler.config.isJitLoggingVerbose()) {
+                    ex.printStackTrace();
+                }
+            }
+
+            jitCompiler.counts.failCount.incrementAndGet();
+        }
 
         protected Class<?> defineClass(final JITClassGenerator generator, final JVMVisitor visitor,
                                       final IRScope scope, final InterpreterContext interpreterContext) {
@@ -285,12 +302,34 @@ public class JITCompiler implements JITCompilerMBean {
             }
             generator.updateCounters(jitCompiler.counts, interpreterContext);
 
+            // successfully got back a jitted method/block
+            long methodCount = jitCompiler.counts.successCount.incrementAndGet();
+
+            if (jitCompiler.config.isJitLogging()) logJitted();
+
+            // logEvery n methods based on configuration
+            if (jitCompiler.config.getJitLogEvery() > 0) {
+                if (methodCount % jitCompiler.config.getJitLogEvery() == 0) {
+                    logImpl("live compiled count: " + methodCount);
+                }
+            }
+
             return sourceClass;
         }
 
         ClassDefiningClassLoader getCodeLoader(final Ruby runtime) {
             return new OneShotClassLoader(runtime.getJRubyClassLoader());
         }
+
+        protected void logJitted() {
+            logImpl("done jitting");
+        }
+
+        protected void logFailed(Throwable ex) {
+            logImpl("could not compile", ex);
+        }
+
+        protected abstract void logImpl(String msg, Object... cause) ;
 
     }
 

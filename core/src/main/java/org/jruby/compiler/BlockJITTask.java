@@ -50,52 +50,52 @@ class BlockJITTask extends JITCompiler.Task {
     }
 
     @Override
-    public void exec() {
-        try {
-            // Check if the method has been explicitly excluded
-            String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body.getImplementationClass());
-            if (excludeModuleName != null) {
-                body.setCallCount(-1);
-                if (jitCompiler.config.isJitLogging()) {
-                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, "skipping block in " + excludeModuleName);
-                }
-                return;
-            }
-
-            final String key = SexpMaker.sha1(body.getIRScope());
-            final Ruby runtime = jitCompiler.runtime;
-            JVMVisitor visitor = new JVMVisitor(runtime);
-            BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, runtime, body, visitor);
-
-            JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-            generator.compile(context);
-
-            Class<?> sourceClass = defineClass(generator, visitor, body.getIRScope(), body.ensureInstrsReady());
-            if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
-
-            // successfully got back a jitted body
-
-            String jittedName = context.getVariableName();
-
-            // blocks only have variable-arity
-            body.completeBuild(
-                    new CompiledIRBlockBody(
-                            JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
-                            body.getIRScope(),
-                            ((IRClosure) body.getIRScope()).getSignature().encode()));
-
+    public void exec() throws NoSuchMethodException, IllegalAccessException {
+        // Check if the method has been explicitly excluded
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body.getImplementationClass());
+        if (excludeModuleName != null) {
+            body.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + '.' + methodName, "done jitting");
+                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, "skipping block in " + excludeModuleName);
             }
-        } catch (Throwable t) {
-            if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + '.' + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.toString());
-                if (jitCompiler.config.isJitLoggingVerbose()) {
-                    t.printStackTrace();
-                }
-            }
-
-            jitCompiler.counts.failCount.incrementAndGet();
+            return;
         }
+
+        final String key = SexpMaker.sha1(body.getIRScope());
+        final Ruby runtime = jitCompiler.runtime;
+        JVMVisitor visitor = new JVMVisitor(runtime);
+        BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, runtime, body, visitor);
+
+        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+        generator.compile(context);
+
+        Class<?> sourceClass = defineClass(generator, visitor, body.getIRScope(), body.ensureInstrsReady());
+        if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
+
+        // successfully got back a jitted body
+        String jittedName = context.getVariableName();
+
+        // blocks only have variable-arity
+        body.completeBuild(
+                new CompiledIRBlockBody(
+                        JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                        body.getIRScope(),
+                        ((IRClosure) body.getIRScope()).getSignature().encode()));
     }
+
+    @Override
+    protected void logJitted() {
+        logImpl("block done jitting");
+    }
+
+    @Override
+    protected void logFailed(final Throwable ex) {
+        logImpl("could not compile; passes run: " + body.getIRScope().getExecutedPasses(), ex);
+    }
+
+    @Override
+    protected void logImpl(final String message, Object... reason) {
+        JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, message, reason);
+    }
+
 }
