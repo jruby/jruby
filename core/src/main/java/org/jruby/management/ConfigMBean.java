@@ -8,8 +8,11 @@ public interface ConfigMBean {
     public boolean isJitLoggingVerbose();
     public int getJitLogEvery();
     public int getJitThreshold();
+    void setJitThreshold(int threshold);
     public int getJitMax();
+    void setJitMax(int max);
     public int getJitMaxSize();
+    void setJitMaxSize(int maxSize);
     public boolean isRunRubyInProcess();
     public String getCurrentDirectory();
     public boolean isObjectSpaceEnabled();
@@ -37,5 +40,7 @@ public interface ConfigMBean {
     public String getExcludedMethods();
 
     @Deprecated
-    public String getCompatVersion();
+    default String getCompatVersion() {
+        return org.jruby.CompatVersion.RUBY2_1.name();
+    }
 }
