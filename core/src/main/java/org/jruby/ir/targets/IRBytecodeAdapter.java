@@ -272,8 +272,8 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void pushObjectClass() {
-        loadRuntime();
-        adapter.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
+        loadContext();
+        invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
     }
 
     public void pushUndefined() {

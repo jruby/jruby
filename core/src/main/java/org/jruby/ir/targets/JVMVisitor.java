@@ -1784,9 +1784,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) {
-        jvmMethod().loadRuntime();
+        jvmMethod().loadContext();
         jvmLoadLocal("$blockArg");
-        jvmMethod().invokeIRHelper("newProc", sig(IRubyObject.class, Ruby.class, Block.class));
+        jvmMethod().invokeIRHelper("newProc", sig(IRubyObject.class, ThreadContext.class, Block.class));
         jvmStoreLocal(reifyclosureinstr.getResult());
     }
 
@@ -2268,23 +2268,13 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().pop();
     }
 
-    // ruby 1.9 specific
     @Override
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) {
-        jvmMethod().loadRuntime();
+        jvmMethod().loadContext();
 
-        IRClosure body = ((WrappedIRClosure)buildlambdainstr.getLambdaBody()).getClosure();
-        if (body == null) {
-            jvmMethod().pushNil();
-        } else {
-            visit(buildlambdainstr.getLambdaBody());
-        }
+        visit(buildlambdainstr.getLambdaBody());
 
-        jvmAdapter().getstatic(p(Block.Type.class), "LAMBDA", ci(Block.Type.class));
-        jvmAdapter().ldc(buildlambdainstr.getFile());
-        jvmAdapter().pushInt(buildlambdainstr.getLine());
-
-        jvmAdapter().invokestatic(p(RubyProc.class), "newProc", sig(RubyProc.class, Ruby.class, Block.class, Block.Type.class, String.class, int.class));
+        jvmMethod().invokeIRHelper("newLambdaProc", sig(RubyProc.class, ThreadContext.class, Block.class));
 
         jvmStoreLocal(buildlambdainstr.getResult());
     }
@@ -2330,10 +2320,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Complex(Complex complex) {
-        jvmMethod().loadRuntime();
-        jvmMethod().pushFixnum(0);
+        jvmMethod().loadContext();
         visit(complex.getNumber());
-        jvmAdapter().invokestatic(p(RubyComplex.class), "newComplexRaw", sig(RubyComplex.class, Ruby.class, IRubyObject.class, IRubyObject.class));
+        jvmMethod().invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
     }
 
     @Override
@@ -2343,21 +2332,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) {
-        jvmMethod().loadRuntime();
+        jvmMethod().loadContext();
         visit(dynamicsymbol.getSymbolName());
-        jvmAdapter().dup();
-
-        // get symbol name
-        jvmAdapter().invokeinterface(p(IRubyObject.class), "asJavaString", sig(String.class));
-        jvmAdapter().swap();
-
-        // get encoding of symbol name
-        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
-        jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
-        jvmAdapter().invokevirtual(p(ByteList.class), "getEncoding", sig(Encoding.class));
-
-        // keeps encoding of symbol name
-        jvmAdapter().invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class, Encoding.class));
+        jvmMethod().invokeIRHelper("newDSymbol", sig(RubySymbol.class, ThreadContext.class, IRubyObject.class));
     }
 
     @Override
@@ -2488,10 +2465,10 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Rational(Rational rational) {
-        jvmMethod().loadRuntime();
+        jvmMethod().loadContext();
         visit(rational.getNumerator());
         visit(rational.getDenominator());
-        jvmAdapter().invokestatic(p(RubyRational.class), "newRationalRaw", sig(RubyRational.class, Ruby.class, IRubyObject.class, IRubyObject.class));
+        jvmMethod().invokeIRHelper("newRationalRaw", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
     }
 
     @Override
@@ -2544,8 +2521,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void StandardError(StandardError standarderror) {
-        jvmMethod().loadRuntime();
-        jvmAdapter().invokevirtual(p(Ruby.class), "getStandardError", sig(RubyClass.class));
+        jvmMethod().loadContext();
+        jvmMethod().invokeIRHelper("getStandardError", sig(RubyClass.class, ThreadContext.class));
     }
 
     @Override
