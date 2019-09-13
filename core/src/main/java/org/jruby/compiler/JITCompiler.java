@@ -36,10 +36,16 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -260,6 +266,31 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         protected abstract void exec() ;
+
+        // shared helper methods :
+
+        protected Class<?> defineClass(final JITClassGenerator generator, final JVMVisitor visitor,
+                                      final IRScope scope, final InterpreterContext interpreterContext) {
+            // FIXME: reinstate active bytecode size check
+            // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
+            // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
+            // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
+            // mechanism of getting all body sizes.
+            Class sourceClass = visitor.defineFromBytecode(scope, generator.bytecode(), getCodeLoader(jitCompiler.runtime));
+
+            if (sourceClass == null) {
+                // class could not be found nor generated; give up on JIT and bail out
+                jitCompiler.counts.failCount.incrementAndGet();
+                return null;
+            }
+            generator.updateCounters(jitCompiler.counts, interpreterContext);
+
+            return sourceClass;
+        }
+
+        ClassDefiningClassLoader getCodeLoader(final Ruby runtime) {
+            return new OneShotClassLoader(runtime.getJRubyClassLoader());
+        }
 
     }
 

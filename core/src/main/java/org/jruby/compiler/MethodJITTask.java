@@ -39,7 +39,6 @@ import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
-import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.collections.IntHashMap;
 
 class MethodJITTask extends JITCompiler.Task {
@@ -76,20 +75,8 @@ class MethodJITTask extends JITCompiler.Task {
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             generator.compile(context);
 
-            // FIXME: reinstate active bytecode size check
-            // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
-            // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
-            // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
-            // mechanism of getting all method sizes.
-            Class sourceClass = visitor.defineFromBytecode(method.getIRScope(), generator.bytecode(), new OneShotClassLoader(runtime.getJRubyClassLoader()));
-
-            if (sourceClass == null) {
-                // class could not be found nor generated; give up on JIT and bail out
-                jitCompiler.counts.failCount.incrementAndGet();
-                return;
-            } else {
-                generator.updateCounters(jitCompiler.counts, method.ensureInstrsReady());
-            }
+            Class<?> sourceClass = defineClass(generator, visitor, method.getIRScope(), method.ensureInstrsReady());
+            if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
             // successfully got back a jitted method
             long methodCount = jitCompiler.counts.successCount.incrementAndGet();

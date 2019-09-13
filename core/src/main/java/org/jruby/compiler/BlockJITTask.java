@@ -26,13 +26,13 @@
 
 package org.jruby.compiler;
 
+import org.jruby.Ruby;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
-import org.jruby.util.OneShotClassLoader;
 
 import static org.jruby.compiler.MethodJITTask.*;
 
@@ -62,27 +62,16 @@ class BlockJITTask extends JITCompiler.Task {
                 return;
             }
 
-            String key = SexpMaker.sha1(body.getIRScope());
-            JVMVisitor visitor = new JVMVisitor(jitCompiler.runtime);
-            BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, jitCompiler.runtime, body, visitor);
+            final String key = SexpMaker.sha1(body.getIRScope());
+            final Ruby runtime = jitCompiler.runtime;
+            JVMVisitor visitor = new JVMVisitor(runtime);
+            BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, runtime, body, visitor);
 
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             generator.compile(context);
 
-            // FIXME: reinstate active bytecode size check
-            // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
-            // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
-            // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
-            // mechanism of getting all body sizes.
-            Class sourceClass = visitor.defineFromBytecode(body.getIRScope(), generator.bytecode(), new OneShotClassLoader(jitCompiler.runtime.getJRubyClassLoader()));
-
-            if (sourceClass == null) {
-                // class could not be found nor generated; give up on JIT and bail out
-                jitCompiler.counts.failCount.incrementAndGet();
-                return;
-            } else {
-                generator.updateCounters(jitCompiler.counts, body.ensureInstrsReady());
-            }
+            Class<?> sourceClass = defineClass(generator, visitor, body.getIRScope(), body.ensureInstrsReady());
+            if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
             // successfully got back a jitted body
 
