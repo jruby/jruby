@@ -90,7 +90,7 @@ class BlockJITTask extends JITCompiler.Task {
 
     @Override
     protected void logFailed(final Throwable ex) {
-        logImpl("could not compile; passes run: " + body.getIRScope().getExecutedPasses(), ex);
+        logImpl("could not compile block; passes run: " + body.getIRScope().getExecutedPasses(), ex);
     }
 
     @Override

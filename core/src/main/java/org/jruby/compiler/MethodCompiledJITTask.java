@@ -97,7 +97,7 @@ class MethodCompiledJITTask extends JITCompiler.Task {
 
     @Override
     protected void logFailed(final Throwable ex) {
-        logImpl("could not compile; passes run: " + method.getIRScope().getExecutedPasses(), ex);
+        logImpl("could not re-compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
     }
 
     @Override
