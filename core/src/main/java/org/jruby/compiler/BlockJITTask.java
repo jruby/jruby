@@ -56,7 +56,7 @@ class BlockJITTask extends JITCompiler.Task {
         if (excludeModuleName != null) {
             body.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, "skipping block in " + excludeModuleName);
+                JITCompiler.log(body, methodName, "skipping block in " + excludeModuleName);
             }
             return;
         }
@@ -95,7 +95,7 @@ class BlockJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), methodName, message, reason);
+        JITCompiler.log(body, methodName, message, reason);
     }
 
 }

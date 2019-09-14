@@ -102,7 +102,7 @@ class MethodCompiledJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, message, reason);
+        JITCompiler.log(method, methodName, message, reason);
     }
 
 }

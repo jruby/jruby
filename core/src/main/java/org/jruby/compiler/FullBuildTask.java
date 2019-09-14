@@ -27,12 +27,11 @@ class FullBuildTask implements Runnable {
             method.completeBuild(method.getIRScope().prepareFullBuild());
 
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(), "done building"); // never logged
+                JITCompiler.log(method, method.getName(), "done building");
             }
         } catch (Throwable t) {
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
-                        "Could not build; passes run: " + method.getIRScope().getExecutedPasses(), t.toString());
+                JITCompiler.log(method, method.getName(), "could not build; passes run: " + method.getIRScope().getExecutedPasses(), t);
                 if (jitCompiler.config.isJitLoggingVerbose()) {
                     t.printStackTrace();
                 }

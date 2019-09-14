@@ -187,7 +187,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         if (task instanceof Task && config.getJitMax() >= 0 && config.getJitMax() < getSuccessCount()) {
             if (config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(), "skipping: jit.max threshold reached");
+                JITCompiler.log(method, method.getName(), "skipping: jit.max threshold reached");
             }
             return;
         }
@@ -231,13 +231,13 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    static void log(RubyModule implementationClass, String file, int line, String name, String message, Object... reason) {
-        String className = implementationClass.getName();
+    static void log(Compilable<?> target, String name, String message, Object... reason) {
+        String className = target.getImplementationClass().getName();
 
         StringBuilder builder = new StringBuilder(32);
         builder.append(message).append(": ").append(className);
         if (name != null) builder.append(' ').append(name);
-        builder.append(" at ").append(file).append(':').append(line);
+        builder.append(" at ").append(target.getFile()).append(':').append(target.getLine());
 
         if (reason.length > 0) {
             builder.append(" because of: \"");

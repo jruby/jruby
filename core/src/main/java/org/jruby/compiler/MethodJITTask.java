@@ -118,7 +118,7 @@ class MethodJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(String message, Object... reason) {
-        JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, message, reason);
+        JITCompiler.log(method, methodName, message, reason);
     }
 
     static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,
