@@ -332,20 +332,20 @@ public class IRClosure extends IRScope {
     }
 
     private static final ByteList CLOSURE_CLONE =
-            new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_', 'C', 'L', 'O', 'N', 'E', '_'});
+            new ByteList(new byte[] {'_', 'C', 'L', 'O', 'S', 'U', 'R', 'E', '_', 'C', 'L', 'O', 'N', 'E', '_'}, false);
 
     public IRClosure cloneForInlining(CloneInfo ii) {
         IRClosure clonedClosure;
         IRScope lexicalParent = ii.getScope();
 
-        if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo)ii).isEnsureBlockCloneMode()) {
+        if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo) ii).isEnsureBlockCloneMode()) {
             clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
         } else {
             int id = lexicalParent.getNextClosureId();
             ByteList fullName = lexicalParent.getByteName();
-            fullName = fullName != null ? fullName.dup() : ByteList.EMPTY_BYTELIST;
+            fullName = fullName != null ? fullName.dup() : new ByteList();
             fullName.append(CLOSURE_CLONE);
-            fullName.append(new Integer(id).toString().getBytes());
+            fullName.append(Integer.toString(id).getBytes());
             clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
         }
 
@@ -360,9 +360,7 @@ public class IRClosure extends IRScope {
     public void setByteName(ByteList name) {
         ByteList newName = getLexicalParent().getByteName();
 
-        if (newName == null) newName = new ByteList();
-
-        newName = newName.dup();
+        newName = newName == null ? new ByteList() : newName.dup();
         newName.append(name);
 
         super.setByteName(newName);
