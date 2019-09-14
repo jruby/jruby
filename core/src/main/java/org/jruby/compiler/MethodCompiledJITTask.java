@@ -91,6 +91,11 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     }
 
     @Override
+    protected String getSourceFile() {
+        return method.getFile();
+    }
+
+    @Override
     protected void logJitted() {
         logImpl("(compiled) method done jitting");
     }

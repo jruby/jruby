@@ -45,15 +45,21 @@ import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.cli.Options;
+import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -71,6 +77,8 @@ public class JITCompiler implements JITCompilerMBean {
     final Ruby runtime;
     final RubyInstanceConfig config;
 
+    final Map<String, ClassDefiningClassLoader> loaderMap; // weak valued map
+
     public JITCompiler(Ruby runtime) {
         this.runtime = runtime;
         this.config = runtime.getInstanceConfig();
@@ -82,6 +90,19 @@ public class JITCompiler implements JITCompilerMBean {
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory("Ruby-" + runtime.getRuntimeNumber() + "-JIT", Thread.MIN_PRIORITY));
+
+        switch (Options.JIT_LOADER_MODE.load()) {
+            case SHARED:
+                this.loaderMap = new SharedClassLoaderMap(new ClassDefiningJRubyClassLoader(runtime.getJRubyClassLoader()));
+                break;
+            case SHARED_SOURCE:
+                this.loaderMap = new WeakValuedMap<>();
+                break;
+            case UNIQUE:
+            default:
+                this.loaderMap = null;
+                break;
+        }
     }
 
     public long getSuccessCount() {
@@ -231,9 +252,24 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
+    ClassDefiningClassLoader getLoaderFor(final String source) {
+        if (source != null && loaderMap != null) {
+            ClassDefiningClassLoader loader = loaderMap.get(source);
+            if (loader == null) {
+                synchronized (loaderMap) {
+                    loader = loaderMap.get(source);
+                    if (loader == null) {
+                        loaderMap.put(source, loader = new ClassDefiningJRubyClassLoader(runtime.getJRubyClassLoader()));
+                    }
+                }
+            }
+            return loader;
+        }
+        return new OneShotClassLoader(runtime.getJRubyClassLoader());
+    }
+
     static void log(Compilable<?> target, String name, String message, Object... reason) {
         String className = target.getImplementationClass().getName();
-
         StringBuilder builder = new StringBuilder(32);
         builder.append(message).append(": ").append(className);
         if (name != null) builder.append(' ').append(name);
@@ -271,6 +307,10 @@ public class JITCompiler implements JITCompilerMBean {
 
         protected abstract void exec() throws Exception ;
 
+        protected String getSourceFile() {
+            return null; // unknown by default
+        }
+
         // shared helper methods :
 
         protected void jitFailed(final Throwable ex) {
@@ -285,13 +325,13 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         protected Class<?> defineClass(final JITClassGenerator generator, final JVMVisitor visitor,
-                                      final IRScope scope, final InterpreterContext interpreterContext) {
+                                       final IRScope scope, final InterpreterContext interpreterContext) {
             // FIXME: reinstate active bytecode size check
             // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
             // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
             // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
             // mechanism of getting all body sizes.
-            Class sourceClass = visitor.defineFromBytecode(scope, generator.bytecode(), getCodeLoader(jitCompiler.runtime));
+            Class sourceClass = visitor.defineFromBytecode(scope, generator.bytecode(), getCodeLoader());
 
             if (sourceClass == null) {
                 // class could not be found nor generated; give up on JIT and bail out
@@ -315,8 +355,8 @@ public class JITCompiler implements JITCompilerMBean {
             return sourceClass;
         }
 
-        ClassDefiningClassLoader getCodeLoader(final Ruby runtime) {
-            return new OneShotClassLoader(runtime.getJRubyClassLoader());
+        ClassDefiningClassLoader getCodeLoader() {
+            return jitCompiler.getLoaderFor(getSourceFile());
         }
 
         protected void logJitted() {
@@ -328,6 +368,42 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         protected abstract void logImpl(String msg, Object... cause) ;
+
+    }
+
+    // a fake (read-only) map which returns same value for whatever key
+    private static class SharedClassLoaderMap extends AbstractMap<String, ClassDefiningClassLoader> {
+
+        final ClassDefiningClassLoader value; // keeping a hard reference for the shared class-loader
+
+        SharedClassLoaderMap(ClassDefiningClassLoader value) {
+            this.value = value;
+        }
+
+        @Override
+        public ClassDefiningClassLoader get(final Object key) {
+            return value;
+        }
+
+        @Override
+        public ClassDefiningClassLoader put(String key, ClassDefiningClassLoader value) {
+            return this.value;
+        }
+
+        @Override
+        public int size() {
+            return -1; // unknown
+        }
+
+        @Override
+        public void clear() {
+            /* no-op */
+        }
+
+        @Override
+        public Set<Entry<String, ClassDefiningClassLoader>> entrySet() {
+            throw new UnsupportedOperationException();
+        }
 
     }
 
