@@ -181,7 +181,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     public RubyModule getImplementationClass() {
-        return null;
+        return closure.getStaticScope().getModule();
     }
 
 }

@@ -232,9 +232,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     static void log(RubyModule implementationClass, String file, int line, String name, String message, Object... reason) {
-        boolean isBlock = implementationClass == null;
-        String className = isBlock ? "<block>" : implementationClass.getBaseName();
-        if (className == null) className = "<anon class>";
+        String className = implementationClass.getName();
 
         StringBuilder builder = new StringBuilder(32);
         builder.append(message).append(": ").append(className);
