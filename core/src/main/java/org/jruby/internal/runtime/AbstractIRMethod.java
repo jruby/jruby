@@ -57,11 +57,14 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         // we don't synchronize callCount++ it does not matter if count isn't accurate
         if (self.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
             synchronized (self) { // disable same jit tasks from entering queue twice
-                long newTime = System.nanoTime();
-                if ((newTime - self.time) >= Options.JIT_TIME_DELTA.load()) {
-                    self.callCount = 0;
-                    self.time = newTime;
-                    return;
+                final long timeDelta;
+                if ((timeDelta = runtime.getInstanceConfig().getJitTimeDelta()) >= 0) {
+                    long newTime = System.nanoTime();
+                    if ((newTime - self.time) >= timeDelta) {
+                        self.callCount = 0;
+                        self.time = newTime;
+                        return;
+                    }
                 }
 
                 if (self.callCount >= 0) {

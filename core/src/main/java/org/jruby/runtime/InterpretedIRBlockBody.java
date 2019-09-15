@@ -158,11 +158,14 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         // we don't synchronize callCount++ it does not matter if count isn't accurate
         if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
             synchronized (this) { // disable same jit tasks from entering queue twice
-                long newTime = System.nanoTime();
-                if ((newTime - time) >= Options.JIT_TIME_DELTA.load()) {
-                    callCount = 0;
-                    time = newTime;
-                    return;
+                final long timeDelta;
+                if ((timeDelta = runtime.getInstanceConfig().getJitTimeDelta()) >= 0) {
+                    long newTime = System.nanoTime();
+                    if ((newTime - this.time) >= timeDelta) {
+                        this.callCount = 0;
+                        this.time = newTime;
+                        return;
+                    }
                 }
 
                 if (this.callCount >= 0) {
