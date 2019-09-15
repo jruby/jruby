@@ -273,7 +273,7 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "rand", meta = true, optional = 1)
+    @JRubyMethod(name = "rand", alias = "random_number", meta = true, optional = 1)
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) return randFloat(context, random);
@@ -315,12 +315,12 @@ public class RubyRandom extends RubyObject {
         return (args.length == 0) ? rand(context) : rand(context, args[0]);
     }
 
-    @JRubyMethod(name = "rand")
+    @JRubyMethod(name = "rand", alias = "random_number")
     public IRubyObject rand(ThreadContext context) {
         return randFloat(context, random);
     }
 
-    @JRubyMethod(name = "rand")
+    @JRubyMethod(name = "rand", alias = "random_number")
     public IRubyObject rand(ThreadContext context, IRubyObject arg) {
         return randomRand(context, arg, random);
     }
