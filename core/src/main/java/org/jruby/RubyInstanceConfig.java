@@ -1894,6 +1894,10 @@ public class RubyInstanceConfig {
                 return Opcodes.V10;
             case "11" :
                 return Opcodes.V11;
+            case "12" :
+                return Opcodes.V12;
+            case "13" :
+                return Opcodes.V13;
         }
     }
 
