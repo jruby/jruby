@@ -2532,14 +2532,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void SValue(SValue svalue) {
+        jvmMethod().loadContext();
         visit(svalue.getArray());
-        jvmAdapter().dup();
-        jvmAdapter().instance_of(p(RubyArray.class));
-        org.objectweb.asm.Label after = new org.objectweb.asm.Label();
-        jvmAdapter().iftrue(after);
-        jvmAdapter().pop();
-        jvmMethod().pushNil();
-        jvmAdapter().label(after);
+        jvmMethod().invokeIRHelper("svalue", sig(IRubyObject.class, ThreadContext.class, Object.class));
     }
 
     @Override
