@@ -169,7 +169,7 @@ public class Bootstrap {
         return new ConstantCallSite(constant(ByteList.class, bytelist(value, encodingName)));
     }
 
-    private static ByteList bytelist(String value, String encodingName) {
+    public static ByteList bytelist(String value, String encodingName) {
         Encoding encoding;
         EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
         if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());

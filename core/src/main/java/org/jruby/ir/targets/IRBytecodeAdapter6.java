@@ -96,8 +96,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     public void pushRegexp(ByteList source, int options) {
         loadContext();
-        pushByteList(source);
-        adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class), RegexpObjectSite.BOOTSTRAP, options);
+        adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class), RegexpObjectSite.BOOTSTRAP, RubyEncoding.decodeISO(source), source.getEncoding().toString(), options);
     }
 
     public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
