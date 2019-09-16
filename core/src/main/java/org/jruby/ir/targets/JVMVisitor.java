@@ -2119,37 +2119,31 @@ public class JVMVisitor extends IRVisitor {
                 switch (location) {
                     case 0:
                         storeValue.visit(this);
-                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZero", sig(IRubyObject.class, IRubyObject.class));
-                        m.adapter.pop();
+                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueZeroDepthZeroVoid", sig(void.class, IRubyObject.class));
                         return;
                     case 1:
                         storeValue.visit(this);
-                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueOneDepthZero", sig(IRubyObject.class, IRubyObject.class));
-                        m.adapter.pop();
+                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueOneDepthZeroVoid", sig(void.class, IRubyObject.class));
                         return;
                     case 2:
                         storeValue.visit(this);
-                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueTwoDepthZero", sig(IRubyObject.class, IRubyObject.class));
-                        m.adapter.pop();
+                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueTwoDepthZeroVoid", sig(void.class, IRubyObject.class));
                         return;
                     case 3:
                         storeValue.visit(this);
-                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZero", sig(IRubyObject.class, IRubyObject.class));
-                        m.adapter.pop();
+                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueThreeDepthZeroVoid", sig(void.class, IRubyObject.class));
                         return;
                     default:
                         storeValue.visit(this);
                         m.adapter.pushInt(location);
-                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueDepthZero", sig(IRubyObject.class, IRubyObject.class, int.class));
-                        m.adapter.pop();
+                        m.adapter.invokevirtual(p(DynamicScope.class), "setValueDepthZeroVoid", sig(void.class, IRubyObject.class, int.class));
                         return;
                 }
             default:
                 m.adapter.pushInt(location);
                 storeValue.visit(this);
                 m.adapter.pushInt(depth);
-                m.adapter.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, int.class, IRubyObject.class, int.class));
-                m.adapter.pop();
+                m.adapter.invokevirtual(p(DynamicScope.class), "setValueVoid", sig(void.class, int.class, IRubyObject.class, int.class));
         }
     }
 
