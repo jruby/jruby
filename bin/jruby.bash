@@ -193,7 +193,7 @@ JRUBY_SHELL=/bin/sh
 
 CP_DELIMITER=":"
 
-# add main jruby jar to the bootclasspath
+# add main jruby jar to the classpath
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
       continue
