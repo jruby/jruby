@@ -2008,12 +2008,30 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    @Interp @JIT
+    @Interp
     public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
         DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
         if (newScope != null) {
             context.pushScope(newScope);
         }
+        return newScope;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeNew(ThreadContext context, Block block) {
+        DynamicScope newScope = block.allocScope(block.getBinding().getDynamicScope());
+
+        context.pushScope(newScope);
+
+        return newScope;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeReuse(ThreadContext context, Block block) {
+        DynamicScope newScope = block.getBinding().getDynamicScope();
+
+        context.pushScope(newScope);
+
         return newScope;
     }
 

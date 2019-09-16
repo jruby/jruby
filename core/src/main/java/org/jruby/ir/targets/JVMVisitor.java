@@ -1663,15 +1663,27 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void PushBlockBindingInstr(PushBlockBindingInstr instr) {
         IRScope scope = jvm.methodData().scope;
+
         // FIXME: Centralize this out of InterpreterContext
         boolean reuseParentDynScope = scope.getExecutionContext().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         boolean pushNewDynScope = !scope.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
 
-        jvmMethod().loadContext();
-        jvmMethod().loadSelfBlock();
-        jvmAdapter().ldc(pushNewDynScope);
-        jvmAdapter().ldc(reuseParentDynScope);
-        jvmMethod().invokeIRHelper("pushBlockDynamicScopeIfNeeded", sig(DynamicScope.class, ThreadContext.class, Block.class, boolean.class, boolean.class));
+        if (pushNewDynScope) {
+            if (reuseParentDynScope) {
+                throw new NotCompilableException("BUG: both create new scope and reuse parent scope specified");
+            } else {
+                jvmMethod().loadContext();
+                jvmMethod().loadSelfBlock();
+                jvmMethod().invokeIRHelper("pushBlockDynamicScopeNew", sig(DynamicScope.class, ThreadContext.class, Block.class));
+            }
+        } else if (reuseParentDynScope) {
+            jvmMethod().loadContext();
+            jvmMethod().loadSelfBlock();
+            jvmMethod().invokeIRHelper("pushBlockDynamicScopeReuse", sig(DynamicScope.class, ThreadContext.class, Block.class));
+        } else {
+            jvmAdapter().aconst_null();
+        }
+
         jvmStoreLocal(DYNAMIC_SCOPE);
     }
 
@@ -1679,8 +1691,7 @@ public class JVMVisitor extends IRVisitor {
     public void PushBlockFrameInstr(PushBlockFrameInstr instr) {
         jvmMethod().loadContext();
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
-        jvmAdapter().invokevirtual(p(ThreadContext.class), "preYieldNoScope", sig(Frame.class, Binding.class));
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "preYieldNoScope", sig(Frame.class, Block.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1700,10 +1711,8 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().loadContext();
             jvmMethod().loadStaticScope();
-            jvmAdapter().invokestatic(p(DynamicScope.class), "newDynamicScope", sig(DynamicScope.class, StaticScope.class));
-            jvmAdapter().dup();
+            jvmAdapter().invokevirtual(p(ThreadContext.class), "pushNewScope", sig(DynamicScope.class, StaticScope.class));
             jvmStoreLocal(DYNAMIC_SCOPE);
-            jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void pushScope(org.jruby.runtime.DynamicScope)"));
         }
     }
 

@@ -327,6 +327,13 @@ public final class ThreadContext {
         }
     }
 
+    @JIT
+    public DynamicScope pushNewScope(StaticScope staticScope) {
+        DynamicScope scope = staticScope.construct(null);
+        pushScope(scope);
+        return scope;
+    }
+
     public void popScope() {
         scopeStack[scopeIndex--] = null;
     }
@@ -1050,6 +1057,11 @@ public final class ThreadContext {
 
     public Frame preYieldNoScope(Binding binding) {
         return pushFrameForBlock(binding);
+    }
+
+    @JIT
+    public Frame preYieldNoScope(Block block) {
+        return pushFrameForBlock(block.getBinding());
     }
 
     public void preEvalScriptlet(DynamicScope scope) {
