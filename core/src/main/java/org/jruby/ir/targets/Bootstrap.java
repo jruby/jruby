@@ -23,6 +23,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -201,6 +202,35 @@ public class Bootstrap {
             default:
                 throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
         }
+    }
+
+    public static final Handle OPEN_META_CLASS = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "openMetaClass",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class),
+            false);
+
+    @JIT
+    public static CallSite openMetaClass(Lookup lookup, String name, MethodType type, MethodHandle body, MethodHandle scope) {
+        try {
+            IRScope irScope = (IRScope) scope.invokeExact();
+            return new ConstantCallSite(
+                    Binder
+                            .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class)
+                            .append(MethodHandle.class, body)
+                            .append(IRScope.class, irScope)
+                            .invokeStaticQuiet(lookup, Bootstrap.class, "openMetaClass")
+            );
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+            return null;
+        }
+    }
+
+    @JIT
+    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, MethodHandle body, IRScope scope) {
+        return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope, object);
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {

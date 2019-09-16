@@ -43,6 +43,9 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1292,13 +1295,23 @@ public class JVMVisitor extends IRVisitor {
     public void DefineMetaClassInstr(DefineMetaClassInstr definemetaclassinstr) {
         IRModuleBody metaClassBody = definemetaclassinstr.getMetaClassBody();
 
+        Handle bodyHandle = emitModuleBody(metaClassBody);
+        Handle scopeHandle = new Handle(
+                Opcodes.H_GETSTATIC,
+                jvm.clsData().clsName,
+                bodyHandle.getName() + "_IRScope",
+                ci(IRScope.class),
+                false);
+
         jvmMethod().loadContext();
-        Handle handle = emitModuleBody(metaClassBody);
-        jvmMethod().pushHandle(handle);
-        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemetaclassinstr.getObject());
 
-        jvmMethod().invokeIRHelper("newCompiledMetaClass", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class));
+        jvmAdapter().invokedynamic(
+                "openMetaClass",
+                sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class),
+                Bootstrap.OPEN_META_CLASS,
+                bodyHandle,
+                scopeHandle);
 
         jvmStoreLocal(definemetaclassinstr.getResult());
     }
