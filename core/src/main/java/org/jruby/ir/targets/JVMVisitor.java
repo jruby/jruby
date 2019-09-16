@@ -624,9 +624,9 @@ public class JVMVisitor extends IRVisitor {
             // no need to unbox
             visit(arg1);
             jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
-        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isTrue()) || arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+        } else if (arg1.isTruthyImmediate()) {
             // always true, don't branch
-        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isFalse()) || arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isFalse()) || (arg1 instanceof Nil)) {
             // always false, always branch
             jvmAdapter().go_to(getJVMLabel(bFalseInstr.getJumpTarget()));
         } else {
@@ -906,10 +906,10 @@ public class JVMVisitor extends IRVisitor {
             // no need to unbox, just branch
             visit(arg1);
             jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
-        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isTrue()) || arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+        } else if (arg1.isTruthyImmediate()) {
             // always true, always branch
             jvmMethod().goTo(getJVMLabel(btrueinstr.getJumpTarget()));
-        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isFalse()) || arg1 instanceof UnboxedFixnum || arg1 instanceof UnboxedFloat) {
+        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isFalse()) || (arg1 instanceof Nil)) {
             // always false, never branch
         } else {
             // unbox and branch

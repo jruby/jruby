@@ -54,4 +54,9 @@ public class Complex extends ImmutableLiteral {
     public Operand getNumber() {
         return number;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

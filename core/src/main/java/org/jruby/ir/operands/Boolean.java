@@ -62,4 +62,9 @@ public class Boolean extends ImmutableLiteral {
     public String toString() {
         return isTrue() ? "true" : "false";
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return truthy;
+    }
 }

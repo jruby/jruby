@@ -82,4 +82,9 @@ public class Fixnum extends ImmutableLiteral {
     public String toString() {
         return "Fixnum:" + value;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }
