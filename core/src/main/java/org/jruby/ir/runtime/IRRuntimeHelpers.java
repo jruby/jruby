@@ -2244,7 +2244,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public void aliasGlobalVariable(Ruby runtime, Object newName, Object oldName) {
+    public static void aliasGlobalVariable(Ruby runtime, Object newName, Object oldName) {
         runtime.getGlobalVariables().alias(newName.toString(), oldName.toString());
     }
 
