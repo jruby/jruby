@@ -233,6 +233,27 @@ public class Bootstrap {
         return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope, object);
     }
 
+    public static final Handle CHECK_ARITY = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(Bootstrap.class),
+            "checkArity",
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class, int.class, int.class, int.class, int.class),
+            false);
+
+    @JIT
+    public static CallSite checkArity(Lookup lookup, String name, MethodType type, int req, int opt, int rest, int key, int keyrest) {
+        return new ConstantCallSite(
+                Binder
+                        .from(type)
+                        .append(arrayOf(int.class, int.class, int.class, int.class, int.class), arrayOf(req, opt, rest, key, keyrest))
+                        .invokeStaticQuiet(lookup, Bootstrap.class, "checkArity"));
+    }
+
+    @JIT
+    public static void checkArity(ThreadContext context, StaticScope scope, Object[] args, Block block, int req, int opt, int rest, int key, int keyrest) {
+        IRRuntimeHelpers.checkArity(context, scope, args, req, opt, rest == 0 ? false : true, key == 0 ? false : true, keyrest, block);
+    }
+
     public static CallSite array(Lookup lookup, String name, MethodType type) {
         MethodHandle handle = Binder
                 .from(type)

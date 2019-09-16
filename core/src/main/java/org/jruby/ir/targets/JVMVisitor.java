@@ -1124,14 +1124,12 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmMethod().loadStaticScope();
         jvmMethod().loadArgs();
-        // TODO: pack these, e.g. in a constant pool String
-        jvmAdapter().ldc(required);
-        jvmAdapter().ldc(opt);
-        jvmAdapter().ldc(rest);
-        jvmAdapter().ldc(receivesKeywords);
-        jvmAdapter().ldc(restKey);
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, int.class, int.class, boolean.class, boolean.class, int.class, Block.class));
+        jvmAdapter().invokedynamic(
+                "checkArity",
+                sig(void.class, ThreadContext.class, StaticScope.class, Object[].class, Block.class),
+                Bootstrap.CHECK_ARITY,
+                required, opt, rest ? 1 : 0, receivesKeywords ? 1 : 0, restKey);
     }
 
     @Override
