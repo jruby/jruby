@@ -140,7 +140,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     public void loadRuntime() {
         loadContext();
-        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
     }
 
     public void pushEncoding(Encoding encoding) {

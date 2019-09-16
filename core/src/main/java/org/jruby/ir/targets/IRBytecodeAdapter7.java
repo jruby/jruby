@@ -49,11 +49,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         super(adapter, signature, classData);
     }
 
-    public void loadRuntime() {
-        loadContext();
-        adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
-    }
-
     @Override
     public void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
