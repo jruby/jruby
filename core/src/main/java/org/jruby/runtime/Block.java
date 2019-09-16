@@ -309,6 +309,14 @@ public class Block {
         escapeBlock.escaped = true;
     }
 
+    public Visibility getVisibility() {
+        return binding.getFrame().getVisibility();
+    }
+
+    public void setVisibility(Visibility vis) {
+        binding.getFrame().setVisibility(vis);
+    }
+
     @Override
     public boolean equals(Object other) {
         if ( this == other ) return true;

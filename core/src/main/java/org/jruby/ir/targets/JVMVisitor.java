@@ -1925,10 +1925,8 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RestoreBindingVisibilityInstr(RestoreBindingVisibilityInstr instr) {
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
-        jvmAdapter().invokevirtual(p(Binding.class), "getFrame", sig(Frame.class));
         visit(instr.getVisibility());
-        jvmAdapter().invokevirtual(p(Frame.class), "setVisibility", sig(void.class, Visibility.class));
+        jvmAdapter().invokevirtual(p(Block.class), "setVisibility", sig(void.class, Visibility.class));
     }
 
     @Override
@@ -2051,9 +2049,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void SaveBindingVisibilityInstr(SaveBindingVisibilityInstr instr) {
         jvmMethod().loadSelfBlock();
-        jvmAdapter().invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
-        jvmAdapter().invokevirtual(p(Binding.class), "getFrame", sig(Frame.class));
-        jvmAdapter().invokevirtual(p(Frame.class), "getVisibility", sig(Visibility.class));
+        jvmAdapter().invokevirtual(p(Block.class), "getVisibility", sig(Visibility.class));
         jvmStoreLocal(instr.getResult());
     }
 
