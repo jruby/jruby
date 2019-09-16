@@ -1024,8 +1024,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(instr.getBegin());
         visit(instr.getEnd());
-        jvmAdapter().ldc(instr.isExclusive());
-        jvmAdapter().invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
+        jvmAdapter().invokestatic(p(RubyRange.class), instr.isExclusive() ? "newExclusiveRange" : "newInclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
         jvmStoreLocal(instr.getResult());
     }
 
