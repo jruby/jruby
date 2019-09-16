@@ -2175,16 +2175,18 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void TraceInstr(TraceInstr traceInstr) {
         jvmMethod().loadContext();
-        jvmAdapter().getstatic(p(RubyEvent.class), traceInstr.getEvent().name(), ci(RubyEvent.class));
+
         String name = traceInstr.getName();
-        if (name == null) {
-            jvmAdapter().aconst_null();
-        } else {
-            jvmAdapter().ldc(name);
-        }
-        jvmAdapter().ldc(traceInstr.getFilename());
-        jvmAdapter().ldc(traceInstr.getLinenumber());
-        jvmMethod().invokeIRHelper("callTrace", sig(void.class, ThreadContext.class, RubyEvent.class, String.class, String.class, int.class));
+        if (name == null) name = "";
+
+        jvmAdapter().invokedynamic(
+                "callTrace",
+                sig(void.class, ThreadContext.class),
+                CallTraceSite.BOOTSTRAP,
+                traceInstr.getEvent().getName(),
+                name,
+                traceInstr.getFilename(),
+                traceInstr.getLinenumber());
     }
 
     @Override
