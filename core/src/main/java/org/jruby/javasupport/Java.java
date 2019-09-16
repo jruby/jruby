@@ -922,6 +922,7 @@ public class Java implements Library {
             }
             catch (RuntimeException e) {
                 if ( e instanceof RaiseException ) throw e;
+                if (runtime.isDebug()) e.printStackTrace();
                 throw runtime.newNameError("missing class or uppercase package name (`" + fullName + "'), caused by " + e.getMessage(), fullName);
             }
         }

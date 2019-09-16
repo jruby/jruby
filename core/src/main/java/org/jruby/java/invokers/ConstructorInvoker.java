@@ -3,6 +3,8 @@ package org.jruby.java.invokers;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.util.List;
+import java.util.function.Supplier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -16,11 +18,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
 public final class ConstructorInvoker extends RubyToJavaInvoker {
-
-    private static final Constructor[] EMPTY_ARRAY = new Constructor[0];
-
-    public ConstructorInvoker(RubyModule host, List<Constructor> ctors, String name) {
-        super(host, setAccessible(ctors.toArray(EMPTY_ARRAY)), name);
+    public ConstructorInvoker(RubyModule host, Supplier<Constructor[]> ctors, String name) {
+        super(host, () -> setAccessible(ctors.get()), name);
     }
 
     @Override
