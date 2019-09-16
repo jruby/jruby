@@ -2060,8 +2060,11 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ToggleBacktraceInstr(ToggleBacktraceInstr instr) {
         jvmMethod().loadContext();
-        jvmAdapter().pushBoolean(instr.requiresBacktrace());
-        jvmAdapter().invokevirtual(p(ThreadContext.class), "setExceptionRequiresBacktrace", sig(void.class, boolean.class));
+        if (instr.requiresBacktrace()) {
+            jvmAdapter().invokevirtual(p(ThreadContext.class), "exceptionBacktraceOn", sig(void.class));
+        } else {
+            jvmAdapter().invokevirtual(p(ThreadContext.class), "exceptionBacktraceOff", sig(void.class));
+        }
     }
 
     @Override

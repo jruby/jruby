@@ -52,6 +52,7 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.JIT;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -1214,6 +1215,16 @@ public final class ThreadContext {
 
     public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
+    }
+
+    @JIT
+    public void exceptionBacktraceOn() {
+        this.exceptionRequiresBacktrace = true;
+    }
+
+    @JIT
+    public void exceptionBacktraceOff() {
+        this.exceptionRequiresBacktrace = false;
     }
 
     private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
