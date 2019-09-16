@@ -179,6 +179,24 @@ public final class Frame {
     /**
      * Update the frame based on the given values.
      *
+     * @param klazz The class against which the method is being called
+     * @param self The 'self' for the method
+     * @param name The name under which the method is being invoked
+     * @param block The block passed to the method
+     */
+    public void updateFrame(RubyModule klazz, IRubyObject self, String name, Visibility visibility, Block block) {
+        block.getClass(); // null check
+
+        this.self = self;
+        this.name = name;
+        this.klazz = klazz;
+        this.block = block;
+        this.visibility = visibility;
+    }
+
+    /**
+     * Update the frame based on the given values.
+     *
      * @param self The 'self' for the method
      */
     public void updateFrameForEval(IRubyObject self) {

@@ -383,8 +383,12 @@ public class InterpreterEngine {
                 context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
-                context.preMethodFrameOnly(implClass, name, self, blockArg);
-                context.setCurrentVisibility(((PushMethodFrameInstr) instr).getVisibility());
+                context.preMethodFrameOnly(
+                        implClass,
+                        name,
+                        self,
+                        ((PushMethodFrameInstr) instr).getVisibility(),
+                        blockArg);
                 break;
             case PUSH_BACKREF_FRAME:
                 context.preBackrefMethod();

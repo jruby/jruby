@@ -463,6 +463,16 @@ public final class ThreadContext {
         }
     }
 
+    private void pushCallFrame(RubyModule clazz, String name,
+                               IRubyObject self, Visibility visibility, Block block) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(clazz, self, name, visibility, block);
+        if (index + 1 == stack.length) {
+            expandFrameStack();
+        }
+    }
+
     private void pushBackrefFrame() {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
@@ -936,6 +946,10 @@ public final class ThreadContext {
 
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block) {
         pushCallFrame(clazz, name, self, block);
+    }
+
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Visibility visiblity, Block block) {
+        pushCallFrame(clazz, name, self, visiblity, block);
     }
 
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self) {

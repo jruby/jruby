@@ -1721,14 +1721,13 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadFrameClass();
         jvmMethod().loadFrameName();
         jvmMethod().loadSelf();
-        jvmMethod().loadBlock();
-        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameOnly(org.jruby.RubyModule, String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block)"));
 
         // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
         // See also CompiledIRMethod.call
-        jvmMethod().loadContext();
         jvmAdapter().getstatic(p(Visibility.class), pushframeinstr.getVisibility().name(), ci(Visibility.class));
-        jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
+
+        jvmMethod().loadBlock();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "preMethodFrameOnly", sig(void.class, RubyModule.class, String.class, IRubyObject.class, Visibility.class, Block.class));
     }
 
     @Override
