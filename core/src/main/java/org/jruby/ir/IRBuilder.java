@@ -560,7 +560,7 @@ public class IRBuilder {
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody, scope.getFile(), node.getLine()));
+        addInstr(new BuildLambdaInstr(lambda, lambdaBody));
         return lambda;
     }
 

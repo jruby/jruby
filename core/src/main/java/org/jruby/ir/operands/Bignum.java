@@ -65,4 +65,9 @@ public class Bignum extends ImmutableLiteral {
     public String toString() {
         return "Bignum:" + value;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

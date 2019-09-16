@@ -49,84 +49,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         super(adapter, signature, classData);
     }
 
-    public void pushFixnum(long l) {
-        loadContext();
-        adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), FixnumObjectSite.BOOTSTRAP, l);
-    }
-
-    public void pushFloat(double d) {
-        loadContext();
-        adapter.invokedynamic("flote", sig(JVM.OBJECT, ThreadContext.class), FloatObjectSite.BOOTSTRAP, d);
-    }
-
-    public void pushString(ByteList bl, int cr) {
-        loadContext();
-        adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), Bootstrap.string(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr);
-    }
-
-    public void pushFrozenString(ByteList bl, int cr, String file, int line) {
-        loadContext();
-        adapter.invokedynamic("frozen", sig(RubyString.class, ThreadContext.class), Bootstrap.fstring(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString(), cr, file, line);
-    }
-
-    public void pushByteList(ByteList bl) {
-        adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), RubyEncoding.decodeISO(bl), bl.getEncoding().toString());
-    }
-
-    public void pushRegexp(ByteList source, int options) {
-        loadContext();
-        pushByteList(source);
-        adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class), RegexpObjectSite.BOOTSTRAP, options);
-    }
-
-    public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
-        if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
-
-        String cacheField = null;
-        Label done = null;
-
-        if (options.isOnce()) {
-            // need to cache result forever
-            cacheField = "dregexp" + getClassData().cacheFieldCount.getAndIncrement();
-            done = new Label();
-            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
-            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
-            adapter.dup();
-            adapter.ifnonnull(done);
-            adapter.pop();
-        }
-
-        // We may evaluate these operands multiple times or the upstream instrs that created them, which is a bug (jruby/jruby#2798).
-        // However, only one dregexp will ever come out of the indy call.
-        callback.run();
-        adapter.invokedynamic("dregexp", sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity)), DRegexpObjectSite.BOOTSTRAP, options.toEmbeddedOptions());
-
-        if (done != null) {
-            adapter.dup();
-            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
-            adapter.label(done);
-        }
-    }
-
-    /**
-     * Push a symbol on the stack
-     * @param sym the symbol's string identifier
-     */
-    public void pushSymbol(String sym, Encoding encoding) {
-        loadContext();
-        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), SymbolObjectSite.BOOTSTRAP, sym, new String(encoding.getName()));
-    }
-
-    public void loadRuntime() {
-        loadContext();
-        adapter.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), Bootstrap.contextValue());
-    }
-
-    public void pushEncoding(Encoding encoding) {
-        loadContext();
-        adapter.invokedynamic("encoding", sig(RubyEncoding.class, ThreadContext.class), Bootstrap.contextValueString(), new String(encoding.getName()));
-    }
-
     @Override
     public void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
@@ -277,21 +199,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
         }
     }
 
-    public void pushNil() {
-        loadContext();
-        adapter.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
-    }
-
-    public void pushBoolean(boolean b) {
-        loadContext();
-        adapter.invokedynamic(b ? "True" : "False", sig(IRubyObject.class, ThreadContext.class), Bootstrap.contextValue());
-    }
-
-    public void pushBignum(BigInteger bigint) {
-        loadContext();
-        adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint.toString());
-    }
-
     public void putField(String name) {
         adapter.invokedynamic("ivarSet:" + JavaNameMangler.mangleMethodName(name), sig(void.class, IRubyObject.class, IRubyObject.class), VariableSite.IVAR_ASM_HANDLE);
     }
@@ -330,18 +237,6 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 "checkpoint",
                 sig(void.class, ThreadContext.class),
                 Bootstrap.checkpointHandle());
-    }
-
-    @Override
-    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
-        Handle scopeHandle = new Handle(
-                Opcodes.H_GETSTATIC,
-                getClassData().clsName,
-                handle.getName() + "_IRScope",
-                ci(IRScope.class),
-                false);
-        long encodedSignature = signature.encode();
-        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
     }
 
     @Override

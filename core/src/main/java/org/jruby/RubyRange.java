@@ -124,6 +124,14 @@ public class RubyRange extends RubyObject {
         return range;
     }
 
+    public static RubyRange newInclusiveRange(ThreadContext context, IRubyObject begin, IRubyObject end) {
+        return newRange(context, begin, end, false);
+    }
+
+    public static RubyRange newExclusiveRange(ThreadContext context, IRubyObject begin, IRubyObject end) {
+        return newRange(context, begin, end, true);
+    }
+
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyRange range = (RubyRange) clone;

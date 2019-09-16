@@ -52,6 +52,7 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.JIT;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -326,6 +327,13 @@ public final class ThreadContext {
         }
     }
 
+    @JIT
+    public DynamicScope pushNewScope(StaticScope staticScope) {
+        DynamicScope scope = staticScope.construct(null);
+        pushScope(scope);
+        return scope;
+    }
+
     public void popScope() {
         scopeStack[scopeIndex--] = null;
     }
@@ -457,6 +465,16 @@ public final class ThreadContext {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
         stack[index].updateFrame(clazz, self, name, block);
+        if (index + 1 == stack.length) {
+            expandFrameStack();
+        }
+    }
+
+    private void pushCallFrame(RubyModule clazz, String name,
+                               IRubyObject self, Visibility visibility, Block block) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(clazz, self, name, visibility, block);
         if (index + 1 == stack.length) {
             expandFrameStack();
         }
@@ -937,6 +955,10 @@ public final class ThreadContext {
         pushCallFrame(clazz, name, self, block);
     }
 
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Visibility visiblity, Block block) {
+        pushCallFrame(clazz, name, self, visiblity, block);
+    }
+
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self) {
         pushCallFrame(clazz, name, self, Block.NULL_BLOCK);
     }
@@ -1035,6 +1057,11 @@ public final class ThreadContext {
 
     public Frame preYieldNoScope(Binding binding) {
         return pushFrameForBlock(binding);
+    }
+
+    @JIT
+    public Frame preYieldNoScope(Block block) {
+        return pushFrameForBlock(block.getBinding());
     }
 
     public void preEvalScriptlet(DynamicScope scope) {
@@ -1214,6 +1241,16 @@ public final class ThreadContext {
 
     public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
+    }
+
+    @JIT
+    public void exceptionBacktraceOn() {
+        this.exceptionRequiresBacktrace = true;
+    }
+
+    @JIT
+    public void exceptionBacktraceOff() {
+        this.exceptionRequiresBacktrace = false;
     }
 
     private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;

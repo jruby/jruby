@@ -1,6 +1,5 @@
 package org.jruby.ir.targets;
 
-import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
 import org.jruby.RubySymbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -17,14 +16,11 @@ import java.lang.invoke.MethodType;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
-/**
-* Created by headius on 10/23/14.
-*/
-public class SymbolObjectSite extends LazyObjectSite {
+public class SymbolProcObjectSite extends LazyObjectSite {
     private final String value;
     private final String encoding;
 
-    public SymbolObjectSite(MethodType type, String value, String encoding) {
+    public SymbolProcObjectSite(MethodType type, String value, String encoding) {
         super(type);
 
         this.value = value;
@@ -33,20 +29,21 @@ public class SymbolObjectSite extends LazyObjectSite {
 
     public static final Handle BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
-            p(SymbolObjectSite.class),
+            p(SymbolProcObjectSite.class),
             "bootstrap",
             sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class),
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encoding) {
-        return new SymbolObjectSite(type, value, encoding).bootstrap(lookup);
+        return new SymbolProcObjectSite(type, value, encoding).bootstrap(lookup);
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime,
+        RubySymbol symbol = RubySymbol.newSymbol(context.runtime,
                 new ByteList(
                         RubyEncoding.encodeISO(value),
                         IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding),
                         false));
+        return IRRuntimeHelpers.newSymbolProc(context, symbol);
     }
 }
