@@ -883,13 +883,12 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return Helpers.getLastLine(runtime, runtime.getCurrentContext());
+            return runtime.getCurrentContext().getLastLine();
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            Helpers.setLastLine(runtime, runtime.getCurrentContext(), value);
-            return value;
+            return runtime.getCurrentContext().setLastLine(value);
         }
     }
 
