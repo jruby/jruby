@@ -2243,6 +2243,11 @@ public class IRRuntimeHelpers {
         return (val instanceof RubyArray) ? (RubyArray) val : context.nil;
     }
 
+    @JIT
+    public void aliasGlobalVariable(Ruby runtime, Object newName, Object oldName) {
+        runtime.getGlobalVariables().alias(newName.toString(), oldName.toString());
+    }
+
     private static IRRuntimeHelpersSites sites(ThreadContext context) {
         return context.sites.IRRuntimeHelpers;
     }
