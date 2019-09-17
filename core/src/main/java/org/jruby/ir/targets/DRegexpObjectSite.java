@@ -64,15 +64,25 @@ public class DRegexpObjectSite extends ConstructObjectSite {
                 .binder();
     }
 
+    @Override
+    public String initialTarget() {
+        if (options.isOnce()) return "constructOnce";
+
+        return super.initialTarget();
+    }
+
     // dynamic regexp
     public RubyRegexp construct(ThreadContext context, RubyString[] pieces) {
         RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
-        if (!options.isOnce()) {
-            return re;
-        }
+        return re;
+    }
+
+    // dynamic regexp cached once
+    public RubyRegexp constructOnce(ThreadContext context, RubyString[] pieces) {
+        RubyRegexp re = construct(context, pieces);
 
         // permanently set target to new regexp iff we are the first to assign it
         if (CACHE_UPDATER.compareAndSet(this, null, re)) {
@@ -83,6 +93,5 @@ public class DRegexpObjectSite extends ConstructObjectSite {
 
         // cache was assigned on another thread, re-get cache and return
         return this.cache;
-
     }
 }
