@@ -223,7 +223,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
         }
-        
+
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, arg2, block);
     }
 
