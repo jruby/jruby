@@ -585,6 +585,13 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @return true if JIT compilation is enabled
+     */
+    public boolean isJitEnabled() {
+        return getJitThreshold() >= 0 && getCompileMode().shouldJIT();
+    }
+
+    /**
      * @see Options#LAUNCH_INPROC
      */
     public boolean isRunRubyInProcess() {

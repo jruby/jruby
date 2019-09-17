@@ -1,6 +1,7 @@
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
+import java.io.ByteArrayOutputStream;
+
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
@@ -14,11 +15,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
 
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
@@ -28,26 +26,15 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
-    protected InterpreterContext interpreterContext = null;
-    protected int callCount = 0;
-
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
 
-        // -1 jit.threshold is way of having interpreter not promote full builds.
-        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
-
-        // If we are printing, do the build right at creation time so we can see it
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
-            ensureInstrsReady();
-        }
+        // -1 jit.threshold is way of having interpreter not promote full builds
+        // regardless of compile mode (even when OFF full-builds are promoted)
+        if (implementationClass.getRuntime().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
 
         // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
         method.compilable = this;
-    }
-
-    public void setCallCount(int callCount) {
-        this.callCount = callCount;
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {
@@ -127,7 +114,6 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, block);
     }
 
@@ -136,7 +122,6 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
-
         return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, Block.NULL_BLOCK);
     }
 
@@ -292,13 +277,9 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
     private void promoteToFullBuild(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        tryJit(context, this);
 
-        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return;   // don't Promote to full build during runtime boot
-
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) runtime.getJITCompiler().buildThresholdReached(context, this);
-
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
+        if (IRRuntimeHelpers.shouldPrintIR(context.runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(method, true, true);
 
             LOG.info("Printing full IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));

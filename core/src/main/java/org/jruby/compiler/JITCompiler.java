@@ -36,10 +36,16 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.targets.JVMVisitor;
+import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -177,24 +183,28 @@ public class JITCompiler implements JITCompilerMBean {
     public void buildThresholdReached(ThreadContext context, final Compilable method) {
         final RubyInstanceConfig config = context.runtime.getInstanceConfig();
 
-        // Disable any other jit tasks from entering queue
-        method.setCallCount(-1);
+        final Runnable task = getTaskFor(context, method);
 
-        Runnable jitTask = getTaskFor(context, method);
+        if (task instanceof Task && config.getJitMax() >= 0 && config.getJitMax() < getSuccessCount()) {
+            if (config.isJitLogging()) {
+                JITCompiler.log(method, method.getName(), "skipping: jit.max threshold reached");
+            }
+            return;
+        }
 
         try {
             if (config.getJitBackground() && config.getJitThreshold() > 0) {
                 try {
-                    executor.submit(jitTask);
+                    executor.submit(task);
                 } catch (RejectedExecutionException ree) {
                     // failed to submit, just run it directly
-                    jitTask.run();
+                    task.run();
                 }
             } else {
                 // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
                 method.ensureInstrsReady();
                 // just run directly
-                jitTask.run();
+                task.run();
             }
         } catch (Exception e) {
             throw new NotCompilableException(e);
@@ -221,22 +231,104 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
-        boolean isBlock = implementationClass == null;
-        String className = isBlock ? "<block>" : implementationClass.getBaseName();
-        if (className == null) className = "<anon class>";
+    static void log(Compilable<?> target, String name, String message, Object... reason) {
+        String className = target.getImplementationClass().getName();
 
         StringBuilder builder = new StringBuilder(32);
-        builder.append(message).append(": ").append(className)
-               .append(' ').append(name == null ? "" : name)
-               .append(" at ").append(file).append(':').append(line);
+        builder.append(message).append(": ").append(className);
+        if (name != null) builder.append(' ').append(name);
+        builder.append(" at ").append(target.getFile()).append(':').append(target.getLine());
 
         if (reason.length > 0) {
             builder.append(" because of: \"");
-            for (String aReason : reason) builder.append(aReason);
+            for (Object aReason : reason) builder.append(aReason);
             builder.append('"');
         }
 
         LOG.info(builder.toString());
     }
+
+    static abstract class Task implements Runnable {
+
+        protected final JITCompiler jitCompiler;
+
+        public Task(JITCompiler jitCompiler) {
+            this.jitCompiler = jitCompiler;
+        }
+
+        public void run() {
+            // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
+            // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
+            // See #4739 for a reproduction script that produced various errors without this.
+            synchronized (jitCompiler) {
+                try {
+                    exec();
+                } catch (Throwable ex) {
+                    jitFailed(ex);
+                }
+            }
+        }
+
+        protected abstract void exec() throws Exception ;
+
+        // shared helper methods :
+
+        protected void jitFailed(final Throwable ex) {
+            if (jitCompiler.config.isJitLogging()) {
+                logFailed(ex);
+                if (jitCompiler.config.isJitLoggingVerbose()) {
+                    ex.printStackTrace();
+                }
+            }
+
+            jitCompiler.counts.failCount.incrementAndGet();
+        }
+
+        protected Class<?> defineClass(final JITClassGenerator generator, final JVMVisitor visitor,
+                                      final IRScope scope, final InterpreterContext interpreterContext) {
+            // FIXME: reinstate active bytecode size check
+            // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
+            // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
+            // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
+            // mechanism of getting all body sizes.
+            Class sourceClass = visitor.defineFromBytecode(scope, generator.bytecode(), getCodeLoader(jitCompiler.runtime));
+
+            if (sourceClass == null) {
+                // class could not be found nor generated; give up on JIT and bail out
+                jitCompiler.counts.failCount.incrementAndGet();
+                return null;
+            }
+            generator.updateCounters(jitCompiler.counts, interpreterContext);
+
+            // successfully got back a jitted method/block
+            long methodCount = jitCompiler.counts.successCount.incrementAndGet();
+
+            if (jitCompiler.config.isJitLogging()) logJitted();
+
+            // logEvery n methods based on configuration
+            if (jitCompiler.config.getJitLogEvery() > 0) {
+                if (methodCount % jitCompiler.config.getJitLogEvery() == 0) {
+                    logImpl("live compiled count: " + methodCount);
+                }
+            }
+
+            return sourceClass;
+        }
+
+        ClassDefiningClassLoader getCodeLoader(final Ruby runtime) {
+            return new OneShotClassLoader(runtime.getJRubyClassLoader());
+        }
+
+        protected void logJitted() {
+            logImpl("done jitting");
+        }
+
+        protected void logFailed(Throwable ex) {
+            logImpl("could not compile", ex);
+        }
+
+        protected abstract void logImpl(String msg, Object... cause) ;
+
+    }
+
 }
