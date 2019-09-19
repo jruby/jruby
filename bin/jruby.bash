@@ -49,7 +49,7 @@ function add_log() {
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
-unset jruby_java_opts_from_files
+unset java_opts_from_files
 function process_java_opts {
   java_opts_file=$1
   if [[ -r $java_opts_file ]]; then
@@ -174,6 +174,7 @@ fi
 # * user directory .jruby.java_opts
 # * current directory .jruby.java_opts
 # * dev mode options from bin/.dev_mode.java_opts, if --dev is specified
+# * module options from bin/.jruby.module_opts if modules are detected
 # * JAVA_OPTS environment variable
 # * command line flags
 
@@ -307,11 +308,11 @@ do
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
             $JAVACMD -help
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-X" ]; then
             $JAVACMD -X
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-classpath" ]; then
             CP="$CP$CP_DELIMITER$2"
@@ -365,7 +366,7 @@ do
           else
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
-        fi 
+        fi
         JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
         java_args=("${java_args[@]}" "-sourcepath" "$JDB_SOURCEPATH")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
