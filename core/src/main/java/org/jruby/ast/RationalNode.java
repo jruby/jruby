@@ -37,7 +37,7 @@ public class RationalNode extends NumericNode implements SideEffectFree {
 
     @Override
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Node.createList(numerator, denominator);
     }
 
     @Override
