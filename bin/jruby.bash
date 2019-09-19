@@ -116,6 +116,8 @@ add_log "  $BASH_SOURCE"
 command_line_options="$@"
 add_log "JRuby command line options:"
 add_log "  $command_line_options"
+add_log "Current directory:"
+add_log "  $(pwd)"
 
 add_log
 add_log "Environment:"
