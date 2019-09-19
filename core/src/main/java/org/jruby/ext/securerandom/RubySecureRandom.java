@@ -93,12 +93,12 @@ public class RubySecureRandom {
         return bytes;
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, name = {"random_number", "rand"})
     public static IRubyObject random_number(ThreadContext context, IRubyObject self) {
         return randomDouble(context);
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, name = {"random_number", "rand"})
     public static IRubyObject random_number(ThreadContext context, IRubyObject self, IRubyObject n) {
         if (n instanceof RubyFixnum) {
             final long bound = ((RubyFixnum) n).getLongValue();

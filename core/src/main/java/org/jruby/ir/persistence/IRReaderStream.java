@@ -258,7 +258,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case CHECK_FOR_LJE: return CheckForLJEInstr.decode(this);
             case CLASS_SUPER: return ClassSuperInstr.decode(this);
             case CLASS_VAR_MODULE: return GetClassVarContainerModuleInstr.decode(this);
-            case CONST_MISSING: return ConstMissingInstr.decode(this);
             case COPY: return CopyInstr.decode(this);
             case DEF_CLASS: return DefineClassInstr.decode(this);
             case DEF_CLASS_METH: return DefineClassMethodInstr.decode(this);

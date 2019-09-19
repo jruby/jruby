@@ -151,6 +151,10 @@ public class RubyComplex extends RubyNumeric {
         return new RubyComplex(runtime, runtime.getComplex(), x, RubyFixnum.zero(runtime));
     }
 
+    public static RubyComplex newComplexRawImage(Ruby runtime, IRubyObject image) {
+        return new RubyComplex(runtime, runtime.getComplex(), RubyFixnum.zero(runtime), image);
+    }
+
     /** rb_complex_new1
      * 
      */

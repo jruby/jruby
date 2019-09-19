@@ -82,7 +82,7 @@ abstract class ClassData {
     public ClassVisitor cls;
     public final String clsName;
     final Stack<MethodData> methodStack = new Stack();
-    public final AtomicInteger callSiteCount = new AtomicInteger(0);
+    public final AtomicInteger cacheFieldCount = new AtomicInteger(0);
     public final Set<Integer> arrayMethodsDefined = new HashSet(4, 1);
     public final Set<Integer> hashMethodsDefined = new HashSet(4, 1);
     public final Set<Integer> kwargsHashMethodsDefined = new HashSet(4, 1);

@@ -7,7 +7,8 @@ import org.jruby.ir.interpreter.InterpreterContext;
  * Created by headius on 12/8/16.
  */
 class FullBuildTask implements Runnable {
-    private JITCompiler jitCompiler;
+
+    private final JITCompiler jitCompiler;
     private final Compilable<InterpreterContext> method;
 
     FullBuildTask(JITCompiler jitCompiler, Compilable<InterpreterContext> method) {
@@ -26,12 +27,11 @@ class FullBuildTask implements Runnable {
             method.completeBuild(method.getIRScope().prepareFullBuild());
 
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(), "done building");
+                JITCompiler.log(method, method.getName(), "done building");
             }
         } catch (Throwable t) {
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
-                        "Could not build; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
+                JITCompiler.log(method, method.getName(), "could not build; passes run: " + method.getIRScope().getExecutedPasses(), t);
                 if (jitCompiler.config.isJitLoggingVerbose()) {
                     t.printStackTrace();
                 }

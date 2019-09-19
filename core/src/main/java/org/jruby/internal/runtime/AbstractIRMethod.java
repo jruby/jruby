@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.IRMethod;
@@ -33,7 +35,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected final StaticScope staticScope;
     protected InterpreterContext interpreterContext = null;
     protected int callCount = 0;
-    private MethodData methodData;
+    private transient MethodData methodData;
 
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(implementationClass, visibility, method.getId());
@@ -42,21 +44,38 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         this.staticScope.determineModule();
         this.signature = staticScope.getSignature();
 
-        // -1 jit.threshold is way of having interpreter not promote full builds.
-        if (Options.JIT_THRESHOLD.load() == -1) callCount = -1;
-
+        final Ruby runtime = implementationClass.getRuntime();
         // If we are printing, do the build right at creation time so we can see it
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
+        if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ensureInstrsReady();
+        }
+    }
+
+    public static <T extends AbstractIRMethod & Compilable> void tryJit(ThreadContext context, T self) {
+        final Ruby runtime = context.runtime;
+        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+
+        if (self.callCount < 0) return;
+        // we don't synchronize callCount++ it does not matter if count isn't accurate
+        if (self.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+            synchronized (self) { // disable same jit tasks from entering queue twice
+                if (self.callCount >= 0) {
+                    self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
+
+                    runtime.getJITCompiler().buildThresholdReached(context, self);
+                }
+            }
+        }
+    }
+
+    public final void setCallCount(int callCount) {
+        synchronized (this) {
+            this.callCount = callCount;
         }
     }
 
     public IRScope getIRScope() {
         return method;
-    }
-
-    public void setCallCount(int callCount) {
-        this.callCount = callCount;
     }
 
     public StaticScope getStaticScope() {

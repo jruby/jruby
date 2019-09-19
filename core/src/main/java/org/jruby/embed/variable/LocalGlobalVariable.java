@@ -150,8 +150,8 @@ public class LocalGlobalVariable extends GlobalVariable {
     @Override
     public void inject() {
         synchronized (getRuntime()) {
-            String gName = (name.startsWith("$") ? name : "$" + name);
-            getRuntime().getGlobalVariables().set( gName.intern(), irubyObject );
+            String name = this.name.startsWith("$") ? this.name : '$' + this.name;
+            getRuntime().getGlobalVariables().set(name, rubyObject);
         }
     }
 
@@ -163,8 +163,8 @@ public class LocalGlobalVariable extends GlobalVariable {
     @Override
     public void remove() {
         synchronized (getRuntime()) {
-            String gName = (name.startsWith("$") ? name : "$" + name);
-            getRuntime().getGlobalVariables().clear( gName.intern() );
+            String name = this.name.startsWith("$") ? this.name : '$' + this.name;
+            getRuntime().getGlobalVariables().clear(name);
         }
     }
 }

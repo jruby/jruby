@@ -86,6 +86,7 @@ import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
@@ -650,6 +651,7 @@ public class RubyKernel {
         final long startTime = System.currentTimeMillis();
         final RubyThread rubyThread = context.getThread();
 
+        boolean interrupted = false;
         try {
             // Spurious wakeup-loop
             do {
@@ -661,6 +663,11 @@ public class RubyKernel {
             } while (milliseconds > 0);
         } catch (InterruptedException ie) {
             // ignore; sleep gets interrupted
+            interrupted = true;
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
@@ -1087,8 +1094,14 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerInternal(ThreadContext context, IRubyObject recv, IRubyObject level, IRubyObject length) {
-        int[] ll = levelAndLengthFromArgs(context, level, length, 1);
-        return context.createCallerBacktrace(ll[0], ll[1]);
+        if (length == null) {
+            // use Java 8 version of walker to reduce overhead (GH-5857)
+            return withLevelAndLength(context, level, length, 1,
+                    (ctx, lev, len) -> ThreadContext.WALKER8.walk(stream -> ctx.createCallerBacktrace(lev, len, stream)));
+        }
+
+        return withLevelAndLength(context, level, length, 1,
+                (ctx, lev, len) -> ThreadContext.WALKER.walk(stream -> ctx.createCallerBacktrace(lev, len, stream)));
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
@@ -1107,40 +1120,48 @@ public class RubyKernel {
     }
 
     private static IRubyObject callerLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
-        int[] ll = levelAndLengthFromArgs(context, level, length, 1);
-        return context.createCallerLocations(ll[0], ll[1]);
+        if (length == null) {
+            // use Java 8 version of walker to reduce overhead (GH-5857)
+            return withLevelAndLength(
+                    context, level, length, 1,
+                    (ctx, lev, len) -> ThreadContext.WALKER8.walk(stream -> ctx.createCallerLocations(lev, len, stream)));
+        }
+
+        return withLevelAndLength(
+                context, level, length, 1,
+                (ctx, lev, len) -> ThreadContext.WALKER.walk(stream -> ctx.createCallerLocations(lev, len, stream)));
     }
 
     /**
      * Retrieve the level and length from given args, if non-null.
      */
-    static int[] levelAndLengthFromArgs(ThreadContext context, IRubyObject _level, IRubyObject _length, int defaultLevel) {
-        int level;
+    static <R> R withLevelAndLength(ThreadContext context, IRubyObject level, IRubyObject length, int defaultLevel, ObjectIntIntFunction<ThreadContext, R> func) {
+        int lev;
         // Suitably large but no chance to overflow int when combined with level
-        int length = 1 << 24;
-        if (_length != null) {
-            level = RubyNumeric.fix2int(_level);
-            length = RubyNumeric.fix2int(_length);
-        } else if (_level != null && _level instanceof RubyRange) {
-            RubyRange range = (RubyRange) _level;
-            level = RubyNumeric.fix2int(range.first(context));
-            length = RubyNumeric.fix2int(range.last(context)) - level;
-            if (!range.isExcludeEnd()) length++;
-            length = length < 0 ? 0 : length;
-        } else if (_level != null) {
-            level = RubyNumeric.fix2int(_level);
+        int len = 1 << 24;
+        if (length != null) {
+            lev = RubyNumeric.fix2int(level);
+            len = RubyNumeric.fix2int(length);
+        } else if (level != null && level instanceof RubyRange) {
+            RubyRange range = (RubyRange) level;
+            lev = RubyNumeric.fix2int(range.first(context));
+            len = RubyNumeric.fix2int(range.last(context)) - lev;
+            if (!range.isExcludeEnd()) len++;
+            len = len < 0 ? 0 : len;
+        } else if (level != null) {
+            lev = RubyNumeric.fix2int(level);
         } else {
-            level = defaultLevel;
+            lev = defaultLevel;
         }
 
-        if (level < 0) {
-            throw context.runtime.newArgumentError("negative level (" + level + ')');
+        if (lev < 0) {
+            throw context.runtime.newArgumentError("negative level (" + lev + ')');
         }
-        if (length < 0) {
-            throw context.runtime.newArgumentError("negative size (" + length + ')');
+        if (len < 0) {
+            throw context.runtime.newArgumentError("negative size (" + len + ')');
         }
 
-        return new int[] {level, length};
+        return func.apply(context, lev, len);
     }
 
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {

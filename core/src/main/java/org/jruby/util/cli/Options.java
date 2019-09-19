@@ -103,8 +103,9 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", false, "Use MethodHandles rather than generated code to bind Ruby methods.");
     public static final Option<Boolean> INVOKEDYNAMIC_YIELD = bool(INVOKEDYNAMIC, "invokedynamic.yield", false, "Bind yields directly using invokedynamic.");
 
+    // NOTE: -1 jit.threshold is way of having interpreter not promote full builds
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
-    public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_METHODS_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
+    public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
     public static final Option<Integer> JIT_MAXSIZE = integer(JIT, "jit.maxsize", Constants.JIT_MAX_SIZE_LIMIT, "Set the max size (in IR instructions) for a method to be eligible to JIT.");
     public static final Option<Boolean> JIT_LOGGING = bool(JIT, "jit.logging", false, "Enable JIT logging (reports successful compilation).");
     public static final Option<Boolean> JIT_LOGGING_VERBOSE = bool(JIT, "jit.logging.verbose", false, "Enable verbose JIT logging (reports failed compilation).");
@@ -142,6 +143,7 @@ public class Options {
     public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
     public static final Option<Boolean> FFI_COMPILE_REIFY = bool(NATIVE, "ffi.compile.reify", false, "Reify FFI compiled classes.");
     public static final Option<Boolean> NATIVE_STDIO = bool(NATIVE, "native.stdio", true, "Use native wrappers around the default stdio descriptors.");
+    public static final Option<Boolean> NATIVE_PTHREAD_KILL = bool(NATIVE, "native.pthread_kill", true, "Use pthread_kill to interrupt blocking kernel calls.");
 
     public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(NATIVE, "regexp.interruptible", false, "Allow regexp operations to be interuptible from Ruby.");
 

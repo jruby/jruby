@@ -188,6 +188,7 @@ import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1247,7 +1248,7 @@ public final class Ruby implements Constantizable {
         // relationship handled either more directly or through a descriptive method
         // FIXME: We need a failing test case for this since removing it did not regress tests
         IRScope top = new IRScriptBody(irManager, "", context.getCurrentScope().getStaticScope());
-        top.allocateInterpreterContext(new ArrayList<Instr>());
+        top.allocateInterpreterContext(Collections.EMPTY_LIST);
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);

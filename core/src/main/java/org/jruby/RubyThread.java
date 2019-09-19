@@ -51,7 +51,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
@@ -1661,17 +1660,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return backtraceInternal(context, level, length);
     }
 
-    private IRubyObject backtraceInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
-        ThreadContext myContext = getContext();
+    private IRubyObject backtraceInternal(ThreadContext callerContext, IRubyObject level, IRubyObject length) {
+        ThreadContext context = getContext();
         Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
         // nativeThread may have finished
-        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
+        if (context == null || nativeThread == null || !nativeThread.isAlive()) return callerContext.nil;
 
-        int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        return WALKER.walk(getNativeThread().getStackTrace(), stream -> myContext.createCallerBacktrace(ll[0], ll[1], stream));
+        return RubyKernel.withLevelAndLength(
+                context, level, length, 0,
+                (ctx, lev, len) -> WALKER.walk(getNativeThread().getStackTrace(), stream -> ctx.createCallerBacktrace(lev, len, stream)));
     }
 
     @JRubyMethod
@@ -1689,17 +1689,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return backtraceLocationsInternal(context, level, length);
     }
 
-    private IRubyObject backtraceLocationsInternal(ThreadContext context, IRubyObject level, IRubyObject length) {
-        ThreadContext myContext = getContext();
+    private IRubyObject backtraceLocationsInternal(ThreadContext callerContext, IRubyObject level, IRubyObject length) {
+        ThreadContext context = getContext();
         Thread nativeThread = getNativeThread();
 
         // context can be nil if we have not started or GC has claimed our context
         // nativeThread can be null if the thread has terminated and GC has claimed it
         // nativeThread may have finished
-        if (myContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
+        if (context == null || nativeThread == null || !nativeThread.isAlive()) return callerContext.nil;
 
-        int[] ll = RubyKernel.levelAndLengthFromArgs(context, level, length, 0);
-        return WALKER.walk(getNativeThread().getStackTrace(), stream -> myContext.createCallerLocations(ll[0], ll[1], stream));
+        return RubyKernel.withLevelAndLength(
+                context, level, length, 0,
+                (ctx, lev, len) -> WALKER.walk(getNativeThread().getStackTrace(), stream -> ctx.createCallerLocations(lev, len, stream)));
     }
 
     @JRubyMethod(name = "report_on_exception=")

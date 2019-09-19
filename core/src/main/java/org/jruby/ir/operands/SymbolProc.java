@@ -68,4 +68,9 @@ public class SymbolProc extends ImmutableLiteral {
     public String toString() {
         return "SymbolProc:" + name;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

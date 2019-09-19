@@ -142,5 +142,12 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         return new FrozenString(d.decodeByteList(), d.decodeInt(), d.decodeString(), d.decodeInt());
     }
 
-    public int getCodeRange() { return coderange; }
+    public int getCodeRange() {
+        return coderange;
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

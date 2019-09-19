@@ -699,6 +699,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -745,6 +753,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -791,6 +807,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -837,6 +861,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -883,6 +915,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -929,6 +969,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -975,6 +1023,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -1021,6 +1077,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -1067,6 +1131,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>

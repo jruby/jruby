@@ -14,6 +14,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -25,6 +26,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyProc;
+import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -474,6 +476,18 @@ public class IRRuntimeHelpers {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }
 
+    @JIT
+    public static IRubyObject newProc(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
+    }
+
+    @JIT
+    public static RubyProc newLambdaProc(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
+        return runtime.newProc(LAMBDA, block);
+    }
+
     public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldVal, boolean unwrapArray) {
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
@@ -624,12 +638,12 @@ public class IRRuntimeHelpers {
      * @param runtime the current runtime
      * @return whether to print IR
      */
-    public static boolean shouldPrintIR(Ruby runtime) {
+    public static boolean shouldPrintIR(final Ruby runtime) {
         boolean booting = runtime.isBooting();
         boolean print = Options.IR_PRINT.load();
         boolean printAll = Options.IR_PRINT_ALL.load();
 
-        return (print && !booting) || (booting && printAll);
+        return (!booting && print) || (booting && printAll);
     }
 
     private static class DivvyKeywordsVisitor extends RubyHash.VisitorWithState {
@@ -1756,9 +1770,13 @@ public class IRRuntimeHelpers {
         return context.runtime.newArgumentError(str(context.runtime, "missing keyword: ", ids(context.runtime, id)));
     }
 
-    @JIT
     public static void pushExitBlock(ThreadContext context, Block blk) {
         context.runtime.pushEndBlock(context.runtime.newProc(LAMBDA, blk));
+    }
+
+    @JIT
+    public static void pushExitBlock(ThreadContext context, Object blk) {
+        context.runtime.pushEndBlock(context.runtime.newProc(LAMBDA, getBlockFromObject(context, blk)));
     }
 
     @JIT
@@ -1990,12 +2008,30 @@ public class IRRuntimeHelpers {
         return null;
     }
 
-    @Interp @JIT
+    @Interp
     public static DynamicScope pushBlockDynamicScopeIfNeeded(ThreadContext context, Block block, boolean pushNewDynScope, boolean reuseParentDynScope) {
         DynamicScope newScope = getNewBlockScope(block, pushNewDynScope, reuseParentDynScope);
         if (newScope != null) {
             context.pushScope(newScope);
         }
+        return newScope;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeNew(ThreadContext context, Block block) {
+        DynamicScope newScope = block.allocScope(block.getBinding().getDynamicScope());
+
+        context.pushScope(newScope);
+
+        return newScope;
+    }
+
+    @JIT
+    public static DynamicScope pushBlockDynamicScopeReuse(ThreadContext context, Block block) {
+        DynamicScope newScope = block.getBinding().getDynamicScope();
+
+        context.pushScope(newScope);
+
         return newScope;
     }
 
@@ -2175,6 +2211,41 @@ public class IRRuntimeHelpers {
         warnSetConstInRefinement(context, self);
 
         module.setClassVar(id, value);
+    }
+
+    @JIT
+    public static RubyRational newRationalRaw(ThreadContext context, IRubyObject num, IRubyObject den) {
+        return RubyRational.newRationalRaw(context.runtime, num, den);
+    }
+
+    @JIT
+    public static RubyComplex newComplexRaw(ThreadContext context, IRubyObject i) {
+        return RubyComplex.newComplexRawImage(context.runtime, i);
+    }
+
+    @JIT
+    public static RubySymbol newDSymbol(ThreadContext context, IRubyObject symbol) {
+        return context.runtime.newSymbol(symbol.asString().getByteList());
+    }
+
+    @JIT
+    public static RubyClass getStandardError(ThreadContext context) {
+        return context.runtime.getStandardError();
+    }
+
+    @JIT
+    public static RubyClass getObject(ThreadContext context) {
+        return context.runtime.getObject();
+    }
+
+    @JIT @Interp
+    public static IRubyObject svalue(ThreadContext context, Object val) {
+        return (val instanceof RubyArray) ? (RubyArray) val : context.nil;
+    }
+
+    @JIT
+    public static void aliasGlobalVariable(Ruby runtime, Object newName, Object oldName) {
+        runtime.getGlobalVariables().alias(newName.toString(), oldName.toString());
     }
 
     private static IRRuntimeHelpersSites sites(ThreadContext context) {

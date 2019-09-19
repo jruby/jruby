@@ -71,7 +71,7 @@ public abstract class IRScope implements ParseResult {
     private static final AtomicInteger globalScopeCount = new AtomicInteger();
 
     /** Unique global scope id */
-    private int scopeId;
+    private final int scopeId;
 
     /** Name */
     private ByteList name;
@@ -111,7 +111,7 @@ public abstract class IRScope implements ParseResult {
 
     Map<RubySymbol, LocalVariable> localVars;
 
-    EnumSet<IRFlags> flags;
+    final EnumSet<IRFlags> flags;
 
     private IRManager manager;
 
@@ -137,8 +137,7 @@ public abstract class IRScope implements ParseResult {
         setupLexicalContainment();
     }
 
-    public IRScope(IRManager manager, IRScope lexicalParent, ByteList name,
-            int lineNumber, StaticScope staticScope) {
+    public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
         this.name = name;
@@ -506,11 +505,7 @@ public abstract class IRScope implements ParseResult {
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
     public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
-        try {
-            interpreterContext = new InterpreterContext(this, instructions);
-        } catch (Exception e) {
-            Helpers.throwException(e);
-        }
+        interpreterContext = new InterpreterContext(this, instructions);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 

@@ -21,11 +21,16 @@ public class ConstructObjectSite extends MutableCallSite {
     public CallSite bootstrap(MethodHandles.Lookup lookup) {
         MethodHandle handle = prepareBinder()
                 .insert(0, this)
-                .invokeVirtualQuiet(lookup, "construct");
+                .invokeVirtualQuiet(lookup, initialTarget());
 
         setTarget(handle);
 
         return this;
+    }
+
+    // Default method to initialize object is "construct", overridable by child classes
+    protected String initialTarget() {
+        return "construct";
     }
 
     public Binder prepareBinder() {

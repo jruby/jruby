@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
@@ -1453,12 +1454,14 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not-used
     public static IRubyObject getErrorInfo(Ruby runtime) {
-        return runtime.getGlobalVariables().get("$!");
+        return runtime.getCurrentContext().getErrorInfo();
     }
 
+    @Deprecated // not-used
     public static void setErrorInfo(Ruby runtime, IRubyObject error) {
-        runtime.getGlobalVariables().set("$!", error);
+        runtime.getCurrentContext().setErrorInfo(error);
     }
 
     public static IRubyObject setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
@@ -2380,6 +2383,15 @@ public class Helpers {
 
     public static void throwException(final Throwable e) {
         Helpers.<RuntimeException>throwsUnchecked(e);
+    }
+
+    public static <T> T tryThrow(Callable<T> call) {
+        try {
+            return call.call();
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -315,7 +315,7 @@ public class IRBuilder {
         this.manager = manager;
         this.scope = scope;
         this.parent = parent;
-        instructions = new ArrayList<>(50);
+        this.instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
 
         if (parent != null) executesOnce = parent.executesOnce;
@@ -560,7 +560,7 @@ public class IRBuilder {
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody, scope.getFile(), node.getLine()));
+        addInstr(new BuildLambdaInstr(lambda, lambdaBody));
         return lambda;
     }
 

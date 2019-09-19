@@ -73,6 +73,14 @@ public abstract class Operand {
         return this;
     }
 
+    /**
+     * Returns true if this is an immediate value that will always be considered truthy (true, numbers, etc)
+     * @return
+     */
+    public boolean isTruthyImmediate() {
+        return false;
+    }
+
     /** Append the list of variables used in this operand to the input list -- force every operand
      *  to implement this because a missing implementation can cause bad failures.
      */
