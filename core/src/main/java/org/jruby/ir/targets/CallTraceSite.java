@@ -52,6 +52,6 @@ public class CallTraceSite extends MutableCallSite {
     }
 
     public void trace(ThreadContext context) {
-        IRRuntimeHelpers.callTrace(context, event, name, file, 1);
+        IRRuntimeHelpers.callTrace(context, event, name, file, line);
     }
 }
