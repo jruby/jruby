@@ -2501,11 +2501,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (args.length == 1) return newArray(getRuntime(), args[0]);
 
-        RubyArray ary = newArray(getRuntime(), args.length);
+        RubyArray ary = newBlankArrayInternal(getRuntime(), args.length);
 
         for (int i = 0; i < args.length; i++) {
-            ary.append(aref(args[i]));
+            ary.storeInternal(i, aref(args[i]));
         }
+        ary.realLength = args.length;
 
         return ary;
     }

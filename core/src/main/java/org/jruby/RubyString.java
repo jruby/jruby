@@ -4337,7 +4337,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 last = prev;
                 prev = startp[0];
                 if (ary == null) ary = context.runtime.newArray(4);
-                ary.push(result);
+                ary.append(result);
             }
             if (last >= 0) patternSearch(context, pat, str, last, true);
             return ary == null ? context.runtime.newEmptyArray() : ary;
