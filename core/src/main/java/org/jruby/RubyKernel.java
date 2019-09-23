@@ -1198,39 +1198,42 @@ public class RubyKernel {
         return func.apply(context, lev, len);
     }
 
+    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
+    public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, Block block) {
+        return rbCatch(context, recv, new RubyObject(context.runtime.getObject()), block);
+    }
+
+    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbCatch19(context, recv, tag, block);
-    }
-
-    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
-    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, Block block) {
-        IRubyObject tag = new RubyObject(context.runtime.getObject());
-        return rbCatch19Common(context, tag, block);
-    }
-
-    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
-    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbCatch19Common(context, tag, block);
-    }
-
-    private static IRubyObject rbCatch19Common(ThreadContext context, IRubyObject tag, Block block) {
         return new CatchThrow(tag).enter(context, tag, block);
     }
 
-    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbThrow19(context, recv, tag, block);
+    @Deprecated
+    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, Block block) {
+        return rbCatch(context, recv, block);
     }
 
-    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject arg, Block block) {
-        return rbThrow19(context, recv, tag, arg, block);
+    @Deprecated
+    public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
+        return rbCatch(context, recv, tag, block);
     }
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE)
-    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
+    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
         return rbThrowInternal(context, tag, null);
     }
 
     @JRubyMethod(name = "throw", module = true, visibility = PRIVATE)
+    public static IRubyObject rbThrow(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject value, Block block) {
+        return rbThrowInternal(context, tag, value);
+    }
+
+    @Deprecated
+    public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
+        return rbThrowInternal(context, tag, null);
+    }
+
+    @Deprecated
     public static IRubyObject rbThrow19(ThreadContext context, IRubyObject recv, IRubyObject tag, IRubyObject value, Block block) {
         return rbThrowInternal(context, tag, value);
     }
