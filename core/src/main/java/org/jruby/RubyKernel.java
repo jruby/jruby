@@ -1176,7 +1176,7 @@ public class RubyKernel {
         if (length != null) {
             lev = RubyNumeric.fix2int(level);
             len = RubyNumeric.fix2int(length);
-        } else if (level != null && level instanceof RubyRange) {
+        } else if (level instanceof RubyRange) {
             RubyRange range = (RubyRange) level;
             lev = RubyNumeric.fix2int(range.first(context));
             len = RubyNumeric.fix2int(range.last(context)) - lev;
