@@ -4257,8 +4257,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (args.length > 0) {
             IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
             if (!hash.isNil()) {
-                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "random");
-                if (rets[0] != UNDEF) randgen = rets[0];
+                IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+                if (ret != null) randgen = ret;
             }
         }
         int i = realLength;
@@ -4302,8 +4302,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (args.length > 0) {
                 IRubyObject hash = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
                 if (!hash.isNil()) {
-                    IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "random");
-                    if (rets[0] != UNDEF) randgen = rets[0];
+                    IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
+                    if (ret != null) randgen = ret;
                     args = ArraySupport.newCopy(args, args.length - 1);
                 }
             }
@@ -4883,18 +4883,19 @@ float_loop:
     public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
         final Ruby runtime = context.runtime;
         IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
-        IRubyObject buffer = context.nil;
+        IRubyObject buffer = null;
 
         if (opts != context.nil) {
-            buffer = ArgsUtil.extractKeywordArg(context, "buffer", (RubyHash) opts);
-            if (buffer != context.nil && !(buffer instanceof RubyString)) {
+            buffer = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "buffer");
+            if (buffer == context.nil) buffer = null;
+            if (buffer != null && !(buffer instanceof RubyString)) {
                 throw runtime.newTypeError(str(runtime, "buffer must be String, not ", types(runtime, buffer.getType())));
             }
         }
 
         final RubyString pack = pack(context, obj);
 
-        if (buffer != context.nil) {
+        if (buffer != null) {
             try {
                 return ((RubyString) buffer).append(pack);
             } catch (ArrayIndexOutOfBoundsException e) {

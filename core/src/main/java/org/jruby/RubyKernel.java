@@ -1296,7 +1296,7 @@ public class RubyKernel {
             if (tmp != context.nil) {
                 kwargs = true;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, WARN_VALID_KEYS);
-                uplevel = rets[0] == UNDEF ? 0 : RubyNumeric.num2int(rets[0]);
+                uplevel = rets[0] == null ? 0 : RubyNumeric.num2int(rets[0]);
 
                 if (uplevel < 0) {
                     throw context.runtime.newArgumentError("negative level (" + uplevel + ")");

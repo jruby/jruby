@@ -236,14 +236,14 @@ public class RubyException extends RubyObject {
             IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
 
             IRubyObject vHigh = highlightOrder[0];
-            if (vHigh == UNDEF) vHigh = context.nil;
+            if (vHigh == null) vHigh = context.nil;
             if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
                 throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
             }
             highlight = vHigh.isTrue();
 
             IRubyObject vOrder = highlightOrder[1];
-            if (vOrder != UNDEF) {
+            if (vOrder != null) {
                 vOrder = TypeConverter.checkID(vOrder);
                 if (vOrder == runtime.newSymbol("bottom")) reverse = true;
                 else if (vOrder == runtime.newSymbol("top")) reverse = false;

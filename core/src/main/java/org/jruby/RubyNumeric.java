@@ -992,11 +992,11 @@ public class RubyNumeric extends RubyObject {
         }
         if (!hash.isNil()) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, STEP_KEYS);
-            if (values[0] != UNDEF) {
+            if (values[0] != null) {
                 if (argc > 0) throw runtime.newArgumentError("to is given twice");
                 newArgs[0] = to = values[0];
             }
-            if (values[1] != UNDEF) {
+            if (values[1] != null) {
                 if (argc > 1) throw runtime.newArgumentError("step is given twice");
                 newArgs[1] = step = values[1];
             }
@@ -1475,8 +1475,8 @@ public class RubyNumeric extends RubyObject {
             throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
         }
 
-        IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) arg, "freeze");
-        if (!rets[0].isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) arg, "freeze");
+        if (ret != null && !ret.isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
 
         return this;
     }

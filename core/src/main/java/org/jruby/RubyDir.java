@@ -185,6 +185,9 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
+    private static final String[] BASE = new String[] { "base" };
+    private static final String[] BASE_FLAGS = new String[] { "base", "flags" };
+
     // returns null (no kwargs present), "" kwargs but no base key, "something" kwargs with base key (which might be "").
     private static String globOptions(ThreadContext context, IRubyObject[] args, int[] flags) {
         Ruby runtime = context.runtime;
@@ -196,9 +199,9 @@ public class RubyDir extends RubyObject implements Closeable {
                     flags[0] = RubyNumeric.num2int(args[1]);
                 }
             } else {
-                String[] keys = flags != null ? new String[] {"base", "flags"} : new String[] {"base"};
+                String[] keys = flags != null ? BASE_FLAGS : BASE;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
-                String base = rets[0] == UNDEF || rets[0] == context.nil ? "" : RubyFile.get_path(context, rets[0]).asJavaString();
+                String base = rets[0] == null || rets[0] == context.nil ? "" : RubyFile.get_path(context, rets[0]).asJavaString();
 
                 // Deep down in glob things are unhappy if base is not absolute.
                 if (!base.isEmpty()) {
@@ -211,7 +214,7 @@ public class RubyDir extends RubyObject implements Closeable {
                         base = new JRubyFile(runtime.getCurrentDirectory(), base).getAbsolutePath();
                     }
                 }
-                if (flags != null) flags[0] = rets[1] == UNDEF ? 0 : RubyNumeric.num2int(rets[1]);
+                if (flags != null) flags[0] = rets[1] == null ? 0 : RubyNumeric.num2int(rets[1]);
                 return base;
             }
         }
@@ -322,9 +325,9 @@ public class RubyDir extends RubyObject implements Closeable {
 
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
 
-        if (opts != context.nil) {
-            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, "encoding", opts);
-            if (encodingArg != context.nil) {
+        if (opts instanceof RubyHash) {
+            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");
+            if (encodingArg != null && !encodingArg.isNil()) {
                 encoding = runtime.getEncodingService().getEncodingFromObject(encodingArg);
             }
         }
@@ -422,19 +425,15 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "children", meta = true)
     public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return childrenCommon(context, recv, arg, context.nil);
+        return children(context, recv, arg, context.nil);
     }
 
     @JRubyMethod(name = "children", meta = true)
     public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
-        return childrenCommon(context, recv, arg, opts);
-    }
-
-    private static RubyArray childrenCommon(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
         Encoding encoding = null;
-        if (opts != context.nil) {
-            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, "encoding", opts);
-            if (encodingArg != context.nil) {
+        if (opts instanceof RubyHash) {
+            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");
+            if (encodingArg != null && !encodingArg.isNil()) {
                 encoding = context.runtime.getEncodingService().getEncodingFromObject(encodingArg);
             }
         }

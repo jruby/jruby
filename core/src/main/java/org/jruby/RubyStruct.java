@@ -197,11 +197,11 @@ public class RubyStruct extends RubyObject {
         RubyArray member = runtime.newArray();
 
         int argc = args.length;
-        if (args[args.length - 1] instanceof RubyHash) {
+        final IRubyObject opts = args[args.length - 1];
+        if (opts instanceof RubyHash) {
             argc--;
-            RubyHash kwArgs = args[args.length - 1].convertToHash();
-            IRubyObject[] rets = ArgsUtil.extractKeywordArgs(runtime.getCurrentContext(), kwArgs, "keyword_init");
-            keywordInit = rets[0].isTrue();
+            IRubyObject ret = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
+            keywordInit = ret != null && ret.isTrue();
         }
 
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {

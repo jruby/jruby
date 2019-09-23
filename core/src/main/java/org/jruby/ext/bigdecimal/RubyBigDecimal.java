@@ -1715,8 +1715,8 @@ public class RubyBigDecimal extends RubyNumeric {
         if (arg == context.nil) return getRoundingMode(context.runtime);
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
         if (opts != context.nil) {
-            arg = ArgsUtil.extractKeywordArg(context, "half", (RubyHash) opts);
-            if (arg == context.nil) return getRoundingMode(context.runtime);
+            arg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "half");
+            if (arg == null || arg == context.nil) return getRoundingMode(context.runtime);
             String roundingMode = arg.asJavaString();
             switch (roundingMode) {
                 case "up":

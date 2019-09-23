@@ -115,8 +115,8 @@ public class JRubyUtilLibrary implements Library {
         boolean raw = false, path = false;
         if (args.length > 1 && args[1] instanceof RubyHash) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "raw", "path");
-            raw  = values[0] != null && values[0] != RubyBasicObject.UNDEF && values[0].isTrue();
-            path = values[1] != null && values[1] != RubyBasicObject.UNDEF && values[1].isTrue();
+            raw  = values[0] != null && values[0].isTrue();
+            path = values[1] != null && values[1].isTrue();
         }
         
         try {
