@@ -33,6 +33,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -2378,6 +2379,43 @@ public class Helpers {
     @Deprecated
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index, IRubyObject arg0) {
         return invokedynamic(context, self, MethodNames.values()[index], arg0);
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts
+     * @return false if `exception: false`, true otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, RubyHash opts) {
+        return ArgsUtil.extractKeywordArg(context, opts, "exception") != context.fals;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts the keyword args hash
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject opts, boolean defValue) {
+        IRubyObject hash = TypeConverter.checkHashType(context.runtime, opts);
+        if (hash != context.nil) {
+            return extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
+        return defValue;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param args method args
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject[] args, boolean defValue) {
+        if (args.length == 0) return defValue;
+        return extractExceptionOnlyArg(context, args[args.length - 1], defValue);
     }
 
     public static void throwException(final Throwable e) {

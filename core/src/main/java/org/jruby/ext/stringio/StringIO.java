@@ -1344,10 +1344,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             boolean exception = true;
             IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
-
             if (opts != context.nil) {
                 args = ArraySupport.newCopy(args, args.length - 1);
-                exception = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "exception") != context.fals;
+                exception = Helpers.extractExceptionOnlyArg(context, (RubyHash) opts);
             }
 
             IRubyObject val = self.callMethod(context, "read", args);

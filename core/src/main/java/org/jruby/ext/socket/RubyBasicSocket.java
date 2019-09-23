@@ -48,6 +48,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -72,6 +73,7 @@ import org.jruby.util.io.Sockaddr;
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_IP;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
+import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
 /**
  * Implementation of the BasicSocket class from Ruby.
@@ -196,8 +198,12 @@ public class RubyBasicSocket extends RubyIO {
     @JRubyMethod(required = 1, optional = 3) // (length) required = 1 handled above
     public IRubyObject recv_nonblock(ThreadContext context, IRubyObject[] args) {
         int argc = args.length;
+        boolean exception = true;
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (opts != context.nil) argc--;
+        if (opts != context.nil) {
+            argc--;
+            exception = extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
 
         IRubyObject length, flags, str;
         length = flags = context.nil; str = null;
@@ -214,7 +220,7 @@ public class RubyBasicSocket extends RubyIO {
         ByteList bytes = doReadNonblock(context, buffer);
 
         if (bytes == null) {
-            if (!extractExceptionArg(context, opts)) return context.runtime.newSymbol("wait_readable");
+            if (!exception) return context.runtime.newSymbol("wait_readable");
             throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
         }
 
@@ -681,7 +687,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     static boolean extractExceptionArg(ThreadContext context, IRubyObject opts) {
-        return ArgsUtil.extractKeywordArg(context, "exception", opts) != context.fals;
+        return extractExceptionOnlyArg(context, opts, true);
     }
 
     private static int asNumber(ThreadContext context, IRubyObject val) {
