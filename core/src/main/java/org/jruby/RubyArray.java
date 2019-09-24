@@ -188,7 +188,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public static final RubyArray newArrayLight(final Ruby runtime, final int len) {
         IRubyObject[] values = IRubyObject.array(len);
         Helpers.fillNil(values, 0, len, runtime);
-        return new RubyArray(runtime, values, 0, 0, false);
+        return new RubyArray(runtime, runtime.getArray(), values, 0, 0, false);
     }
 
     /** rb_ary_new
@@ -401,8 +401,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         this.realLength = length;
     }
 
-    private RubyArray(Ruby runtime, IRubyObject[] vals, int begin, int length, boolean objectSpace) {
-        super(runtime, runtime.getArray(), objectSpace);
+    private RubyArray(Ruby runtime, RubyClass metaClass, IRubyObject[] vals, int begin, int length, boolean objectSpace) {
+        super(runtime, metaClass, objectSpace);
         this.values = vals;
         this.begin = begin;
         this.realLength = length;
@@ -699,14 +699,29 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      * @return A new RubyArray sharing the original backing store.
      */
+    @Override
     public IRubyObject dup() {
         if (metaClass.getClassIndex() != ClassIndex.ARRAY) return super.dup();
 
-        RubyArray dup = new RubyArray(metaClass.runtime, values, begin, realLength);
-        dup.isShared = isShared = true;
+        RubyArray dup = dupImpl(metaClass.runtime.getArray());
         dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-
         return dup;
+    }
+
+    private RubyArray dupImpl(RubyClass metaClass) {
+        RubyArray dup = new RubyArray(metaClass.runtime, metaClass, values, begin, realLength, true);
+        dup.isShared = this.isShared = true;
+        return dup;
+    }
+
+    /** rb_ary_dup
+     *
+     */
+    public RubyArray aryDup() {
+        // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
+        // dup returns an instance of Array, rather than an instance of the subclass
+        // Also, taintedness and trustedness are not inherited to duplicates
+        return dupImpl(metaClass.runtime.getArray());
     }
 
     /** rb_ary_replace
@@ -1130,20 +1145,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @Deprecated
     public IRubyObject insert19(IRubyObject[] args) {
         return insert(args);
-    }
-
-    /** rb_ary_dup
-     *
-     */
-    public RubyArray aryDup() {
-        // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
-        // dup returns an instance of Array, rather than an instance of the subclass
-        // Also, taintedness and trustedness are not inherited to duplicates
-        RubyArray dup = new RubyArray(metaClass.runtime, values, begin, realLength);
-        dup.isShared = true;
-        isShared = true;
-        // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
-        return dup;
     }
 
     /** rb_ary_transpose
@@ -2046,8 +2047,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @Override
     public RubyArray to_a() {
         final RubyClass metaClass = this.metaClass;
-        if (metaClass != metaClass.runtime.getArray()) {
-            return aryDup();
+        final RubyClass arrayClass = metaClass.runtime.getArray();
+        if (metaClass != arrayClass) {
+            return dupImpl(arrayClass);
         }
         return this;
     }
@@ -2539,13 +2541,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse() {
         if (realLength > 1) {
-            RubyArray dup = safeReverse();
-            dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-            // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
-            return dup;
-        } else {
-            return dup();
+            return safeReverse();
         }
+        return aryDup();
     }
 
     protected RubyArray safeReverse() {
@@ -2554,15 +2552,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         IRubyObject[] myValues = this.values;
         IRubyObject[] vals = IRubyObject.array(length);
 
+        final Ruby runtime = metaClass.runtime;
         try {
             for (int i = 0; i <= length >> 1; i++) {
                 vals[i] = myValues[myBegin + length - i - 1];
                 vals[length - i - 1] = myValues[myBegin + i];
             }
         } catch (ArrayIndexOutOfBoundsException e) {
-            throw concurrentModification(getRuntime(), e);
+            throw concurrentModification(runtime, e);
         }
-        return new RubyArray(getRuntime(), getMetaClass(), vals);
+        return new RubyArray(runtime, runtime.getArray(), vals);
     }
 
     /** rb_ary_collect
