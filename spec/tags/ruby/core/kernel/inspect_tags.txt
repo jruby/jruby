@@ -1,1 +1,0 @@
-fails:Kernel#inspect returns an untrusted string if self is untrusted

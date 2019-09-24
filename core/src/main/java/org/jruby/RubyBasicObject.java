@@ -1231,6 +1231,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             first = false;
         }
         encStrBufCat(runtime, part, INSPECT_GT);
+        part.setTaint(isTaint());
         return part;
     }
 
