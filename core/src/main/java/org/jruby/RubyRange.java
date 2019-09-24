@@ -223,7 +223,7 @@ public class RubyRange extends RubyObject {
         return len;
     }
 
-    final int[] begLenInt(int len, int err) {
+    final int[] begLenInt(int len, final int err) {
         int beg = RubyNumeric.num2int(this.begin);
         int end = RubyNumeric.num2int(this.end);
 

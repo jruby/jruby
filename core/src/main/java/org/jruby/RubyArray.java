@@ -1179,11 +1179,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return new RubyArray(runtime, result);
     }
 
-    /** rb_values_at (internal)
+    /** rb_values_at
      *
      */
-    private final IRubyObject values_at(final int olen, IRubyObject[] args) {
-        RubyArray result = newArray(getRuntime(), args.length);
+    @JRubyMethod(name = "values_at", rest = true)
+    public IRubyObject values_at(IRubyObject[] args) {
+        final Ruby runtime = metaClass.runtime;
+        final int length = realLength;
+
+        RubyArray result = newArray(runtime, args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
@@ -1196,7 +1200,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if ( ! ( arg instanceof RubyRange ) ) {
                 // do result.append
             }
-            else if ( ( begLen = ((RubyRange) arg).begLenInt(olen, 0) ) == null ) {
+            else if ( ( begLen = ((RubyRange) arg).begLenInt(length, 1) ) == null ) {
                 continue;
             }
             else {
@@ -1210,16 +1214,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             result.append( entry(RubyNumeric.num2long(arg)) );
         }
 
-        Helpers.fillNil(result.values, result.realLength, result.values.length, getRuntime());
+        Helpers.fillNil(result.values, result.realLength, result.values.length, runtime);
         return result;
-    }
-
-    /** rb_values_at
-     *
-     */
-    @JRubyMethod(name = "values_at", rest = true)
-    public IRubyObject values_at(IRubyObject[] args) {
-        return values_at(realLength, args);
     }
 
     /** rb_ary_subseq
