@@ -53,6 +53,7 @@ import java.util.Set;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -1261,21 +1262,29 @@ public class RubyKernel {
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject _message) {
-        if (_message instanceof RubyArray) {
-            RubyArray messageArray = _message.convertToArray();
-            for (int i = 0; i < messageArray.size(); i++) warn(context, recv, messageArray.eltOk(i));
+    public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (arg instanceof RubyHash) { // warn({}) - treat as kwarg
+            return warn(context, recv, new IRubyObject[] { arg });
+        }
+
+        return warnObj(context, recv, arg);
+    }
+
+    private static IRubyObject warnObj(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (arg instanceof RubyArray) {
+            final RubyArray argAry = arg.convertToArray();
+            for (int i = 0; i < argAry.size(); i++) warnObj(context, recv, argAry.eltOk(i));
             return context.nil;
         }
 
-        return warn(context, recv, _message.asString());
+        return warnStr(context, recv, arg.asString());
     }
 
-    static IRubyObject warn(ThreadContext context, IRubyObject recv, RubyString message) {
+    static IRubyObject warnStr(ThreadContext context, IRubyObject recv, RubyString message) {
         final Ruby runtime = context.runtime;
 
         if (!message.endsWithAsciiChar('\n')) {
-            message = (RubyString) message.op_plus19(context, runtime.newString(singleCharByteList((byte) '\n')));
+            message = message.strDup(runtime).cat('\n', USASCIIEncoding.INSTANCE);
         }
 
         if (recv == runtime.getWarning()) {
@@ -1284,45 +1293,51 @@ public class RubyKernel {
         return sites(context).warn.call(context, recv, runtime.getWarning(), message);
     }
 
-    public static final String[] WARN_VALID_KEYS = { "uplevel" };
-
     @JRubyMethod(module = true, rest = true, visibility = PRIVATE, omit = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         boolean kwargs = false;
         int uplevel = 0;
 
-        if (args.length > 1) {
-            IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
-            if (tmp != context.nil) {
-                kwargs = true;
-                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, WARN_VALID_KEYS);
-                uplevel = rets[0] == null ? 0 : RubyNumeric.num2int(rets[0]);
+        int argMessagesLen = args.length;
+        if (argMessagesLen > 0) {
+            IRubyObject opts = TypeConverter.checkHashType(context.runtime, args[argMessagesLen - 1]);
+            if (opts != context.nil) {
+                argMessagesLen--;
 
-                if (uplevel < 0) {
-                    throw context.runtime.newArgumentError("negative level (" + uplevel + ")");
+                IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "uplevel");
+                if (ret == null) kwargs = false; // as if options Hash wasn't passed
+                else {
+                    kwargs = true;
+                    if ((uplevel = RubyNumeric.num2int(ret)) < 0) {
+                        throw context.runtime.newArgumentError("negative level (" + uplevel + ")");
+                    }
                 }
             }
         }
 
-        // FIXME: This is not particularly efficient.
-        int numberOfMessages = kwargs ? args.length - 1 : args.length;
+        int i = 0;
 
-        if (kwargs) {
-            RubyStackTraceElement element = context.getSingleBacktrace(uplevel);
+        if (kwargs && argMessagesLen > 0) { // warn(uplevel: X) does nothing
+            warnStr(context, recv, buildWarnMessage(context, uplevel, args[0]));
+            i = 1;
+        }
 
-            RubyString baseMessage = context.runtime.newString();
-            baseMessage.catString(element.getFileName() + ':' + element.getLineNumber() + ": warning: ");
-
-            for (int i = 0; i < numberOfMessages; i++) {
-                warn(context, recv, (RubyString) baseMessage.op_plus19(context, args[i]));
-            }
-        } else {
-            for (int i = 0; i < numberOfMessages; i++) {
-                warn(context, recv, args[i]);
-            }
+        for (; i < argMessagesLen; i++) {
+            warnObj(context, recv, args[i]);
         }
 
         return context.nil;
+    }
+
+    private static RubyString buildWarnMessage(ThreadContext context, final int uplevel, final IRubyObject arg) {
+        RubyStackTraceElement element = context.getSingleBacktrace(uplevel);
+
+        RubyString message = RubyString.newStringLight(context.runtime, 32);
+        if (element != null) {
+            message.catString(element.getFileName()).cat(':').catString(Integer.toString(element.getLineNumber()))
+                   .catString(": warning: ");
+        }
+        return (RubyString) message.op_plus19(context, arg.asString());
     }
 
     @JRubyMethod(module = true)
