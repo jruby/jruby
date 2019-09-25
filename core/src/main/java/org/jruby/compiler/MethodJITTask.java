@@ -57,7 +57,7 @@ class MethodJITTask extends JITCompiler.Task {
     @Override
     public void exec() throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
-        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
         if (excludeModuleName != null) {
             method.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
@@ -122,8 +122,9 @@ class MethodJITTask extends JITCompiler.Task {
     }
 
     static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,
-                                      final RubyModule implementationClass) {
+                                      final Compilable target) {
         if (config.getExcludedMethods().size() > 0) {
+            final RubyModule implementationClass = target.getImplementationClass();
             String excludeModuleName = className;
             if (implementationClass.getMethodLocation().isSingleton()) {
                 RubyBasicObject possibleRealClass = ((MetaClass) implementationClass).getAttached();
@@ -132,9 +133,11 @@ class MethodJITTask extends JITCompiler.Task {
                 }
             }
 
-            if ((config.getExcludedMethods().contains(excludeModuleName)
+            if (config.getExcludedMethods().contains(excludeModuleName)
+                    || config.getExcludedMethods().contains(methodName)
                     || config.getExcludedMethods().contains(excludeModuleName + '#' + methodName)
-                    || config.getExcludedMethods().contains(methodName))) {
+                    || config.getExcludedMethods().contains(target.getFile())
+                    || config.getExcludedMethods().contains(target.getFile() + ':' + target.getLine())) {
 
                 return excludeModuleName; // true - excluded
             }

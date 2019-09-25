@@ -57,11 +57,11 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     @Override
     public void exec() throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
-        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method.getImplementationClass());
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
         if (excludeModuleName != null) {
             method.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                logImpl("skipping method in " + excludeModuleName);
+                logImpl("skipping (compiled) method in " + excludeModuleName);
             }
             return;
         }
