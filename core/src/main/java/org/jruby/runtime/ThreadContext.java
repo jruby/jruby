@@ -657,16 +657,16 @@ public final class ThreadContext {
     }
 
     /**
-     * Check if a static scope is present on the call stack.
+     * Check if a scope is present on the call stack.
      * This is the IR equivalent of isJumpTargetAlive
      *
-     * @param scope the static scope to look for
+     * @param scope the scope to look for
      * @return true if it exists. otherwise false.
      **/
-    public boolean scopeExistsOnCallStack(StaticScope scope) {
+    public boolean scopeExistsOnCallStack(DynamicScope scope) {
         DynamicScope[] stack = scopeStack;
         for (int i = scopeIndex; i >= 0; i--) {
-            if (stack[i].staticScope == scope) return true;
+            if (stack[i] == scope) return true;
         }
         return false;
     }

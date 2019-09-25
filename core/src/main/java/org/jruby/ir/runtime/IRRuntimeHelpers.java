@@ -109,6 +109,10 @@ public class IRRuntimeHelpers {
         return blockType == LAMBDA && !scope.isArgumentScope();
     }
 
+    public static boolean inMethod(Block.Type blockType) {
+        return blockType == null;
+    }
+
     public static boolean inLambda(Block.Type blockType) {
         return blockType == LAMBDA;
     }
@@ -117,19 +121,19 @@ public class IRRuntimeHelpers {
         return blockType == Block.Type.PROC;
     }
 
-    // FIXME: We should change this to be static scope which is what it is implmented with now and it will make the inlining FIXME below trivial since
-    //   checkforljeinstr can just record IRScope it should return to statically
     // FIXME: ENEBO: If we inline this instr then dynScope will be for the inlined dynscope and that scope could be many things.
     //   CheckForLJEInstr.clone should convert this as appropriate based on what it is being inlined into.
-    public static void checkForLJE(ThreadContext context, DynamicScope dynScope, boolean definedWithinMethod, Block block) {
-        if (inLambda(block.type)) return; // break/return in lambda unconditionally a return.
+    @Interp @JIT
+    public static void checkForLJE(ThreadContext context, DynamicScope currentScope, boolean definedWithinMethod, Block block) {
+        if (inLambda(block.type)) return; // break/return in lambda is unconditionally a return.
 
-        StaticScope staticScope = getContainingReturnToScope(dynScope.getStaticScope());
-        if (staticScope != null) { // we found a valid lexical return scope...but is it higher up the stack?
+        DynamicScope returnToScope = getContainingReturnToScope(currentScope);
+        if (returnToScope != null) { // we found a valid return scope...but is it higher up the stack?
+            StaticScope staticScope = returnToScope.getStaticScope();
             boolean inDefineMethod = staticScope.isArgumentScope() && staticScope.getScopeType().isBlock();
             boolean topLevel = staticScope.getScopeType() == IRScopeType.SCRIPT_BODY;
 
-            if ((definedWithinMethod || inDefineMethod || topLevel) && context.scopeExistsOnCallStack(staticScope)) {
+            if ((definedWithinMethod || inDefineMethod || topLevel) && context.scopeExistsOnCallStack(returnToScope)) {
                 return;
             }
         }
@@ -144,38 +148,39 @@ public class IRRuntimeHelpers {
      * Note: as a result of this all lambdas which contain returns in nested scopes (or itself) can never eliminate
      * its binding.
      */
-    private static StaticScope getContainingLambda(DynamicScope dynamicScope) {
+    private static DynamicScope getContainingLambda(DynamicScope dynamicScope) {
         for (DynamicScope scope = dynamicScope; scope != null && scope.getStaticScope().isBlockScope(); scope = scope.getParentScope()) {
             // we are within a lambda but not a define_method (which seemingly advertises itself as a lambda).
-            if (scope.isLambda() && !scope.getStaticScope().isArgumentScope()) return scope.getStaticScope();
+            if (scope.isLambda() && !scope.getStaticScope().isArgumentScope()) return scope;
         }
 
         return null;
     }
 
     // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
-    @JIT
+    @JIT @Interp
     public static IRubyObject initiateNonLocalReturn(DynamicScope dynScope, Block block, IRubyObject returnValue) {
         if (block != null && inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
 
-        StaticScope returnScope = dynScope.getStaticScope();
-        StaticScope returnToScope = getContainingLambda(dynScope);
+        DynamicScope returnToScope = getContainingLambda(dynScope);
 
-        if (returnToScope == null) returnToScope = getContainingReturnToScope(returnScope);
+        if (returnToScope == null) returnToScope = getContainingReturnToScope(dynScope);
 
         assert returnToScope != null: "accidental return scope";
 
-        throw IRReturnJump.create(returnScope.getIRScope(), returnToScope.getIRScope(), returnValue);
+        StaticScope returnScope = dynScope.getStaticScope();
+        throw IRReturnJump.create(returnScope.getIRScope(), returnToScope, returnValue);
     }
 
     // Finds static scope of where we want to *return* to.
-    private static StaticScope getContainingReturnToScope(StaticScope returnLocationScope) {
-        for (StaticScope current = returnLocationScope; current != null; current = current.getEnclosingScope()) {
-            IRScopeType scopeType = current.getScopeType();
+    private static DynamicScope getContainingReturnToScope(DynamicScope returnLocationScope) {
+        for (DynamicScope current = returnLocationScope; current != null; current = current.getParentScope()) {
+            StaticScope staticScope = current.getStaticScope();
+            IRScopeType scopeType = staticScope.getScopeType();
 
             // We hit a method boundary (actual method or a define_method closure) or we exit out of a script/file.
             if (scopeType.isMethodType() ||                              // Contained within a method
-                    scopeType.isBlock() && current.isArgumentScope() ||  // Contained within define_method closure
+                    scopeType.isBlock() && staticScope.isArgumentScope() ||  // Contained within define_method closure
                     scopeType == IRScopeType.SCRIPT_BODY) {              // (2.5+) Contained within a script
                 return current;
             }
@@ -185,7 +190,7 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject handleNonlocalReturn(DynamicScope dynScope, Object rjExc) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(DynamicScope currentScope, Object rjExc) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null; // Unreachable
@@ -193,8 +198,8 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // If we are in the method scope we are supposed to return from, stop p<ropagating.
-            if (rj.methodToReturnFrom == dynScope.getStaticScope().getIRScope()) {
-                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
+            if (rj.isReturnToScope(currentScope)) {
+                if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + currentScope);
                 return (IRubyObject) rj.returnValue;
             }
 
@@ -233,9 +238,8 @@ public class IRRuntimeHelpers {
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
-    private static boolean inReturnScope(Block.Type blockType, IRReturnJump exception, IRScope scope) {
-        // blockType == null is any non-block scope but in this case it is always a method based on how we emit instrs.
-        return (blockType == null || inLambda(blockType)) && exception.methodToReturnFrom == scope;
+    private static boolean inReturnToScope(Block.Type blockType, IRReturnJump exception, DynamicScope currentScope) {
+        return (inMethod(blockType) || inLambda(blockType)) && exception.isReturnToScope(currentScope);
     }
 
     @JIT
@@ -244,7 +248,7 @@ public class IRRuntimeHelpers {
             // Wrap the return value in an exception object and push it through the nonlocal return exception
             // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
             return ((IRWrappedLambdaReturnValue) exc).returnValue;
-        } else if (exc instanceof IRReturnJump && dynScope != null && inReturnScope(block.type, (IRReturnJump) exc, dynScope.getStaticScope().getIRScope())) {
+        } else if (exc instanceof IRReturnJump && dynScope != null && inReturnToScope(block.type, (IRReturnJump) exc, dynScope)) {
             if (isDebug()) System.out.println("---> Non-local Return reached target in scope: " + dynScope);
             return (IRubyObject) ((IRReturnJump) exc).returnValue;
         } else {

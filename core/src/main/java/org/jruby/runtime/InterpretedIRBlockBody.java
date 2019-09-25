@@ -66,17 +66,19 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             displayedCFG = true;
         }
 
-        if (interpreterContext == null) {
+        InterpreterContext ic = interpreterContext;
+        if (ic == null) {
             if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
                 LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
-            interpreterContext = closure.getInterpreterContext();
+            ic = closure.getInterpreterContext();
+            interpreterContext = ic;
             fullInterpreterContext = interpreterContext;
         }
-        return interpreterContext;
+        return ic;
     }
 
     @Override
