@@ -74,6 +74,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.specialized.RubyArrayOneObject;
+import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.specialized.RubyArrayTwoObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
@@ -2358,7 +2359,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if (equalInternal(context, eltOk(i), obj)) return runtime.newFixnum(i);
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = {"index", "find_index"})
@@ -3482,22 +3483,28 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "-", required = 1)
     public IRubyObject op_diff(IRubyObject other) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
+
+        final int len = realLength;
+        RubyArray res = newBlankArrayInternal(runtime, len);
+
+        int index = 0;
         RubyHash hash = other.convertToArray().makeHash(runtime);
-        RubyArray ary3 = newArray(runtime);
-
-        try {
-            for (int i = 0; i < realLength; i++) {
-                IRubyObject value = eltOk(i);
-                if (hash.fastARef(value) != null) continue;
-                ary3.append(value);
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw concurrentModification(runtime, e);
+        for (int i = 0; i < len; i++) {
+            IRubyObject val = eltOk(i);
+            if (hash.fastARef(val) == null) res.storeInternal(index++, val);
         }
-        Helpers.fillNil(ary3.values, ary3.realLength, ary3.values.length, runtime);
 
-        return ary3;
+        // if index is 1 and we made a size 2 array, repack
+        if (index == 0) return newEmptyArray(runtime);
+        if (index == 1 && len == 2) return newArray(runtime, res.eltInternal(0));
+
+        assert index == res.realLength;
+        if (!(res instanceof RubyArraySpecialized)) {
+            Helpers.fillNil(res.values, index, res.values.length, runtime);
+        }
+
+        return res;
     }
 
     /** rb_ary_and
@@ -3505,25 +3512,40 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and(IRubyObject other) {
-        Ruby runtime = getRuntime();
-        RubyArray ary2 = other.convertToArray();
-        if (realLength == 0 || ary2.realLength == 0) return newEmptyArray(runtime);
+        final Ruby runtime = metaClass.runtime;
 
-        int maxSize = realLength < ary2.realLength ? realLength : ary2.realLength;
-        RubyArray ary3 = newBlankArray(runtime, maxSize);
-        RubyHash hash = ary2.makeHash(runtime);
+        RubyArray ary2 = other.convertToArray();
+
+        final int len = realLength;
+        int maxSize = len < ary2.realLength ? len : ary2.realLength;
+        RubyArray res;
+        switch (maxSize) {
+            case 0:
+                return newEmptyArray(runtime);
+            case 1:
+                if (len == 0 || ary2.realLength == 0) return newEmptyArray(runtime);
+            default:
+                res = newBlankArrayInternal(runtime, maxSize);
+                break;
+        }
 
         int index = 0;
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (hash.fastDelete(v)) ary3.storeInternal(index++, v);
+        RubyHash hash = ary2.makeHash(runtime);
+        for (int i = 0; i < len; i++) {
+            IRubyObject val = elt(i);
+            if (hash.fastDelete(val)) res.storeInternal(index++, val);
         }
 
         // if index is 1 and we made a size 2 array, repack
         if (index == 0) return newEmptyArray(runtime);
-        if (index == 1 && maxSize == 2) return newArray(runtime, ary3.eltInternal(0));
+        if (index == 1 && maxSize == 2) return newArray(runtime, res.eltInternal(0));
 
-        return ary3;
+        assert index == res.realLength;
+        if (!(res instanceof RubyArraySpecialized)) {
+            Helpers.fillNil(res.values, index, res.values.length, runtime);
+        }
+
+        return res;
     }
 
     /** rb_ary_or
@@ -3531,29 +3553,22 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "|", required = 1)
     public IRubyObject op_or(IRubyObject other) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         RubyArray ary2 = other.convertToArray();
 
         int maxSize = realLength + ary2.realLength;
         if (maxSize == 0) return newEmptyArray(runtime);
 
-        RubyArray ary3 = newBlankArray(runtime, maxSize);
         RubyHash set = ary2.makeHash(makeHash(runtime));
+        RubyArray res = newBlankArrayInternal(runtime, set.size);
+        res.setValuesFrom(runtime.getCurrentContext(), set);
+        res.realLength = set.size;
 
-        int index = 0;
-        for (int i = 0; i < realLength; i++) {
-            IRubyObject v = elt(i);
-            if (set.fastDelete(v)) ary3.storeInternal(index++, v);
-        }
-        for (int i = 0; i < ary2.realLength; i++) {
-            IRubyObject v = ary2.elt(i);
-            if (set.fastDelete(v)) ary3.storeInternal(index++, v);
-        }
-
+        int index = res.realLength;
         // if index is 1 and we made a size 2 array, repack
-        if (index == 1 && maxSize == 2) return newArray(runtime, ary3.eltInternal(0));
+        if (index == 1 && maxSize == 2) return newArray(runtime, res.eltInternal(0));
 
-        return ary3;
+        return res;
     }
 
     /** rb_ary_sort
