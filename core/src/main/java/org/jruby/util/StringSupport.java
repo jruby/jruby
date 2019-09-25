@@ -1883,7 +1883,7 @@ public final class StringSupport {
         return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
     }
 
-    private static int NULL_POINTER = -1;
+    private static final int NULL_POINTER = -1;
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, IRubyObject opts, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;
