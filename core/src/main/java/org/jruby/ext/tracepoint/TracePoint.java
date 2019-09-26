@@ -6,7 +6,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -18,8 +17,9 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.TypeConverter;
+
+import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
     public static void createTracePointClass(Ruby runtime) {
@@ -49,8 +49,6 @@ public class TracePoint extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] _events, final Block block) {
         final Ruby runtime = context.runtime;
         
-        if (!block.isGiven()) throw runtime.newArgumentError("must be called with a block");
-        
         ArrayList<RubyEvent> events = new ArrayList<RubyEvent>(_events.length);
         for (int i = 0; i < _events.length; i++) {
             RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], runtime.getSymbol(), sites(context).to_sym);
@@ -61,7 +59,7 @@ public class TracePoint extends RubyObject {
                 event = RubyEvent.valueOf(eventName);
             } catch (IllegalArgumentException iae) {}
 
-            if (event == null) throw runtime.newArgumentError("unknown event: " + eventName);
+            if (event == null) throw runtime.newArgumentError(str(runtime, "unknown event: ", _event));
 
             // a_call is call | b_call | c_call, and same as a_return.
             if (event == RubyEvent.A_CALL) {
@@ -83,6 +81,8 @@ public class TracePoint extends RubyObject {
         } else {
             eventSet = RubyEvent.ALL_EVENTS_ENUMSET;
         }
+
+        if (!block.isGiven()) throw runtime.newArgumentError("must be called with a block");
 
         hook = new EventHook() {
             @Override
