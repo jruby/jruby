@@ -1005,7 +1005,7 @@ public final class ThreadContext {
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
 
-        getCurrentScope().getStaticScope().setModule(objectClass);
+        getCurrentStaticScope().setModule(objectClass);
     }
 
     public void preNodeEval(IRubyObject self) {

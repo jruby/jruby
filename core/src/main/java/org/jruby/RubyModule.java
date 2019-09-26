@@ -3315,7 +3315,7 @@ public class RubyModule extends RubyObject {
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         RubyModule object = runtime.getObject();
-        StaticScope scope = context.getCurrentScope().getStaticScope();
+        StaticScope scope = context.getCurrentStaticScope();
         RubyArray result = runtime.newArray();
 
         for (StaticScope current = scope; current.getModule() != object; current = current.getPreviousCRefScope()) {

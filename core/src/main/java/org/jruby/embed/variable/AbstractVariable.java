@@ -163,7 +163,7 @@ abstract class AbstractVariable implements BiVariable {
 
     protected static RubyModule getRubyClass(final Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
-        StaticScope scope = context.getCurrentScope().getStaticScope();
+        StaticScope scope = context.getCurrentStaticScope();
         RubyModule rubyClass = scope.getModule();
         return rubyClass;
     }
