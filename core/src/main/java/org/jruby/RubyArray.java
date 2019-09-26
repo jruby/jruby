@@ -3362,7 +3362,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     private RubyHash makeHash(Ruby runtime) {
-        return makeHash(new RubyHash(runtime, false));
+        return makeHash(new RubyHash(runtime, Math.min(realLength, 128), false));
     }
 
     private RubyHash makeHash(RubyHash hash) {
@@ -3374,7 +3374,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private RubyHash makeHash(ThreadContext context, Block block) {
-        return makeHash(context, new RubyHash(context.runtime, false), block);
+        return makeHash(context, new RubyHash(context.runtime, Math.min(realLength, 128), false), block);
     }
 
     private RubyHash makeHash(ThreadContext context, RubyHash hash, Block block) {

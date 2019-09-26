@@ -2180,7 +2180,7 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject uniq(ThreadContext context, IRubyObject self, final Block block) {
-        final RubyHash hash = new RubyHash(context.runtime, false);
+        final RubyHash hash = new RubyHash(context.runtime, 12, false);
 
         if (block.isGiven()) {
             callEach(context, self, Signature.OPTIONAL, new BlockCallback() {

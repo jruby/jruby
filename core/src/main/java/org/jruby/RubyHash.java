@@ -271,10 +271,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
-        super(runtime, runtime.getHash());
+        this(runtime, buckets, true);
         this.ifNone = defaultValue;
-        if (buckets <= 0) buckets = 1; // FIXME: this hash implementation cannot deal with no buckets so we will add a single one (this constructor will go away once open addressing is added back).
-        allocFirst(buckets);
     }
 
     protected RubyHash(Ruby runtime, RubyClass metaClass, IRubyObject defaultValue, RubyHashEntry[] initialTable, int threshold) {
@@ -288,9 +286,12 @@ public class RubyHash extends RubyObject implements Map {
      *  Constructor for internal usage (mainly for Array#|, Array#&, Array#- and Array#uniq)
      *  it doesn't initialize ifNone field
      */
-    RubyHash(Ruby runtime, boolean objectSpace) {
+    RubyHash(Ruby runtime, int buckets, boolean objectSpace) {
         super(runtime, runtime.getHash(), objectSpace);
-        allocFirst();
+        // FIXME: current hash implementation cannot deal with no buckets so we will add a single one
+        //  (this constructor will go away once open addressing is added back ???)
+        if (buckets <= 0) buckets = 1;
+        allocFirst(buckets);
     }
 
     // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
