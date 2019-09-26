@@ -226,9 +226,7 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream ris = null;
-            try {
-                ris = resource.inputStream();
+            try (InputStream ris = resource.inputStream()) {
 
                 if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
                     runtime.compileAndLoadFile(scriptName, ris, wrap);
@@ -237,10 +235,6 @@ class LibrarySearcher {
                 }
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
-            } finally {
-                try {
-                    if (ris != null) ris.close();
-                } catch (IOException ioE) { /* At least we tried.... */}
             }
         }
     }
@@ -252,9 +246,9 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = null;
-            try {
-                is = new BufferedInputStream(resource.inputStream(), 32768);
+            try (InputStream ris = resource.inputStream()) {
+
+                InputStream is = new BufferedInputStream(ris, 32768);
                 IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
 
                 // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
@@ -265,10 +259,6 @@ class LibrarySearcher {
                 runtime.loadScope(script, wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
-            } finally {
-                try {
-                    if (is != null) is.close();
-                } catch (IOException ioE) { /* At least we tried.... */ }
             }
         }
     }

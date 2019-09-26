@@ -78,39 +78,27 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         // the temp file with the super URLClassLoader
         if (url.toString().contains( "!/" ) ||
             !(url.getProtocol().equals("file") || url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
-            InputStream in = null; OutputStream out = null;
             try {
                 File f = File.createTempFile("jruby", new File(url.getFile()).getName(), getTempDir());
-                out = new BufferedOutputStream( new FileOutputStream( f ) );
-                in = new BufferedInputStream( url.openStream() );
-                int i = in.read();
-                while( i != -1 ) {
-                    out.write( i );
-                    i = in.read();
-                }
-                out.close();
-                in.close();
-                url = f.toURI().toURL();
 
-                cachedJarPaths.add(URLUtil.getPath(url));
-            }
-            catch (IOException e) {
+                try (FileOutputStream fileOut = new FileOutputStream(f);
+                     InputStream urlIn = url.openStream()) {
+
+                    OutputStream out = new BufferedOutputStream(fileOut);
+                    InputStream in = new BufferedInputStream(urlIn);
+
+                    int i = in.read();
+                    while (i != -1) {
+                        out.write(i);
+                        i = in.read();
+                    }
+                    out.flush();
+                    url = f.toURI().toURL();
+
+                    cachedJarPaths.add(URLUtil.getPath(url));
+                }
+            } catch (IOException e) {
                 throw new RuntimeException("BUG: we can not copy embedded jar to temp directory", e);
-            }
-            finally {
-                // make sure we close everything
-                if ( out != null ) {
-                    try {
-                        out.close();
-                    }
-                    catch (IOException ex) { LOG.debug(ex); }
-                }
-                if ( in != null ) {
-                    try {
-                        in.close();
-                    }
-                    catch (IOException ex) { LOG.debug(ex); }
-                }
             }
         }
         super.addURL( url );
