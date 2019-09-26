@@ -2330,6 +2330,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg);
     }
 
+    // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, opt);
