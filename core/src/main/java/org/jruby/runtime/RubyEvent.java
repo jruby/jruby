@@ -18,18 +18,18 @@ public enum RubyEvent {
     END      ("end", false),
     CALL     ("call"),
     RETURN   ("return"),
-    C_CALL   ("c-call"),
-    C_RETURN ("c-return"),
-    B_CALL   ("b-call"),
-    B_RETURN ("b-return"),
-    THREAD_BEGIN   ("thread-begin"),
-    THREAD_END ("thread-end"),
+    C_CALL   ("c_call"),
+    C_RETURN ("c_return"),
+    B_CALL   ("b_call"),
+    B_RETURN ("b_return"),
+    THREAD_BEGIN   ("thread_begin"),
+    THREAD_END ("thread_end"),
     RAISE    ("raise"),
     COVERAGE ("coverage"),
     // A_CALL is CALL + B_CALL + C_CALL
-    A_CALL   ("a-call"),
+    A_CALL   ("a_call"),
     // A_RETURN is RETURN + B_RETURN + C_RETURN
-    A_RETURN ("a-return");
+    A_RETURN ("a_return");
 
     public static Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
 
