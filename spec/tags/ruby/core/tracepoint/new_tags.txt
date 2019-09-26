@@ -1,4 +1,2 @@
 fails:TracePoint.new includes :line event when event is not specified
-fails:TracePoint.new converts given event name as string into symbol using to_sym
 fails:TracePoint.new includes multiple events when multiple event names are passed as params
-fails:TracePoint.new raises a Argument error when the given argument doesn't match an event name
