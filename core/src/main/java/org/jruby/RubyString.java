@@ -3792,14 +3792,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     final IRubyObject uptoCommon(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
-        return uptoCommon(context, arg, excl, block, false);
+        if (arg instanceof RubySymbol) throw context.runtime.newTypeError("can't convert Symbol into String");
+        return uptoCommon(context, arg.convertToString(), excl, block, false);
     }
 
-    final IRubyObject uptoCommon(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asSymbol) {
-        Ruby runtime = context.runtime;
-        if (arg instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
+    final IRubyObject uptoCommon(ThreadContext context, RubyString end, boolean excl, Block block, boolean asSymbol) {
+        final Ruby runtime = context.runtime;
 
-        RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);
         boolean isAscii = scanForCodeRange() == CR_7BIT && end.scanForCodeRange() == CR_7BIT;
         if (value.getRealSize() == 1 && end.value.getRealSize() == 1 && isAscii) {
@@ -4853,7 +4852,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "chop")
     public IRubyObject chop(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return newEmptyString(runtime, getMetaClass(), value.getEncoding()).infectBy(this);
+        if (value.getRealSize() == 0) return newEmptyString(runtime, metaClass, value.getEncoding()).infectBy(this);
         return makeShared(runtime, 0, StringSupport.choppedLength(this));
     }
 

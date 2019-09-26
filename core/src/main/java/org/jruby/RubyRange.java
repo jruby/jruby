@@ -206,7 +206,7 @@ public class RubyRange extends RubyObject {
         return beg;
     }
 
-    final long begLen1(long len, long beg) {
+    final long begLen1(long len, int beg) {
         long end = RubyNumeric.num2long(this.end);
 
         if (end < 0) {
@@ -527,7 +527,7 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, block);
         } else if (begin instanceof RubySymbol && end instanceof RubySymbol) {
-            begin.asString().uptoCommon(context, end.asString(), isExclusive, block, true);
+            ((RubySymbol) begin).asString().uptoCommon(context, ((RubySymbol) end).asString(), isExclusive, block, true);
         } else {
             IRubyObject tmp = begin.checkStringType();
             if (!tmp.isNil()) {
