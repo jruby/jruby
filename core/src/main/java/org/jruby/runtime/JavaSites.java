@@ -461,6 +461,7 @@ public class JavaSites {
     public static class PathnameSites {
         public final CallSite glob = new FunctionalCachingCallSite("glob");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
+        public final CallSite sub = new FunctionalCachingCallSite("sub");
     }
 
     public static class DateSites {

@@ -2252,17 +2252,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).nil_p(context);
     }
 
-    @JRubyMethod(name = "=~", required = 1, writes = FrameField.BACKREF)
+    // Reads and writes backref due to decendant calls ending up in Regexp#=~
+    @JRubyMethod(name = "=~", reads = FrameField.BACKREF, writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return ((RubyBasicObject)self).op_match19(context, arg);
+        return ((RubyBasicObject)self).op_match(context, arg);
     }
 
-    @Deprecated
-    public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        return op_match(context, self, arg);
-    }
-
-    @JRubyMethod(name = "!~", required = 1, writes = FrameField.BACKREF)
+    // Reads and writes backref due to decendant calls ending up in Regexp#=~
+    @JRubyMethod(name = "!~", reads = FrameField.BACKREF, writes = FrameField.BACKREF)
     public static IRubyObject op_not_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         return ((RubyBasicObject)self).op_not_match(context, arg);
     }
@@ -2417,5 +2414,10 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
         return require(context, recv, name, block);
+    }
+
+    @Deprecated
+    public static IRubyObject op_match19(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return op_match(context, self, arg);
     }
 }

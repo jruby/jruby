@@ -2787,17 +2787,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_pattern_match
      *
      *  call-seq:
-     *     obj =~ other  => false
+     *     obj =~ other  => nil
      *
      *  Pattern Match---Overridden by descendents (notably
      *  <code>Regexp</code> and <code>String</code>) to provide meaningful
      *  pattern-match semantics.
      */
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
-        return context.fals;
-    }
-
-    public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         return context.nil;
     }
 
@@ -3225,6 +3221,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public synchronized Object dataGetStructChecked() {
         TypeConverter.checkData(this);
         return getInternalVariable("__wrap_struct__");
+    }
+
+    @Deprecated
+    public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
+        return context.nil;
     }
 
     @Deprecated
