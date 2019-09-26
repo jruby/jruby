@@ -2190,7 +2190,7 @@ public class IRRuntimeHelpers {
     public static void callTrace(ThreadContext context, RubyEvent event, String name, String filename, int line) {
         if (context.runtime.hasEventHooks()) {
             // FIXME: Try and statically generate END linenumber instead of hacking it.
-            int linenumber = line == -1 ? context.getLine()+1 : line;
+            int linenumber = line == -1 ? context.getLine() : line;
 
             context.trace(event, name, context.getFrameKlazz(), filename, linenumber);
         }

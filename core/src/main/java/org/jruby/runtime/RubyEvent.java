@@ -52,9 +52,10 @@ public enum RubyEvent {
         this.event_name = event_name;
         this.requiresDebug = requiresDebug;
     }
-	
+
+    @Deprecated
     public int getLineNumberOffset(){
-        return 1;
+        return 0;
     }
 	
     public String getName(){

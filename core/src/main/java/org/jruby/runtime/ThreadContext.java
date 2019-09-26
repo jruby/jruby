@@ -738,7 +738,7 @@ public final class ThreadContext {
     }
 
     public void trace(RubyEvent event, String name, RubyModule implClass) {
-        trace(event, name, implClass, backtrace[backtraceIndex].filename, backtrace[backtraceIndex].line);
+        trace(event, name, implClass, backtrace[backtraceIndex].filename, backtrace[backtraceIndex].line + 1);
     }
 
     public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
