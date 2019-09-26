@@ -86,6 +86,7 @@ import org.jruby.util.cli.Options;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.murmurCombine;
@@ -1553,23 +1554,29 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (arg0 instanceof RubyFixnum) {
             store(((RubyFixnum) arg0).value, arg1);
         } else if (arg0 instanceof RubyRange) {
-            RubyRange range = (RubyRange)arg0;
-            int beg = (int) range.begLen0(realLength);
-            splice(getRuntime(), beg, (int) range.begLen1(realLength, beg), arg1);
+            RubyRange range = (RubyRange) arg0;
+            final Ruby runtime = metaClass.runtime;
+            int beg = checkInt(runtime, range.begLen0(realLength));
+            splice(runtime, beg, checkInt(runtime, range.begLen1(realLength, beg)), arg1);
         } else {
-            ThreadContext context = getRuntime().getCurrentContext();
-            ArraySites sites = sites(context);
-
-            if (RubyRange.isRangeLike(context, arg0, sites.begin_checked, sites.end_checked, sites.exclude_end_checked)) {
-                RubyRange range = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
-
-                int beg = (int) range.begLen0(realLength);
-                splice(getRuntime(), beg, (int) range.begLen1(realLength, beg), arg1);
-            } else {
-                store(RubyNumeric.num2long(arg0), arg1);
-            }
+            asetFallback(arg0, arg1);
         }
         return arg1;
+    }
+
+    private void asetFallback(IRubyObject arg0, IRubyObject arg1) {
+        final Ruby runtime = metaClass.runtime;
+        ThreadContext context = runtime.getCurrentContext();
+        ArraySites sites = sites(context);
+
+        if (RubyRange.isRangeLike(context, arg0, sites.begin_checked, sites.end_checked, sites.exclude_end_checked)) {
+            RubyRange range = RubyRange.rangeFromRangeLike(context, arg0, sites.begin, sites.end, sites.exclude_end);
+
+            int beg = checkInt(runtime, range.begLen0(realLength));
+            splice(runtime, beg, checkInt(runtime, range.begLen1(realLength, beg)), arg1);
+        } else {
+            store(RubyNumeric.num2long(arg0), arg1);
+        }
     }
 
     @Deprecated
