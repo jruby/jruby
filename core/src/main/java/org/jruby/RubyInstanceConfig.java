@@ -1764,6 +1764,8 @@ public class RubyInstanceConfig {
      * Comma-separated list of methods to exclude from JIT compilation.
      * Specify as "Module", "Module#method" or "method".
      *
+     * Also supports excluding based on implementation_file.rb syntax.
+     *
      * Set with the <tt>jruby.jit.exclude</tt> system property.
      */
     public static final String COMPILE_EXCLUDE = Options.JIT_EXCLUDE.load();

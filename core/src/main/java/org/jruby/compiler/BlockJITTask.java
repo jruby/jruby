@@ -52,7 +52,7 @@ class BlockJITTask extends JITCompiler.Task {
     @Override
     public void exec() throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
-        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body.getImplementationClass());
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body);
         if (excludeModuleName != null) {
             body.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
