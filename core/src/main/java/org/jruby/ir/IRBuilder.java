@@ -337,9 +337,9 @@ public class IRBuilder {
             needsLineNumInfo = false;
             addInstr(manager.newLineNumber(_lastProcessedLineNum));
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
                 if (needsCodeCoverage()) {
-                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
                 }
             }
         }
@@ -2055,8 +2055,8 @@ public class IRBuilder {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
-            addInstr(manager.newLineNumber(scope.getLine()));
-            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine()));
+            addInstr(manager.newLineNumber(scope.getLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine() + 1));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -2076,8 +2076,8 @@ public class IRBuilder {
         Operand rv = build(defNode.getBodyNode());
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new LineNumberInstr(defNode.getEndLine()));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
+            addInstr(new LineNumberInstr(defNode.getEndLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine() + 1));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -3703,7 +3703,7 @@ public class IRBuilder {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
+                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine() + 1));
             }
 
             addInstr(new ReturnInstr(retVal));
@@ -4044,7 +4044,7 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
+        addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
@@ -4054,7 +4054,7 @@ public class IRBuilder {
         // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
         // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
         addInstr(manager.newLineNumber(endLine));
-        addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
+        addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine + 1));
 
         addInstr(new ReturnInstr(bodyReturnValue));
 
