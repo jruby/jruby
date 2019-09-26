@@ -159,17 +159,16 @@ public class IRRuntimeHelpers {
 
     // Create a jump for a non-local return which will return from nearest lambda (which may be itself) or method.
     @JIT @Interp
-    public static IRubyObject initiateNonLocalReturn(DynamicScope dynScope, Block block, IRubyObject returnValue) {
+    public static IRubyObject initiateNonLocalReturn(DynamicScope currentScope, Block block, IRubyObject returnValue) {
         if (block != null && inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
 
-        DynamicScope returnToScope = getContainingLambda(dynScope);
+        DynamicScope returnToScope = getContainingLambda(currentScope);
 
-        if (returnToScope == null) returnToScope = getContainingReturnToScope(dynScope);
+        if (returnToScope == null) returnToScope = getContainingReturnToScope(currentScope);
 
         assert returnToScope != null: "accidental return scope";
 
-        StaticScope returnScope = dynScope.getStaticScope();
-        throw IRReturnJump.create(returnScope.getIRScope(), returnToScope, returnValue);
+        throw IRReturnJump.create(currentScope.getStaticScope().getIRScope(), returnToScope, returnValue);
     }
 
     // Finds static scope of where we want to *return* to.
