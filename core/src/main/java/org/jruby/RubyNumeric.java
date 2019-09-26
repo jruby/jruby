@@ -174,35 +174,31 @@ public class RubyNumeric extends RubyObject {
         long num = num2long(arg);
 
         checkInt(arg, num);
-        return (int)num;
+        return (int) num;
     }
 
     /** check_int
      *
      */
-    public static int checkInt(final Ruby runtime, long num){
-        if (num < Integer.MIN_VALUE) {
-            tooSmall(runtime, num);
-        } else if (num > Integer.MAX_VALUE) {
-            tooBig(runtime, num);
+    public static int checkInt(final Ruby runtime, long num) {
+        if (((int) num) != num) {
+            checkIntFail(runtime, num);
         }
         return (int) num;
     }
 
-    public static void checkInt(IRubyObject arg, long num){
-        if (num < Integer.MIN_VALUE) {
-            tooSmall(arg.getRuntime(), num);
-        } else if (num > Integer.MAX_VALUE) {
-            tooBig(arg.getRuntime(), num);
+    public static void checkInt(IRubyObject arg, long num) {
+        if (((int) num) != num) {
+            checkIntFail(arg.getRuntime(), num);
         }
     }
 
-    private static void tooSmall(Ruby runtime, long num) {
-        throw runtime.newRangeError("integer " + num + " too small to convert to `int'");
-    }
-
-    private static void tooBig(Ruby runtime, long num) {
-        throw runtime.newRangeError("integer " + num + " too big to convert to `int'");
+    private static void checkIntFail(Ruby runtime, long num) {
+        if (num < Integer.MIN_VALUE) {
+            throw runtime.newRangeError("integer " + num + " too small to convert to `int'");
+        } else {
+            throw runtime.newRangeError("integer " + num + " too big to convert to `int'");
+        }
     }
 
     /**
