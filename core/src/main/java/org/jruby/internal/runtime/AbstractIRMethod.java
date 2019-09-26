@@ -112,27 +112,6 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         }
     }
 
-    @JIT
-    public String getClassName(ThreadContext context) {
-        String className;
-        if (implementationClass.isSingleton()) {
-            MetaClass metaClass = (MetaClass)implementationClass;
-            RubyClass realClass = metaClass.getRealClass();
-            // if real class is Class
-            if (realClass == context.runtime.getClassClass()) {
-                // use the attached class's name
-                className = ((RubyClass) metaClass.getAttached()).getName();
-            } else {
-                // use the real class name
-                className = realClass.getName();
-            }
-        } else {
-            // use the class name
-            className = implementationClass.getName();
-        }
-        return className;
-    }
-
     public String getFile() {
         return method.getFile();
     }

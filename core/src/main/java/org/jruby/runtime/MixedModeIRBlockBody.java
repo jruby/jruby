@@ -96,11 +96,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public String getClassName(ThreadContext context) {
-        return closure.getId();
-    }
-
-    @Override
     public String getName() {
         return closure.getId();
     }
