@@ -170,11 +170,11 @@ public class JITCompiler implements JITCompilerMBean {
 
     public Runnable getTaskFor(ThreadContext context, Compilable method) {
         if (method instanceof MixedModeIRMethod) {
-            return new MethodJITTask(this, (MixedModeIRMethod) method, method.getClassName(context));
+            return new MethodJITTask(this, (MixedModeIRMethod) method, method.getOwnerName());
         } else if (method instanceof MixedModeIRBlockBody) {
-            return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getClassName(context));
+            return new BlockJITTask(this, (MixedModeIRBlockBody) method, method.getOwnerName());
         } else if (method instanceof CompiledIRMethod) {
-            return new MethodCompiledJITTask(this, (CompiledIRMethod) method, method.getClassName(context));
+            return new MethodCompiledJITTask(this, (CompiledIRMethod) method, method.getOwnerName());
         }
 
         return new FullBuildTask(this, method);

@@ -29,6 +29,7 @@ package org.jruby.compiler;
 import org.jruby.Ruby;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.CompiledIRBlockBody;
@@ -40,13 +41,16 @@ class BlockJITTask extends JITCompiler.Task {
 
     private final String className;
     private final MixedModeIRBlockBody body;
+    private final String blockId;
     private final String methodName;
 
     public BlockJITTask(JITCompiler jitCompiler, MixedModeIRBlockBody body, String className) {
         super(jitCompiler);
         this.body = body;
         this.className = className;
-        this.methodName = body.getName();
+        this.blockId = body.getName();
+        IRMethod method = body.getIRScope().getNearestMethod();
+        this.methodName = method != null ? method.getByteName().toString() : null;
     }
 
     @Override
@@ -56,7 +60,7 @@ class BlockJITTask extends JITCompiler.Task {
         if (excludeModuleName != null) {
             body.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body, methodName, "skipping block in " + excludeModuleName);
+                JITCompiler.log(body, blockId, "skipping block in " + excludeModuleName);
             }
             return;
         }
@@ -64,7 +68,7 @@ class BlockJITTask extends JITCompiler.Task {
         final String key = SexpMaker.sha1(body.getIRScope());
         final Ruby runtime = jitCompiler.runtime;
         JVMVisitor visitor = new JVMVisitor(runtime);
-        BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, runtime, body, visitor);
+        BlockJITClassGenerator generator = new BlockJITClassGenerator(className, blockId, key, runtime, body, visitor);
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
         generator.compile(context);
@@ -95,7 +99,7 @@ class BlockJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(body, methodName, message, reason);
+        JITCompiler.log(body, blockId, message, reason);
     }
 
 }
