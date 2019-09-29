@@ -106,8 +106,9 @@ describe "Kernel#warn" do
 
         -> { w.f4(false, 0) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.warn_call_lineno}: warning: false|)
         -> { w.f4(nil, 1) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f1_call_lineno}: warning: |)
-        obj = Object.new
-        -> { w.f4(obj, 2) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f2_call_lineno}: warning: #{obj.to_s}|)
+        obj = mock("obj")
+        obj.should_receive(:to_s).and_return("to_s called")
+        -> { w.f4(obj, 2) }.should output(nil, %r|core/kernel/fixtures/classes.rb:#{w.f2_call_lineno}: warning: to_s called|)
       end
 
       it "does not prepend caller information if line number is too big" do
@@ -147,9 +148,9 @@ describe "Kernel#warn" do
     end
 
     it "treats empty hash as no keyword argument" do
-      $VERBOSE = true
-      -> { warn Hash.new }.should output("", "")
-      -> { warn('foo', {}) }.should output(nil, "foo\n")
+      h = {}
+      -> { warn(**h) }.should_not complain(verbose: true)
+      -> { warn('foo', **h) }.should complain("foo\n")
     end
   end
 end
