@@ -1,0 +1,2 @@
+fails:Thread#backtrace_locations without argument is the same as showing all locations with 0..-1
+fails:Thread#backtrace_locations the first location reports the call to #backtrace_locations
