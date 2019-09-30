@@ -91,4 +91,9 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
         // AbstractIRMethod.getMethodData() calls this and we want IC since we have not eliminated any get/put fields.
         return method.getInterpreterContext();
     }
+
+    @Override
+    protected void printMethodIR() {
+        // no-op
+    }
 }

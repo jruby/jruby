@@ -15,13 +15,13 @@ public class IRMethod extends IRScope {
     // Argument description
     protected ArgumentDescriptor[] argDesc = ArgumentDescriptor.EMPTY_ARRAY;
 
-    private DefNode defn;
+    private volatile DefNode defNode;
 
     public IRMethod(IRManager manager, IRScope lexicalParent, DefNode defn, ByteList name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope, boolean needsCodeCoverage) {
         super(manager, lexicalParent, name, lineNumber, staticScope);
 
-        this.defn = defn;
+        this.defNode = defn;
         this.isInstanceMethod = isInstanceMethod;
 
         if (needsCodeCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
@@ -33,25 +33,28 @@ public class IRMethod extends IRScope {
 
     @Override
     public boolean hasBeenBuilt() {
-        return defn == null;
+        return defNode == null;
     }
 
-    public synchronized InterpreterContext lazilyAcquireInterpreterContext() {
-        if (!hasBeenBuilt()) {
-            IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent(), getFlags().contains(IRFlags.CODE_COVERAGE));
-
-            defn = null;
-        }
+    public final InterpreterContext lazilyAcquireInterpreterContext() {
+        if (!hasBeenBuilt()) buildMethodImpl();
 
         return interpreterContext;
     }
 
+    private synchronized void buildMethodImpl() {
+        DefNode defNode = this.defNode;
+        if (defNode == null) return;
+
+        IRBuilder.topIRBuilder(getManager(), this).
+                defineMethodInner(defNode, getLexicalParent(), getFlags().contains(IRFlags.CODE_COVERAGE)); // sets interpreterContext
+        this.defNode = null;
+    }
+
     public synchronized BasicBlock[] prepareForCompilation() {
-        if (!hasBeenBuilt()) lazilyAcquireInterpreterContext();
+        if (!hasBeenBuilt()) buildMethodImpl();
 
-        BasicBlock[] bbs = super.prepareForCompilation();
-
-        return bbs;
+        return super.prepareForCompilation();
     }
 
     @Override

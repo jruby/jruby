@@ -74,15 +74,8 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     }
 
     @Override
-    public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
+    protected void printMethodIR() {
+        // no-op
     }
 
     @Override
