@@ -2945,6 +2945,11 @@ public class IRBuilder {
     private InterpreterContext buildIterInner(IterNode iterNode) {
         boolean forNode = iterNode instanceof ForNode;
         prepareImplicitState();                                    // recv_self, add frame block, etc)
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
+        }
+
         if (!forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
         receiveBlockArgs(iterNode);
         // for adds these after processing binding block args because and operations at that point happen relative
@@ -2956,6 +2961,10 @@ public class IRBuilder {
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getName(), getFileName(), iterNode.getEndLine() + 1));
+        }
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
