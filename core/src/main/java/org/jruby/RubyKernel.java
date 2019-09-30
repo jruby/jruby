@@ -90,9 +90,7 @@ import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.RubyIO.checkUnsupportedOptions;
 import static org.jruby.RubyIO.checkValidSpawnOptions;
 import static org.jruby.RubyIO.UNSUPPORTED_SPAWN_OPTIONS;
