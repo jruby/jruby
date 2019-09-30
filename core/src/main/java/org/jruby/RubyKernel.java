@@ -783,11 +783,7 @@ public class RubyKernel {
      */
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, reads = SCOPE)
     public static RubyArray local_variables(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-
-        StaticScope currentStaticScope = context.getCurrentStaticScope();
-
-        return currentStaticScope.getLocalVariables(runtime::newArray, (a, s) -> a.append(runtime.newSymbol(s)));
+        return context.getCurrentStaticScope().getLocalVariables(context.runtime);
     }
 
     @Deprecated

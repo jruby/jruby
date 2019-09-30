@@ -34,9 +34,9 @@
 
 package org.jruby;
 
-import java.util.HashSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -45,7 +45,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.IdUtil;
 
 /**
  * @author  jpetersen
@@ -172,22 +171,9 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        HashSet<String> encounteredLocalVariables = new HashSet<>();
-        RubyArray allLocalVariables = runtime.newArray();
-        DynamicScope currentScope = binding.getEvalScope(context.runtime);
+        Ruby runtime = context.runtime;
 
-        while (currentScope != null) {
-            for (String name : currentScope.getStaticScope().getVariables()) {
-                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
-                    allLocalVariables.push(runtime.newSymbol(name));
-                    encounteredLocalVariables.add(name);
-                }
-            }
-            currentScope = currentScope.getParentScope();
-        }
-
-        return allLocalVariables;
+        return binding.getEvalScope(runtime).getStaticScope().getLocalVariables(runtime);
     }
 
     @JRubyMethod(name = "receiver")

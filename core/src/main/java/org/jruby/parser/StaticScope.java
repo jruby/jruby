@@ -34,9 +34,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.BiConsumer;
 import java.util.function.IntFunction;
 
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -58,6 +61,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.IdUtil;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -436,35 +440,54 @@ public class StaticScope implements Serializable {
      * @return a list of all names (sans $~ and $_ which are special names)
      */
     public String[] getAllNamesInScope() {
-        return getLocalVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
+        return collectVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
     }
 
     /**
-     * Populate a collection of local variable names in scope using the given functions.
+     * Populate a deduplicated collection of variable names in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
      *
      * @param collectionFactory used to construct the collection
      * @param collectionPopulator used to pass values into the collection
      * @param <T> resulting collection type
      * @return populated collection
      */
-    public <T> T getLocalVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+    public <T> T collectVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
         StaticScope current = this;
 
         T collection = collectionFactory.apply(current.variableNamesLength);
 
+        HashMap<String, Object> dedup = new HashMap<>();
+
         while (current.isBlockOrEval) {
             for (String name : current.variableNames) {
-                collectionPopulator.accept(collection, name);
+                dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
             }
             current = current.enclosingScope;
         }
 
         // once more for method scope
         for (String name : current.variableNames) {
-            collectionPopulator.accept(collection, name);
+            dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
         }
 
         return collection;
+    }
+
+    /**
+     * Convenience wrapper around {@link #collectVariables(IntFunction, BiConsumer)}.
+     *
+     * @param runtime current runtime
+     * @return populated RubyArray
+     */
+    public RubyArray getLocalVariables(Ruby runtime) {
+        return collectVariables(
+                runtime::newArray,
+                (a, s) -> {
+                    if (IdUtil.isLocal(s)) a.append(runtime.newSymbol(s));
+                });
     }
 
     public int isDefined(String name, int depth) {
