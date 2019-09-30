@@ -32,7 +32,10 @@ package org.jruby.parser;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.BiConsumer;
+import java.util.function.IntFunction;
 
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -287,11 +290,7 @@ public class StaticScope implements Serializable {
     }
 
     public String[] getVariables() {
-        String[] newVars = new String[variableNames.length];
-        for (int i = 0; i < variableNames.length; i++) {
-            newVars[i] = variableNames[i];
-        }
-        return newVars;
+        return variableNames.clone();
     }
 
     public int getNumberOfVariables() {
@@ -437,19 +436,35 @@ public class StaticScope implements Serializable {
      * @return a list of all names (sans $~ and $_ which are special names)
      */
     public String[] getAllNamesInScope() {
-        String[] names = getVariables();
-        if (isBlockOrEval) {
-            String[] ourVariables = names;
-            String[] variables = enclosingScope.getAllNamesInScope();
+        return getLocalVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
+    }
 
-            // we know variables cannot be null since this IRStaticScope always returns a non-null array
-            names = new String[variables.length + ourVariables.length];
+    /**
+     * Populate a collection of local variable names in scope using the given functions.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T getLocalVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        StaticScope current = this;
 
-            System.arraycopy(variables, 0, names, 0, variables.length);
-            System.arraycopy(ourVariables, 0, names, variables.length, ourVariables.length);
+        T collection = collectionFactory.apply(current.variableNamesLength);
+
+        while (current.isBlockOrEval) {
+            for (String name : current.variableNames) {
+                collectionPopulator.accept(collection, name);
+            }
+            current = current.enclosingScope;
         }
 
-        return names;
+        // once more for method scope
+        for (String name : current.variableNames) {
+            collectionPopulator.accept(collection, name);
+        }
+
+        return collection;
     }
 
     public int isDefined(String name, int depth) {

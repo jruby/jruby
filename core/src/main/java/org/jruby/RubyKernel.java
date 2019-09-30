@@ -46,9 +46,7 @@ package org.jruby;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
@@ -67,6 +65,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -76,7 +75,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.KernelSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -785,23 +783,11 @@ public class RubyKernel {
      */
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, reads = SCOPE)
     public static RubyArray local_variables(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        Set<RubySymbol> encounteredLocalVariables = new HashSet<>();
-        RubyArray allLocalVariables = runtime.newArray();
-        DynamicScope currentScope = context.getCurrentScope();
+        Ruby runtime = context.runtime;
 
-        while (currentScope != null) {
-            for (String id: currentScope.getStaticScope().getVariables()) {
-                RubySymbol name = runtime.newSymbol(id);
-                if (name.validLocalVariableName() && !encounteredLocalVariables.contains(name)) {
-                    allLocalVariables.push(name);
-                    encounteredLocalVariables.add(name);
-                }
-            }
-            currentScope = currentScope.getParentScope();
-        }
+        StaticScope currentStaticScope = context.getCurrentStaticScope();
 
-        return allLocalVariables;
+        return currentStaticScope.getLocalVariables(runtime::newArray, (a, s) -> a.append(runtime.newSymbol(s)));
     }
 
     @Deprecated
