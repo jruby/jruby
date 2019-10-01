@@ -215,7 +215,7 @@ public class RubyObject extends RubyBasicObject {
     public boolean equals(Object other) {
         return other == this ||
                 other instanceof IRubyObject &&
-                invokedynamic(getRuntime().getCurrentContext(), this, OP_EQUAL, (IRubyObject) other).isTrue();
+                invokedynamic(metaClass.runtime.getCurrentContext(), this, OP_EQUAL, (IRubyObject) other).isTrue();
     }
 
     /**
@@ -235,14 +235,14 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public String toString() {
-        return toRubyString(getRuntime().getCurrentContext()).getUnicodeValue();
+        return toRubyString(metaClass.runtime.getCurrentContext()).getUnicodeValue();
     }
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject[] args, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
     }
 
@@ -250,7 +250,7 @@ public class RubyObject extends RubyBasicObject {
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
     }
 
@@ -258,7 +258,7 @@ public class RubyObject extends RubyBasicObject {
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
     }
 
@@ -266,7 +266,7 @@ public class RubyObject extends RubyBasicObject {
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
     }
 
@@ -274,7 +274,7 @@ public class RubyObject extends RubyBasicObject {
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
     }
 
@@ -412,7 +412,7 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public int hashCode() {
-        IRubyObject hashValue = invokedynamic(getRuntime().getCurrentContext(), this, HASH);
+        IRubyObject hashValue = invokedynamic(metaClass.runtime.getCurrentContext(), this, HASH);
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
         return nonFixnumHashCode(hashValue);
     }

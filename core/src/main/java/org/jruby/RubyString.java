@@ -1121,7 +1121,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Override
     public final int compareTo(IRubyObject other) {
-        return (int) op_cmp(getRuntime().getCurrentContext(), other).convertToInteger().getLongValue();
+        return (int) op_cmp(metaClass.runtime.getCurrentContext(), other).convertToInteger().getLongValue();
     }
 
     /* rb_str_cmp_m */
@@ -1371,7 +1371,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // rb_str_buf_append against ptr
     public final int cat19(ByteList other, int codeRange) {
-        return EncodingUtils.encCrStrBufCat(getRuntime(), this, other, other.getEncoding(), codeRange);
+        return EncodingUtils.encCrStrBufCat(metaClass.runtime, this, other, other.getEncoding(), codeRange);
     }
 
     public final RubyString catString(String str) {
@@ -1616,7 +1616,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
 
         IRubyObject tmp = other.checkStringType();
-        if (tmp.isNil()) return runtime.getNil();
+        if (tmp.isNil()) return context.nil;
 
         RubyString otherStr = (RubyString) tmp;
         Encoding enc = StringSupport.areCompatible(this, otherStr);
@@ -1638,7 +1638,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
 
         IRubyObject tmp = other.checkStringType();
-        if (tmp.isNil()) return runtime.getNil();
+        if (tmp.isNil()) return context.nil;
         RubyString otherStr = (RubyString) tmp;
 
         Encoding enc = StringSupport.areCompatible(this, otherStr);
@@ -2711,7 +2711,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString concat(IRubyObject other) {
-        return concat(getRuntime().getCurrentContext(), other);
+        return concat(metaClass.runtime.getCurrentContext(), other);
     }
 
     @Deprecated
@@ -3542,11 +3542,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return subpat(context, (RubyRegexp) arg);
         } else if (arg instanceof RubyString) {
             RubyString str = (RubyString)arg;
-            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime) : runtime.getNil();
+            return StringSupport.index(this, str, 0, this.checkEncoding(str)) != -1 ? str.strDup(runtime) : context.nil;
         } else if (arg instanceof RubyRange) {
             int len = strLength();
             int[] begLen = ((RubyRange) arg).begLenInt(len, 0);
-            return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+            return begLen == null ? context.nil : substr19(runtime, begLen[0], begLen[1]);
         } else {
             StringSites sites = sites(context);
             if (RubyRange.isRangeLike(context, arg, sites.respond_to_begin, sites.respond_to_end)) {
@@ -3554,7 +3554,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 RubyRange range = RubyRange.rangeFromRangeLike(context, arg, sites.begin, sites.end, sites.exclude_end);
 
                 int[] begLen = range.begLenInt(len, 0);
-                return begLen == null ? runtime.getNil() : substr19(runtime, begLen[0], begLen[1]);
+                return begLen == null ? context.nil : substr19(runtime, begLen[0], begLen[1]);
             }
         }
         return op_aref(runtime, RubyNumeric.num2int(arg));
@@ -3915,7 +3915,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
         int i = RubyNumeric.num2int(index);
         if (i < 0) i += value.getRealSize();
-        if (i < 0 || i >= value.getRealSize()) return runtime.getNil();
+        if (i < 0 || i >= value.getRealSize()) return context.nil;
         return RubyFixnum.newFixnum(runtime, value.getUnsafeBytes()[value.getBegin() + i] & 0xff);
     }
 

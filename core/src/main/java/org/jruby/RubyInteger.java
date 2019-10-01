@@ -108,13 +108,13 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // conversion
     protected RubyFloat toFloat() {
-        return RubyFloat.newFloat(getRuntime(), getDoubleValue());
+        return RubyFloat.newFloat(metaClass.runtime, getDoubleValue());
     }
 
     public int signum() { return getBigIntegerValue().signum(); }
 
     public RubyInteger negate() { // abstract - Fixnum/Bignum do override
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return sites(context).op_uminus.call(context, this, this).convertToInteger();
     }
 
@@ -196,7 +196,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     @JRubyMethod(name = "integer?")
     public IRubyObject integer_p() {
-        return getRuntime().getTrue();
+        return metaClass.runtime.getTrue();
     }
 
     /** int_upto
@@ -715,7 +715,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "digits")
     public RubyArray digits(ThreadContext context) {
-        return digits(context, RubyFixnum.newFixnum(context.getRuntime(), 10));
+        return digits(context, RubyFixnum.newFixnum(context.runtime, 10));
     }
 
     @JRubyMethod(name = "digits")
@@ -987,7 +987,7 @@ public abstract class RubyInteger extends RubyNumeric {
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return other.callMethod(context, "to_i");
         } else {
-            throw recv.getRuntime().newTypeError(
+            throw context.runtime.newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");
         }
     }

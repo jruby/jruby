@@ -288,15 +288,15 @@ public class RubyMatchData extends RubyObject {
     }
 
     final void check() {
-        if (str == null) throw getRuntime().newTypeError("uninitialized Match");
+        if (str == null) throw metaClass.runtime.newTypeError("uninitialized Match");
     }
 
     final Regex getPattern() {
         final Object pattern = this.pattern;
         if (pattern instanceof Regex) return (Regex) pattern;
-        if (pattern == null) throw getRuntime().newTypeError("uninitialized Match (missing pattern)");
+        if (pattern == null) throw metaClass.runtime.newTypeError("uninitialized Match (missing pattern)");
         // when a regexp is avoided for matching we lazily instantiate one from the unquoted string :
-        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(getRuntime(), (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
+        Regex regexPattern = RubyRegexp.getQuotedRegexpFromCache(metaClass.runtime, (RubyString) pattern, RegexpOptions.NULL_OPTIONS);
         this.pattern = regexPattern;
         return regexPattern;
     }
@@ -305,7 +305,7 @@ public class RubyMatchData extends RubyObject {
         RubyRegexp regexp = this.regexp;
         if (regexp != null) return regexp;
         final Regex pattern = getPattern();
-        return this.regexp = RubyRegexp.newRegexp(getRuntime(), (ByteList) pattern.getUserObject(), pattern);
+        return this.regexp = RubyRegexp.newRegexp(metaClass.runtime, (ByteList) pattern.getUserObject(), pattern);
     }
 
     private static RubyString makeShared(Ruby runtime, RubyString str, int index, int length) {
@@ -352,7 +352,7 @@ public class RubyMatchData extends RubyObject {
             byte[] bytes = name.getBytes();
             return getPattern().nameToBackrefNumber(bytes, 0, bytes.length, regs);
         } catch (JOniException je) {
-            throw getRuntime().newIndexError(je.getMessage());
+            throw metaClass.runtime.newIndexError(je.getMessage());
         }
     }
 
@@ -378,9 +378,9 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyString inspect() {
-        Ruby runtime = getRuntime();
         if (str == null) return (RubyString) anyToString();
 
+        Ruby runtime = metaClass.runtime;
         RubyString result = runtime.newString();
         result.cat((byte)'#').cat((byte)'<');
         result.append(getMetaClass().getRealClass().to_s());
@@ -433,7 +433,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a() {
-        return match_array(getRuntime(), 0);
+        return match_array(metaClass.runtime, 0);
     }
 
     @JRubyMethod(rest = true)
@@ -460,7 +460,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     public IRubyObject values_at(IRubyObject[] args) {
-        return values_at(getRuntime().getCurrentContext(), args);
+        return values_at(metaClass.runtime.getCurrentContext(), args);
     }
 
     /** match_captures
@@ -473,7 +473,7 @@ public class RubyMatchData extends RubyObject {
 
     private int nameToBackrefNumber(RubyString str) {
         check();
-        return nameToBackrefNumber(getRuntime(), getPattern(), regs, str);
+        return nameToBackrefNumber(metaClass.runtime, getPattern(), regs, str);
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
@@ -743,7 +743,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject to_s() {
         check();
         IRubyObject ss = RubyRegexp.last_match(this);
-        if (ss.isNil()) ss = RubyString.newEmptyString(getRuntime());
+        if (ss.isNil()) ss = RubyString.newEmptyString(metaClass.runtime);
         if (isTaint()) ss.setTaint(true);
         return ss;
     }
@@ -792,7 +792,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = {"eql?", "=="}, required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
-        return getRuntime().newBoolean( equals(obj) );
+        return metaClass.runtime.newBoolean( equals(obj) );
     }
 
     @Override
@@ -804,7 +804,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum( hashCode() );
+        return metaClass.runtime.newFixnum( hashCode() );
     }
 
     @JRubyMethod

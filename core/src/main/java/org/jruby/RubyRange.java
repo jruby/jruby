@@ -301,7 +301,7 @@ public class RubyRange extends RubyObject {
 
     @Override
     public RubyFixnum hash() {
-        return hash(getRuntime().getCurrentContext());
+        return hash(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "hash")
@@ -694,7 +694,7 @@ public class RubyRange extends RubyObject {
                     return intervalStepSize(context, begin, end, step, self.isExclusive);
                 }
 
-                return runtime.getNil();
+                return context.nil;
             }
         };
     }

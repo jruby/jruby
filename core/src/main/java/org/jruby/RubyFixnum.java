@@ -131,7 +131,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         final long value = this.value;
 
         if (value < CACHE_OFFSET && value >= -CACHE_OFFSET) {
-            Object[] fixnumConstants = getRuntime().fixnumConstants;
+            Object[] fixnumConstants = metaClass.runtime.fixnumConstants;
             constant = fixnumConstants[(int) value + CACHE_OFFSET];
 
             if (constant == null) {
@@ -194,7 +194,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyInteger negate() {
-        return negate(getRuntime(), value);
+        return negate(metaClass.runtime, value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
@@ -248,7 +248,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyFixnum hash() {
-        return newFixnum(getRuntime(), hashCode());
+        return newFixnum(metaClass.runtime, hashCode());
     }
 
     @Override
@@ -396,24 +396,24 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         switch (args.length) {
             case 0: return to_s();
             case 1: return to_s(args[0]);
-            default: throw getRuntime().newArgumentError(args.length, 1);
+            default: throw metaClass.runtime.newArgumentError(args.length, 1);
         }
     }
 
     @Override
     public RubyString to_s() {
         ByteList bytes = ConvertBytes.longToByteList(value, 10);
-        return RubyString.newString(getRuntime(), bytes, USASCIIEncoding.INSTANCE);
+        return RubyString.newString(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
     }
 
     @Override
     public RubyString to_s(IRubyObject arg0) {
         int base = num2int(arg0);
         if (base < 2 || base > 36) {
-            throw getRuntime().newArgumentError("illegal radix " + base);
+            throw metaClass.runtime.newArgumentError("illegal radix " + base);
         }
         ByteList bytes = ConvertBytes.longToByteList(value, base);
-        return RubyString.newString(getRuntime(), bytes, USASCIIEncoding.INSTANCE);
+        return RubyString.newString(metaClass.runtime, bytes, USASCIIEncoding.INSTANCE);
     }
 
     /** fix_to_sym
@@ -1012,7 +1012,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     private int compareToOther(IRubyObject other) {
         if (other instanceof RubyBignum) return BigInteger.valueOf(value).compareTo(((RubyBignum) other).value);
         if (other instanceof RubyFloat) return Double.compare((double) value, ((RubyFloat) other).value);
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
     }
 
@@ -1322,7 +1322,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject to_f() {
-        return RubyFloat.newFloat(getRuntime(), (double) value);
+        return RubyFloat.newFloat(metaClass.runtime, (double) value);
     }
 
     /** fix_size
@@ -1379,7 +1379,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject id() {
         if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
-            return newFixnum(getRuntime(), 2 * value + 1);
+            return newFixnum(metaClass.runtime, 2 * value + 1);
         }
 
         return super.id();
@@ -1393,7 +1393,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     // Piece of mri rb_to_id
     @Override
     public String asJavaString() {
-        throw getRuntime().newTypeError(inspect().toString() + " is not a symbol");
+        throw metaClass.runtime.newTypeError(inspect().toString() + " is not a symbol");
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
@@ -1464,7 +1464,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public RubyRational convertToRational() {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         return RubyRational.newRationalRaw(runtime, this, one(runtime));
     }
 

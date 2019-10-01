@@ -939,7 +939,7 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public RubyInteger convertToInteger() {
-        return mriTruncate(getRuntime().getCurrentContext());
+        return mriTruncate(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "to_i")

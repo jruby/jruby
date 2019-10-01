@@ -967,7 +967,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyBignum) {
             return value.compareTo(((RubyBignum)other).value);
         }
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return (int)coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
     }
 
@@ -1031,7 +1031,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject eql_p(IRubyObject other) {
         // '==' and '===' are the same, but they differ from 'eql?'.
-        return op_equal(getRuntime().getCurrentContext(), other);
+        return op_equal(metaClass.runtime.getCurrentContext(), other);
     }
 
     @Deprecated
@@ -1044,7 +1044,7 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(value.hashCode());
+        return metaClass.runtime.newFixnum(value.hashCode());
     }
 
     @Override
@@ -1067,7 +1067,7 @@ public class RubyBignum extends RubyInteger {
 
     @Deprecated
     public IRubyObject abs() {
-        return abs(getRuntime().getCurrentContext());
+        return abs(metaClass.runtime.getCurrentContext());
     }
 
     /** rb_big_abs

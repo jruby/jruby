@@ -494,7 +494,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
+        return inspect(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod

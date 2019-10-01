@@ -666,7 +666,8 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
-        throw getRuntime().newTypeError(str(getRuntime(), "can't copy ", types(getRuntime(), getType())));
+        final Ruby runtime = metaClass.runtime;
+        throw runtime.newTypeError(str(runtime, "can't copy ", types(runtime, getType())));
     }
 
     /** num_coerce
@@ -674,7 +675,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         if (metaClass == other.getMetaClass()) return runtime.newArray(other, this);
 
         IRubyObject cdr = RubyKernel.new_float(runtime, this);
@@ -720,9 +721,9 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(IRubyObject other) {
         if (this == other) { // won't hurt fixnums
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(metaClass.runtime);
         }
-        return getRuntime().getNil();
+        return metaClass.runtime.getNil();
     }
 
     /** num_eql
@@ -887,7 +888,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "integer?")
     public IRubyObject integer_p() {
-        return getRuntime().getFalse();
+        return metaClass.runtime.getFalse();
     }
 
     /** num_zero_p
@@ -900,7 +901,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public boolean isZero() {
-        return zero_p(getRuntime().getCurrentContext()).isTrue();
+        return zero_p(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
     /** num_nonzero_p
@@ -1296,7 +1297,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public RubyRational convertToRational() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+        final ThreadContext context = metaClass.runtime.getCurrentContext();
         return RubyRational.newRationalRaw(context.runtime, numerator(context), denominator(context));
     }
 
@@ -1423,11 +1424,11 @@ public class RubyNumeric extends RubyObject {
     }
 
     public boolean isNegative() {
-        return isNegative(getRuntime().getCurrentContext()).isTrue();
+        return isNegative(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
     public boolean isPositive() {
-        return isPositive(getRuntime().getCurrentContext()).isTrue();
+        return isPositive(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
@@ -1451,7 +1452,7 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated
     public final IRubyObject rbClone(IRubyObject[] args) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         switch (args.length) {
             case 0: return rbClone(context);
             case 1: return rbClone(context, args[0]);

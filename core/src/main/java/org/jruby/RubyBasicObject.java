@@ -374,15 +374,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public final IRubyObject callMethod(String name, IRubyObject... args) {
-        return Helpers.invoke(getRuntime().getCurrentContext(), this, name, args);
+        return Helpers.invoke(metaClass.runtime.getCurrentContext(), this, name, args);
     }
 
     public final IRubyObject callMethod(String name, IRubyObject arg) {
-        return Helpers.invoke(getRuntime().getCurrentContext(), this, name, arg);
+        return Helpers.invoke(metaClass.runtime.getCurrentContext(), this, name, arg);
     }
 
     public final IRubyObject callMethod(String name) {
-        return Helpers.invoke(getRuntime().getCurrentContext(), this, name);
+        return Helpers.invoke(metaClass.runtime.getCurrentContext(), this, name);
     }
 
     /**
@@ -587,7 +587,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public final boolean respondsTo(String name) {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         final CacheEntry entry = metaClass.searchWithCache("respond_to?");
         final DynamicMethod respondTo = entry.method;
 
@@ -639,7 +639,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         DynamicMethod method = entry.method;
         // perhaps should try a smart version as for respondsTo above?
         if ( method.isUndefined() ) return false;
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         return method.call(runtime.getCurrentContext(), this, entry.sourceModule,
             "respond_to_missing?", runtime.newSymbol(name), runtime.newBoolean(incPrivate)
         ).isTrue();
@@ -692,7 +692,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyString asString() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         IRubyObject str = sites.to_s.call(context, this, this);
@@ -708,7 +708,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyArray convertToArray() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         return (RubyArray) TypeConverter.convertToType(context, this, runtime.getArray(), sites.to_ary_checked);
@@ -720,7 +720,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyHash convertToHash() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         return (RubyHash) TypeConverter.convertToType(context, this, runtime.getHash(), sites.to_hash_checked);
@@ -732,7 +732,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyFloat convertToFloat() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         return (RubyFloat) TypeConverter.convertToType(context, this, runtime.getFloat(), sites.to_f_checked);
@@ -744,14 +744,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyInteger convertToInteger() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
 
         IRubyObject result = TypeConverter.convertToType(context, this, runtime.getInteger(), sites.to_int_checked, true);
 
         if (!(result instanceof RubyInteger)) {
-            throw getRuntime().newTypeError(str(runtime, types(runtime, getMetaClass()), "#to_int should return Integer"));
+            throw runtime.newTypeError(str(runtime, types(runtime, getMetaClass()), "#to_int should return Integer"));
         }
 
         return (RubyInteger) result;
@@ -767,7 +767,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (convertMethod.equals("to_int")) return convertToInteger();
 
         IRubyObject result;
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         if (convertMethod.equals("to_i")) {
             ThreadContext context = runtime.getCurrentContext();
             BasicObjectSites sites = sites(context);
@@ -789,7 +789,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyString convertToString() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         return (RubyString) TypeConverter.convertToType(context, this, runtime.getString(), sites.to_str_checked);
@@ -801,7 +801,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject anyToString() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
 
         /* 6:tags 16:addr 1:eos */
         String hex = Integer.toHexString(System.identityHashCode(this));
@@ -836,7 +836,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject checkStringType() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         return TypeConverter.checkStringType(context, sites.to_str_checked, this);
@@ -857,7 +857,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     */
     @Override
     public IRubyObject checkArrayType() {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
         return TypeConverter.checkArrayType(context, sites.to_ary_checked, this);
@@ -909,8 +909,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         IRubyObject dup = metaClass.getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
 
-        final Ruby runtime = getRuntime();
-        initCopy(runtime.getCurrentContext(), dup, this, false);
+        initCopy(metaClass.runtime.getCurrentContext(), dup, this, false);
 
         return dup;
     }
@@ -977,7 +976,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Override
     public IRubyObject rbClone() {
-        return rbCloneInternal(getRuntime().getCurrentContext(), true);
+        return rbCloneInternal(metaClass.runtime.getCurrentContext(), true);
     }
 
     public IRubyObject rbClone(ThreadContext context, IRubyObject maybeOpts) {
@@ -1265,7 +1264,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public int compareTo(IRubyObject other) {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
 
         IRubyObject cmp = invokedynamic(runtime.getCurrentContext(), this, OP_CMP, other);
 
@@ -1324,7 +1323,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public boolean eql(IRubyObject other) {
-        return invokedynamic(getRuntime().getCurrentContext(), this, EQL, other).isTrue();
+        return invokedynamic(metaClass.runtime.getCurrentContext(), this, EQL, other).isTrue();
     }
 
     /**
@@ -2712,7 +2711,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.hello         #=> "Hello from Mod.\n"
      */
     public IRubyObject extend(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+        Ruby runtime = metaClass.runtime;
 
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
@@ -2962,8 +2961,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (other == this) return true;
 
         if (other instanceof IRubyObject) {
-            Ruby runtime = getRuntime();
-            ThreadContext context = runtime.getCurrentContext();
+            ThreadContext context = metaClass.runtime.getCurrentContext();
             BasicObjectSites sites = sites(context);
             IRubyObject equals = invokeChecked(context, this, sites.equals_checked, (IRubyObject)other);
             if (equals == null) return false;
@@ -2981,7 +2979,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public int hashCode() {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         IRubyObject hashValue = invokeChecked(context, this, sites(context).hash_checked);
         if (hashValue == null) return super.hashCode();
         if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);

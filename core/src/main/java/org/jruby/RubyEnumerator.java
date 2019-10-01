@@ -541,14 +541,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         IRubyObject size = this.size;
         if (size != null) {
             if (size.respondsTo("call")) {
-                if (context == null) context = getRuntime().getCurrentContext();
+                if (context == null) context = metaClass.runtime.getCurrentContext();
                 return size.callMethod(context, "call");
             }
 
             return size;
         }
 
-        if (context == null) context = getRuntime().getCurrentContext();
+        if (context == null) context = metaClass.runtime.getCurrentContext();
 
         return context.nil;
     }
@@ -612,7 +612,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @Override
     public synchronized boolean hasNext() {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         try {
             // We don't care about the result, just whether it succeeds.
             sites(context).peek.call(context, this, this);
@@ -628,7 +628,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @Override
     public Object next() {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return sites(context).next.call(context, this, this).toJava(java.lang.Object.class);
     }
 

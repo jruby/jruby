@@ -497,7 +497,7 @@ public class RubyTime extends RubyObject {
     }
 
     public final RubyTime localtime() {
-        return localtime(getRuntime().getCurrentContext());
+        return localtime(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "localtime")
@@ -533,7 +533,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
     public RubyBoolean gmt() {
-        return getRuntime().newBoolean(isUTC());
+        return metaClass.runtime.newBoolean(isUTC());
     }
 
     public boolean isUTC() {
@@ -542,11 +542,11 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"getgm", "getutc"})
     public RubyTime getgm() {
-        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), nsec);
+        return newTime(metaClass.runtime, dt.withZone(DateTimeZone.UTC), nsec);
     }
 
     public final RubyTime getlocal() {
-        return getlocal(getRuntime().getCurrentContext());
+        return getlocal(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "getlocal")

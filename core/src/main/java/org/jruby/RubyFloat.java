@@ -183,7 +183,7 @@ public class RubyFloat extends RubyNumeric {
 
     @Override
     public RubyInteger convertToInteger() {
-        return toInteger(getRuntime());
+        return toInteger(metaClass.runtime);
     }
 
     private RubyInteger toInteger(final Ruby runtime) {
@@ -236,7 +236,7 @@ public class RubyFloat extends RubyNumeric {
         } else if (number instanceof RubyFloat) {
             return number;
         }
-        throw recv.getRuntime().newTypeError("failed to convert " + number.getMetaClass() + " into Float");
+        throw context.runtime.newTypeError("failed to convert " + number.getMetaClass() + " into Float");
     }
 
     /** flo_to_s
@@ -245,7 +245,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
     public IRubyObject to_s() {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         if (Double.isInfinite(value)) {
             return RubyString.newString(runtime, value < 0 ? "-Infinity" : "Infinity");
         }
@@ -285,7 +285,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "coerce", required = 1)
     @Override
     public IRubyObject coerce(IRubyObject other) {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         return runtime.newArray(RubyKernel.new_float(runtime, other), this);
     }
 
@@ -517,7 +517,7 @@ public class RubyFloat extends RubyNumeric {
         case FLOAT:
             return Double.compare(value, ((RubyNumeric) other).getDoubleValue());
         default:
-            ThreadContext context = getRuntime().getCurrentContext();
+            ThreadContext context = metaClass.runtime.getCurrentContext();
             return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
         }
     }
@@ -641,7 +641,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "eql?", required = 1)
     @Override
     public IRubyObject eql_p(IRubyObject other) {
-        return getRuntime().newBoolean( equals(other) );
+        return metaClass.runtime.newBoolean( equals(other) );
     }
 
     @Override
@@ -662,7 +662,7 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum( hashCode() );
+        return metaClass.runtime.newFixnum( hashCode() );
     }
 
     @Override
@@ -1119,7 +1119,7 @@ public class RubyFloat extends RubyNumeric {
      */
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p() {
-        return RubyBoolean.newBoolean(getRuntime(), isNaN());
+        return RubyBoolean.newBoolean(metaClass.runtime, isNaN());
     }
 
     public boolean isNaN() {
@@ -1132,9 +1132,9 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "infinite?")
     public IRubyObject infinite_p() {
         if (Double.isInfinite(value)) {
-            return RubyFixnum.newFixnum(getRuntime(), value < 0 ? -1 : 1);
+            return RubyFixnum.newFixnum(metaClass.runtime, value < 0 ? -1 : 1);
         }
-        return getRuntime().getNil();
+        return metaClass.runtime.getNil();
     }
 
     public boolean isInfinite() {
@@ -1147,9 +1147,9 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "finite?")
     public IRubyObject finite_p() {
         if (Double.isInfinite(value) || Double.isNaN(value)) {
-            return getRuntime().getFalse();
+            return metaClass.runtime.getFalse();
         }
-        return getRuntime().getTrue();
+        return metaClass.runtime.getTrue();
     }
 
     private ByteList marshalDump() {
@@ -1190,12 +1190,12 @@ public class RubyFloat extends RubyNumeric {
 
     @JRubyMethod(name = "next_float")
     public IRubyObject next_float() {
-        return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.POSITIVE_INFINITY));
+        return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.POSITIVE_INFINITY));
     }
 
     @JRubyMethod(name = "prev_float")
     public IRubyObject prev_float() {
-        return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+        return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
     }
 
     @Deprecated

@@ -317,7 +317,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ino")
     public IRubyObject ino() {
         checkInitialized();
-        return getRuntime().newFixnum(stat.ino());
+        return metaClass.runtime.newFixnum(stat.ino());
     }
 
     @JRubyMethod(name = "inspect")
@@ -328,7 +328,7 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) {
             buf.append(": uninitialized");
         } else {
-            ThreadContext context = getRuntime().getCurrentContext();
+            ThreadContext context = metaClass.runtime.getCurrentContext();
             buf.append(' ');
             // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
             // Using generic posix library makes pushing inspect behavior into specific system impls

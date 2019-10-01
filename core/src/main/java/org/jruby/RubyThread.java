@@ -716,7 +716,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void pollThreadEvents() {
-        pollThreadEvents(getRuntime().getCurrentContext());
+        pollThreadEvents(metaClass.runtime.getCurrentContext());
     }
 
     // CHECK_INTS
@@ -1195,7 +1195,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Override
     public IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
+        return inspect(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod
@@ -1336,7 +1336,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @return this thread
      */
     public final IRubyObject raise(IRubyObject exception) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return genericRaise(context, context.getThread(), exception);
     }
 
@@ -1349,7 +1349,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @return this thread
      */
     public final IRubyObject raise(IRubyObject exception, RubyString message) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         return genericRaise(context, context.getThread(), exception, message);
     }
 
