@@ -3061,8 +3061,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 return runtime.getNil();
             }
 
-            int pos = (int) range.begLen0(realLength);
-            int len = (int) range.begLen1(realLength, pos);
+            int pos = checkInt(runtime, range.begLen0(realLength));
+            int len = checkInt(runtime, range.begLen1(realLength, pos));
             return slice_internal(runtime, pos, len);
         }
         return delete_at(RubyNumeric.num2int(arg0));
