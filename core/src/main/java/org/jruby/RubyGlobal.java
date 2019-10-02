@@ -105,7 +105,7 @@ public class RubyGlobal {
         }
     }
 
-    public static void createGlobals(ThreadContext context, Ruby runtime) {
+    public static void createGlobals(Ruby runtime) {
         GlobalVariables globals = runtime.getGlobalVariables();
 
         runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
@@ -128,28 +128,36 @@ public class RubyGlobal {
         // Version information:
         IRubyObject version = null;
         IRubyObject patchlevel = null;
-        IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze(context);
-        IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze(context);
-        IRubyObject engine = runtime.newString(Constants.ENGINE).freeze(context);
+        IRubyObject release = runtime.newString(Constants.COMPILE_DATE);
+        release.setFrozen(true);
+        IRubyObject platform = runtime.newString(Constants.PLATFORM);
+        release.setFrozen(true);
+        IRubyObject engine = runtime.newString(Constants.ENGINE);
+        release.setFrozen(true);
 
-        version = runtime.newString(Constants.RUBY_VERSION).freeze(context);
+        version = runtime.newString(Constants.RUBY_VERSION);
+        release.setFrozen(true);
         patchlevel = runtime.newFixnum(0);
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
 
-        IRubyObject description = runtime.newString(OutputStrings.getVersionString()).freeze(context);
+        IRubyObject description = runtime.newString(OutputStrings.getVersionString());
+        release.setFrozen(true);
         runtime.defineGlobalConstant("RUBY_DESCRIPTION", description);
 
-        IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString()).freeze(context);
+        IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString());
+        release.setFrozen(true);
         runtime.defineGlobalConstant("RUBY_COPYRIGHT", copyright);
 
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 
-        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION).freeze(context);
-        IRubyObject jrubyRevision = runtime.newString(Constants.REVISION).freeze(context);
+        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION);
+        release.setFrozen(true);
+        IRubyObject jrubyRevision = runtime.newString(Constants.REVISION);
+        release.setFrozen(true);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
 
@@ -166,7 +174,8 @@ public class RubyGlobal {
 
         runtime.defineVariable(kcodeGV, GLOBAL);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV), GLOBAL);
-        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze(context);
+        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator());
+        release.setFrozen(true);
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);

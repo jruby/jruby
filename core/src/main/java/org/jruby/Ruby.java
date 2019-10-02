@@ -1253,10 +1253,10 @@ public final class Ruby implements Constantizable {
 
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
-        dummyClass.freeze(context);
+        dummyClass.setFrozen(true);
 
         // Create global constants and variables
-        RubyGlobal.createGlobals(context, this);
+        RubyGlobal.createGlobals(this);
 
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
