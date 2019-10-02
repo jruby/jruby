@@ -216,8 +216,6 @@ public class RbConfigLibrary implements Library {
 
         final RubyModule rbConfig = runtime.defineModule("RbConfig");
 
-        rbConfig.defineAnnotatedMethods(RbConfigLibrary.class);
-
         normalizedHome = getNormalizedHome(runtime);
 
         // Ruby installed directory.
