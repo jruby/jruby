@@ -20,7 +20,7 @@ import org.jruby.util.log.LoggerFactory;
 public class TraceType {
 
     private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
-    private static final StackWalker WALKER = StackWalker.getInstance();
+    private static final StackWalker WALKER = ThreadContext.WALKER;
 
     private final Gather gather;
     private final Format format;

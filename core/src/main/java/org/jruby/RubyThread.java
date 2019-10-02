@@ -110,7 +110,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final Logger LOG = LoggerFactory.getLogger(RubyThread.class);
     // static { LOG.setDebugEnable(true); }
 
-    private static final StackWalker WALKER = StackWalker.getInstance();
+    private static final StackWalker WALKER = ThreadContext.WALKER;
 
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl = ThreadLike.DUMMY;
