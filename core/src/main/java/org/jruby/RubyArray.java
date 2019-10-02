@@ -1934,18 +1934,18 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         JavaSites.CheckedSites to_ary_checked = null;
 
         for (; i < realLength; i++) {
-            if (i > 0 && sep != null) result.append19(sep);
+            if (i > 0 && sep != null) result.cat19(sep);
 
             IRubyObject val = eltOk(i);
 
             if (val instanceof RubyString) {
-                strJoin(result, val, first);
+                strJoin(result, (RubyString) val, first);
             } else if (val instanceof RubyArray) {
                 recursiveJoin(context, val, sep, result, (RubyArray) val, first);
             } else {
                 IRubyObject tmp = val.checkStringType();
                 if (tmp != context.nil) {
-                    strJoin(result, tmp, first);
+                    strJoin(result, (RubyString) tmp, first);
                     continue;
                 }
 
@@ -1955,8 +1955,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 if (tmp != context.nil) {
                     recursiveJoin(context, val, sep, result, (RubyArray) tmp, first);
                 } else {
-                    val = RubyString.objAsString(context, val);
-                    strJoin(result, val, first);
+                    strJoin(result, RubyString.objAsString(context, val), first);
                 }
             }
         }
@@ -1965,10 +1964,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     // MRI: ary_join_1, str_join label
-    private void strJoin(RubyString result, IRubyObject tmp, boolean[] first) {
-        result.append19(tmp);
+    private static void strJoin(RubyString result, RubyString val, boolean[] first) {
+        result.cat19(val);
         if (first[0]) {
-            result.setEncoding(((RubyString) tmp).getEncoding());
+            result.setEncoding(val.getEncoding());
             first[0] = false;
         }
     }

@@ -2318,10 +2318,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @JRubyMethod(name = "insert")
-    public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
-        RubyString str = stringArg.convertToString();
+    public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject arg) {
+        RubyString str = arg.convertToString();
         int index = RubyNumeric.num2int(indexArg);
-        if (index == -1) return append19(stringArg);
+        if (index == -1) {
+            modifyCheck();
+            return cat19(str);
+        }
         if (index < 0) index++;
         replaceInternal19(index, 0, str);
         return this;
@@ -2635,10 +2638,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return cat(otherStr.value);
     }
 
-    public RubyString append(RubyString otherStr) {
+    public RubyString append(RubyString other) {
         modifyCheck();
-        infectBy(otherStr);
-        return cat(otherStr.value);
+        infectBy(other);
+        return cat(other.value);
     }
 
     public RubyString append19(IRubyObject other) {
@@ -2656,28 +2659,42 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return cat19(other.convertToString());
     }
 
+    // NOTE: append(RubyString) should pbly just do the encoding aware cat
+    final RubyString append19(RubyString other) {
+        modifyCheck();
+        return cat19(other);
+    }
+
     /** rb_str_concat
      *
      */
     @JRubyMethod(name = "<<")
     public RubyString concatSingle(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
+        if (other instanceof RubyString) {
+            // duplicated (default) return path - since its common
+            return append19((RubyString) other);
+        }
         if (other instanceof RubyFixnum) {
             long c = RubyNumeric.num2long(other);
             if (c < 0) {
-                throw runtime.newRangeError(c + " out of char range");
+                throw context.runtime.newRangeError(c + " out of char range");
             }
-            return concatNumeric(runtime, (int)(c & 0xFFFFFFFF));
-        } else if (other instanceof RubyBignum) {
+            return concatNumeric(context.runtime, (int)(c & 0xFFFFFFFF));
+        }
+        if (other instanceof RubyBignum) {
             if (((RubyBignum) other).getBigIntegerValue().signum() < 0) {
-                throw runtime.newRangeError("negative string size (or size too big)");
+                throw context.runtime.newRangeError("negative string size (or size too big)");
             }
             long c = ((RubyBignum) other).getLongValue();
-            return concatNumeric(runtime, (int) c);
+            return concatNumeric(context.runtime, (int) c);
         }
+        if (other instanceof RubyFloat) {
+            modifyCheck();
+            return cat19((RubyString) ((RubyFloat) other).to_s());
+        }
+        if (other instanceof RubySymbol) throw context.runtime.newTypeError("can't convert Symbol into String");
 
-        if (other instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
-        return append19(other);
+        return append19(other.convertToString());
     }
 
     /** rb_str_concat
@@ -2704,7 +2721,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 tmp.concatSingle(context, obj);
             }
 
-            append19(tmp);
+            cat19(tmp);
         }
 
         return this;
