@@ -77,6 +77,7 @@ import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
+import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -191,6 +192,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -953,25 +955,21 @@ public final class Ruby implements Constantizable {
         return moduleLastId.incrementAndGet();
     }
     public void addModule(RubyModule module) {
-        synchronized (allModules) {
-            allModules.add(module);
-        }
+        allModules.put(module, RubyBasicObject.NEVER);
     }
 
     public void eachModule(Consumer<RubyModule> func) {
-        synchronized (allModules) {
-            for (RubyModule module : allModules) {
-                func.accept(module);
-            }
+        Enumeration<RubyModule> e = allModules.keys();
+        while (e.hasMoreElements()) {
+            func.accept(e.nextElement());
         }
     }
 
     @Deprecated
     public void eachModule(Function1<Object, IRubyObject> func) {
-        synchronized (allModules) {
-            for (RubyModule module : allModules) {
-                func.apply(module);
-            }
+        Enumeration<RubyModule> e = allModules.keys();
+        while (e.hasMoreElements()) {
+            func.apply(e.nextElement());
         }
     }
 
@@ -5234,7 +5232,9 @@ public final class Ruby implements Constantizable {
     private final AtomicInteger moduleLastId = new AtomicInteger(0);
 
     // Weak map of all Modules in the system (and by extension, all Classes
-    private final Set<RubyModule> allModules = new WeakHashSet<>(128);
+    // a ConcurrentMap<RubyModule, ?> is used to emulate WeakHashSet<RubyModule>
+    // NOTE: module/class instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
+    private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
     /**
