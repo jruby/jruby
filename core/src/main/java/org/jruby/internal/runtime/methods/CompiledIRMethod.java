@@ -204,17 +204,4 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         }
     }
 
-    public String getFile() {
-        return method.getFile();
-    }
-
-    public int getLine() {
-        return method.getLine();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
-    }
-
 }

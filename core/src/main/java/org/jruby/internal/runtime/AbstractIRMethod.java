@@ -160,4 +160,10 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
         return methodData;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + ' ' + method + ' ' + getSignature();
+    }
+
 }
