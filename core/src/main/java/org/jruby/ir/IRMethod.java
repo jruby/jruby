@@ -52,7 +52,7 @@ public class IRMethod extends IRScope {
     }
 
     public synchronized BasicBlock[] prepareForCompilation() {
-        if (!hasBeenBuilt()) buildMethodImpl();
+        buildMethodImpl();
 
         return super.prepareForCompilation();
     }
