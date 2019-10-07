@@ -39,6 +39,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
@@ -234,6 +235,16 @@ public abstract class JavaLang {
             java.lang.Throwable throwable = unwrapIfJavaObject(self);
             final String msg = throwable.getLocalizedMessage(); // does getMessage
             return msg == null ? RubyString.newEmptyString(context.runtime) : RubyString.newString(context.runtime, msg);
+        }
+
+        @JRubyMethod
+        public static IRubyObject full_message(final ThreadContext context, final IRubyObject self) {
+            return full_message(context, self, null);
+        }
+
+        @JRubyMethod
+        public static IRubyObject full_message(final ThreadContext context, final IRubyObject self, final IRubyObject opts) {
+            return RubyString.newString(context.runtime, TraceType.printFullMessage(context, self, opts));
         }
 
         @JRubyMethod // Ruby exception to_s is the same as message

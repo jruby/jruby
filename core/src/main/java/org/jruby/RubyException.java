@@ -39,7 +39,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.Exception;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.exceptions.RaiseException;
@@ -53,7 +52,6 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -78,7 +76,7 @@ public class RubyException extends RubyObject {
             this.backtraceObject = clone.backtraceObject;
             this.backtraceLocations = clone.backtraceLocations;
         }
-        
+
         /**
          * Get the Ruby-facing representation of this backtrace, or a previously-set backtrace object.
          *
@@ -118,7 +116,6 @@ public class RubyException extends RubyObject {
     public static final int TRACE_HEAD = 8;
     public static final int TRACE_TAIL = 4;
     public static final int TRACE_MAX = RubyException.TRACE_HEAD + RubyException.TRACE_TAIL + 6;
-    public static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
 
     private final Backtrace backtrace = new Backtrace();
 
@@ -222,39 +219,12 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod
     public IRubyObject full_message(ThreadContext context) {
-        return RubyString.newString(context.runtime, TraceType.Format.MRI.printBacktrace(this, false));
+        return full_message(context, null);
     }
 
     @JRubyMethod
     public IRubyObject full_message(ThreadContext context, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
-        boolean highlight = false;
-        boolean reverse = false;
-
-        if (!optArg.isNil()) {
-            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
-
-            IRubyObject vHigh = highlightOrder[0];
-            if (vHigh == null) vHigh = context.nil;
-            if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
-                throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
-            }
-            highlight = vHigh.isTrue();
-
-            IRubyObject vOrder = highlightOrder[1];
-            if (vOrder != null) {
-                vOrder = TypeConverter.checkID(vOrder);
-                if (vOrder == runtime.newSymbol("bottom")) reverse = true;
-                else if (vOrder == runtime.newSymbol("top")) reverse = false;
-                else {
-                    throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
-                }
-            }
-        }
-
-        // TODO: reverse
-        return RubyString.newString(runtime, TraceType.Format.MRI.printBacktrace(this, highlight));
+        return RubyString.newString(context.runtime, TraceType.printFullMessage(context, this, opts));
     }
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
@@ -446,19 +416,7 @@ public class RubyException extends RubyObject {
      */
     public void printBacktrace(PrintStream errorStream, int skip) {
         IRubyObject trace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-        if ( trace.isNil() ) return;
-        if ( trace instanceof RubyArray ) {
-            IRubyObject[] elements = ((RubyArray) trace).toJavaArrayMaybeUnsafe();
-            for (int i = skip; i < elements.length; i++) {
-                IRubyObject stackTraceLine = elements[i];
-                if (stackTraceLine instanceof RubyString) {
-                    errorStream.println("\tfrom " + stackTraceLine);
-                }
-                else {
-                    errorStream.println("\t" + stackTraceLine);
-                }
-            }
-        }
+        TraceType.printBacktraceToStream(trace, errorStream, skip);
     }
 
     private boolean isArrayOfStrings(IRubyObject backtrace) {
