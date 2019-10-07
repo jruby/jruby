@@ -439,7 +439,7 @@ public class RubyDate extends RubyObject {
         return civilImpl(context, (RubyClass) self, args[0], args[1], args[2], sg);
     }
 
-    static DateTime civilDate(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
+    public static DateTime civilDate(ThreadContext context, final int y, final int m, final int d, final Chronology chronology) {
         DateTime dt;
         try {
             if (d >= 0) { // let d == 0 fail (raise 'invalid date')
@@ -1493,7 +1493,7 @@ public class RubyDate extends RubyObject {
         return jd_to_ajd(context, jd, fr, of_sec);
     }
 
-    static Chronology getChronology(ThreadContext context, final long sg, final int off) {
+    public static Chronology getChronology(ThreadContext context, final long sg, final int off) {
         final DateTimeZone zone;
         if (off == 0) {
             if (sg == ITALY) return CHRONO_ITALY_UTC;
