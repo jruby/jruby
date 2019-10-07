@@ -43,8 +43,7 @@ public class IRMethod extends IRScope {
     }
 
     private synchronized void buildMethodImpl() {
-        DefNode defNode = this.defNode;
-        if (defNode == null) return;
+        if (hasBeenBuilt()) return;
 
         IRBuilder.topIRBuilder(getManager(), this).
                 defineMethodInner(defNode, getLexicalParent(), getFlags().contains(IRFlags.CODE_COVERAGE)); // sets interpreterContext
