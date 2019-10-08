@@ -11,16 +11,21 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyString;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.TypeConverter;
 
 public class TraceType {
 
     private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
     private static final StackWalker WALKER = ThreadContext.WALKER;
+    private static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
 
     private final Gather gather;
     private final Format format;
@@ -302,7 +307,38 @@ public class TraceType {
         public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
     }
 
-    protected static String printBacktraceMRI(RubyException exception, boolean console) {
+    public static String printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
+        boolean highlight = false;
+        boolean reverse = false;
+
+        if (!optArg.isNil()) {
+            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
+
+            IRubyObject vHigh = highlightOrder[0];
+            if (vHigh == null) vHigh = context.nil;
+            if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
+                throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
+            }
+            highlight = vHigh.isTrue();
+
+            IRubyObject vOrder = highlightOrder[1];
+            if (vOrder != null) {
+                vOrder = TypeConverter.checkID(vOrder);
+                if (vOrder == runtime.newSymbol("bottom")) reverse = true;
+                else if (vOrder == runtime.newSymbol("top")) reverse = false;
+                else {
+                    throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
+                }
+            }
+        }
+
+        // TODO: reverse
+        return printBacktraceMRI(exception, highlight);
+    }
+
+    private static String printBacktraceMRI(IRubyObject exception, boolean console) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
 
@@ -369,7 +405,7 @@ public class TraceType {
             }
         }
 
-        exception.printBacktrace(errorStream, 1);
+        printBacktraceToStream(backtrace, errorStream, 1);
 
         return baos.toString();
     }
@@ -483,6 +519,22 @@ public class TraceType {
                 errorStream.print(context.getFile() + ':' + context.getLine());
             } else {
                 errorStream.print(context.getFile());
+            }
+        }
+    }
+
+    public static void printBacktraceToStream(IRubyObject backtrace, PrintStream errorStream, int skip) {
+        if ( backtrace.isNil() ) return;
+        if ( backtrace instanceof RubyArray ) {
+            IRubyObject[] elements = ((RubyArray) backtrace).toJavaArrayMaybeUnsafe();
+            for (int i = skip; i < elements.length; i++) {
+                IRubyObject stackTraceLine = elements[i];
+                if (stackTraceLine instanceof RubyString) {
+                    errorStream.println("\tfrom " + stackTraceLine);
+                }
+                else {
+                    errorStream.println("\t" + stackTraceLine);
+                }
             }
         }
     }
