@@ -77,6 +77,7 @@ public class RubyDir extends RubyObject implements Closeable {
     private String[] snapshot;     // snapshot of contents of directory
     private int pos;               // current position in directory
     private boolean isOpen = true;
+    private Encoding encoding;
 
     private static final Pattern PROTOCOL_PATTERN = Pattern.compile("^(uri|jar|file|classpath):([^:]*:)?//?.*");
 
@@ -126,10 +127,21 @@ public class RubyDir extends RubyObject implements Closeable {
      * <code>Dir</code> object returned, so a new <code>Dir</code> instance
      * must be created to reflect changes to the underlying file system.
      */
-    @JRubyMethod(name = "initialize")
-    public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
+    @JRubyMethod(name = "initialize", required = 1, optional = 1)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        RubyString newPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+
+        if (args.length > 1 && !args[1].isNil()) {
+            RubyHash opts = args[1].convertToHash();
+            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");
+            if (encodingArg != null && !encodingArg.isNil()) {
+                encoding = runtime.getEncodingService().getEncodingFromObject(encodingArg);
+            }
+        }
+
+        if (encoding == null) encoding = runtime.getDefaultFilesystemEncoding();
+
+        RubyString newPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
         path = newPath;
         pos = 0;
 
@@ -144,7 +156,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @Deprecated
     public IRubyObject initialize19(ThreadContext context, IRubyObject arg) {
-        return initialize(context, arg);
+        return initialize(context, new IRubyObject[] {arg});
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
@@ -637,9 +649,9 @@ public class RubyDir extends RubyObject implements Closeable {
      * provided, a new directory object is passed to the block, which closes the
      * directory object before terminating.
      */
-    @JRubyMethod(name = "open", meta = true)
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        RubyDir directory = (RubyDir) context.runtime.getDir().newInstance(context, RubyFile.get_path(context, path), Block.NULL_BLOCK);
+    @JRubyMethod(name = "open", meta = true, required = 1, optional = 1)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject args[], Block block) {
+        RubyDir directory = (RubyDir) context.runtime.getDir().newInstance(context, args, Block.NULL_BLOCK);
 
         if (!block.isGiven()) return directory;
 
@@ -652,7 +664,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @Deprecated
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        return open(context, recv, path, block);
+        return open(context, recv, new IRubyObject[] {path}, block);
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
@@ -691,7 +703,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "each")
     public IRubyObject each(ThreadContext context, Block block) {
-        return block.isGiven() ? each(context, context.runtime.getDefaultEncoding(), block) : enumeratorize(context.runtime, this, "each");
+        return block.isGiven() ? each(context, encoding, block) : enumeratorize(context.runtime, this, "each");
     }
 
     @JRubyMethod(name = "each")
@@ -733,7 +745,7 @@ public class RubyDir extends RubyObject implements Closeable {
      * (i.e. all the directory entries except for "." and "..").
      */
     public IRubyObject each_child(ThreadContext context, Block block) {
-        return each_child(context, context.runtime.getDefaultEncoding(), block);
+        return each_child(context, encoding, block);
     }
 
     @Override
@@ -801,7 +813,7 @@ public class RubyDir extends RubyObject implements Closeable {
         final String[] snapshot = this.snapshot;
         if (pos >= snapshot.length) return getRuntime().getNil();
 
-        RubyString result = getRuntime().newString(snapshot[pos]);
+        RubyString result = RubyString.newString(getRuntime(), snapshot[pos], encoding);
         pos++;
         return result;
     }
