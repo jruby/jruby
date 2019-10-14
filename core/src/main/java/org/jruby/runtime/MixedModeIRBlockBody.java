@@ -160,7 +160,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
                     // ensure we've got code ready for JIT
                     ensureInstrsReady();
-                    closure.getNearestTopLocalVariableScope().prepareForCompilation();
+                    closure.getNearestUncompiledScope().prepareForCompilation();
 
                     if (!closure.hasExplicitCallProtocol()) {
                         if (Options.JIT_LOGGING.load()) {
