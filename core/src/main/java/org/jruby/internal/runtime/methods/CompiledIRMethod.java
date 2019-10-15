@@ -74,15 +74,8 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     }
 
     @Override
-    public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
+    protected void printMethodIR() {
+        // no-op
     }
 
     @Override
@@ -209,19 +202,6 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
             Helpers.throwException(t);
             return null; // not reached
         }
-    }
-
-    public String getFile() {
-        return method.getFile();
-    }
-
-    public int getLine() {
-        return method.getLine();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
     }
 
 }

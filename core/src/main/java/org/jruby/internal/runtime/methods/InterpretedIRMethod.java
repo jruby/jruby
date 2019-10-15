@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
@@ -53,24 +52,10 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         }
     }
 
-    // FIXME: for subclasses we should override this method since it can be simple get
-    // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
     @Override
-    public InterpreterContext ensureInstrsReady() {
-        if (interpreterContext == null) {
-            if (method instanceof IRMethod) {
-                interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
-            }
-            interpreterContext = method.getInterpreterContext();
-
-            if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
-                ByteArrayOutputStream baos = IRDumper.printIR(method, false, true);
-
-                LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
-            }
-        }
-
-        return interpreterContext;
+    protected void printMethodIR() {
+        ByteArrayOutputStream baos = IRDumper.printIR(method, false, true);
+        LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
     }
 
     @Override

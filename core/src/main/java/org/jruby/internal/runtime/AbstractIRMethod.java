@@ -3,16 +3,13 @@ package org.jruby.internal.runtime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.JIT;
 import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.PutFieldInstr;
@@ -33,8 +30,8 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected final Signature signature;
     protected final IRScope method;
     protected final StaticScope staticScope;
-    protected InterpreterContext interpreterContext = null;
     protected int callCount = 0;
+    protected transient InterpreterContext interpreterContext; // cached from method
     private transient MethodData methodData;
 
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
@@ -87,7 +84,28 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return ((IRMethod) method).getArgumentDescriptors();
     }
 
-    public abstract InterpreterContext ensureInstrsReady();
+    public InterpreterContext ensureInstrsReady() {
+        final InterpreterContext interpreterContext = this.interpreterContext;
+        if (interpreterContext == null) {
+            return this.interpreterContext = retrieveInterpreterContext();
+        }
+        return interpreterContext;
+    }
+
+    private InterpreterContext retrieveInterpreterContext() {
+        final InterpreterContext interpreterContext;
+        if (method instanceof IRMethod) {
+            interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
+        } else {
+            interpreterContext = method.getInterpreterContext();
+        }
+
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) printMethodIR();
+
+        return interpreterContext;
+    }
+
+    protected abstract void printMethodIR() ;
 
     public Signature getSignature() {
         return signature;
@@ -142,4 +160,10 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
         return methodData;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + ' ' + method + ' ' + getSignature();
+    }
+
 }

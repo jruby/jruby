@@ -2,11 +2,9 @@ package org.jruby.internal.runtime.methods;
 
 import java.io.ByteArrayOutputStream;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
@@ -54,22 +52,10 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
     }
 
-    // FIXME: for subclasses we should override this method since it can be simple get
-    // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
-    public InterpreterContext ensureInstrsReady() {
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
-            ByteArrayOutputStream baos = IRDumper.printIR(method, false);
-
-            LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
-        }
-
-        return ic;
+    @Override
+    protected void printMethodIR() {
+        ByteArrayOutputStream baos = IRDumper.printIR(method, false);
+        LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
     }
 
     @Override
