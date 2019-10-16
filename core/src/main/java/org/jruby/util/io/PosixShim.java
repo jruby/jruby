@@ -182,7 +182,6 @@ public class PosixShim {
         // TODO: null channel always succeeds for all locking operations
 //        if (descriptor.isNull()) return RubyFixnum.zero(runtime);
 
-        Channel channel = fd.ch;
         clear();
 
         int real_fd = fd.realFileno;
