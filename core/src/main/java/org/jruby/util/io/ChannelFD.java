@@ -190,7 +190,7 @@ public class ChannelFD implements Closeable {
     public int realFileno;
     public int fakeFileno;
     private AtomicInteger refs;
-    public FileLock currentLock;
+    public ThreadLocal<FileLock> currentLock = new ThreadLocal<>();
     private final POSIX posix;
     public boolean isNativeFile = false;
     private final FilenoUtil filenoUtil;

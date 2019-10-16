@@ -202,12 +202,12 @@ public class PosixShim {
             int ret = checkSharedExclusive(fd, lockMode);
             if (ret < 0) return ret;
 
-            if (!lockStateChanges(fd.currentLock, lockMode)) return 0;
+            if (!lockStateChanges(fd.currentLock.get(), lockMode)) return 0;
 
             try {
                 synchronized (fd.chFile) {
                     // check again, to avoid unnecessary overhead
-                    if (!lockStateChanges(fd.currentLock, lockMode)) return 0;
+                    if (!lockStateChanges(fd.currentLock.get(), lockMode)) return 0;
 
                     switch (lockMode) {
                         case LOCK_UN:
@@ -607,9 +607,11 @@ public class PosixShim {
     }
 
     private int unlock(ChannelFD fd) throws IOException {
-        if (fd.currentLock != null) {
-            fd.currentLock.release();
-            fd.currentLock = null;
+        FileLock fileLock = fd.currentLock.get();
+
+        if (fileLock != null) {
+            fileLock.release();
+            fd.currentLock.remove();
 
             return 0;
         }
@@ -617,11 +619,15 @@ public class PosixShim {
     }
 
     private int lock(ChannelFD fd, boolean exclusive) throws IOException {
-        if (fd.currentLock != null) fd.currentLock.release();
+        FileLock fileLock = fd.currentLock.get();
 
-        fd.currentLock = fd.chFile.lock(0L, Long.MAX_VALUE, !exclusive);
+        if (fileLock != null) fileLock.release();
 
-        if (fd.currentLock != null) {
+        fileLock = fd.chFile.lock(0L, Long.MAX_VALUE, !exclusive);
+
+        fd.currentLock.set(fileLock);
+
+        if (fileLock != null) {
             return 0;
         }
 
@@ -629,11 +635,15 @@ public class PosixShim {
     }
 
     private int tryLock(ChannelFD fd, boolean exclusive) throws IOException {
-        if (fd.currentLock != null) fd.currentLock.release();
+        FileLock fileLock = fd.currentLock.get();
 
-        fd.currentLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, !exclusive);
+        if (fileLock != null) fileLock.release();
 
-        if (fd.currentLock != null) {
+        fileLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, !exclusive);
+
+        fd.currentLock.set(fileLock);
+
+        if (fileLock != null) {
             return 0;
         }
 
