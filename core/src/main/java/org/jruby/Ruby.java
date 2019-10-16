@@ -3297,6 +3297,12 @@ public final class Ruby implements Constantizable {
     public void tearDown(boolean systemExit) {
         int status = 0;
 
+        // Check if there's live threads, since teardown may interfere with them
+        RubyThread[] activeRubyThreads = getThreadService().getActiveRubyThreads();
+        if (activeRubyThreads.length > 1) {
+            warnings.warn("teardown while live threads exist:\n" + Arrays.toString(activeRubyThreads));
+        }
+
         // clear out old style recursion guards so they don't leak
         mriRecursionGuard = null;
 
