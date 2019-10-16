@@ -45,6 +45,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
@@ -152,18 +153,28 @@ public class RubyObject extends RubyBasicObject {
     public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            Set<String> foundVariables = klass.discoverInstanceVariables();
+            synchronized (klass.getRealClass()) {
+                ObjectAllocator allocator = klass.getAllocator();
 
-            if (Options.DUMP_INSTANCE_VARS.load()) {
-                System.err.println(klass + ";" + foundVariables);
+                if (allocator == this) {
+                    // proceed, we are the first one to get here
+                    Set<String> foundVariables = klass.discoverInstanceVariables();
+
+                    if (Options.DUMP_INSTANCE_VARS.load()) {
+                        System.err.println(klass + ";" + foundVariables);
+                    }
+
+                    allocator = RubyObjectSpecializer.specializeForVariables(klass, foundVariables);
+
+                    // invalidate metaclass so new allocator is picked up for specialized .new
+                    klass.metaClass.invalidateCacheDescendants();
+
+                    return allocator.allocate(runtime, klass);
+                } else {
+                    // someone else replaced allocator while we waited for lock, use it
+                    return allocator.allocate(runtime, klass);
+                }
             }
-
-            ObjectAllocator allocator = RubyObjectSpecializer.specializeForVariables(klass, foundVariables);
-
-            // invalidate metaclass so new allocator is picked up for specialized .new
-            klass.metaClass.invalidateCacheDescendants();
-
-            return allocator.allocate(runtime, klass);
         }
     };
 
