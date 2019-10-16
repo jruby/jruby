@@ -5098,7 +5098,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (cls instanceof RubyClass) {
-                cls = ((RubyClass)cls).getSuperClass();
+                cls = cls.getSuperClass();
             } else {
                 break;
             }
