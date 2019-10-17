@@ -634,6 +634,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
                  Pipe::SinkChannel.java_class.name)
     assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
   end
+  
+  def test_inner_class_dot_syntax
+    assert_equal("java.awt.Desktop$Action",
+                java.awt.Desktop.Action.java_class.name)
+  end
 
   def test_subclasses_and_their_return_types
     l = ArrayList.new

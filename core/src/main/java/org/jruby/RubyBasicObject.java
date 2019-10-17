@@ -1705,8 +1705,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (args.length == 0 || !(args[0] instanceof RubySymbol)) {
             throw context.runtime.newArgumentError("no id given");
         }
+        
+        RubySymbol symbol = (RubySymbol)args[0];
+        
+        if (recv instanceof RubyClass) {
+            String probablyClassName = symbol.idString();
+            RubyClass klass = (RubyClass) recv;
+            IRubyObject innerClass = klass.getConstantNoConstMissing(probablyClassName, false);
+            if (innerClass instanceof RubyClass) {
+                return innerClass;
+            }
+        }
 
-        return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args);
+        return RubyKernel.methodMissingDirect(context, recv, symbol, lastVis, lastCallType, args);
     }
 
     @Deprecated
