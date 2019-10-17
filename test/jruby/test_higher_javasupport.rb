@@ -634,6 +634,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
                  Pipe::SinkChannel.java_class.name)
     assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
   end
+  
+  def test_inner_classes_should_not_be_nested
+    Java::JavaAwt::Desktop::Action
+    assert_raises(NameError){ Java::JavaAwt::Desktop::Action::Action }
+  end
 
   def test_subclasses_and_their_return_types
     l = ArrayList.new
