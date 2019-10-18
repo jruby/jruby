@@ -234,16 +234,8 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.nop();
 
             // visit remaining instrs
-            Instr[] instrs = (Instr []) bb.getInstrs().toArray();
-            int length = instrs.length;
-
-            if (length > 0) {
-                Instr currentInstr = instrs[0];
-                for (int i = 1; i < instrs.length; i++) {
-                    nextInstr = instrs[i];
-                    visit(currentInstr);
-                    currentInstr = nextInstr;
-                }
+            for (Instr instr: bb.getInstrs()) {
+                visit(instr);
             }
 
             org.objectweb.asm.Label syntheticEnd = syntheticEndForStart.get(bb.getLabel());
