@@ -81,6 +81,10 @@ public abstract class Operand {
         return false;
     }
 
+    public boolean isFalseyImmediate() {
+        return false;
+    }
+
     /** Append the list of variables used in this operand to the input list -- force every operand
      *  to implement this because a missing implementation can cause bad failures.
      */

@@ -4166,25 +4166,15 @@ public class IRBuilder {
             Boolean lhs = (Boolean) v2;
 
             if (lhs.isTrue()) {
-                if (v1 instanceof Boolean) {
-                    if (((Boolean) v1).isTrue()) { // true == true -> just jump
-                        return new JumpInstr(jmpTarget);
-                    } else {                       // false == true (this will never jump)
-                        return NopInstr.NOP;
-                    }
-                } else {
-                    return new BTrueInstr(jmpTarget, v1);
-                }
+                if (v1.isTruthyImmediate()) return new JumpInstr(jmpTarget);
+                if (v1.isFalseyImmediate()) return NopInstr.NOP;
+
+                return new BTrueInstr(jmpTarget, v1);
             } else if (lhs.isFalse()) {
-                if (v1 instanceof Boolean) {
-                    if (((Boolean) v1).isFalse()) { // false == false -> just jump
-                        return new JumpInstr(jmpTarget);
-                    } else {                        // true == false (this will never jump)
-                        return NopInstr.NOP;
-                    }
-                } else {
-                    return new BFalseInstr(jmpTarget, v1);
-                }
+                if (v1.isTruthyImmediate()) return NopInstr.NOP;
+                if (v1.isFalseyImmediate()) return new JumpInstr(jmpTarget);
+
+                return new BFalseInstr(jmpTarget, v1);
             }
         } else if (v2 instanceof Nil) {
             if (v1 instanceof Nil) { // nil == nil -> just jump

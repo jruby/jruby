@@ -67,4 +67,9 @@ public class Boolean extends ImmutableLiteral {
     public boolean isTruthyImmediate() {
         return truthy;
     }
+
+    @Override
+    public boolean isFalseyImmediate() {
+        return !truthy;
+    }
 }
