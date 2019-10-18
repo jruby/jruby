@@ -1,12 +1,10 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
@@ -43,9 +41,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import java.io.ByteArrayOutputStream;
-import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -239,8 +234,16 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.nop();
 
             // visit remaining instrs
-            for (Instr instr : bb.getInstrs()) {
-                visit(instr);
+            Instr[] instrs = (Instr []) bb.getInstrs().toArray();
+            int length = instrs.length;
+
+            if (length > 0) {
+                Instr currentInstr = instrs[0];
+                for (int i = 1; i < instrs.length; i++) {
+                    nextInstr = instrs[i];
+                    visit(currentInstr);
+                    currentInstr = nextInstr;
+                }
             }
 
             org.objectweb.asm.Label syntheticEnd = syntheticEndForStart.get(bb.getLabel());
@@ -619,20 +622,13 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BFalseInstr(BFalseInstr bFalseInstr) {
         Operand arg1 = bFalseInstr.getArg1();
+        visit(arg1);
+
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
         if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
-            // no need to unbox
-            visit(arg1);
-            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
-        } else if (arg1.isTruthyImmediate()) {
-            // always true, don't branch
-        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isFalse()) || (arg1 instanceof Nil)) {
-            // always false, always branch
-            jvmAdapter().go_to(getJVMLabel(bFalseInstr.getJumpTarget()));
+            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget())); // no need to unbox
         } else {
-            // unbox
-            visit(arg1);
-            jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+            jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class)); // unbox
             jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
         }
     }
@@ -901,20 +897,13 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();
+        visit(arg1);
+
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
         if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
-            // no need to unbox, just branch
-            visit(arg1);
-            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
-        } else if (arg1.isTruthyImmediate()) {
-            // always true, always branch
-            jvmMethod().goTo(getJVMLabel(btrueinstr.getJumpTarget()));
-        } else if ((arg1 instanceof Boolean && ((Boolean) arg1).isFalse()) || (arg1 instanceof Nil)) {
-            // always false, never branch
+            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget())); // no need to unbox, just branch
         } else {
-            // unbox and branch
-            visit(arg1);
-            jvmMethod().branchIfTruthy(getJVMLabel(btrueinstr.getJumpTarget()));
+            jvmMethod().branchIfTruthy(getJVMLabel(btrueinstr.getJumpTarget())); // unbox and branch
         }
     }
 
@@ -2602,4 +2591,6 @@ public class JVMVisitor extends IRVisitor {
     private Map<String, IRScope> scopeMap;
     private String file;
     private int lastLine = -1;
+
+    private Instr nextInstr; // nextInstr while instruction walking.  For simple peephole optimizations.
 }

@@ -4161,6 +4161,7 @@ public class IRBuilder {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
+    // FIXME: Add this to clone on branch instrs so if something changes (like an inline) it will replace with opted branch/jump/nop.
     public static Instr createBranch(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof Boolean) {
             Boolean lhs = (Boolean) v2;
