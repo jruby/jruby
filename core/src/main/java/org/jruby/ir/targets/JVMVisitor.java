@@ -911,7 +911,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();
-        visit(arg1);
+
+        if (omitStoreLoad) {
+            omitStoreLoad = false;
+        } else {
+            visit(arg1);
+        }
 
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
         if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
@@ -1096,7 +1101,7 @@ public class JVMVisitor extends IRVisitor {
 
         Variable result = call.getResult();
         if (result != null) {
-            jvmStoreLocal(result);
+            if (!omitStoreLoad) jvmStoreLocal(result);
         } else {
             // still need to drop, since all dyncalls return something (FIXME)
             m.adapter.pop();
@@ -1322,8 +1327,20 @@ public class JVMVisitor extends IRVisitor {
         jvmStoreLocal(definemoduleinstr.getResult());
     }
 
+    // FIXME: We need to make a system for this which should exist elsewhere but I am orgniazing simple opts
+    // as private methods for now:
+
+    // 'when' statements emit a 1;1 use:def temporary which we can omit and just leave eqq result on the stack.
+    private boolean canOmitStoreLoad(EQQInstr eqq, Instr nextInstr) {
+        assert nextInstr != null: "Somehow EQQ is the last instr in the scope...";
+
+        return nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
+    }
+
     @Override
     public void EQQInstr(EQQInstr eqqinstr) {
+        omitStoreLoad = canOmitStoreLoad(eqqinstr, nextInstr);
+
         if (!eqqinstr.isSplattedValue() && !(eqqinstr.getArg1() instanceof UndefinedValue)) {
             compileCallCommon(jvmMethod(), eqqinstr);
         } else {
@@ -1331,7 +1348,7 @@ public class JVMVisitor extends IRVisitor {
             visit(eqqinstr.getReceiver());
             visit(eqqinstr.getArg1());
             jvmMethod().callEqq(eqqinstr);
-            jvmStoreLocal(eqqinstr.getResult());
+            if (!omitStoreLoad) jvmStoreLocal(eqqinstr.getResult());
         }
     }
 
@@ -2607,4 +2624,5 @@ public class JVMVisitor extends IRVisitor {
     private int lastLine = -1;
 
     private Instr nextInstr; // nextInstr while instruction walking.  For simple peephole optimizations.
+    private boolean omitStoreLoad;
 }
