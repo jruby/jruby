@@ -233,9 +233,31 @@ public class JVMVisitor extends IRVisitor {
                       detect that a BB will not emit any code, we return to always emitting the nop. */
             m.adapter.nop();
 
+            /* FIXME: This nextInstr stuff is messy...All emitScopes share a single visitor instance and nesting of new
+              scopes is handled by a stack.  Remove the stack and make each nested scope use a fresh visitor. */
+
             // visit remaining instrs
-            for (Instr instr: bb.getInstrs()) {
-                visit(instr);
+            List<Instr> instrs = bb.getInstrs();
+            int length = instrs.size();
+
+            Instr previousScopeNextInstr = null;     // in case we nested we should check to see if we should save/restore
+            if (nextInstr != null) {                 // previous scopes nextInstr.
+                previousScopeNextInstr = nextInstr;
+            }
+
+            if (length > 0) {
+                Instr currentInstr = instrs.get(0);
+                for (int i = 1; i < length; i++) {
+                    nextInstr = instrs.get(i);
+                    visit(currentInstr);
+                    currentInstr = nextInstr;
+                }
+                nextInstr = null;
+                visit(currentInstr);
+            }
+
+            if (previousScopeNextInstr != null) {
+                nextInstr = previousScopeNextInstr;
             }
 
             org.objectweb.asm.Label syntheticEnd = syntheticEndForStart.get(bb.getLabel());
