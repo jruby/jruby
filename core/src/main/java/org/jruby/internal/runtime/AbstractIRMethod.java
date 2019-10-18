@@ -143,19 +143,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
      */
     public MethodData getMethodData() {
         if (methodData == null) {
-            List<String> ivarNames = new ArrayList<>();
-            InterpreterContext context = ensureInstrsReady();
-            for (Instr i : context.getInstructions()) {
-                switch (i.getOperation()) {
-                    case GET_FIELD:
-                        ivarNames.add(((GetFieldInstr) i).getId());
-                        break;
-                    case PUT_FIELD:
-                        ivarNames.add(((PutFieldInstr) i).getId());
-                        break;
-                }
-            }
-            methodData = new MethodData(method.getId(), method.getFile(), ivarNames);
+            methodData = ((IRMethod) getIRScope()).getMethodData();
         }
 
         return methodData;

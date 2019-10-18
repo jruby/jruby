@@ -5092,16 +5092,11 @@ public class RubyModule extends RubyObject {
         HashSet<String> set = new HashSet();
         RubyModule cls = this;
         while (cls != null) {
-            for (DynamicMethod method : cls.getNonIncludedClass().getMethodLocation().getMethods().values()) {
-                MethodData methodData = method.getMethodData();
-                set.addAll(methodData.getIvarNames());
-            }
+            Map<String, DynamicMethod> methods = cls.getNonIncludedClass().getMethodLocation().getMethods();
 
-            if (cls instanceof RubyClass) {
-                cls = cls.getSuperClass();
-            } else {
-                break;
-            }
+            methods.forEach((name, method) -> set.addAll(method.getMethodData().getIvarNames()));
+
+            cls = cls.getSuperClass();
         }
         return set;
     }
