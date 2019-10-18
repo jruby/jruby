@@ -43,9 +43,9 @@ if [ -r "/dev/urandom" ]; then
 fi
 
 # Gather environment information as we go
-environment_log="JRuby Environment\n================="
+environment_log=$'JRuby Environment\n================='
 function add_log() {
-    printf -v environment_log "$environment_log\n$1"
+    environment_log+=$'\n'$1
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
@@ -56,20 +56,18 @@ function process_java_opts {
     add_log
     add_log "Adding Java options from: $java_opts_file"
 
-    java_opts_file_contents=`cat $java_opts_file`
-
     while read -r line; do
       if [[ $line ]]; then
           add_log "  $line"
       fi
-    done <<< $java_opts_file_contents
+    done < $java_opts_file
 
     # On Java 9+, add an @argument for the given file.
     # On earlier versions the file contents will be read and expanded on the Java command line.
     if [[ $is_java9 ]]; then
       java_opts_from_files="$java_opts_from_files @$java_opts_file"
     else
-      java_opts_from_files="$java_opts_from_files $()"
+      java_opts_from_files="$java_opts_from_files $(cat $java_opts_file)"
     fi
   fi
 }
