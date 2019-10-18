@@ -2,12 +2,23 @@ package org.jruby.ir;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.ir.instructions.GetFieldInstr;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.PutFieldInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.ByteList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -34,6 +45,47 @@ public class IRMethod extends IRScope {
     @Override
     public boolean hasBeenBuilt() {
         return defNode == null;
+    }
+
+    public MethodData getMethodData() {
+        List<String> ivarNames = new ArrayList<>();
+
+        DefNode def = defNode;
+        if (def != null) {
+            // walk AST
+            def.getBodyNode().accept(new AbstractNodeVisitor<Object>() {
+                @Override
+                protected Object defaultVisit(Node node) {
+                    if (node == null) return null;
+
+                    if (node instanceof InstVarNode) {
+                        ivarNames.add(((InstVarNode) node).getName().idString());
+                    } else if (node instanceof InstAsgnNode) {
+                        ivarNames.add(((InstAsgnNode) node).getName().idString());
+                    }
+
+                    node.childNodes().forEach((child) -> defaultVisit(child));
+
+                    return null;
+                }
+            });
+        } else {
+            InterpreterContext context = lazilyAcquireInterpreterContext();
+
+            // walk instructions
+            for (Instr i : context.getInstructions()) {
+                switch (i.getOperation()) {
+                    case GET_FIELD:
+                        ivarNames.add(((GetFieldInstr) i).getId());
+                        break;
+                    case PUT_FIELD:
+                        ivarNames.add(((PutFieldInstr) i).getId());
+                        break;
+                }
+            }
+        }
+
+        return new MethodData(getId(), getFile(), ivarNames);
     }
 
     public final InterpreterContext lazilyAcquireInterpreterContext() {

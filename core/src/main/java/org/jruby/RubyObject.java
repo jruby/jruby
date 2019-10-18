@@ -153,28 +153,32 @@ public class RubyObject extends RubyBasicObject {
     public static final ObjectAllocator IVAR_INSPECTING_OBJECT_ALLOCATOR = new ObjectAllocator() {
         @Override
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            synchronized (klass.getRealClass()) {
-                ObjectAllocator allocator = klass.getAllocator();
+            ObjectAllocator allocator = klass.getAllocator();
 
-                if (allocator == this) {
-                    // proceed, we are the first one to get here
-                    Set<String> foundVariables = klass.discoverInstanceVariables();
+            if (allocator == this) {
+                // eagerly gather variables outside of sync
+                Set<String> foundVariables = klass.discoverInstanceVariables();
 
-                    if (Options.DUMP_INSTANCE_VARS.load()) {
-                        System.err.println(klass + ";" + foundVariables);
+                synchronized (klass.getRealClass()) {
+                    // check again before reifying
+                    allocator = klass.getAllocator();
+
+                    if (allocator == this) {
+                        // proceed, we are the first one to get here
+
+                        if (Options.DUMP_INSTANCE_VARS.load()) {
+                            System.err.println(klass + ";" + foundVariables);
+                        }
+
+                        allocator = RubyObjectSpecializer.specializeForVariables(klass, foundVariables);
+
+                        // invalidate metaclass so new allocator is picked up for specialized .new
+                        klass.metaClass.invalidateCacheDescendants();
                     }
-
-                    allocator = RubyObjectSpecializer.specializeForVariables(klass, foundVariables);
-
-                    // invalidate metaclass so new allocator is picked up for specialized .new
-                    klass.metaClass.invalidateCacheDescendants();
-
-                    return allocator.allocate(runtime, klass);
-                } else {
-                    // someone else replaced allocator while we waited for lock, use it
-                    return allocator.allocate(runtime, klass);
                 }
             }
+
+            return allocator.allocate(runtime, klass);
         }
     };
 
