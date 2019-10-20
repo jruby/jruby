@@ -68,6 +68,20 @@ class TestString < Test::Unit::TestCase
     assert_raise(FrozenError){ str.__send__(:initialize, encoding: 'euc-jp') }
     assert_raise(FrozenError){ str.__send__(:initialize, 'abc', encoding: 'euc-jp') }
     assert_raise(FrozenError){ str.__send__(:initialize, 'abc', capacity: 1000, encoding: 'euc-jp') }
+
+    str = S("")
+    assert_equal("mystring", str.__send__(:initialize, "mystring"))
+    str = S("mystring")
+    assert_equal("mystring", str.__send__(:initialize, str))
+    str = S("")
+    assert_equal("mystring", str.__send__(:initialize, "mystring", capacity: 1000))
+    str = S("mystring")
+    assert_equal("mystring", str.__send__(:initialize, str, capacity: 1000))
+  end
+
+  def test_initialize_shared
+    String.new(str = "mystring" * 10).__send__(:initialize, capacity: str.bytesize)
+    assert_equal("mystring", str[0, 8])
   end
 
   def test_initialize_nonstring
@@ -1932,6 +1946,12 @@ CODE
     r.taint
     a.sub!(/./, r)
     assert_predicate(a, :tainted?)
+
+    bug16105 = '[Bug #16105] heap-use-after-free'
+    a = S("ABCDEFGHIJKLMNOPQRSTUVWXYZ012345678")
+    b = a.dup
+    c = a.slice(1, 100)
+    assert_equal("AABCDEFGHIJKLMNOPQRSTUVWXYZ012345678", b.sub!(c, b), bug16105)
   end
 
   def test_succ
@@ -2920,6 +2940,23 @@ CODE
     INPUT
   end
 =end
+
+  def test_nesting_shared
+    a = ('a' * 24).encode(Encoding::ASCII).gsub('x', '')
+    hash = {}
+    hash[a] = true
+    assert_equal(('a' * 24), a)
+    4.times { GC.start }
+    assert_equal(('a' * 24), a, '[Bug #15792]')
+  end
+
+  def test_nesting_shared_b
+    a = ('j' * 24).b.b
+    eval('', binding, a)
+    assert_equal(('j' * 24), a)
+    4.times { GC.start }
+    assert_equal(('j' * 24), a, '[Bug #15934]')
+  end
 
   def test_shared_force_encoding
     s = "\u{3066}\u{3059}\u{3068}".gsub(//, '')

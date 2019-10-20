@@ -228,6 +228,19 @@ class TestIO < Test::Unit::TestCase
       assert_nil r.gets
       r.close
     end)
+
+    (0..3).each do |i|
+      pipe(proc do |w|
+        w.write("a" * ((4096 << i) - 4), "\r\n" "a\r\n")
+        w.close
+      end,
+      proc do |r|
+        r.gets
+        assert_equal "a", r.gets(chomp: true)
+        assert_nil r.gets
+        r.close
+      end)
+    end
   end
 
   def test_gets_chomp_rs_nil
@@ -3349,7 +3362,7 @@ __END__
       }
 
       IO.select(tempfiles)
-    }, bug8080, timeout: 50
+    }, bug8080, timeout: 100
   end if defined?(Process::RLIMIT_NOFILE)
 
   def test_read_32bit_boundary
@@ -3704,28 +3717,28 @@ __END__
         end
       end
     end
+
+    def test_pread
+      make_tempfile { |t|
+        open(t.path) do |f|
+          assert_equal("bar", f.pread(3, 4))
+          buf = "asdf"
+          assert_equal("bar", f.pread(3, 4, buf))
+          assert_equal("bar", buf)
+          assert_raise(EOFError) { f.pread(1, f.size) }
+        end
+      }
+    end if IO.method_defined?(:pread)
+
+    def test_pwrite
+      make_tempfile { |t|
+        open(t.path, IO::RDWR) do |f|
+          assert_equal(3, f.pwrite("ooo", 4))
+          assert_equal("ooo", f.pread(3, 4))
+        end
+      }
+    end if IO.method_defined?(:pread) and IO.method_defined?(:pwrite)
   end
-
-  def test_pread
-    make_tempfile { |t|
-      open(t.path) do |f|
-        assert_equal("bar", f.pread(3, 4))
-        buf = "asdf"
-        assert_equal("bar", f.pread(3, 4, buf))
-        assert_equal("bar", buf)
-        assert_raise(EOFError) { f.pread(1, f.size) }
-      end
-    }
-  end if IO.method_defined?(:pread)
-
-  def test_pwrite
-    make_tempfile { |t|
-      open(t.path, IO::RDWR) do |f|
-        assert_equal(3, f.pwrite("ooo", 4))
-        assert_equal("ooo", f.pread(3, 4))
-      end
-    }
-  end if IO.method_defined?(:pread) and IO.method_defined?(:pwrite)
 
   def test_select_exceptfds
     if Etc.uname[:sysname] == 'SunOS' && Etc.uname[:release] == '5.11'
