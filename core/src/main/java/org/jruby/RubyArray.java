@@ -710,7 +710,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return dup;
     }
 
-    private RubyArray dupImpl(RubyClass metaClass) {
+    protected RubyArray dupImpl(RubyClass metaClass) {
         RubyArray dup = new RubyArray(metaClass.runtime, metaClass, values, begin, realLength, true);
         dup.isShared = this.isShared = true;
         return dup;
