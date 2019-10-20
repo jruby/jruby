@@ -35,3 +35,4 @@ exclude :test_std_fileno, "passes in isolation; some other test is causing STDIN
 exclude :test_sysread_buffer_not_raise_shared_string_error, "hangs"
 exclude :test_sysread_locktmp, "requires string locking we do not support"
 exclude :test_threaded_flush, "needs investigation"
+exclude :test_gets_chomp_default_rs, "needs investigation"
