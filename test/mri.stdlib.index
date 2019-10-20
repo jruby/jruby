@@ -209,7 +209,6 @@ psych/test_string.rb
 psych/test_struct.rb
 psych/test_symbol.rb
 psych/test_tainted.rb
-psych/test_to_yaml_properties.rb
 psych/test_tree_builder.rb
 psych/test_yaml.rb
 psych/test_yamlstore.rb
