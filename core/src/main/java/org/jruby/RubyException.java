@@ -52,6 +52,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.RubyStringBuilder;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -302,10 +303,9 @@ public class RubyException extends RubyObject {
 
         if (exception.isEmpty()) return context.runtime.newString(rubyClass);
 
-        return RubyString.newString(context.runtime,
-                new StringBuilder(2 + rubyClass.length() + 2 + exception.size() + 1).
-                    append("#<").append(rubyClass).append(": ").append(exception.getByteList()).append('>')
-        );
+        String exceptionStartStr = new StringBuilder(2 + rubyClass.length() + 2).append("#<").append(rubyClass).append(": ").toString();
+        String exceptionStr = RubyStringBuilder.str(context.runtime, exceptionStartStr, exception, ">");
+        return RubyString.newString(context.runtime, exceptionStr);
     }
 
     @Override
