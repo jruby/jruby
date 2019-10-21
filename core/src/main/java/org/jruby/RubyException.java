@@ -303,8 +303,7 @@ public class RubyException extends RubyObject {
 
         if (exception.isEmpty()) return context.runtime.newString(rubyClass);
 
-        String exceptionStartStr = new StringBuilder(2 + rubyClass.length() + 2).append("#<").append(rubyClass).append(": ").toString();
-        String exceptionStr = RubyStringBuilder.str(context.runtime, exceptionStartStr, exception, ">");
+        String exceptionStr = RubyStringBuilder.str(context.runtime, "#<" + rubyClass + ": ", exception, ">");
         return RubyString.newString(context.runtime, exceptionStr);
     }
 
