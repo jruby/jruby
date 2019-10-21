@@ -59,6 +59,7 @@ import java.io.PrintStream;
 import java.util.List;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  *
@@ -298,13 +299,12 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         // rb_class_name skips intermediate classes (JRUBY-6786)
-        String rubyClass = getMetaClass().getRealClass().getName();
+        RubyString rubyClass = getMetaClass().getRealClass().rubyName();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.isEmpty()) return context.runtime.newString(rubyClass);
+        if (exception.isEmpty()) return rubyClass;
 
-        String exceptionStr = RubyStringBuilder.str(context.runtime, "#<" + rubyClass + ": ", exception, ">");
-        return RubyString.newString(context.runtime, exceptionStr);
+        return RubyString.newString(context.runtime, str(context.runtime, "#<", rubyClass, ": ", exception, ">"));
     }
 
     @Override
