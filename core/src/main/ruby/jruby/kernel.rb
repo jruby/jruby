@@ -25,4 +25,4 @@ load 'jruby/kernel/io.rb'
 load 'jruby/kernel/gc.rb'
 load 'jruby/kernel/range.rb'
 load 'jruby/kernel/file.rb'
-load 'jruby/kernel/string.rb'
+
