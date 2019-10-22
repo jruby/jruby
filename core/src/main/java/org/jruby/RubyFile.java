@@ -934,7 +934,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean braces_match = false;
         boolean extglob = (flags & FNM_EXTGLOB) != 0;
 
-        ByteList pattern = args[0].convertToString().getByteList();
+        ByteList pattern = StringSupport.checkEmbeddedNulls(runtime, args[0].convertToString()).getByteList();
         ByteList path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getByteList();
 
         if(extglob) {
