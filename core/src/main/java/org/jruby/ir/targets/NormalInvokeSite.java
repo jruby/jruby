@@ -10,10 +10,8 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.SwitchPoint;
 
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -22,7 +20,6 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class NormalInvokeSite extends InvokeSite {
-    CacheEntry cache;
 
     public NormalInvokeSite(MethodType type, String name, boolean literalClosure, String file, int line) {
         super(type, name, CallType.NORMAL, literalClosure, file, line);
