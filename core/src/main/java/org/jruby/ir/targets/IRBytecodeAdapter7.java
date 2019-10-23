@@ -96,8 +96,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
                 Bootstrap.getFixnumOperatorHandle(),
                 fixnum,
                 call.getCallType().ordinal(),
-                "",
-                0);
+                file,
+                line);
     }
 
     @Override
@@ -117,8 +117,8 @@ public class IRBytecodeAdapter7 extends IRBytecodeAdapter6 {
             Bootstrap.getFloatOperatorHandle(),
             flote,
                 call.getCallType().ordinal(),
-            "",
-            0);
+            file,
+            line);
     }
 
     private void invokeOtherOrSelfArity1(String file, int line, CallBase call) {
