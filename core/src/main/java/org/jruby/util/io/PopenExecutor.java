@@ -31,6 +31,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,6 +46,16 @@ import java.util.Set;
  * Port of MRI's popen+exec logic.
  */
 public class PopenExecutor {
+    /**
+     * Check properties and runtime state to determine whether a native popen is possible.
+     *
+     * @param runtime current runtime
+     * @return true if popen can use native code, false otherwise
+     */
+    public static boolean nativePopenAvailable(Ruby runtime) {
+        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS;
+    }
+
     // MRI: check_pipe_command
     public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
         RubyString filenameStr = filenameOrCommand.convertToString();

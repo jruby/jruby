@@ -146,6 +146,7 @@ public class Options {
     public static final Option<Boolean> FFI_COMPILE_REIFY = bool(NATIVE, "ffi.compile.reify", false, "Reify FFI compiled classes.");
     public static final Option<Boolean> NATIVE_STDIO = bool(NATIVE, "native.stdio", true, "Use native wrappers around the default stdio descriptors.");
     public static final Option<Boolean> NATIVE_PTHREAD_KILL = bool(NATIVE, "native.pthread_kill", true, "Use pthread_kill to interrupt blocking kernel calls.");
+    public static final Option<Boolean> NATIVE_POPEN = bool(NATIVE, "native.popen", true, "Use native calls to posix_spawn for subprocess execution.");
 
     public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(NATIVE, "regexp.interruptible", false, "Allow regexp operations to be interuptible from Ruby.");
 

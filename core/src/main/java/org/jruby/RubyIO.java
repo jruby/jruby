@@ -3683,15 +3683,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         boolean warn = recv == runtime.getFile();
         if ((warn || recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            if (recv != runtime.getIO()) {
-                // FIXME: use actual called name instead of "open" as in MRI
-                String message = "IO.open called on " + recv + " to invoke external command";
-                if (warn) {
-                    runtime.getWarnings().warn(message);
+            if (PopenExecutor.nativePopenAvailable(runtime)) {
+                if (recv != runtime.getIO()) {
+                    // FIXME: use actual called name instead of "open" as in MRI
+                    String message = "IO.open called on " + recv + " to invoke external command";
+                    if (warn) {
+                        runtime.getWarnings().warn(message);
+                    }
                 }
-            }
 
-            return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
+                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
+            } else {
+                throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");
+            }
         }
         return (RubyIO) ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
@@ -3998,7 +4002,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             // new native popen logic
             return PopenExecutor.popen(context, args, (RubyClass)recv, block);
         }

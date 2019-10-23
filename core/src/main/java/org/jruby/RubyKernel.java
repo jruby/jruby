@@ -302,8 +302,12 @@ public class RubyKernel {
                 } else {
                     IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
                     if (cmd != context.nil) {
-                        args[0] = cmd;
-                        return PopenExecutor.popen(context, args, runtime.getIO(), block);
+                        if (PopenExecutor.nativePopenAvailable(runtime)) {
+                            args[0] = cmd;
+                            return PopenExecutor.popen(context, args, runtime.getIO(), block);
+                        } else {
+                            throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");
+                        }
                     }
                 }
             }
@@ -1576,7 +1580,7 @@ public class RubyKernel {
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             IRubyObject port;
             IRubyObject result;
             OpenFile fptr;
@@ -1673,7 +1677,7 @@ public class RubyKernel {
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
-        if (!needChdir && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (!needChdir && PopenExecutor.nativePopenAvailable(runtime)) {
             // MRI: rb_f_system
             long pid;
             int status;
