@@ -815,7 +815,7 @@ public class Pack {
 
     private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, Block block) {
         final Ruby runtime = context.runtime;
-        final RubyArray result = mode == UNPACK_BLOCK ? null : runtime.newArray();
+        final RubyArray result = (mode == UNPACK_BLOCK) || (mode == UNPACK_1) ? null : runtime.newArray();
         final ByteList encodedString = encoded.getByteList();
         final boolean tainted = encoded.isTaint();
         // FIXME: potentially could just use ByteList here?
