@@ -221,8 +221,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (!runtime.warningsEnabled()) return context.nil;
 
-        TypeConverter.checkStringType(runtime, arg);
-        RubyString str = (RubyString) arg;
+        IRubyObject warnArg = TypeConverter.checkStringType(runtime, arg);
+        // FIXME: checkStringType should not be allowing nil through here but we have too many other consumers
+        // to change this right before a release so it is manually added.
+        if (warnArg.isNil()) throw runtime.newTypeError(arg, "String");
+        RubyString str = (RubyString) warnArg;
         if (!str.getEncoding().isAsciiCompatible()) {
             throw runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + str.getEncoding());
         }
