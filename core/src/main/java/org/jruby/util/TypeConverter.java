@@ -389,7 +389,7 @@ public class TypeConverter {
         ClassIndex xt = x.getMetaClass().getClassIndex();
 
         // MISSING: special error for T_DATA of a certain type
-        if (xt != type.getClassIndex()) {
+        if (xt != type.getClassIndex() && !type.isInstance(x)) {
             Ruby runtime = context.runtime;
             throw context.runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, x.getMetaClass()), " (expected ", types(runtime, type), ")"));
         }
