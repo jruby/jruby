@@ -9,9 +9,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   inherit 'org.sonatype.oss:oss-parent:7'
   packaging 'pom'
 
-  description 'JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.'
+  description 'JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.'
 
-  organization 'JRuby', 'http://jruby.org'
+  organization 'JRuby', 'https://www.jruby.org'
 
   [ 'headius', 'enebo', 'wmeissner', 'BanzaiMan', 'mkristian' ].each do |name|
     developer name do
