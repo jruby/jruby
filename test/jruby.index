@@ -47,13 +47,12 @@ jruby/test_load
 jruby/test_load_gem_extensions
 jruby/test_method
 jruby/test_method_cache
-jruby/test_method_override_and_caching
+jruby/test_method_missing
 jruby/test_java_accessible_object
 jruby/test_java_extension
 jruby/test_jruby_internals
 jruby/test_marshal
 jruby/test_marshal_gemspec
-jruby/test_method_missing
 jruby/test_name_error
 jruby/test_pack
 jruby/test_primitive_to_java
