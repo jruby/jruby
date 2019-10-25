@@ -193,7 +193,7 @@ public class MathLinker {
             String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
             String name = "fixnum_boolean_" + opMethod;
 
-            if (target == null) target = findTargetImpl(name, boolean.class, value);
+            target = findTargetImpl(name, boolean.class, value);
 
             RubyClass classFixnum = runtime.getFixnum();
 
@@ -331,14 +331,14 @@ public class MathLinker {
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
 
         if (!(self instanceof RubyFloat) || entry == null || !entry.method.isBuiltin()) {
-            site.setTarget(fallback); // invalid - fallback on slow-path
+            site.setTarget(target = fallback); // invalid - fallback on slow-path
 
             if (LOG_BINDING) LOG.debug(site.name + "\tFloat operation at site #" + site.siteID + " (" + site.file() + ":" + site.line() + ") bound indirectly");
         } else {
             String opMethod = MethodIndex.getFastFloatOpsMethod(operator);
             String name = "float_" + opMethod;
 
-            if (target == null) target = findTargetImpl(name, IRubyObject.class, value);
+            target = findTargetImpl(name, IRubyObject.class, value);
 
             RubyClass classFloat = runtime.getFloat();
 
