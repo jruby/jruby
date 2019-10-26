@@ -16,6 +16,11 @@ class TestGH5939 < Test::Unit::TestCase
       other == _value
     end
 
+    def method_missing(name, *args)
+      return _value - args.first if name == :-
+      super
+    end
+
   end
 
   class Klass; end
@@ -46,6 +51,13 @@ class TestGH5939 < Test::Unit::TestCase
       assert thread.value # should not raise (if thread raised an exception)
     end
 
+  end
+
+  def test_op_fallback_on_mm_npe
+    prim = Primitive.new
+    assert_equal -1, prim - 1
+
+    assert_raises(NoMethodError) { Primitive.new * 1 }
   end
 
   def plus_10(version)

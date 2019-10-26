@@ -179,7 +179,7 @@ public class MathLinker {
         Ruby runtime = context.runtime;
         String operator = site.name;
 
-        MethodHandle target = null;
+        MethodHandle target;
 
         MethodHandle fallback = insertArguments(FIXNUM_BOOLEAN_FAIL, 3, site, runtime.newFixnum(value));
 
@@ -324,7 +324,7 @@ public class MathLinker {
         Ruby runtime = context.runtime;
         String operator = site.name;
 
-        MethodHandle target = null;
+        MethodHandle target;
 
         MethodHandle fallback = insertArguments(FLOAT_OPERATOR_FAIL, 3, site, RubyFloat.newFloat(runtime, value));
 
@@ -424,7 +424,7 @@ public class MathLinker {
         RubyClass selfClass = InvokeDynamicSupport.pollAndGetClass(context, self);
         CacheEntry entry = searchWithCache(operator, caller, selfClass, site);
         if (entry == null) { // method_missing
-            return InvokeDynamicSupport.callMethodMissing(entry, site.callType, context, self, operator, value);
+            return InvokeDynamicSupport.callMethodMissing(CacheEntry.NULL_CACHE, site.callType, context, self, operator, value);
         }
         return entry.method.call(context, self, entry.sourceModule, operator, value);
     }
