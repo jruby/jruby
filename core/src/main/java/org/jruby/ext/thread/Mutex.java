@@ -95,10 +95,14 @@ public class Mutex extends RubyObject implements DataType {
 
         // try locking without sleep status to avoid looking like blocking
         if (!thread.tryLock(lock)) {
-            try {
-                context.getThread().lockInterruptibly(lock);
-            } catch (InterruptedException ex) {
-                throw context.runtime.newConcurrencyError("interrupted waiting for mutex");
+            for (;;) {
+                try {
+                    context.getThread().lockInterruptibly(lock);
+                    return this;
+                } catch (InterruptedException ex) {
+                    /// ignore, check thread events and try again!
+                    context.pollThreadEvents();
+                }
             }
         }
 
