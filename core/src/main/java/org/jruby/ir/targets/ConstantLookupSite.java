@@ -228,8 +228,7 @@ public class ConstantLookupSite extends MutableCallSite {
         } else {
 
             // wipe out site with this new type
-            String bound = tracker.seenTypesCount() > 0 ? "rebound" : "bound";
-            if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) LOG.info(name + "\tconstant " + bound);
+            if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) LOG.info(name + "\tconstant " + (tracker.seenTypesCount() > 0 ? "rebound" : "bound"));
 
             fallback = cachingFallback;
             tracker.clearTypes();
