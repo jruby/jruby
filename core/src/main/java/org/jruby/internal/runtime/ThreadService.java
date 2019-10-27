@@ -197,10 +197,10 @@ public class ThreadService {
      * collected.
      */
     public final ThreadContext getCurrentContext() {
-        ThreadContext context = null;
+        ThreadContext context;
 
         // keep trying until we have a context
-        while (context == null) {
+        do {
             SoftReference<ThreadContext> ref = localContext.get();
             if (ref == null) {
                 context = adoptCurrentThread().getContext(); // registerNewThread will localContext.set(...)
@@ -210,7 +210,7 @@ public class ThreadService {
                     localContext.set(null);
                 }
             }
-        }
+        } while (context == null);
 
         return context;
     }
