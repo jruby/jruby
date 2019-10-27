@@ -206,7 +206,6 @@ matrix:
       if: env(SONATYPE_USERNAME) IS present AND type = push AND branch IN (master, jruby-9.1) # only master and maintenance pushes
 
   allow_failures:
-    - name: MRI stdlib
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
 
 script: tool/travis-script.sh
