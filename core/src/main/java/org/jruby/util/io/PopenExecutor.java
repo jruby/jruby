@@ -852,47 +852,45 @@ public class PopenExecutor {
             int j;
             if (pairs[i].oldfd == -1)
                 continue;
-            // We can't support this logic because it makes fcntl changes in parent
-            throw runtime.newNotImplementedError("cyclic redirects in child are not supported");
-//            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
-//                int fd = pairs[i].oldfd;
-//                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
-//                if (ret == -1) {
-//                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
-//                    return -1;
-//                }
-//                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
-//                    ret &= ~FcntlLibrary.FD_CLOEXEC;
-//                    ret = runtime.getPosix().fcntl(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
-//                    if (ret == -1) {
-//                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
-//                        return -1;
-//                    }
-//                }
-//                pairs[i].oldfd = -1;
-//                continue;
-//            }
-//            if (extra_fd == -1) {
-//                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
-//                if (extra_fd == -1) {
-//                    if (errmsg != null) errmsg[0] = "dup";
-//                    return -1;
-//                }
-////                rb_update_max_fd(extra_fd);
-//            }
-//            else {
-//                // This always succeeds because we just defer it to posix_spawn.
-//                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
-//            }
-//            pairs[i].oldfd = extra_fd;
-//            j = pairs[i].older_index;
-//            pairs[i].older_index = -1;
-//            while (j != -1) {
-//                // This always succeeds because we just defer it to posix_spawn.
-//                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
-//                pairs[j].oldfd = -1;
-//                j = pairs[j].older_index;
-//            }
+            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
+                int fd = pairs[i].oldfd;
+                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
+                if (ret == -1) {
+                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
+                    return -1;
+                }
+                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
+                    ret &= ~FcntlLibrary.FD_CLOEXEC;
+                    ret = runtime.getPosix().fcntlInt(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
+                    if (ret == -1) {
+                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
+                        return -1;
+                    }
+                }
+                pairs[i].oldfd = -1;
+                continue;
+            }
+            if (extra_fd == -1) {
+                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
+                if (extra_fd == -1) {
+                    if (errmsg != null) errmsg[0] = "dup";
+                    return -1;
+                }
+//                rb_update_max_fd(extra_fd);
+            }
+            else {
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+            }
+            pairs[i].oldfd = extra_fd;
+            j = pairs[i].older_index;
+            pairs[i].older_index = -1;
+            while (j != -1) {
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                pairs[j].oldfd = -1;
+                j = pairs[j].older_index;
+            }
         }
         if (extra_fd != -1) {
             ret = redirectClose(runtime, eargp, extra_fd, sargp != null); /* async-signal-safe */
