@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jcodings.Encoding;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -830,13 +831,25 @@ public class JavaUtil {
     };
 
     public static class StringConverter extends JavaConverter {
+        private Encoding encoding;
+
         public StringConverter() {
+            this(null);
+        }
+        
+        public StringConverter(Encoding encoding) {
             super(String.class);
+            this.encoding = encoding;
         }
 
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
-            return RubyString.newUnicodeString(runtime, (String)object);
+            if (encoding == null) {
+            	return RubyString.newUnicodeString(runtime, (String)object);
+            }
+            else {
+            	return RubyString.newString(runtime, (String)object, encoding);
+            }
         }
 
         public IRubyObject get(Ruby runtime, Object array, int i) {
