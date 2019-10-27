@@ -197,21 +197,22 @@ public class ThreadService {
      * collected.
      */
     public final ThreadContext getCurrentContext() {
-        SoftReference<ThreadContext> ref = localContext.get();
-        if (ref == null) {
-            adoptCurrentThread(); // registerNewThread will localContext.set(...)
-            ref = localContext.get();
-        }
         ThreadContext context;
-        if ((context = ref.get()) != null) {
-            return context;
-        }
 
-        // context is null, wipe out the SoftReference (this could be done with a reference queue)
-        localContext.set(null);
+        // keep trying until we have a context
+        do {
+            SoftReference<ThreadContext> ref = localContext.get();
+            if (ref == null) {
+                context = adoptCurrentThread().getContext(); // registerNewThread will localContext.set(...)
+            } else {
+                if ((context = ref.get()) == null) {
+                    // context is null, wipe out the SoftReference (this could be done with a reference queue)
+                    localContext.set(null);
+                }
+            }
+        } while (context == null);
 
-        // go until a context is available, to clean up soft-refs that might have been collected
-        return getCurrentContext();
+        return context;
     }
 
     private RubyThread adoptCurrentThread() {
