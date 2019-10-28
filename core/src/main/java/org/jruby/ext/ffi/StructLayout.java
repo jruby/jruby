@@ -481,7 +481,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context the current context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
@@ -514,7 +514,7 @@ public final class StructLayout extends Type {
         /**
          * Writes a ruby value to the native struct member as the appropriate native value.
          *
-         * @param runtime The ruby runtime
+         * @param context the current context
          * @param cache The value cache
          * @param ptr The struct memory area.
          * @param value The ruby value to write to the native struct member.
