@@ -145,11 +145,6 @@ public final class StructLayout extends Type {
                 ArrayFieldAllocator.INSTANCE, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
 
-        RubyClass mappedFieldClass = runtime.defineClassUnder("Mapped", fieldClass,
-                MappedFieldAllocator.INSTANCE, layoutClass);
-        mappedFieldClass.defineAnnotatedMethods(MappedField.class);
-
-
         return layoutClass;
     }
     
@@ -893,39 +888,6 @@ public final class StructLayout extends Type {
             return this;
         }
     }
-
-    private static final class MappedFieldAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new MappedField(runtime, klass);
-        }
-        private static final ObjectAllocator INSTANCE = new MappedFieldAllocator();
-    }
-
-    @JRubyClass(name="FFI::StructLayout::Mapped", parent="FFI::StructLayout::Field")
-    public static final class MappedField extends Field {
-
-        public MappedField(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
-        }
-
-        @JRubyMethod(required = 4, visibility = PRIVATE)
-        public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-            if (!(args[2] instanceof MappedType)) {
-                throw context.runtime.newTypeError(args[2],
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Mapped"));
-            }
-
-            if (!(args[3] instanceof Field)) {
-                throw context.runtime.newTypeError(args[3],
-                        context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
-            }
-
-            init(args[0], args[2], args[1], new MappedFieldIO((MappedType) args[2], ((Field) args[3]).getFieldIO()));
-
-            return this;
-        }
-    }
-
 
     public static interface Storage {
         IRubyObject getCachedValue(Member member);
