@@ -1,6 +1,8 @@
 require 'tempfile'
 
 module FFI
+
+  # @private
   class TypesGenerator
 
     ##
@@ -46,26 +48,37 @@ module FFI
       Tempfile.open 'ffi_types_generator' do |io|
         io.puts <<-C
 #include <sys/types.h>
+#if !(defined(WIN32))
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/resource.h>
+#endif
         C
 
         io.close
-        typedefs = `gcc -E -x c #{options[:cppflags]} -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -c #{io.path}`
+        cc = ENV['CC'] || 'gcc'
+        cmd = "#{cc} -E -x c #{options[:cppflags]} -D_DARWIN_USE_64_BIT_INODE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -c"
+        if options[:input]
+          typedefs = File.read(options[:input])
+        elsif options[:remote]
+          typedefs = `ssh #{options[:remote]} #{cmd} - < #{io.path}`
+        else
+          typedefs = `#{cmd} #{io.path}`
+        end
       end
-      
-      code = ""
 
-      typedefs.each do |type|
+      code = []
+
+      typedefs.each_line do |type|
         # We only care about single line typedef
         next unless type =~ /typedef/
         # Ignore unions or structs
         next if type =~ /union|struct/
-        
+
         # strip off the starting typedef and ending ;
         type.gsub!(/^(.*typedef\s*)/, "")
         type.gsub!(/\s*;\s*$/, "")
-    
+
         parts = type.split(/\s+/)
         def_type   = parts.join(" ")
 
@@ -87,7 +100,7 @@ module FFI
           else
             final_type = parts.pop
           end
-          
+
           def_type = case type
                      when /__QI__/   then "char"
                      when /__HI__/   then "short"
@@ -102,22 +115,21 @@ module FFI
           final_type = parts.pop
           def_type   = parts.join(" ")
         end
-        
+
         if type = TYPE_MAP[def_type]
-          code << "rbx.platform.typedef.#{final_type} = #{type}\n"
+          code << "rbx.platform.typedef.#{final_type} = #{type}"
           TYPE_MAP[final_type] = TYPE_MAP[def_type]
         else
           # Fallback to an ordinary pointer if we don't know the type
           if def_type =~ /\*/
-            code << "rbx.platform.typedef.#{final_type} = pointer\n"
+            code << "rbx.platform.typedef.#{final_type} = pointer"
             TYPE_MAP[final_type] = :pointer
           end
         end
       end
 
-      code
+      code.sort.join("\n")
     end
-
   end
 end
 

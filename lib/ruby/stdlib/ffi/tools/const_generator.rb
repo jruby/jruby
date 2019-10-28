@@ -1,28 +1,43 @@
-require 'tmpdir'
 require 'tempfile'
 require 'open3'
 
 module FFI
 
-  ##
   # ConstGenerator turns C constants into ruby values.
-
+  #
+  # @example a simple example for stdio
+  #  require 'ffi/tools/const_generator'
+  #  cg = FFI::ConstGenerator.new('stdio') do |gen|
+  #    gen.const(:SEEK_SET)
+  #    gen.const('SEEK_CUR')
+  #    gen.const('seek_end')   # this constant does not exist
+  #  end            # #calculate called automatically at the end of the block
+  #
+  #  cg['SEEK_SET'] # => 0
+  #  cg['SEEK_CUR'] # => 1
+  #  cg['seek_end'] # => nil
+  #  cg.to_ruby     # => "SEEK_SET = 0\nSEEK_CUR = 1\n# seek_end not available"
   class ConstGenerator
     @options = {}
     attr_reader :constants
 
-    ##
     # Creates a new constant generator that uses +prefix+ as a name, and an
     # options hash.
     #
-    # The only option is :required, which if set to true raises an error if a
+    # The only option is +:required+, which if set to +true+ raises an error if a
     # constant you have requested was not found.
     #
-    # When passed a block, #calculate is automatically called at the end of
-    # the block, otherwise you must call it yourself.
-
+    # @param [#to_s] prefix
+    # @param [Hash] options
+    # @return
+    # @option options [Boolean] :required
+    # @overload initialize(prefix, options)
+    # @overload initialize(prefix, options) { |gen| ... }
+    #  @yieldparam [ConstGenerator] gen new generator is passed to the block
+    #  When passed a block, {#calculate} is automatically called at the end of
+    #  the block, otherwise you must call it yourself.
     def initialize(prefix = nil, options = {})
-      @includes = []
+      @includes = ['stdio.h', 'stddef.h']
       @constants = {}
       @prefix = prefix
 
@@ -34,23 +49,40 @@ module FFI
         calculate self.class.options.merge(options)
       end
     end
+    # Set class options
+    # These options are merged with {#initialize} options when it is called with a block.
+    # @param [Hash] options
+    # @return [Hash] class options
     def self.options=(options)
       @options = options
     end
+    # Get class options.
+    # @return [Hash] class options
     def self.options
       @options
     end
+    # @param [String] name
+    # @return constant value (converted if a +converter+ was defined).
+    # Access a constant by name.
     def [](name)
-      @constants[name].value
+      @constants[name].converted_value
     end
 
-    ##
-    # Request the value for C constant +name+.  +format+ is a printf format
-    # string to print the value out, and +cast+ is a C cast for the value.
-    # +ruby_name+ allows you to give the constant an alternate ruby name for
-    # #to_ruby.  +converter+ or +converter_proc+ allow you to convert the
-    # value from a string to the appropriate type for #to_ruby.
-
+    # Request the value for C constant +name+.
+    #
+    # @param [#to_s] name C constant name
+    # @param [String] format a printf format string to print the value out
+    # @param [String] cast a C cast for the value
+    # @param ruby_name alternate ruby name for {#to_ruby}
+    #
+    # @overload const(name, format=nil, cast='', ruby_name=nil, converter=nil)
+    #  +converter+ is a Method or a Proc.
+    #  @param [#call] converter convert the value from a string to the appropriate
+    #   type for {#to_ruby}.
+    # @overload const(name, format=nil, cast='', ruby_name=nil) { |value| ... }
+    #  Use a converter block. This block convert the value from a string to the
+    #  appropriate type for {#to_ruby}.
+    #  @yieldparam value constant value
     def const(name, format = nil, cast = '', ruby_name = nil, converter = nil,
               &converter_proc)
       format ||= '%d'
@@ -67,18 +99,19 @@ module FFI
       return const
     end
 
+    # Calculate constants values.
+    # @param [Hash] options
+    # @option options [String] :cppflags flags for C compiler
+    # @return [nil]
+    # @raise if a constant is missing and +:required+ was set to +true+ (see {#initialize})
     def calculate(options = {})
       binary = File.join Dir.tmpdir, "rb_const_gen_bin_#{Process.pid}"
 
       Tempfile.open("#{@prefix}.const_generator") do |f|
-        f.puts "#include <stdio.h>"
-
         @includes.each do |inc|
           f.puts "#include <#{inc}>"
         end
-
-        f.puts "#include <stddef.h>\n\n"
-        f.puts "int main(int argc, char **argv)\n{"
+        f.puts "\nint main(int argc, char **argv)\n{"
 
         @constants.each_value do |const|
           f.puts <<-EOF
@@ -116,17 +149,19 @@ module FFI
       end
     end
 
+    # Dump constants to +io+.
+    # @param [#puts] io
+    # @return [nil]
     def dump_constants(io)
       @constants.each do |name, constant|
-        name = [@prefix, name].join '.'
+        name = [@prefix, name].join '.' if @prefix
         io.puts "#{name} = #{constant.converted_value}"
       end
     end
 
-    ##
     # Outputs values for discovered constants.  If the constant's value was
     # not discovered it is not omitted.
-
+    # @return [String]
     def to_ruby
       @constants.sort_by { |name,| name }.map do |name, constant|
         if constant.value.nil? then
@@ -137,17 +172,28 @@ module FFI
       end.join "\n"
     end
 
-    def include(i)
-      @includes << i
+    # Add additional C include file(s) to calculate constants from.
+    # @note +stdio.h+ and +stddef.h+ automatically included
+    # @param [List<String>, Array<String>] i include file(s)
+    # @return [Array<String>] array of include files
+    def include(*i)
+      @includes |= i.flatten
     end
 
   end
 
+  # This class hold constants for {ConstGenerator}
   class ConstGenerator::Constant
 
     attr_reader :name, :format, :cast
     attr_accessor :value
 
+    # @param [#to_s] name
+    # @param [String] format a printf format string to print the value out
+    # @param [String] cast a C cast for the value
+    # @param ruby_name alternate ruby name for {#to_ruby}
+    # @param [#call] converter convert the value from a string to the appropriate
+    #  type for {#to_ruby}.
     def initialize(name, format, cast, ruby_name = nil, converter=nil)
       @name = name
       @format = format
@@ -157,6 +203,8 @@ module FFI
       @value = nil
     end
 
+    # Return constant value (converted if a +converter+ was defined).
+    # @return constant value.
     def converted_value
       if @converter
         @converter.call(@value)
@@ -165,14 +213,18 @@ module FFI
       end
     end
 
+    # get constant ruby name
+    # @return [String]
     def ruby_name
       @ruby_name || @name
     end
 
+    # Get an evaluable string from constant.
+    # @return [String]
     def to_ruby
       "#{ruby_name} = #{converted_value}"
     end
 
-  end  
+  end
 
 end
