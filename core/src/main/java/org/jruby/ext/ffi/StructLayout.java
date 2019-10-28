@@ -307,6 +307,41 @@ public final class StructLayout extends Type {
         return RubyArray.newArray(context.runtime, fields);
     }
 
+    @JRubyMethod(name = "__union!")
+    public IRubyObject union_bang(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        NativeType[] alignmentTypes = {
+                NativeType.CHAR, NativeType.SHORT, NativeType.INT, NativeType.LONG,
+                NativeType.FLOAT, NativeType.DOUBLE, NativeType.LONGDOUBLE
+        };
+
+        NativeType t = null;
+        int count, i;
+
+        for (NativeType alignmentType : alignmentTypes) {
+            if (Type.getNativeAlignment(alignmentType) == alignment) {
+                t = alignmentType;
+                break;
+            }
+        }
+
+        if (t == null) {
+            throw runtime.newRuntimeError("cannot create libffi union representation for alignment " + alignment);
+        }
+
+        // FIXME: wot
+//        count = layout.size / Type.getNativeSize(t);
+//        layout.ffiTypes = xcalloc(count + 1, sizeof(ffi_type *));
+//        layout.base.ffiType->elements = layout->ffiTypes;
+//
+//        for (i = 0; i < count; ++i) {
+//            layout->ffiTypes[i] = t;
+//        }
+
+        return this;
+    }
+
     final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
         if (!(ptr instanceof AbstractMemory)) {
             throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
