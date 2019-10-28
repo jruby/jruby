@@ -28,11 +28,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.#
 
-if RUBY_ENGINE == 'jruby'
-  # Load built-in ffi-internal library
-  JRuby::Util.load_ext("org.jruby.ext.ffi.FFIService")
-end
-
 require 'rbconfig'
 module FFI
   class PlatformError < LoadError; end

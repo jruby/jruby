@@ -8,6 +8,10 @@ if !defined?(RUBY_ENGINE) || RUBY_ENGINE == 'ruby' || RUBY_ENGINE == 'rbx'
 
   require 'ffi/ffi'
 
+elsif RUBY_ENGINE == 'jruby'
+  JRuby::Util.load_ext("org.jruby.ext.ffi.FFIService")
+  require 'ffi/ffi'
+
 elsif defined?(RUBY_ENGINE)
   # Remove the ffi gem dir from the load path, then reload the internal ffi implementation
   $LOAD_PATH.delete(File.dirname(__FILE__))
