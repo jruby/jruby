@@ -1,6 +1,7 @@
 #
-# Copyright (C) 2008, 2009 Wayne Meissner
-# Copyright (C) 2009 Luc Heinrich
+# Copyright (C) 2008-2010 Wayne Meissner
+# Copyright (C) 2008, 2009 Andrea Fazzi
+# Copyright (C) 2008, 2009 Luc Heinrich
 #
 # This file is part of ruby-ffi.
 #
@@ -31,48 +32,65 @@
 #
 
 module FFI
-  class VariadicInvoker    
-    def init(arg_types, type_map)
-      @fixed = Array.new
-      @type_map = type_map
-      arg_types.each_with_index do |type, i|
-        @fixed << type unless type == Type::VARARGS
-      end
+
+  class StructLayout
+
+    # @return [Array<Array(Symbol, Numeric)>
+    # Get an array of tuples (field name, offset of the field).
+    def offsets
+      members.map { |m| [ m, self[m].offset ] }
     end
 
-
-    def call(*args, &block)
-      param_types = Array.new(@fixed)
-      param_values = Array.new
-      @fixed.each_with_index do |t, i|
-        param_values << args[i]
-      end
-      i = @fixed.length
-      while i < args.length
-        param_types << FFI.find_type(args[i], @type_map)
-        param_values << args[i + 1]
-        i += 2
-      end
-      invoke(param_types, param_values, &block)
+    # @return [Numeric]
+    # Get the offset of a field.
+    def offset_of(field_name)
+      self[field_name].offset
     end
 
-    #
-    # Attach the invoker to module +mod+ as +mname+
-    #
-    def attach(mod, mname)
-      invoker = self
-      params = "*args"
-      call = "call"
-      mod.module_eval <<-code
-      @@#{mname} = invoker
-      def self.#{mname}(#{params})
-        @@#{mname}.#{call}(#{params})
+    # An enum {Field} in a {StructLayout}.
+    class Enum < Field
+
+      # @param [AbstractMemory] ptr pointer on a {Struct}
+      # @return [Object]
+      # Get an object of type {#type} from memory pointed by +ptr+.
+      def get(ptr)
+        type.find(ptr.get_int(offset))
       end
-      def #{mname}(#{params})
-        @@#{mname}.#{call}(#{params})
+
+      # @param [AbstractMemory] ptr pointer on a {Struct}
+      # @param  value
+      # @return [nil]
+      # Set +value+ into memory pointed by +ptr+.
+      def put(ptr, value)
+        ptr.put_int(offset, type.find(value))
       end
-      code
-      invoker
+
+    end
+
+    class InnerStruct < Field
+      def get(ptr)
+        type.struct_class.new(ptr.slice(self.offset, self.size))
+      end
+
+     def put(ptr, value)
+       raise TypeError, "wrong value type (expected #{type.struct_class})" unless value.is_a?(type.struct_class)
+       ptr.slice(self.offset, self.size).__copy_from__(value.pointer, self.size)
+     end
+    end
+
+    class Mapped < Field
+      def initialize(name, offset, type, orig_field)
+        super(name, offset, type)
+        @orig_field = orig_field
+      end
+
+      def get(ptr)
+        type.from_native(@orig_field.get(ptr), nil)
+      end
+
+      def put(ptr, value)
+        @orig_field.put(ptr, type.to_native(value, nil))
+      end
     end
   end
 end

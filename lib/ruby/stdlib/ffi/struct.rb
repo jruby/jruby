@@ -1,8 +1,9 @@
 #
-# Copyright (C) 2008, 2009 Wayne Meissner
+# Copyright (C) 2008-2010 Wayne Meissner
 # Copyright (C) 2008, 2009 Andrea Fazzi
 # Copyright (C) 2008, 2009 Luc Heinrich
-# Copyright (c) 2007, 2008 Evan Phoenix
+#
+# This file is part of ruby-ffi.
 #
 # All rights reserved.
 #
@@ -14,7 +15,7 @@
 # * Redistributions in binary form must reproduce the above copyright notice
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# * Neither the name of the Evan Phoenix nor the names of its contributors
+# * Neither the name of the Ruby FFI project nor the names of its contributors
 #   may be used to endorse or promote products derived from this software
 #   without specific prior written permission.
 #
@@ -28,18 +29,95 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
 require 'ffi/platform'
+require 'ffi/struct_layout'
 require 'ffi/struct_layout_builder'
+require 'ffi/struct_by_reference'
 
 module FFI
 
   class Struct
+
+    # Get struct size
+    # @return [Numeric]
+    def size
+      self.class.size
+    end
+
+    # @return [Fixnum] Struct alignment
+    def alignment
+      self.class.alignment
+    end
     alias_method :align, :alignment
 
+    # (see FFI::StructLayout#offset_of)
+    def offset_of(name)
+      self.class.offset_of(name)
+    end
+
+    # (see FFI::StructLayout#members)
+    def members
+      self.class.members
+    end
+
+    # @return [Array]
+    # Get array of values from Struct fields.
+    def values
+      members.map { |m| self[m] }
+    end
+
+    # (see FFI::StructLayout#offsets)
+    def offsets
+      self.class.offsets
+    end
+
+    # Clear the struct content.
+    # @return [self]
+    def clear
+      pointer.clear
+      self
+    end
+
+    # Get {Pointer} to struct content.
+    # @return [AbstractMemory]
+    def to_ptr
+      pointer
+    end
+
+    # Get struct size
+    # @return [Numeric]
+    def self.size
+      defined?(@layout) ? @layout.size : defined?(@size) ? @size : 0
+    end
+
+    # set struct size
+    # @param [Numeric] size
+    # @return [size]
     def self.size=(size)
       raise ArgumentError, "Size already set" if defined?(@size) || defined?(@layout)
       @size = size
+    end
+
+    # @return (see Struct#alignment)
+    def self.alignment
+      @layout.alignment
+    end
+
+    # (see FFI::Type#members)
+    def self.members
+      @layout.members
+    end
+
+    # (see FFI::StructLayout#offsets)
+    def self.offsets
+      @layout.offsets
+    end
+
+    # (see FFI::StructLayout#offset_of)
+    def self.offset_of(name)
+      @layout.offset_of(name)
     end
 
     def self.in
@@ -68,6 +146,7 @@ module FFI
 
     class ManagedStructConverter < StructByReference
 
+      # @param [Struct] struct_class
       def initialize(struct_class)
         super(struct_class)
 
@@ -75,6 +154,9 @@ module FFI
         @method = struct_class.method(:release)
       end
 
+      # @param [Pointer] ptr
+      # @param [nil] ctx
+      # @return [Struct]
       def from_native(ptr, ctx)
         struct_class.new(AutoPointer.new(ptr, @method))
       end
@@ -88,7 +170,41 @@ module FFI
     class << self
       public
 
+      # @return [StructLayout]
+      # @overload layout
+      #  @return [StructLayout]
+      #  Get struct layout.
+      # @overload layout(*spec)
+      #  @param [Array<Symbol, Integer>,Array(Hash)] spec
+      #  @return [StructLayout]
+      #  Create struct layout from +spec+.
+      #  @example Creating a layout from an array +spec+
+      #    class MyStruct < Struct
+      #      layout :field1, :int,
+      #             :field2, :pointer,
+      #             :field3, :string
+      #    end
+      #  @example Creating a layout from an array +spec+ with offset
+      #    class MyStructWithOffset < Struct
+      #      layout :field1, :int,
+      #             :field2, :pointer, 6,  # set offset to 6 for this field
+      #             :field3, :string
+      #    end
+      #  @example Creating a layout from a hash +spec+ (Ruby 1.9 only)
+      #    class MyStructFromHash < Struct
+      #      layout :field1 => :int,
+      #             :field2 => :pointer,
+      #             :field3 => :string
+      #    end
+      #  @example Creating a layout with pointers to functions
+      #    class MyFunctionTable < Struct
+      #      layout :function1, callback([:int, :int], :int),
+      #             :function2, callback([:pointer], :void),
+      #             :field3, :string
+      #    end
+      #  @note Creating a layout from a hash +spec+ is supported only for Ruby 1.9.
       def layout(*spec)
+        #raise RuntimeError, "struct layout already defined for #{self.inspect}" if defined?(@layout)
         return @layout if spec.size == 0
 
         builder = StructLayoutBuilder.new
@@ -101,12 +217,11 @@ module FFI
         else
           array_layout(builder, spec)
         end
-
         builder.size = @size if defined?(@size) && @size > builder.size
-        layout = builder.build
-        @size = layout.size
-        self.layout = layout unless self == Struct
-        layout
+        cspec = builder.build
+        @layout = cspec unless self == Struct
+        @size = cspec.size
+        return cspec
       end
 
 
@@ -121,7 +236,7 @@ module FFI
         @packed = packed
       end
       alias :pack :packed
-      
+
       def aligned(alignment = 1)
         @min_alignment = alignment
       end
@@ -131,7 +246,7 @@ module FFI
         begin
           mod = self.name.split("::")[0..-2].inject(Object) { |obj, c| obj.const_get(c) }
           (mod < FFI::Library || mod < FFI::Struct || mod.respond_to?(:find_type)) ? mod : nil
-        rescue Exception => ex
+        rescue Exception
           nil
         end
       end
@@ -160,13 +275,20 @@ module FFI
 
       private
 
+      # @param [StructLayoutBuilder] builder
+      # @param [Hash] spec
+      # @return [builder]
+      # Add hash +spec+ to +builder+.
       def hash_layout(builder, spec)
-        raise "Ruby version not supported" if RUBY_VERSION =~ /1.8.*/ && !(RUBY_PLATFORM =~ /java/)
         spec[0].each do |name, type|
           builder.add name, find_field_type(type), nil
-          end
         end
+      end
 
+      # @param [StructLayoutBuilder] builder
+      # @param [Array<Symbol, Integer>] spec
+      # @return [builder]
+      # Add array +spec+ to +builder+.
       def array_layout(builder, spec)
         i = 0
         while i < spec.size
@@ -182,8 +304,8 @@ module FFI
           end
 
           builder.add name, find_field_type(type), offset
-          end
         end
       end
     end
   end
+end

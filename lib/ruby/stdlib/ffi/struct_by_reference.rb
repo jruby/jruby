@@ -1,6 +1,5 @@
 #
-# Copyright (C) 2008, 2009 Wayne Meissner
-# Copyright (C) 2009 Luc Heinrich
+# Copyright (C) 2010 Wayne Meissner
 #
 # This file is part of ruby-ffi.
 #
@@ -27,52 +26,47 @@
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.#
 
 module FFI
-  class VariadicInvoker    
-    def init(arg_types, type_map)
-      @fixed = Array.new
-      @type_map = type_map
-      arg_types.each_with_index do |type, i|
-        @fixed << type unless type == Type::VARARGS
+  # This class includes the {FFI::DataConverter} module.
+  class StructByReference
+    include DataConverter
+
+    attr_reader :struct_class
+
+    # @param [Struct] struct_class
+    def initialize(struct_class)
+      unless Class === struct_class and struct_class < FFI::Struct
+        raise TypeError, 'wrong type (expected subclass of FFI::Struct)'
       end
+      @struct_class = struct_class
     end
 
-
-    def call(*args, &block)
-      param_types = Array.new(@fixed)
-      param_values = Array.new
-      @fixed.each_with_index do |t, i|
-        param_values << args[i]
-      end
-      i = @fixed.length
-      while i < args.length
-        param_types << FFI.find_type(args[i], @type_map)
-        param_values << args[i + 1]
-        i += 2
-      end
-      invoke(param_types, param_values, &block)
+    # Always get {FFI::Type}::POINTER.
+    def native_type
+      FFI::Type::POINTER
     end
 
-    #
-    # Attach the invoker to module +mod+ as +mname+
-    #
-    def attach(mod, mname)
-      invoker = self
-      params = "*args"
-      call = "call"
-      mod.module_eval <<-code
-      @@#{mname} = invoker
-      def self.#{mname}(#{params})
-        @@#{mname}.#{call}(#{params})
+    # @param [nil, Struct] value
+    # @param [nil] ctx
+    # @return [AbstractMemory] Pointer on +value+.
+    def to_native(value, ctx)
+      return Pointer::NULL if value.nil?
+
+      unless @struct_class === value
+        raise TypeError, "wrong argument type #{value.class} (expected #{@struct_class})"
       end
-      def #{mname}(#{params})
-        @@#{mname}.#{call}(#{params})
-      end
-      code
-      invoker
+
+      value.pointer
+    end
+
+    # @param [AbstractMemory] value
+    # @param [nil] ctx
+    # @return [Struct]
+    # Create a struct from content of memory +value+.
+    def from_native(value, ctx)
+      @struct_class.new(value)
     end
   end
 end

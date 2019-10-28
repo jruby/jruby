@@ -1,33 +1,9 @@
 #
 # Copyright (C) 2008-2010 Wayne Meissner
-# Copyright (C) 2008 Luc Heinrich <luc@honk-honk.com>
 #
-# Version: EPL 2.0/GPL 2.0/LGPL 2.1
+# This file is part of ruby-ffi.
 #
-# The contents of this file are subject to the Common Public
-# License Version 1.0 (the "License"); you may not use this file
-# except in compliance with the License. You may obtain a copy of
-# the License at http://www.eclipse.org/legal/cpl-v10.html
-#
-# Software distributed under the License is distributed on an "AS
-# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-# implied. See the License for the specific language governing
-# rights and limitations under the License.
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either of the GNU General Public License Version 2 or later (the "GPL"),
-# or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the EPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the EPL, the GPL or the LGPL.
-#
-#
-# This file contains code that was originally under the following license:
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -37,7 +13,7 @@
 # * Redistributions in binary form must reproduce the above copyright notice
 #   this list of conditions and the following disclaimer in the documentation
 #   and/or other materials provided with the distribution.
-# * Neither the name of the Evan Phoenix nor the names of its contributors
+# * Neither the name of the Ruby FFI project nor the names of its contributors
 #   may be used to endorse or promote products derived from this software
 #   without specific prior written permission.
 #
@@ -50,29 +26,68 @@
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.#
+
 module FFI
   CURRENT_PROCESS = USE_THIS_PROCESS_AS_LIBRARY = Object.new
+
+  # @param [#to_s] lib library name
+  # @return [String] library name formatted for current platform
+  # Transform a generic library name to a platform library name
+  # @example
+  #  # Linux
+  #  FFI.map_library_name 'c'     # -> "libc.so.6"
+  #  FFI.map_library_name 'jpeg'  # -> "libjpeg.so"
+  #  # Windows
+  #  FFI.map_library_name 'c'     # -> "msvcrt.dll"
+  #  FFI.map_library_name 'jpeg'  # -> "jpeg.dll"
+  def self.map_library_name(lib)
+    # Mangle the library name to reflect the native library naming conventions
+    lib = Library::LIBC if lib == 'c'
+
+    if lib && File.basename(lib) == lib
+      lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
+      r = Platform::IS_GNU ? "\\.so($|\\.[1234567890]+)" : "\\.#{Platform::LIBSUFFIX}$"
+      lib += ".#{Platform::LIBSUFFIX}" unless lib =~ /#{r}/
+    end
+
+    lib
+  end
+
+  # Exception raised when a function is not found in libraries
+  class NotFoundError < LoadError
+    def initialize(function, *libraries)
+      super("Function '#{function}' not found in [#{libraries[0].nil? ? 'current process' : libraries.join(", ")}]")
+    end
+  end
 
   # This module is the base to use native functions.
   #
   # A basic usage may be:
   #  require 'ffi'
-  #
+  #  
   #  module Hello
   #    extend FFI::Library
   #    ffi_lib FFI::Library::LIBC
   #    attach_function 'puts', [ :string ], :int
   #  end
-  #
+  #  
   #  Hello.puts("Hello, World")
   #
-  #
+  # 
   module Library
     CURRENT_PROCESS = FFI::CURRENT_PROCESS
     LIBC = FFI::Platform::LIBC
 
+    # @param mod extended object
+    # @return [nil]
+    # @raise {RuntimeError} if +mod+ is not a Module
+    # Test if extended object is a Module. If not, raise RuntimeError.
+    def self.extended(mod)
+      raise RuntimeError.new("must only be extended by module") unless mod.kind_of?(Module)
+    end
+
+    
     # @param [Array] names names of libraries to load
     # @return [Array<DynamicLibrary>]
     # @raise {LoadError} if a library cannot be opened
@@ -82,17 +97,21 @@ module FFI
 
       lib_flags = defined?(@ffi_lib_flags) ? @ffi_lib_flags : FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL
       ffi_libs = names.map do |name|
+
         if name == FFI::CURRENT_PROCESS
           FFI::DynamicLibrary.open(nil, FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL)
+
         else
-          libnames = (name.is_a?(::Array) ? name : [ name ]).map { |n| [ n, FFI.map_library_name(n) ].uniq }.flatten.compact
+          libnames = (name.is_a?(::Array) ? name : [ name ]).map(&:to_s).map { |n| [ n, FFI.map_library_name(n) ].uniq }.flatten.compact
           lib = nil
           errors = {}
 
           libnames.each do |libname|
             begin
+              orig = libname
               lib = FFI::DynamicLibrary.open(libname, lib_flags)
               break if lib
+
             rescue Exception => ex
               ldscript = false
               if ex.message =~ /(([^ \t()])+\.so([^ \t:()])*):([ \t])*(invalid ELF header|file too short|invalid file format)/
@@ -105,13 +124,25 @@ module FFI
               if ldscript
                 retry
               else
-                errors[libname] = ex
+                # TODO better library lookup logic
+                unless libname.start_with?("/") || FFI::Platform.windows?
+                  path = ['/usr/lib/','/usr/local/lib/','/opt/local/lib/'].find do |pth|
+                    File.exist?(pth + libname)
+                  end
+                  if path
+                    libname = path + libname
+                    retry
+                  end
+                end
+
+                libr = (orig == libname ? orig : "#{orig} #{libname}")
+                errors[libr] = ex
               end
             end
           end
 
           if lib.nil?
-            raise LoadError.new(errors.values.join('. '))
+            raise LoadError.new(errors.values.join(".\n"))
           end
 
           # return the found lib
@@ -228,9 +259,10 @@ module FFI
             raise LoadError unless function
 
             invokers << if arg_types.length > 0 && arg_types[arg_types.length - 1] == FFI::NativeType::VARARGS
-              FFI::VariadicInvoker.new(find_type(ret_type), arg_types, function, options)
+              VariadicInvoker.new(function, arg_types, find_type(ret_type), options)
+
             else
-              FFI::Function.new(find_type(ret_type), arg_types, function, options)
+              Function.new(find_type(ret_type), arg_types, function, options)
             end
 
           rescue LoadError
@@ -241,7 +273,7 @@ module FFI
       raise FFI::NotFoundError.new(cname.to_s, ffi_libraries.map { |lib| lib.name }) unless invoker
 
       invoker.attach(self, mname.to_s)
-      invoker # Return a version that can be called via #call
+      invoker
     end
 
     # @param [#to_s] name function name
@@ -259,11 +291,11 @@ module FFI
       if ffi_convention == :stdcall
         # Get the size of each parameter
         size = arg_types.inject(0) do |mem, arg|
-          mem + arg.size
+          size = arg.size
+          # The size must be a multiple of 4
+          size += (4 - size) % 4
+          mem + size
         end
-
-        # Next, the size must be a multiple of 4
-        size += (4 - size) % 4
 
         result << "_#{name.to_s}@#{size}" # win32
         result << "#{name.to_s}@#{size}" # win64
@@ -272,24 +304,26 @@ module FFI
     end
 
     # @overload attach_variable(mname, cname, type)
-    #  @example
-    #   module Bar
-    #     extend FFI::Library
-    #     ffi_lib 'my_lib'
-    #     attach_variable :c_myvar, :myvar, :long
-    #   end
-    #   # now callable via Bar.c_myvar
+    #   @param [#to_s] mname name of ruby method to attach as
+    #   @param [#to_s] cname name of C variable to attach
+    #   @param [DataConverter, Struct, Symbol, Type] type C variable's type
+    #   @example
+    #     module Bar
+    #       extend FFI::Library
+    #       ffi_lib 'my_lib'
+    #       attach_variable :c_myvar, :myvar, :long
+    #     end
+    #     # now callable via Bar.c_myvar
     # @overload attach_variable(cname, type)
-    #  @example
-    #   module Bar
-    #     extend FFI::Library
-    #     ffi_lib 'my_lib'
-    #     attach_variable :myvar, :long
-    #   end
-    #   # now callable via Bar.myvar
-    # @param [#to_s] mname name of ruby method to attach as
-    # @param [#to_s] cname name of C variable to attach
-    # @param [DataConverter, Struct, Symbol, Type] type C varaible's type
+    #   @param [#to_s] mname name of ruby method to attach as
+    #   @param [DataConverter, Struct, Symbol, Type] type C variable's type
+    #   @example
+    #     module Bar
+    #       extend FFI::Library
+    #       ffi_lib 'my_lib'
+    #       attach_variable :myvar, :long
+    #     end
+    #     # now callable via Bar.myvar
     # @return [DynamicLibrary::Symbol]
     # @raise {FFI::NotFoundError} if +cname+ cannot be found in libraries
     #
@@ -308,7 +342,7 @@ module FFI
       raise FFI::NotFoundError.new(cname, ffi_libraries) if address.nil? || address.null?
       if type.is_a?(Class) && type < FFI::Struct
         # If it is a global struct, just attach directly to the pointer
-        s = type.new(address)
+        s = s = type.new(address) # Assigning twice to suppress unused variable warning
         self.module_eval <<-code, __FILE__, __LINE__
           @@ffi_gvar_#{mname} = s
           def self.#{mname}
@@ -340,10 +374,12 @@ module FFI
 
 
     # @overload callback(name, params, ret)
+    #   @param name callback name to add to type map
+    #   @param [Array] params array of parameters' types
+    #   @param [DataConverter, Struct, Symbol, Type] ret callback return type
     # @overload callback(params, ret)
-    # @param name callback name to add to type map
-    # @param [Array] params array of parameters' types
-    # @param [DataConverter, Struct, Symbol, Type] ret callback return type
+    #   @param [Array] params array of parameters' types
+    #   @param [DataConverter, Struct, Symbol, Type] ret callback return type
     # @return [FFI::CallbackInfo]
     def callback(*args)
       raise ArgumentError, "wrong number of arguments" if args.length < 2 || args.length > 3
@@ -368,10 +404,6 @@ module FFI
       cb
     end
 
-    # @param [DataConverter, Symbol, Type] old
-    # @param  add
-    # @param [] info
-    # @return [FFI::Enum, FFI::Type]
     # Register or get an already registered type definition.
     #
     # To register a new type definition, +old+ should be a {FFI::Type}. +add+
@@ -384,6 +416,11 @@ module FFI
     # * in others cases, +info+ is used to create a named enum.
     #
     # If +old+ is a key for type map, #typedef get +old+ type definition.
+    #
+    # @param [DataConverter, Symbol, Type] old
+    # @param [Symbol] add
+    # @param [Symbol] info
+    # @return [FFI::Enum, FFI::Type]
     def typedef(old, add, info=nil)
       @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
 
@@ -408,6 +445,28 @@ module FFI
       end
     end
 
+    private
+    # Generic enum builder
+    #  @param [Class] klass can be one of FFI::Enum or FFI::Bitmask
+    #  @param args (see #enum or #bitmask)
+    def generic_enum(klass, *args)
+      native_type = args.first.kind_of?(FFI::Type) ? args.shift : nil
+      name, values = if args[0].kind_of?(Symbol) && args[1].kind_of?(Array)
+        [ args[0], args[1] ]
+      elsif args[0].kind_of?(Array)
+        [ nil, args[0] ]
+      else
+        [ nil, args ]
+      end
+      @ffi_enums = FFI::Enums.new unless defined?(@ffi_enums)
+      @ffi_enums << (e = native_type ? klass.new(native_type, values, name) : klass.new(values, name))
+
+      # If called with a name, add a typedef alias
+      typedef(e, name) if name
+      e
+    end
+
+    public
     # @overload enum(name, values)
     #  Create a named enum.
     #  @example
@@ -446,27 +505,57 @@ module FFI
     # @return [FFI::Enum]
     # Create a new {FFI::Enum}.
     def enum(*args)
-      native_type = args.first.kind_of?(FFI::Type) ? args.shift : nil
-      name, values = if args[0].kind_of?(Symbol) && args[1].kind_of?(Array)
-        [ args[0], args[1] ]
-      elsif args[0].kind_of?(Array)
-        [ nil, args[0] ]
-      else
-        [ nil, args ]
-      end
-      @ffi_enums = FFI::Enums.new unless defined?(@ffi_enums)
-      @ffi_enums << (e = native_type ? FFI::Enum.new(native_type, values, name) : FFI::Enum.new(values, name))
+      generic_enum(FFI::Enum, *args)
+    end
 
-      # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
-      typedef(e, name) if name
-      e
+    # @overload bitmask(name, values)
+    #  Create a named bitmask
+    #  @example
+    #   bitmask :foo, [:red, :green, :blue] # bits 0,1,2 are used
+    #   bitmask :foo, [:red, :green, 5, :blue] # bits 0,5,6 are used
+    #  @param [Symbol] name for new bitmask
+    #  @param [Array<Symbol, Integer>] values for new bitmask
+    # @overload bitmask(*args)
+    #  Create an unamed bitmask
+    #  @example
+    #   bm = bitmask :red, :green, :blue # bits 0,1,2 are used
+    #   bm = bitmask :red, :green, 5, blue # bits 0,5,6 are used
+    #  @param [Symbol, Integer] args values for new bitmask
+    # @overload bitmask(values)
+    #  Create an unamed bitmask
+    #  @example
+    #   bm = bitmask [:red, :green, :blue] # bits 0,1,2 are used
+    #   bm = bitmask [:red, :green, 5, blue] # bits 0,5,6 are used
+    #  @param [Array<Symbol, Integer>] values for new bitmask
+    # @overload bitmask(native_type, name, values)
+    #  Create a named enum and specify the native type.
+    #  @example
+    #   bitmask FFI::Type::UINT64, :foo, [:red, :green, :blue]
+    #  @param [FFI::Type] native_type native type for new bitmask
+    #  @param [Symbol] name for new bitmask
+    #  @param [Array<Symbol, Integer>] values for new bitmask
+    # @overload bitmask(native_type, *args)
+    #  @example
+    #   bitmask FFI::Type::UINT64, :red, :green, :blue
+    #  @param [FFI::Type] native_type native type for new bitmask
+    #  @param [Symbol, Integer] args values for new bitmask
+    # @overload bitmask(native_type, values)
+    #  Create a named enum and specify the native type.
+    #  @example
+    #   bitmask FFI::Type::UINT64, [:red, :green, :blue]
+    #  @param [FFI::Type] native_type native type for new bitmask
+    #  @param [Array<Symbol, Integer>] values for new bitmask
+    # @return [FFI::Bitmask]
+    # Create a new FFI::Bitmask
+    def bitmask(*args)
+      generic_enum(FFI::Bitmask, *args)
     end
 
     # @param name
     # @return [FFI::Enum]
     # Find an enum by name.
     def enum_type(name)
-      @ffi_enums && @ffi_enums.find(name)
+      @ffi_enums.find(name) if defined?(@ffi_enums)
     end
 
     # @param symbol
@@ -480,7 +569,7 @@ module FFI
     # @return [Type]
     # Find a type definition.
     def find_type(t)
-      if t.kind_of?(FFI::Type)
+      if t.kind_of?(Type)
         t
 
       elsif defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(t)
