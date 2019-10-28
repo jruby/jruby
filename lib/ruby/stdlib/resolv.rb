@@ -783,7 +783,7 @@ class Resolv
           sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
           return nil if !sock
           service = [IPAddr.new(host), port]
-          id = DNS.allocate_request_id(host, port)
+          id = DNS.allocate_request_id(service[0].to_s, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
           return @senders[[service, id]] =
@@ -795,7 +795,7 @@ class Resolv
             if @initialized
               super
               @senders.each_key {|service, id|
-                DNS.free_request_id(service[0], service[1], id)
+                DNS.free_request_id(service[0].to_s, service[1], id)
               }
               @initialized = false
             end
