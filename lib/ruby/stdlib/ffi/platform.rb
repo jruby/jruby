@@ -167,6 +167,12 @@ module FFI
     def self.unix?
       !IS_WINDOWS
     end
+
+    # Test if current OS is a Linux
+    # @return [Boolean]
+    def self.linux?
+      IS_LINUX
+    end
   end
 end
 
