@@ -102,7 +102,7 @@ describe "Struct tests" do
     smp = FFI::MemoryPointer.new :pointer
     s = PointerMember.new smp
     expect { s[:pointer] = s }.not_to raise_error Exception
-    expect { foo = s[:pointer] }.not_to raise_error Exception
+    expect { s[:pointer].nil? }.not_to raise_error Exception
   end
 
   it "Struct#[:pointer]=nil" do
@@ -855,7 +855,7 @@ describe "variable-length arrays" do
       Class.new(FFI::Struct) do
         layout :data, [ :char, 0 ], :count, :int
       end
-    }.to raise_error
+    }.to raise_error(TypeError)
   end
 
   it "can access elements of array" do
@@ -875,8 +875,8 @@ describe "variable-length arrays" do
     end
     s = struct_class.new(FFI::MemoryPointer.new(1024))
     s[:data][0] = 0x1eadbeef
-    expect { s[:data][1] = 0x12345678 }.to raise_error
+    expect { s[:data][1] = 0x12345678 }.to raise_error(IndexError)
     expect(s[:data][0]).to eq(0x1eadbeef)
-    expect { expect(s[:data][1]).to == 0x12345678 }.to raise_error
+    expect { expect(s[:data][1]).to == 0x12345678 }.to raise_error(IndexError)
   end
 end

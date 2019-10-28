@@ -83,7 +83,7 @@ describe "Library" do
           m.extend FFI::Library
           attach_function :getpid, [ ], :uint
         end
-      }.to raise_error
+      }.to raise_error(LoadError)
     end
 
     it "attach_function :getpid from this process" do
@@ -91,6 +91,16 @@ describe "Library" do
         expect(Module.new do |m|
           m.extend FFI::Library
           ffi_lib FFI::Library::CURRENT_PROCESS
+          attach_function :getpid, [ ], :uint
+        end.getpid).to eq(Process.pid)
+      }.not_to raise_error
+    end
+
+    it "loads library using symbol" do
+      expect {
+        expect(Module.new do |m|
+          m.extend FFI::Library
+          ffi_lib :c
           attach_function :getpid, [ ], :uint
         end.getpid).to eq(Process.pid)
       }.not_to raise_error
