@@ -10,7 +10,7 @@ project 'JRuby Core' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
 
-              'tzdata.version' => '2013d',
+              'tzdata.version' => '2019c',
               'tzdata.scope' => 'provided',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
