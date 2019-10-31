@@ -4872,7 +4872,8 @@ float_loop:
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString format = obj.convertToString();
         try {
-            return Pack.pack(context, this, format);
+            RubyString buffer = context.runtime.newString();
+            return Pack.pack(context, this, format, buffer);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw concurrentModification(context.runtime, e);
         }
@@ -4892,16 +4893,11 @@ float_loop:
             }
         }
 
-        final RubyString pack = pack(context, obj);
-
-        if (buffer != null) {
-            try {
-                return ((RubyString) buffer).append(pack);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                throw concurrentModification(context.runtime, e);
-            }
+        if(buffer==null) {
+            buffer = context.runtime.newString();
         }
-        return pack;
+
+        return Pack.pack(context, this, obj.convertToString(), (RubyString) buffer);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true)

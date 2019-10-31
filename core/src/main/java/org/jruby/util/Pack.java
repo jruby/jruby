@@ -1748,12 +1748,14 @@ public class Pack {
      * Same as pack but defaults tainting of output to false.
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor());
+        RubyString buffer = runtime.newString();
+        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor(), buffer);
     }
 
     @Deprecated
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        return pack(context, list, formatString);
+        RubyString buffer = runtime.newString();
+        return pack(context, list, formatString, buffer);
     }
 
     @Deprecated
@@ -1763,8 +1765,8 @@ public class Pack {
             result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
     }
 
-    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor());
+    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString, RubyString buffer) {
+        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor(), buffer);
         return (RubyString) pack.infectBy(formatString);
     }
 
@@ -1780,9 +1782,11 @@ public class Pack {
         int idx;
     }
 
-    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor, RubyString buffer) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
-        ByteList result = new ByteList();
+
+        buffer.modify();
+        ByteList result = buffer.getByteList();
         boolean taintOutput = tainted;
         PackInts packInts = new PackInts(list.size(), 0);
         int type;
@@ -1907,21 +1911,20 @@ public class Pack {
             }
         }
 
-        RubyString output = RubyString.newString(context.runtime, result);
-        if (taintOutput) output.setTaint(true);
+        if (taintOutput) buffer.setTaint(true);
 
         switch (enc_info) {
             case 1:
-                output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
+                buffer.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
-                output.associateEncoding(UTF8);
+                buffer.associateEncoding(UTF8);
                 break;
             default:
                 /* do nothing, keep ASCII-8BIT */
         }
 
-        return output;
+        return buffer;
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
