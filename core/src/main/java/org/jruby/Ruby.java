@@ -2762,7 +2762,7 @@ public final class Ruby implements Constantizable {
     }
 
     public ThreadContext getCurrentContext() {
-        return threadService.getCurrentContext();
+        return ThreadService.getCurrentContext(threadService);
     }
 
     /**
@@ -3413,8 +3413,8 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        // tear down thread references
-        getThreadService().teardown();
+        // swap with a new service to dereference all thread constructs
+        threadService = new ThreadService(this);
 
         // shut down executors
         getJITCompiler().shutdown();
@@ -5076,7 +5076,7 @@ public final class Ruby implements Constantizable {
             1     /* concurrency level - mostly reads here so this can be 1 */);
 
     private final Invalidator checkpointInvalidator;
-    private final ThreadService threadService;
+    private ThreadService threadService;
 
     private final POSIX posix;
 

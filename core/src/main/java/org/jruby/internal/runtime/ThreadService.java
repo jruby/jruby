@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 
 /**
- * ThreadService maintains lists ofall the JRuby-specific thread data structures
+ * ThreadService maintains references to all JRuby-specific thread data structures
  * needed for Ruby's threading API and for JRuby's execution. The main
  * structures are:
  *
@@ -66,7 +66,7 @@ import org.jruby.runtime.ThreadContext;
  * with these structures are:
  *
  * <ul>
- * <li>ThreadService has a hard reference to a ThreadLocal, which holds a soft reference
+ * <li>ThreadService is itself a ThreadLocal, which holds a soft reference
  * to a ThreadContext. So the thread's locals softly reference ThreadContext.
  * We use a soft reference to keep ThreadContext instances from going away too
  * quickly when a Java thread leaves Ruby space completely, which would otherwise
@@ -106,22 +106,13 @@ import org.jruby.runtime.ThreadContext;
  * releasing the hard reference to the Thread itself.</li>
  * <ul>
  */
-public class ThreadService {
+public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     private final Ruby runtime;
     /**
      * A hard reference to the "main" context, so we always have one waiting for
      * "main" thread execution.
      */
     private ThreadContext mainContext;
-
-    /**
-     * A thread-local soft reference to the current thread's ThreadContext. We
-     * use a soft reference so that the ThreadContext is still collectible but
-     * will not immediately disappear once dereferenced, to avoid churning
-     * through ThreadContext instances every time a Java thread enters and exits
-     * Ruby space.
-     */
-    private ThreadLocal<SoftReference<ThreadContext>> localContext;
 
     /**
      * The Java thread group into which we register all Ruby threads. This is
@@ -144,7 +135,6 @@ public class ThreadService {
 
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
-        this.localContext = new ThreadLocal<>();
 
         try {
             this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
@@ -156,9 +146,6 @@ public class ThreadService {
     }
 
     public void teardown() {
-        // clear all thread-local context references
-        localContext = new ThreadLocal<>();
-
         // clear main context reference
         mainContext = null;
 
@@ -170,7 +157,7 @@ public class ThreadService {
         this.mainContext = ThreadContext.newContext(runtime);
 
         // Must be called from main thread (it is currently, but this bothers me)
-        localContext.set(new SoftReference<>(mainContext));
+        set(new SoftReference<>(mainContext));
     }
 
     /**
@@ -197,22 +184,36 @@ public class ThreadService {
      * collected.
      */
     public final ThreadContext getCurrentContext() {
+        return getCurrentContext(this);
+    }
+
+    public static ThreadContext getCurrentContext(ThreadService service) {
         ThreadContext context;
 
         // keep trying until we have a context
-        do {
-            SoftReference<ThreadContext> ref = localContext.get();
-            if (ref == null) {
-                context = adoptCurrentThread().getContext(); // registerNewThread will localContext.set(...)
-            } else {
-                if ((context = ref.get()) == null) {
-                    // context is null, wipe out the SoftReference (this could be done with a reference queue)
-                    localContext.set(null);
-                }
-            }
-        } while (context == null);
+        context = adoptLoop(service);
+
+        if (context == null) return getCurrentContext(service);
 
         return context;
+    }
+
+    private static ThreadContext adoptLoop(ThreadService service) {
+        SoftReference<ThreadContext> ref = service.get();
+        if (ref == null) {
+            return contextFromAdopt(service); // registerNewThread will localContext.set(...)
+        } else {
+            ThreadContext context;
+            if ((context = ref.get()) == null) {
+                // context is null, wipe out the SoftReference (this could be done with a reference queue)
+                service.remove();
+            }
+            return context;
+        }
+    }
+
+    private static ThreadContext contextFromAdopt(ThreadService service) {
+        return service.adoptCurrentThread().getContext();
     }
 
     private RubyThread adoptCurrentThread() {
@@ -224,7 +225,7 @@ public class ThreadService {
         ThreadContext context = ThreadContext.newContext(runtime);
         context.setThread(thread);
         ThreadFiber.initRootFiber(context, thread);
-        localContext.set(new SoftReference<>(context));
+        set(new SoftReference<>(context));
         return context;
     }
 
@@ -287,9 +288,9 @@ public class ThreadService {
             if (thread != null) thread.clearContext(); // help GC - clear context-ref
         }
 
-        SoftReference<ThreadContext> ref = localContext.get();
+        SoftReference<ThreadContext> ref = get();
         if (ref != null) ref.clear(); // help GC
-        localContext.remove();
+        remove();
     }
 
     @Deprecated // use unregisterCurrentThread
@@ -327,7 +328,7 @@ public class ThreadService {
 
     @Deprecated
     public final void setCurrentContext(ThreadContext context) {
-        localContext.set(new SoftReference<ThreadContext>(context));
+        set(new SoftReference<ThreadContext>(context));
     }
 
     @Deprecated
