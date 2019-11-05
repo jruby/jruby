@@ -2572,9 +2572,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *  The default to_a method is deprecated.
      */
-    public RubyArray to_a() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
-        return getRuntime().newArray(this);
+    public RubyArray to_a(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
+        return runtime.newArray(this);
     }
 
     /** rb_obj_instance_eval
@@ -3224,6 +3225,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Deprecated
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         return context.nil;
+    }
+
+    @Deprecated
+    public RubyArray to_a() {
+        return to_a(getRuntime().getCurrentContext());
     }
 
     @Deprecated

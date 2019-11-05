@@ -705,13 +705,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject dup() {
         if (metaClass.getClassIndex() != ClassIndex.ARRAY) return super.dup();
 
-        RubyArray dup = dupImpl(metaClass.runtime.getArray());
+        Ruby runtime = metaClass.runtime;
+        RubyArray dup = dupImpl(runtime, runtime.getArray());
         dup.flags |= flags & TAINTED_F; // from DUP_SETUP
         return dup;
     }
 
-    protected RubyArray dupImpl(RubyClass metaClass) {
-        RubyArray dup = new RubyArray(metaClass.runtime, metaClass, values, begin, realLength, true);
+    protected RubyArray dupImpl(Ruby runtime, RubyClass metaClass) {
+        RubyArray dup = new RubyArray(runtime, metaClass, values, begin, realLength, true);
         dup.isShared = this.isShared = true;
         return dup;
     }
@@ -723,7 +724,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
         // dup returns an instance of Array, rather than an instance of the subclass
         // Also, taintedness and trustedness are not inherited to duplicates
-        return dupImpl(metaClass.runtime.getArray());
+        Ruby runtime = metaClass.runtime;
+        return dupImpl(runtime, runtime.getArray());
     }
 
     /** rb_ary_replace
@@ -2031,11 +2033,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "to_a")
     @Override
-    public RubyArray to_a() {
+    public RubyArray to_a(ThreadContext context) {
         final RubyClass metaClass = this.metaClass;
-        final RubyClass arrayClass = metaClass.runtime.getArray();
+        Ruby runtime = context.runtime;
+        final RubyClass arrayClass = runtime.getArray();
         if (metaClass != arrayClass) {
-            return dupImpl(arrayClass);
+            return dupImpl(runtime, arrayClass);
         }
         return this;
     }

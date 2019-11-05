@@ -926,12 +926,12 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "to_a")
     @Override
-    public RubyArray to_a() {
-        final Ruby runtime = metaClass.runtime;
+    public RubyArray to_a(ThreadContext context) {
+        final Ruby runtime = context.runtime;
         try {
             final RubyArray result = RubyArray.newBlankArrayInternal(runtime, size);
 
-            visitAll(runtime.getCurrentContext(), RubyHash.StoreKeyValueVisitor, result);
+            visitAll(context, RubyHash.StoreKeyValueVisitor, result);
 
             result.setTaint(isTaint());
             return result;
@@ -1595,7 +1595,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public IRubyObject sort(ThreadContext context, Block block) {
-        return to_a().sort_bang(context, block);
+        return to_a(context).sort_bang(context, block);
     }
 
     /** rb_hash_index
@@ -2059,14 +2059,14 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject flatten(ThreadContext context) {
-        RubyArray ary = to_a();
+        RubyArray ary = to_a(context);
         sites(context).flatten_bang.call(context, ary, ary, RubyFixnum.one(context.runtime));
         return ary;
     }
 
     @JRubyMethod
     public IRubyObject flatten(ThreadContext context, IRubyObject level) {
-        RubyArray ary = to_a();
+        RubyArray ary = to_a(context);
         sites(context).flatten_bang.call(context, ary, ary, level);
         return ary;
     }

@@ -432,8 +432,8 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod
     @Override
-    public RubyArray to_a() {
-        return match_array(metaClass.runtime, 0);
+    public RubyArray to_a(ThreadContext context) {
+        return match_array(context.runtime, 0);
     }
 
     @JRubyMethod(rest = true)
@@ -576,26 +576,26 @@ public class RubyMatchData extends RubyObject {
 
     @Deprecated
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
-        return op_aref(idx, rest);
+        return op_aref(getRuntime().getCurrentContext(), idx, rest);
     }
 
     /** match_aref
      *
      */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? to_a().aref(idx) : result;
+        return result == null ? to_a(context).aref(idx) : result;
     }
 
     /** match_aref
     *
     */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a(context).aref(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {
