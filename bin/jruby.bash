@@ -369,11 +369,12 @@ do
         java_args=("${java_args[@]}" "-sourcepath" "$JDB_SOURCEPATH")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
-        JAVA_VM=-client ;;
-     --server)
-        JAVA_VM=-server ;;
-     --dev)
         JAVA_VM=-client
+        echo "Warning: the --client flag is deprecated and has no effect most JVMs" ;;
+     --server)
+        JAVA_VM=-server
+        echo "Warning: the --server flag is deprecated and has no effect most JVMs" ;;
+     --dev)
         process_java_opts $dev_mode_opts_file
         # For OpenJ9 use environment variable to enable quickstart and shareclasses
         export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses" ;;
