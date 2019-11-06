@@ -857,9 +857,7 @@ public class Pack {
             out[index++] = (byte)((c << 6 | d) & 255);
         }
 
-        // FIXME: Can calculate exact if p == buf.length
-        // done processing but strict cannot be empty
-        //if (p < buf.length) throw runtime.newArgumentError("invalid base64");
+        if (p <= buf.length) throw runtime.newArgumentError("invalid base64");
 
         if (a != -1 && b != -1) {
             if (c == -1 && s == '=') {
