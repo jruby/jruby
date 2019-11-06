@@ -852,12 +852,12 @@ public class Pack {
             if (d == -1) throw runtime.newArgumentError("invalid base64");
 
             // calculate based on a, b, c and d
-            out[index++] = (byte)((a << 2 | b >> 4) & 255);
-            out[index++] = (byte)((b << 4 | c >> 2) & 255);
-            out[index++] = (byte)((c << 6 | d) & 255);
+            out[index++] = (byte) (a << 2 | b >> 4);
+            out[index++] = (byte) (b << 4 | c >> 2);
+            out[index++] = (byte) (c << 6 | d);
         }
 
-        if (p <= buf.length) throw runtime.newArgumentError("invalid base64");
+        if (p < begin + length) throw runtime.newArgumentError("invalid base64");
 
         if (a != -1 && b != -1) {
             if (c == -1 && s == '=') {
