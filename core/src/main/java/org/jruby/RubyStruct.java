@@ -629,7 +629,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"to_a", "values"})
     @Override
     public RubyArray to_a(ThreadContext context) {
-        return getRuntime().newArray(values);
+        return context.runtime.newArray(values);
     }
 
     @JRubyMethod
@@ -964,6 +964,12 @@ public class RubyStruct extends RubyObject {
         public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
             return self.inspectStruct(context, recur);
         }
+    }
+
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        return getRuntime().newArray(values);
     }
 
 }

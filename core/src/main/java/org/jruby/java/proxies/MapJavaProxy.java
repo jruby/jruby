@@ -121,13 +121,13 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         private Map mapDelegate() { return receiver.getMapObject(); }
 
         @Override
-        public RubyFixnum rb_size() {
-            return getRuntime().newFixnum( mapDelegate().size() );
+        public RubyFixnum rb_size(ThreadContext context) {
+            return context.runtime.newFixnum( mapDelegate().size() );
         }
 
         @Override
-        public RubyBoolean empty_p() {
-            return mapDelegate().isEmpty() ? getRuntime().getTrue() : getRuntime().getFalse();
+        public RubyBoolean empty_p(ThreadContext context) {
+            return mapDelegate().isEmpty() ? context.tru : context.fals;
         }
 
         @Override
@@ -143,7 +143,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyFixnum hash() {
+        public RubyFixnum hash(ThreadContext context) {
             return getRuntime().newFixnum( mapDelegate().hashCode() );
         }
 
@@ -296,7 +296,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyHash rehash() {
+        public RubyHash rehash(ThreadContext context) {
             // java.util.Map does not expose rehash, and many maps don't use hashing, so we do nothing. #3142
             return this;
         }
@@ -359,7 +359,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyHash rb_clear() {
+        public RubyHash rb_clear(ThreadContext context) {
             mapDelegate().clear();
             setSize( 0 );
             return this;
@@ -371,8 +371,8 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         }
 
         @Override
-        public RubyHash to_hash() {
-            final Ruby runtime = getRuntime();
+        public RubyHash to_hash(ThreadContext context) {
+            final Ruby runtime = context.runtime;
             final RubyHash hash = new RubyHash(runtime);
             @SuppressWarnings("unchecked")
             Set<Map.Entry> entries = mapDelegate().entrySet();

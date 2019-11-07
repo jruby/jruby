@@ -5464,4 +5464,16 @@ float_loop:
     public IRubyObject flatten_bang19(ThreadContext context) {
         return flatten_bang(context);
     }
+
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        final RubyClass metaClass = this.metaClass;
+        Ruby runtime = metaClass.runtime;
+        final RubyClass arrayClass = runtime.getArray();
+        if (metaClass != arrayClass) {
+            return dupImpl(runtime, arrayClass);
+        }
+        return this;
+    }
 }

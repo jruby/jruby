@@ -872,4 +872,20 @@ public class RubyMatchData extends RubyObject {
         return regs == null ? 1 : regs.numRegs;
     }
 
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        return match_array(getRuntime(), 0);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(IRubyObject idx) {
+        return op_aref(getRuntime().getCurrentContext(), idx);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+        return op_aref(getRuntime().getCurrentContext(), idx, rest);
+    }
+
 }
