@@ -103,8 +103,8 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray dupImpl(RubyClass metaClass) {
-        if (!packed()) return super.dupImpl(metaClass);
+    protected RubyArray dupImpl(Ruby runtime, RubyClass metaClass) {
+        if (!packed()) return super.dupImpl(runtime, metaClass);
         return new RubyArrayOneObject(metaClass, this);
     }
 

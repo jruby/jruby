@@ -772,7 +772,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "default=", required = 1)
-    public IRubyObject default_value_set(final IRubyObject defaultValue) {
+    public IRubyObject default_value_set(ThreadContext context, final IRubyObject defaultValue) {
         modify();
 
         ifNone = defaultValue;
@@ -785,8 +785,8 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod
-    public IRubyObject default_proc() {
-        return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : metaClass.runtime.getNil();
+    public IRubyObject default_proc(ThreadContext context) {
+        return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : context.nil;
     }
 
     /** default_proc_arity_check
@@ -805,7 +805,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "default_proc=")
-    public IRubyObject set_default_proc(IRubyObject proc) {
+    public IRubyObject set_default_proc(ThreadContext context, IRubyObject proc) {
         modify();
 
         if (proc.isNil()) {
@@ -814,20 +814,17 @@ public class RubyHash extends RubyObject implements Map {
             return proc;
         }
 
-        IRubyObject b = TypeConverter.convertToType(proc, metaClass.runtime.getProc(), "to_proc");
+        Ruby runtime = context.runtime;
+
+        IRubyObject b = TypeConverter.convertToType(proc, runtime.getProc(), "to_proc");
         if (b.isNil() || !(b instanceof RubyProc)) {
-            throw getRuntime().newTypeError("wrong default_proc type " + proc.getMetaClass() + " (expected Proc)");
+            throw runtime.newTypeError("wrong default_proc type " + proc.getMetaClass() + " (expected Proc)");
         }
         proc = b;
         checkDefaultProcArity(proc);
         ifNone = proc;
         flags |= PROCDEFAULT_HASH_F;
         return proc;
-    }
-
-    @Deprecated
-    public IRubyObject set_default_proc20(IRubyObject proc) {
-        return set_default_proc(proc);
     }
 
     /** rb_hash_modify
@@ -899,26 +896,20 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = {"size", "length"})
-    public RubyFixnum rb_size() {
-        return metaClass.runtime.newFixnum(size);
+    public RubyFixnum rb_size(ThreadContext context) {
+        return context.runtime.newFixnum(size);
     }
 
     private SizeFn enumSizeFn() {
-        final RubyHash self = this;
-        return new RubyEnumerator.SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.rb_size();
-            }
-        };
+        return (context, args) -> this.rb_size(context);
     }
 
     /** rb_hash_empty_p
      *
      */
     @JRubyMethod(name = "empty?")
-    public RubyBoolean empty_p() {
-        return size == 0 ? metaClass.runtime.getTrue() : metaClass.runtime.getFalse();
+    public RubyBoolean empty_p(ThreadContext context) {
+        return size == 0 ? context.tru : context.fals;
     }
 
     /** rb_hash_to_a
@@ -926,12 +917,12 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "to_a")
     @Override
-    public RubyArray to_a() {
-        final Ruby runtime = metaClass.runtime;
+    public RubyArray to_a(ThreadContext context) {
+        final Ruby runtime = context.runtime;
         try {
             final RubyArray result = RubyArray.newBlankArrayInternal(runtime, size);
 
-            visitAll(runtime.getCurrentContext(), RubyHash.StoreKeyValueVisitor, result);
+            visitAll(context, RubyHash.StoreKeyValueVisitor, result);
 
             result.setTaint(isTaint());
             return result;
@@ -963,9 +954,9 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "rehash")
-    public RubyHash rehash() {
+    public RubyHash rehash(ThreadContext context) {
         if (iteratorCount > 0) {
-            throw getRuntime().newRuntimeError("rehash during iteration");
+            throw context.runtime.newRuntimeError("rehash during iteration");
         }
 
         modify();
@@ -1000,7 +991,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "to_hash")
-    public RubyHash to_hash() {
+    public RubyHash to_hash(ThreadContext context) {
         return this;
     }
 
@@ -1595,7 +1586,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public IRubyObject sort(ThreadContext context, Block block) {
-        return to_a().sort_bang(context, block);
+        return to_a(context).sort_bang(context, block);
     }
 
     /** rb_hash_index
@@ -1681,8 +1672,8 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    public final RubyArray rb_values() {
-        return values(metaClass.runtime.getCurrentContext());
+    public final RubyArray rb_values(ThreadContext context) {
+        return values(context);
     }
 
     public static final VisitorWithState<RubyArray> StoreValueVisitor = new VisitorWithState<RubyArray>() {
@@ -1876,7 +1867,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     @JRubyMethod(name = "clear")
-    public RubyHash rb_clear() {
+    public RubyHash rb_clear(ThreadContext context) {
         modify();
 
         if (size > 0) {
@@ -1914,7 +1905,7 @@ public class RubyHash extends RubyObject implements Map {
         modify();
         final RubyHash otherHash = other.convertToHash();
 
-        if (otherHash.empty_p().isTrue()) return this;
+        if (otherHash.empty_p(context).isTrue()) return this;
 
         otherHash.visitAll(context, new MergeVisitor(this), block);
 
@@ -1972,7 +1963,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (this == otherHash) return this;
 
-        rb_clear();
+        rb_clear(context);
 
         if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
             setComparedByIdentity(true);
@@ -2059,14 +2050,14 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject flatten(ThreadContext context) {
-        RubyArray ary = to_a();
+        RubyArray ary = to_a(context);
         sites(context).flatten_bang.call(context, ary, ary, RubyFixnum.one(context.runtime));
         return ary;
     }
 
     @JRubyMethod
     public IRubyObject flatten(ThreadContext context, IRubyObject level) {
-        RubyArray ary = to_a();
+        RubyArray ary = to_a(context);
         sites(context).flatten_bang.call(context, ary, ary, level);
         return ary;
     }
@@ -2100,7 +2091,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject compare_by_identity(ThreadContext context) {
         modify();
         setComparedByIdentity(true);
-        return rehash();
+        return rehash(context);
     }
 
     @JRubyMethod(name = "compare_by_identity?")
@@ -2342,7 +2333,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Override
     public void clear() {
-        rb_clear();
+        rb_clear(getRuntime().getCurrentContext());
     }
 
     @Override
@@ -2762,5 +2753,61 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         internalPutNoResize(key, value, checkForExisting);
+    }
+
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        return to_a(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public IRubyObject default_value_set(final IRubyObject defaultValue) {
+        return default_value_set(getRuntime().getCurrentContext(), defaultValue);
+    }
+
+    @Deprecated
+    public IRubyObject default_proc() {
+        return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : metaClass.runtime.getNil();
+    }
+
+    @Deprecated
+    public IRubyObject set_default_proc(IRubyObject proc) {
+        return set_default_proc(getRuntime().getCurrentContext(), proc);
+    }
+
+    @Deprecated
+    public IRubyObject set_default_proc20(IRubyObject proc) {
+        return set_default_proc(proc);
+    }
+
+    @Deprecated
+    public RubyFixnum rb_size() {
+        return metaClass.runtime.newFixnum(size);
+    }
+
+    @Deprecated
+    public RubyBoolean empty_p() {
+        return size == 0 ? metaClass.runtime.getTrue() : metaClass.runtime.getFalse();
+    }
+
+    @Deprecated
+    public RubyHash rehash() {
+        return rehash(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public RubyHash to_hash() {
+        return to_hash(getRuntime().getCurrentContext());
+    }
+
+    @Deprecated
+    public final RubyArray rb_values() {
+        return values(metaClass.runtime.getCurrentContext());
+    }
+
+    @Deprecated
+    public RubyHash rb_clear() {
+        return rb_clear(getRuntime().getCurrentContext());
     }
 }

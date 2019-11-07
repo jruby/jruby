@@ -818,8 +818,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     @Override
-    public RubyArray to_a() {
-        return RubyArray.newArrayNoCopy(getRuntime(), sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
+    public RubyArray to_a(ThreadContext context) {
+        return RubyArray.newArrayNoCopy(context.runtime, sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
     }
 
     @JRubyMethod

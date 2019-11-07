@@ -287,7 +287,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
             }
             return this;
         }
-        return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
+        return RubyEnumerator.enumeratorizeWithSize(context, this, "times", timesSizeFn());
     }
     /** rb_fix_ceil
      *
