@@ -49,7 +49,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
@@ -956,7 +955,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(optional = 2)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(context, this, args));
+            return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(this, args));
         }
 
         IRubyObject[] newArgs = new IRubyObject[2];
@@ -1214,15 +1213,12 @@ public class RubyNumeric extends RubyObject {
         return (RubyNumeric) result;
     }
 
-    private SizeFn stepSizeFn(final ThreadContext context, final IRubyObject from, final IRubyObject[] args) {
-        return new SizeFn() {
-            // MRI: num_step_size
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                IRubyObject[] newArgs = new IRubyObject[2];
-                scanStepArgs(context, args, newArgs);
-                return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
-            }
+    private SizeFn stepSizeFn(final IRubyObject from, final IRubyObject[] args) {
+        // MRI: num_step_size
+        return (context, args1) -> {
+            IRubyObject[] newArgs = new IRubyObject[2];
+            scanStepArgs(context, args1, newArgs);
+            return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
         };
     }
 

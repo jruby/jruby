@@ -901,13 +901,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private SizeFn enumSizeFn() {
-        final RubyHash self = this;
-        return new RubyEnumerator.SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.rb_size();
-            }
-        };
+        return (context, args) -> this.rb_size(context);
     }
 
     /** rb_hash_empty_p
@@ -1911,7 +1905,7 @@ public class RubyHash extends RubyObject implements Map {
         modify();
         final RubyHash otherHash = other.convertToHash();
 
-        if (otherHash.empty_p().isTrue()) return this;
+        if (otherHash.empty_p(context).isTrue()) return this;
 
         otherHash.visitAll(context, new MergeVisitor(this), block);
 
@@ -1969,7 +1963,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (this == otherHash) return this;
 
-        rb_clear();
+        rb_clear(context);
 
         if (!isComparedByIdentity() && otherHash.isComparedByIdentity()) {
             setComparedByIdentity(true);
@@ -2097,7 +2091,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject compare_by_identity(ThreadContext context) {
         modify();
         setComparedByIdentity(true);
-        return rehash();
+        return rehash(context);
     }
 
     @JRubyMethod(name = "compare_by_identity?")
@@ -2339,7 +2333,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Override
     public void clear() {
-        rb_clear();
+        rb_clear(getRuntime().getCurrentContext());
     }
 
     @Override
@@ -2814,13 +2808,6 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public RubyHash rb_clear() {
-        modify();
-
-        if (size > 0) {
-            alloc();
-            size = 0;
-        }
-
-        return this;
+        return rb_clear(getRuntime().getCurrentContext());
     }
 }

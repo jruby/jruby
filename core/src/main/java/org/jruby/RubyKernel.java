@@ -65,7 +65,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.parser.StaticScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -1437,7 +1436,7 @@ public class RubyKernel {
     @JRubyMethod(name = "loop", module = true, visibility = PRIVATE)
     public static IRubyObject loop(ThreadContext context, IRubyObject recv, Block block) {
         if ( ! block.isGiven() ) {
-            return RubyEnumerator.enumeratorizeWithSize(context, recv, "loop", loopSizeFn(context));
+            return RubyEnumerator.enumeratorizeWithSize(context, recv, "loop", loopSizeFn());
         }
         final Ruby runtime = context.runtime;
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -1460,13 +1459,8 @@ public class RubyKernel {
         }
     }
 
-    private static SizeFn loopSizeFn(final ThreadContext context) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
-            }
-        };
+    private static SizeFn loopSizeFn() {
+        return (context, args) -> RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
     }
 
     @JRubyMethod(required = 2, optional = 1, module = true, visibility = PRIVATE)
@@ -1919,12 +1913,7 @@ public class RubyKernel {
         }
 
         if (block.isGiven()) {
-            sizeFn = new SizeFn() {
-                @Override
-                public IRubyObject size(IRubyObject[] args) {
-                    return block.call(context, args);
-                }
-            };
+            sizeFn = (ctx, args1) -> block.call(ctx, args1);
         }
 
         return enumeratorizeWithSize(context, self, method, args, sizeFn);

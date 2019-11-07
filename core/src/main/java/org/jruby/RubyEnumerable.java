@@ -53,7 +53,6 @@ import org.jruby.util.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -223,7 +222,7 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, "cycle", cycleSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, "cycle", cycleSizeFn(self));
         }
 
         return cycleCommon(context, self, -1, block);
@@ -233,7 +232,7 @@ public class RubyEnumerable {
     public static IRubyObject cycle(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         if (arg.isNil()) return cycle(context, self, block);
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, cycleSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, cycleSizeFn(self));
         }
 
         long times = RubyNumeric.num2long(arg);
@@ -276,35 +275,32 @@ public class RubyEnumerable {
         return context.nil;
     }
 
-    private static SizeFn cycleSizeFn(final ThreadContext context, final IRubyObject self) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                Ruby runtime = context.runtime;
-                long mul = 0;
-                IRubyObject n = runtime.getNil();
+    private static SizeFn cycleSizeFn(final IRubyObject self) {
+        return (context, args) -> {
+            Ruby runtime = context.runtime;
+            long mul = 0;
+            IRubyObject n = runtime.getNil();
 
-                if (args != null && args.length > 0) {
-                    n = args[0];
-                    if (!n.isNil()) mul = n.convertToInteger().getLongValue();
-                }
-
-                IRubyObject size = enumSizeFn(context, self).size(args);
-                if (size == null || size.isNil() || size.equals(RubyFixnum.zero(runtime))) {
-                    return size;
-                }
-
-                if (n == null || n.isNil()) {
-                    return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
-                }
-
-                if (mul <= 0) {
-                    return RubyFixnum.zero(runtime);
-                }
-
-                n = RubyFixnum.newFixnum(runtime, mul);
-                return size.callMethod(context, "*", n);
+            if (args != null && args.length > 0) {
+                n = args[0];
+                if (!n.isNil()) mul = n.convertToInteger().getLongValue();
             }
+
+            IRubyObject size = enumSizeFn(self).size(context, args);
+            if (size == null || size.isNil() || size.equals(RubyFixnum.zero(runtime))) {
+                return size;
+            }
+
+            if (n == null || n.isNil()) {
+                return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
+            }
+
+            if (mul <= 0) {
+                return RubyFixnum.zero(runtime);
+            }
+
+            n = RubyFixnum.newFixnum(runtime, mul);
+            return size.callMethod(context, "*", n);
         };
     }
 
@@ -536,7 +532,7 @@ public class RubyEnumerable {
         IRubyObject[][] valuesAndCriteria;
 
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, "sort_by", enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, "sort_by", enumSizeFn(self));
         }
 
         if (self instanceof RubyArray) {
@@ -816,7 +812,7 @@ public class RubyEnumerable {
 
     public static IRubyObject selectCommon(ThreadContext context, IRubyObject self, final Block block, String methodName) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, methodName, enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, methodName, enumSizeFn(self));
         }
 
         final RubyArray result = context.runtime.newArray();
@@ -850,7 +846,7 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject reject(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, "reject", enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, "reject", enumSizeFn(self));
         }
 
         final RubyArray result = context.runtime.newArray();
@@ -919,7 +915,7 @@ public class RubyEnumerable {
             });
             return result;
         } else {
-            return enumeratorizeWithSize(context, self, methodName, enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, methodName, enumSizeFn(self));
         }
     }
 
@@ -974,7 +970,7 @@ public class RubyEnumerable {
             });
             return ary;
         } else {
-            return enumeratorizeWithSize(context, self, methodName, enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, methodName, enumSizeFn(self));
         }
     }
 
@@ -1161,7 +1157,7 @@ public class RubyEnumerable {
         final RubyArray arr_false = runtime.newArray();
 
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, "partition", enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, "partition", enumSizeFn(self));
         }
 
         callEach(context, self, Signature.OPTIONAL, new BlockCallback() {
@@ -1260,7 +1256,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_with_index", rest = true)
     public static IRubyObject each_with_index(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each_with_indexCommon(context, self, block, args) : enumeratorizeWithSize(context, self, "each_with_index", args, enumSizeFn(context, self));
+        return block.isGiven() ? each_with_indexCommon(context, self, block, args) : enumeratorizeWithSize(context, self, "each_with_index", args, enumSizeFn(self));
     }
 
     @Deprecated @SuppressWarnings("deprecation")
@@ -1270,12 +1266,12 @@ public class RubyEnumerable {
 
     @JRubyMethod(required = 1)
     public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
-        return block.isGiven() ? each_with_objectCommon(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSizeFn(context, self));
+        return block.isGiven() ? each_with_objectCommon(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSizeFn(self));
     }
 
     @JRubyMethod(rest = true)
     public static IRubyObject each_entry(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
-        return block.isGiven() ? each_entryCommon(context, self, args, block) : enumeratorizeWithSize(context, self, "each_entry", args, enumSizeFn(context, self));
+        return block.isGiven() ? each_entryCommon(context, self, args, block) : enumeratorizeWithSize(context, self, "each_entry", args, enumSizeFn(self));
     }
 
     public static IRubyObject each_entryCommon(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
@@ -1302,7 +1298,7 @@ public class RubyEnumerable {
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
 
         return block.isGiven() ? each_sliceCommon(context, self, size, block) :
-                enumeratorizeWithSize(context, self, "each_slice", new IRubyObject[]{arg}, eachSliceSizeFn(context, self));
+                enumeratorizeWithSize(context, self, "each_slice", new IRubyObject[]{arg}, eachSliceSizeFn(self));
     }
 
     static IRubyObject each_sliceCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
@@ -1326,25 +1322,22 @@ public class RubyEnumerable {
         return context.nil;
     }
 
-    private static SizeFn eachSliceSizeFn(final ThreadContext context, final IRubyObject self) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                Ruby runtime = context.runtime;
-                assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
-                long sliceSize = ((RubyNumeric) args[0]).getLongValue();
-                if (sliceSize <= 0) {
-                    throw runtime.newArgumentError("invalid slice size");
-                }
-
-                IRubyObject size = enumSizeFn(context, self).size(args);
-                if (size == null || size.isNil()) {
-                    return runtime.getNil();
-                }
-
-                IRubyObject n = size.callMethod(context, "+", RubyFixnum.newFixnum(runtime, sliceSize - 1));
-                return n.callMethod(context, "/", RubyFixnum.newFixnum(runtime, sliceSize));
+    private static SizeFn eachSliceSizeFn(final IRubyObject self) {
+        return (context, args) -> {
+            Ruby runtime = context.runtime;
+            assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
+            long sliceSize = ((RubyNumeric) args[0]).getLongValue();
+            if (sliceSize <= 0) {
+                throw runtime.newArgumentError("invalid slice size");
             }
+
+            IRubyObject size = enumSizeFn(self).size(context, args);
+            if (size == null || size.isNil()) {
+                return runtime.getNil();
+            }
+
+            IRubyObject n = size.callMethod(context, "+", RubyFixnum.newFixnum(runtime, sliceSize - 1));
+            return n.callMethod(context, "/", RubyFixnum.newFixnum(runtime, sliceSize));
         };
     }
 
@@ -1357,7 +1350,7 @@ public class RubyEnumerable {
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         int size = (int) RubyNumeric.num2long(arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
-        return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, eachConsSizeFn(context, self));
+        return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, eachConsSizeFn(self));
     }
 
     static IRubyObject each_consCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
@@ -1375,39 +1368,36 @@ public class RubyEnumerable {
         return context.nil;
     }
 
-    private static SizeFn eachConsSizeFn(final ThreadContext context, final IRubyObject self) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                Ruby runtime = context.runtime;
-                assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_cons ensures arg[0] is numeric
-                long consSize = ((RubyNumeric) args[0]).getLongValue();
-                if (consSize <= 0) {
-                    throw runtime.newArgumentError("invalid size");
-                }
-
-                IRubyObject size = enumSizeFn(context, self).size(args);
-                if (size == null || size.isNil()) {
-                    return runtime.getNil();
-                }
-
-                IRubyObject n = size.callMethod(context, "+", RubyFixnum.newFixnum(runtime, 1 - consSize));
-                RubyFixnum zero = RubyFixnum.zero(runtime);
-                return RubyComparable.cmpint(context, n.callMethod(context, "<=>", zero), n, zero) == -1 ? zero : n;
+    private static SizeFn eachConsSizeFn(final IRubyObject self) {
+        return (context, args) -> {
+            Ruby runtime = context.runtime;
+            assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_cons ensures arg[0] is numeric
+            long consSize = ((RubyNumeric) args[0]).getLongValue();
+            if (consSize <= 0) {
+                throw runtime.newArgumentError("invalid size");
             }
+
+            IRubyObject size = enumSizeFn(self).size(context, args);
+            if (size == null || size.isNil()) {
+                return runtime.getNil();
+            }
+
+            IRubyObject n = size.callMethod(context, "+", RubyFixnum.newFixnum(runtime, 1 - consSize));
+            RubyFixnum zero = RubyFixnum.zero(runtime);
+            return RubyComparable.cmpint(context, n.callMethod(context, "<=>", zero), n, zero) == -1 ? zero : n;
         };
     }
 
     @JRubyMethod
     public static IRubyObject reverse_each(ThreadContext context, IRubyObject self, Block block) {
         return block.isGiven() ? reverse_eachInternal(context, self, to_a(context, self), block) :
-            enumeratorizeWithSize(context, self, "reverse_each", enumSizeFn(context, self));
+            enumeratorizeWithSize(context, self, "reverse_each", enumSizeFn(self));
     }
 
     @JRubyMethod(rest = true)
     public static IRubyObject reverse_each(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return block.isGiven() ? reverse_eachInternal(context, self, to_a(context, self, args), block) :
-            enumeratorizeWithSize(context, self, "reverse_each", args, enumSizeFn(context, self));
+            enumeratorizeWithSize(context, self, "reverse_each", args, enumSizeFn(self));
     }
 
     private static IRubyObject reverse_eachInternal(ThreadContext context, IRubyObject self, IRubyObject obj, Block block) {
@@ -1473,7 +1463,7 @@ public class RubyEnumerable {
     public static IRubyObject max_by(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         if (arg == context.nil) return singleExtentBy(context, self, "max", SORT_MAX, block);
 
-        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "max_by", enumSizeFn(context, self));
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "max_by", enumSizeFn(self));
 
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
         RubyArray sorted = (RubyArray)sort_by(context, self, block);
@@ -1489,7 +1479,7 @@ public class RubyEnumerable {
     public static IRubyObject min_by(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         if (arg == context.nil) return singleExtentBy(context, self, "min", SORT_MIN, block);
 
-        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "min_by", enumSizeFn(context, self));
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "min_by", enumSizeFn(self));
 
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
         RubyArray sorted = (RubyArray)sort_by(context, self, block);
@@ -1522,7 +1512,7 @@ public class RubyEnumerable {
     }
 
     private static IRubyObject singleExtentBy(final ThreadContext context, IRubyObject self, final String op, final int sortDirection, final Block block) {
-        if (!block.isGiven()) return enumeratorizeWithSize(context, self, op, enumSizeFn(context, self));
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, op, enumSizeFn(self));
 
         final IRubyObject result[] = new IRubyObject[] { context.nil };
 
@@ -1600,7 +1590,7 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject minmax_by(final ThreadContext context, IRubyObject self, final Block block) {
 
-        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "minmax_by", enumSizeFn(context, self));
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "minmax_by", enumSizeFn(self));
 
         final IRubyObject result[] = new IRubyObject[] { context.nil, context.nil };
 
@@ -2125,7 +2115,7 @@ public class RubyEnumerable {
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
         final Ruby runtime = context.runtime;
 
-        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "group_by", enumSizeFn(context, self));
+        if (!block.isGiven()) return enumeratorizeWithSize(context, self, "group_by", enumSizeFn(self));
 
         final RubyHash result = new RubyHash(runtime);
 
@@ -2165,7 +2155,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
 
         if(!block.isGiven()) {
-            return enumeratorizeWithSize(context, self, "chunk", enumSizeFn(context, self));
+            return enumeratorizeWithSize(context, self, "chunk", enumSizeFn(self));
         }
 
         IRubyObject enumerator = context.runtime.getEnumerator().allocate();
@@ -2213,13 +2203,10 @@ public class RubyEnumerable {
         }
     }
 
-    static SizeFn enumSizeFn(final ThreadContext context, final IRubyObject self) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                IRubyObject size = self.checkCallMethod(context, sites(context).size_checked);
-                return size == null ? context.nil : size;
-            }
+    static SizeFn enumSizeFn(final IRubyObject self) {
+        return (context, args) -> {
+            IRubyObject size = self.checkCallMethod(context, sites(context).size_checked);
+            return size == null ? context.nil : size;
         };
     }
 

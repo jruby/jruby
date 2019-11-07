@@ -459,7 +459,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).empty_p();
+        return getOrCreateRubyHashMap(context.runtime).empty_p(context);
     }
 
     /** rb_hash_to_a
@@ -493,7 +493,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "rehash", notImplemented = true)
     public RubyHash rehash(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).rehash();
+        return getOrCreateRubyHashMap(context.runtime).rehash(context);
     }
 
     /** rb_hash_to_hash
@@ -662,7 +662,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = { "values", "ruby_values" }) // collision with java.util.Map#values
     public RubyArray rb_values(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).rb_values();
+        return getOrCreateRubyHashMap(context.runtime).rb_values(context);
     }
 
     /** rb_hash_shift
@@ -718,7 +718,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = { "clear", "ruby_clear" }) // collision with java.util.Map#clear (return type)
     public IRubyObject rb_clear(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).rb_clear();
+        return getOrCreateRubyHashMap(context.runtime).rb_clear(context);
     }
 
     /** rb_hash_invert

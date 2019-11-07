@@ -519,13 +519,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private SizeFn enumSizeFn() {
-        final RubyStruct self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.size();
-            }
-        };
+        return (context, args) -> size();
     }
 
     public IRubyObject set(IRubyObject value, int index) {

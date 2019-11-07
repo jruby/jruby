@@ -919,7 +919,7 @@ public class IRRuntimeHelpers {
         hash.modify();
         final RubyHash otherHash = explicitKwarg.convertToHash();
 
-        if (otherHash.empty_p().isTrue()) return hash;
+        if (otherHash.empty_p(context).isTrue()) return hash;
 
         otherHash.visitAll(context, new KwargMergeVisitor(hash), Block.NULL_BLOCK);
 

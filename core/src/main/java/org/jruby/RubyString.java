@@ -2595,13 +2595,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private SizeFn eachByteSizeFn() {
-        final RubyString self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.bytesize();
-            }
-        };
+        return (context, args) -> this.bytesize();
     }
 
     /** rb_str_empty
@@ -5676,13 +5670,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private SizeFn eachCharSizeFn() {
-        final RubyString self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.rubyLength(getRuntime());
-            }
-        };
+        return (context, args) -> rubyLength(context.runtime);
     }
 
     /** rb_str_each_codepoint
@@ -5817,39 +5805,31 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private SizeFn eachCodepointSizeFn() {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return rubyLength(getRuntime());
-            }
-        };
+        return (context, args) -> rubyLength(context.runtime);
     }
 
     private static final ByteList GRAPHEME_CLUSTER_PATTERN = new ByteList(new byte[] {(byte)'\\', (byte)'X'}, false);
 
     private SizeFn eachGraphemeClusterSizeFn() {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                Ruby runtime = getRuntime();
-                ByteList value = getByteList();
-                Encoding enc = value.getEncoding();
-                if (!enc.isUnicode()) return rubyLength(runtime);
+        return (context, args) -> {
+            Ruby runtime = context.runtime;
+            ByteList value = getByteList();
+            Encoding enc = value.getEncoding();
+            if (!enc.isUnicode()) return rubyLength(runtime);
 
-                Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
-                int beg = value.getBegin();
-                int end = beg + value.getRealSize();
-                Matcher matcher = reg.matcher(value.getUnsafeBytes(), beg, end);
-                int count = 0;
+            Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
+            int beg = value.getBegin();
+            int end = beg + value.getRealSize();
+            Matcher matcher = reg.matcher(value.getUnsafeBytes(), beg, end);
+            int count = 0;
 
-                while (beg < end) {
-                    int len = matcher.match(beg, end, Option.DEFAULT);
-                    if (len <= 0) break;
-                    count++;
-                    beg += len;
-                }
-                return RubyFixnum.newFixnum(runtime, count);
+            while (beg < end) {
+                int len = matcher.match(beg, end, Option.DEFAULT);
+                if (len <= 0) break;
+                count++;
+                beg += len;
             }
+            return RubyFixnum.newFixnum(runtime, count);
         };
     }
 
