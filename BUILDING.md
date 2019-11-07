@@ -78,13 +78,13 @@ environment. This will do the following:
  needed to run integration tests.
 
 ```
-mvn -Pbootstrap
+./mvnw -Pbootstrap
 ```
 
 In case there is a problem with installing the jruby-launcher (due to missing compiler or so) use
 
 ```
-mvn -Pbootstrap-no-launcher
+./mvnw -Pbootstrap-no-launcher
 ```
 
 This only needs to be run once to install these gems or if you update
@@ -96,7 +96,7 @@ After changing Java code, you can recompile quickly by running one of the
 jar files by
 
 ```
-mvn -pl core
+./mvnw -pl core
 ```
 
 ### Day to Day Testing
