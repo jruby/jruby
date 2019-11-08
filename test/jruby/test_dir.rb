@@ -1,11 +1,9 @@
 # coding: utf-8
 require 'test/unit'
 require 'test/jruby/test_helper'
-require 'rbconfig'
 
 class TestDir < Test::Unit::TestCase
   include TestHelper
-  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup; require 'fileutils' ; require 'tmpdir'
     @save_dir = Dir.pwd
@@ -65,6 +63,92 @@ class TestDir < Test::Unit::TestCase
     files = []
     Dir.foreach('./testDir_1') {|f| files << f }
     assert_equal(['.', '..', "file1", "file2"], files.sort)
+  end
+  
+  def test_dir_new_enc
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/new_enc", "w") {|f|
+      f.write("hello")
+    }         
+    
+    dir = Dir.new("./testDir_1", encoding: "ASCII-8BIT")
+    begin
+      while name = dir.read
+        assert_equal(Encoding.find("ASCII-8BIT"), name.encoding)
+      end
+    ensure
+      dir.close
+    end
+    
+    dir = Dir.new("./testDir_1", encoding: Encoding.find("ASCII-8BIT"))
+    begin
+      while name = dir.read
+        assert_equal(Encoding.find("ASCII-8BIT"), name.encoding)
+      end
+    ensure
+      dir.close
+    end
+  end
+
+  def test_dir_open_enc
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/open_encoding", "w") {|f|
+      f.write("hello")
+    }
+    
+    dir = Dir.open("./testDir_1", encoding: "ASCII-8BIT")
+    begin
+      while name = dir.read
+        assert_equal(Encoding.find("ASCII-8BIT"), name.encoding)
+      end
+    ensure
+      dir.close
+    end
+  end
+  
+  def test_dir_entries_enc_static
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/open_encoding_type", "w") {|f|
+      f.write("hello")
+    }
+
+    file = Dir.entries('./testDir_1', encoding: Encoding.find("ASCII-8BIT"))[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)
+    
+    file = Dir.entries('./testDir_1', encoding: "ASCII-8BIT")[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)    
+  end
+  
+  def test_dir_entries_enc_instance
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/open_encoding_type", "w") {|f|
+      f.write("hello")
+    }
+
+    file = Dir.open('./testDir_1', encoding: Encoding.find("ASCII-8BIT")).entries[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)
+
+    file = Dir.open('./testDir_1', encoding: "ASCII-8BIT").entries[0]
+    assert_equal(Encoding.find("ASCII-8BIT"), file.encoding)
+
+  end
+
+  def test_dir_foreach_enc
+    Dir.mkdir("./testDir_1")
+    File.open("./testDir_1/foreach_enc", "w") {|f|
+      f.write("hello")
+    }
+    files = []
+    Dir.foreach('./testDir_1', encoding: Encoding.find("UTF-8")) {|f| files << f}
+    assert_equal(Encoding.find("UTF-8"), files[0].encoding)
+
+    files = []
+    Dir.foreach('./testDir_1', encoding: Encoding.find("ASCII-8BIT")) {|f| files << f}
+    assert_equal(Encoding.find("ASCII-8BIT"), files[0].encoding)
+
+    files = []
+    Dir.foreach('./testDir_1', encoding: "ASCII-8BIT") {|f| files << f}
+    assert_equal(Encoding.find("ASCII-8BIT"), files[0].encoding)
   end
 
   def test_entries_via_uri_classloader

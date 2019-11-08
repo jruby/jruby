@@ -131,6 +131,12 @@ public class RubyComplex extends RubyNumeric {
         this.flags |= FROZEN_F;
     }
 
+
+    @Override
+    public ClassIndex getNativeClassIndex() {
+        return ClassIndex.COMPLEX;
+    }
+
     /** rb_complex_raw
      * 
      */
@@ -143,6 +149,10 @@ public class RubyComplex extends RubyNumeric {
      */
     public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x) {
         return new RubyComplex(runtime, runtime.getComplex(), x, RubyFixnum.zero(runtime));
+    }
+
+    public static RubyComplex newComplexRawImage(Ruby runtime, IRubyObject image) {
+        return new RubyComplex(runtime, runtime.getComplex(), RubyFixnum.zero(runtime), image);
     }
 
     /** rb_complex_new1
@@ -872,7 +882,7 @@ public class RubyComplex extends RubyNumeric {
      */
     private static boolean signbit(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFloat) {
-            double value = ((RubyFloat)x).getDoubleValue();
+            double value = ((RubyFloat) x).value;
             return !Double.isNaN(value) && Double.doubleToLongBits(value) < 0;
         }
         return f_negative_p(context, x);

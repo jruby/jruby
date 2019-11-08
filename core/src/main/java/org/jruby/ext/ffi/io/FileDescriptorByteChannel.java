@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
+
 /**
  * An implementation of ByteChannel that reads from and writes to a native unix
  * file descriptor.
@@ -74,7 +76,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
         }
         int n = libc.read(fd, dst, dst.remaining());
         if (n > 0) {
-            dst.position(dst.position() + n);
+            positionBuffer(dst, dst.position() + n);
         } else if (n == 0) {
             return -1; // EOF
         }
@@ -95,7 +97,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
         }
         int n = libc.write(fd, src, src.remaining());
         if (n > 0) {
-            src.position(src.position() + n);
+            positionBuffer(src, src.position() + n);
         }
         return n;
     }

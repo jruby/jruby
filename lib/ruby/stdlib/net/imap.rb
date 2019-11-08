@@ -1323,11 +1323,11 @@ module Net
       when nil
         put_string("NIL")
       when String
-        send_string_data(data)
+        send_string_data(data, tag)
       when Integer
         send_number_data(data)
       when Array
-        send_list_data(data)
+        send_list_data(data, tag)
       when Time
         send_time_data(data)
       when Symbol
@@ -1337,13 +1337,13 @@ module Net
       end
     end
 
-    def send_string_data(str)
+    def send_string_data(str, tag = nil)
       case str
       when ""
         put_string('""')
       when /[\x80-\xff\r\n]/n
         # literal
-        send_literal(str)
+        send_literal(str, tag)
       when /[(){ \x00-\x1f\x7f%*"\\]/n
         # quoted string
         send_quoted_string(str)
@@ -1356,7 +1356,7 @@ module Net
       put_string('"' + str.gsub(/["\\]/n, "\\\\\\&") + '"')
     end
 
-    def send_literal(str, tag)
+    def send_literal(str, tag = nil)
       synchronize do
         put_string("{" + str.bytesize.to_s + "}" + CRLF)
         @continued_command_tag = tag
@@ -1377,7 +1377,7 @@ module Net
       put_string(num.to_s)
     end
 
-    def send_list_data(list)
+    def send_list_data(list, tag = nil)
       put_string("(")
       first = true
       list.each do |i|
@@ -1386,7 +1386,7 @@ module Net
         else
           put_string(" ")
         end
-        send_data(i)
+        send_data(i, tag)
       end
       put_string(")")
     end
@@ -1528,6 +1528,7 @@ module Net
       end
       @sock = SSLSocket.new(@sock, context)
       @sock.sync_close = true
+      @sock.hostname = @host if @sock.respond_to? :hostname=
       ssl_socket_connect(@sock, @open_timeout)
       if context.verify_mode != VERIFY_NONE
         @sock.post_connection_check(@host)

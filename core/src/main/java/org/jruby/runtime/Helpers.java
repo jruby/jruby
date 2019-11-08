@@ -1,18 +1,27 @@
 package org.jruby.runtime;
 
+import java.io.EOFException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemLoopException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.Errno;
@@ -24,6 +33,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -41,6 +51,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
@@ -53,6 +64,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
+import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -97,24 +109,49 @@ public class Helpers {
         return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
 
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, args, block);
+    }
+
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, args, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, args, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, arg0, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, arg0, arg1, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, arg0, arg1, arg2, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, arg0, arg1, arg2, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, arg0, arg1, arg2, block);
+    }
+
+    public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, Block block) {
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, self, klass, name, block);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType, Block block) {
-        return selectMethodMissing(context, receiver, visibility, name, callType).call(context, receiver, receiver.getMetaClass(), name, block);
+        final RubyClass klass = getMetaClass(receiver);
+        return selectMethodMissing(context, klass, visibility, name, callType).call(context, receiver, klass, name, block);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, IRubyObject receiver, Visibility visibility, String name, CallType callType) {
@@ -124,25 +161,29 @@ public class Helpers {
             return selectInternalMM(runtime, visibility, callType);
         }
 
-        DynamicMethod methodMissing = receiver.getMetaClass().searchMethod("method_missing");
+        CacheEntry entry = receiver.getMetaClass().searchWithCache("method_missing");
+        DynamicMethod methodMissing = entry.method;
+
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return new MethodMissingMethod(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         if (name.equals("method_missing")) {
             return selectInternalMM(runtime, visibility, callType);
         }
 
-        DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
+        CacheEntry entry = selfClass.searchWithCache("method_missing");
+        DynamicMethod methodMissing = entry.method;
+
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return new MethodMissingMethod(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -152,11 +193,13 @@ public class Helpers {
             return selectInternalMM(runtime, visibility, callType);
         }
 
-        DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
+        CacheEntry entry = selfClass.searchWithCache("method_missing");
+        DynamicMethod methodMissing = entry.method;
+
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(methodMissing, visibility, callType);
+        return new MethodMissingMethod(entry, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -175,23 +218,57 @@ public class Helpers {
         return (~(original ^ ~other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
     }
 
+    /**
+     * This method attempts to produce an Errno value for the given exception.
+     *
+     * Many low-level operations wrapped by the JDK will raise IOException or subclasses of it when there's a system-
+     * level error. In most cases, the only way to determine the cause of the IOException is by inspecting its contents,
+     * usually by checking the error message string. This is obviously fragile and breaks on platforms localized to
+     * languages other than English, so we also try as much as possible to detect the cause of the error by its actual
+     * type (if it is indeed a specialized subtype of IOException).
+     *
+     * @param t the exception to convert to an {@link Errno}
+     * @return the resulting {@link Errno} value, or null if none could be determined.
+     */
     public static Errno errnoFromException(Throwable t) {
+        // FIXME: Error-message scrapingis gross and turns out to be fragile if the host system is localized jruby/jruby#5415
+
+        // Try specific exception types by rethrowing and catching.
         try {
             throw t;
+        } catch (FileNotFoundException fnfe) {
+            return Errno.ENOENT;
+        } catch (EOFException eofe) {
+            return Errno.EPIPE;
         } catch (AtomicMoveNotSupportedException amnse) {
             return Errno.EXDEV;
         } catch (ClosedChannelException cce) {
             return Errno.EBADF;
-        } catch (PortUnreachableException cce) {
+        } catch (PortUnreachableException pue) {
             return Errno.ECONNREFUSED;
+        } catch (FileAlreadyExistsException faee) {
+            return Errno.EEXIST;
+        } catch (FileSystemLoopException fsle) {
+            return Errno.ELOOP;
+        } catch (NoSuchFileException nsfe) {
+            return Errno.ENOENT;
+        } catch (NotDirectoryException nde) {
+            return Errno.ENOTDIR;
+        } catch (AccessDeniedException ade) {
+            return Errno.EACCES;
+        } catch (DirectoryNotEmptyException dnee) {
+            switch (dnee.getMessage()) {
+                case "File exists":
+                    return Errno.EEXIST;
+                case "Directory not empty":
+                    return Errno.ENOTEMPTY;
+            }
         } catch (Throwable t2) {
             // fall through
         }
 
         final String errorMessage = t.getMessage();
 
-        // FIXME: This is gross and turns out to be fragile if the host system has localized error messages.
-        // See https://github.com/jruby/jruby/issues/5415
         if (errorMessage != null) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
@@ -227,6 +304,15 @@ public class Helpers {
                     return Errno.EMSGSIZE;
                 case "Is a directory":
                     return Errno.EISDIR;
+                case "Operation timed out":
+                    return Errno.ETIMEDOUT;
+                case "No route to host":
+                    return Errno.EHOSTUNREACH;
+                case "permission denied":
+                case "Permission denied":
+                    return Errno.EACCES;
+                case "Protocol family unavailable":
+                    return Errno.EADDRNOTAVAIL;
             }
         }
         return null;
@@ -262,9 +348,8 @@ public class Helpers {
         int n = rubyArray.getLength();
         if (preArgsCount + postArgsCount >= n) {
             return RubyArray.newEmptyArray(context.runtime);
-        } else {
-            return (RubyArray)rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
         }
+        return (RubyArray)rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
     }
 
     public static Class[] getStaticMethodParams(Class target, int args) {
@@ -302,13 +387,13 @@ public class Helpers {
     }
 
     private static class MethodMissingMethod extends DynamicMethod {
-        private final DynamicMethod delegate;
+        private final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
 
-        public MethodMissingMethod(DynamicMethod delegate, Visibility lastVisibility, CallType lastCallStatus) {
-            super(delegate.getImplementationClass(), lastVisibility, delegate.getName());
-            this.delegate = delegate;
+        public MethodMissingMethod(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
+            super(entry.method.getImplementationClass(), lastVisibility, entry.method.getName());
+            this.entry = entry;
             this.lastCallStatus = lastCallStatus;
             this.lastVisibility = lastVisibility;
         }
@@ -316,7 +401,7 @@ public class Helpers {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
-            return this.delegate.call(context, self, clazz, "method_missing", prepareMethodMissingArgs(args, context, name), block);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", prepareMethodMissingArgs(args, context, name), block);
         }
 
         @Override
@@ -396,56 +481,35 @@ public class Helpers {
     }
 
     /**
-     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
-        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, args, block);
-    }
-
-    /**
-     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
-        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, arg, block);
-    }
-
-    /**
-     * Same behavior as invoke, but uses the given caller object to check visibility if callType demands it.
-     */
-    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
-        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    }
-
-    /**
     * MRI: rb_funcallv_public
     */
     public static IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
-        return self.getMetaClass().invokePublic(context, self, name, arg);
+        return getMetaClass(self).invokePublic(context, self, name, arg);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
-        return self.getMetaClass().finvokeChecked(context, self, name);
+        return getMetaClass(self).finvokeChecked(context, self, name);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
-        return self.getMetaClass().finvokeChecked(context, self, sites);
+        return getMetaClass(self).finvokeChecked(context, self, sites);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
-        return self.getMetaClass().finvokeChecked(context, self, name, args);
+        return getMetaClass(self).finvokeChecked(context, self, name, args);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
-        return self.getMetaClass().finvokeChecked(context, self, sites, arg0);
+        return getMetaClass(self).finvokeChecked(context, self, sites, arg0);
     }
 
     // MRI: rb_check_funcall
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
-        return self.getMetaClass().finvokeChecked(context, self, sites, args);
+        return getMetaClass(self).finvokeChecked(context, self, sites, args);
     }
 
     /**
@@ -463,25 +527,29 @@ public class Helpers {
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = klass.getSuperClass();
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, args, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, args, block);
         }
-        return method.call(context, self, superClass, name, args, block);
+        return method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject arg0, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = klass.getSuperClass();
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, block);
         }
-        return method.call(context, self, superClass, name, arg0, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, Block block) {
@@ -489,13 +557,15 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, block);
         }
-        return method.call(context, self, superClass, name, block);
+        return method.call(context, self, entry.sourceModule, name, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) {
@@ -503,13 +573,15 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, block);
         }
-        return method.call(context, self, superClass, name, arg0, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
@@ -517,13 +589,15 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, arg1, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, arg1, block);
         }
-        return method.call(context, self, superClass, name, arg0, arg1, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
     }
 
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -531,15 +605,19 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+
+        RubyClass selfClass = getMetaClass(self);
+        RubyClass superClass = klazz.getSuperClass();
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
+        DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
-            return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, arg0, arg1, arg2, block);
+            return callMethodMissing(context, self, selfClass, method.getVisibility(), name, CallType.SUPER, arg0, arg1, arg2, block);
         }
-        return method.call(context, self, superClass, name, arg0, arg1, arg2, block);
+        return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
+    @Deprecated
     public static RubyArray ensureRubyArray(IRubyObject value) {
         return ensureRubyArray(value.getRuntime(), value);
     }
@@ -570,26 +648,26 @@ public class Helpers {
             if (rest < 0) {
                 // no opt, no rest, exact match
                 if (given != required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 }
             } else {
                 // only rest, must be at least required
                 if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 }
             }
         } else {
             if (rest < 0) {
                 // opt but no rest, must be at least required and no more than required + opt
                 if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 } else if (given > (required + opt)) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + (required + opt) + ")");
+                    throw runtime.newArgumentError(given, required + opt);
                 }
             } else {
                 // opt and rest, must be at least required
                 if (given < required) {
-                    throw runtime.newArgumentError("wrong number of arguments (" + given + " for " + required + ")");
+                    throw runtime.newArgumentError(given, required);
                 }
             }
         }
@@ -898,21 +976,6 @@ public class Helpers {
             exception = ((RaiseException)currentThrowable).getException();
         } else {
             exception = JavaUtil.convertJavaToUsableRubyObject(context.runtime, currentThrowable);
-        }
-        context.setErrorInfo(exception);
-    }
-
-    @Deprecated
-    public static void storeNativeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
-        IRubyObject exception;
-        if (currentThrowable instanceof RaiseException) {
-            exception = ((RaiseException)currentThrowable).getException();
-        } else {
-            Ruby runtime = context.runtime;
-
-            // wrap Throwable in a NativeException object
-            exception = new NativeException(runtime, runtime.getNativeException(), currentThrowable);
-            ((NativeException)exception).prepareIntegratedBacktrace(context, currentThrowable.getStackTrace());
         }
         context.setErrorInfo(exception);
     }
@@ -1391,12 +1454,14 @@ public class Helpers {
         }
     }
 
+    @Deprecated // not-used
     public static IRubyObject getErrorInfo(Ruby runtime) {
-        return runtime.getGlobalVariables().get("$!");
+        return runtime.getCurrentContext().getErrorInfo();
     }
 
+    @Deprecated // not-used
     public static void setErrorInfo(Ruby runtime, IRubyObject error) {
-        runtime.getGlobalVariables().set("$!", error);
+        runtime.getCurrentContext().setErrorInfo(error);
     }
 
     public static IRubyObject setLastLine(Ruby runtime, ThreadContext context, IRubyObject value) {
@@ -1436,11 +1501,12 @@ public class Helpers {
                 }
                 return (RubyArray)avalue;
             } else {
-                DynamicMethod methodMissing = value.getMetaClass().searchMethod("method_missing");
+                CacheEntry entry = value.getMetaClass().searchWithCache("method_missing");
+                DynamicMethod methodMissing = entry.method;
                 if (methodMissing.isUndefined() || runtime.isDefaultMethodMissing(methodMissing)) {
                     return runtime.newArray(value);
                 } else {
-                    IRubyObject avalue = methodMissing.call(context, value, value.getMetaClass(), "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
+                    IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
                     if (!(avalue instanceof RubyArray)) {
                         if (avalue.isNil()) {
                             return runtime.newArray(value);
@@ -1463,6 +1529,7 @@ public class Helpers {
         return TypeConverter.rb_Array(context, value);
     }
 
+    @Deprecated // not used
     public static IRubyObject aryToAry(IRubyObject value) {
         return aryToAry(value.getRuntime().getCurrentContext(), value);
     }
@@ -1542,18 +1609,14 @@ public class Helpers {
 
     @Deprecated // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        return splatToArgumentsCommon(value.getRuntime(), value);
-    }
-
-    private static IRubyObject[] splatToArgumentsCommon(Ruby runtime, IRubyObject value) {
         if (value.isNil()) {
-            return runtime.getSingleNilArray();
+            return value.getRuntime().getSingleNilArray();
         }
 
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            return convertSplatToJavaArray(runtime, value);
+            return convertSplatToJavaArray(value.getRuntime(), value);
         }
         return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
@@ -1563,12 +1626,13 @@ public class Helpers {
         // remove this hack too.
 
         RubyClass metaClass = value.getMetaClass();
-        DynamicMethod method = metaClass.searchMethod("to_a");
+        CacheEntry entry = metaClass.searchWithCache("to_a");
+        DynamicMethod method = entry.method;
         if (method.isUndefined() || method.isImplementedBy(runtime.getKernel())) {
             return new IRubyObject[] {value};
         }
 
-        IRubyObject avalue = method.call(runtime.getCurrentContext(), value, metaClass, "to_a");
+        IRubyObject avalue = method.call(runtime.getCurrentContext(), value, entry.sourceModule, "to_a");
         if (!(avalue instanceof RubyArray)) {
             if (avalue.isNil()) {
                 return new IRubyObject[] {value};
@@ -1582,17 +1646,12 @@ public class Helpers {
     @SuppressWarnings("deprecation") @Deprecated // no longer used
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
-        return argsCatToArgumentsCommon(args, ary);
-    }
-
-    private static IRubyObject[] argsCatToArgumentsCommon(IRubyObject[] args, IRubyObject[] ary) {
         if (ary.length > 0) {
             IRubyObject[] newArgs = new IRubyObject[args.length + ary.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);
             System.arraycopy(ary, 0, newArgs, args.length, ary.length);
-            args = newArgs;
+            return newArgs;
         }
-
         return args;
     }
 
@@ -2246,18 +2305,20 @@ public class Helpers {
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method) {
         RubyClass metaclass = self.getMetaClass();
         String name = method.realName();
-        return getMethodCached(context, metaclass, method.ordinal(), name).call(context, self, metaclass, name);
+        CacheEntry entry = getMethodCached(context, metaclass, method.ordinal(), name);
+        return entry.method.call(context, self, entry.sourceModule, name);
     }
 
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method, IRubyObject arg0) {
         RubyClass metaclass = self.getMetaClass();
         String name = method.realName();
-        return getMethodCached(context, metaclass, method.ordinal(), name).call(context, self, metaclass, name, arg0);
+        CacheEntry entry = getMethodCached(context, metaclass, method.ordinal(), name);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0);
     }
 
-    private static DynamicMethod getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
-        if (metaclass.getClassIndex() == ClassIndex.NO_INDEX) return metaclass.searchMethod(name);
-        return context.runtimeCache.getMethod(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
+    private static CacheEntry getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
+        if (metaclass.getClassIndex() == ClassIndex.NO_INDEX) return metaclass.searchWithCache(name);
+        return context.runtimeCache.getMethodEntry(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
     }
 
     @Deprecated // not used
@@ -2320,8 +2381,54 @@ public class Helpers {
         return invokedynamic(context, self, MethodNames.values()[index], arg0);
     }
 
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts
+     * @return false if `exception: false`, true otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, RubyHash opts) {
+        return ArgsUtil.extractKeywordArg(context, opts, "exception") != context.fals;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts the keyword args hash
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject opts, boolean defValue) {
+        IRubyObject hash = TypeConverter.checkHashType(context.runtime, opts);
+        if (hash != context.nil) {
+            return extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
+        return defValue;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param args method args
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject[] args, boolean defValue) {
+        if (args.length == 0) return defValue;
+        return extractExceptionOnlyArg(context, args[args.length - 1], defValue);
+    }
+
     public static void throwException(final Throwable e) {
         Helpers.<RuntimeException>throwsUnchecked(e);
+    }
+
+    public static <T> T tryThrow(Callable<T> call) {
+        try {
+            return call.call();
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -2393,10 +2500,18 @@ public class Helpers {
      * @return the decoded string
      */
     public static String byteListToString(final ByteList bytes) {
-        final Charset charset = EncodingUtils.charsetForEncoding(bytes.getEncoding());
+        final Encoding encoding = bytes.getEncoding();
+
+        if (encoding == UTF8Encoding.INSTANCE || encoding == USASCIIEncoding.INSTANCE) {
+            return RubyEncoding.decodeUTF8(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+        }
+
+        final Charset charset = EncodingUtils.charsetForEncoding(encoding);
+
         if ( charset != null ) {
             return new String(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize(), charset);
         }
+
         return bytes.toString();
     }
 
@@ -2529,6 +2644,22 @@ public class Helpers {
     }
 
     /**
+     *
+     * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
+     * This method is just so we can share that logic.
+     */
+    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
+        if (method.isUndefined() || method.isNotImplemented()) return false;
+
+        return !(checkVisibility &&
+                (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    }
+
+    public static StaticScope getStaticScope(IRScope scope) {
+        return scope.getStaticScope();
+    }
+
+    /**
      * This method is deprecated because it depends on having a Ruby frame pushed for checking method visibility,
      * and there's no way to enforce that. Most users of this method probably don't need to check visibility.
      *
@@ -2564,19 +2695,18 @@ public class Helpers {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }
 
-    /**
-     *
-     * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.
-     * This method is just so we can share that logic.
-     */
-    public static boolean respondsToMethod(DynamicMethod method, boolean checkVisibility) {
-        if (method.isUndefined() || method.isNotImplemented()) return false;
-
-        return !(checkVisibility &&
-                (method.getVisibility() == PRIVATE || method.getVisibility() == PROTECTED));
+    @Deprecated
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, args, block);
     }
 
-    public static StaticScope getStaticScope(IRScope scope) {
-        return scope.getStaticScope();
+    @Deprecated
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, arg, block);
+    }
+
+    @Deprecated
+    public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
+        return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 }

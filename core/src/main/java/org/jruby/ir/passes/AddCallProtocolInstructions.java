@@ -167,7 +167,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     // Breaks & non-local returns in blocks will throw exceptions
                     // and pops for them will be handled in the GEB
                     if (!bb.isExitBB() && i instanceof ReturnInstr) {
-                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        // Frame holds backref and lastline, binding holds heap scopes
+                        if (requireFrame || requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         // Add before the break/return
                         i = instrs.previous();
                         popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);
@@ -179,7 +180,8 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 if (bb.isExitBB() && !bb.isEmpty()) {
                     // Last instr could be a return -- so, move iterator one position back
                     if (i != null && i instanceof ReturnInstr) {
-                        if (requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
+                        // Frame holds backref and lastline, binding holds heap scopes
+                        if (requireFrame || requireBinding) fixReturn(scope, (ReturnInstr)i, instrs);
                         instrs.previous();
                     }
                     popSavedState(scope, bb == geb, requireBinding, requireFrame, savedViz, savedFrame, instrs);

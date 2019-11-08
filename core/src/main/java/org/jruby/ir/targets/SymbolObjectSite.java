@@ -1,10 +1,12 @@
 package org.jruby.ir.targets;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubySymbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -41,7 +43,10 @@ public class SymbolObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return RubySymbol.newSymbol(context.runtime, value,
-                IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding));
+        return RubySymbol.newSymbol(context.runtime,
+                new ByteList(
+                        RubyEncoding.encodeISO(value),
+                        IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding),
+                        false));
     }
 }

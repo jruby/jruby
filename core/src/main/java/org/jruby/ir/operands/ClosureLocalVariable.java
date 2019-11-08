@@ -10,17 +10,12 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
  * and defined in this or a parent closure.
  */
 public class ClosureLocalVariable extends LocalVariable {
-    // Note that we cannot use (scopeDepth > 0) check to detect this.
-    // When a dyn-scope is eliminated for a leaf scope, depths for all
-    // closure local vars are decremented by 1 => a non-local variable
-    // can have scope depth 0.
-    //
-    // Can only transition in one direction (from true to false)
-    private boolean definedLocally;
-
     public ClosureLocalVariable(RubySymbol name, int scopeDepth, int location) {
         super(name, scopeDepth, location);
-        this.definedLocally = true;
+    }
+
+    public ClosureLocalVariable(RubySymbol name, int scopeDepth, int location, boolean isOuterScopeVar) {
+        super(name, scopeDepth, location, isOuterScopeVar);
     }
 
     @Override
@@ -39,23 +34,14 @@ public class ClosureLocalVariable extends LocalVariable {
         return a < b ? -1 : (a == b ? 0 : 1);
     }
 
-    public boolean isDefinedLocally() {
-        return definedLocally;
-    }
-
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        ClosureLocalVariable lv = new ClosureLocalVariable(name, scopeDepth, offset);
-        lv.definedLocally = definedLocally;
-        return lv;
+        // FIXME: LocalVariable simply returns this .. why not here?
+        return new ClosureLocalVariable(name, scopeDepth, offset, isOuterScopeVar);
     }
 
     public LocalVariable cloneForDepth(int n) {
-        ClosureLocalVariable lv = new ClosureLocalVariable(name, n, offset);
-        if (definedLocally && n > 0) {
-            lv.definedLocally = false;
-        }
-        return lv;
+        return n > scopeDepth ? new ClosureLocalVariable(name, n, offset) : new ClosureLocalVariable(name, n, offset, isOuterScopeVar);
     }
 
     @Override
@@ -66,12 +52,10 @@ public class ClosureLocalVariable extends LocalVariable {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        // FIXME: cloneForDepth might have marked this false and we may need to restore with false
-        //e.encode(definedLocally);
     }
 
     @Override
     public String toString() {
-        return name + "(" + scopeDepth + ":" + offset + ":local=" + definedLocally + ")";
+        return name + "(" + scopeDepth + ":" + offset + ":local=" + !isOuterScopeVar() + ")";
     }
 }

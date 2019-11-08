@@ -42,6 +42,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -94,42 +95,22 @@ public class RaiseException extends JumpException {
         preRaise(context, (IRubyObject) null);
     }
 
-    private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
-        context.runtime.incrementExceptionCount();
-        doSetLastError(context);
-        doCallEventHook(context);
-
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
-
-        if (requiresBacktrace(context)) {
-            exception.prepareIntegratedBacktrace(context, javaTrace);
-        }
-    }
-
-    private boolean requiresBacktrace(ThreadContext context) {
-        IRubyObject debugMode;
-        // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
-        return context.exceptionRequiresBacktrace ||
-                ((debugMode = context.runtime.getGlobalVariables().get("$DEBUG")) != null && debugMode.isTrue()) ||
-                ! context.runtime.getStandardError().isInstance(exception);
-    }
-
     private void preRaise(ThreadContext context, IRubyObject backtrace) {
         context.runtime.incrementExceptionCount();
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
+
         doSetLastError(context);
         doCallEventHook(context);
 
-        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
+        if (backtrace == null) {
+            backtrace = Helpers.invokeChecked(context, exception, sites(context).backtrace);
+        } else {
+            exception.setBacktrace(backtrace);
+        }
 
-        // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
-        if (requiresBacktrace(context)) {
-            if (backtrace == null) {
-                exception.prepareBacktrace(context);
-            } else {
-                exception.forceBacktrace(backtrace);
-                if ( backtrace.isNil() ) return;
-            }
-
+        if (backtrace == null || backtrace.isNil()) {
+            // No backtrace provided or overridden, capture at this point in stack
+            exception.captureBacktrace(context);
             setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
         }
     }
@@ -141,7 +122,7 @@ public class RaiseException extends JumpException {
     }
 
     private void doSetLastError(final ThreadContext context) {
-        context.runtime.getGlobalVariables().set("$!", exception);
+        context.setErrorInfo(exception); // $!
     }
 
     /**
@@ -164,14 +145,11 @@ public class RaiseException extends JumpException {
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         return createNativeRaiseException(runtime, cause, null);
     }
-
     @Deprecated
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
         org.jruby.NativeException nativeException = new org.jruby.NativeException(runtime, runtime.getNativeException(), cause);
-
         return new RaiseException(cause, nativeException);
     }
-
     @Deprecated
     public RaiseException(Throwable cause, org.jruby.NativeException nativeException) {
         super(nativeException.getMessageAsJavaString(), cause);
@@ -230,5 +208,28 @@ public class RaiseException extends JumpException {
     @Deprecated
     protected final void setException(RubyException newException, boolean unused) {
         this.exception = newException;
+    }
+
+    @Deprecated
+    private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
+        context.runtime.incrementExceptionCount();
+        doSetLastError(context);
+        doCallEventHook(context);
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
+        if (requiresBacktrace(context)) {
+            exception.prepareIntegratedBacktrace(context, javaTrace);
+        }
+    }
+
+    @Deprecated
+    private boolean requiresBacktrace(ThreadContext context) {
+        // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
+        return context.exceptionRequiresBacktrace ||
+                !context.runtime.getStandardError().isInstance(exception) ||
+                context.runtime.isDebug();
+    }
+
+    private static JavaSites.RaiseExceptionSites sites(ThreadContext context) {
+        return context.sites.RaiseException;
     }
 }

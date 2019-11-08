@@ -10,8 +10,10 @@ project 'JRuby Complete' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'bundle'
 
-  plugin_repository( :id => 'rubygems-releases',
-                     :url => 'https://otto.takari.io/content/repositories/rubygems/maven/releases' )
+
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+
+  plugin_repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
@@ -36,6 +38,9 @@ project 'JRuby Complete' do
           :archive => {
             :manifest => {
               :mainClass => 'org.jruby.Main'
+            },
+            manifestEntries: {
+              'Automatic-Module-Name' => 'org.jruby.complete'
             }
           },
           :instructions => {
@@ -47,11 +52,19 @@ project 'JRuby Complete' do
             'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
             'Bundle-SymbolicName' => 'org.jruby.jruby',
             # the artifactId exclusion needs to match the jruby-core from above
-            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi',
+            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi|me.qmx.jitescript:jitescript',
             'Embed-Transitive' => true
           } ) do
     # TODO fix DSL
     @current.extensions = true
+  end
+
+  plugin( 'org.codehaus.mojo:truezip-maven-plugin', '1.2' ) do
+    execute_goals(:remove,
+                  phase: :package,
+                  filesets: [ { directory: '${build.directory}/${project.artifactId}-${project.version}.jar',
+                                includes: ['module-info.class'] } ]
+                 )
   end
 
   plugin( :invoker )

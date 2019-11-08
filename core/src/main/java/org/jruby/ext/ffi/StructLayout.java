@@ -963,12 +963,12 @@ public final class StructLayout extends Type {
                     || type.getComponentType() instanceof StructByValue);
         }
 
-        private final long getOffset(int index) {
+        private long getOffset(int index) {
             if (index < 0 || (index >= arrayType.length() && arrayType.length() > 0)) {
                 throw getRuntime().newIndexError("index " + index + " out of bounds");
             }
 
-            return (long) (index * arrayType.getComponentType().getNativeSize());
+            return index * (long) arrayType.getComponentType().getNativeSize();
         }
 
         private IRubyObject get(ThreadContext context, int index) {

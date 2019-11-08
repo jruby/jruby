@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.EvalType;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ir.*;
@@ -77,34 +78,47 @@ public class IRReader implements IRPersistenceValues {
     private static KeyValuePair<IRScope, Integer> decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
-        // Wackiness we decode as bytelist when we encoded as symbol because currentScope is not defined yet on first
-        // name of first scope.  We will use manager in this method to finish the job in constructing our symbol.
-        ByteList name = decoder.decodeByteList();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("NAME = " + name);
         int line = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
-        Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
+        int nextLabelInt = decoder.decodeInt();
 
-        IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
+        boolean isEND = false;
+        if (type == IRScopeType.CLOSURE) {
+            isEND = decoder.decodeBoolean();
+        }
+
         Signature signature;
-
         if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
             signature = Signature.decode(decoder.decodeLong());
         } else {
             signature = Signature.OPTIONAL;
         }
+
+        // Wackiness we decode as bytelist when we encoded as symbol because currentScope is not defined yet on first
+        // name of first scope.  We will use manager in this method to finish the job in constructing our symbol.
+        String file = null;
+        ByteList name = null;
+        IRScope parent = null;
+        if (type == IRScopeType.SCRIPT_BODY) {
+            file = decoder.decodeString();
+        } else {
+            name = decoder.decodeByteList();
+            parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
+
+        }
+
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, manager.runtime.newSymbol(name), line, parent, signature, staticScope);
+        IRScope scope = createScope(manager, type, name, file, line, parent, signature, staticScope);
+
+        if (scope instanceof IRClosure && isEND) {
+            ((IRClosure) scope).setIsEND();
+        }
 
         scope.setTemporaryVariableCount(tempVarsCount);
-        // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
-        scope.setLabelIndices(indices);
+        scope.setNextLabelIndex(nextLabelInt);
 
         // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
         // But because of this we have to push decoding lvars to the end of the scope info.
@@ -132,15 +146,6 @@ public class IRReader implements IRPersistenceValues {
         return localVariables;
     }
 
-    private static Map<String, Integer> decodeScopeLabelIndices(IRReaderDecoder decoder) {
-        int labelIndicesSize = decoder.decodeInt();
-        Map<String, Integer> indices = new HashMap<String, Integer>(labelIndicesSize);
-        for (int i = 0; i < labelIndicesSize; i++) {
-            indices.put(decoder.decodeString(), decoder.decodeInt());
-        }
-        return indices;
-    }
-
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
         StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, decoder.decodeStaticScopeType(), decoder.decodeStringArray(), decoder.decodeInt());
 
@@ -149,22 +154,25 @@ public class IRReader implements IRPersistenceValues {
         return scope;
     }
 
-    public static IRScope createScope(IRManager manager, IRScopeType type, RubySymbol name, int line,
+    public static IRScope createScope(IRManager manager, IRScopeType type, ByteList byteName, String file, int line,
                                       IRScope lexicalParent, Signature signature, StaticScope staticScope) {
+        Ruby runtime = manager.getRuntime();
 
         switch (type) {
         case CLASS_BODY:
-            return new IRClassBody(manager, lexicalParent, name, line, staticScope);
+            // FIXME: add saving on noe-time usage to writeer/reader
+            return new IRClassBody(manager, lexicalParent, byteName, line, staticScope, false);
         case METACLASS_BODY:
-            return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
+            return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName().getBytes(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, true, line, staticScope, false);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope, false);
+            return new IRMethod(manager, lexicalParent, null, byteName, false, line, staticScope, false);
         case MODULE_BODY:
-            return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
+            // FIXME: add saving on noe-time usage to writeer/reader
+            return new IRModuleBody(manager, lexicalParent, byteName, line, staticScope, false);
         case SCRIPT_BODY:
-            return new IRScriptBody(manager, name, staticScope);
+            return new IRScriptBody(manager, file, staticScope);
         case FOR:
             return new IRFor(manager, lexicalParent, line, staticScope, signature);
         case CLOSURE:

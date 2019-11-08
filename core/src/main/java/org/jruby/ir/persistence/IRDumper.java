@@ -15,7 +15,6 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Complex;
@@ -64,6 +63,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,20 +105,23 @@ public class IRDumper extends IRVisitor {
         Map<RubySymbol, LocalVariable> localVariables = ic.getScope().getLocalVariables();
 
         if (localVariables != null && !localVariables.isEmpty()) {
-            println("declared variables");
+            println("declared variables:");
 
             for (Map.Entry<RubySymbol, LocalVariable> entry : localVariables.entrySet()) {
                 println(ansiStr(VARIABLE_COLOR, "  " + entry.getValue().toString()));
             }
         }
 
-        Set<LocalVariable> usedVariables = ic.getScope().getUsedLocalVariables();
+        FullInterpreterContext fullInterpreterContext = ic.getScope().getFullInterpreterContext();
+        if (fullInterpreterContext != null) {
+            Collection<LocalVariable> usedVariables = fullInterpreterContext.getUsedLocalVariables();
 
-        if (usedVariables != null && !usedVariables.isEmpty()) {
-            println("used variables");
+            println("used variables:");
 
-            for (LocalVariable var : usedVariables) {
-                println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+            if (usedVariables != null && !usedVariables.isEmpty()) {
+                for (LocalVariable var : usedVariables) {
+                    println(ansiStr(VARIABLE_COLOR, "  " + var.toString()));
+                }
             }
         }
 
@@ -156,6 +159,8 @@ public class IRDumper extends IRVisitor {
         String ipcFormat = "  %0" + instrLog + "d: ";
 
         if (instrs != null) {
+            println();
+
             for (int i = 0; i < instrs.length; i++) {
                 formatInstr(instrs[i], varFormat, varSpaces, ipcFormat, instrs[i], i);
             }
@@ -285,7 +290,6 @@ public class IRDumper extends IRVisitor {
             visit(o);
         }
     }
-    public void AsString(AsString asstring) { visit(asstring.getSource()); }
     public void Bignum(Bignum bignum) { print(bignum.value); }
     public void Boolean(org.jruby.ir.operands.Boolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }

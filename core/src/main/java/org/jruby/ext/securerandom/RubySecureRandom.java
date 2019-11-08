@@ -55,9 +55,14 @@ public class RubySecureRandom {
         return RubyString.newStringNoCopy(context.runtime, nextBytes(context, 16));
     }
 
-    @JRubyMethod(meta = true, name = "random_bytes", alias = "gen_random") // gen_random for 'better' compat (not-used)
+    @JRubyMethod(meta = true, name = "random_bytes")
     public static IRubyObject random_bytes(ThreadContext context, IRubyObject self, IRubyObject n) {
         return RubyString.newStringNoCopy(context.runtime, nextBytes(context, n));
+    }
+
+    @JRubyMethod(meta = true, name = {"gen_random", "bytes"})
+    public static IRubyObject gen_random(ThreadContext context, IRubyObject self, IRubyObject n) {
+        return random_bytes(context, self, n);
     }
 
     @JRubyMethod(meta = true)
@@ -88,12 +93,12 @@ public class RubySecureRandom {
         return bytes;
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, name = {"random_number", "rand"})
     public static IRubyObject random_number(ThreadContext context, IRubyObject self) {
         return randomDouble(context);
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, name = {"random_number", "rand"})
     public static IRubyObject random_number(ThreadContext context, IRubyObject self, IRubyObject n) {
         if (n instanceof RubyFixnum) {
             final long bound = ((RubyFixnum) n).getLongValue();

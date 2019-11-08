@@ -1,3 +1,4 @@
+exclude :test_ASET, "expected behavior; JRuby can only do int range offsets into a string (integer -9223372036854775808 too small to convert to `int')"
 exclude :test_ASET_limits, "expected behavior; JRuby can only do int range offsets into a string, so error reflects that"
 exclude :test_crypt, "does not raise as expected"
 exclude :test_setter, "does not raise as expected"

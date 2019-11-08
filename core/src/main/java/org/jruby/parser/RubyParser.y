@@ -120,6 +120,7 @@ import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.StringSupport;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
@@ -253,12 +254,12 @@ public class RubyParser {
 %type <Node> lhs none args
 %type <ListNode> qword_list word_list
 %type <ListNode> f_arg f_optarg
-%type <ListNode> f_marg_list, symbol_list
-%type <ListNode> qsym_list, symbols, qsymbols
+%type <ListNode> f_marg_list symbol_list
+%type <ListNode> qsym_list symbols qsymbols
    // FIXME: These are node until a better understanding of underlying type
-%type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
-%type <Node> f_kw, f_block_kw
-%type <ListNode> f_block_kwarg, f_kwarg
+%type <ArgsTailHolder> opt_args_tail opt_block_args_tail block_args_tail args_tail
+%type <Node> f_kw f_block_kw
+%type <ListNode> f_block_kwarg f_kwarg
 %type <HashNode> assoc_list
 %type <HashNode> assocs
 %type <KeyValuePair> assoc
@@ -290,7 +291,7 @@ public class RubyParser {
 %type <ByteList> call_op call_op2
 %type <ArgumentNode> f_arg_asgn
 %type <FCallNode> fcall
-%token <ByteList> tLABEL_END, tSTRING_DEND
+%token <ByteList> tLABEL_END
 %type <ISourcePosition> k_return k_class k_module
 
 /*
@@ -360,7 +361,7 @@ top_stmts     : none
 
 top_stmt      : stmt
               | keyword_BEGIN tLCURLY top_compstmt tRCURLY {
-                    support.getResult().addBeginNode(new PreExe19Node($1, support.getCurrentScope(), $3));
+                    support.getResult().addBeginNode(new PreExe19Node($1, support.getCurrentScope(), $3, lexer.getRubySourceline()));
                     $$ = null;
               }
 
@@ -459,7 +460,7 @@ stmt            : keyword_alias fitem {
                     if (support.isInDef()) {
                         support.warn(ID.END_IN_METHOD, $1, "END in method; use at_exit");
                     }
-                    $$ = new PostExeNode($1, $3);
+                    $$ = new PostExeNode($1, $3, lexer.getRubySourceline());
                 }
                 | command_asgn
                 | mlhs '=' command_call {
@@ -754,6 +755,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     support.backrefAssignError($1);
                 }
 
+// [!null or throws]
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = support.assignableLabelOrIdentifier($1, null);
                 }
@@ -1567,7 +1569,7 @@ primary         : literal
                     lexer.getConditionState().end();
                 } compstmt keyword_end {
                       // ENEBO: Lots of optz in 1.9 parser here
-                    $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope());
+                    $$ = new ForNode($1, $2, $8, $5, support.getCurrentScope(), lexer.getRubySourceline());
                 }
                 | k_class cpath superclass {
                     if (support.isInDef()) {
@@ -1694,6 +1696,7 @@ opt_else        : none
                     $$ = $2;
                 }
 
+// [!null]
 for_var         : lhs
                 | mlhs {
                 }
@@ -1863,7 +1866,7 @@ lambda          : /* none */  {
                 } lambda_body {
                     lexer.getCmdArgumentState().reset($<Long>3.longValue());
                     lexer.getCmdArgumentState().restart();
-                    $$ = new LambdaNode($2.getPosition(), $2, $4, support.getCurrentScope());
+                    $$ = new LambdaNode($2.getPosition(), $2, $4, support.getCurrentScope(), lexer.getRubySourceline());
                     lexer.setLeftParenBegin($<Integer>1);
                     support.popCurrentScope();
                 }
@@ -1965,8 +1968,8 @@ brace_body      : {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack()) >> 1;
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param compstmt {
-                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope());
-                     support.popCurrentScope();
+                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
 
@@ -1977,8 +1980,8 @@ do_body 	: {
                     $$ = Long.valueOf(lexer.getCmdArgumentState().getStack());
                     lexer.getCmdArgumentState().reset();
                 } opt_block_param bodystmt {
-                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope());
-                     support.popCurrentScope();
+                    $$ = new IterNode($<ISourcePosition>1, $3, $4, support.getCurrentScope(), lexer.getRubySourceline());
+                    support.popCurrentScope();
                     lexer.getCmdArgumentState().reset($<Long>2.longValue());
                 }
  
@@ -2604,7 +2607,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                 }
                 | restarg_mark {
   // FIXME: bytelist_love: somewhat silly to remake the empty bytelist over and over but this type should change (using null vs "" is a strange distinction).
-  $$ = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(new ByteList(new byte[] {})), support.getCurrentScope().addVariable("*"));
+  $$ = new UnnamedRestArgNode(lexer.getPosition(), support.symbolID(CommonByteLists.EMPTY), support.getCurrentScope().addVariable("*"));
                 }
 
 // [!null]

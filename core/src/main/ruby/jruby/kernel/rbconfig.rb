@@ -18,4 +18,11 @@ module RbConfig
     val.replace(newval) unless newval == val
     val
   end
+
+  def RbConfig.ruby
+    File.join(
+        RbConfig::CONFIG["bindir"],
+        RbConfig::CONFIG["ruby_install_name"] + RbConfig::CONFIG["EXEEXT"]
+    )
+  end
 end

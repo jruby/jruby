@@ -1,7 +1,8 @@
 # -*- coding: us-ascii -*-
 # frozen_string_literal: true
 
-require 'securerandom.jar'
+# Load built-in securerandom library
+JRuby::Util.load_ext("org.jruby.ext.securerandom.SecureRandomLibrary")
 
 # == Secure random number generator interface.
 #
@@ -179,10 +180,6 @@ module Random::Formatter
     ary[2] = (ary[2] & 0x0fff) | 0x4000
     ary[3] = (ary[3] & 0x3fff) | 0x8000
     "%08x-%04x-%04x-%04x-%04x%08x" % ary
-  end
-
-  private def gen_random(n)
-    self.bytes(n)
   end
 
   # SecureRandom.choose generates a string that randomly draws from a

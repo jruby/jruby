@@ -31,6 +31,9 @@
 package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public final class MetaClass extends RubyClass {
 
@@ -48,6 +51,21 @@ public final class MetaClass extends RubyClass {
         // use same ClassIndex as metaclass, since we're technically still of that type
         setClassIndex(superClass.getClassIndex());
         superClass.addSubclass(this);
+
+        if (LOG_SINGLETONS || LOG_SINGLETONS_VERBOSE) {
+            logSingleton(runtime, superClass, attached);
+        }
+    }
+
+    private static void logSingleton(Ruby runtime, RubyClass superClass, RubyBasicObject attached) {
+        if (runtime.isBooting()) return; // don't log singleton created during boot
+
+        String attachedString = attached == null ? "null object" : "object of type " + attached.getMetaClass();
+        LOG.info("singleton class created for type " + superClass + " attached to " + attachedString);
+
+        if (LOG_SINGLETONS_VERBOSE) {
+            LOG.info(new Exception("singleton creation stack trace"));
+        }
     }
 
     @Override
@@ -103,5 +121,9 @@ public final class MetaClass extends RubyClass {
     }
 
     private RubyBasicObject attached;
+
+    private static final Logger LOG = LoggerFactory.getLogger(MetaClass.class);
+    private static final boolean LOG_SINGLETONS = Options.LOG_SINGLETONS.load();
+    private static final boolean LOG_SINGLETONS_VERBOSE = Options.LOG_SINGLETONS_VERBOSE.load();
 
 }

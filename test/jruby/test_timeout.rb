@@ -1,13 +1,14 @@
 require 'test/unit'
-require 'timeout'
-require 'socket'
-require 'net/http'
-
 require 'test/jruby/test_helper'
 
 class TestTimeout < Test::Unit::TestCase
   include TestHelper
-  
+
+  def setup
+    require 'timeout'
+    require 'socket'
+  end
+
   def test_timeout_for_loop
     n = 10000000
     assert_raises(Timeout::Error) do
@@ -62,24 +63,35 @@ class TestTimeout < Test::Unit::TestCase
     begin; client.close; rescue Exception; end
   end
 
-  def foo
-    sleep 5
-  rescue Exception => e
-    @in_foo = e
-    raise e
-  end
-
   # JRUBY-3817
-  def test_net_http_timeout
-    assert_raises Net::OpenTimeout do
-      http = Net::HTTP.new('8.8.8.8')
-      http.open_timeout = 0.001
-      http.start do |h|
-        h.request_get '/index.html'
-        # ensure we timeout even if we're fast
-        sleep(1)
+  false && def test_net_http_timeout
+    require 'net/http'
+
+    # Try binding to ports until we find one that's not already open
+    server = nil
+    port = 0
+    1000.times do
+      port = 10000 + rand(10000)
+      begin
+        server = ServerSocket.new(:INET, :STREAM)
+        server.bind(Addrinfo.tcp("127.0.0.1", port))
+        break
+      rescue
+        server = nil
+        next
       end
     end
+
+    fail "could not find an open port" unless server
+
+    http = Net::HTTP.new('127.0.0.1', port)
+    http.open_timeout = 0.01
+
+    assert_raises Net::OpenTimeout do
+      http.start {}
+    end
+  ensure
+    server.close rescue nil
   end
 
   def test_timeout_raises_anon_class_to_unroll
@@ -92,6 +104,13 @@ class TestTimeout < Test::Unit::TestCase
     end
 
     assert ok, "Timeout::Error was not eventually delivered to caller"
+  end
+
+  def foo
+    sleep 2
+  rescue Exception => e
+    @in_foo = e
+    raise e
   end
 
   # JRUBY-3928: Net::HTTP doesn't timeout as expected when using timeout.rb

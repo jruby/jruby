@@ -29,35 +29,39 @@ package org.jruby.runtime.opto;
 
 import java.lang.invoke.SwitchPoint;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.atomic.AtomicStampedReference;
 
 public class FailoverSwitchPointInvalidator implements Invalidator {
     // a dummy switchpoint to use until we actually need a real one
     private static final SwitchPoint DUMMY = new SwitchPoint();
     static {SwitchPoint.invalidateAll(new SwitchPoint[]{DUMMY});}
 
-    private volatile SwitchPoint switchPoint = DUMMY;
-    
-    private volatile int failures;
+    private final AtomicStampedReference<SwitchPoint> switchPoint = new AtomicStampedReference<>(DUMMY, 0);
+
     private final int maxFailures;
     
     public FailoverSwitchPointInvalidator(int maxFailures) {
         this.maxFailures = maxFailures;
     }
     
-    public synchronized void invalidate() {
+    public void invalidate() {
+        SwitchPoint switchPoint = this.switchPoint.getReference();
         if (switchPoint == DUMMY) return;
 
-        failures += 1;
-        
-        // if we have failed too many times, set it to DUMMY and leave it
-        if (failures > maxFailures) {
-            SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
-            switchPoint = DUMMY;
-            return;
+        int failures = this.switchPoint.getStamp();
+        SwitchPoint newSwitch = DUMMY;
+
+        if (failures < maxFailures) {
+            newSwitch = new SwitchPoint();
         }
-        
+
+        // Not important if we are successful, since update after read means another thread got to it first
+        this.switchPoint.compareAndSet(switchPoint, newSwitch, failures, failures + 1);
+
+        // Safe to invalidate now that we've updated
         SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
-        switchPoint = new SwitchPoint();
     }
 
     public void invalidateAll(List<Invalidator> invalidators) {
@@ -73,14 +77,29 @@ public class FailoverSwitchPointInvalidator implements Invalidator {
     }
     
     public synchronized Object getData() {
-        return switchPoint == DUMMY && failures <= maxFailures ? switchPoint = new SwitchPoint() : switchPoint;
+        while (true) {
+            SwitchPoint switchPoint = this.switchPoint.getReference();
+            int failures = this.switchPoint.getStamp();
+            if (switchPoint == DUMMY && failures <= maxFailures) {
+                SwitchPoint newSwitch = new SwitchPoint();
+                if (this.switchPoint.compareAndSet(DUMMY, newSwitch, failures, failures)) {
+                    return newSwitch;
+                }
+            } else {
+                return switchPoint;
+            }
+        }
     }
     
     public synchronized SwitchPoint replaceSwitchPoint() {
-        if (switchPoint == DUMMY || failures > maxFailures) return DUMMY;
-
-        SwitchPoint oldSwitchPoint = switchPoint;
-        switchPoint = new SwitchPoint();
-        return oldSwitchPoint;
+        while (true) {
+            SwitchPoint switchPoint = this.switchPoint.getReference();
+            int failures = this.switchPoint.getStamp();
+            if (switchPoint == DUMMY || failures > maxFailures) return DUMMY;
+            SwitchPoint newSwitch = new SwitchPoint();
+            if (this.switchPoint.compareAndSet(switchPoint, newSwitch, failures, failures + 1)) {
+                return newSwitch;
+            }
+        }
     }
 }

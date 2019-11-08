@@ -37,8 +37,8 @@ import org.jruby.parser.StaticScope;
  * Stubby lambda node (1.9 only)
  */
 public class LambdaNode extends IterNode {
-    public LambdaNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        super(position, args, body, scope);
+    public LambdaNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope, int endLine) {
+        super(position, args, body, scope, endLine);
     }
 
     @Override

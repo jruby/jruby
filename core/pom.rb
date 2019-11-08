@@ -10,7 +10,7 @@ project 'JRuby Core' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
 
-              'tzdata.version' => '2013d',
+              'tzdata.version' => '2019c',
               'tzdata.scope' => 'provided',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
@@ -41,16 +41,16 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.19', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.20', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.45', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.11', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.9'
+  jar 'com.github.jnr:jnr-enxio:0.23', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.24', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.51', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.14', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.1.11'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.25'
-  jar 'org.jruby.jcodings:jcodings:1.0.41'
+  jar 'org.jruby.joni:joni:2.1.30'
+  jar 'org.jruby.jcodings:jcodings:1.0.46'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -73,7 +73,9 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:modulator:1.0'
+  jar 'com.headius:backport9:1.3'
+
+  jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -149,6 +151,16 @@ project 'JRuby Core' do
                                       xml( '<classpath/>' ),
                                       'org.jruby.anno.InvokerGenerator',
                                       '${anno.sources}/annotated_classes.txt',
+                                      '${project.build.outputDirectory}' ],
+                     'executable' =>  'java',
+                     'classpathScope' =>  'compile' )
+
+      execute_goals( 'exec',
+                     :id => 'scope-generator',
+                     'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
+                                      '-classpath',
+                                      xml( '<classpath/>' ),
+                                      'org.jruby.runtime.scope.DynamicScopeGenerator',
                                       '${project.build.outputDirectory}' ],
                      'executable' =>  'java',
                      'classpathScope' =>  'compile' )
@@ -295,6 +307,9 @@ project 'JRuby Core' do
                            {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                            {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
                        ],
+                       transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main',
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.core'}}],
                        filters:
                            {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
         )
@@ -411,13 +426,5 @@ project 'JRuby Core' do
                      :id => 'pack core sources',
                      :phase => 'prepare-package' ) # Needs to run before the shade plugin
     end
-  end
-
-  profile 'java9' do
-    activation do
-      jdk '[9,)'
-    end
-
-    jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
   end
 end

@@ -46,16 +46,23 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
 
-    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver, Operand[] args, Operand closure,
-                       boolean potentiallyRefined) {
+    // main constructor
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand closure, boolean potentiallyRefined) {
+        this(scope, op, callType, name, receiver, args, closure, potentiallyRefined, null, callSiteCounter++);
+    }
+
+    // clone constructor
+    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
+                       Operand[] args, Operand closure, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
         super(op, arrayifyOperands(receiver, args, closure));
 
-        this.callSiteId = callSiteCounter++;
+        this.callSiteId = callSiteId;
         argsCount = args.length;
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined);
+        this.callSite = callSite == null ? getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined) : callSite;
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
@@ -82,7 +89,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         }
 
         if (hasClosure) e.encode(getClosureArg(null));
-
     }
 
     // FIXME: Convert this to some Signature/Arity method
@@ -174,7 +180,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     protected static CallSite getCallSiteFor(IRScope scope, CallType callType, String name, long callsiteId, boolean hasLiteralClosure, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
 
-        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
+        if (potentiallyRefined) return new RefinedCachingCallSite(name, scope.getStaticScope(), callType);
 
         switch (callType) {
             case NORMAL:
@@ -278,12 +284,6 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
                 modifiedScope = true;
                 flags.addAll(IRFlags.REQUIRE_ALL_FRAME_FIELDS);
             }
-        }
-
-        // Refined scopes require dynamic scope in order to get the static scope
-        if (potentiallyRefined) {
-            modifiedScope = true;
-            flags.add(REQUIRES_DYNSCOPE);
         }
 
         return modifiedScope;
@@ -573,6 +573,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     public Block prepareBlock(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         if (getClosureArg() == null) return Block.NULL_BLOCK;
 
-        return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        if (potentiallyRefined) {
+            return IRRuntimeHelpers.getRefinedBlockFromObject(context, currScope, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        } else {
+            return IRRuntimeHelpers.getBlockFromObject(context, getClosureArg().retrieve(context, self, currScope, currDynScope, temp));
+        }
     }
 }

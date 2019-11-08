@@ -3,6 +3,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.DescriptorInfo;
 
 /**
  * The diffierent types of arguments identified in a method.
@@ -35,9 +36,10 @@ public enum ArgumentType {
             case 'o': return opt;
             case 'r': return rest;
             case 'q': return req;
-            case 'n': return anonreq;
-            case 'O': return anonopt;
-            case 'R': return anonrest;
+            // These are sourced from DescriptorInfo because ArgumentType references Ruby.
+            case DescriptorInfo.ANONREQ_CHAR: return anonreq;
+            case DescriptorInfo.ANONOPT_CHAR: return anonopt;
+            case DescriptorInfo.ANONREST_CHAR: return anonrest;
             case 'N': return anonkeyrest;
             default: return null;
         }

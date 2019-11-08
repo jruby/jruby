@@ -40,4 +40,9 @@ public class UnboxedFloat extends ImmutableLiteral {
     public double getValue() {
         return value;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

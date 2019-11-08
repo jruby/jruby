@@ -4,6 +4,7 @@ require "net/http"
 require "tempfile"
 require "webrick"
 require "webrick/httpauth/basicauth"
+require "stringio"
 require_relative "utils"
 
 class TestWEBrickHTTPAuth < Test::Unit::TestCase
@@ -216,12 +217,119 @@ class TestWEBrickHTTPAuth < Test::Unit::TestCase
     }
   end
 
+  def test_digest_auth_int
+    log_tester = lambda {|log, access_log|
+      log.reject! {|line| /\A\s*\z/ =~ line }
+      pats = [
+        /ERROR Digest wb auth-int realm: no credentials in the request\./,
+        /ERROR WEBrick::HTTPStatus::Unauthorized/,
+        /ERROR Digest wb auth-int realm: foo: digest unmatch\./
+      ]
+      pats.each {|pat|
+        assert(!log.grep(pat).empty?, "webrick log doesn't have expected error: #{pat.inspect}")
+        log.reject! {|line| pat =~ line }
+      }
+      assert_equal([], log)
+   }
+    TestWEBrick.start_httpserver({}, log_tester) {|server, addr, port, log|
+      realm = "wb auth-int realm"
+      path = "/digest_auth_int"
+
+      Tempfile.create("test_webrick_auth_int") {|tmpfile|
+        tmpfile.close
+        tmp_pass = WEBrick::HTTPAuth::Htdigest.new(tmpfile.path)
+        tmp_pass.set_passwd(realm, "foo", "Hunter2")
+        tmp_pass.flush
+
+        htdigest = WEBrick::HTTPAuth::Htdigest.new(tmpfile.path)
+        users = []
+        htdigest.each{|user, pass| users << user }
+        assert_equal %w(foo), users
+
+        auth = WEBrick::HTTPAuth::DigestAuth.new(
+          :Realm => realm, :UserDB => htdigest,
+          :Algorithm => 'MD5',
+          :Logger => server.logger,
+          :Qop => %w(auth-int),
+        )
+        server.mount_proc(path){|req, res|
+          auth.authenticate(req, res)
+          res.body = "bbb"
+        }
+        Net::HTTP.start(addr, port) do |http|
+          post = Net::HTTP::Post.new(path)
+          params = {}
+          data = 'hello=world'
+          body = StringIO.new(data)
+          post.content_length = data.bytesize
+          post['Content-Type'] = 'application/x-www-form-urlencoded'
+          post.body_stream = body
+
+          http.request(post) do |res|
+            assert_equal('401', res.code, log.call)
+            res["www-authenticate"].scan(DIGESTRES_) do |key, quoted, token|
+              params[key.downcase] = token || quoted.delete('\\')
+            end
+             params['uri'] = "http://#{addr}:#{port}#{path}"
+          end
+
+          body.rewind
+          cred = credentials_for_request('foo', 'Hunter3', params, body)
+          post['Authorization'] = cred
+          post.body_stream = body
+          http.request(post){|res|
+            assert_equal('401', res.code, log.call)
+            assert_not_equal("bbb", res.body, log.call)
+          }
+
+          body.rewind
+          cred = credentials_for_request('foo', 'Hunter2', params, body)
+          post['Authorization'] = cred
+          post.body_stream = body
+          http.request(post){|res| assert_equal("bbb", res.body, log.call)}
+        end
+      }
+    }
+  end
+
+  def test_digest_auth_invalid
+    digest_auth = WEBrick::HTTPAuth::DigestAuth.new(Realm: 'realm', UserDB: '')
+
+    def digest_auth.error(fmt, *)
+    end
+
+    def digest_auth.try_bad_request(len)
+      request = {"Authorization" => %[Digest a="#{'\b'*len}]}
+      authenticate request, nil
+    end
+
+    bad_request = WEBrick::HTTPStatus::BadRequest
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    assert_raise(bad_request) {digest_auth.try_bad_request(10)}
+    limit = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0)
+    [20, 50, 100, 200].each do |len|
+      assert_raise(bad_request) do
+        Timeout.timeout(len*limit) {digest_auth.try_bad_request(len)}
+      end
+    end
+  end
+
   private
-  def credentials_for_request(user, password, params)
+  def credentials_for_request(user, password, params, body = nil)
     cnonce = "hoge"
     nonce_count = 1
     ha1 = "#{user}:#{params['realm']}:#{password}"
-    ha2 = "GET:#{params['uri']}"
+    if body
+      dig = Digest::MD5.new
+      while buf = body.read(16384)
+        dig.update(buf)
+      end
+      body.rewind
+      ha2 = "POST:#{params['uri']}:#{dig.hexdigest}"
+    else
+      ha2 = "GET:#{params['uri']}"
+    end
+
     request_digest =
       "#{Digest::MD5.hexdigest(ha1)}:" \
       "#{params['nonce']}:#{'%08x' % nonce_count}:#{cnonce}:#{params['qop']}:" \

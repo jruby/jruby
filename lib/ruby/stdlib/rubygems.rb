@@ -10,7 +10,7 @@ require 'rbconfig'
 require 'thread'
 
 module Gem
-  VERSION = "2.7.6"
+  VERSION = "2.7.10"
 end
 
 # Must be first since it unloads the prelude from 1.9.2
@@ -247,7 +247,7 @@ module Gem
 
   ##
   # Find the full path to the executable for gem +name+.  If the +exec_name+
-  # is not given, the gem's default_executable is chosen, otherwise the
+  # is not given, an exception will be raised, otherwise the
   # specified executable's path is returned.  +requirements+ allows
   # you to specify specific gem versions.
 
@@ -270,12 +270,7 @@ module Gem
 
     return loaded if loaded && dep.matches_spec?(loaded)
 
-    find_specs = proc { dep.matching_specs(true) }
-    if dep.to_s == "bundler (>= 0.a)"
-      specs = Gem::BundlerVersionFinder.without_filtering(&find_specs)
-    else
-      specs = find_specs.call
-    end
+    specs = dep.matching_specs(true)
 
     specs = specs.find_all { |spec|
       spec.executables.include? exec_name
@@ -295,7 +290,7 @@ module Gem
 
   ##
   # Find the full path to the executable for gem +name+.  If the +exec_name+
-  # is not given, the gem's default_executable is chosen, otherwise the
+  # is not given, an exception will be raised, otherwise the
   # specified executable's path is returned.  +requirements+ allows
   # you to specify specific gem versions.
   #
@@ -604,13 +599,18 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
 
   private_class_method :find_home
 
-  # FIXME deprecate these in 3.0
+  # TODO:  remove in RubyGems 4.0
 
   ##
   # Zlib::GzipReader wrapper that unzips +data+.
 
   def self.gunzip(data)
     Gem::Util.gunzip data
+  end
+
+  class << self
+    extend Gem::Deprecate
+    deprecate :gunzip, "Gem::Util.gunzip", 2018, 12
   end
 
   ##
@@ -620,11 +620,21 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
     Gem::Util.gzip data
   end
 
+  class << self
+    extend Gem::Deprecate
+    deprecate :gzip, "Gem::Util.gzip", 2018, 12
+  end
+
   ##
   # A Zlib::Inflate#inflate wrapper
 
   def self.inflate(data)
     Gem::Util.inflate data
+  end
+
+  class << self
+    extend Gem::Deprecate
+    deprecate :inflate, "Gem::Util.inflate", 2018, 12
   end
 
   ##
@@ -1225,9 +1235,12 @@ An Array (#{env.inspect}) was passed in from #{caller[3]}
 
   class << self
     ##
-    # TODO remove with RubyGems 3.0
+    # TODO remove with RubyGems 4.0
 
     alias detect_gemdeps use_gemdeps # :nodoc:
+
+    extend Gem::Deprecate
+    deprecate :detect_gemdeps, "Gem.use_gemdeps", 2018, 12
   end
 
   # FIX: Almost everywhere else we use the `def self.` way of defining class

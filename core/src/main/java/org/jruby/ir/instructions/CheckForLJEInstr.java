@@ -8,6 +8,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -35,7 +36,14 @@ public class CheckForLJEInstr extends NoOperandInstr {
 
     @Override
     public Instr clone(CloneInfo info) {
-        return new CheckForLJEInstr(definedWithinMethod);
+        if (info instanceof InlineCloneInfo) {
+            InlineCloneInfo ii = (InlineCloneInfo) info;
+
+            // lexical closure
+            if (ii.getScopeBeingInlined().isScopeContainedBy(ii.getHostScope())) return NopInstr.NOP;
+        }
+
+        return this;
     }
 
     @Override

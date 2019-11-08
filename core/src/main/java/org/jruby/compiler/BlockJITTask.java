@@ -26,79 +26,85 @@
 
 package org.jruby.compiler;
 
+import org.jruby.Ruby;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
-import org.jruby.util.OneShotClassLoader;
 
-class BlockJITTask implements Runnable {
-    private JITCompiler jitCompiler;
+import static org.jruby.compiler.MethodJITTask.*;
+
+class BlockJITTask extends JITCompiler.Task {
+
     private final String className;
     private final MixedModeIRBlockBody body;
+    private final String blockId;
     private final String methodName;
 
     public BlockJITTask(JITCompiler jitCompiler, MixedModeIRBlockBody body, String className) {
-        this.jitCompiler = jitCompiler;
+        super(jitCompiler);
         this.body = body;
         this.className = className;
-        this.methodName = body.getName();
+        this.blockId = body.getName();
+        IRMethod method = body.getIRScope().getNearestMethod();
+        this.methodName = method != null ? method.getByteName().toString() : null;
     }
 
-    public void run() {
-        // We synchronize against the JITCompiler object so at most one code body will jit at once in a given runtime.
-        // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
-        // See #4739 for a reproduction script that produced various errors without this.
-        synchronized (jitCompiler) {
-            try {
-                String key = SexpMaker.sha1(body.getIRScope());
-                JVMVisitor visitor = new JVMVisitor(jitCompiler.runtime);
-                BlockJITClassGenerator generator = new BlockJITClassGenerator(className, methodName, key, jitCompiler.runtime, body, visitor);
-
-                JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-                generator.compile(context);
-
-                // FIXME: reinstate active bytecode size check
-                // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
-                // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
-                // bytecode counts often include all nested scopes, even if they'd be different methods. We need a new
-                // mechanism of getting all body sizes.
-                Class sourceClass = visitor.defineFromBytecode(body.getIRScope(), generator.bytecode(), new OneShotClassLoader(jitCompiler.runtime.getJRubyClassLoader()));
-
-                if (sourceClass == null) {
-                    // class could not be found nor generated; give up on JIT and bail out
-                    jitCompiler.counts.failCount.incrementAndGet();
-                    return;
-                } else {
-                    generator.updateCounters(jitCompiler.counts, body.ensureInstrsReady());
-                }
-
-                // successfully got back a jitted body
-
-                String jittedName = context.getVariableName();
-
-                // blocks only have variable-arity
-                body.completeBuild(
-                        new CompiledIRBlockBody(
-                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
-                                body.getIRScope(),
-                                ((IRClosure) body.getIRScope()).getSignature().encode()));
-
-                if (jitCompiler.config.isJitLogging()) {
-                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "done jitting");
-                }
-            } catch (Throwable t) {
-                if (jitCompiler.config.isJitLogging()) {
-                    JITCompiler.log(body.getImplementationClass(), body.getFile(), body.getLine(), className + "." + methodName, "Could not compile; passes run: " + body.getIRScope().getExecutedPasses(), t.getMessage());
-                    if (jitCompiler.config.isJitLoggingVerbose()) {
-                        t.printStackTrace();
-                    }
-                }
-
-                jitCompiler.counts.failCount.incrementAndGet();
+    @Override
+    public void exec() throws NoSuchMethodException, IllegalAccessException {
+        // Check if the method has been explicitly excluded
+        String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body);
+        if (excludeModuleName != null) {
+            body.setCallCount(-1);
+            if (jitCompiler.config.isJitLogging()) {
+                JITCompiler.log(body, blockId, "skipping block in " + excludeModuleName);
             }
+            return;
         }
+
+        final String key = SexpMaker.sha1(body.getIRScope());
+        final Ruby runtime = jitCompiler.runtime;
+        JVMVisitor visitor = new JVMVisitor(runtime);
+        BlockJITClassGenerator generator = new BlockJITClassGenerator(className, blockId, key, runtime, body, visitor);
+
+        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
+        generator.compile(context);
+
+        Class<?> sourceClass = defineClass(generator, visitor, body.getIRScope(), body.ensureInstrsReady());
+        if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
+
+        // successfully got back a jitted body
+        String jittedName = context.getVariableName();
+
+        // blocks only have variable-arity
+        body.completeBuild(
+                new CompiledIRBlockBody(
+                        JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                        body.getIRScope(),
+                        ((IRClosure) body.getIRScope()).getSignature().encode()));
     }
+
+    @Override
+    protected String getSourceFile() {
+        return body.getFile();
+    }
+
+    @Override
+    protected void logJitted() {
+        logImpl("block done jitting");
+    }
+
+    @Override
+    protected void logFailed(final Throwable ex) {
+        logImpl("could not compile block; passes run: " + body.getIRScope().getExecutedPasses(), ex);
+    }
+
+    @Override
+    protected void logImpl(final String message, Object... reason) {
+        JITCompiler.log(body, blockId, message, reason);
+    }
+
 }

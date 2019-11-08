@@ -90,7 +90,7 @@ public class SunSignalFacade implements SignalFacade {
                 if (block != null) {
                     block.callMethod(context, "call", signum);
                 } else {
-                    blockCallback.call(context, new IRubyObject[] {signum}, Block.NULL_BLOCK);
+                    blockCallback.call(context, signum, Block.NULL_BLOCK);
                 }
             } catch(RaiseException e) {
                 try {
@@ -198,9 +198,8 @@ public class SunSignalFacade implements SignalFacade {
                 retVals[0] = runtime.newString("DEFAULT");
             }
         } else {
-            final RubyModule signalModule = runtime.getModule("Signal");
-            Block block = CallBlock.newCallClosure(signalModule, signalModule, Signature.NO_ARGUMENTS,
-                    callback, runtime.getCurrentContext());
+            Block block = CallBlock.newCallClosure(runtime.getCurrentContext(),
+                    runtime.getModule("Signal"), Signature.NO_ARGUMENTS, callback);
             retVals[0] = RubyProc.newProc(runtime, block, block.type);
         }
 

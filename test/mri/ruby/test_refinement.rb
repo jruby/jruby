@@ -2055,6 +2055,57 @@ class TestRefinement < Test::Unit::TestCase
     INPUT
   end
 
+  def test_call_method_in_unused_refinement
+    bug15720 = '[ruby-core:91916] [Bug #15720]'
+    assert_in_out_err([], <<-INPUT, ["ok"], [], bug15720)
+      module M1
+        refine Kernel do
+          def foo
+            'foo called!'
+          end
+        end
+      end
+
+      module M2
+        refine Kernel do
+          def bar
+            'bar called!'
+          end
+        end
+      end
+
+      using M1
+
+      foo
+
+      begin
+        bar
+      rescue NameError
+      end
+
+      puts "ok"
+    INPUT
+  end
+
+  def test_super_from_refined_module
+    a = EnvUtil.labeled_module("A") do
+      def foo;"[A#{super}]";end
+    end
+    b = EnvUtil.labeled_class("B") do
+      def foo;"[B]";end
+    end
+    c = EnvUtil.labeled_class("C", b) do
+      include a
+      def foo;"[C#{super}]";end
+    end
+    d = EnvUtil.labeled_module("D") do
+      refine(a) do
+        def foo;end
+      end
+    end
+    assert_equal("[C[A[B]]]", c.new.foo, '[ruby-dev:50390] [Bug #14232]')
+  end
+
   private
 
   def eval_using(mod, s)

@@ -162,7 +162,9 @@
 # DateTime instance will use the time zone offset of this
 # instance.
 
-require 'date.jar'
+# Load built-in date library
+JRuby::Util.load_ext("org.jruby.ext.date.DateLibrary")
+
 require 'date/format'
 
 # Class representing a date.
@@ -521,28 +523,6 @@ class Date
     define_method(n.downcase + '?') { wday == i }
   end
 
-  # The relationship operator for Date.
-  #
-  # Compares dates by Julian Day Number.  When comparing
-  # two DateTime instances, or a DateTime with a Date,
-  # the instances will be regarded as equivalent if they
-  # fall on the same date in local time.
-  def === (other)
-    case other
-    when Numeric
-      jd == other
-    when Date
-      jd == other.jd
-    else
-      begin
-        l, r = other.coerce(self)
-        l === r
-      rescue NoMethodError
-        false
-      end
-    end
-  end
-
   # Step the current date forward +step+ days at a
   # time (or backward, if +step+ is negative) until
   # we reach +limit+ (inclusive), yielding the resultant
@@ -557,7 +537,12 @@ class Date
       return to_enum(:step, limit, step)
     end
     da = self
-    op = %w(- <= >=)[step <=> 0]
+    step_cmp = step <=> 0
+    if step_cmp.nil?
+      raise ArgumentError.new("comparison of #{step.class} with 0 failed")
+    end
+    step_cmp = step_cmp > 0 ? 1 : step_cmp < 0 ? -1 : 0
+    op = %w(- <= >=)[step_cmp]
     while da.__send__(op, limit)
       yield da
       da += step

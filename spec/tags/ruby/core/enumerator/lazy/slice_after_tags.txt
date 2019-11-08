@@ -1,0 +1,1 @@
+fails:Enumerator::Lazy#slice_after works with an infinite enumerable

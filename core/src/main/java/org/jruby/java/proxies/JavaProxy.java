@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.headius.backport9.modules.Module;
+import com.headius.backport9.modules.Modules;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -42,9 +44,12 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
+
+import static org.jruby.runtime.Helpers.arrayOf;
 
 public class JavaProxy extends RubyObject {
 
@@ -232,7 +237,7 @@ public class JavaProxy extends RubyObject {
 
         if ( Modifier.isStatic(field.getModifiers()) ) {
             if ( asReader ) {
-                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field));
+                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field, false));
             }
             if ( asWriter == null || asWriter ) {
                 if ( Modifier.isFinal(field.getModifiers()) ) {
@@ -436,27 +441,61 @@ public class JavaProxy extends RubyObject {
     }
 
     private Method getMethod(ThreadContext context, String name, Class... argTypes) {
+        Class<?> originalClass = getObject().getClass();
+
         try {
-            return getObject().getClass().getMethod(name, argTypes);
+            for (Class<?> clazz = originalClass; clazz != null; clazz = clazz.getSuperclass()) {
+                Module module = Modules.getModule(clazz);
+                Package pkg = clazz.getPackage();
+
+                // Default package cannot be used by modules
+                if (pkg != null) {
+                    if (!module.isExported(pkg.getName())) continue;
+                }
+
+                Method method = clazz.getMethod(name, argTypes);
+
+                if (!Modifier.isPublic(method.getModifiers())) continue;
+
+                return method;
+            }
         } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(context.runtime, getObject().getClass(), name + CodegenUtils.prettyParams(argTypes), name);
+            throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
         }
+
+        throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
     }
 
     private MethodInvoker getMethodInvoker(Method method) {
         if (Modifier.isStatic(method.getModifiers())) {
-            return new StaticMethodInvoker(metaClass.getMetaClass(), method, method.getName());
+            return new StaticMethodInvoker(metaClass.getMetaClass(), () -> arrayOf(method), method.getName());
         } else {
-            return new InstanceMethodInvoker(metaClass, method, method.getName());
+            return new InstanceMethodInvoker(metaClass, () -> arrayOf(method), method.getName());
         }
     }
 
     private RubyMethod getRubyMethod(ThreadContext context, String name, Class... argTypes) {
         Method jmethod = getMethod(context, name, argTypes);
+        RubyClass sourceModule;
+
         if (Modifier.isStatic(jmethod.getModifiers())) {
-            return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes).toString(), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
+            sourceModule = metaClass.getSingletonClass();
+            return RubyMethod.newMethod(
+                    sourceModule,
+                    CodegenUtils.prettyParams(argTypes).toString(),
+                    sourceModule,
+                    name,
+                    new CacheEntry(getMethodInvoker(jmethod), sourceModule, metaClass.getGeneration()),
+                    getMetaClass());
         } else {
-            return RubyMethod.newMethod(metaClass, CodegenUtils.prettyParams(argTypes).toString(), metaClass, name, getMethodInvoker(jmethod), this);
+            sourceModule = metaClass;
+            return RubyMethod.newMethod(
+                    sourceModule,
+                    CodegenUtils.prettyParams(argTypes).toString(),
+                    sourceModule,
+                    name,
+                    new CacheEntry(getMethodInvoker(jmethod), sourceModule, metaClass.getGeneration()),
+                    this);
         }
     }
 
@@ -623,12 +662,12 @@ public class JavaProxy extends RubyObject {
             final MethodInvoker invoker;
 
             if ( Modifier.isStatic( method.getModifiers() ) ) {
-                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), method, newNameStr);
+                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), () -> arrayOf(method), newNameStr);
                 // add alias to meta
                 proxyClass.getSingletonClass().addMethod(newNameStr, invoker);
             }
             else {
-                invoker = new InstanceMethodInvoker(proxyClass, method, newNameStr);
+                invoker = new InstanceMethodInvoker(proxyClass, () -> arrayOf(method), newNameStr);
                 proxyClass.addMethod(newNameStr, invoker);
             }
 
@@ -646,12 +685,12 @@ public class JavaProxy extends RubyObject {
             final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 
             if ( Modifier.isStatic( method.getModifiers() ) ) {
-                MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method, name);
-                return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, invoker, clazz);
+                MethodInvoker invoker = new StaticMethodInvoker(proxyClass, () -> arrayOf(method), name);
+                return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, new CacheEntry(invoker, proxyClass, proxyClass.getGeneration()), clazz);
             }
 
-            MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method, name);
-            return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, invoker);
+            MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, () -> arrayOf(method), name);
+            return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, new CacheEntry(invoker, proxyClass, proxyClass.getGeneration()));
         }
 
         private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,

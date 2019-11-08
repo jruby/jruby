@@ -1,0 +1,1 @@
+fails:Enumerator::Lazy#chunk_while works with an infinite enumerable

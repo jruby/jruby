@@ -1,0 +1,1 @@
+fails:RbConfig::CONFIG ['archdir'] returns the directory containing standard libraries C extensions

@@ -7,6 +7,7 @@
 
 require 'rubygems/command'
 require 'rubygems/exceptions'
+require 'rubygems/deprecate'
 require 'rubygems/package'
 require 'rubygems/ext'
 require 'rubygems/user_interaction'
@@ -26,6 +27,8 @@ require 'fileutils'
 # file.  See Gem.pre_install and Gem.post_install for details.
 
 class Gem::Installer
+
+  extend Gem::Deprecate
 
   ##
   # Paths where env(1) might live.  Some systems are broken and have it in
@@ -707,9 +710,26 @@ class Gem::Installer
       unpack or File.writable?(gem_home)
   end
 
-  def verify_spec_name
-    return if spec.name =~ Gem::Specification::VALID_NAME_PATTERN
-    raise Gem::InstallError, "#{spec} has an invalid name"
+  def verify_spec
+    unless spec.name =~ Gem::Specification::VALID_NAME_PATTERN
+      raise Gem::InstallError, "#{spec} has an invalid name"
+    end
+
+    if spec.raw_require_paths.any?{|path| path =~ /\r\n|\r|\n/ }
+      raise Gem::InstallError, "#{spec} has an invalid require_paths"
+    end
+
+    if spec.extensions.any?{|ext| ext =~ /\r\n|\r|\n/ }
+      raise Gem::InstallError, "#{spec} has an invalid extensions"
+    end
+
+    unless spec.specification_version.to_s =~ /\A\d+\z/
+      raise Gem::InstallError, "#{spec} has an invalid specification_version"
+    end
+
+    if spec.dependencies.any? {|dep| dep.type =~ /\r\n|\r|\n/ || dep.name =~ /\r\n|\r|\n/ }
+      raise Gem::InstallError, "#{spec} has an invalid dependencies"
+    end
   end
 
   ##
@@ -777,13 +797,14 @@ TEXT
   ##
   # Logs the build +output+ in +build_dir+, then raises Gem::Ext::BuildError.
   #
-  # TODO:  Delete this for RubyGems 3.  It remains for API compatibility
+  # TODO:  Delete this for RubyGems 4.  It remains for API compatibility
 
   def extension_build_error(build_dir, output, backtrace = nil) # :nodoc:
     builder = Gem::Ext::Builder.new spec, @build_args
 
     builder.build_error build_dir, output, backtrace
   end
+  deprecate :extension_build_error, :none, 2018, 12
 
   ##
   # Reads the file index and extracts each file into the gem directory.
@@ -836,9 +857,11 @@ TEXT
   def pre_install_checks
     verify_gem_home options[:unpack]
 
-    ensure_loadable_spec
+    # The name and require_paths must be verified first, since it could contain
+    # ruby code that would be eval'ed in #ensure_loadable_spec
+    verify_spec
 
-    verify_spec_name
+    ensure_loadable_spec
 
     if options[:install_as_default]
       Gem.ensure_default_gem_subdirectories gem_home

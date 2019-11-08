@@ -51,7 +51,7 @@ abstract class AbstractVariable implements BiVariable {
     protected final String name;
     protected Object javaObject = null;
     protected Class javaType = null;
-    protected IRubyObject irubyObject = null;
+    protected IRubyObject rubyObject = null;
     protected boolean fromRuby;
 
     /**
@@ -64,7 +64,7 @@ abstract class AbstractVariable implements BiVariable {
      */
     protected AbstractVariable(IRubyObject receiver, String name, boolean fromRuby) {
         this.receiver = receiver;
-        this.name = name;
+        this.name = name.intern();
         this.fromRuby = fromRuby;
     }
 
@@ -79,9 +79,9 @@ abstract class AbstractVariable implements BiVariable {
      */
     protected AbstractVariable(IRubyObject receiver, String name, boolean fromRuby, IRubyObject rubyObject) {
         this.receiver = receiver;
-        this.name = name;
+        this.name = name.intern();
         this.fromRuby = fromRuby;
-        this.irubyObject = rubyObject;
+        this.rubyObject = rubyObject;
     }
 
     final Ruby getRuntime() { return receiver.getRuntime(); }
@@ -104,13 +104,13 @@ abstract class AbstractVariable implements BiVariable {
         } else {
             javaType = javaObject.getClass();
         }
-        irubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
+        rubyObject = JavaEmbedUtils.javaToRuby(runtime, javaObject);
         fromRuby = false;
     }
 
     protected void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
-        this.irubyObject = rubyObject;
+        this.rubyObject = rubyObject;
         this.javaType = null;
         // NOTE: quite weird - but won't pass tests otherwise !?!
         //this.javaObject = null;
@@ -135,13 +135,13 @@ abstract class AbstractVariable implements BiVariable {
     }
 
     public Object getJavaObject() {
-        if (irubyObject == null) return javaObject;
+        if (rubyObject == null) return javaObject;
 
         if (javaType != null) { // Java originated variables
-            javaObject = javaType.cast( irubyObject.toJava(javaType) );
+            javaObject = javaType.cast( rubyObject.toJava(javaType) );
         }
         else { // Ruby originated variables
-            javaObject = irubyObject.toJava(Object.class);
+            javaObject = rubyObject.toJava(Object.class);
             if (javaObject != null) {
                 javaType = javaObject.getClass();
             }
@@ -154,7 +154,7 @@ abstract class AbstractVariable implements BiVariable {
     }
 
     public IRubyObject getRubyObject() {
-        return irubyObject;
+        return rubyObject;
     }
 
     public void setRubyObject(final IRubyObject rubyObject) {
@@ -163,7 +163,7 @@ abstract class AbstractVariable implements BiVariable {
 
     protected static RubyModule getRubyClass(final Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
-        StaticScope scope = context.getCurrentScope().getStaticScope();
+        StaticScope scope = context.getCurrentStaticScope();
         RubyModule rubyClass = scope.getModule();
         return rubyClass;
     }

@@ -229,6 +229,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             fileClass.searchMethod("mkfifo").setNotImplemented(true);
         }
 
+        if (!Platform.IS_BSD) {
+            // lchmod appears to be mostly a BSD-ism, not supported on Linux.
+            // See https://github.com/jruby/jruby/issues/5547
+            fileClass.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
+        }
+
         return fileClass;
     }
 
@@ -480,7 +486,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (fptr.posix.ftruncate(fptr.fd(), pos) < 0) {
-            throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+            throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
         }
 
         return RubyFixnum.zero(runtime);
@@ -488,17 +494,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
+        return inspect(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
         final String path = openFile.getPath();
-        ByteList str = new ByteList(path.length() + 8);
+        ByteList str = new ByteList((path == null ? 4 : path.length()) + 8);
 
         str.append('#').append('<');
-        str.append(((RubyString) getMetaClass().to_s()).getByteList());
-        str.append(':').append( RubyEncoding.encodeUTF8(path) );
+        str.append(getMetaClass().getRealClass().to_s().getByteList());
+        str.append(':').append(path == null ? RubyNil.nilBytes : RubyEncoding.encodeUTF8(path));
         if (!openFile.isOpen()) {
             str.append(' ').append('(');
             str.append('c').append('l').append('o').append('s').append('e').append('d');
@@ -928,7 +934,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean braces_match = false;
         boolean extglob = (flags & FNM_EXTGLOB) != 0;
 
-        ByteList pattern = args[0].convertToString().getByteList();
+        ByteList pattern = StringSupport.checkEmbeddedNulls(runtime, args[0].convertToString()).getByteList();
         ByteList path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getByteList();
 
         if(extglob) {
@@ -1109,15 +1115,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Path destPath = Paths.get(dest.getAbsolutePath());
         try {
             Files.move(oldPath, destPath, StandardCopyOption.ATOMIC_MOVE);
+            return RubyFixnum.zero(runtime);
         } catch (IOException ioe) {
             throw Helpers.newIOErrorFromException(runtime, ioe);
         }
-
-        if (oldFile.renameTo(dest)) { // try to rename one more time
-            return RubyFixnum.zero(runtime);
-        }
-
-        throw runtime.newErrnoEACCESError(oldNameJavaString + " or " + newNameJavaString);
     }
 
     @JRubyMethod(required = 1, meta = true)
@@ -1432,7 +1433,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (!args[3].isNil()) {
                     options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
                     if (options.isNil()) {
-                        throw runtime.newArgumentError("wrong number of arguments (4 for 1..3)");
+                        throw runtime.newArgumentError(4, 1, 3);
                     }
                 }
                 vperm(pm, args[2]);
@@ -1480,7 +1481,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
-        if (path instanceof RubyString) return (RubyString) path;
+        if (path instanceof RubyString) return StringSupport.checkEmbeddedNulls(context.runtime, path);
 
         FileSites sites = sites(context);
         if (sites.respond_to_to_path.respondsTo(context, path, path, true)) path = sites.to_path.call(context, path, path);
@@ -1491,6 +1492,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
     // mri: file_path_convert
     private static RubyString filePathConvert(ThreadContext context, RubyString path) {
+        StringSupport.checkEmbeddedNulls(context.runtime, path.convertToString());
+
         if (!Platform.IS_WINDOWS) {
             Ruby runtime = context.getRuntime();
             EncodingService encodingService = runtime.getEncodingService();

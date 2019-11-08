@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -29,7 +30,10 @@ public class PutConstInstr extends PutInstr implements FixedArityInstr {
 
         assert module != null : "MODULE should always be something";
 
-        module.setConstant(getId(), value);
+        String id = getId();
+
+        IRRuntimeHelpers.putConst(context, self, module, id, value);
+
         return null;
     }
 

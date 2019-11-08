@@ -127,7 +127,7 @@ public class HeredocTerm extends StrTerm {
                 }
 
                 if (lexer.getHeredocIndent() > 0) {
-                    for (long i = 0; p + i < pend && lexer.update_heredoc_indent(lexer.p(p)); i++) {}
+                    for (int i = 0; p + i < pend && lexer.update_heredoc_indent(lexer.p(p+i)); i++) {}
                     lexer.setHeredocLineIndent(0);
                 }
 
@@ -152,7 +152,9 @@ public class HeredocTerm extends StrTerm {
             tok.setEncoding(lexer.getEncoding());
             if (c == '#') {
                 int token = lexer.peekVariableName(RubyParser.tSTRING_DVAR, RubyParser.tSTRING_DBEG);
-                int heredoc_line_indent = lexer.getHeredocLineIndent() ;
+
+                // FIXME: MRI does not have this code...but we fail some cases with it in MRI test_syntax.rb
+                int heredoc_line_indent = lexer.getHeredocLineIndent();
                 if (heredoc_line_indent != -1) {
                     if (lexer.getHeredocIndent() > heredoc_line_indent) {
                         lexer.setHeredocIndent(heredoc_line_indent);
@@ -169,10 +171,7 @@ public class HeredocTerm extends StrTerm {
             do {
                 lexer.pushback(c);
 
-                Encoding enc[] = new Encoding[1];
-                enc[0] = lexer.getEncoding();
-
-                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, enc)) == EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n', lexer.getRubySourceline()).parseStringIntoBuffer(lexer, tok, lexer.getEncoding())) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }

@@ -66,7 +66,6 @@ module FFI
   end
 end
 
-require 'ffi-internal.so' # Load the JRuby implementation class
 require 'ffi/platform'
 require 'ffi/types'
 require 'ffi/library'

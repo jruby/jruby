@@ -45,6 +45,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
@@ -77,6 +78,51 @@ public class RubyTCPSocket extends RubyIPSocket {
         super(runtime, type);
     }
 
+
+    private SocketChannel attemptConnect(ThreadContext context, IRubyObject host, String localHost, int localPort,
+                                String remoteHost, int remotePort) throws IOException {
+        for (InetAddress address: InetAddress.getAllByName(remoteHost)) {
+            // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
+            // (2) Socket.getChannel() seems to return null in some cases
+            SocketChannel channel = SocketChannel.open();
+            Socket socket = channel.socket();
+
+            openFile = null; // Second or later attempts will have non-closeable failed attempt to connect.
+
+            initSocket(newChannelFD(context.runtime, channel));
+
+            // Do this nonblocking so we can be interrupted
+            channel.configureBlocking(false);
+
+            if (localHost != null) {
+                socket.setReuseAddress(true);
+                socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
+            }
+            try {
+                channel.connect(new InetSocketAddress(address, remotePort));
+
+                // wait for connection
+                while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
+                    context.pollThreadEvents();
+                }
+
+                // complete connection
+                while (!channel.finishConnect()) {
+                    context.pollThreadEvents();
+                }
+
+                channel.configureBlocking(true);
+
+                return channel;
+            } catch (ConnectException e) {
+                // fall through and try next valid address for the host.
+            }
+        }
+
+        // did not complete and only path out is n repeated ConnectExceptions
+        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
+    }
+
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -94,68 +140,28 @@ public class RubyTCPSocket extends RubyIPSocket {
         SocketChannel channel = null;
 
         try {
-            // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
-            // (2) Socket.getChannel() seems to return null in some cases
-            channel = SocketChannel.open();
-            Socket socket = channel.socket();
-
-            if (localHost != null) {
-                socket.setReuseAddress(true);
-                socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
-            }
-
             try {
-                // Do this nonblocking so we can be interrupted
-                channel.configureBlocking(false);
-                channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
-
-                // wait for connection
-                while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
-                    context.pollThreadEvents();
-                }
-
-                // complete connection
-                while (!channel.finishConnect()) {
-                    context.pollThreadEvents();
-                }
-
-                // only try to set blocking back if we succeeded to finish connecting
-                channel.configureBlocking(true);
-
-                initSocket(newChannelFD(runtime, channel));
+                channel = attemptConnect(context, host, localHost, localPort, remoteHost, remotePort);
                 success = true;
-            }
-            catch (BindException e) {
+            } catch (BindException e) {
             	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);
-            }
-            catch (NoRouteToHostException e) {
+            } catch (NoRouteToHostException e) {
                 throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
-            }
-            catch (ConnectException e) {
-                throw runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
-            }
-            catch (UnknownHostException e) {
+            } catch (UnknownHostException e) {
                 throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
             }
-        }
-        catch (ClosedChannelException e) {
+        } catch (ClosedChannelException e) {
             throw runtime.newErrnoECONNREFUSEDError();
-        }
-        catch (BindException e) {
+        } catch (BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e, " on: " + localHost + ':' + localPort);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // NOTE: MRI does -1 as SocketError but +65536 as ECONNREFUSED
             // ... which JRuby does currently not blindly follow!
             throw sockerr(runtime, e.getMessage(), e);
-        }
-        finally {
-            if ( ! success && channel != null ) {
-                try { channel.close(); } catch (IOException ioe) {}
-            }
+        } finally {
+            if (!success && channel != null) try { channel.close(); } catch (IOException ioe) {}
         }
 
         return context.nil;

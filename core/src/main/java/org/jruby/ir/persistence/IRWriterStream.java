@@ -12,7 +12,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
@@ -28,6 +27,8 @@ import java.util.Map;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
+
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
 
 // FIXME: Make into a base class at some point to play with different formats
 
@@ -146,8 +147,13 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         encode(encoding.getName());
     }
 
+    @Override
     public void encode(RubySymbol symbol) {
-        encode(symbol.getBytes());
+        if (symbol == null) {
+            encode(NULL_STRING);
+        } else {
+            encode(symbol.getBytes());
+        }
     }
 
     @Override
@@ -276,7 +282,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
             stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
             stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
-            buf.flip();
+            flipBuffer(buf);
             stream.write(buf.array(), buf.position(), buf.limit());
             stream.close();
         } catch (IOException e) {

@@ -424,9 +424,18 @@ public class RubyInstanceConfig {
     private static InputStream findScript(InputStream is) throws IOException {
         StringBuilder buf = new StringBuilder(64);
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String currentLine = br.readLine();
-        while (currentLine != null && !isRubyShebangLine(currentLine)) {
-            currentLine = br.readLine();
+
+        boolean foundRubyShebang = false;
+        String currentLine;
+        while ((currentLine = br.readLine()) != null) {
+            if (isRubyShebangLine(currentLine)) {
+                foundRubyShebang = true;
+                break;
+            }
+        }
+
+        if (!foundRubyShebang) {
+            throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
         }
 
         buf.append(currentLine).append('\n');
@@ -573,6 +582,13 @@ public class RubyInstanceConfig {
      */
     public void setJitMaxSize(int jitMaxSize) {
         this.jitMaxSize = jitMaxSize;
+    }
+
+    /**
+     * @return true if JIT compilation is enabled
+     */
+    public boolean isJitEnabled() {
+        return getJitThreshold() >= 0 && getCompileMode().shouldJIT();
     }
 
     /**
@@ -1645,7 +1661,7 @@ public class RubyInstanceConfig {
     /**
      * The version to use for generated classes. Set to current JVM version by default
      */
-    public static final int JAVA_VERSION = initGlobalJavaVersion();
+    public static final int JAVA_VERSION = initJavaBytecodeVersion();
 
     /**
      * The number of lines at which a method, class, or block body is split into
@@ -1738,13 +1754,6 @@ public class RubyInstanceConfig {
     public static final int FIBER_POOL_TTL = Options.FIBER_THREADPOOL_TTL.load();
 
     /**
-     * Enable use of the native Java version of the 'net/protocol' library.
-     *
-     * Set with the <tt>jruby.native.net.protocol</tt> system property.
-     */
-    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
-
-    /**
      * Enable tracing of method calls.
      *
      * Set with the <tt>jruby.debug.fullTrace</tt> system property.
@@ -1754,6 +1763,8 @@ public class RubyInstanceConfig {
     /**
      * Comma-separated list of methods to exclude from JIT compilation.
      * Specify as "Module", "Module#method" or "method".
+     *
+     * Also supports excluding based on implementation_file.rb syntax.
      *
      * Set with the <tt>jruby.jit.exclude</tt> system property.
      */
@@ -1835,7 +1846,7 @@ public class RubyInstanceConfig {
 
     public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
-    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
+    public static final boolean SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
@@ -1877,7 +1888,7 @@ public class RubyInstanceConfig {
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
 
-    private static int initGlobalJavaVersion() {
+    private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
         switch ( specVersion ) {
             case "1.6" :
@@ -1889,7 +1900,13 @@ public class RubyInstanceConfig {
             case "9" :
                 return Opcodes.V9;
             case "10" :
-                return Opcodes.V9; // TODO: switch when `V10 = 54` added
+                return Opcodes.V10;
+            case "11" :
+                return Opcodes.V11;
+            case "12" :
+                return Opcodes.V12;
+            case "13" :
+                return Opcodes.V13;
         }
     }
 
@@ -2032,4 +2049,14 @@ public class RubyInstanceConfig {
     @Deprecated
     public void setCompatVersion(CompatVersion compatVersion) {
     }
+
+    /**
+     * Enable use of the native Java version of the 'net/protocol' library.
+     *
+     * Set with the <tt>jruby.native.net.protocol</tt> system property.
+     */
+    @Deprecated
+    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
+    @Deprecated
+    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 }

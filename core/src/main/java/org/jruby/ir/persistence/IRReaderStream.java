@@ -36,6 +36,8 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
+import static com.headius.backport9.buffer.Buffers.positionBuffer;
+
 /**
  *
  * @author enebo
@@ -130,7 +132,16 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public RubySymbol decodeSymbol() {
-        return currentScope.getManager().getRuntime().newSymbol(decodeByteList());
+        int strLength = decodeInt();
+
+        if (strLength == NULL_STRING) return null;
+
+        byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
+        buf.get(bytes);
+
+        Encoding encoding = decodeEncoding();
+
+        return currentScope.getManager().getRuntime().newSymbol(new ByteList(bytes, encoding, false));
     }
 
     @Override
@@ -191,7 +202,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
         currentScope = scope;
         vars = new HashMap<>();
-        buf.position(offset);
+        positionBuffer(buf, offset);
 
         int numberOfInstructions = decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
@@ -218,6 +229,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(this);
             case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
+            case AS_STRING: return AsStringInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
             case B_SWITCH: return BSwitchInstr.decode(this);
@@ -246,7 +258,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case CHECK_FOR_LJE: return CheckForLJEInstr.decode(this);
             case CLASS_SUPER: return ClassSuperInstr.decode(this);
             case CLASS_VAR_MODULE: return GetClassVarContainerModuleInstr.decode(this);
-            case CONST_MISSING: return ConstMissingInstr.decode(this);
             case COPY: return CopyInstr.decode(this);
             case DEF_CLASS: return DefineClassInstr.decode(this);
             case DEF_CLASS_METH: return DefineClassMethodInstr.decode(this);
@@ -452,7 +463,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public void seek(int headersOffset) {
-        buf.position(headersOffset);
+        positionBuffer(buf, headersOffset);
     }
 
     public Operand decode(OperandType type) {
@@ -460,7 +471,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         switch (type) {
             case ARRAY: return Array.decode(this);
-            case AS_STRING: return AsString.decode(this);
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
             case COMPLEX: return Complex.decode(this);

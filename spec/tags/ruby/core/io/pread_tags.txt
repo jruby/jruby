@@ -1,6 +1,0 @@
-fails:IO#pread accepts a length, and an offset
-fails:IO#pread accepts a length, an offset, and an output buffer
-fails:IO#pread does not advance the file pointer
-fails:IO#pread raises EOFError if end-of-file is reached
-fails:IO#pread raises IOError when file is not open in read mode
-fails:IO#pread raises IOError when file is closed

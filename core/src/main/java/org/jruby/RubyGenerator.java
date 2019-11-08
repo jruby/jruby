@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Block;
@@ -37,6 +38,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+@JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
     public static void createGeneratorClass(Ruby runtime) {
         RubyClass genc = runtime.defineClassUnder("Generator", runtime.getObject(), new ObjectAllocator() {
@@ -61,7 +63,7 @@ public class RubyGenerator extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        final IRubyObject proc;
+        final RubyProc proc;
 
         if (args.length == 0) {
             proc = RubyProc.newProc(runtime, block, Block.Type.PROC);
@@ -70,7 +72,7 @@ public class RubyGenerator extends RubyObject {
                 throw runtime.newTypeError(args[0], runtime.getProc());
             }
 
-            proc = args[0];
+            proc = (RubyProc) args[0];
 
             if (block.isGiven()) {
                 runtime.getWarnings().warn(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
@@ -91,7 +93,7 @@ public class RubyGenerator extends RubyObject {
 
         checkFrozen();
 
-        this.proc = ((RubyGenerator)other).proc;
+        this.proc = ((RubyGenerator) other).proc;
 
         return this;
     }
@@ -99,8 +101,12 @@ public class RubyGenerator extends RubyObject {
     // generator_each
     @JRubyMethod(rest = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return ((RubyProc) proc).call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args), Block.NULL_BLOCK);
+        return proc.call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args));
     }
 
-    private IRubyObject proc;
+    public RubyProc getProc() {
+        return proc;
+    }
+
+    private RubyProc proc;
 }

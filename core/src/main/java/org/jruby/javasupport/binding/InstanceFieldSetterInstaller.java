@@ -4,7 +4,6 @@ import org.jruby.RubyModule;
 import org.jruby.java.invokers.InstanceFieldSetter;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 /**
 * Created by headius on 2/26/15.
@@ -16,7 +15,7 @@ public class InstanceFieldSetterInstaller extends FieldInstaller {
     }
 
     @Override void install(final RubyModule proxy) {
-        if ( Modifier.isPublic(field.getModifiers()) ) {
+        if (isAccessible()) {
             proxy.addMethod(name, new InstanceFieldSetter(name, proxy, field));
         }
     }

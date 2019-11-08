@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#reject sets #size to nil
-fails:Enumerator::Lazy#reject on a nested Lazy sets #size to nil

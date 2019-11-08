@@ -36,7 +36,7 @@ describe "A block yielded a single" do
       m([1, 2]) { |a=5, b=4, c=3| [a, b, c] }.should == [1, 2, 3]
     end
 
-    it "assgins elements to post arguments" do
+    it "assigns elements to post arguments" do
       m([1, 2]) { |a=5, b, c, d| [a, b, c, d] }.should == [5, 1, 2, nil]
     end
 
@@ -45,29 +45,54 @@ describe "A block yielded a single" do
     end
 
     it "assigns elements to mixed argument types" do
-      result = m([1, 2, 3, {x: 9}]) { |a, b=5, *c, d, e: 2, **k| [a, b, c, d, e, k] }
-      result.should == [1, 2, [], 3, 2, {x: 9}]
+      suppress_keyword_warning do
+        result = m([1, 2, 3, {x: 9}]) { |a, b=5, *c, d, e: 2, **k| [a, b, c, d, e, k] }
+        result.should == [1, 2, [], 3, 2, {x: 9}]
+      end
     end
 
-    it "calls #to_hash on the argument" do
-      obj = mock("coerce block keyword arguments")
-      obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
+    it "assigns symbol keys from a Hash to keyword arguments" do
+      suppress_keyword_warning do
+        result = m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }
+        result.should == [{"a" => 1}, a: 10]
+      end
+    end
 
-      result = m([obj]) { |a=nil, **b| [a, b] }
-      result.should == [{"a" => 1, "b" => 2}, {}]
+    it "assigns symbol keys from a Hash returned by #to_hash to keyword arguments" do
+      suppress_keyword_warning do
+        obj = mock("coerce block keyword arguments")
+        obj.should_receive(:to_hash).and_return({"a" => 1, b: 2})
+
+        result = m([obj]) { |a=nil, **b| [a, b] }
+        result.should == [{"a" => 1}, b: 2]
+      end
+    end
+
+    ruby_version_is ""..."2.7" do
+      it "calls #to_hash on the argument and uses resulting hash as first argument when optional argument and keyword argument accepted" do
+        obj = mock("coerce block keyword arguments")
+        obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
+
+        result = m([obj]) { |a=nil, **b| [a, b] }
+        result.should == [{"a" => 1, "b" => 2}, {}]
+      end
+    end
+
+    ruby_version_is "2.7" do
+      it "calls #to_hash on the argument but ignores result when optional argument and keyword argument accepted" do
+        obj = mock("coerce block keyword arguments")
+        obj.should_receive(:to_hash).and_return({"a" => 1, "b" => 2})
+
+        result = m([obj]) { |a=nil, **b| [a, b] }
+        result.should == [obj, {}]
+      end
     end
 
     describe "when non-symbol keys are in a keyword arguments Hash" do
-      ruby_version_is ""..."2.6" do
-        it "separates non-symbol keys and symbol keys" do
+      it "separates non-symbol keys and symbol keys" do
+        suppress_keyword_warning do
           result = m(["a" => 10, b: 2]) { |a=nil, **b| [a, b] }
           result.should == [{"a" => 10}, {b: 2}]
-        end
-      end
-
-      ruby_version_is "2.6" do
-        it "raises an ArgumentError" do
-          lambda {m(["a" => 1, a: 10]) { |a=nil, **b| [a, b] }}.should raise_error(ArgumentError)
         end
       end
     end
@@ -78,34 +103,40 @@ describe "A block yielded a single" do
     end
 
     it "calls #to_hash on the last element if keyword arguments are present" do
-      obj = mock("destructure block keyword arguments")
-      obj.should_receive(:to_hash).and_return({x: 9})
+      suppress_keyword_warning do
+        obj = mock("destructure block keyword arguments")
+        obj.should_receive(:to_hash).and_return({x: 9})
 
-      result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
-      result.should == [1, [2], 3, {x: 9}]
+        result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
+        result.should == [1, [2], 3, {x: 9}]
+      end
     end
 
     it "assigns the last element to a non-keyword argument if #to_hash returns nil" do
-      obj = mock("destructure block keyword arguments")
-      obj.should_receive(:to_hash).and_return(nil)
+      suppress_keyword_warning do
+        obj = mock("destructure block keyword arguments")
+        obj.should_receive(:to_hash).and_return(nil)
 
-      result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
-      result.should == [1, [2, 3], obj, {}]
+        result = m([1, 2, 3, obj]) { |a, *b, c, **k| [a, b, c, k] }
+        result.should == [1, [2, 3], obj, {}]
+      end
     end
 
     it "calls #to_hash on the last element when there are more arguments than parameters" do
-      x = mock("destructure matching block keyword argument")
-      x.should_receive(:to_hash).and_return({x: 9})
+      suppress_keyword_warning do
+        x = mock("destructure matching block keyword argument")
+        x.should_receive(:to_hash).and_return({x: 9})
 
-      result = m([1, 2, 3, {y: 9}, 4, 5, x]) { |a, b=5, c, **k| [a, b, c, k] }
-      result.should == [1, 2, 3, {x: 9}]
+        result = m([1, 2, 3, {y: 9}, 4, 5, x]) { |a, b=5, c, **k| [a, b, c, k] }
+        result.should == [1, 2, 3, {x: 9}]
+      end
     end
 
     it "raises a TypeError if #to_hash does not return a Hash" do
       obj = mock("destructure block keyword arguments")
       obj.should_receive(:to_hash).and_return(1)
 
-      lambda { m([1, 2, 3, obj]) { |a, *b, c, **k| } }.should raise_error(TypeError)
+      -> { m([1, 2, 3, obj]) { |a, *b, c, **k| } }.should raise_error(TypeError)
     end
 
     it "raises the error raised inside #to_hash" do
@@ -113,7 +144,7 @@ describe "A block yielded a single" do
       error = RuntimeError.new("error while converting to a hash")
       obj.should_receive(:to_hash).and_raise(error)
 
-      lambda { m([1, 2, 3, obj]) { |a, *b, c, **k| } }.should raise_error(error)
+      -> { m([1, 2, 3, obj]) { |a, *b, c, **k| } }.should raise_error(error)
     end
 
     it "does not call #to_ary on the Array" do
@@ -164,7 +195,7 @@ describe "A block yielded a single" do
       obj = mock("destructure block arguments")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { m(obj) { |a, b| } }.should raise_error(TypeError)
+      -> { m(obj) { |a, b| } }.should raise_error(TypeError)
     end
   end
 end
@@ -212,6 +243,12 @@ describe "A block" do
     it "does not raise an exception when values are yielded" do
       @y.s(0) { 1 }.should == 1
     end
+
+    ruby_version_is "2.5" do
+      it "may include a rescue clause" do
+        eval("@y.z do raise ArgumentError; rescue ArgumentError; 7; end").should == 7
+      end
+    end
   end
 
   describe "taking || arguments" do
@@ -221,6 +258,12 @@ describe "A block" do
 
     it "does not raise an exception when values are yielded" do
       @y.s(0) { || 1 }.should == 1
+    end
+
+    ruby_version_is "2.5" do
+      it "may include a rescue clause" do
+        eval('@y.z do || raise ArgumentError; rescue ArgumentError; 7; end').should == 7
+      end
     end
   end
 
@@ -247,10 +290,16 @@ describe "A block" do
     it "does not destructure a single Array value" do
       @y.s([1, 2]) { |a| a }.should == [1, 2]
     end
+
+    ruby_version_is "2.5" do
+      it "may include a rescue clause" do
+        eval('@y.s(1) do |x| raise ArgumentError; rescue ArgumentError; 7; end').should == 7
+      end
+    end
   end
 
   describe "taking |a, b| arguments" do
-    it "assgins nil to the arguments when no values are yielded" do
+    it "assigns nil to the arguments when no values are yielded" do
       @y.z { |a, b| [a, b] }.should == [nil, nil]
     end
 
@@ -309,14 +358,14 @@ describe "A block" do
       obj = mock("block yield to_ary invalid")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { @y.s(obj) { |a, b| } }.should raise_error(TypeError)
+      -> { @y.s(obj) { |a, b| } }.should raise_error(TypeError)
     end
 
     it "raises the original exception if #to_ary raises an exception" do
       obj = mock("block yield to_ary raising an exception")
       obj.should_receive(:to_ary).and_raise(ZeroDivisionError)
 
-      lambda { @y.s(obj) { |a, b| } }.should raise_error(ZeroDivisionError)
+      -> { @y.s(obj) { |a, b| } }.should raise_error(ZeroDivisionError)
     end
 
   end
@@ -373,7 +422,7 @@ describe "A block" do
       obj = mock("block yield to_ary invalid")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { @y.s(obj) { |a, *b| } }.should raise_error(TypeError)
+      -> { @y.s(obj) { |a, *b| } }.should raise_error(TypeError)
     end
   end
 
@@ -454,7 +503,7 @@ describe "A block" do
       @y.z { |a, | a }.should be_nil
     end
 
-    it "assgins the argument a single value yielded" do
+    it "assigns the argument a single value yielded" do
       @y.s(1) { |a, | a }.should == 1
     end
 
@@ -498,7 +547,7 @@ describe "A block" do
       obj = mock("block yield to_ary invalid")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { @y.s(obj) { |a, | } }.should raise_error(TypeError)
+      -> { @y.s(obj) { |a, | } }.should raise_error(TypeError)
     end
   end
 
@@ -540,7 +589,7 @@ describe "A block" do
       obj = mock("block yield to_ary invalid")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { @y.s(obj) { |(a, b)| } }.should raise_error(TypeError)
+      -> { @y.s(obj) { |(a, b)| } }.should raise_error(TypeError)
     end
   end
 
@@ -581,7 +630,7 @@ describe "A block" do
       obj = mock("block yield to_ary invalid")
       obj.should_receive(:to_ary).and_return(1)
 
-      lambda { @y.s(obj) { |(a, b), c| } }.should raise_error(TypeError)
+      -> { @y.s(obj) { |(a, b), c| } }.should raise_error(TypeError)
     end
   end
 
@@ -621,6 +670,12 @@ describe "A block" do
     end
   end
 
+  describe "taking |*a, b:|" do
+    it "merges the hash into the splatted array" do
+      @y.k { |*a, b:| [a, b] }.should == [[], true]
+    end
+  end
+
   describe "arguments with _" do
     it "extracts arguments with _" do
       @y.m([[1, 2, 3], 4]) { |(_, a, _), _| a }.should == 2
@@ -634,9 +689,9 @@ describe "A block" do
 
   describe "taking identically-named arguments" do
     it "raises a SyntaxError for standard arguments" do
-      lambda { eval "lambda { |x,x| }" }.should raise_error(SyntaxError)
-      lambda { eval "->(x,x) {}" }.should raise_error(SyntaxError)
-      lambda { eval "Proc.new { |x,x| }" }.should raise_error(SyntaxError)
+      -> { eval "lambda { |x,x| }" }.should raise_error(SyntaxError)
+      -> { eval "->(x,x) {}" }.should raise_error(SyntaxError)
+      -> { eval "Proc.new { |x,x| }" }.should raise_error(SyntaxError)
     end
 
     it "accepts unnamed arguments" do
@@ -657,27 +712,27 @@ describe "Block-local variables" do
   end
 
   it "can not have the same name as one of the standard parameters" do
-    lambda { eval "[1].each {|foo; foo| }" }.should raise_error(SyntaxError)
-    lambda { eval "[1].each {|foo, bar; glark, bar| }" }.should raise_error(SyntaxError)
+    -> { eval "[1].each {|foo; foo| }" }.should raise_error(SyntaxError)
+    -> { eval "[1].each {|foo, bar; glark, bar| }" }.should raise_error(SyntaxError)
   end
 
   it "can not be prefixed with an asterisk" do
-    lambda { eval "[1].each {|foo; *bar| }" }.should raise_error(SyntaxError)
-    lambda do
+    -> { eval "[1].each {|foo; *bar| }" }.should raise_error(SyntaxError)
+    -> do
       eval "[1].each {|foo, bar; glark, *fnord| }"
     end.should raise_error(SyntaxError)
   end
 
   it "can not be prefixed with an ampersand" do
-    lambda { eval "[1].each {|foo; &bar| }" }.should raise_error(SyntaxError)
-    lambda do
+    -> { eval "[1].each {|foo; &bar| }" }.should raise_error(SyntaxError)
+    -> do
       eval "[1].each {|foo, bar; glark, &fnord| }"
     end.should raise_error(SyntaxError)
   end
 
   it "can not be assigned default values" do
-    lambda { eval "[1].each {|foo; bar=1| }" }.should raise_error(SyntaxError)
-    lambda do
+    -> { eval "[1].each {|foo; bar=1| }" }.should raise_error(SyntaxError)
+    -> do
       eval "[1].each {|foo, bar; glark, fnord=:fnord| }"
     end.should raise_error(SyntaxError)
   end
@@ -688,8 +743,8 @@ describe "Block-local variables" do
   end
 
   it "only allow a single semi-colon in the parameter list" do
-    lambda { eval "[1].each {|foo; bar; glark| }" }.should raise_error(SyntaxError)
-    lambda { eval "[1].each {|; bar; glark| }" }.should raise_error(SyntaxError)
+    -> { eval "[1].each {|foo; bar; glark| }" }.should raise_error(SyntaxError)
+    -> { eval "[1].each {|; bar; glark| }" }.should raise_error(SyntaxError)
   end
 
   it "override shadowed variables from the outer scope" do
@@ -752,8 +807,8 @@ describe "Post-args" do
   end
 
   it "are required" do
-    lambda {
-      lambda do |*a, b|
+    -> {
+      -> *a, b do
         [a, b]
       end.call
     }.should raise_error(ArgumentError)
@@ -821,20 +876,38 @@ describe "Post-args" do
     end
 
     describe "with a circular argument reference" do
-      it "shadows an existing local with the same name as the argument" do
-        a = 1
-        -> {
-          @proc = eval "proc { |a=a| a }"
-        }.should complain(/circular argument reference/)
-        @proc.call.should == nil
+      ruby_version_is ''...'2.7' do
+        it "warns and uses a nil value when there is an existing local variable with same name" do
+          a = 1
+          -> {
+            @proc = eval "proc { |a=a| a }"
+          }.should complain(/circular argument reference/)
+          @proc.call.should == nil
+        end
+
+        it "warns and uses a nil value when there is an existing method with same name" do
+          def a; 1; end
+          -> {
+            @proc = eval "proc { |a=a| a }"
+          }.should complain(/circular argument reference/)
+          @proc.call.should == nil
+        end
       end
 
-      it "shadows an existing method with the same name as the argument" do
-        def a; 1; end
-        -> {
-          @proc = eval "proc { |a=a| a }"
-        }.should complain(/circular argument reference/)
-        @proc.call.should == nil
+      ruby_version_is '2.7' do
+        it "raises a SyntaxError if using an existing local with the same name as the argument" do
+          a = 1
+          -> {
+            @proc = eval "proc { |a=a| a }"
+          }.should raise_error(SyntaxError)
+        end
+
+        it "raises a SyntaxError if there is an existing method with the same name as the argument" do
+          def a; 1; end
+          -> {
+            @proc = eval "proc { |a=a| a }"
+          }.should raise_error(SyntaxError)
+        end
       end
 
       it "calls an existing method with the same name as the argument if explicitly using ()" do

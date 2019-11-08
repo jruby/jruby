@@ -117,8 +117,7 @@ public class InterpreterEngine {
         Object    exception = null;
         boolean   acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        // Blocks with explicit call protocol shouldn't do this before args are prepared
-        if (acceptsKeywordArgument && (block == null || !interpreterContext.hasExplicitCallProtocol())) {
+        if (acceptsKeywordArgument) {
             args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
         }
 
@@ -384,8 +383,12 @@ public class InterpreterEngine {
                 context.postYieldNoScope((Frame) retrieveOp(((PopBlockFrameInstr)instr).getFrame(), context, self, currDynScope, currScope, temp));
                 break;
             case PUSH_METHOD_FRAME:
-                context.preMethodFrameOnly(implClass, name, self, blockArg);
-                context.setCurrentVisibility(((PushMethodFrameInstr) instr).getVisibility());
+                context.preMethodFrameOnly(
+                        implClass,
+                        name,
+                        self,
+                        ((PushMethodFrameInstr) instr).getVisibility(),
+                        blockArg);
                 break;
             case PUSH_BACKREF_FRAME:
                 context.preBackrefMethod();
@@ -412,17 +415,9 @@ public class InterpreterEngine {
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
                 break;
-            case TRACE: {
-                if (context.runtime.hasEventHooks()) {
-                    TraceInstr trace = (TraceInstr) instr;
-                    // FIXME: Try and statically generate END linenumber instead of hacking it.
-                    int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
-
-                    context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                            trace.getFilename(), linenumber);
-                }
+            case TRACE:
+                instr.interpret(context, currScope, currDynScope, self, temp);
                 break;
-            }
         }
     }
 
@@ -447,7 +442,7 @@ public class InterpreterEngine {
             case NONLOCAL_RETURN: {
                 NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
                 IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
-                return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, block, rv);
+                return IRRuntimeHelpers.initiateNonLocalReturn(currDynScope, block, rv);
             }
             case RETURN_OR_RETHROW_SAVED_EXC: {
                 IRubyObject retVal = (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);

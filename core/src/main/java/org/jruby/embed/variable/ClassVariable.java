@@ -163,7 +163,7 @@ public class ClassVariable extends AbstractVariable {
     @Override
     public void inject() {
         RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.setClassVar(name, irubyObject);
+        rubyClass.setClassVar(name, rubyObject);
     }
 
     /**

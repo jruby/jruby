@@ -7,7 +7,7 @@ describe "A lambda literal -> () { }" do
   it "returns a Proc object when used in a BasicObject method" do
     klass = Class.new(BasicObject) do
       def create_lambda
-        -> () { }
+        -> { }
       end
     end
 
@@ -15,11 +15,21 @@ describe "A lambda literal -> () { }" do
   end
 
   it "does not execute the block" do
-    ->() { fail }.should be_an_instance_of(Proc)
+    -> { fail }.should be_an_instance_of(Proc)
   end
 
   it "returns a lambda" do
-    -> () { }.lambda?.should be_true
+    -> { }.lambda?.should be_true
+  end
+
+  ruby_version_is "2.6" do
+    it "may include a rescue clause" do
+      eval('-> do raise ArgumentError; rescue ArgumentError; 7; end').should be_an_instance_of(Proc)
+    end
+
+    it "may include a ensure clause" do
+      eval('-> do 1; ensure; 2; end').should be_an_instance_of(Proc)
+    end
   end
 
   it "has its own scope for local variables" do
@@ -101,7 +111,7 @@ describe "A lambda literal -> () { }" do
         @a = -> (a:) { a }
       ruby
 
-      lambda { @a.() }.should raise_error(ArgumentError)
+      -> { @a.() }.should raise_error(ArgumentError)
       @a.(a: 1).should == 1
     end
 
@@ -119,7 +129,7 @@ describe "A lambda literal -> () { }" do
 
       @a.().should be_nil
       @a.(a: 1, b: 2).should be_nil
-      lambda { @a.(1) }.should raise_error(ArgumentError)
+      -> { @a.(1) }.should raise_error(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -143,8 +153,8 @@ describe "A lambda literal -> () { }" do
       ruby
 
       @a.(1, 2).should == [1, 2]
-      lambda { @a.() }.should raise_error(ArgumentError)
-      lambda { @a.(1) }.should raise_error(ArgumentError)
+      -> { @a.() }.should raise_error(ArgumentError)
+      -> { @a.(1) }.should raise_error(ArgumentError)
     end
 
     evaluate <<-ruby do
@@ -176,9 +186,11 @@ describe "A lambda literal -> () { }" do
       @a.().should == {}
       @a.(1, 2, 3, a: 4, b: 5).should == {a: 4, b: 5}
 
-      h = mock("keyword splat")
-      h.should_receive(:to_hash).and_return({a: 1})
-      @a.(h).should == {a: 1}
+      suppress_keyword_warning do
+        h = mock("keyword splat")
+        h.should_receive(:to_hash).and_return({a: 1})
+        @a.(h).should == {a: 1}
+      end
     end
 
     evaluate <<-ruby do
@@ -255,25 +267,43 @@ describe "A lambda literal -> () { }" do
     end
 
     describe "with circular optional argument reference" do
-      it "shadows an existing local with the same name as the argument" do
-        a = 1
-        -> {
-          @proc = eval "-> (a=a) { a }"
-        }.should complain(/circular argument reference/)
-        @proc.call.should == nil
+      ruby_version_is ''...'2.7' do
+        it "warns and uses a nil value when there is an existing local variable with same name" do
+          a = 1
+          -> {
+            @proc = eval "-> (a=a) { a }"
+          }.should complain(/circular argument reference/)
+          @proc.call.should == nil
+        end
+
+        it "warns and uses a nil value when there is an existing method with same name" do
+          def a; 1; end
+          -> {
+            @proc = eval "-> (a=a) { a }"
+          }.should complain(/circular argument reference/)
+          @proc.call.should == nil
+        end
       end
 
-      it "shadows an existing method with the same name as the argument" do
-        def a; 1; end
-        -> {
-          @proc = eval "-> (a=a) { a }"
-        }.should complain(/circular argument reference/)
-        @proc.call.should == nil
+      ruby_version_is '2.7' do
+        it "raises a SyntaxError if using an existing local with the same name as the argument" do
+          a = 1
+          -> {
+            @proc = eval "-> (a=a) { a }"
+          }.should raise_error(SyntaxError)
+        end
+
+        it "raises a SyntaxError if there is an existing method with the same name as the argument" do
+          def a; 1; end
+          -> {
+            @proc = eval "-> (a=a) { a }"
+          }.should raise_error(SyntaxError)
+        end
       end
 
       it "calls an existing method with the same name as the argument if explicitly using ()" do
         def a; 1; end
-        -> (a=a()) { a }.call.should == 1
+        -> a=a() { a }.call.should == 1
       end
     end
   end
@@ -305,19 +335,37 @@ describe "A lambda expression 'lambda { ... }'" do
     lambda { lambda }.should raise_error(ArgumentError)
   end
 
+  ruby_version_is "2.5" do
+    it "may include a rescue clause" do
+      eval('lambda do raise ArgumentError; rescue ArgumentError; 7; end').should be_an_instance_of(Proc)
+    end
+  end
+
+
   context "with an implicit block" do
     before do
       def meth; lambda; end
     end
 
-    it "can be created" do
-      implicit_lambda = nil
-      -> {
-        implicit_lambda = meth { 1 }
-      }.should complain(/tried to create Proc object without a block/)
+    ruby_version_is ""..."2.7" do
+      it "can be created" do
+        implicit_lambda = nil
+        -> {
+          implicit_lambda = meth { 1 }
+        }.should complain(/tried to create Proc object without a block/)
 
-      implicit_lambda.lambda?.should be_true
-      implicit_lambda.call.should == 1
+        implicit_lambda.lambda?.should be_true
+        implicit_lambda.call.should == 1
+      end
+    end
+
+    ruby_version_is "2.7" do
+      it "raises ArgumentError" do
+        implicit_lambda = nil
+        -> {
+          meth { 1 }
+        }.should raise_error(ArgumentError, /tried to create Proc object without a block/)
+      end
     end
   end
 
@@ -492,9 +540,11 @@ describe "A lambda expression 'lambda { ... }'" do
       @a.().should == {}
       @a.(1, 2, 3, a: 4, b: 5).should == {a: 4, b: 5}
 
-      h = mock("keyword splat")
-      h.should_receive(:to_hash).and_return({a: 1})
-      @a.(h).should == {a: 1}
+      suppress_keyword_warning do
+        h = mock("keyword splat")
+        h.should_receive(:to_hash).and_return({a: 1})
+        @a.(h).should == {a: 1}
+      end
     end
 
     evaluate <<-ruby do

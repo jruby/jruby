@@ -29,6 +29,7 @@
 package org.jruby.ext.socket;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -48,6 +49,7 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.INAddr;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.NameInfo;
@@ -70,6 +72,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -271,19 +274,19 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
         RubyArray list = RubyArray.newArray(context.runtime);
+        RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
-            RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
             while (en.hasMoreElements()) {
-                NetworkInterface ni = en.nextElement();
+                NetworkInterface iface = en.nextElement();
                 // create interface link layer ifaddr
-                list.append(new Ifaddr(context.runtime, Ifaddr, ni));
-                for ( InterfaceAddress ia :  ni.getInterfaceAddresses() ) {
-                    list.append(new Ifaddr(context.runtime, Ifaddr, ni, ia));
+                list.append(new Ifaddr(context.runtime, Ifaddr, iface));
+                for ( InterfaceAddress iaddr : iface.getInterfaceAddresses() ) {
+                    list.append(new Ifaddr(context.runtime, Ifaddr, iface, iaddr));
                 }
             }
         }
-        catch (Exception ex) {
+        catch (SocketException|RuntimeException ex) {
             if ( ex instanceof RaiseException ) throw (RaiseException) ex;
             throw SocketUtils.sockerr_with_trace(context.runtime, "getifaddrs: " + ex.toString(), ex.getStackTrace());
         }
@@ -572,7 +575,10 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "connect(2)", addr);
+            // Subclasses of SocketException all indicate failure to connect, which leaves the channel closed.
+            // At this point the socket channel is no longer usable, so we clean up.
+            getOpenFile().cleanup(runtime, true);
+            throw buildSocketException(runtime, e, "connect(2)", addr);
         }
         catch (IOException e) {
             throw sockerr(runtime, "connect(2): name or service not known", e);
@@ -609,7 +615,7 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
         }
         catch (SocketException e) {
-            handleSocketException(runtime, e, "bind(2)", iaddr); // throws
+            throw buildSocketException(runtime, e, "bind(2)", iaddr); // throws
         }
         catch (IOException e) {
             throw sockerr(runtime, "bind(2): name or service not known", e);
@@ -619,36 +625,31 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    static void handleSocketException(final Ruby runtime, final SocketException ex,
+    static RaiseException buildSocketException(final Ruby runtime, final SocketException ex,
         final String caller, final SocketAddress addr) {
 
-        final String message = ex.getMessage();
-        if ( message != null ) {
-            switch ( message ) {
-                case "permission denied" :
-                case "Permission denied" :
-                    if ( addr == null ) {
-                        throw runtime.newErrnoEACCESError(caller + " - " + message);
-                    }
-                    throw runtime.newErrnoEACCESError("Address already in use - " + caller + " for " + formatAddress(addr));
-                case "Address already in use" :
-                    throw runtime.newErrnoEADDRINUSEError(caller + " for " + formatAddress(addr));
-                case "Protocol family unavailable" :
-                    throw runtime.newErrnoEADDRNOTAVAILError(caller + " for " + formatAddress(addr));
-            }
+        final Errno errno = Helpers.errnoFromException(ex);
+        final String callerWithAddr = caller + " for " + formatAddress(addr);
 
+        if (errno != null) {
+            return runtime.newErrnoFromErrno(errno, callerWithAddr);
+        }
+
+        final String message = ex.getMessage();
+
+        if (message != null) {
             // This is ugly, but what can we do, Java provides the same exception type
             // for different situations, so we differentiate the errors
             // based on the exception's message.
             if (ALREADY_BOUND_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEINVALError(caller + " - " + message);
+                return runtime.newErrnoEINVALError(callerWithAddr);
             }
             if (ADDR_NOT_AVAIL_PATTERN.matcher(message).find()) {
-                throw runtime.newErrnoEADDRNOTAVAILError(caller + " - " + message);
+                return runtime.newErrnoEADDRNOTAVAILError(callerWithAddr);
             }
         }
 
-        throw runtime.newErrnoEADDRINUSEError(caller + " - " + message);
+        return runtime.newIOError(callerWithAddr);
     }
 
     private static CharSequence formatAddress(final SocketAddress addr) {

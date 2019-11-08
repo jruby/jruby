@@ -1,0 +1,2 @@
+fails:Hash#hash returns a value in which element values do not cancel each other out
+fails:Hash#hash returns a value in which element keys and values do not cancel each other out

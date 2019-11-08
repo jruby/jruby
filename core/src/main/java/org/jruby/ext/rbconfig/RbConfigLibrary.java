@@ -42,13 +42,11 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyModule;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -60,6 +58,7 @@ public class RbConfigLibrary implements Library {
     private static final String RUBY_WIN32 = "mswin32";
     private static final String RUBY_SOLARIS = "solaris";
     private static final String RUBY_FREEBSD = "freebsd";
+    private static final String RUBY_DRAGONFLYBSD = "dragonflybsd";
     private static final String RUBY_AIX = "aix";
 
     private static String normalizedHome;
@@ -85,6 +84,7 @@ public class RbConfigLibrary implements Library {
         RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("SunOS", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
+        RUBY_OS_NAMES.put("DragonFlyBSD", RUBY_DRAGONFLYBSD);
         RUBY_OS_NAMES.put("AIX", RUBY_AIX);
     }
 
@@ -216,22 +216,32 @@ public class RbConfigLibrary implements Library {
 
         final RubyModule rbConfig = runtime.defineModule("RbConfig");
 
-        rbConfig.defineAnnotatedMethods(RbConfigLibrary.class);
+        normalizedHome = getNormalizedHome(runtime);
 
+        // Ruby installed directory.
+        rbConfig.setConstant("TOPDIR", RubyString.newString(runtime, normalizedHome));
+        RubyString destDir = RubyString.newEmptyString(runtime);
+        // DESTDIR on make install.
+        rbConfig.setConstant("DESTDIR", destDir);
+
+        // The hash configurations stored.
         final RubyHash CONFIG = new RubyHash(runtime, 48);
+
+        CONFIG.fastASetCheckString(runtime, runtime.newString("DESTDIR"), destDir);
 
         String[] versionParts;
         versionParts = Constants.RUBY_VERSION.split("\\.");
 
-        setConfig(context, CONFIG, "MAJOR", versionParts[0]);
-        setConfig(context, CONFIG, "MINOR", versionParts[1]);
-        setConfig(context, CONFIG, "TEENY", versionParts[2]);
-        setConfig(context, CONFIG, "ruby_version", versionParts[0] + '.' + versionParts[1] + ".0");
+        String major = versionParts[0];
+        String minor = versionParts[1];
+        String teeny = versionParts[2];
+        setConfig(context, CONFIG, "MAJOR", major);
+        setConfig(context, CONFIG, "MINOR", minor);
+        setConfig(context, CONFIG, "TEENY", teeny);
+        setConfig(context, CONFIG, "ruby_version", major + '.' + minor + ".0");
         // Rubygems is too specific on host cpu so until we have real need lets default to universal
         //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
         setConfig(context, CONFIG, "arch", "universal-java" + System.getProperty("java.specification.version"));
-
-        normalizedHome = getNormalizedHome(runtime);
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
@@ -419,13 +429,12 @@ public class RbConfigLibrary implements Library {
             setConfig(context, mkmfHash, "EXEEXT", ".exe");
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
-            cflags = " -fPIC -DTARGET_RT_MAC_CFM=0 " + cflags;
+            cflags = " -DTARGET_RT_MAC_CFM=0 " + cflags;
             archflags = " -arch " + getArchitecture();
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(context, mkmfHash, "DLEXT", "bundle");
 	        setConfig(context, mkmfHash, "EXEEXT", "");
         } else {
-            cflags = " -fPIC " + cflags;
             setConfig(context, mkmfHash, "DLEXT", "so");
 	        setConfig(context, mkmfHash, "EXEEXT", "");
         }
@@ -434,6 +443,7 @@ public class RbConfigLibrary implements Library {
         String objext = "o";
 
         setConfig(context, mkmfHash, "configure_args", "");
+        setConfig(context, mkmfHash, "CCDLFLAGS", "-fPIC");
         setConfig(context, mkmfHash, "CFLAGS", cflags);
         setConfig(context, mkmfHash, "CPPFLAGS", cppflags);
         setConfig(context, mkmfHash, "CXXFLAGS", cxxflags);
@@ -461,6 +471,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "CPP", cpp);
         setConfig(context, mkmfHash, "CXX", cxx);
         setConfig(context, mkmfHash, "OUTFLAG", "-o ");
+        setConfig(context, mkmfHash, "COUTFLAG", "-o ");
         setConfig(context, mkmfHash, "COMMON_HEADERS", "ruby.h");
         setConfig(context, mkmfHash, "PATH_SEPARATOR", ":");
         setConfig(context, mkmfHash, "INSTALL", "install -c ");
@@ -486,18 +497,6 @@ public class RbConfigLibrary implements Library {
     // TODO: note lack of command.com support for Win 9x...
     public static String jrubyShell() {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
-    }
-
-    @JRubyMethod(name = "ruby", meta = true)
-    public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");
-
-        IRubyObject bindir            = configHash.op_aref(context, runtime.newString("bindir"));
-        IRubyObject ruby_install_name = configHash.op_aref(context, runtime.newString("ruby_install_name"));
-        IRubyObject exeext            = configHash.op_aref(context, runtime.newString("EXEEXT"));
-
-        return Helpers.invoke(context, runtime.getClass("File"), "join", bindir, ruby_install_name.callMethod(context, "+", exeext));
     }
 
     private static String getRubyEnv(RubyHash envHash, String var, String default_value) {

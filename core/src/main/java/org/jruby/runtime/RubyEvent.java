@@ -6,30 +6,36 @@
  */
 package org.jruby.runtime;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public enum RubyEvent {
-    LINE     ("line", 1),
-    CLASS    ("class", 1),
-    END      ("end", 1),
-    CALL     ("call", 1),
-    RETURN   ("return", 1),
-    C_CALL   ("c-call", 1),
-    C_RETURN ("c-return", 1),
-    B_CALL   ("b-call", 1),
-    B_RETURN ("b-return", 1),
-    THREAD_BEGIN   ("thread-begin", 1),
-    THREAD_END ("thread-end", 1),
-    RAISE    ("raise", 1),
-    COVERAGE ("coverage", 1),
+    LINE     ("line"),
+    CLASS    ("class", false),
+    END      ("end", false),
+    CALL     ("call"),
+    RETURN   ("return"),
+    C_CALL   ("c_call"),
+    C_RETURN ("c_return"),
+    B_CALL   ("b_call"),
+    B_RETURN ("b_return"),
+    THREAD_BEGIN   ("thread_begin"),
+    THREAD_END ("thread_end"),
+    RAISE    ("raise"),
+    COVERAGE ("coverage"),
     // A_CALL is CALL + B_CALL + C_CALL
-    A_CALL   ("a-call", 1),
+    A_CALL   ("a_call"),
     // A_RETURN is RETURN + B_RETURN + C_RETURN
-    A_RETURN ("a-return", 1);
+    A_RETURN ("a_return");
+
+    public static Set<RubyEvent> ALL_EVENTS = Collections.synchronizedSet(EnumSet.allOf(RubyEvent.class));
+    public static EnumSet ALL_EVENTS_ENUMSET = EnumSet.copyOf(RubyEvent.ALL_EVENTS);
 
     private final String event_name;
-    private final int line_number_offset;
+    private final boolean requiresDebug;
 
     private static final Map<String, RubyEvent> fromName = new HashMap<>();
     static {
@@ -38,13 +44,18 @@ public enum RubyEvent {
         }
     }
 
-    RubyEvent(String event_name, int line_number_offset){
-        this.event_name = event_name;
-        this.line_number_offset = line_number_offset;
+    RubyEvent(String event_name){
+        this(event_name, true);
     }
-	
+
+    RubyEvent(String event_name, boolean requiresDebug){
+        this.event_name = event_name;
+        this.requiresDebug = requiresDebug;
+    }
+
+    @Deprecated
     public int getLineNumberOffset(){
-        return line_number_offset;
+        return 0;
     }
 	
     public String getName(){
@@ -57,6 +68,10 @@ public enum RubyEvent {
 
     public static RubyEvent fromName(String name) {
         return fromName.get(name);
+    }
+
+    public boolean requiresDebug() {
+        return requiresDebug;
     }
 }
 

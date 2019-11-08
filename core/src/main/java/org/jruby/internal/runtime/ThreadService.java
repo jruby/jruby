@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 
 /**
- * ThreadService maintains lists ofall the JRuby-specific thread data structures
+ * ThreadService maintains references to all JRuby-specific thread data structures
  * needed for Ruby's threading API and for JRuby's execution. The main
  * structures are:
  *
@@ -66,7 +66,7 @@ import org.jruby.runtime.ThreadContext;
  * with these structures are:
  *
  * <ul>
- * <li>ThreadService has a hard reference to a ThreadLocal, which holds a soft reference
+ * <li>ThreadService is itself a ThreadLocal, which holds a soft reference
  * to a ThreadContext. So the thread's locals softly reference ThreadContext.
  * We use a soft reference to keep ThreadContext instances from going away too
  * quickly when a Java thread leaves Ruby space completely, which would otherwise
@@ -106,22 +106,13 @@ import org.jruby.runtime.ThreadContext;
  * releasing the hard reference to the Thread itself.</li>
  * <ul>
  */
-public class ThreadService {
+public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     private final Ruby runtime;
     /**
      * A hard reference to the "main" context, so we always have one waiting for
      * "main" thread execution.
      */
     private ThreadContext mainContext;
-
-    /**
-     * A thread-local soft reference to the current thread's ThreadContext. We
-     * use a soft reference so that the ThreadContext is still collectible but
-     * will not immediately disappear once dereferenced, to avoid churning
-     * through ThreadContext instances every time a Java thread enters and exits
-     * Ruby space.
-     */
-    private ThreadLocal<SoftReference<ThreadContext>> localContext;
 
     /**
      * The Java thread group into which we register all Ruby threads. This is
@@ -144,7 +135,6 @@ public class ThreadService {
 
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
-        this.localContext = new ThreadLocal<SoftReference<ThreadContext>>();
 
         try {
             this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
@@ -155,15 +145,7 @@ public class ThreadService {
         this.rubyThreadMap = Collections.synchronizedMap(new WeakHashMap<Object, RubyThread>());
     }
 
-    public void disposeCurrentThread() {
-        localContext.set(null);
-        rubyThreadMap.remove(Thread.currentThread());
-    }
-
     public void teardown() {
-        // clear all thread-local context references
-        localContext = new ThreadLocal<SoftReference<ThreadContext>>();
-
         // clear main context reference
         mainContext = null;
 
@@ -175,7 +157,7 @@ public class ThreadService {
         this.mainContext = ThreadContext.newContext(runtime);
 
         // Must be called from main thread (it is currently, but this bothers me)
-        localContext.set(new SoftReference<ThreadContext>(mainContext));
+        set(new SoftReference<>(mainContext));
     }
 
     /**
@@ -202,33 +184,49 @@ public class ThreadService {
      * collected.
      */
     public final ThreadContext getCurrentContext() {
-        SoftReference<ThreadContext> ref;
-        ThreadContext context = null;
+        return getCurrentContext(this);
+    }
 
-        while (context == null) {
-            // loop until a context is available, to clean up softrefs that might have been collected
-            if ((ref = localContext.get()) == null) {
-                ref = adoptCurrentThread();
-                context = ref.get();
-            } else {
-                context = ref.get();
-            }
+    public static ThreadContext getCurrentContext(ThreadService service) {
+        ThreadContext context;
 
-            // context is null, wipe out the SoftReference (this could be done with a reference queue)
-            if (context == null) {
-                localContext.set(null);
-            }
-        }
+        // keep trying until we have a context
+        context = adoptLoop(service);
+
+        if (context == null) return getCurrentContext(service);
 
         return context;
     }
 
-    private SoftReference<ThreadContext> adoptCurrentThread() {
-        Thread current = Thread.currentThread();
+    private static ThreadContext adoptLoop(ThreadService service) {
+        SoftReference<ThreadContext> ref = service.get();
+        if (ref == null) {
+            return contextFromAdopt(service); // registerNewThread will localContext.set(...)
+        } else {
+            ThreadContext context;
+            if ((context = ref.get()) == null) {
+                // context is null, wipe out the SoftReference (this could be done with a reference queue)
+                service.remove();
+            }
+            return context;
+        }
+    }
 
-        RubyThread.adopt(runtime.getThread(), current);
+    private static ThreadContext contextFromAdopt(ThreadService service) {
+        return service.adoptCurrentThread().getContext();
+    }
 
-        return localContext.get();
+    private RubyThread adoptCurrentThread() {
+        return RubyThread.adopt(runtime, this, Thread.currentThread());
+    }
+
+    public ThreadContext registerNewThread(RubyThread thread) {
+        assert thread.getContext() == null;
+        ThreadContext context = ThreadContext.newContext(runtime);
+        context.setThread(thread);
+        ThreadFiber.initRootFiber(context, thread);
+        set(new SoftReference<>(context));
+        return context;
     }
 
     public RubyThread getMainThread() {
@@ -240,11 +238,11 @@ public class ThreadService {
         rubyThreadMap.put(thread, rubyThread);
     }
 
-    public synchronized RubyThread[] getActiveRubyThreads() {
+    public RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
-
+        ArrayList<RubyThread> rtList;
         synchronized(rubyThreadMap) {
-            List<RubyThread> rtList = new ArrayList<>(rubyThreadMap.size());
+            rtList = new ArrayList<>(rubyThreadMap.size());
 
             for (Map.Entry<Object, RubyThread> entry : rubyThreadMap.entrySet()) {
                 Object key = entry.getKey();
@@ -264,27 +262,40 @@ public class ThreadService {
 
                 rtList.add(entry.getValue());
             }
-
-            return rtList.toArray(new RubyThread[rtList.size()]);
         }
+        return rtList.toArray(new RubyThread[rtList.size()]);
     }
 
-    public synchronized ThreadContext registerNewThread(RubyThread thread) {
-        ThreadContext context = ThreadContext.newContext(runtime);
-        localContext.set(new SoftReference<ThreadContext>(context));
-        context.setThread(thread);
-        ThreadFiber.initRootFiber(context); // may be overwritten by fiber
-        return context;
+    public void associateThread(Thread thread, RubyThread rubyThread) {
+        rubyThreadMap.put(thread, rubyThread); // synchronized
     }
 
-    public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
-        rubyThreadMap.put(threadOrFuture, rubyThread);
+    public void unregisterThread(RubyThread thread) {
+        // NOTE: previously assumed thread.getNativeThread() == Thread.currentThread()
+        unregisterThreadImpl(thread.getContext(), thread.getNativeThread());
     }
 
-    public synchronized void unregisterThread(RubyThread thread) {
-        rubyThreadMap.remove(Thread.currentThread());
-        getCurrentContext().setThread(null);
-        localContext.set(null);
+    public void unregisterCurrentThread(ThreadContext context) {
+        unregisterThreadImpl(context, Thread.currentThread());
+    }
+
+    private void unregisterThreadImpl(ThreadContext context, Thread nativeThread) {
+        rubyThreadMap.remove(nativeThread); // synchronized
+
+        if (context != null) {
+            RubyThread thread = context.getThread();
+            context.setThread(null);
+            if (thread != null) thread.clearContext(); // help GC - clear context-ref
+        }
+
+        SoftReference<ThreadContext> ref = get();
+        if (ref != null) ref.clear(); // help GC
+        remove();
+    }
+
+    @Deprecated // use unregisterCurrentThread
+    public void disposeCurrentThread() {
+        unregisterCurrentThread(getCurrentContext());
     }
 
     public long incrementAndGetThreadCount() {
@@ -317,7 +328,7 @@ public class ThreadService {
 
     @Deprecated
     public final void setCurrentContext(ThreadContext context) {
-        localContext.set(new SoftReference<ThreadContext>(context));
+        set(new SoftReference<ThreadContext>(context));
     }
 
     @Deprecated

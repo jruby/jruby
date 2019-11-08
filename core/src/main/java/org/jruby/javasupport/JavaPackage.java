@@ -119,7 +119,7 @@ public class JavaPackage extends RubyModule {
         return context.runtime.newBoolean(obj == this || isInstance(obj));
     }
 
-    @JRubyMethod(name = "const_missing", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "const_missing", required = 1)
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
         return relativeJavaClassOrPackage(context, name, false);
     }
@@ -246,13 +246,13 @@ public class JavaPackage extends RubyModule {
         return context.runtime.newBoolean(BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
     }
 
-    @JRubyMethod(name = "method_missing", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_missing")
     public IRubyObject method_missing(ThreadContext context, final IRubyObject name) {
         // NOTE: getProxyOrPackageUnderPackage binds the (cached) method for us
         return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), true);
     }
 
-    @JRubyMethod(name = "method_missing", rest = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "method_missing", rest = true)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject[] args) {
         if (args.length > 1) {
             throw packageMethodArgumentMismatch(context.runtime, this, args[0].toString(), args.length - 1);

@@ -32,15 +32,14 @@ import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
@@ -238,6 +237,16 @@ public abstract class JavaLang {
             return msg == null ? RubyString.newEmptyString(context.runtime) : RubyString.newString(context.runtime, msg);
         }
 
+        @JRubyMethod
+        public static IRubyObject full_message(final ThreadContext context, final IRubyObject self) {
+            return full_message(context, self, null);
+        }
+
+        @JRubyMethod
+        public static IRubyObject full_message(final ThreadContext context, final IRubyObject self, final IRubyObject opts) {
+            return RubyString.newString(context.runtime, TraceType.printFullMessage(context, self, opts));
+        }
+
         @JRubyMethod // Ruby exception to_s is the same as message
         public static IRubyObject to_s(final ThreadContext context, final IRubyObject self) {
             return message(context, self);
@@ -351,9 +360,6 @@ public abstract class JavaLang {
             if (val instanceof java.math.BigInteger) { // NOTE: should be moved into its own?
                 return RubyBignum.newBignum(context.runtime, (java.math.BigInteger) val);
             }
-            if (val instanceof java.math.BigDecimal) { // NOTE: should be moved into its own?
-                return RubyBignum.newBignum(context.runtime, ((java.math.BigDecimal) val).toBigInteger());
-            }
             return context.runtime.newFixnum(val.longValue());
         }
 
@@ -386,17 +392,7 @@ public abstract class JavaLang {
 
             // NOTE: a basic stub that always coverts Java numbers to Ruby ones (for simplicity)
             // gist being this is not expected to be used heavily, if so should get special care
-            final IRubyObject value;
-            if (val instanceof java.math.BigDecimal) {
-                final RubyClass klass = context.runtime.getClass("BigDecimal");
-                if (klass == null) { // user should require 'bigdecimal'
-                    throw context.runtime.newNameError("uninitialized constant BigDecimal", "BigDecimal");
-                }
-                value = new RubyBigDecimal(context.runtime, klass, (java.math.BigDecimal) val);
-            }
-            else {
-                value = convertJavaToUsableRubyObject(context.runtime, val);
-            }
+            final IRubyObject value = convertJavaToUsableRubyObject(context.runtime, val);
             return context.runtime.newArray(type, value);
         }
 

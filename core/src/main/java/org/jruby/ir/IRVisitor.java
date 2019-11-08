@@ -31,8 +31,9 @@ public abstract class IRVisitor {
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
     public void ArgScopeDepthInstr(ArgScopeDepthInstr instr) { error(instr); }
-    public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void ArrayDerefInstr(ArrayDerefInstr arrayderefinstr) { error(arrayderefinstr); }
+    public void AsStringInstr(AsStringInstr asstring) { error(asstring); }
+    public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
     public void BNEInstr(BNEInstr bneinstr) { error(bneinstr); }
@@ -52,7 +53,6 @@ public abstract class IRVisitor {
     public void CheckArityInstr(CheckArityInstr checkarityinstr) { error(checkarityinstr); }
     public void CheckForLJEInstr(CheckForLJEInstr checkforljeinstr) { error(checkforljeinstr); }
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) { error(classsuperinstr); }
-    public void ConstMissingInstr(ConstMissingInstr constmissinginstr) { error(constmissinginstr); }
     public void CopyInstr(CopyInstr copyinstr) { error(copyinstr); }
     public void DefineClassInstr(DefineClassInstr defineclassinstr) { error(defineclassinstr); }
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) { error(defineclassmethodinstr); }
@@ -160,7 +160,6 @@ public abstract class IRVisitor {
 
     // operands
     public void Array(Array array) { error(array); }
-    public void AsString(AsString asstring) { error(asstring); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }

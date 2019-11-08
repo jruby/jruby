@@ -37,13 +37,13 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.RubyEncoding;
 
 /**
  * ByteList is simple a collection of bytes in the same way a Java String is a collection
@@ -56,6 +56,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     public static final byte[] NULL_ARRAY = new byte[0];
     public static final ByteList EMPTY_BYTELIST = new ByteList(NULL_ARRAY, false);
+
+    private static final Charset ISO_LATIN_1 = Charset.forName("ISO-8859-1");
 
     // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
     // until there's new releases we shall keep them public and maybe review other exts using BL's API
@@ -253,11 +255,33 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param b is byte to be appended
      * @param len is number of times to repeat the append
      */
-    // FIXME: Innefficient impl since we know the len up front.
-    public void fill(int b, int len) {
-        for ( ; --len >= 0; ) {
-            append(b);
+    public void fill(final int b, final int len) {
+        int i;
+        switch (len) {
+            case 0: return;
+            case 1:
+                grow(1);
+                i = begin + realSize;
+                bytes[i] = (byte) b;
+                break;
+            case 2:
+                grow(2);
+                i = begin + realSize;
+                bytes[i] = (byte) b; bytes[i + 1] = (byte) b;
+                break;
+            case 3:
+                grow(3);
+                i = begin + realSize;
+                bytes[i] = (byte) b; bytes[i + 1] = (byte) b; bytes[i + 2] = (byte) b;
+                break;
+            default:
+                if (len < 0) return; // TODO: Sprintf assumes < 0 to work (likely should not)
+
+                grow(len);
+                i = begin + realSize;
+                for (int s = len; --s >= 0; i++) bytes[i] = (byte) b;
         }
+        realSize += len;
         invalidate();
     }
 
@@ -434,17 +458,17 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * stream then throw an IOException.
      *
      * @param input the stream to read bytes from
-     * @param length how many byte to try and read
+     * @param len how many bytes to try reading
      * @return this instance
      * @throws IOException when no bytes are read
      */
-    public ByteList append(InputStream input, int length) throws IOException {
-        grow(length);
+    public ByteList append(InputStream input, int len) throws IOException {
+        grow(len);
         int read = 0;
         int n;
         int start = begin + realSize;
-        while (read < length) {
-            n = input.read(bytes, start + read, length - read);
+        while (read < len) {
+            n = input.read(bytes, start + read, len - read);
             if (n == -1) {
                 if (read == 0) throw new java.io.EOFException();
                 break;
@@ -516,7 +540,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public void append(byte[] moreBytes, int start, int len) {
         assert moreBytes != null : "moreBytes is null";
-        assert start >= 0 && (start == 0 || start < moreBytes.length) : "Invalid start: " + start;
+        assert start >= 0 && start <= moreBytes.length : "Invalid start: " + start;
         assert len >= 0 && moreBytes.length - start >= len : "Bad length: " + len;
 
         grow(len);
@@ -560,15 +584,12 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         return realSize == 0;
     }
 
-    // ENEBO: Wow...what happens if newLength < realSize...nasty shrinkage?
     /**
-     * grow the bytelist to be newLength in size.
+     * Set the byte container length.
      *
      * @param newLength
      */
     public void length(int newLength) {
-//        assert newLength >= realSize : "newLength is too small";
-
         grow(newLength - realSize);
         realSize = newLength;
     }
@@ -688,8 +709,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param sourceLen length of source region in the replacement bytes
      */
     public void replace(int targetOff, int targetLen, byte[] source, int sourceOff, int sourceLen) {
-        int newSize = realSize - targetLen + sourceLen;
-        ensure(newSize);
+        int newSize = realSize + (sourceLen - targetLen);
+        grow(sourceLen - targetLen);
         int tailSize = realSize - (targetLen + targetOff);
         if (tailSize != 0) {
             System.arraycopy(bytes,begin+targetOff+targetLen,bytes,begin+targetOff+sourceLen,tailSize);
@@ -1074,16 +1095,13 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     }
 
     /**
-     * Grow the ByteList by increaseRequested bytes.  A value <0 will be a no-op.
+     * Grow the ByteList by increaseRequested bytes.
      *
      * @param increaseRequested number of bytes to grow
      */
     private void grow(int increaseRequested) {
-        if (increaseRequested < 0) return;
-
         // new available size
-        int newSize = realSize + increaseRequested;
-
+        int newSize = realSize + increaseRequested; // increase <= 0 -> no-op
         // only recopy if bytes does not have enough room *after* the begin index
         if (newSize > bytes.length - begin) {
             byte[] newBytes = new byte[newSize + (newSize >> 1)];
@@ -1124,7 +1142,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public String toString() {
         String decoded = this.stringValue;
         if (decoded == null) {
-            this.stringValue = decoded = decode(bytes, begin, realSize, "ISO-8859-1");
+            this.stringValue = decoded = decode(bytes, begin, realSize, ISO_LATIN_1);
         }
         return decoded;
     }
@@ -1135,7 +1153,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return a String based on the raw bytes
      */
     public String toByteString() {
-        return new String(bytes, begin, realSize, StandardCharsets.ISO_8859_1);
+        return new String(bytes, begin, realSize, ISO_LATIN_1);
     }
 
     /**
@@ -1155,14 +1173,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return a byte[]
      */
     public static byte[] plain(CharSequence s) {
-        if (s instanceof String) return encode(s, "ISO-8859-1");
-
-        // Not a String...get it the slow way
-        byte[] bytes = new byte[s.length()];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) s.charAt(i);
-        }
-        return bytes;
+        return RubyEncoding.encodeISO(s);
     }
 
     /**
@@ -1216,8 +1227,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     // Work around bad charset handling in JDK. See
     // http://halfbottle.blogspot.com/2009/07/charset-continued-i-wrote-about.html
-    private static final ConcurrentMap<String,Charset> charsetsByAlias =
-            new ConcurrentHashMap<String,Charset>();
+    private static final ConcurrentMap<String,Charset> charsetsByAlias = new ConcurrentHashMap<>();
 
     /**
      * Decode byte data into a String with the supplied charsetName.
@@ -1229,7 +1239,11 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return the new String
      */
     public static String decode(byte[] data, int offset, int length, String charsetName) {
-        return lookup(charsetName).decode(ByteBuffer.wrap(data, offset, length)).toString();
+        return decode(data, offset, length, lookup(charsetName));
+    }
+
+    private static String decode(byte[] data, int offset, int length, Charset charset) {
+        return charset.decode(ByteBuffer.wrap(data, offset, length)).toString();
     }
 
     /**

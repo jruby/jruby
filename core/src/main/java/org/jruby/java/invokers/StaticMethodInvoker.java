@@ -1,9 +1,8 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.function.Supplier;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.javasupport.JavaMethod;
@@ -14,12 +13,8 @@ import org.jruby.util.ArraySupport;
 
 public final class StaticMethodInvoker extends MethodInvoker {
 
-    public StaticMethodInvoker(RubyClass host, List<Method> methods, String name) {
+    public StaticMethodInvoker(RubyModule host, Supplier<Method[]> methods, String name) {
         super(host, methods, name);
-    }
-
-    public StaticMethodInvoker(RubyModule host, Method method, String name) {
-        super(host, method, name);
     }
 
     @Override

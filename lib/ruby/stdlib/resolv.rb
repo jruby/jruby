@@ -727,10 +727,6 @@ class Resolv
         socks&.each(&:close)
       end
 
-      def lazy_initialize
-        self
-      end
-
       class Sender # :nodoc:
         def initialize(msg, data, sock)
           @msg = msg
@@ -743,8 +739,8 @@ class Resolv
         def initialize(*nameserver_port)
           super()
           @nameserver_port = nameserver_port
-          @mutex = Thread::Mutex.new
           @initialized = false
+          @mutex = Thread::Mutex.new
         end
 
         def lazy_initialize
@@ -787,7 +783,7 @@ class Resolv
           sock = @socks_hash[host.index(':') ? "::" : "0.0.0.0"]
           return nil if !sock
           service = [IPAddr.new(host), port]
-          id = DNS.allocate_request_id(service[0], service[1])
+          id = DNS.allocate_request_id(service[0].to_s, port)
           request = msg.encode
           request[0,2] = [id].pack('n')
           return @senders[[service, id]] =
@@ -799,7 +795,7 @@ class Resolv
             if @initialized
               super
               @senders.each_key {|service, id|
-                DNS.free_request_id(service[0], service[1], id)
+                DNS.free_request_id(service[0].to_s, service[1], id)
               }
               @initialized = false
             end
@@ -824,9 +820,9 @@ class Resolv
       class ConnectedUDP < Requester # :nodoc:
         def initialize(host, port=Port)
           super()
-          @mutex = Thread::Mutex.new
           @host = host
           @port = port
+          @mutex = Thread::Mutex.new
           @initialized = false
         end
 
@@ -862,7 +858,7 @@ class Resolv
         end
 
         def close
-          @mutex.synchronize {
+          @mutex.synchronize do
             if @initialized
               super
               @senders.each_key {|from, id|
@@ -870,7 +866,7 @@ class Resolv
               }
               @initialized = false
             end
-          }
+          end
         end
 
         class Sender < Requester::Sender # :nodoc:
@@ -894,6 +890,7 @@ class Resolv
         end
 
         def sender_for(addr, msg)
+          lazy_initialize
           @senders[msg.id]
         end
       end

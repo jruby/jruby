@@ -9,6 +9,7 @@ import org.objectweb.asm.Opcodes;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.math.BigInteger;
 
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -17,12 +18,12 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class BignumObjectSite extends LazyObjectSite {
-    private final String value;
+    private final BigInteger value;
 
     public BignumObjectSite(MethodType type, String value) {
         super(type);
 
-        this.value = value;
+        this.value = new BigInteger(value);
     }
 
     public static final Handle BOOTSTRAP = new Handle(

@@ -6,10 +6,8 @@ class PlatformGuard < SpecGuard
       case name
       when :rubinius
         RUBY_ENGINE.start_with?('rbx')
-      when :ruby, :jruby, :truffleruby, :ironruby, :macruby, :maglev, :topaz, :opal
-        RUBY_ENGINE.start_with?(name.to_s)
       else
-        raise "unknown implementation #{name}"
+        RUBY_ENGINE.start_with?(name.to_s)
       end
     end
   end
@@ -18,20 +16,20 @@ class PlatformGuard < SpecGuard
     implementation? :ruby
   end
 
-  HOST_OS = begin
+  PLATFORM = if RUBY_ENGINE == "jruby"
     require 'rbconfig'
-    RbConfig::CONFIG['host_os'] || RUBY_PLATFORM
-  rescue LoadError
+    "#{RbConfig::CONFIG['host_cpu']}-#{RbConfig::CONFIG['host_os']}"
+  else
     RUBY_PLATFORM
-  end.downcase
+  end
 
   def self.os?(*oses)
     oses.any? do |os|
       raise ":java is not a valid OS" if os == :java
       if os == :windows
-        HOST_OS =~ /(mswin|mingw)/
+        PLATFORM =~ /(mswin|mingw)/
       else
-        HOST_OS.include?(os.to_s)
+        PLATFORM.include?(os.to_s)
       end
     end
   end

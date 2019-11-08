@@ -36,8 +36,11 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.chrono.GJChronology;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
@@ -51,10 +54,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
 import java.time.*;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
@@ -231,7 +234,7 @@ public class RubyDateTime extends RubyDate {
             throw context.runtime.newArgumentError("invalid date");
         }
 
-        return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen);
+        return (RubyDateTime) new RubyDateTime(context.runtime, (RubyClass) self, dt, off, sg, subMillisNum, subMillisDen).normalizeSubMillis();
     }
 
     static long getDay(ThreadContext context, IRubyObject day, final long[] rest) {
@@ -239,12 +242,35 @@ public class RubyDateTime extends RubyDate {
 
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational();
-            long num = rat.getNumerator().getLongValue();
-            long den = rat.getDenominator().getLongValue();
-            rest[0] = (num - d * den); rest[1] = den;
+            if (rat.getNumerator() instanceof RubyBignum || rat.getDenominator() instanceof RubyBignum) {
+                calcBigIntDayRest(rat, d, rest);
+            } else {
+                long num = rat.getNumerator().getLongValue();
+                long den = rat.getDenominator().getLongValue();
+                rest[0] = num - d * den; rest[1] = den;
+            }
         }
 
         return d;
+    }
+
+    private static void calcBigIntDayRest(final RubyRational day, final long d, final long[] rest) {
+        BigInteger num = day.getNumerator().getBigIntegerValue();
+        BigInteger den = day.getDenominator().getBigIntegerValue();
+        BigInteger r0 = num.subtract(den.multiply(BigInteger.valueOf(d)));
+        BigInteger r1 = den;
+        BigInteger gcd = r0.gcd(r1);
+        r0 = r0.divide(gcd);
+        r1 = r1.divide(gcd);
+        try {
+            rest[0] = r0.longValueExact();
+            rest[1] = r1.longValueExact();
+        } catch (ArithmeticException e) {
+            BigDecimal r = new BigDecimal(r0).divide(new BigDecimal(r1), 18, BigDecimal.ROUND_HALF_UP);
+            r = r.setScale(18, BigDecimal.ROUND_HALF_UP);
+            rest[0] = r.unscaledValue().longValue();
+            rest[1] = (long) Math.pow(10, r.scale());
+        }
     }
 
     static int getHour(ThreadContext context, IRubyObject hour, final long[] rest) {
@@ -275,27 +301,72 @@ public class RubyDateTime extends RubyDate {
         return (int) (v < 0 ? v + 60 : v); // JODA will handle invalid value
     }
 
-    static int getSecond(ThreadContext context, IRubyObject sec, final long[] rest) {
-        return getMinute(context, sec, rest);
+    static int getSecond(ThreadContext context, IRubyObject val, final long[] rest) {
+        // MRI: num2int_with_frac(s,n)
+        // NOTE: missing "invalid fraction" detection (would be relevant for hour and min)
+        boolean wholeNum;
+        if (val instanceof RubyRational) {
+            RubyInteger den = ((RubyRational) (val)).getDenominator();
+            wholeNum = den instanceof RubyFixnum && den.getLongValue() == 1;
+        } else if (val instanceof RubyFloat) {
+            double v = ((RubyFloat) val).getDoubleValue();
+            wholeNum = (double) Math.round(v) == v;
+        } else {
+            wholeNum = true;
+        }
+
+        long i = 0;
+        final long r0 = rest[0], r1 = rest[1];
+        if (r0 != 0) {
+            i = (60 * r0) / r1;
+            rest[0] = (60 * r0) - (i * r1);
+        }
+        // MRI: s_trunc
+        long v;
+        if (wholeNum) {
+            v = val.convertToInteger().getLongValue();
+        } else {
+            val = ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
+            v = ((RubyInteger) ((RubyArray) val).eltInternal(0)).getLongValue();
+            RubyNumeric fr = (RubyNumeric) ((RubyArray) val).eltInternal(1);
+            // NOTE: we don't:
+            // *fr = f_quo(*fr, INT2FIX(86400));
+            // since we're calculating directly instead of post-adding as MRI does: Date#+(fr)
+            addFraction(context, rest, fr, true); // add_frac() fr2
+        }
+
+        v += i;
+        return (int) (v < 0 ? v + 60 : v); // JODA will handle invalid value
     }
 
     private static void addRationalModToRest(ThreadContext context, IRubyObject val, long ival, final long[] rest) {
         if (!(val instanceof RubyInteger) && val instanceof RubyNumeric) { // Rational|Float
-            RubyRational rat = ((RubyNumeric) val).convertToRational();
-            long num = rat.getNumerator().getLongValue();
-            long den = rat.getDenominator().getLongValue();
-            num -= ival * den;
-            if (num != 0) {
-                IRubyObject res = RubyRational.newRational(context.runtime, rest[0], rest[1]).
-                        op_plus(context, RubyRational.newRationalCanonicalize(context, num, den));
-                if (res instanceof RubyRational) {
-                    rest[0] = ((RubyRational) res).getNumerator().getLongValue();
-                    rest[1] = ((RubyRational) res).getDenominator().getLongValue();
-                } else {
-                    rest[0] = res.convertToInteger().getLongValue();
-                    rest[1] = 1;
-                }
-            }
+            addRationalModToRest(context, ((RubyNumeric) val).convertToRational(), ival, rest);
+        }
+    }
+
+    private static void addRationalModToRest(ThreadContext context, RubyRational rat, long ival, final long[] rest) {
+        long num = rat.getNumerator().getLongValue();
+        long den = rat.getDenominator().getLongValue();
+        num -= ival * den;
+        if (num != 0) {
+            addFraction(context, rest, RubyRational.newRational(context.runtime, num, den), false);
+        }
+    }
+
+    private static void addFraction(ThreadContext context, final long[] rest, RubyNumeric fr, boolean roundFloat) {
+        RubyNumeric res = (RubyNumeric) RubyRational.newRational(context.runtime, rest[0], rest[1]).op_plus(context, fr);
+        if (res instanceof RubyRational) {
+            rest[0] = ((RubyRational) res).getNumerator().getLongValue();
+            rest[1] = ((RubyRational) res).getDenominator().getLongValue();
+        } else if (roundFloat && res instanceof RubyFloat) {
+            // currently only used for (sub) sec rounding - will need a revision for others
+            res = roundToPrecision(context, (RubyFloat) res, SUB_MS_PRECISION * 1000L).convertToRational();
+            rest[0] = ((RubyRational) res).getNumerator().getLongValue();
+            rest[1] = ((RubyRational) res).getDenominator().getLongValue();
+        } else {
+            rest[0] = res.convertToInteger().getLongValue();
+            rest[1] = 1;
         }
     }
 
@@ -444,7 +515,7 @@ public class RubyDateTime extends RubyDate {
                 dt.getMillisOfSecond(), RubyTime.getTimeZone(runtime, this.off)
         );
 
-        RubyTime time = new RubyTime(runtime, runtime.getTime(), dt);
+        RubyTime time = new RubyTime(runtime, runtime.getTime(), dt, true);
         if (subMillisNum != 0) {
             RubyNumeric usec = (RubyNumeric)
                     subMillis(runtime).op_mul(context, RubyFixnum.newFixnum(runtime, 1_000_000));

@@ -68,6 +68,20 @@ class TestString < Test::Unit::TestCase
     assert_raise(FrozenError){ str.__send__(:initialize, encoding: 'euc-jp') }
     assert_raise(FrozenError){ str.__send__(:initialize, 'abc', encoding: 'euc-jp') }
     assert_raise(FrozenError){ str.__send__(:initialize, 'abc', capacity: 1000, encoding: 'euc-jp') }
+
+    str = S("")
+    assert_equal("mystring", str.__send__(:initialize, "mystring"))
+    str = S("mystring")
+    assert_equal("mystring", str.__send__(:initialize, str))
+    str = S("")
+    assert_equal("mystring", str.__send__(:initialize, "mystring", capacity: 1000))
+    str = S("mystring")
+    assert_equal("mystring", str.__send__(:initialize, str, capacity: 1000))
+  end
+
+  def test_initialize_shared
+    String.new(str = "mystring" * 10).__send__(:initialize, capacity: str.bytesize)
+    assert_equal("mystring", str[0, 8])
   end
 
   def test_initialize_nonstring
@@ -202,9 +216,7 @@ CODE
     assert_equal("fobar", s)
 
     assert_raise(ArgumentError) { "foo"[1, 2, 3] = "" }
-  end
 
-  def test_ASET_limits
     assert_raise(IndexError) {"foo"[RbConfig::LIMITS["LONG_MIN"]] = "l"}
   end
 
@@ -970,6 +982,7 @@ CODE
 
   def test_each_grapheme_cluster
     [
+      "\u{0D 0A}",
       "\u{20 200d}",
       "\u{600 600}",
       "\u{600 20}",
@@ -982,11 +995,18 @@ CODE
       "\u{1f469 200d 2764 fe0f 200d 1f469}",
     ].each do |g|
       assert_equal [g], g.each_grapheme_cluster.to_a
+      assert_equal 1, g.each_grapheme_cluster.size
     end
 
-    assert_equal ["\u000A", "\u0308"], "\u{a 308}".each_grapheme_cluster.to_a
-    assert_equal ["\u000D", "\u0308"], "\u{d 308}".each_grapheme_cluster.to_a
-    assert_equal ["a", "b", "c"], "abc".b.each_grapheme_cluster.to_a
+    [
+      ["\u{a 308}", ["\u000A", "\u0308"]],
+      ["\u{d 308}", ["\u000D", "\u0308"]],
+      ["abc", ["a", "b", "c"]],
+    ].each do |str, grapheme_clusters|
+      assert_equal grapheme_clusters, str.each_grapheme_cluster.to_a
+      assert_equal grapheme_clusters.size, str.each_grapheme_cluster.size
+    end
+
     s = ("x"+"\u{10ABCD}"*250000)
     assert_empty(s.each_grapheme_cluster {s.clear})
   end
@@ -1121,6 +1141,10 @@ CODE
     res = []
     S("\r\n").each_line(chomp: true) {|x| res << x}
     assert_equal([S("")], res)
+
+    res = []
+    S("a\n b\n").each_line(" ", chomp: true) {|x| res << x}
+    assert_equal([S("a\n"), S("b\n")], res)
   end
 
   def test_lines
@@ -1528,6 +1552,8 @@ CODE
     assert_nil($~)
 
     assert_equal(3, S("hello hello hello").scan("hello".taint).count(&:tainted?))
+
+    assert_equal(%w[1 2 3], S("a1 a2 a3").scan(/a\K./))
   end
 
   def test_size
@@ -1920,6 +1946,12 @@ CODE
     r.taint
     a.sub!(/./, r)
     assert_predicate(a, :tainted?)
+
+    bug16105 = '[Bug #16105] heap-use-after-free'
+    a = S("ABCDEFGHIJKLMNOPQRSTUVWXYZ012345678")
+    b = a.dup
+    c = a.slice(1, 100)
+    assert_equal("AABCDEFGHIJKLMNOPQRSTUVWXYZ012345678", b.sub!(c, b), bug16105)
   end
 
   def test_succ
@@ -2909,6 +2941,23 @@ CODE
   end
 =end
 
+  def test_nesting_shared
+    a = ('a' * 24).encode(Encoding::ASCII).gsub('x', '')
+    hash = {}
+    hash[a] = true
+    assert_equal(('a' * 24), a)
+    4.times { GC.start }
+    assert_equal(('a' * 24), a, '[Bug #15792]')
+  end
+
+  def test_nesting_shared_b
+    a = ('j' * 24).b.b
+    eval('', binding, a)
+    assert_equal(('j' * 24), a)
+    4.times { GC.start }
+    assert_equal(('j' * 24), a, '[Bug #15934]')
+  end
+
   def test_shared_force_encoding
     s = "\u{3066}\u{3059}\u{3068}".gsub(//, '')
     h = {}
@@ -3084,6 +3133,12 @@ CODE
     assert_equal("a", "a".chr)
     assert_equal("\u3042", "\u3042\u3043".chr)
     assert_equal('', ''.chr)
+  end
+
+  def test_substr_code_range
+    data = "\xff" + "a"*200
+    assert_not_predicate(data, :valid_encoding?)
+    assert_predicate(data[100..-1], :valid_encoding?)
   end
 end
 

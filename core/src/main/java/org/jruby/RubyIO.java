@@ -101,6 +101,9 @@ import org.jruby.util.io.PosixShim;
 import org.jruby.util.io.SelectExecutor;
 import org.jruby.util.io.STDIO;
 
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -309,6 +312,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
+
+        runtime.setIO(ioClass);
 
         ioClass.setClassIndex(ClassIndex.IO);
         ioClass.setReifiedClass(RubyIO.class);
@@ -891,7 +896,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (fd == null) {
                 if (Platform.IS_WINDOWS) {
-                    // Native channels don't work quite right on Windows yet. See jruby/jruby#3625
+                    // Native channels don't work quite right on Windows yet. Override standard io for better nonblocking support. See jruby/jruby#3625
                     switch (fileno) {
                         case 0:
                             fd = new ChannelFD(Channels.newChannel(runtime.getIn()), runtime.getPosix(), runtime.getFilenoUtil());
@@ -903,7 +908,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             fd = new ChannelFD(Channels.newChannel(runtime.getErr()), runtime.getPosix(), runtime.getFilenoUtil());
                             break;
                         default:
-                            throw runtime.newErrnoEBADFError("Windows does not support wrapping native file descriptor: " + fileno);
+                            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
+                            break;
                     }
                 } else {
                     fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix(), runtime.getFilenoUtil());
@@ -1208,7 +1214,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
         fd = sysopen(runtime, fname.toString(), oflags, perm);
-        return runtime.newFixnum(fd.bestFileno());
+        return runtime.newFixnum(fd.bestFileno(true));
     }
 
     public static class Sysopen {
@@ -1264,11 +1270,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         PosixShim shim = new PosixShim(runtime);
         ret = shim.open(runtime.getCurrentDirectory(), data.fname, data.oflags, data.perm);
         if (ret == null) {
-            data.errno = shim.errno;
+            data.errno = shim.getErrno();
             return null;
         }
-        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil());
-        if (fd.realFileno > 0 && runtime.getPosix().isNative()) {
+        ChannelFD fd = new ChannelFD(ret, runtime.getPosix(), runtime.getFilenoUtil(), data.oflags);
+        if (fd.realFileno > 0 && runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             OpenFile.fdFixCloexec(shim, fd.realFileno);
         }
 
@@ -1335,7 +1341,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             fptr.checkWritable(context);
 
-            str = str.convertToString().dupFrozen();
+            str = str.convertToString().newFrozen();
 
             if (fptr.wbuf.len != 0) {
                 runtime.getWarnings().warn("syswrite for buffered IO");
@@ -1386,14 +1392,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             n = fptr.posix.write(fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize(), true);
 
             if (n == -1) {
-                if (fptr.posix.errno == Errno.EWOULDBLOCK || fptr.posix.errno == Errno.EAGAIN) {
+                if (fptr.posix.getErrno() == Errno.EWOULDBLOCK || fptr.posix.getErrno() == Errno.EAGAIN) {
                     if (no_exception) {
                         return runtime.newSymbol("wait_writable");
                     } else {
                         throw runtime.newErrnoEAGAINWritableError("write would block");
                     }
                 }
-                throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+                throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
             }
         } finally {
             if (locked) fptr.unlock();
@@ -1428,11 +1434,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "write", rest = true)
     public IRubyObject write(ThreadContext context, IRubyObject[] args) {
-        long bytes = Arrays.stream(args)
-            .map(s -> write(context, s, false))
-            .map(RubyNumeric::num2long)
-            .reduce(0l, (x, y) -> x + y);
-        return RubyFixnum.newFixnum(context.runtime, bytes);
+        long acc = 0l;
+        for (IRubyObject s : args) {
+            IRubyObject write = write(context, s, false);
+            long num2long = RubyNumeric.num2long(write);
+            acc = acc + num2long;
+        }
+        return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
     final IRubyObject write(ThreadContext context, int ch) {
@@ -2039,8 +2047,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             fptr.finalizeFlush(context, false);
 
-            fptr.finalizeFlush(context, false);
-
             // interrupt waiting threads
             fptr.interruptBlockingThreads(context);
             try {
@@ -2326,6 +2332,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg);
     }
 
+    // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, opt);
@@ -3676,15 +3683,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         boolean warn = recv == runtime.getFile();
         if ((warn || recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            if (recv != runtime.getIO()) {
-                // FIXME: use actual called name instead of "open" as in MRI
-                String message = "IO.open called on " + recv + " to invoke external command";
-                if (warn) {
-                    runtime.getWarnings().warn(message);
+            if (PopenExecutor.nativePopenAvailable(runtime)) {
+                if (recv != runtime.getIO()) {
+                    // FIXME: use actual called name instead of "open" as in MRI
+                    String message = "IO.open called on " + recv + " to invoke external command";
+                    if (warn) {
+                        runtime.getWarnings().warn(message);
+                    }
                 }
-            }
 
-            return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
+                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
+            } else {
+                throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");
+            }
         }
         return (RubyIO) ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
@@ -3991,7 +4002,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject popen(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             // new native popen logic
             return PopenExecutor.popen(context, args, (RubyClass)recv, block);
         }
@@ -4130,7 +4141,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         PosixShim posix = new PosixShim(runtime);
         Channel[] fds = posix.pipe();
         if (fds == null)
-            throw runtime.newErrnoFromErrno(posix.errno, "opening pipe");
+            throw runtime.newErrnoFromErrno(posix.getErrno(), "opening pipe");
 
 //        args[0] = klass;
 //        args[1] = INT2NUM(pipes[0]);
@@ -4437,15 +4448,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (length > 0 && length < chunkSize) {
                 // last read should limit to remaining length
-                buffer.limit((int)length);
+                limitBuffer(buffer, (int)length);
             }
             long n = from.read(buffer);
 
             if (n == -1) break;
 
-            buffer.flip();
+            flipBuffer(buffer);
             to.write(buffer);
-            buffer.clear();
+            clearBuffer(buffer);
 
             transferred += n;
             if (length > 0) {
@@ -4464,6 +4475,139 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ( arg instanceof RubyObject &&
                 sites(context).respond_to_to_io.respondsTo(context, arg, arg, true) ) ?
                     convertToIO(context, arg) : context.nil;
+    }
+
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject len, IRubyObject offset) {
+        int count = len.convertToInteger().getIntValue();
+        return pread(context, len, offset, null);
+    }
+
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject len, IRubyObject offset, IRubyObject str) {
+        Ruby runtime = context.runtime;
+
+        int count = len.convertToInteger().getIntValue();
+        long off = offset.convertToInteger().getIntValue();
+
+        RubyString string = EncodingUtils.setStrBuf(runtime, str, count);
+        if (count == 0) return string;
+
+        OpenFile fptr = getOpenFile();
+        fptr.checkByteReadable(context);
+
+        ChannelFD fd = fptr.fd();
+        fptr.checkClosed();
+
+        ByteList strByteList = string.getByteList();
+
+        try {
+            return context.getThread().executeTask(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
+                @Override
+                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
+                    Ruby runtime = context.runtime;
+
+                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), count);
+                    int read = 0;
+
+                    try {
+                        if (fd.chFile != null) {
+                            read = fd.chFile.read(wrap, off);
+
+                            if (read == -1) {
+                                throw runtime.newEOFError();
+                            }
+                        } else if (fd.chNative != null) {
+                            read = (int) runtime.getPosix().pread(fd.chNative.getFD(), wrap, count, off);
+
+                            if (read == 0) {
+                                throw runtime.newEOFError();
+                            } else if (read == -1) {
+                                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+                            }
+                        } else if (fd.chRead != null) {
+                            read = fd.chRead.read(wrap);
+                        } else {
+                            throw runtime.newIOError("not opened for reading");
+                        }
+                    } catch (IOException ioe) {
+                        throw Helpers.newIOErrorFromException(runtime, ioe);
+                    }
+
+                    string.setReadLength(read);
+
+                    return string;
+                }
+
+                @Override
+                public void wakeup(RubyThread thread, ChannelFD channelFD) {
+                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+                    thread.getNativeThread().interrupt();
+                }
+            });
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    @JRubyMethod(name = "pwrite")
+    public IRubyObject pwrite(ThreadContext context, IRubyObject str, IRubyObject offset) {
+        OpenFile fptr;
+        RubyString buf;
+        RubyString string;
+
+        if (str instanceof RubyString) {
+            string = (RubyString) str;
+        } else {
+            string = str.convertToString();
+        }
+
+        long off = offset.convertToInteger().getLongValue();
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFile();
+        fptr.checkWritable(context);
+        ChannelFD fd = fptr.fd();
+
+        buf = string.newFrozen();
+
+        ByteList strByteList = buf.getByteList();
+
+        try {
+            return context.getThread().executeTask(context, fd, new RubyThread.Task<ChannelFD, IRubyObject>() {
+                @Override
+                public IRubyObject run(ThreadContext context, ChannelFD channelFD) throws InterruptedException {
+                    Ruby runtime = context.runtime;
+
+                    int length = strByteList.realSize();
+                    ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
+                    int written = 0;
+
+                    try {
+                        if (fd.chFile != null) {
+                            written = fd.chFile.write(wrap, off);
+                        } else if (fd.chNative != null) {
+                            written = (int) runtime.getPosix().pwrite(fd.chNative.getFD(), wrap, length, off);
+                        } else if (fd.chWrite != null) {
+                            written = fd.chWrite.write(wrap);
+                        } else {
+                            throw runtime.newIOError("not opened for writing");
+                        }
+                    } catch (IOException ioe) {
+                        throw Helpers.newIOErrorFromException(runtime, ioe);
+                    }
+                    return runtime.newFixnum(written);
+                }
+
+                @Override
+                public void wakeup(RubyThread thread, ChannelFD channelFD) {
+                    // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+                    thread.getNativeThread().interrupt();
+                }
+            });
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
     }
 
     /**

@@ -40,7 +40,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -393,14 +392,14 @@ public class OpenFile implements Finalizable {
 
         if (wbuf.len != 0) {
             if (io_fflush(context) < 0) {
-                throw runtime.newErrnoFromErrno(posix.errno, "error flushing");
+                throw runtime.newErrnoFromErrno(posix.getErrno(), "error flushing");
             }
         }
         if (tiedIOForWriting != null) {
             OpenFile wfptr;
             wfptr = tiedIOForWriting.getOpenFileChecked();
             if (wfptr.io_fflush(context) < 0) {
-                throw runtime.newErrnoFromErrno(wfptr.posix.errno, wfptr.getPath());
+                throw runtime.newErrnoFromErrno(wfptr.posix.getErrno(), wfptr.getPath());
             }
         }
     }
@@ -443,11 +442,11 @@ public class OpenFile implements Finalizable {
     public boolean waitWritable(ThreadContext context, long timeout) {
         boolean locked = lock();
         try {
-            if (posix.errno == null) return false;
+            if (posix.getErrno() == null) return false;
 
             checkClosed();
 
-            switch (posix.errno) {
+            switch (posix.getErrno()) {
                 case EINTR:
                     //            case ERESTART: // not defined in jnr-constants
                     runtime.getCurrentContext().pollThreadEvents();
@@ -473,11 +472,11 @@ public class OpenFile implements Finalizable {
     public boolean waitReadable(ThreadContext context, long timeout) {
         boolean locked = lock();
         try {
-            if (posix.errno == null) return false;
+            if (posix.getErrno() == null) return false;
 
             checkClosed();
 
-            switch (posix.errno) {
+            switch (posix.getErrno()) {
                 case EINTR:
                     //            case ERESTART: // not defined in jnr-constants
                     runtime.getCurrentContext().pollThreadEvents();
@@ -590,7 +589,7 @@ public class OpenFile implements Finalizable {
         if (0 <= r) {
             wbuf.off += r;
             wbuf.len -= r;
-            posix.errno = Errno.EAGAIN;
+            posix.setErrno(Errno.EAGAIN);
         }
         return -1;
     }
@@ -656,9 +655,9 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (io_fflush(context) < 0)
-                throw context.runtime.newErrnoFromErrno(posix.errno, "");
+                throw context.runtime.newErrnoFromErrno(posix.getErrno(), "");
             unread(context);
-            posix.errno = null;
+            posix.setErrno(null);
         } finally {
             if (locked) unlock();
         }
@@ -877,7 +876,7 @@ public class OpenFile implements Finalizable {
             }
             else {
                 if (io_fflush(context) < 0 && err == context.nil) {
-                    err = RubyFixnum.newFixnum(runtime, posix.errno == null ? 0 :posix.errno.longValue());
+                    err = RubyFixnum.newFixnum(runtime, posix.getErrno() == null ? 0 : posix.getErrno().longValue());
                 }
             }
         }
@@ -892,19 +891,19 @@ public class OpenFile implements Finalizable {
 	        /* stdio_file is deallocated anyway
              * even if fclose failed.  */
             if (posix.close(stdio_file) < 0 && err.isNil())
-                err = noraise ? context.tru : RubyNumeric.int2fix(runtime, posix.errno.intValue());
+                err = noraise ? context.tru : RubyNumeric.int2fix(runtime, posix.getErrno().intValue());
         } else if (fd != null) {
             /* fptr->fd may be closed even if close fails.
              * POSIX doesn't specify it.
              * We assumes it is closed.  */
             if ((posix.close(fd) < 0) && err.isNil())
-                err = noraise ? context.tru : runtime.newFixnum(posix.errno.intValue());
+                err = noraise ? context.tru : runtime.newFixnum(posix.getErrno().intValue());
         }
 
         if (!err.isNil() && !noraise) {
             if (err instanceof RubyFixnum || err instanceof RubyBignum) {
-                posix.errno = Errno.valueOf(RubyNumeric.num2int(err));
-                throw runtime.newErrnoFromErrno(posix.errno, pathv);
+                posix.setErrno(Errno.valueOf(RubyNumeric.num2int(err)));
+                throw runtime.newErrnoFromErrno(posix.getErrno(), pathv);
             } else {
                 throw ((RubyException)err).toThrowable();
             }
@@ -1282,7 +1281,7 @@ public class OpenFile implements Finalizable {
                         if (waitReadable(context, fd)) {
                             continue retry;
                         }
-                        throw context.runtime.newErrnoFromErrno(posix.errno, "channel: " + fd + (pathv != null ? " " + pathv : ""));
+                        throw context.runtime.newErrnoFromErrno(posix.getErrno(), "channel: " + fd + (pathv != null ? " " + pathv : ""));
                     }
                     break;
                 }
@@ -1410,12 +1409,12 @@ public class OpenFile implements Finalizable {
         boolean locked = lock();
         try {
             if (!fd.ch.isOpen()) {
-                posix.errno = Errno.EBADF;
+                posix.setErrno(Errno.EBADF);
                 return false;
             }
 
-            if (posix.errno != null && posix.errno != Errno.EAGAIN
-                    && posix.errno != Errno.EWOULDBLOCK && posix.errno != Errno.EINTR) {
+            if (posix.getErrno() != null && posix.getErrno() != Errno.EAGAIN
+                    && posix.getErrno() != Errno.EWOULDBLOCK && posix.getErrno() != Errno.EINTR) {
                 // Encountered a permanent error. Don't read again.
                 return false;
             }
@@ -1792,7 +1791,7 @@ public class OpenFile implements Finalizable {
         bufreadCall(context, arg);
         len = arg.len;
         // should be errno
-        if (len < 0) throw context.runtime.newErrnoFromErrno(posix.errno, pathv);
+        if (len < 0) throw context.runtime.newErrnoFromErrno(posix.getErrno(), pathv);
         return len;
     }
 
@@ -1968,10 +1967,10 @@ public class OpenFile implements Finalizable {
             if (rbuf.len == 0 || (mode & DUPLEX) != 0)
                 return;
             /* xxx: target position may be negative if buffer is filled by ungetc */
-            posix.errno = null;
+            posix.setErrno(null);
             r = posix.lseek(fd, -rbuf.len, PosixShim.SEEK_CUR);
-            if (r == -1 && posix.errno != null) {
-                if (posix.errno == Errno.ESPIPE)
+            if (r == -1 && posix.getErrno() != null) {
+                if (posix.getErrno() == Errno.ESPIPE)
                     mode |= DUPLEX;
                 return;
             }
@@ -2017,8 +2016,8 @@ public class OpenFile implements Finalizable {
             //        }
 
             pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR);
-            if (pos == -1 && posix.errno != null) {
-                if (posix.errno == Errno.ESPIPE)
+            if (pos == -1 && posix.getErrno() != null) {
+                if (posix.getErrno() == Errno.ESPIPE)
                     mode |= DUPLEX;
                 return;
             }
@@ -2049,7 +2048,7 @@ public class OpenFile implements Finalizable {
                 }
                 read_size = readInternal(context, this, fd, bufBytes, buf, rbuf.len + newlines);
                 if (read_size < 0) {
-                    throw runtime.newErrnoFromErrno(posix.errno, pathv);
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), pathv);
                 }
                 if (read_size == rbuf.len) {
                     posix.lseek(fd, r, PosixShim.SEEK_SET);
@@ -2214,7 +2213,7 @@ public class OpenFile implements Finalizable {
                     if (0 <= r) {
                         offset += r;
                         n -= r;
-                        posix.errno = Errno.EAGAIN;
+                        posix.setErrno(Errno.EAGAIN);
                     }
                     if (waitWritable(context)) {
                         checkClosed();
@@ -2354,7 +2353,7 @@ public class OpenFile implements Finalizable {
                             }
                             break retry;
                         }
-                        return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, (posix.errno == null) ? 0 : posix.errno.longValue());
+                        return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, (posix.getErrno() == null) ? 0 : posix.getErrno().longValue());
                     }
                     if (res == EConvResult.InvalidByteSequence ||
                             res == EConvResult.IncompleteInput ||
@@ -2370,7 +2369,7 @@ public class OpenFile implements Finalizable {
             while (res == EConvResult.DestinationBufferFull) {
                 if (wbuf.len == wbuf.capa) {
                     if (io_fflush(context) < 0)
-                        return noalloc ? context.tru : runtime.newFixnum(posix.errno == null ? 0 : posix.errno.longValue());
+                        return noalloc ? context.tru : runtime.newFixnum(posix.getErrno() == null ? 0 : posix.getErrno().longValue());
                 }
 
                 dsBytes = wbuf.ptr;
@@ -2519,9 +2518,7 @@ public class OpenFile implements Finalizable {
     }
 
     public int getFileno() {
-        int fileno = fd.realFileno;
-        if (fileno != -1) return fileno;
-        return fd.fakeFileno;
+        return fd.bestFileno(true);
     }
 
     // rb_thread_flock
@@ -2557,11 +2554,11 @@ public class OpenFile implements Finalizable {
     }
 
     public Errno errno() {
-        return posix.errno;
+        return posix.getErrno();
     }
 
     public void errno(Errno newErrno) {
-        posix.errno = newErrno;
+        posix.setErrno(newErrno);
     }
 
     public static int cloexecDup2(PosixShim posix, ChannelFD oldfd, ChannelFD newfd) {
@@ -2602,7 +2599,7 @@ public class OpenFile implements Finalizable {
             int flags, flags2, ret;
             flags = posix.fcntlGetFD(fd); /* should not fail except EBADF. */
             if (flags == -1) {
-                throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_GETFD) failed: %s", fd, posix.errno.description()));
+                throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_GETFD) failed: %s", fd, posix.getErrno().description()));
             }
             if (fd <= 2)
                 flags2 = flags & ~FcntlLibrary.FD_CLOEXEC; /* Clear CLOEXEC for standard file descriptors: 0, 1, 2. */
@@ -2611,7 +2608,7 @@ public class OpenFile implements Finalizable {
             if (flags != flags2) {
                 ret = posix.fcntlSetFD(fd, flags2);
                 if (ret == -1) {
-                    throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_SETFD, %d) failed: %s", fd, flags2, posix.errno.description()));
+                    throw new AssertionError(String.format("BUG: rb_maygvl_fd_fix_cloexec: fcntl(%d, F_SETFD, %d) failed: %s", fd, flags2, posix.getErrno().description()));
                 }
             }
         }
@@ -2674,7 +2671,7 @@ public class OpenFile implements Finalizable {
 
                 // raise will also wake the thread from selection
                 RubyException exception = (RubyException) runtime.getIOError().newInstance(context, runtime.newString("stream closed in another thread"), Block.NULL_BLOCK);
-                thread.raise(Helpers.arrayOf(exception), Block.NULL_BLOCK);
+                thread.raise(exception);
             }
         }
     }

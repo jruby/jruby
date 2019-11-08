@@ -29,7 +29,6 @@
 
 package org.jruby.util.cli;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +37,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import com.headius.options.Option;
+import org.jruby.compiler.ClassLoaderMode;
 import org.jruby.runtime.Constants;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
@@ -104,8 +104,9 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", false, "Use MethodHandles rather than generated code to bind Ruby methods.");
     public static final Option<Boolean> INVOKEDYNAMIC_YIELD = bool(INVOKEDYNAMIC, "invokedynamic.yield", false, "Bind yields directly using invokedynamic.");
 
+    // NOTE: -1 jit.threshold is way of having interpreter not promote full builds
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
-    public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_METHODS_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
+    public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
     public static final Option<Integer> JIT_MAXSIZE = integer(JIT, "jit.maxsize", Constants.JIT_MAX_SIZE_LIMIT, "Set the max size (in IR instructions) for a method to be eligible to JIT.");
     public static final Option<Boolean> JIT_LOGGING = bool(JIT, "jit.logging", false, "Enable JIT logging (reports successful compilation).");
     public static final Option<Boolean> JIT_LOGGING_VERBOSE = bool(JIT, "jit.logging.verbose", false, "Enable verbose JIT logging (reports failed compilation).");
@@ -115,6 +116,7 @@ public class Options {
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
     public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", JIT_THRESHOLD.load() != 0, "Run the JIT compiler in a background thread. Off if jit.threshold=0.");
     public static final Option<Boolean> JIT_KERNEL = bool(JIT, "jit.kernel", false, "Run the JIT compiler while the pure-Ruby kernel is booting.");
+    public static final Option<ClassLoaderMode> JIT_LOADER_MODE = enumeration(JIT, "jit.loader.mode", ClassLoaderMode.class, ClassLoaderMode.UNIQUE, "Set JIT class loader to use. UNIQUE class loader per class; SHARED loader for all classes");
 
     public static final Option<String> IR_DEBUG_IGV          = string(IR, "ir.debug.igv", (String) null, "Specify file:line of scope to jump to IGV");
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
@@ -143,6 +145,8 @@ public class Options {
     public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
     public static final Option<Boolean> FFI_COMPILE_REIFY = bool(NATIVE, "ffi.compile.reify", false, "Reify FFI compiled classes.");
     public static final Option<Boolean> NATIVE_STDIO = bool(NATIVE, "native.stdio", true, "Use native wrappers around the default stdio descriptors.");
+    public static final Option<Boolean> NATIVE_PTHREAD_KILL = bool(NATIVE, "native.pthread_kill", true, "Use pthread_kill to interrupt blocking kernel calls.");
+    public static final Option<Boolean> NATIVE_POPEN = bool(NATIVE, "native.popen", true, "Use native calls to posix_spawn for subprocess execution.");
 
     public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(NATIVE, "regexp.interruptible", false, "Allow regexp operations to be interuptible from Ruby.");
 
@@ -167,7 +171,6 @@ public class Options {
     public static final Option<String> BACKTRACE_STYLE = string(MISCELLANEOUS, "backtrace.style", new String[]{"normal", "raw", "full", "mri"}, "normal", "Set the style of exception backtraces.");
     public static final Option<Boolean> BACKTRACE_MASK = bool(MISCELLANEOUS, "backtrace.mask", false, "Mask .java lines in Ruby backtraces.");
     public static final Option<String> THREAD_DUMP_SIGNAL = string(MISCELLANEOUS, "thread.dump.signal", new String[]{"USR1", "USR2", "etc"}, "USR2", "Set the signal used for dumping thread stacks.");
-    public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
     public static final Option<Boolean> FIBER_COROUTINES = bool(MISCELLANEOUS, "fiber.coroutines", false, "Use JVM coroutines for Fiber.");
     public static final Option<Boolean> GLOBAL_REQUIRE_LOCK = bool(MISCELLANEOUS, "global.require.lock", false, "Use a single global lock for requires.");
     public static final Option<Boolean> NATIVE_EXEC = bool(MISCELLANEOUS, "native.exec", true, "Do a true process-obliterating native exec for Kernel#exec.");
@@ -175,6 +178,8 @@ public class Options {
     public static final Option<Boolean> CONSISTENT_HASHING = bool(MISCELLANEOUS, "consistent.hashing", false, "Generate consistent object hashes across JVMs");
     public static final Option<Boolean> VOLATILE_VARIABLES = bool(MISCELLANEOUS, "volatile.variables", false, "Always ensure volatile semantics for instance variables.");
     public static final Option<Boolean> REIFY_VARIABLES = bool(MISCELLANEOUS, "reify.variables", !(REIFY_CLASSES.load() || VOLATILE_VARIABLES.load()), "Attempt to expand instance vars into Java fields");
+    public static final Option<Integer> REIFY_VARIABLES_MAX = integer(MISCELLANEOUS, "reify.variables.max", 50, "Maximum number of reified instance variable fields");
+    public static final Option<Boolean> REIFY_VARIABLES_NAME = bool(MISCELLANEOUS, "reify.variables.name", false, "Reify variables into a class named after the Ruby class");
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
     public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
     public static final Option<String> PREFERRED_PRNG = string(MISCELLANEOUS, "preferred.prng", "NativePRNGNonBlocking", "Set the preferred JDK-supported random number generator to use.");
@@ -194,12 +199,14 @@ public class Options {
     public static final Option<Boolean> LOG_BACKTRACES = bool(DEBUG, "log.backtraces", false, "Log every time an exception backtrace is generated.");
     public static final Option<Boolean> LOG_CALLERS = bool(DEBUG, "log.callers", false, "Log every time a Kernel#caller backtrace is generated.");
     public static final Option<Boolean> LOG_WARNINGS = bool(DEBUG, "log.warnings", false, "Log every time a built-in warning backtrace is generated.");
+    public static final Option<Boolean> LOG_SINGLETONS = bool(DEBUG, "log.singletons", false, "Log every time a singleton class is created.");
+    public static final Option<Boolean> LOG_SINGLETONS_VERBOSE = bool(DEBUG, "log.singletons.verbose", false, "Log a stack trace every time a singleton class is created.");
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[]{"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
     public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
     // TODO: Replace flag that's false on 9 with proper module checks
-    public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", calculateSetAccessibleDefault(), "Try to set inaccessible Java methods to be accessible.");
+    public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");
     public static final Option<Boolean> JI_UPPER_CASE_PACKAGE_NAME_ALLOWED = bool(JAVA_INTEGRATION, "ji.upper.case.package.name.allowed", false, "Allow Capitalized Java package names.");
     public static final Option<Boolean> INTERFACES_USEPROXY = bool(JAVA_INTEGRATION, "interfaces.useProxy", false, "Use java.lang.reflect.Proxy for interface impl.");
@@ -249,7 +256,7 @@ public class Options {
 
     public static final Collection<Option> PROPERTIES = Collections.unmodifiableCollection(_loadedOptions);
 
-    // After PROPERTIES so these doesn't show up in --properties
+    // After PROPERTIES so these don't show up in --properties
 
     @Deprecated
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");
@@ -257,6 +264,10 @@ public class Options {
     // Most (all?) OpenJDK default this to false. See jruby/jruby#4869
     @Deprecated
     public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", false, "(DEPRECATED) Prefer IPv4 network stack");
+
+    // internal IO mimics what this was doing, and this has been untested and unsupported for many years
+    @Deprecated
+    public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
 
     private static Option<String> string(Category category, String name, String[] options, String defval, String description) {
         Option<String> option = Option.string("jruby", name, category, options, defval, description);
@@ -303,15 +314,6 @@ public class Options {
     private static boolean calculateInvokedynamicDefault() {
         // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
         return false;
-    }
-
-    /**
-     * Java 9 has much more restrictive reflection access to e.g. java.lang classes, and raises a Java 9-specific
-     * error. For now we default ji.setAccessible to false so we don't attempt it.
-     */
-    private static boolean calculateSetAccessibleDefault() {
-        String version = SafePropertyAccessor.getProperty("java.specification.version", "1.7");
-        return new BigDecimal(version).compareTo(new BigDecimal("1.9")) < 0;
     }
 
     private enum SearchMode { PREFIX,  CONTAINS }

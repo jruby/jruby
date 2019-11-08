@@ -228,6 +228,19 @@ class TestIO < Test::Unit::TestCase
       assert_nil r.gets
       r.close
     end)
+
+    (0..3).each do |i|
+      pipe(proc do |w|
+        w.write("a" * ((4096 << i) - 4), "\r\n" "a\r\n")
+        w.close
+      end,
+      proc do |r|
+        r.gets
+        assert_equal "a", r.gets(chomp: true)
+        assert_nil r.gets
+        r.close
+      end)
+    end
   end
 
   def test_gets_chomp_rs_nil
@@ -3349,7 +3362,7 @@ __END__
       }
 
       IO.select(tempfiles)
-    }, bug8080, timeout: 50
+    }, bug8080, timeout: 100
   end if defined?(Process::RLIMIT_NOFILE)
 
   def test_read_32bit_boundary
@@ -3442,17 +3455,6 @@ __END__
       t.join
     }
   end if /cygwin/ !~ RUBY_PLATFORM
-
-  def test_readpartial_bad_args
-    IO.pipe do |r, w|
-      w.write '.'
-      buf = String.new
-      assert_raise(ArgumentError) { r.readpartial(1, buf, exception: false) }
-      assert_raise(TypeError) { r.readpartial(1, exception: false) }
-      assert_equal [[r],[],[]], IO.select([r], nil, nil, 1)
-      assert_equal '.', r.readpartial(1)
-    end
-  end
 
   def test_readpartial_bad_args
     IO.pipe do |r, w|
@@ -3753,4 +3755,21 @@ __END__
       con.close
     end
   end if Socket.const_defined?(:MSG_OOB)
+
+  def test_select_leak
+    assert_no_memory_leak([], <<-"end;", <<-"end;", rss: true, timeout: 240)
+      r, w = IO.pipe
+      rset = [r]
+      wset = [w]
+      Thread.new { IO.select(rset, wset, nil, 0) }.join
+    end;
+      20_000.times do
+        th = Thread.new { IO.select(rset, wset) }
+        Thread.pass until th.stop?
+        th.kill
+        th.join
+        GC.start
+      end
+    end;
+  end
 end

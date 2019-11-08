@@ -7,7 +7,7 @@ exclude :test_include_module_with_constants_does_not_invalidate_method_cache, "n
 exclude :test_initialize_copy_empty, "needs investigation"
 exclude :test_invalid_attr, "needs investigation"
 exclude :test_method_redefinition, "needs investigation"
+exclude :test_prepend_private_super, "stack overflow, probably related to jruby/jruby#4531"
 exclude :test_private_constant_reopen, "needs investigation"
 exclude :test_private_constant_with_no_args, "needs investigation"
 exclude :test_protected_singleton_method, "needs investigation"
-exclude :test_prepend_each_classes, "needs investigation - ancestors do not match"

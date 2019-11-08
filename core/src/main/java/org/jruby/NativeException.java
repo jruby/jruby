@@ -29,6 +29,9 @@
 package org.jruby;
 
 import java.lang.reflect.Member;
+import java.util.Arrays;
+
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -78,14 +81,6 @@ public class NativeException extends RubyException {
         exceptionClass.defineAnnotatedMethods(NativeException.class);
 
         return exceptionClass;
-    }
-
-    @Override
-    public void prepareBacktrace(ThreadContext context) {
-        // if it's null, use cause's trace to build a raw stack trace
-        if (backtraceData == null) {
-            backtraceData = TraceType.Gather.RAW.getBacktraceData(getRuntime().getCurrentContext(), cause.getStackTrace());
-        }
     }
 
     @JRubyMethod

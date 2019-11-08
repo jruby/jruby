@@ -45,7 +45,6 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 public final class Kernel {
 
     public static void define(final Ruby runtime) {
-        runtime.getKernel().defineAnnotatedMethods(Kernel.class);
         final RubyModule Kernel = runtime.getKernel();
         Kernel.addMethodInternal("java", new JavaPackageMethod(Kernel, "java"));
         Kernel.addMethodInternal("javax", new JavaPackageMethod(Kernel, "javax"));

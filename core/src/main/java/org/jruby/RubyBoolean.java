@@ -137,30 +137,29 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
-            super(runtime,
-                    false); // Don't put in object space
+            super(runtime, false);
 
             flags = FALSE_F | FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
-        public static IRubyObject false_and(IRubyObject f, IRubyObject oth) {
-            return f;
+        public static IRubyObject false_and(IRubyObject fals, IRubyObject oth) {
+            return fals;
         }
 
         @JRubyMethod(name = "|")
-        public static IRubyObject false_or(IRubyObject f, IRubyObject oth) {
-            return oth.isTrue() ? f.getRuntime().getTrue() : f;
+        public static IRubyObject false_or(ThreadContext context, IRubyObject fals, IRubyObject oth) {
+            return oth.isTrue() ? context.tru : fals;
         }
 
         @JRubyMethod(name = "^")
-        public static IRubyObject false_xor(IRubyObject f, IRubyObject oth) {
-            return oth.isTrue() ? f.getRuntime().getTrue() : f;
+        public static IRubyObject false_xor(ThreadContext context, IRubyObject fals, IRubyObject oth) {
+            return oth.isTrue() ? context.tru : fals;
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString false_to_s(IRubyObject f) {
-            return RubyString.newStringShared(f.getRuntime(), FALSE_BYTES);
+        public static RubyString false_to_s(IRubyObject fals) {
+            return RubyString.newStringShared(fals.getRuntime(), FALSE_BYTES);
         }
 
         @Override
@@ -176,30 +175,29 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static class True extends RubyBoolean {
         True(Ruby runtime) {
-            super(runtime,
-                    true); // Don't put in object space
+            super(runtime, true);
 
             flags |= FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
-        public static IRubyObject true_and(IRubyObject t, IRubyObject oth) {
-            return oth.isTrue() ? t : t.getRuntime().getFalse();
+        public static IRubyObject true_and(ThreadContext context, IRubyObject tru, IRubyObject oth) {
+            return oth.isTrue() ? tru : context.fals;
         }
 
         @JRubyMethod(name = "|")
-        public static IRubyObject true_or(IRubyObject t, IRubyObject oth) {
-            return t;
+        public static IRubyObject true_or(IRubyObject tru, IRubyObject oth) {
+            return tru;
         }
 
         @JRubyMethod(name = "^")
-        public static IRubyObject true_xor(IRubyObject t, IRubyObject oth) {
-            return oth.isTrue() ? t.getRuntime().getFalse() : t;
+        public static IRubyObject true_xor(ThreadContext context, IRubyObject tru, IRubyObject oth) {
+            return oth.isTrue() ? context.fals : tru;
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString true_to_s(IRubyObject t) {
-            return RubyString.newStringShared(t.getRuntime(), TRUE_BYTES);
+        public static RubyString true_to_s(IRubyObject tru) {
+            return RubyString.newStringShared(tru.getRuntime(), TRUE_BYTES);
         }
 
         @Override

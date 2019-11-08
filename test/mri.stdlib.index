@@ -23,8 +23,6 @@ test_syslog.rb
 test_tempfile.rb
 test_time.rb
 test_timeout.rb
-# all tests fail
-#test_tracer.rb
 test_tsort.rb
 
 base64/test_base64.rb
@@ -211,7 +209,6 @@ psych/test_string.rb
 psych/test_struct.rb
 psych/test_symbol.rb
 psych/test_tainted.rb
-psych/test_to_yaml_properties.rb
 psych/test_tree_builder.rb
 psych/test_yaml.rb
 psych/test_yamlstore.rb
@@ -248,7 +245,9 @@ stringio/test_stringio.rb
 
 strscan/test_stringscanner.rb
 
+thread/test_cv.rb
 thread/test_queue.rb
+thread/test_sync.rb
 
 zlib/test_zlib.rb
 

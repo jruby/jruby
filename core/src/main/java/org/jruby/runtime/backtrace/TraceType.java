@@ -3,20 +3,29 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
+import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyString;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.TypeConverter;
 
 public class TraceType {
 
     private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
+    private static final StackWalker WALKER = ThreadContext.WALKER;
+    private static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
 
     private final Gather gather;
     private final Format format;
@@ -42,16 +51,6 @@ public class TraceType {
      */
     public BacktraceData getBacktrace(ThreadContext context) {
         return gather.getBacktraceData(context);
-    }
-
-    public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
-        // NOTE: could be optimized not to walk the whole stack
-        RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);
-
-        // User can ask for level higher than stack
-        if (elements.length <= uplevel + 1) uplevel = -1;
-
-        return elements[uplevel + 1];
     }
 
     /**
@@ -167,10 +166,10 @@ public class TraceType {
          * Full raw backtraces with all Java frames included.
          */
         RAW {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
-                        BacktraceElement.EMPTY_ARRAY,
+                        stackStream,
+                        Stream.empty(),
                         true,
                         false,
                         false);
@@ -181,9 +180,9 @@ public class TraceType {
          * A backtrace with interpreted frames intact, but don't remove Java frames.
          */
         FULL {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         true,
                         false,
@@ -195,9 +194,9 @@ public class TraceType {
          * A normal Ruby-style backtrace, but which includes any non-org.jruby frames
          */
         INTEGRATED {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         false,
                         false,
@@ -209,9 +208,9 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         NORMAL {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         false,
                         context.runtime.getInstanceConfig().getBacktraceMask(),
@@ -223,9 +222,9 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         CALLER {
-            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            public BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> stackStream) {
                 return new BacktraceData(
-                        javaTrace,
+                        stackStream,
                         context.getBacktrace(),
                         false,
                         true,
@@ -234,18 +233,22 @@ public class TraceType {
         };
 
         /**
-         * Gather backtrace data for a normal Ruby trace.
+         * Gather current-stack backtrace data for a normal Ruby trace.
          *
          * @param context
          * @return
          */
         public BacktraceData getBacktraceData(ThreadContext context) {
-            BacktraceData data = getBacktraceData(context, Thread.currentThread().getStackTrace());
+            return WALKER.walk(Thread.currentThread().getStackTrace(), stream -> {
+                BacktraceData data = getBacktraceData(context, stream);
 
-            context.runtime.incrementBacktraceCount();
-            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
+                context.runtime.incrementBacktraceCount();
+                if (RubyInstanceConfig.LOG_BACKTRACES) {
+                    logBacktrace(context.runtime, data.getBacktrace(context.runtime));
+                }
 
-            return data;
+                return data;
+            });
         }
 
         /**
@@ -257,21 +260,20 @@ public class TraceType {
          * @return
          */
         public BacktraceData getIntegratedBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
-            Gather useGather = this;
+            Gather useGather = this == NORMAL ? INTEGRATED : this;
 
-            if (useGather == NORMAL) {
-                useGather = INTEGRATED;
-            }
+            return WALKER.walk(javaTrace, stream -> {
+                BacktraceData data = useGather.getBacktraceData(context, stream);
 
-            BacktraceData data = useGather.getBacktraceData(context, javaTrace);
+                context.runtime.incrementBacktraceCount();
+                if (RubyInstanceConfig.LOG_BACKTRACES)
+                    logBacktrace(context.runtime, data.getBacktrace(context.runtime));
 
-            context.runtime.incrementBacktraceCount();
-            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(context.runtime, data.getBacktrace(context.runtime));
-
-            return data;
+                return data;
+            });
         }
 
-        public abstract BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace);
+        public abstract BacktraceData getBacktraceData(ThreadContext context, Stream<StackWalker.StackFrame> javaTrace);
     }
 
     public enum Format {
@@ -305,7 +307,38 @@ public class TraceType {
         public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
     }
 
-    protected static String printBacktraceMRI(RubyException exception, boolean console) {
+    public static String printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
+        Ruby runtime = context.runtime;
+        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
+        boolean highlight = false;
+        boolean reverse = false;
+
+        if (!optArg.isNil()) {
+            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
+
+            IRubyObject vHigh = highlightOrder[0];
+            if (vHigh == null) vHigh = context.nil;
+            if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
+                throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
+            }
+            highlight = vHigh.isTrue();
+
+            IRubyObject vOrder = highlightOrder[1];
+            if (vOrder != null) {
+                vOrder = TypeConverter.checkID(vOrder);
+                if (vOrder == runtime.newSymbol("bottom")) reverse = true;
+                else if (vOrder == runtime.newSymbol("top")) reverse = false;
+                else {
+                    throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
+                }
+            }
+        }
+
+        // TODO: reverse
+        return printBacktraceMRI(exception, highlight);
+    }
+
+    private static String printBacktraceMRI(IRubyObject exception, boolean console) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
 
@@ -372,7 +405,7 @@ public class TraceType {
             }
         }
 
-        exception.printBacktrace(errorStream, 1);
+        printBacktraceToStream(backtrace, errorStream, 1);
 
         return baos.toString();
     }
@@ -477,6 +510,36 @@ public class TraceType {
         }
     }
 
+    private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
+        if (context.getFile() != null && context.getFile().length() > 0) {
+            if (context.getFrameName() != null) {
+                errorStream.print(context.getFile() + ':' + context.getLine());
+                errorStream.print(":in '" + context.getFrameName() + '\'');
+            } else if (context.getLine() != 0) {
+                errorStream.print(context.getFile() + ':' + context.getLine());
+            } else {
+                errorStream.print(context.getFile());
+            }
+        }
+    }
+
+    public static void printBacktraceToStream(IRubyObject backtrace, PrintStream errorStream, int skip) {
+        if ( backtrace.isNil() ) return;
+        if ( backtrace instanceof RubyArray ) {
+            IRubyObject[] elements = ((RubyArray) backtrace).toJavaArrayMaybeUnsafe();
+            for (int i = skip; i < elements.length; i++) {
+                IRubyObject stackTraceLine = elements[i];
+                if (stackTraceLine instanceof RubyString) {
+                    errorStream.println("\tfrom " + stackTraceLine);
+                }
+                else {
+                    errorStream.println("\t" + stackTraceLine);
+                }
+            }
+        }
+    }
+
+    @Deprecated
     public static IRubyObject generateMRIBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
         if (trace == null) return runtime.getNil();
 
@@ -490,16 +553,14 @@ public class TraceType {
         return RubyArray.newArrayMayCopy(runtime, traceArray);
     }
 
-    private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
-        if (context.getFile() != null && context.getFile().length() > 0) {
-            if (context.getFrameName() != null) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
-                errorStream.print(":in '" + context.getFrameName() + '\'');
-            } else if (context.getLine() != 0) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
-            } else {
-                errorStream.print(context.getFile());
-            }
-        }
+    @Deprecated
+    public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
+        // NOTE: could be optimized not to walk the whole stack
+        RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);
+
+        // User can ask for level higher than stack
+        if (elements.length <= uplevel + 1) uplevel = -1;
+
+        return elements[uplevel + 1];
     }
 }

@@ -20,22 +20,6 @@ Some additional libraries distributed with JRuby are not covered by
 JRuby's licence. Most of these libraries and their licenses are listed 
 below. Also see LICENSE.RUBY for most files found in lib/ruby/stdlib.
 
- bench/rails/public/javascripts/* are distributed under the MIT
- license, and have the following copyrights:
-
-   controls.js is Copyright:
-   (c) 2005-2008 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-   (c) 2005-2007 Ivan Krstic (http://blogs.law.harvard.edu/ivan)
-   (c) 2005-2007 Jon Tirsen (http://www.tirsen.com)
-
-   dragdrop.js is Copyright:
-   (c) 2005-2008 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-   (c) 2005-2007 Sammi Williams (http://www.oriontransfer.co.nz, sammi@oriontransfer.co.nz)
-
-   effect.js is Copyright (c) 2005-2008 Thomas Fuchs.
-
-   prototype.js is Copyright (c) 2005-2007 Sam Stephenson.
-
  asm (http://asm.objectweb.org) is distributed under the BSD license and is
 
    Copyright (c) 2000-2011 INRIA, France Telecom

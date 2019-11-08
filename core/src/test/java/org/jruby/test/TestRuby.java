@@ -169,7 +169,7 @@ public class TestRuby extends TestRubyBase {
         RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
         exception.set_backtrace(backtrace);
         ruby.printError(exception);
-        assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", err.toString());
+        assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", CRLFToNL(err.toString()));
     }
     
     public void testPrintErrorShouldOnlyPrintErrorMessageWhenBacktraceIsNil() {
@@ -183,5 +183,15 @@ public class TestRuby extends TestRubyBase {
         RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
+    }
+
+    public void testTeardownExecutors() {
+        Ruby ruby = Ruby.newInstance();
+
+        ruby.tearDown(false);
+
+        assertTrue(ruby.getExecutor().isShutdown());
+        assertTrue(ruby.getFiberExecutor().isShutdown());
+        assertTrue(ruby.getJITCompiler().isShutdown());
     }
 }

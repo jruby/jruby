@@ -64,4 +64,9 @@ public class UnboxedFixnum extends ImmutableLiteral {
     public String toString() {
         return "UnboxedFixnum:" + value;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

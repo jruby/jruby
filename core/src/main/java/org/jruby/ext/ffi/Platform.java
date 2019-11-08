@@ -69,6 +69,7 @@ public class Platform {
         FREEBSD,
         NETBSD,
         OPENBSD,
+        DRAGONFLYBSD,
         LINUX,
         SOLARIS,
         AIX,
@@ -300,7 +301,7 @@ public class Platform {
         return javaVersionMajor = version;
     }
     public final boolean isBSD() {
-        return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN;
+        return OS == OS.FREEBSD || OS == OS.OPENBSD || OS == OS.NETBSD || OS == OS.DARWIN || OS == OS.DRAGONFLYBSD;
     }
     public final boolean isUnix() {
         return OS != OS.WINDOWS;
@@ -322,6 +323,7 @@ public class Platform {
         module.defineConstant("IS_WINDOWS", runtime.newBoolean(os == OS.WINDOWS));
         module.defineConstant("IS_BSD", runtime.newBoolean(platform.isBSD()));
         module.defineConstant("IS_FREEBSD", runtime.newBoolean(os == OS.FREEBSD));
+        module.defineConstant("IS_DRAGONFLYBSD", runtime.newBoolean(os == OS.DRAGONFLYBSD));
         module.defineConstant("IS_OPENBSD", runtime.newBoolean(os == OS.OPENBSD));
         module.defineConstant("IS_SOLARIS", runtime.newBoolean(os == OS.SOLARIS));
         module.defineConstant("IS_LINUX", runtime.newBoolean(os == OS.LINUX));

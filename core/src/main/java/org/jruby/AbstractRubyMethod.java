@@ -41,6 +41,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.DataType;
 
 /**
@@ -52,7 +53,9 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     protected String methodName;
     protected RubyModule originModule;
     protected String originName;
+    protected CacheEntry entry;
     protected DynamicMethod method;
+    protected RubyModule sourceModule;
 
     protected AbstractRubyMethod(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -147,13 +150,13 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
         if (superClass == null) return context.nil;
 
-        DynamicMethod newMethod = superClass.searchMethod(methodName);
-        if (newMethod == UndefinedMethod.INSTANCE) return context.nil;
+        CacheEntry entry = superClass.searchWithCache(methodName);
+        if (entry.method == UndefinedMethod.INSTANCE) return context.nil;
 
         if (receiver == null) {
-            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, newMethod);
+            return RubyUnboundMethod.newUnboundMethod(superClass, methodName, superClass, originName, entry);
         } else {
-            return RubyMethod.newMethod(superClass, methodName, superClass, originName, newMethod, receiver);
+            return RubyMethod.newMethod(superClass, methodName, superClass, originName, entry, receiver);
         }
     }
 

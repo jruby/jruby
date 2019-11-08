@@ -23,7 +23,7 @@ import static org.jruby.util.CodegenUtils.sig;
 public class DRegexpObjectSite extends ConstructObjectSite {
     protected final RegexpOptions options;
     private volatile RubyRegexp cache;
-    private static final AtomicReferenceFieldUpdater UPDATER = AtomicReferenceFieldUpdater.newUpdater(DRegexpObjectSite.class, RubyRegexp.class, "cache");
+    private static final AtomicReferenceFieldUpdater CACHE_UPDATER = AtomicReferenceFieldUpdater.newUpdater(DRegexpObjectSite.class, RubyRegexp.class, "cache");
 
     public DRegexpObjectSite(MethodType type, int embeddedOptions) {
         super(type);
@@ -64,24 +64,34 @@ public class DRegexpObjectSite extends ConstructObjectSite {
                 .binder();
     }
 
+    @Override
+    public String initialTarget() {
+        if (options.isOnce()) return "constructOnce";
+
+        return super.initialTarget();
+    }
+
     // dynamic regexp
-    public RubyRegexp construct(ThreadContext context, RubyString[] pieces) throws Throwable {
+    public RubyRegexp construct(ThreadContext context, RubyString[] pieces) {
         RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
-        if (options.isOnce()) {
-            if (cache != null) {
-                // we cached a value, so re-call this site's target handle to get it
-                return cache;
-            }
+        return re;
+    }
 
-            // we don't care if this succeeds, just that it only gets set once
-            UPDATER.compareAndSet(this, null, cache);
+    // dynamic regexp cached once
+    public RubyRegexp constructOnce(ThreadContext context, RubyString[] pieces) {
+        RubyRegexp re = construct(context, pieces);
 
-            setTarget(Binder.from(type()).dropAll().constant(cache));
+        // permanently set target to new regexp iff we are the first to assign it
+        if (CACHE_UPDATER.compareAndSet(this, null, re)) {
+            setTarget(Binder.from(type()).dropAll().constant(re));
+
+            return re;
         }
 
-        return re;
+        // cache was assigned on another thread, re-get cache and return
+        return this.cache;
     }
 }

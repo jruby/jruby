@@ -37,6 +37,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
@@ -79,65 +80,70 @@ public class RubyObjectSpecializer {
 
     public static ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
         int size = foundVariables.size();
-        ClassAndAllocator cna = getClassForSize(size);
 
-        if (cna == null) {
-            final String clsPath = "org/jruby/gen/RubyObject" + size;
+        // clamp to max object width (jruby/jruby#
+        size = Math.min(size, Options.REIFY_VARIABLES_MAX.load());
 
-            Class specialized;
+        ClassAndAllocator cna = null;
+        String className = null;
+
+        if (Options.REIFY_VARIABLES_NAME.load()) {
+            className = klass.getName();
+
+            if (className.startsWith("#")) {
+                className = "Anonymous" + Integer.toHexString(System.identityHashCode(klass));
+            } else {
+                className = className.replace("::", "/");
+            }
+        } else {
+            // Generate class for specified size
+            cna = getClassForSize(size);
+
+            if (cna == null) {
+                className = "RubyObject" + size;
+            }
+        }
+
+        // if we have a className, proceed to generate
+        if (className != null) {
+            final String clsPath = "org/jruby/gen/" + className;
+
             synchronized (LOADER) {
+                Class specialized;
                 try {
                     // try loading class without generating
                     specialized = LOADER.loadClass(clsPath.replace('/', '.'));
                 } catch (ClassNotFoundException cnfe) {
                     // generate specialized class
-                    specialized = generateInternal(foundVariables.size(), clsPath);
+                    specialized = generateInternal(size, clsPath);
                 }
 
                 try {
-//                    MethodHandle allocatorHandle = LOOKUP
-//                            .findConstructor(specialized, MethodType.methodType(void.class, Ruby.class, RubyClass.class))
-//                            .asType(MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class));
-
-                    // LMF version not working currently
-//                    MethodType invokeType = MethodType.methodType(specialized, Ruby.class, RubyClass.class);
-//                    MethodType smaType = MethodType.methodType(IRubyObject.class, Ruby.class, RubyClass.class);
-//                    CallSite allocatorSite = LambdaMetafactory.metafactory(
-//                            LOOKUP,
-//                            "allocate",
-//                            MethodType.methodType(ObjectAllocator.class),
-//                            smaType,
-//                            allocatorHandle,
-//                            invokeType);
-//
-//                    ObjectAllocator allocator = (ObjectAllocator) allocatorSite.dynamicInvoker().invokeExact();
-
-//                    ObjectAllocator allocator = (runtime, klazz) -> {
-//                        try {
-//                            return (IRubyObject) allocatorHandle.invokeExact(runtime, klazz);
-//                        } catch (Throwable t) {
-//                            Helpers.throwException(t);
-//                            return null;
-//                        }
-//                    };
-
                     ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].newInstance();
 
-                    SPECIALIZED_CLASSES.put(size, cna = new ClassAndAllocator(specialized, allocator));
+                    cna = new ClassAndAllocator(specialized, allocator);
+
+                    if (!Options.REIFY_VARIABLES_NAME.load()) {
+                        SPECIALIZED_CLASSES.put(size, cna);
+                    }
                 } catch (Throwable t) {
                     throw new RuntimeException(t);
                 }
             }
         }
 
+        // Pre-initialize variable table with field accessors for size
         try {
             int offset = 0;
+
+            // TODO: this just ends up reifying the first N variables it finds, which may not be the most valuable
             for (String name : foundVariables) {
                 klass.getVariableTableManager().getVariableAccessorForVar(
                         name,
                         LOOKUP.findGetter(cna.cls, "var" + offset, Object.class),
                         LOOKUP.findSetter(cna.cls, "var" + offset, Object.class));
                 offset++;
+                if (offset >= size) break;
             }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);

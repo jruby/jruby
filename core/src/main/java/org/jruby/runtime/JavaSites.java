@@ -47,6 +47,9 @@ public class JavaSites {
     public final MarshalSites Marshal = new MarshalSites();
     public final PathnameSites Pathname = new PathnameSites();
     public final DateSites Date = new DateSites();
+    public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
+    public final ConditionVariableSites ConditionVariable = new ConditionVariableSites();
+    public final FiberSites Fiber = new FiberSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -106,8 +109,6 @@ public class JavaSites {
         public final CachingCallSite op_cmp_minmax = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt_minmax = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_minmax = new FunctionalCachingCallSite("<");
-        public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
-        public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
         public final CallSite begin = new FunctionalCachingCallSite("begin");
         public final CallSite end = new FunctionalCachingCallSite("end");
         public final CallSite exclude_end = new FunctionalCachingCallSite("exclude_end?");
@@ -140,7 +141,6 @@ public class JavaSites {
         public final CallSite to_s = new FunctionalCachingCallSite("to_s");
         public final CallSite op_match = new FunctionalCachingCallSite("=~");
         public final CallSite match = new FunctionalCachingCallSite("match");
-        public final CallSite match_p = new FunctionalCachingCallSite("match?");
         public final RespondToCallSite respond_to_begin = new RespondToCallSite("begin");
         public final RespondToCallSite respond_to_end = new RespondToCallSite("end");
         public final CallSite begin = new FunctionalCachingCallSite("begin");
@@ -217,8 +217,8 @@ public class JavaSites {
     }
 
     public static class IntegerSites {
-        public final CallSite op_gt = new FunctionalCachingCallSite(">");
-        public final CallSite op_lt = new FunctionalCachingCallSite("<");
+        public final CachingCallSite op_gt = new FunctionalCachingCallSite(">");
+        public final CachingCallSite op_lt = new FunctionalCachingCallSite("<");
         public final CallSite op_le = new FunctionalCachingCallSite("<=");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
         public final CallSite op_minus = new FunctionalCachingCallSite("-");
@@ -461,10 +461,24 @@ public class JavaSites {
     public static class PathnameSites {
         public final CallSite glob = new FunctionalCachingCallSite("glob");
         public final CallSite op_plus = new FunctionalCachingCallSite("+");
+        public final CallSite sub = new FunctionalCachingCallSite("sub");
     }
 
     public static class DateSites {
         public final CallSite zone_to_diff = new FunctionalCachingCallSite("zone_to_diff");
+    }
+
+    public static class RaiseExceptionSites {
+        public final CheckedSites backtrace = new CheckedSites("backtrace");
+    }
+
+    public static class ConditionVariableSites {
+        public final CachingCallSite mutex_sleep = new FunctionalCachingCallSite("sleep");
+    }
+
+    public static class FiberSites {
+        public final CachingCallSite peek = new FunctionalCachingCallSite("peek");
+        public final CachingCallSite next = new FunctionalCachingCallSite("next");
     }
 
     public static class CheckedSites {

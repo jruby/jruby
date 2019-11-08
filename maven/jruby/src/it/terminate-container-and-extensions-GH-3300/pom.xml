@@ -27,8 +27,8 @@
 
   <repositories>
     <repository>
-      <url>https://otto.takari.io/content/repositories/rubygems/maven/releases</url>
-      <id>rubygems-releases</id>
+      <id>mavengems</id>
+      <url>mavengem:https://rubygems.org</url>
     </repository>
   </repositories>
 
@@ -38,6 +38,13 @@
   </properties>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>org.torquebox.mojo</groupId>
+        <artifactId>mavengem-wagon</artifactId>
+        <version>1.0.3</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>

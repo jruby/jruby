@@ -1,0 +1,2 @@
+fails:TracePoint#inspect returns a String showing the event, path and line
+fails:TracePoint#inspect returns a String showing the event, path and line for a :class event

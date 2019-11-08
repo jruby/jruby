@@ -31,6 +31,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,6 +46,16 @@ import java.util.Set;
  * Port of MRI's popen+exec logic.
  */
 public class PopenExecutor {
+    /**
+     * Check properties and runtime state to determine whether a native popen is possible.
+     *
+     * @param runtime current runtime
+     * @return true if popen can use native code, false otherwise
+     */
+    public static boolean nativePopenAvailable(Ruby runtime) {
+        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS;
+    }
+
     // MRI: check_pipe_command
     public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
         RubyString filenameStr = filenameOrCommand.convertToString();
@@ -111,6 +122,10 @@ public class PopenExecutor {
             prog = (RubyString)prog.strDup(runtime).prepend(context, RubyString.newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
             eargp.chdir_dir = null;
             eargp.chdir_given_clear();
+
+            // create new pgroup to prevent orphaned processes when the parent is killed
+            eargp.attributes.add(SpawnAttribute.pgroup(0));
+            eargp.attributes.add(SpawnAttribute.flags((short)SpawnAttribute.SETPGROUP));
         }
 
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
@@ -539,13 +554,13 @@ public class PopenExecutor {
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
                 if (API.rb_pipe(runtime, writePair) == -1)
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
                 if (API.rb_pipe(runtime, pair) == -1) {
-                    e = posix.errno;
+                    e = posix.getErrno();
                     runtime.getPosix().close(writePair[1]);
                     runtime.getPosix().close(writePair[0]);
-                    posix.errno = e;
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    posix.setErrno(e);
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
                 }
 
                 if (eargp != null) prepareStdioRedirects(runtime, pair, writePair, eargp);
@@ -553,14 +568,14 @@ public class PopenExecutor {
                 break;
             case OpenFile.READABLE:
                 if (API.rb_pipe(runtime, pair) == -1)
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
 
                 if (eargp != null) prepareStdioRedirects(runtime, pair, null, eargp);
 
                 break;
             case OpenFile.WRITABLE:
                 if (API.rb_pipe(runtime, pair) == -1)
-                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                    throw runtime.newErrnoFromErrno(posix.getErrno(), prog.toString());
 
                 if (eargp != null) prepareStdioRedirects(runtime, null, pair, eargp);
 
@@ -837,47 +852,45 @@ public class PopenExecutor {
             int j;
             if (pairs[i].oldfd == -1)
                 continue;
-            // We can't support this logic because it makes fcntl changes in parent
-            throw runtime.newNotImplementedError("cyclic redirects in child are not supported");
-//            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
-//                int fd = pairs[i].oldfd;
-//                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
-//                if (ret == -1) {
-//                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
-//                    return -1;
-//                }
-//                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
-//                    ret &= ~FcntlLibrary.FD_CLOEXEC;
-//                    ret = runtime.getPosix().fcntl(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
-//                    if (ret == -1) {
-//                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
-//                        return -1;
-//                    }
-//                }
-//                pairs[i].oldfd = -1;
-//                continue;
-//            }
-//            if (extra_fd == -1) {
-//                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
-//                if (extra_fd == -1) {
-//                    if (errmsg != null) errmsg[0] = "dup";
-//                    return -1;
-//                }
-////                rb_update_max_fd(extra_fd);
-//            }
-//            else {
-//                // This always succeeds because we just defer it to posix_spawn.
-//                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
-//            }
-//            pairs[i].oldfd = extra_fd;
-//            j = pairs[i].older_index;
-//            pairs[i].older_index = -1;
-//            while (j != -1) {
-//                // This always succeeds because we just defer it to posix_spawn.
-//                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
-//                pairs[j].oldfd = -1;
-//                j = pairs[j].older_index;
-//            }
+            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
+                int fd = pairs[i].oldfd;
+                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
+                if (ret == -1) {
+                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
+                    return -1;
+                }
+                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
+                    ret &= ~FcntlLibrary.FD_CLOEXEC;
+                    ret = runtime.getPosix().fcntlInt(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
+                    if (ret == -1) {
+                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
+                        return -1;
+                    }
+                }
+                pairs[i].oldfd = -1;
+                continue;
+            }
+            if (extra_fd == -1) {
+                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
+                if (extra_fd == -1) {
+                    if (errmsg != null) errmsg[0] = "dup";
+                    return -1;
+                }
+//                rb_update_max_fd(extra_fd);
+            }
+            else {
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+            }
+            pairs[i].oldfd = extra_fd;
+            j = pairs[i].older_index;
+            pairs[i].older_index = -1;
+            while (j != -1) {
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+                pairs[j].oldfd = -1;
+                j = pairs[j].older_index;
+            }
         }
         if (extra_fd != -1) {
             ret = redirectClose(runtime, eargp, extra_fd, sargp != null); /* async-signal-safe */
@@ -1849,14 +1862,19 @@ public class PopenExecutor {
             checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
         // add chdir if necessary
-        if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
+        String virtualCWD = runtime.getCurrentDirectory();
+        if (!virtualCWD.equals(runtime.getPosix().getcwd())) {
             String arg = prog.toString();
+
+            // if we're launching org.jruby.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
                 prog = RubyString.newString(runtime, arg);
-            }
-            else if (!eargp.chdir_given()) { // only if :chdir is not specified
+            } else if (virtualCWD.startsWith("uri:classloader:")) {
+                // can't switch to uri:classloader URL, so just run in cwd
+            } else if (!eargp.chdir_given()) {
+                // only if :chdir is not specified
                 eargp.chdir_given_set();
-                eargp.chdir_dir = runtime.getCurrentDirectory();
+                eargp.chdir_dir = virtualCWD;
             }
         }
 

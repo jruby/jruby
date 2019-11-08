@@ -9,26 +9,29 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
-    public TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                                         Operand[] args, boolean isPotentiallyRefined) {
-        this(scope, Operation.CALL_2O, callType, result, name, receiver, args, isPotentiallyRefined);
+    // clone constructor
+    protected TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                                            Operand[] args, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, null, isPotentiallyRefined, callSite, callSiteId);
     }
 
-    public TwoOperandArgNoBlockCallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
+    // normal constructor
+    public TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
                                          Operand[] args, boolean isPotentiallyRefined) {
-        super(scope, op, callType, result, name, receiver, args, null, isPotentiallyRefined);
+        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, null, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new TwoOperandArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined());
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public Operand getArg2() {

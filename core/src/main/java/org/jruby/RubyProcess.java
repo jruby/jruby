@@ -42,6 +42,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import jnr.posix.POSIX;
+import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -49,6 +50,9 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.runtime.Helpers.throwException;
+import static org.jruby.runtime.Helpers.tryThrow;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -56,6 +60,7 @@ import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.ShellLauncher;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 
@@ -65,6 +70,8 @@ import static org.jruby.util.WindowsFFI.Kernel32.*;
 
 import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.util.function.ToIntFunction;
 
 /**
  */
@@ -900,18 +907,72 @@ public class RubyProcess {
 
     public static long waitpid(Ruby runtime, long pid, int flags) {
         int[] status = new int[1];
-        runtime.getPosix().errno(0);
-        pid = runtime.getPosix().waitpid(pid, status, flags);
+        POSIX posix = runtime.getPosix();
+        ThreadContext context = runtime.getCurrentContext();
+
+        posix.errno(0);
+
+        int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
+
         raiseErrnoIfSet(runtime, ECHILD);
 
-        if (pid > 0) {
-            runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
+        if (res > 0) {
+            context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res));
         }
         else {
-            runtime.getCurrentContext().setLastExitStatus(runtime.getNil());
+            context.setLastExitStatus(runtime.getNil());
         }
 
-        return pid;
+        return res;
+    }
+
+    private static final Method NATIVE_THREAD_SIGNAL;
+    private static final Method NATIVE_THREAD_CURRENT;
+
+    static {
+        Method m1 = null;
+        Method m2 = null;
+        try {
+            // NativeThread is not public on Windows builds of Open JDK
+            Class nativeThread = Class.forName("sun.nio.ch.NativeThread");
+            Method signal = nativeThread.getDeclaredMethod("signal", long.class);
+            Method current = nativeThread.getDeclaredMethod("current");
+            if (Java.trySetAccessible(signal) && Java.trySetAccessible(current)) {
+                m1 = signal;
+                m2 = current;
+            }
+        } catch (NoSuchMethodException | ClassNotFoundException e) {
+            // ignore and leave it null
+        }
+        NATIVE_THREAD_SIGNAL = m1;
+        NATIVE_THREAD_CURRENT = m2;
+
+    }
+
+    private static int pthreadKillable(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
+        if (Platform.IS_WINDOWS || !Options.NATIVE_PTHREAD_KILL.load() || NATIVE_THREAD_CURRENT == null) {
+            // Can't use pthread_kill on Windows
+            return blockingCall.applyAsInt(context);
+        }
+
+        do try {
+            return context.getThread().executeTask(context, blockingCall, new RubyThread.Task<ToIntFunction<ThreadContext>, Integer>() {
+                long threadID = tryThrow(() -> (Long) NATIVE_THREAD_CURRENT.invoke(null));
+
+                @Override
+                public Integer run(ThreadContext context, ToIntFunction<ThreadContext> blockingCall) {
+                    return blockingCall.applyAsInt(context);
+                }
+
+                @Override
+                public void wakeup(RubyThread thread, ToIntFunction<ThreadContext> blockingCall) {
+                    tryThrow(() -> NATIVE_THREAD_SIGNAL.invoke(null, threadID));
+                }
+            });
+        } catch (InterruptedException ie) {
+            context.pollThreadEvents();
+            // try again
+        } while (true);
     }
 
     private interface NonNativeErrno {
@@ -935,17 +996,21 @@ public class RubyProcess {
     }
 
     public static IRubyObject wait(Ruby runtime, IRubyObject[] args) {
-
         if (args.length > 0) {
             return waitpid(runtime, args);
         }
 
         int[] status = new int[1];
-        runtime.getPosix().errno(0);
-        int pid = runtime.getPosix().wait(status);
+        POSIX posix = runtime.getPosix();
+        ThreadContext context = runtime.getCurrentContext();
+
+        posix.errno(0);
+
+        int pid = pthreadKillable(context, ctx -> posix.wait(status));
+
         raiseErrnoIfSet(runtime, ECHILD);
 
-        runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
         return runtime.newFixnum(pid);
     }
 
@@ -963,10 +1028,14 @@ public class RubyProcess {
         RubyArray results = runtime.newArray();
 
         int[] status = new int[1];
-        int result = posix.wait(status);
+        ThreadContext currentContext = runtime.getCurrentContext();
+
+        int result = pthreadKillable(currentContext, ctx -> posix.wait(status));
+
         while (result != -1) {
             results.append(runtime.newArray(runtime.newFixnum(result), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], result)));
-            result = posix.wait(status);
+
+            result = pthreadKillable(currentContext, ctx -> posix.wait(status));
         }
 
         return results;
@@ -1242,15 +1311,12 @@ public class RubyProcess {
         if (negative) value = value.substring(1);
 
         // We need the SIG for sure.
-        String signalName = value.startsWith("SIG") ? value : "SIG" + value;
+        String signalName = value.startsWith("SIG") ? value.substring(3) : value;
+        int signalValue = (int) RubySignal.signm2signo(signalName);
 
-        try {
-            int signalValue = Signal.valueOf(signalName).intValue();
-            return negative ? -signalValue : signalValue;
+        if (signalValue == 0) throw runtime.newArgumentError("unsupported name `" + signalName + "'");
 
-        } catch (IllegalArgumentException ex) {
-            throw runtime.newArgumentError("unsupported name `" + signalName + "'");
-        }
+        return negative ? -signalValue : signalValue;
     }
 
     @Deprecated
@@ -1376,7 +1442,7 @@ public class RubyProcess {
         return RubyThread.startWaiterThread(
                 runtime,
                 pid,
-                CallBlock.newCallClosure(recv, (RubyModule)recv, Signature.NO_ARGUMENTS, callback, context));
+                CallBlock.newCallClosure(context, recv, Signature.NO_ARGUMENTS, callback));
     }
 
     @Deprecated
@@ -1566,7 +1632,7 @@ public class RubyProcess {
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+        if (PopenExecutor.nativePopenAvailable(runtime)) {
             return PopenExecutor.spawn(context, args);
         }
 

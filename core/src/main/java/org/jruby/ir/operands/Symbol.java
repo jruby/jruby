@@ -72,4 +72,9 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     public void visit(IRVisitor visitor) {
         visitor.Symbol(this);
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

@@ -1,0 +1,1 @@
+fails:BigDecimal#div with precision set to 0 with Object tries to coerce the other operand to self

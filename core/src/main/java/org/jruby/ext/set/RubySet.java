@@ -337,7 +337,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected void clearImpl() {
-        hash.rb_clear();
+        hash.rb_clear(getRuntime().getCurrentContext());
     }
 
     /**
@@ -603,12 +603,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     private RubyEnumerator.SizeFn enumSize() {
-        return new RubyEnumerator.SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return getRuntime().newFixnum( RubySet.this.size() );
-            }
-        };
+        return (context, args) -> context.runtime.newFixnum( size() );
     }
 
     /**
@@ -890,7 +885,7 @@ public class RubySet extends RubyObject implements Set {
 
     @JRubyMethod(name = "reset")
     public IRubyObject reset(ThreadContext context) {
-        this.hash.rehash();
+        this.hash.rehash(context);
         return this;
     }
 

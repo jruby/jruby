@@ -238,7 +238,7 @@ public class TypeConverter {
     public static IRubyObject convertToTypeWithCheck(ThreadContext context, IRubyObject obj, RubyClass target, JavaSites.CheckedSites sites) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(context, obj, target, sites, false);
-        if (val.isNil()) return val;
+        if (val == context.nil) return val;
         if (!target.isInstance(val)) {
             throw newTypeError(context.runtime, obj, target, sites.methodName, val);
         }
@@ -297,6 +297,7 @@ public class TypeConverter {
     // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
+        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
         TypeConverterSites sites = sites(context);
@@ -358,10 +359,13 @@ public class TypeConverter {
     }
 
     // MRI: rb_check_array_type
-    public static IRubyObject checkArrayType(IRubyObject self) {
-        Ruby runtime = self.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        return TypeConverter.convertToTypeWithCheck(context, self, runtime.getArray(), sites(context).to_ary_checked);
+    public static IRubyObject checkArrayType(ThreadContext context, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getArray(), sites(context).to_ary_checked);
+    }
+
+    @Deprecated // no longer used
+    public static IRubyObject checkArrayType(IRubyObject obj) {
+        return checkArrayType(obj.getRuntime().getCurrentContext(), obj);
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
@@ -384,8 +388,8 @@ public class TypeConverter {
 
         ClassIndex xt = x.getMetaClass().getClassIndex();
 
-        // MISSING: special error for T_DATA of a certain type
-        if (xt != type.getClassIndex()) {
+        // MISSING: special error for T_DATA of a certain type (isInstance is attempt at similar behavior)
+        if (xt != type.getClassIndex() && !type.isInstance(x)) {
             Ruby runtime = context.runtime;
             throw context.runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, x.getMetaClass()), " (expected ", types(runtime, type), ")"));
         }
@@ -430,7 +434,7 @@ public class TypeConverter {
 
     // MRI: rb_Array
     public static RubyArray rb_Array(ThreadContext context, IRubyObject val) {
-        IRubyObject tmp = checkArrayType(val); // to_ary
+        IRubyObject tmp = checkArrayType(context, val); // to_ary
 
         if (tmp == context.nil) {
             TypeConverterSites sites = sites(context);
@@ -492,7 +496,7 @@ public class TypeConverter {
         // grab it's string representation without calling a method which properly encodes
         // the string.
         if (obj instanceof RubyString) {
-            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
+            return RubyEncoding.decodeISO(((RubyString) obj).getByteList()).intern();
         }
         return obj.asJavaString().intern();
     }

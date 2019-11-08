@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -33,17 +32,12 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
-    private final RubySymbol scopeName; // Primarily a debugging aid
+    private final String scopeId; // Primarily a debugging aid
 
-    public BreakInstr(Operand returnValue, RubySymbol scopeName) {
+    public BreakInstr(Operand returnValue, String scopeId) {
         super(Operation.BREAK, returnValue);
-        this.scopeName = scopeName;
+        this.scopeId = scopeId;
     }
-
-    public RubySymbol getScopeName() {
-        return scopeName;
-    }
-
     public Operand getReturnValue() {
         return getOperand1();
     }
@@ -57,12 +51,12 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"scope_name: " + scopeName};
+        return new String[] {"scope_name: " + scopeId};
     }
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new BreakInstr(getReturnValue().cloneForInlining(info), scopeName);
+        if (info instanceof SimpleCloneInfo) return new BreakInstr(getReturnValue().cloneForInlining(info), scopeId);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
 
@@ -89,7 +83,7 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
                 return (v == null) ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
             }
 
-            return new BreakInstr(getReturnValue().cloneForInlining(ii), scopeName);
+            return new BreakInstr(getReturnValue().cloneForInlining(ii), scopeId);
         } else {
             throw new UnsupportedOperationException("Break instructions shouldn't show up outside closures.");
         }
@@ -99,11 +93,11 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getReturnValue());
-        e.encode(getScopeName());
+        e.encode(scopeId);
     }
 
     public static BreakInstr decode(IRReaderDecoder d) {
-        return new BreakInstr(d.decodeOperand(), d.decodeSymbol());
+        return new BreakInstr(d.decodeOperand(), d.decodeString());
     }
 
     @Override

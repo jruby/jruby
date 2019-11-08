@@ -13,12 +13,18 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZSuperInstr extends UnresolvedSuperInstr {
+    public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure,
+                       boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
+        super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined, callSite, callSiteId);
+    }
+
     public ZSuperInstr(IRScope scope, Variable result, Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined) {
         super(scope, Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined);
     }
@@ -33,7 +39,8 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii),
+                isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     public static ZSuperInstr decode(IRReaderDecoder d) {

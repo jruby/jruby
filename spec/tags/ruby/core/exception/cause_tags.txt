@@ -1,0 +1,1 @@
+fails:Exception#cause is set for internal errors caused by user errors

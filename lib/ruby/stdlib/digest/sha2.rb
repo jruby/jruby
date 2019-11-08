@@ -11,7 +11,9 @@
 #   $Id$
 
 require 'digest'
-require 'digest/sha2.so'
+
+# Load built-in digest/sha2 library
+JRuby::Util.load_ext("org.jruby.ext.digest.SHA2")
 
 module Digest
   #

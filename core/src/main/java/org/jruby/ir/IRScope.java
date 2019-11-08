@@ -5,7 +5,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.Compilable;
-import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
@@ -15,6 +14,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -70,10 +71,10 @@ public abstract class IRScope implements ParseResult {
     private static final AtomicInteger globalScopeCount = new AtomicInteger();
 
     /** Unique global scope id */
-    private int scopeId;
+    private final int scopeId;
 
     /** Name */
-    private RubySymbol name;
+    private ByteList name;
 
     /** Starting line for this scope's definition */
     private final int lineNumber;
@@ -94,12 +95,6 @@ public abstract class IRScope implements ParseResult {
     /** Parser static-scope that this IR scope corresponds to */
     private final StaticScope staticScope;
 
-    /** Local variables defined in this scope */
-    private Set<LocalVariable> definedLocalVars;
-
-    /** Local variables used in this scope */
-    private Set<LocalVariable> usedLocalVars;
-
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
 
@@ -110,29 +105,15 @@ public abstract class IRScope implements ParseResult {
     protected FullInterpreterContext optimizedInterpreterContext;
 
     protected int temporaryVariableIndex;
-    protected int floatVariableIndex;
-    protected int fixnumVariableIndex;
-    protected int booleanVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
-    private Map<String, Integer> nextVarIndex;
-
-    private TemporaryLocalVariable currentModuleVariable;
-    private TemporaryLocalVariable currentScopeVariable;
+    private int nextLabelIndex = 0;
 
     Map<RubySymbol, LocalVariable> localVars;
 
-    EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
-
-    /** Have scope flags been computed? */
-    private boolean flagsComputed;
-
-    /** # of thread poll instrs added to this scope */
-    protected int threadPollInstrsCount;
+    final EnumSet<IRFlags> flags;
 
     private IRManager manager;
-
-    private TemporaryVariable yieldClosureVariable;
 
     private boolean alreadyHasInline;
     private String inlineFailed;
@@ -144,14 +125,10 @@ public abstract class IRScope implements ParseResult {
         this.manager = s.manager;
         this.lineNumber = s.lineNumber;
         this.staticScope = s.staticScope;
-        this.threadPollInstrsCount = s.threadPollInstrsCount;
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
-        this.floatVariableIndex = s.floatVariableIndex;
-        this.nextVarIndex = new HashMap<>(1); // SSS FIXME: clone!
         this.interpreterContext = null;
 
-        this.flagsComputed = s.flagsComputed;
         this.flags = s.flags.clone();
 
         this.localVars = new HashMap<>(s.localVars);
@@ -160,37 +137,16 @@ public abstract class IRScope implements ParseResult {
         setupLexicalContainment();
     }
 
-    public IRScope(IRManager manager, IRScope lexicalParent, RubySymbol name,
-            int lineNumber, StaticScope staticScope) {
+    public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
         this.manager = manager;
         this.lexicalParent = lexicalParent;
         this.name = name;
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
-        this.threadPollInstrsCount = 0;
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
-        this.floatVariableIndex = -1;
-        this.nextVarIndex = new HashMap<>(1);
         this.interpreterContext = null;
-        this.flagsComputed = false;
-        flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        flags.remove(HAS_BREAK_INSTRS);
-        flags.remove(HAS_END_BLOCKS);
-        flags.remove(HAS_EXPLICIT_CALL_PROTOCOL);
-        flags.remove(HAS_LOOPS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(RECEIVES_KEYWORD_ARGS);
-
-        // These flags are true by default!
-        flags.add(CAN_CAPTURE_CALLERS_BINDING);
-        flags.add(BINDING_HAS_ESCAPED);
-        flags.add(USES_EVAL);
-        flags.add(REQUIRES_BACKREF);
-        flags.add(REQUIRES_LASTLINE);
-        flags.add(REQUIRES_DYNSCOPE);
-        flags.add(USES_ZSUPER);
+        this.flags = DEFAULT_SCOPE_FLAGS.clone();
 
         // We only can compute this once since 'module X; using A; class B; end; end' vs
         // 'module X; class B; using A; end; end'.  First case B can see refinements and in second it cannot.
@@ -246,18 +202,8 @@ public abstract class IRScope implements ParseResult {
         if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
-    private static final ByteList FLIP = new ByteList(new byte[] {'%', 'f', 'l', 'i', 'p', '_'});
-
-    public LocalVariable getNewFlipStateVariable() {
-        ByteList flip = FLIP.dup();
-
-        flip.append(allocateNextPrefixedName("%flip"));
-
-        return getLocalVariable(getManager().getRuntime().newSymbol(flip) , 0);
-    }
-
     public Label getNewLabel(String prefix) {
-        return new Label(prefix, allocateNextPrefixedName(prefix));
+        return new Label(prefix, nextLabelIndex++);
     }
 
     public Label getNewLabel() {
@@ -302,6 +248,14 @@ public abstract class IRScope implements ParseResult {
         return staticScope;
     }
 
+    public boolean isWithinEND() {
+        for (IRScope current = this; current != null && current instanceof IRClosure; current = current.getLexicalParent()) {
+            if (((IRClosure) current).isEND()) return true;
+        }
+
+        return false;
+    }
+
     public IRMethod getNearestMethod() {
         IRScope current = this;
 
@@ -312,16 +266,6 @@ public abstract class IRScope implements ParseResult {
         return (IRMethod) current;
     }
 
-    public IRScope getNearestFlipVariableScope() {
-        IRScope current = this;
-
-        while (current != null && !current.isFlipScope()) {
-            current = current.getLexicalParent();
-        }
-
-        return current;
-    }
-
     public IRScope getNearestTopLocalVariableScope() {
         IRScope current = this;
 
@@ -330,6 +274,25 @@ public abstract class IRScope implements ParseResult {
         }
 
         return current;
+    }
+
+    /**
+     * returns whether this scope is contained by the parentScope parameter.
+     * For simplicity a scope is considered to contain itself.
+     *
+     * @param parentScope we want to see if it contains this scope
+     * @return true if this scope is contained by parentScope.
+     */
+    public boolean isScopeContainedBy(IRScope parentScope) {
+        IRScope current = this;
+
+        while (current != null) {
+            if (parentScope == current) return true;
+
+            current = current.getLexicalParent();
+        }
+
+        return false;
     }
 
     /**
@@ -354,14 +317,18 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String getId() {
-        return name.idString();
+        return getName().idString();
     }
 
     public RubySymbol getName() {
+        return getManager().getRuntime().newSymbol(name);
+    }
+
+    public ByteList getByteName() {
         return name;
     }
 
-    public void setName(RubySymbol name) {
+    public void setByteName(ByteList name) {
         this.name = name;
     }
 
@@ -501,18 +468,6 @@ public abstract class IRScope implements ParseResult {
         return fullInterpreterContext.getCFG();
     }
 
-    protected boolean isUnsafeScope() {
-        if (this.isBeginEndBlock()) return true;                        // this is a BEGIN block
-
-        List beginBlocks = getBeginBlocks();
-        if (beginBlocks != null && !beginBlocks.isEmpty()) return true; // this contains a BEGIN block
-
-        // Does topmost variable scope contain any BEGIN blocks (IRScriptBody or IREval)?
-        // Ex1: eval("BEGIN {a = 1}; p a")    Ex2: BEGIN {a = 1}; p a
-        beginBlocks = getNearestTopLocalVariableScope().getBeginBlocks();
-        return beginBlocks != null && !beginBlocks.isEmpty();
-    }
-
     public List<CompilerPass> getExecutedPasses() {
         return fullInterpreterContext == null ? new ArrayList<CompilerPass>(1) : fullInterpreterContext.getExecutedPasses();
     }
@@ -521,14 +476,6 @@ public abstract class IRScope implements ParseResult {
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
     private void runCompilerPasses(List<CompilerPass> passes, IGVDumper dumper) {
-        // All passes are disabled in scopes where BEGIN and END scopes might
-        // screw around with escaped variables. Optimizing for them is not
-        // worth the effort. It is simpler to just go fully safe in scopes
-        // influenced by their presence.
-        if (isUnsafeScope()) {
-            passes = getManager().getSafePasses(this);
-        }
-
         if (dumper != null) dumper.dump(getCFG(), "Start");
 
         CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
@@ -558,11 +505,7 @@ public abstract class IRScope implements ParseResult {
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
     public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
-        try {
-            interpreterContext = new InterpreterContext(this, instructions);
-        } catch (Exception e) {
-            Helpers.throwException(e);
-        }
+        interpreterContext = new InterpreterContext(this, instructions);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
@@ -612,7 +555,8 @@ public abstract class IRScope implements ParseResult {
         getManager().optimizeIfSimpleScope(this);
 
         // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
-        if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
+        // FIXME: ACP as normal now since we have no BEGINs to make thing unsafe?
+        new AddCallProtocolInstructions().run(this);
 
         fullInterpreterContext.generateInstructionsForInterpretation();
 
@@ -686,7 +630,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void initScopeFlags() {
-        // CON: why isn't this just clear?
+        // .clear() does not work here for unknown reasons.  It is obviously removing something which should not be...
         flags.remove(CAN_CAPTURE_CALLERS_BINDING);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
@@ -745,11 +689,12 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
+            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, USES_EVAL, REQUIRES_BACKREF,
+                    REQUIRES_LASTLINE, REQUIRES_DYNSCOPE, USES_ZSUPER);
+
     private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
-            EnumSet.of(
-                    CAN_RECEIVE_BREAKS,
-                    HAS_NONLOCAL_RETURNS,CAN_RECEIVE_NONLOCAL_RETURNS,
-                    BINDING_HAS_ESCAPED);
+            EnumSet.of(CAN_RECEIVE_BREAKS, HAS_NONLOCAL_RETURNS, CAN_RECEIVE_NONLOCAL_RETURNS, BINDING_HAS_ESCAPED);
 
     private void computeNeedsDynamicScopeFlag() {
         for (IRFlags f : NEEDS_DYNAMIC_SCOPE_FLAGS) {
@@ -776,7 +721,7 @@ public abstract class IRScope implements ParseResult {
         calculateClosureScopeFlags();
         computeNeedsDynamicScopeFlag();
 
-        flagsComputed = true;
+        flags.add(FLAGS_COMPUTED);
     }
 
 
@@ -787,7 +732,7 @@ public abstract class IRScope implements ParseResult {
      *  - also potentially at later times after other opt passes
      */
     public void computeScopeFlags() {
-        if (flagsComputed) return;
+        if (flags.contains(FLAGS_COMPUTED)) return;
 
         initScopeFlags();
         bindingEscapedScopeFlagsCheck();
@@ -801,14 +746,19 @@ public abstract class IRScope implements ParseResult {
         calculateClosureScopeFlags();
         computeNeedsDynamicScopeFlag();
 
-        flagsComputed = true;
+        flags.add(FLAGS_COMPUTED);
     }
 
     public abstract IRScopeType getScopeType();
 
     @Override
     public String toString() {
-        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFile() + ':' + getLine() + ']';
+        return String.valueOf(getScopeType()) + ' ' + getId() + '[' + getFile() + ':' + getLine() + "]<" + toStringCompileForm() + ">";
+    }
+
+    // Looking at way of specific startus/full/optimized
+    public String toStringCompileForm() {
+        return optimizedInterpreterContext != null ? "optimized" : fullInterpreterContext != null ? "full" : "startup";
     }
 
     public String debugOutput() {
@@ -827,26 +777,20 @@ public abstract class IRScope implements ParseResult {
         return Self.SELF;
     }
 
-    public Variable getCurrentModuleVariable() {
+    public Variable createCurrentModuleVariable() {
         // SSS: Used in only 3 cases in generated IR:
         // -> searching a constant in the inheritance hierarchy
         // -> searching a super-method in the inheritance hierarchy
         // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
-        if (currentModuleVariable == null) {
-            temporaryVariableIndex++;
-            currentModuleVariable = TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
-        }
-        return currentModuleVariable;
+        temporaryVariableIndex++;
+        return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
-    public Variable getCurrentScopeVariable() {
+    public Variable createCurrentScopeVariable() {
         // SSS: Used in only 1 case in generated IR:
         // -> searching a constant in the lexical scope hierarchy
-        if (currentScopeVariable == null) {
-            temporaryVariableIndex++;
-            currentScopeVariable = TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
-        }
-        return currentScopeVariable;
+        temporaryVariableIndex++;
+        return TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
     }
 
     /**
@@ -861,7 +805,7 @@ public abstract class IRScope implements ParseResult {
      * Get all variables referenced by this scope.
      */
     public Set<LocalVariable> getUsedLocalVariables() {
-        return usedLocalVars;
+        return getFullInterpreterContext().getUsedLocalVariables();
     }
 
     /**
@@ -872,8 +816,12 @@ public abstract class IRScope implements ParseResult {
         this.localVars = variables;
     }
 
-    public void setLabelIndices(Map<String, Integer> indices) {
-        nextVarIndex = indices;
+    public void setNextLabelIndex(int index) {
+        nextLabelIndex = index;
+    }
+
+    public int getNextLabelIndex() {
+        return nextLabelIndex;
     }
 
     public LocalVariable lookupExistingLVar(RubySymbol name) {
@@ -919,16 +867,16 @@ public abstract class IRScope implements ParseResult {
     public TemporaryLocalVariable getNewTemporaryVariable(TemporaryVariableType type) {
         switch (type) {
             case FLOAT: {
-                floatVariableIndex++;
-                return new TemporaryFloatVariable(floatVariableIndex);
+                getFullInterpreterContext().floatVariableIndex++;
+                return new TemporaryFloatVariable(getFullInterpreterContext().floatVariableIndex);
             }
             case FIXNUM: {
-                fixnumVariableIndex++;
-                return new TemporaryFixnumVariable(fixnumVariableIndex);
+                getFullInterpreterContext().fixnumVariableIndex++;
+                return new TemporaryFixnumVariable(getFullInterpreterContext().fixnumVariableIndex);
             }
             case BOOLEAN: {
-                booleanVariableIndex++;
-                return new TemporaryBooleanVariable(booleanVariableIndex);
+                getFullInterpreterContext().booleanVariableIndex++;
+                return new TemporaryBooleanVariable(getFullInterpreterContext().booleanVariableIndex);
             }
             case LOCAL: {
                 temporaryVariableIndex++;
@@ -941,17 +889,6 @@ public abstract class IRScope implements ParseResult {
 
     public void setTemporaryVariableCount(int count) {
         temporaryVariableIndex = count + 1;
-    }
-
-    /**
-     * Get the variable for accessing the "yieldable" closure in this scope.
-     */
-    public TemporaryVariable getYieldClosureVariable() {
-        if (yieldClosureVariable == null) {
-            return yieldClosureVariable = createTemporaryVariable();
-        }
-
-        return yieldClosureVariable;
     }
 
     public TemporaryLocalVariable getNewUnboxedVariable(Class type) {
@@ -968,27 +905,8 @@ public abstract class IRScope implements ParseResult {
         return getNewTemporaryVariable(varType);
     }
 
-    public void resetTemporaryVariables() {
-        temporaryVariableIndex = -1;
-        floatVariableIndex = -1;
-        fixnumVariableIndex = -1;
-        booleanVariableIndex = -1;
-    }
-
     public int getTemporaryVariablesCount() {
         return temporaryVariableIndex + 1;
-    }
-
-    public int getFloatVariablesCount() {
-        return floatVariableIndex + 1;
-    }
-
-    public int getFixnumVariablesCount() {
-        return fixnumVariableIndex + 1;
-    }
-
-    public int getBooleanVariablesCount() {
-        return booleanVariableIndex + 1;
     }
 
     // Generate a new variable for inlined code
@@ -1008,67 +926,16 @@ public abstract class IRScope implements ParseResult {
         //}
     }
 
-    public int getThreadPollInstrsCount() {
-        return threadPollInstrsCount;
-    }
-
     public int getLocalVariablesCount() {
         return localVars.size();
     }
 
-    public int getUsedVariablesCount() {
-        // System.out.println("For " + this + ", # lvs: " + getLocalVariablesCount());
-        // # local vars, # flip vars
-        //
-        // SSS FIXME: When we are opting local var access,
-        // no need to allocate local var space except when we have been asked to!
-        return getLocalVariablesCount() + getPrefixCountSize("%flip");
-    }
-
-    public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new HashSet<>(1);
-        usedLocalVars = new HashSet<>(1);
-        for (BasicBlock bb : getCFG().getBasicBlocks()) {
-            for (Instr i : bb.getInstrs()) {
-                for (Variable v : i.getUsedVariables()) {
-                    if (v instanceof LocalVariable) usedLocalVars.add((LocalVariable) v);
-                }
-
-                if (i instanceof ResultInstr) {
-                    Variable v = ((ResultInstr) i).getResult();
-
-                    if (v instanceof LocalVariable && ((LocalVariable)v).getScopeDepth() == 0) {
-                        definedLocalVars.add((LocalVariable) v);
-                    }
-                }
-            }
-        }
-
-        for (IRClosure cl : getClosures()) {
-            cl.setUpUseDefLocalVarMaps();
-        }
-    }
-
     public boolean usesLocalVariable(Variable v) {
-        if (usedLocalVars == null) setUpUseDefLocalVarMaps();
-        if (usedLocalVars.contains(v)) return true;
-
-        for (IRClosure cl : getClosures()) {
-            if (cl.usesLocalVariable(v)) return true;
-        }
-
-        return false;
+        return getFullInterpreterContext().usesLocalVariable(v);
     }
 
     public boolean definesLocalVariable(Variable v) {
-        if (definedLocalVars == null) setUpUseDefLocalVarMaps();
-        if (definedLocalVars.contains(v)) return true;
-
-        for (IRClosure cl : getClosures()) {
-            if (cl.definesLocalVariable(v)) return true;
-        }
-
-        return false;
+        return getFullInterpreterContext().definesLocalVariable(v);
     }
 
     /**
@@ -1104,7 +971,7 @@ public abstract class IRScope implements ParseResult {
         fullInterpreterContext = null;
 
         // reset flags
-        flagsComputed = false;
+        flags.remove(FLAGS_COMPUTED);
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
         flags.add(USES_EVAL);
@@ -1194,59 +1061,32 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        // FIXME: CompiledIRMethod needs to be supports which may be changing compiled to Mixed with immediate Compiled in it.
-        if (!(compilable instanceof MixedModeIRMethod)) throw new RuntimeException("Do not support anything other than Mixed atm");
-
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
+    public void inlineMethodCompiled(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+        if (alreadyHasInline) return;
 
-    /** Record a begin block.  Only eval and script body scopes support this */
-    public void recordBeginBlock(IRClosure beginBlockClosure) {
-        throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
-    }
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        if (newContext == null) {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            return;
+        } else {
+            if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+        }
 
-    public List<IRClosure> getBeginBlocks() {
-        return null;
-    }
+        // We are not running any JIT-specific passes here.
 
-    public List<IRClosure> getEndBlocks() {
-        return null;
-    }
+        newContext.linearizeBasicBlocks();
+        this.optimizedInterpreterContext = newContext;
 
-    // Enebo: We should just make n primitive int and not take the hash hit
-    protected int allocateNextPrefixedName(String prefix) {
-        int index = getPrefixCountSize(prefix);
-
-        nextVarIndex.put(prefix, index + 1);
-
-        return index;
-    }
-
-    protected void resetVariableCounter(String prefix) {
-        nextVarIndex.remove(prefix);
-    }
-
-    public Map<String, Integer> getVarIndices() {
-        return nextVarIndex;
-    }
-
-    protected int getPrefixCountSize(String prefix) {
-        Integer index = nextVarIndex.get(prefix);
-
-        if (index == null) return 0;
-
-        return index.intValue();
+        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
     }
 
     public int getNextClosureId() {
         nextClosureIndex++;
 
         return nextClosureIndex;
-    }
-
-    public boolean isBeginEndBlock() {
-        return false;
     }
 
     /**
@@ -1261,10 +1101,6 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isNonSingletonClassBody() {
         return false;
-    }
-
-    public boolean isFlipScope() {
-        return true;
     }
 
     public boolean isTopLocalVariableScope() {
@@ -1337,5 +1173,53 @@ public abstract class IRScope implements ParseResult {
     // FIXME: This should become some heuristic later
     public boolean inliningAllowed() {
         return !alreadyHasInline;
+    }
+
+    /**
+     * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.
+     *
+     * @param context
+     */
+    public void captureParentRefinements(ThreadContext context) {
+        if (maybeUsingRefinements()) {
+            for (IRScope cur = this.getLexicalParent(); cur != null; cur = cur.getLexicalParent()) {
+                RubyModule overlay = cur.staticScope.getOverlayModuleForRead();
+                if (overlay != null && !overlay.getRefinements().isEmpty()) {
+                    // capture current refinements at definition time
+                    RubyModule myOverlay = staticScope.getOverlayModuleForWrite(context);
+
+                    // FIXME: MRI does a copy-on-write thing here with the overlay
+                    myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
+
+                    // only search until we find an overlay
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * We are done with execution of this scope and we can cleanup some amount of things
+     * in this scope which will no longer be used.  Sub-classes will be the deciders of what
+     * is no longer needed.  An example, to illustrate the complexity of cleanup:  A class with
+     * no nested closures can remove any ICs created and can remove some other infomrational
+     * data structures like allocated variables unless closures do exist and then the ICs must
+     * stay for when closures JIT.
+     */
+    public void cleanupAfterExecution() {
+    }
+
+    public boolean executesOnce() {
+        return false;
+    }
+
+    public void persistScopeHeader(IRWriterEncoder file) {
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + getScopeType());
+        file.encode(getScopeType()); // type is enum of kind of scope
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + getLine());
+        file.encode(getLine());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getTemporaryVariablesCount());
+        file.encode(getTemporaryVariablesCount());
+        file.encode(getNextLabelIndex());
     }
 }

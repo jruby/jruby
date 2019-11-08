@@ -12,7 +12,7 @@ DO NOT MODIFIY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.2.1.0</version>
+    <version>9.2.10.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
@@ -60,11 +60,11 @@ DO NOT MODIFIY - GENERATED CODE
     <test.dir>test</test.dir>
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
-    <tzdata.version>2013d</tzdata.version>
-    <version.ruby>2.5.0</version.ruby>
+    <tzdata.version>2019c</tzdata.version>
+    <version.ruby>2.5.7</version.ruby>
     <version.ruby.major>2.5</version.ruby.major>
-    <version.ruby.minor>0</version.ruby.minor>
-    <version.ruby.revision>60928</version.ruby.revision>
+    <version.ruby.minor>7</version.ruby.minor>
+    <version.ruby.revision>67816</version.ruby.revision>
   </properties>
   <dependencies>
     <dependency>
@@ -96,7 +96,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.19</version>
+      <version>0.23</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -107,7 +107,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.20</version>
+      <version>0.24</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -118,7 +118,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.45</version>
+      <version>3.0.51</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -129,7 +129,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.11</version>
+      <version>0.9.14</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -140,7 +140,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.1.9</version>
+      <version>2.1.11</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -156,12 +156,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.25</version>
+      <version>2.1.30</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.41</version>
+      <version>1.0.46</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -248,8 +248,14 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
-      <artifactId>modulator</artifactId>
-      <version>1.0</version>
+      <artifactId>backport9</artifactId>
+      <version>1.3</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.1</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
   <build>
@@ -420,6 +426,24 @@ DO NOT MODIFIY - GENERATED CODE
                 <classpath />
                 <argument>org.jruby.anno.InvokerGenerator</argument>
                 <argument>${anno.sources}/annotated_classes.txt</argument>
+                <argument>${project.build.outputDirectory}</argument>
+              </arguments>
+              <executable>java</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
+            <id>scope-generator</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.bytecode.version=${base.java.version}</argument>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.runtime.scope.DynamicScopeGenerator</argument>
                 <argument>${project.build.outputDirectory}</argument>
               </arguments>
               <executable>java</executable>
@@ -675,6 +699,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -721,6 +753,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -767,6 +807,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -813,6 +861,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -859,6 +915,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -905,6 +969,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -951,6 +1023,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -997,6 +1077,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -1043,6 +1131,14 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
@@ -1231,20 +1327,6 @@ DO NOT MODIFIY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>java9</id>
-      <activation>
-        <jdk>[9,)</jdk>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>javax.annotation</groupId>
-          <artifactId>javax.annotation-api</artifactId>
-          <version>1.3.1</version>
-          <scope>compile</scope>
-        </dependency>
-      </dependencies>
     </profile>
   </profiles>
 </project>

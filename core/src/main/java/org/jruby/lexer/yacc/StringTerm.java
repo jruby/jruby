@@ -97,7 +97,7 @@ public class StringTerm extends StrTerm {
         }
 
         lexer.setState(EXPR_END | EXPR_ENDARG);
-        lexer.setValue("" + end);
+        lexer.setValue(String.valueOf(end));
         return RubyParser.tSTRING_END;
     }
 
@@ -108,7 +108,7 @@ public class StringTerm extends StrTerm {
         if ((flags & STR_FUNC_TERM) != 0) {
             if ((flags & STR_FUNC_QWORDS) != 0) lexer.nextc(); // delayed terminator char
             lexer.setState(EXPR_END|EXPR_ENDARG);
-            lexer.setValue("" + end);
+            lexer.setValue(String.valueOf(end));
             lexer.setStrTerm(null);
             return ((flags & STR_FUNC_REGEXP) != 0) ? RubyParser.tREGEXP_END : RubyParser.tSTRING_END;
         }
@@ -143,10 +143,8 @@ public class StringTerm extends StrTerm {
         }
         lexer.pushback(c); // pushback API is deceptive here...we are just pushing index back one and not pushing c back necessarily.
 
-        Encoding enc[] = new Encoding[1];
-        enc[0] = lexer.getEncoding();
 
-        if (parseStringIntoBuffer(lexer, buffer, enc) == EOF) {
+        if (parseStringIntoBuffer(lexer, buffer, lexer.getEncoding()) == EOF) {
             lexer.setRubySourceline(startLine);
             lexer.compile_error("unterminated " + ((flags & STR_FUNC_REGEXP) != 0 ? "regexp" : "string") +  " meets end of file");
         }
@@ -160,7 +158,7 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding enc[]) throws IOException {
+    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding encoding) throws IOException {
         boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
         boolean expand = (flags & STR_FUNC_EXPAND) != 0;
         boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
@@ -216,8 +214,8 @@ public class StringTerm extends StrTerm {
                         lexer.readUTFEscape(buffer, true, symbol);
                     }
 
-                    if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                        mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    if (hasNonAscii && buffer.getEncoding() != encoding) {
+                        mixedEscape(lexer, buffer.getEncoding(), encoding);
                     }
 
                     continue;
@@ -230,13 +228,13 @@ public class StringTerm extends StrTerm {
                         // goto non_ascii
                         hasNonAscii = true;
 
-                        if (buffer.getEncoding() != enc[0]) {
-                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                        if (buffer.getEncoding() != encoding) {
+                            mixedEscape(lexer, buffer.getEncoding(), encoding);
                             continue;
                         }
 
                         if (!lexer.tokadd_mbchar(c, buffer)) {
-                            lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
+                            lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + encoding + ")");
                         }
 
                         continue;
@@ -251,8 +249,8 @@ public class StringTerm extends StrTerm {
                         lexer.pushback(c);
                         parseEscapeIntoBuffer(lexer, buffer);
 
-                        if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                        if (hasNonAscii && buffer.getEncoding() != encoding) {
+                            mixedEscape(lexer, buffer.getEncoding(), encoding);
                         }
                         
                         continue;
@@ -271,13 +269,13 @@ public class StringTerm extends StrTerm {
             } else if (!lexer.isASCII(c)) {
 nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
 
-                if (buffer.getEncoding() != enc[0]) {
-                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                if (buffer.getEncoding() != encoding) {
+                    mixedEscape(lexer, buffer.getEncoding(), encoding);
                     continue;
                 }
 
                 if (!lexer.tokadd_mbchar(c, buffer)) {
-                    lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + enc[0] + ")");
+                    lexer.compile_error(PID.INVALID_MULTIBYTE_CHAR, "invalid multibyte char (" + encoding + ")");
                 }
 
                 continue;
@@ -289,15 +287,13 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
 
             if ((c & 0x80) != 0) {
                 hasNonAscii = true;
-                if (buffer.getEncoding() != enc[0]) {
-                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                if (buffer.getEncoding() != encoding) {
+                    mixedEscape(lexer, buffer.getEncoding(), encoding);
                     continue;
                 }
             }
             buffer.append(c);
         }
-
-        enc[0] = buffer.getEncoding();
         
         return c;
     }

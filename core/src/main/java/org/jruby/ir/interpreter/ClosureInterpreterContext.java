@@ -16,7 +16,7 @@ public class ClosureInterpreterContext extends InterpreterContext {
         super(scope, instructions);
     }
 
-    public ClosureInterpreterContext(IRClosure scope, Callable<List<Instr>> instructions) throws Exception {
+    public ClosureInterpreterContext(IRClosure scope, Callable<List<Instr>> instructions) {
         super(scope, instructions);
     }
 

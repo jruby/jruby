@@ -108,12 +108,15 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // conversion
     protected RubyFloat toFloat() {
-        return RubyFloat.newFloat(getRuntime(), getDoubleValue());
+        return RubyFloat.newFloat(metaClass.runtime, getDoubleValue());
     }
 
     public int signum() { return getBigIntegerValue().signum(); }
 
-    public abstract RubyInteger negate() ;
+    public RubyInteger negate() { // abstract - Fixnum/Bignum do override
+        ThreadContext context = metaClass.runtime.getCurrentContext();
+        return sites(context).op_uminus.call(context, this, this).convertToInteger();
+    }
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
@@ -156,7 +159,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public static final long floorSqrt(final long x) {
         if ((x & 0xfff0000000000000L) == 0L) return (long) StrictMath.sqrt(x);
         final long result = (long) StrictMath.sqrt(2.0d*(x >>> 1));  
-        return result*result - x > 0L ? (long) result - 1 : (long) result;
+        return result*result - x > 0L ? result - 1 : result;
     }
 
     // floorSqrt :: BigInteger -> BigInteger
@@ -193,7 +196,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     @JRubyMethod(name = "integer?")
     public IRubyObject integer_p() {
-        return getRuntime().getTrue();
+        return metaClass.runtime.getTrue();
     }
 
     /** int_upto
@@ -203,14 +206,13 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-                fixnumUpto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
+                fixnumUpto(context, ((RubyFixnum) this).value, ((RubyFixnum) to).value, block);
             } else {
                 duckUpto(context, this, to, block);
             }
             return this;
-        } else {
-            return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(context, this, to));
         }
+        return enumeratorizeWithSize(context, this, "upto", new IRubyObject[] { to }, uptoSize(this, to));
     }
 
     static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
@@ -249,31 +251,24 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static SizeFn uptoSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
-            }
-        };
+    private static SizeFn uptoSize(final IRubyObject from, final IRubyObject to) {
+        return (context, args) -> intervalStepSize(context, from, to, RubyFixnum.one(context.runtime), false);
     }
 
     /** int_downto
      *
      */
-    // TODO: Make callCoerced work in block context...then fix downto, step, and upto.
     @JRubyMethod
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-                fixnumDownto(context, ((RubyFixnum)this).getLongValue(), ((RubyFixnum)to).getLongValue(), block);
+                fixnumDownto(context, ((RubyFixnum) this).value, ((RubyFixnum) to).value, block);
             } else {
                 duckDownto(context, this, to, block);
             }
             return this;
-        } else {
-            return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(context, this, to));
         }
+        return enumeratorizeWithSize(context, this, "downto", new IRubyObject[] { to }, downToSize(this, to));
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
@@ -311,13 +306,8 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    private static SizeFn downToSize(final ThreadContext context, final IRubyObject from, final IRubyObject to) {
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
-            }
-        };
+    private static SizeFn downToSize(final IRubyObject from, final IRubyObject to) {
+        return (context, args) -> intervalStepSize(context, from, to, RubyFixnum.newFixnum(context.runtime, -1), false);
     }
 
     @JRubyMethod
@@ -335,24 +325,19 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorizeWithSize(context, this, "times", timesSizeFn(context.runtime));
+            return enumeratorizeWithSize(context, this, "times", timesSizeFn());
         }
     }
 
-    protected SizeFn timesSizeFn(final Ruby runtime) {
-        final RubyInteger self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                RubyFixnum zero = RubyFixnum.zero(runtime);
-                ThreadContext context = runtime.getCurrentContext();
-                if ((self instanceof RubyFixnum && getLongValue() < 0)
-                        || sites(context).op_lt.call(context, self, self, zero).isTrue()) {
-                    return zero;
-                }
-
-                return self;
+    protected SizeFn timesSizeFn() {
+        return (context, args) -> {
+            RubyFixnum zero = RubyFixnum.zero(context.runtime);
+            if ((this instanceof RubyFixnum && getLongValue() < 0)
+                    || sites(context).op_lt.call(context, this, this, zero).isTrue()) {
+                return zero;
             }
+
+            return this;
         };
     }
 
@@ -526,7 +511,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return RubyFixnum.zero(runtime);
         }
 
-        f = (RubyNumeric) int_pow(context, 10, -ndigits);
+        f = int_pow(context, 10, -ndigits);
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
             long x = fix2long(this), y = fix2long(f);
             boolean neg = x < 0;
@@ -715,7 +700,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "digits")
     public RubyArray digits(ThreadContext context) {
-        return digits(context, RubyFixnum.newFixnum(context.getRuntime(), 10));
+        return digits(context, RubyFixnum.newFixnum(context.runtime, 10));
     }
 
     @JRubyMethod(name = "digits")
@@ -791,73 +776,60 @@ public abstract class RubyInteger extends RubyNumeric {
         return sites(context).op_pow.call(context, this, this, other);
     }
 
-    private final long HALF_LONG_MSB = 0x80000000L;
+    private static final long HALF_LONG_MSB = 0x80000000L;
 
     // MRI: rb_int_powm
     @JRubyMethod(name = "pow")
     public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
+        // a == this
         Ruby runtime = context.runtime;
-
-        RubyInteger a = this;
 
         boolean negaFlg = false;
         if (!(b instanceof RubyInteger)) {
             throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
         }
-        RubyInteger intB = (RubyInteger) b;
-        if (negativeInt(context, intB)) {
+        if (((RubyInteger) b).isNegative()) {
             throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
         }
         if (!(m instanceof RubyInteger)) {
             throw runtime.newTypeError("Integer#pow() 2nd argument not allowed unless all arguments are integers");
         }
 
-        if (negativeInt(context, m)) {
-            m = sites(context).op_uminus.call(context, m, m);
+        if (((RubyInteger) m).isNegative()) {
+            m = ((RubyInteger) m).negate();
             negaFlg = true;
         }
 
-        if (!positiveInt(context, m)) {
-            throw runtime.newZeroDivisionError();
-        }
+        if (!((RubyInteger) m).isPositive()) throw runtime.newZeroDivisionError();
+
         if (m instanceof RubyFixnum) {
-            long halfVal = HALF_LONG_MSB;
-            long mm = m.convertToInteger().getLongValue();
-            RubyFixnum modulo = (RubyFixnum) a.modulo(context, m);
-            if (mm <= halfVal) {
-                return modulo.intPowTmp1(context, intB, mm, negaFlg);
+            long mm = ((RubyFixnum) m).value;
+            RubyFixnum modulo = (RubyFixnum) modulo(context, m);
+            if (mm <= HALF_LONG_MSB) {
+                return modulo.intPowTmp1(context, (RubyInteger) b, mm, negaFlg);
             } else {
-                return modulo.intPowTmp2(context, intB, mm, negaFlg);
+                return modulo.intPowTmp2(context, (RubyInteger) b, mm, negaFlg);
             }
-        } else if (m instanceof RubyBignum) {
-            return ((RubyInteger) a.modulo(context, m)).intPowTmp3(context, intB, (RubyBignum) m, negaFlg);
+        }
+        if (m instanceof RubyBignum) {
+            return ((RubyInteger) modulo(context, m)).intPowTmp3(context, (RubyInteger) b, (RubyBignum) m, negaFlg);
         }
         // not reached
         throw new AssertionError("BUG: unexpected type " + m.getType());
     }
 
     protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {
-        Ruby runtime = context.runtime;
-
         BigInteger xn, yn, mn, zn;
 
-        if (this instanceof RubyFixnum) {
-            xn = BigInteger.valueOf(this.getLongValue());
-        } else {
-            xn = this.getBigIntegerValue();
-        }
-        if (y instanceof RubyFixnum) {
-            yn = BigInteger.valueOf(y.getLongValue());
-        } else {
-            yn = y.getBigIntegerValue();
-        }
+        xn = getBigIntegerValue();
+        yn = y.getBigIntegerValue();
         mn = m.getBigIntegerValue();
 
         zn = xn.modPow(yn, mn);
         if (negaFlg & zn.signum() == 1) {
             zn = zn.negate();
         }
-        return RubyBignum.bignorm(runtime, zn);
+        return RubyBignum.bignorm(context.runtime, zn);
     }
 
     @JRubyMethod(name = "abs")
@@ -1000,7 +972,7 @@ public abstract class RubyInteger extends RubyNumeric {
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return other.callMethod(context, "to_i");
         } else {
-            throw recv.getRuntime().newTypeError(
+            throw context.runtime.newTypeError(
                     "failed to convert " + other.getMetaClass().getName() + " into Integer");
         }
     }

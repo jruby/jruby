@@ -249,4 +249,15 @@ public abstract class Node implements ISourcePositionHolder, ISourcePosition {
     public boolean containsVariableAssignment() {
         return containsVariableAssignment;
     }
+
+    /**
+     * @return is it possible this node will execute only once.  Note: This is not
+     * comprehensive.  It is used to look from root node down to class/module nodes
+     * to make sure that narrow case can execute once.  It is possible much deeper
+     * down the tree some nodes can only execute once but it will be marked as false
+     * because that case is not what this is for.
+     */
+    public boolean executesOnce() {
+        return false;
+    }
 }

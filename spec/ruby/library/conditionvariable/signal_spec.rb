@@ -66,4 +66,51 @@ describe "ConditionVariable#signal" do
     # released in the same order
     r2.should == r1
   end
+
+  it "allows control to be passed between a pair of threads" do
+    m = Mutex.new
+    cv = ConditionVariable.new
+    repeats = 100
+    in_synchronize = false
+
+    t1 = Thread.new do
+      m.synchronize do
+        in_synchronize = true
+        repeats.times do
+          cv.wait(m)
+          cv.signal
+        end
+      end
+    end
+
+    # Make sure t1 is waiting for a signal before launching t2.
+    Thread.pass until in_synchronize
+    Thread.pass until t1.status == 'sleep'
+
+    t2 = Thread.new do
+      m.synchronize do
+        repeats.times do
+          cv.signal
+          cv.wait(m)
+        end
+      end
+    end
+
+    catch :timed_out do
+      while [t1, t2].any?(&:alive?)
+        # Time out if in the next five seconds neither thread is seen to be
+        # running.  This will either mean that the threads have terminated
+        # (checked below), or that both have been asleep this whole time.
+        start = Time.now
+        until t1.stop? ^ t2.stop?
+          throw :timed_out if Time.now - start >= 5
+          Thread.pass
+        end
+        Thread.pass
+      end
+    end
+
+    # Check that both threads terminated without exception
+    [t1, t2].map(&:status).should == [false, false]
+  end
 end

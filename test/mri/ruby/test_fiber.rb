@@ -269,7 +269,11 @@ class TestFiber < Test::Unit::TestCase
     end
     bug5700 = '[ruby-core:41456]'
     assert_nothing_raised(bug5700) do
-      Fiber.new{ pid = fork {} }.resume
+      Fiber.new do
+        pid = fork do
+          Fiber.new {}.transfer
+        end
+      end.resume
     end
     pid, status = Process.waitpid2(pid)
     assert_equal(0, status.exitstatus, bug5700)
@@ -377,5 +381,15 @@ class TestFiber < Test::Unit::TestCase
     f.resume
     assert_match(/terminated/, f.to_s)
     assert_match(/resumed/, Fiber.current.to_s)
+  end
+
+  def test_machine_stack_gc
+    assert_normal_exit <<-RUBY, '[Bug #14561]', timeout: 10
+      enum = Enumerator.new { |y| y << 1 }
+      thread = Thread.new { enum.peek }
+      thread.join
+      sleep 5     # pause until thread cache wait time runs out. Native thread exits.
+      GC.start
+    RUBY
   end
 end

@@ -103,16 +103,34 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
     }
 
+    protected final void preFrameAndScope(ThreadContext context, IRubyObject self, RubyModule frameClass, String name, Block block) {
+        context.preMethodFrameAndScope(frameClass, name, self, block, staticScope);
+    }
+
+    protected final void preFrameAndDummyScope(ThreadContext context, IRubyObject self, RubyModule frameClass, String name, Block block) {
+        context.preMethodFrameAndDummyScope(frameClass, name, self, block, staticScope);
+    }
+
+    protected final void preFrameOnly(ThreadContext context, IRubyObject self, RubyModule frameClass, String name, Block block) {
+        context.preMethodFrameOnly(frameClass, name, self, block);
+    }
+
+    // Still used by exts like jruby-openssl. Regeneration should pick up new ones above.
+    @Deprecated
     protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
+        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
     }
 
+    // Still used by exts like jruby-openssl. Regeneration should pick up new ones above.
+    @Deprecated
     protected final void preFrameAndDummyScope(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameAndDummyScope(implementationClass, name, self, block, staticScope);
+        context.preMethodFrameAndDummyScope(getImplementationClass(), name, self, block, staticScope);
     }
 
+    // Still used by exts like jruby-openssl. Regeneration should pick up new ones above.
+    @Deprecated
     protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
-        context.preMethodFrameOnly(implementationClass, name, self, block);
+        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
     }
 
     protected final void preScopeOnly(ThreadContext context) {

@@ -269,6 +269,48 @@ class TestDate < Test::Unit::TestCase
     end
   end
 
+  def test_new_with_float
+    d = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+    assert_equal '#<DateTime: 2018-01-14T22:25:19+00:00 ((2458133j,80719s,100000000n),+0s,2299161j)>', d.inspect
+    assert_equal(1.to_r/10, d.sec_fraction)
+
+    d = DateTime.new(2018, 1, 14, 22, 55, 59.00123456, "+9")
+    assert_equal '#<DateTime: 2018-01-14T22:55:59+09:00 ((2458133j,50159s,1234560n),+32400s,2299161j)>', d.inspect
+    assert_equal(123456.to_r/100_000_000, d.sec_fraction)
+  end
+
+  def test_parse_eql_with_sec_fraction
+    d1 = DateTime.parse('2018-01-14T22:25:19.1')
+    d2 = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+    assert_equal(d1, d2)
+    assert d1.eql?(d2), "#{d1.inspect} isnt eql? to #{d2.inspect}"
+    assert d2.eql?(d1), "#{d2.inspect} isnt eql? to #{d1.inspect}"
+
+    d1 = DateTime.new(2018, 1, 14, 22, 55, 59.00123456, "+9")
+    d2 = DateTime.parse('2018-01-14T22:55:59.00123456+09:00')
+    assert_equal(d1, d2)
+    assert d1.eql?(d2), "#{d1.inspect} isnt eql? to #{d2.inspect}"
+    assert d2.eql?(d1), "#{d2.inspect} isnt eql? to #{d1.inspect}"
+  end
+
+  def test_equality_details
+    d1 = DateTime.parse('2018-01-14T22:25:19.1')
+    d2 = DateTime.new(2018, 1, 14, 22, 25, 19.1)
+
+    assert_equal false, d1 == 1
+    assert_equal false, d1 === 1
+    assert_equal false, d1 === Date.today
+    assert_equal true, d1 === d2.to_date
+    assert_equal true, d1.to_date === d2
+    assert_equal false, d1 == d2.to_date
+    assert_equal false, d1.to_date == d2
+    assert_equal false, d2 == BasicObject.new
+    assert_equal nil, d2 === BasicObject.new
+    assert_equal nil, d2 === :sym
+    assert_equal true, d2 === d1
+    assert_equal false, d2 === DateTime.now
+  end
+
   def test_new_invalid
     y = Rational(2005/2); m = -Rational(5/2); d = Rational(31/3);
 
@@ -633,8 +675,8 @@ class TestDate < Test::Unit::TestCase
     assert_equal(3, time2.year)
     assert_equal(31, time2.day)
     assert_equal(0, time2.utc_offset)
-    assert_equal(time.zone, time2.zone) if defined? JRUBY_VERSION
-    # MRI: bug? <"UTC"> expected but was <nil>
+    assert_equal(false, time2.utc?)
+    assert_equal(nil, time2.zone)
   end
 
   def test_to_date
@@ -876,6 +918,24 @@ class TestDate < Test::Unit::TestCase
 
     dump = Marshal.dump(date)
     assert_equal(time.to_date, Marshal.load(dump))
+  end
+
+  def test_bignum_jd_fraction
+    dt = DateTime.jd Rational("106143484200006057997/43200000000000")
+    assert_equal(2015, dt.year)
+    assert_equal(1, dt.month)
+    assert_equal(2, dt.day)
+    assert_equal('#<DateTime: 2015-01-02T02:20:00+00:00 ((2457025j,8400s,12115994n),+0s,2299161j)>', dt.inspect)
+
+    dt = DateTime.jd Rational("296143484258716057997185/43200000000000001")
+    assert_equal(14056, dt.year)
+    assert_equal(9, dt.month)
+    assert_equal(21, dt.day)
+    assert_equal(05, dt.hour)
+    assert_equal(55, dt.min)
+    assert_equal(17, dt.sec)
+    # NOTE: due rounding JRuby ends up with a different fraction :
+    #assert_equal(0.4, dt.sec_fraction.to_f.round(1))
   end
 
   module ActiveSupport

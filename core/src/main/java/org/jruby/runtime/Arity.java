@@ -55,6 +55,7 @@ public final class Arity implements Serializable {
     public final static Arity ONE_REQUIRED = newArity(-2);
     public final static Arity TWO_REQUIRED = newArity(-3);
     public final static Arity THREE_REQUIRED = newArity(-4);
+    public final static int UNLIMITED_ARGUMENTS = -1;
 
     private Arity(int value) {
         this.value = value;
@@ -163,11 +164,11 @@ public final class Arity implements Serializable {
     public void checkArity(Ruby runtime, int length) {
         if (isFixed()) {
             if (length != required()) {
-                throw runtime.newArgumentError("wrong number of arguments (" + length + " for " + required() + ")");
+                throw runtime.newArgumentError(length, required());
             }
         } else {
             if (length < required()) {
-                throw runtime.newArgumentError("wrong number of arguments (" + length + " for " + required() + ")");
+                throw runtime.newArgumentError(length, required());
             }
         }
     }
@@ -250,43 +251,42 @@ public final class Arity implements Serializable {
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, int length, int min, int max) {
-        if (length < min) throw runtime.newArgumentError(length, min);
-        if (max > -1 && length > max) throw runtime.newArgumentError(length, max);
+        if (length < min || (max > UNLIMITED_ARGUMENTS && length > max))
+            throw runtime.newArgumentError(length, min, max);
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(ThreadContext context, int length, int min, int max) {
-        if (length < min) throw context.runtime.newArgumentError(length, min);
-        if (max > -1 && length > max) throw context.runtime.newArgumentError(length, max);
+        raiseArgumentError(context.runtime, length, min, max);
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, int length, int min, int max, boolean hasKwargs) {
-        if (length < min) throw runtime.newArgumentError(length, min);
-        if (max > -1 && length > max) {
+        if (length < min) throw runtime.newArgumentError(length, min, max);
+        if (max > UNLIMITED_ARGUMENTS && length > max) {
             if (hasKwargs  && length == max + 1) {
                 // we have an extra arg, but kwargs active; let it fall through to assignment
                 return;
             }
-            throw runtime.newArgumentError(length, max);
+            throw runtime.newArgumentError(length, min, max);
         }
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max) {
-        if (length < min) throw runtime.newArgumentError(name, length, min);
-        if (max > -1 && length > max) throw runtime.newArgumentError(name, length, max);
+        if (length < min || (max > UNLIMITED_ARGUMENTS && length > max))
+            throw runtime.newArgumentError(name, length, min, max);
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max, boolean hasKwargs) {
-        if (length < min) throw runtime.newArgumentError(name, length, min);
-        if (max > -1 && length > max) {
+        if (length < min) throw runtime.newArgumentError(name, length, min, max);
+        if (max > UNLIMITED_ARGUMENTS && length > max) {
             if (hasKwargs  && length == max + 1) {
                 // we have an extra arg, but kwargs active; let it fall through to assignment
                 return;
             }
-            throw runtime.newArgumentError(name, length, max);
+            throw runtime.newArgumentError(name, length, min, max);
         }
     }
 

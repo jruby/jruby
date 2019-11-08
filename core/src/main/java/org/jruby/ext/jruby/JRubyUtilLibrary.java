@@ -55,7 +55,7 @@ import static org.jruby.util.URLUtil.getPath;
  */
 public class JRubyUtilLibrary implements Library {
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public void load(Ruby runtime, boolean wrap) {
         RubyModule JRuby = runtime.getOrCreateModule("JRuby");
         RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
         JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
@@ -115,8 +115,8 @@ public class JRubyUtilLibrary implements Library {
         boolean raw = false, path = false;
         if (args.length > 1 && args[1] instanceof RubyHash) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "raw", "path");
-            raw  = values[0] != null && values[0] != RubyBasicObject.UNDEF && values[0].isTrue();
-            path = values[1] != null && values[1] != RubyBasicObject.UNDEF && values[1].isTrue();
+            raw  = values[0] != null && values[0].isTrue();
+            path = values[1] != null && values[1].isTrue();
         }
         
         try {
@@ -156,6 +156,23 @@ public class JRubyUtilLibrary implements Library {
         return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
     }
 
+    @JRubyMethod(name = "current_directory", meta = true) // used from JRuby::ProcessManager
+    public static IRubyObject current_directory(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        return runtime.newString(runtime.getCurrentDirectory());
+    }
+
+    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
+    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
+                                                   IRubyObject status, IRubyObject pid) {
+        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
+                status.convertToInteger().getLongValue(),
+                pid.convertToInteger().getLongValue()
+        );
+        context.setLastExitStatus(processStatus);
+        return processStatus;
+    }
+
     // used from jruby/kernel/proc.rb
     @JRubyMethod(meta = true, name = "set_meta_class")
     public static IRubyObject set_meta_class(ThreadContext context, IRubyObject recv, IRubyObject obj, IRubyObject klass) {
@@ -190,6 +207,9 @@ public class JRubyUtilLibrary implements Library {
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {
                 return ((BasicLibraryService) clazz.newInstance()).basicLoad(runtime);
+            } catch (org.jruby.exceptions.Exception e) {
+                // propagate Ruby exceptions as-is
+                throw e;
             } catch (ReflectiveOperationException e) {
                 final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
                 ex.initCause(e); throw ex;
@@ -203,10 +223,14 @@ public class JRubyUtilLibrary implements Library {
             try {
                 ((Library) clazz.newInstance()).load(runtime, false);
                 return true;
+            } catch (org.jruby.exceptions.Exception e) {
+                // propagate Ruby exceptions as-is
+                throw e;
             } catch (ReflectiveOperationException e) {
                 final RaiseException ex = runtime.newNameError("cannot instantiate (ext) Java class " + className, className, e, true);
-                ex.initCause(e); throw ex;
-            } catch (Exception e) {
+                ex.initCause(e);
+                throw ex;
+            } catch (java.lang.Exception e) {
                 final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
                 ex.initCause(e); throw ex;
             }
@@ -215,8 +239,10 @@ public class JRubyUtilLibrary implements Library {
         try {
             Object result = clazz.getMethod("load", Ruby.class).invoke(null, runtime);
             return (result instanceof Boolean) && ! ((Boolean) result).booleanValue() ? false : true;
-        }
-        catch (Exception e) {
+        } catch (org.jruby.exceptions.Exception e) {
+            // propagate Ruby exceptions as-is
+            throw e;
+        } catch (java.lang.Exception e) {
             final RaiseException ex = runtime.newNameError("cannot load (ext) (" + className + ")", null, e, true);
             ex.initCause(e); throw ex;
         }
@@ -252,12 +278,12 @@ public class JRubyUtilLibrary implements Library {
      * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
      */
     @JRubyMethod(module = true)
+    @Deprecated
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
         Ruby runtime = context.runtime;
-        List<String> builtinLibraries = runtime.getLoadService().getBuiltinLibraries();
 
-        IRubyObject[] names = builtinLibraries.stream().map(name -> runtime.newString(name)).toArray(i->new IRubyObject[i]);
+        runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
 
-        return runtime.newArrayNoCopy(names);
+        return runtime.newEmptyArray();
     }
 }

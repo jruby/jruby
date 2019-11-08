@@ -89,7 +89,7 @@ public class IRManager {
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
         this.config = config;
-        object = new IRClassBody(this, null, runtime.newSymbol(OBJECT), 0, null);
+        object = new IRClassBody(this, null, OBJECT, 0, null, false);
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
@@ -221,6 +221,52 @@ public class IRManager {
         }
     }
 
+    private static int CLOSURE_PREFIX_CACHE_SIZE = 300; // arbtrary.  one library in rails 6 uses over 270 in one scope...
+    private String[] closurePrefixCache = new String[CLOSURE_PREFIX_CACHE_SIZE];
+
+    public String getClosurePrefix(int closureId) {
+        if (closureId >= CLOSURE_PREFIX_CACHE_SIZE) {
+            return "CL" + closureId + "_LBL";
+        }
+
+        String prefix = closurePrefixCache[closureId];
+
+        if (prefix == null) {
+            prefix = "CL" + closureId + "_LBL";
+            closurePrefixCache[closureId] = prefix;
+        }
+
+        return prefix;
+    }
+
+
+    private static int FIXNUM_CACHE_HALF_SIZE = 16384;
+    private Fixnum fixnums[] = new Fixnum[2 * FIXNUM_CACHE_HALF_SIZE];
+
+    // Fixnum operand caches end up providing twice the value since it will share the same instance of
+    // the same logical fixnum, but since immutable literals cache the actual RubyFixnum they end up
+    // sharing all occurences of those in Ruby code as well.h
+    public Fixnum newFixnum(long value) {
+        if (value < -FIXNUM_CACHE_HALF_SIZE || value > FIXNUM_CACHE_HALF_SIZE) return new Fixnum(value);
+
+        int adjustedValue = (int) value + FIXNUM_CACHE_HALF_SIZE; // adjust to where 0 is in signed range.
+
+        Fixnum fixnum;
+
+        if (adjustedValue >= 0 && adjustedValue < fixnums.length) {
+            fixnum = fixnums[adjustedValue];
+
+            if (fixnum == null) {
+                fixnum = new Fixnum(value);
+                fixnums[adjustedValue] = fixnum;
+            }
+        } else {
+            fixnum = new Fixnum(value);
+        }
+
+        return fixnum;
+    }
+
     public LineNumberInstr newLineNumber(int line) {
         if (line >= lineNumbers.length-1) growLineNumbersPool(line);
 
@@ -306,7 +352,7 @@ public class IRManager {
 
         EnumSet<IRFlags> flags = scope.getFlags();
 
-        if (!scope.isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
+        if (!flags.contains(REQUIRES_DYNSCOPE)) {
             if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(scope);
             deadCodeEliminationPass.run(scope);
             optimizeDynScopesPass.run(scope);
@@ -328,14 +374,14 @@ public class IRManager {
             IScopingNode scopeNode = (IScopingNode) parseResult.childNodes().get(0);
             scopeNode.getScope().setModule(type);
             DefNode defNode = (DefNode) scopeNode.getBodyNode();
-            IRScriptBody script = new IRScriptBody(this, runtime.newSymbol(parseResult.getFile()), ((RootNode) parseResult).getStaticScope());
+            IRScriptBody script = new IRScriptBody(this, parseResult.getFile(), ((RootNode) parseResult).getStaticScope());
             IRModuleBody containingScope;
             if (scopeNode instanceof ModuleNode) {
-                containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope());
+                containingScope = new IRModuleBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             } else {
-                containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName(), 0, scopeNode.getScope());
+                containingScope = new IRClassBody(this, script, scopeNode.getCPath().getName().getBytes(), 0, scopeNode.getScope(), false);
             }
-            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method), true, 0, defNode.getScope(), false);
+            IRMethod newMethod = new IRMethod(this, containingScope, defNode, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), false);
 
             newMethod.prepareForCompilation();
 

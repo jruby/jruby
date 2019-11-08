@@ -41,12 +41,10 @@ class LibrarySearcher {
 
     private final LoadService loadService;
     private final Ruby runtime;
-    private final Map<String, Library> builtinLibraries;
 
     public LibrarySearcher(LoadService loadService) {
         this.loadService = loadService;
         this.runtime = loadService.runtime;
-        this.builtinLibraries = loadService.builtinLibraries;
     }
 
     // TODO(ratnikov): Kill this helper once we kill LoadService.SearchState
@@ -61,8 +59,7 @@ class LibrarySearcher {
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
-            FoundLibrary library = findBuiltinLibrary(baseName, suffix);
-            if (library == null) library = findResourceLibrary(baseName, suffix);
+            FoundLibrary library = findResourceLibrary(baseName, suffix);
 
             if (library != null) {
                 return library;
@@ -70,19 +67,6 @@ class LibrarySearcher {
         }
 
         return findServiceLibrary(baseName);
-    }
-
-    private FoundLibrary findBuiltinLibrary(String name, String suffix) {
-        String namePlusSuffix = name + suffix;
-
-        DebugLog.Builtin.logTry(namePlusSuffix);
-        if (builtinLibraries.containsKey(namePlusSuffix)) {
-            DebugLog.Builtin.logFound(namePlusSuffix);
-            return new FoundLibrary(
-                    builtinLibraries.get(namePlusSuffix),
-                    namePlusSuffix);
-        }
-        return null;
     }
 
     private FoundLibrary findServiceLibrary(String name) {
@@ -172,6 +156,7 @@ class LibrarySearcher {
                 if (expandedResource.exists()){
                     String scriptName = resolveScriptName(expandedResource, expandedResource.canonicalPath());
                     String loadName = resolveLoadName(expandedResource, searchName + suffix);
+                    DebugLog.Resource.logFound(pathWithSuffix);
                     return new FoundLibrary(ResourceLibrary.create(searchName, scriptName, resource), loadName);
                 }
             }
@@ -241,9 +226,7 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream ris = null;
-            try {
-                ris = resource.inputStream();
+            try (InputStream ris = resource.inputStream()) {
 
                 if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
                     runtime.compileAndLoadFile(scriptName, ris, wrap);
@@ -252,10 +235,6 @@ class LibrarySearcher {
                 }
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
-            } finally {
-                try {
-                    if (ris != null) ris.close();
-                } catch (IOException ioE) { /* At least we tried.... */}
             }
         }
     }
@@ -267,9 +246,9 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = null;
-            try {
-                is = new BufferedInputStream(resource.inputStream(), 32768);
+            try (InputStream ris = resource.inputStream()) {
+
+                InputStream is = new BufferedInputStream(ris, 32768);
                 IRScope script = CompiledScriptLoader.loadScriptFromFile(runtime, is, null, scriptName, false);
 
                 // Depending on the side-effect of the load, which loads the class but does not turn it into a script.
@@ -280,10 +259,6 @@ class LibrarySearcher {
                 runtime.loadScope(script, wrap);
             } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
-            } finally {
-                try {
-                    if (is != null) is.close();
-                } catch (IOException ioE) { /* At least we tried.... */ }
             }
         }
     }

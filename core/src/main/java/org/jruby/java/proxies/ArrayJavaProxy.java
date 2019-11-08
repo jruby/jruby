@@ -726,20 +726,22 @@ public final class ArrayJavaProxy extends JavaProxy {
         final IRubyObject rFirst = range.first(context);
         final IRubyObject rLast = range.last(context);
         if ( rFirst instanceof RubyFixnum && rLast instanceof RubyFixnum ) {
-            int first = (int) ((RubyFixnum) rFirst).getLongValue();
-            int last = (int) ((RubyFixnum) rLast).getLongValue();
+            int first = RubyFixnum.fix2int((RubyFixnum) rFirst);
+            int last = RubyFixnum.fix2int((RubyFixnum) rLast);
 
             first = first >= 0 ? first : arrayLength + first;
+            if (first < 0 || first >= arrayLength) return context.nil;
+
             last = last >= 0 ? last : arrayLength + last;
 
             int newLength = last - first;
-            if ( range.isExcludeEnd() ) newLength += 1;
+            if ( !range.isExcludeEnd() ) newLength++;
 
-            if ( newLength <= 0 ) {
+            if (newLength <= 0) {
                 return ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType());
             }
 
-            return ArrayUtils.javaArraySubarrayDirect(context, array, first, newLength);
+            return subarrayProxy(context, array, arrayLength, first, newLength);
         }
         throw context.runtime.newTypeError("only Integer ranges supported");
     }
@@ -754,20 +756,30 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int arrayLength = Array.getLength( array );
 
         if ( rFirst instanceof RubyFixnum && rLength instanceof RubyFixnum ) {
-            int first = (int) ((RubyFixnum) rFirst).getLongValue();
-            int length = (int) ((RubyFixnum) rLength).getLongValue();
+            int first = RubyFixnum.fix2int((RubyFixnum) rFirst);
+            int length = RubyFixnum.fix2int((RubyFixnum) rLength);
 
-            if ( length > arrayLength ) {
-                throw context.runtime.newIndexError("length specifed is longer than array");
+            if (length > arrayLength) {
+                throw context.runtime.newIndexError("length specified is longer than array");
             }
-            if ( length <= 0 ) {
-                return ArrayUtils.emptyJavaArrayDirect(context, array.getClass().getComponentType());
-            }
+            if (length < 0) return context.nil;
 
             first = first >= 0 ? first : arrayLength + first;
-            return ArrayUtils.javaArraySubarrayDirect(context, array, first, length);
+
+            if (first >= arrayLength) return context.nil;
+
+            return subarrayProxy(context, array, arrayLength, first, length);
         }
-        throw context.runtime.newTypeError("only Fixnum ranges supported");
+        throw context.runtime.newTypeError("only Integer ranges supported");
+    }
+
+    private IRubyObject subarrayProxy(ThreadContext context, Object ary, final int aryLength, int index, int size) {
+        if (index + size > aryLength) size = aryLength - index;
+
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, ary.getClass().getComponentType(), converter, size);
+        System.arraycopy(ary, index, proxy.getObject(), 0, size);
+
+        return proxy;
     }
 
     private static final class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {

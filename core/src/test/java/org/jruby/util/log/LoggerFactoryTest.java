@@ -18,6 +18,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import org.jruby.test.TestRubyBase;
 import org.junit.After;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -108,22 +109,22 @@ public class LoggerFactoryTest {
 
         logger.info("logged at info level");
         handler.flush();
-        assertEquals(log += "JULLogger INFO: logged at info level\n", out.toString());
+        assertEquals(log += "JULLogger INFO: logged at info level\n", TestRubyBase.CRLFToNL(out.toString()));
 
         logger.warn("logged at {} {}", "warn", new StringBuilder("level"));
         handler.flush();
-        assertEquals(log += "JULLogger WARNING: logged at warn level\n", out.toString());
+        assertEquals(log += "JULLogger WARNING: logged at warn level\n", TestRubyBase.CRLFToNL(out.toString()));
 
         julLogger.setLevel(java.util.logging.Level.WARNING);
 
         logger.info("more at info level {}", 'z');
-        handler.flush(); assertEquals(log, out.toString());
+        handler.flush(); assertEquals(log, TestRubyBase.CRLFToNL(out.toString()));
         logger.info("even more at info level", new RuntimeException("ex"));
-        handler.flush(); assertEquals(log, out.toString());
+        handler.flush(); assertEquals(log, TestRubyBase.CRLFToNL(out.toString()));
 
         logger.error("bad news", new RuntimeException("exception happened"));
         handler.flush();
-        assertStartsWith(log += "JULLogger SEVERE: bad news\njava.lang.RuntimeException: exception happened", out.toString());
+        assertStartsWith(log += "JULLogger SEVERE: bad news\njava.lang.RuntimeException: exception happened", TestRubyBase.CRLFToNL(out.toString()));
     }
 
     @Test
@@ -154,18 +155,18 @@ public class LoggerFactoryTest {
 
             logger.info("logged at info level");
             printOut.flush();
-            assertEquals(log += "INFO org.jruby.util.log.SLF4JLogger - logged at info level\n", out.toString());
+            assertEquals(log += "INFO org.jruby.util.log.SLF4JLogger - logged at info level\n", TestRubyBase.CRLFToNL(out.toString()));
 
             logger.warn("logged at {} {}", "warn", new StringBuilder("level"));
             printOut.flush();
-            assertEquals(log += "WARN org.jruby.util.log.SLF4JLogger - logged at warn level\n", out.toString());
+            assertEquals(log += "WARN org.jruby.util.log.SLF4JLogger - logged at warn level\n", TestRubyBase.CRLFToNL(out.toString()));
 
             logger.debug("more debug", new RuntimeException("ex"));
-            printOut.flush(); assertEquals(log, out.toString());
+            printOut.flush(); assertEquals(log, TestRubyBase.CRLFToNL(out.toString()));
 
             logger.error("bad news", new RuntimeException("exception happened"));
             printOut.flush();
-            assertStartsWith(log += "ERROR org.jruby.util.log.SLF4JLogger - bad news\njava.lang.RuntimeException: exception happened", out.toString());
+            assertStartsWith(log += "ERROR org.jruby.util.log.SLF4JLogger - bad news\njava.lang.RuntimeException: exception happened", TestRubyBase.CRLFToNL(out.toString()));
 
         }
         finally {

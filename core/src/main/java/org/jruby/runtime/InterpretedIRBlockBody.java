@@ -1,6 +1,9 @@
 package org.jruby.runtime;
 
 import java.io.ByteArrayOutputStream;
+
+import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.ir.IRClosure;
@@ -28,11 +31,9 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         this.pushScope = true;
         this.reuseParentScope = false;
 
-        // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
-        // promote to full build here if we are -X-C.
-        if (closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() || Options.JIT_THRESHOLD.load() == -1) {
-            callCount = -1;
-        }
+        // -1 jit.threshold is way of having interpreter not promote full builds
+        // regardless of compile mode (even when OFF full-builds are promoted)
+        if (closure.getManager().getInstanceConfig().getJitThreshold() == -1) setCallCount(-1);
     }
 
     @Override
@@ -65,21 +66,23 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
             displayedCFG = true;
         }
 
-        if (interpreterContext == null) {
+        InterpreterContext ic = interpreterContext;
+        if (ic == null) {
             if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
                 LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
-            interpreterContext = closure.getInterpreterContext();
+            ic = closure.getInterpreterContext();
+            interpreterContext = ic;
             fullInterpreterContext = interpreterContext;
         }
-        return interpreterContext;
+        return ic;
     }
 
     @Override
-    public String getClassName(ThreadContext context) {
+    public String getOwnerName() {
         return null;
     }
 
@@ -144,10 +147,19 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
     private void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't Promote to full build during runtime boot
+        final Ruby runtime = context.runtime;
+        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
-        if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            context.runtime.getJITCompiler().buildThresholdReached(context, this);
+        if (this.callCount < 0) return;
+        // we don't synchronize callCount++ it does not matter if count isn't accurate
+        if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+            synchronized (this) { // disable same jit tasks from entering queue twice
+                if (this.callCount >= 0) {
+                    this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
+
+                    runtime.getJITCompiler().buildThresholdReached(context, this);
+                }
+            }
         }
     }
 

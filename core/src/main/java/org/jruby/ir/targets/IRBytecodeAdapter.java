@@ -25,7 +25,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
 import org.jruby.runtime.callsite.ProfilingCachingCallSite;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
@@ -66,6 +66,23 @@ public abstract class IRBytecodeAdapter {
      * @param call of we are making a callsite for.
      */
     public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String scopeFieldName, CallBase call) {
+        CallType callType = call.getCallType();
+        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null && IRManager.IR_INLINER;
+        boolean profiled = false;
+        boolean refined = call.isPotentiallyRefined();
+
+        boolean specialSite = profiled || refined || profileCandidate;
+
+        if (!specialSite) {
+            // use indy to cache the site object
+            method.invokedynamic("callSite", sig(CachingCallSite.class), Bootstrap.CALLSITE, call.getId(), callType.ordinal());
+            return;
+        }
+
+        // site requires special handling (usually refined or profiled that need scope present)
+        Class<? extends CachingCallSite> siteClass;
+        String signature;
+
         // call site object field
         method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
 
@@ -76,24 +93,19 @@ public abstract class IRBytecodeAdapter {
         method.ifnonnull(doCall);
         method.pop();
         method.ldc(call.getId());
-
-        CallType callType = call.getCallType();
-        Class<? extends CachingCallSite> siteClass;
-        String signature;
-        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null;
-        boolean profiled = false;
-        if (call.isPotentiallyRefined()) {
+        if (refined) {
             siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, String.class);
+            signature = sig(siteClass, String.class, IRScope.class, String.class);
+            method.getstatic(className, scopeFieldName, ci(IRScope.class));
             method.ldc(callType.name());
         } else {
             switch (callType) {
                 case NORMAL:
-                    if (profileCandidate && IRManager.IR_INLINER) {
+                    if (profileCandidate) {
                         profiled = true;
                         siteClass = ProfilingCachingCallSite.class;
                     } else {
-                        siteClass = NormalCachingCallSite.class;
+                        siteClass = MonomorphicCallSite.class;
                     }
                     break;
                 case FUNCTIONAL:
@@ -121,7 +133,7 @@ public abstract class IRBytecodeAdapter {
     }
 
     public String getUniqueSiteName(String name) {
-        return "invokeOther" + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+        return "invokeOther" + getClassData().cacheFieldCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
     }
 
     public ClassData getClassData() {
@@ -260,8 +272,8 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void pushObjectClass() {
-        loadRuntime();
-        adapter.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
+        loadContext();
+        invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
     }
 
     public void pushUndefined() {
@@ -363,9 +375,9 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: none
      *
-     * @param id raw id string for the symbol.
+     * @param bytes the ByteList for the symbol
      */
-    public abstract void pushSymbolProc(String id);
+    public abstract void pushSymbolProc(ByteList bytes);
 
         /**
          * Push the JRuby runtime on the stack.
@@ -401,7 +413,16 @@ public abstract class IRBytecodeAdapter {
      * @param file
      * @param line
      */
-    public abstract void invokeArrayDeref(String file, int line, CallBase call);
+    public abstract void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
+
+    /**
+     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
+     *
+     * Stack required: context, self, target
+     * @param file
+     * @param line
+     */
+    public abstract void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.

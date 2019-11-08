@@ -5,6 +5,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.LocalVariable;
@@ -76,23 +77,14 @@ public class IRWriter {
     private static void persistScopeHeader(IRWriterEncoder file, IRScope scope) {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Writing Scope Header");
         file.startEncodingScopeHeader(scope);
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + scope.getScopeType());
-        file.encode(scope.getScopeType()); // type is enum of kind of scope
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getName());
-        file.encode(scope.getName());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + scope.getLine());
-        file.encode(scope.getLine());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + scope.getTemporaryVariablesCount());
-        file.encode(scope.getTemporaryVariablesCount());
+        scope.persistScopeHeader(file);
 
-        persistScopeLabelIndices(scope, file);
-
-        if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
-
-        if (scope instanceof IRClosure) {
-            IRClosure closure = (IRClosure) scope;
-
-            file.encode(closure.getSignature());
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getId());
+        if (scope instanceof IRScriptBody) {
+            file.encode(scope.getId());
+        } else {
+            file.encode(scope.getName());
+            file.encode(scope.getLexicalParent());
         }
 
         persistStaticScope(file, scope.getStaticScope());
@@ -111,19 +103,6 @@ public class IRWriter {
             if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
             file.encode(offset); // No need to write depth..it is zero.
         }
-    }
-
-    private static void persistScopeLabelIndices(IRScope scope, IRWriterEncoder file) {
-        Map<String,Integer> labelIndices = scope.getVarIndices();
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL_SIZE: " + labelIndices.size());
-        file.encode(labelIndices.size());
-        for (String key : labelIndices.keySet()) {
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL: " + key);
-            file.encode(key);
-            file.encode(labelIndices.get(key).intValue());
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("LABEL(num): " + labelIndices.get(key).intValue());
-        }
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("DONE LABELS: " + labelIndices.size());
     }
 
     // {type,[variables],signature}

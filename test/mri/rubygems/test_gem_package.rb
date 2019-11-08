@@ -24,7 +24,7 @@ class TestGemPackage < Gem::Package::TarTestCase
   end
 
   def test_class_new_old_format
-    open 'old_format.gem', 'wb' do |io|
+    File.open 'old_format.gem', 'wb' do |io|
       io.write SIMPLE_GEM
     end
 
@@ -45,7 +45,7 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir 'lib'
 
-    open 'lib/code.rb', 'w' do |io|
+    File.open 'lib/code.rb', 'w' do |io|
       io.write '# lib/code.rb'
     end
 
@@ -110,8 +110,8 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir_p 'lib/empty'
 
-    open 'lib/code.rb',  'w' do |io| io.write '# lib/code.rb'  end
-    open 'lib/extra.rb', 'w' do |io| io.write '# lib/extra.rb' end
+    File.open 'lib/code.rb',  'w' do |io| io.write '# lib/code.rb'  end
+    File.open 'lib/extra.rb', 'w' do |io| io.write '# lib/extra.rb' end
 
     package = Gem::Package.new 'bogus.gem'
     package.spec = spec
@@ -140,7 +140,7 @@ class TestGemPackage < Gem::Package::TarTestCase
     spec.files = %w[lib/code.rb lib/code_sym.rb]
 
     FileUtils.mkdir_p 'lib'
-    open 'lib/code.rb',  'w' do |io| io.write '# lib/code.rb'  end
+    File.open 'lib/code.rb',  'w' do |io| io.write '# lib/code.rb'  end
 
     # NOTE: 'code.rb' is correct, because it's relative to lib/code_sym.rb
     File.symlink('code.rb', 'lib/code_sym.rb')
@@ -179,7 +179,7 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir 'lib'
 
-    open 'lib/code.rb', 'w' do |io|
+    File.open 'lib/code.rb', 'w' do |io|
       io.write '# lib/code.rb'
     end
 
@@ -218,7 +218,7 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir 'lib'
 
-    open 'lib/code.rb', 'w' do |io|
+    File.open 'lib/code.rb', 'w' do |io|
       io.write '# lib/code.rb'
     end
 
@@ -261,7 +261,7 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir 'lib'
 
-    open 'lib/code.rb', 'w' do |io|
+    File.open 'lib/code.rb', 'w' do |io|
       io.write '# lib/code.rb'
     end
 
@@ -311,7 +311,7 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir 'lib'
 
-    open 'lib/code.rb', 'w' do |io|
+    File.open 'lib/code.rb', 'w' do |io|
       io.write '# lib/code.rb'
     end
 
@@ -348,7 +348,7 @@ class TestGemPackage < Gem::Package::TarTestCase
 
     FileUtils.mkdir 'lib'
 
-    open 'lib/code.rb', 'w' do |io|
+    File.open 'lib/code.rb', 'w' do |io|
       io.write '# lib/code.rb'
     end
 
@@ -408,7 +408,7 @@ class TestGemPackage < Gem::Package::TarTestCase
       end
     end
 
-    open 'empty.gem', 'wb' do |io|
+    File.open 'empty.gem', 'wb' do |io|
       io.write gem.string
     end
 
@@ -453,6 +453,67 @@ class TestGemPackage < Gem::Package::TarTestCase
                  File.readlink(extracted)
     assert_equal 'hi',
                  File.read(extracted)
+  end
+
+  def test_extract_symlink_parent
+   skip 'symlink not supported' if Gem.win_platform?
+
+   package = Gem::Package.new @gem
+
+   tgz_io = util_tar_gz do |tar|
+     tar.mkdir       'lib',               0755
+     tar.add_symlink 'lib/link', '../..', 0644
+     tar.add_file    'lib/link/outside.txt', 0644 do |io| io.write 'hi' end
+   end
+
+   # Extract into a subdirectory of @destination; if this test fails it writes
+   # a file outside destination_subdir, but we want the file to remain inside
+   # @destination so it will be cleaned up.
+   destination_subdir = File.join @destination, 'subdir'
+   FileUtils.mkdir_p destination_subdir
+
+   e = assert_raises Gem::Package::PathError do
+     package.extract_tar_gz tgz_io, destination_subdir
+   end
+
+   assert_equal("installing into parent path lib/link/outside.txt of " +
+                 "#{destination_subdir} is not allowed", e.message)
+  end
+
+  def test_extract_symlink_parent_doesnt_delete_user_dir
+    skip if RUBY_VERSION <= "1.8.7"
+
+    package = Gem::Package.new @gem
+
+    # Extract into a subdirectory of @destination; if this test fails it writes
+    # a file outside destination_subdir, but we want the file to remain inside
+    # @destination so it will be cleaned up.
+    destination_subdir = File.join @destination, 'subdir'
+    FileUtils.mkdir_p destination_subdir
+
+    destination_user_dir = File.join @destination, 'user'
+    destination_user_subdir = File.join destination_user_dir, 'dir'
+    FileUtils.mkdir_p destination_user_subdir
+
+    tgz_io = util_tar_gz do |tar|
+      tar.add_symlink 'link', destination_user_dir, 16877
+      tar.add_symlink 'link/dir', '.', 16877
+    end
+
+    e = assert_raises(Gem::Package::PathError, Errno::EACCES) do
+      package.extract_tar_gz tgz_io, destination_subdir
+    end
+
+    assert_path_exists destination_user_subdir
+
+    if Gem::Package::PathError === e
+      assert_equal("installing into parent path #{destination_user_subdir} of " +
+                  "#{destination_subdir} is not allowed", e.message)
+    elsif win_platform?
+      skip "symlink - must be admin with no UAC on Windows"
+    else
+      raise e
+    end
   end
 
   def test_extract_tar_gz_directory
@@ -566,6 +627,21 @@ class TestGemPackage < Gem::Package::TarTestCase
                  "#{@destination} is not allowed", e.message)
   end
 
+  def test_install_location_suffix
+    package = Gem::Package.new @gem
+
+    filename = "../#{File.basename(@destination)}suffix.rb"
+
+    e = assert_raises Gem::Package::PathError do
+      package.install_location filename, @destination
+    end
+
+    parent = File.expand_path File.join @destination, filename
+
+    assert_equal("installing into parent path #{parent} of " +
+                 "#{@destination} is not allowed", e.message)
+  end
+
   def test_load_spec
     entry = StringIO.new Gem.gzip @spec.to_yaml
     def entry.full_name() 'metadata.gz' end
@@ -620,7 +696,7 @@ class TestGemPackage < Gem::Package::TarTestCase
       end
     end
 
-    open 'mismatch.gem', 'wb' do |io|
+    File.open 'mismatch.gem', 'wb' do |io|
       io.write gem.string
     end
 
@@ -670,7 +746,7 @@ class TestGemPackage < Gem::Package::TarTestCase
       end
     end
 
-    open 'data_checksum_missing.gem', 'wb' do |io|
+    File.open 'data_checksum_missing.gem', 'wb' do |io|
       io.write gem.string
     end
 
@@ -723,6 +799,32 @@ class TestGemPackage < Gem::Package::TarTestCase
     assert_match %r%nonexistent.gem$%,           e.message
   end
 
+  def test_verify_duplicate_file
+    FileUtils.mkdir_p 'lib'
+    FileUtils.touch 'lib/code.rb'
+
+    build = Gem::Package.new @gem
+    build.spec = @spec
+    build.setup_signer
+    open @gem, 'wb' do |gem_io|
+      Gem::Package::TarWriter.new gem_io do |gem|
+        build.add_metadata gem
+        build.add_contents gem
+
+        gem.add_file_simple 'a.sig', 0444, 0
+        gem.add_file_simple 'a.sig', 0444, 0
+      end
+    end
+
+    package = Gem::Package.new @gem
+
+    e = assert_raises Gem::Security::Exception do
+      package.verify
+    end
+
+    assert_equal 'duplicate files in the package: ("a.sig")', e.message
+  end
+
   def test_verify_security_policy
     skip 'openssl is missing' unless defined?(OpenSSL::SSL)
 
@@ -773,14 +875,20 @@ class TestGemPackage < Gem::Package::TarTestCase
     FileUtils.mkdir 'lib'
     FileUtils.touch 'lib/code.rb'
 
-    open @gem, 'wb' do |gem_io|
+    File.open @gem, 'wb' do |gem_io|
       Gem::Package::TarWriter.new gem_io do |gem|
         build.add_metadata gem
         build.add_contents gem
 
         # write bogus data.tar.gz to foil signature
         bogus_data = Gem.gzip 'hello'
-        gem.add_file_simple 'data.tar.gz', 0444, bogus_data.length do |io|
+        fake_signer = Class.new do
+          def digest_name; 'SHA512'; end
+          def digest_algorithm; Digest(:SHA512); end
+          def key; 'key'; end
+          def sign(*); 'fake_sig'; end
+        end
+        gem.add_file_signed 'data2.tar.gz', 0444, fake_signer.new do |io|
           io.write bogus_data
         end
 
@@ -804,7 +912,7 @@ class TestGemPackage < Gem::Package::TarTestCase
   end
 
   def test_verify_truncate
-    open 'bad.gem', 'wb' do |io|
+    File.open 'bad.gem', 'wb' do |io|
       io.write File.read(@gem, 1024) # don't care about newlines
     end
 

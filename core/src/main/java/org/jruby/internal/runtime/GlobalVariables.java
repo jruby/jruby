@@ -79,10 +79,10 @@ public class GlobalVariables {
         return variable != null && !(variable.getAccessor() instanceof UndefinedAccessor);
     }
 
-    /** Creates a new global variable which links to
-     * the oldName global variable.
-     *
-     * <b>WANRING</b> we are already using the 1.7.1 behaviour.
+    /**
+     * Creates a new global variable which links to the oldName global variable.
+     * @param name
+     * @param  oldName
      */
     public void alias(String name, String oldName) {
         assert name != null;

@@ -1,0 +1,2 @@
+fails:ENV.update raises TypeError when a name is not coercible to String
+fails:ENV.update raises TypeError when a value is not coercible to String

@@ -127,7 +127,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static RubyFixnum to_i(ThreadContext context, IRubyObject recv) {
-        return RubyFixnum.zero(recv.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
     
     /**

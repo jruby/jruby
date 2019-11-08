@@ -28,6 +28,7 @@
 
 package org.jruby.ext.thread;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -41,12 +42,13 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 /**
  * The "Mutex" class from the 'thread' library.
  */
 @JRubyClass(name = "Mutex")
-public class Mutex extends RubyObject {
+public class Mutex extends RubyObject implements DataType {
     ReentrantLock lock = new ReentrantLock();
 
     @JRubyMethod(name = "new", rest = true, meta = true)
@@ -73,7 +75,7 @@ public class Mutex extends RubyObject {
     }
 
     @JRubyMethod(name = "locked?")
-    public synchronized RubyBoolean locked_p(ThreadContext context) {
+    public RubyBoolean locked_p(ThreadContext context) {
         return context.runtime.newBoolean(lock.isLocked());
     }
 
@@ -88,24 +90,32 @@ public class Mutex extends RubyObject {
     @JRubyMethod
     public IRubyObject lock(ThreadContext context) {
         RubyThread thread = context.getThread();
-        try {
-            thread.enterSleep();
-            checkRelocking(context);
-            thread.lock(lock);
-        } finally {
-            thread.exitSleep();
+
+        checkRelocking(context);
+
+        // try locking without sleep status to avoid looking like blocking
+        if (!thread.tryLock(lock)) {
+            for (;;) {
+                try {
+                    context.getThread().lockInterruptibly(lock);
+                    return this;
+                } catch (InterruptedException ex) {
+                    /// ignore, check thread events and try again!
+                    context.pollThreadEvents();
+                }
+            }
         }
+
         return this;
     }
 
     @JRubyMethod
-    public synchronized IRubyObject unlock(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    public IRubyObject unlock(ThreadContext context) {
         if (!lock.isLocked()) {
-            throw runtime.newThreadError("Mutex is not locked");
+            throw context.runtime.newThreadError("Mutex is not locked");
         }
         if (!lock.isHeldByCurrentThread()) {
-            throw runtime.newThreadError("Mutex is not owned by calling thread");
+            throw context.runtime.newThreadError("Mutex is not owned by calling thread");
         }
 
         boolean hasQueued = lock.hasQueuedThreads();
@@ -115,40 +125,36 @@ public class Mutex extends RubyObject {
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context) {
-        long beg = System.currentTimeMillis();
-        try {
-            unlock(context);
-            context.getThread().sleep(0);
-        } catch (InterruptedException ex) {
-            // ignore interrupted
-        } finally {
-            lock(context);
-        }
-        return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        return sleep(context, context.nil);
     }
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
+        Ruby runtime = context.runtime;
+
         final long beg = System.currentTimeMillis();
-        double t = RubyTime.convertTimeInterval(context, timeout);
-
-        unlock(context);
-
         try {
-            long millis = (long) (t * 1000);
+            RubyThread thread = context.getThread();
 
-            if (Double.compare(t, 0.0d) == 0 || millis == 0) {
-                // wait time is zero or smaller than 1ms, so we just proceed
+            if (timeout.isNil()) {
+                thread.sleep(lock);
             } else {
-                context.getThread().sleep(millis);
+                double t = RubyTime.convertTimeInterval(context, timeout);
+                long millis = (long) (t * 1000);
+
+                if (Double.compare(t, 0.0d) == 0 || millis == 0) {
+                    // wait time is zero or smaller than 1ms, so we just proceed
+                } else {
+                    thread.sleep(lock, millis);
+                }
             }
+        } catch (IllegalMonitorStateException imse) {
+            throw runtime.newThreadError("Attempt to unlock a mutex which is not locked");
         } catch (InterruptedException ex) {
-            // ignore interrupted
-        } finally {
-            lock(context);
+            context.pollThreadEvents();
         }
 
-        return context.runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        return runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
     }
 
     @JRubyMethod

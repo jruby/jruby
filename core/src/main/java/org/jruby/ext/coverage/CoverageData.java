@@ -27,6 +27,7 @@
 package org.jruby.ext.coverage;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -82,7 +83,7 @@ public class CoverageData {
         return coverage;
     }
 
-    private boolean hasCodeBeenPartiallyCovered(int[] lines) {
+    private static boolean hasCodeBeenPartiallyCovered(int[] lines) {
         for (int i = 0; i < lines.length; i++) {
             if (lines[i] > 0) return true;
         }
@@ -93,13 +94,13 @@ public class CoverageData {
     public synchronized Map<String, int[]> prepareCoverage(String filename, int[] lines) {
         assert lines != null;
 
+        Map<String, int[]> coverage = this.coverage;
+
         if (filename == null) {
             // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
             // we opt to ignore scripts with no filename, since coverage means nothing
             return coverage;
         }
-
-        Map<String, int[]> coverage = this.coverage;
 
         if (coverage != null) {
             coverage.put(filename, lines);
@@ -107,22 +108,39 @@ public class CoverageData {
 
         return coverage;
     }
+
+    private static final EnumSet<RubyEvent> COVERAGE_EVENTS = EnumSet.of(RubyEvent.COVERAGE);
     
     private final EventHook COVERAGE_HOOK = new EventHook() {
         @Override
-        public synchronized void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            if (coverage == null || line <= 0) return; // Should not be needed but I predict serialization of IR might hit this.
+        public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
+            synchronized (CoverageData.this) {
+                Map<String, int[]> coverage = CoverageData.this.coverage;
 
-            int[] lines = coverage.get(file);
-            if (lines == null) return;           // no coverage lines for this record.  bail out (should never happen)
-            if (lines.length == 0) return;       // coverage is dead for this record.  result() has been called once
-                                                 // and we marked it as such as an empty list.
-            lines[line - 1] += 1;                // increment usage count by one.
+                // Should not be needed but I predict serialization of IR might hit this.
+                if (coverage == null || line <= 0) return;
+
+                int[] lines = coverage.get(file);
+
+                // no coverage lines for this record.  bail out (should never happen)
+                if (lines == null) return;
+
+                // coverage is dead for this record.  result() has been called once and we marked it as such as an empty list.
+                if (lines.length == 0) return;
+
+                // increment usage count by one.
+                lines[line - 1] += 1;
+            }
         }
 
         @Override
         public boolean isInterestedInEvent(RubyEvent event) {
             return event == RubyEvent.COVERAGE;
+        }
+
+        @Override
+        public EnumSet<RubyEvent> eventSet() {
+            return COVERAGE_EVENTS;
         }
     };
     
