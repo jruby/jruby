@@ -6120,9 +6120,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
 
         RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
-        IRubyObject s = this.gsubCommon(context, null, runtime.newString(UNDERSCORE), null, underscore_pattern, false, 0, false);
+        RubyString s = gsubFast(context, underscore_pattern, runtime.newString(UNDERSCORE), Block.NULL_BLOCK);
 
-        IRubyObject[] ary = RubyComplex.str_to_c_internal(context, (RubyString) s);
+        IRubyObject[] ary = RubyComplex.str_to_c_internal(context, s);
 
         IRubyObject first = ary[0];
         if ( first != context.nil ) return first;
@@ -6140,9 +6140,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Ruby runtime = context.runtime;
 
         RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
-        IRubyObject s = this.gsubCommon(context, null, runtime.newString(UNDERSCORE), null, underscore_pattern, false, 0, false);
+        RubyString s = gsubFast(context, underscore_pattern, runtime.newString(UNDERSCORE), Block.NULL_BLOCK);
 
-        IRubyObject[] ary = RubyRational.str_to_r_internal(context, (RubyString) s);
+        IRubyObject[] ary = RubyRational.str_to_r_internal(context, s);
 
         IRubyObject first = ary[0];
         if ( first != context.nil ) return first;
