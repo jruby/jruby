@@ -1029,13 +1029,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /** rb_str_resize
      */
-    public final void resize(int length) {
-        if (value.getRealSize() > length) {
+    public final void resize(final int size) {
+        final int len = value.length();
+        if (len > size) {
             modify();
-            value.setRealSize(length);
-        } else if (value.length() < length) {
+            value.setRealSize(size);
+        } else if (len < size) {
             modify();
-            value.length(length);
+            value.length(size);
         }
     }
 
