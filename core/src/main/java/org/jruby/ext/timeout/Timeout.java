@@ -31,11 +31,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
@@ -47,6 +50,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
+import org.jruby.util.ByteList;
 
 public class Timeout {
     public static final String EXECUTOR_VARIABLE = "__executor__";
@@ -70,9 +74,18 @@ public class Timeout {
         return timeout(context, recv, seconds, context.nil, block);
     }
 
+    private static final ByteList TIMEOUT_MESSAGE = ByteList.create("execution expired");
+    static { TIMEOUT_MESSAGE.setEncoding(UTF8Encoding.INSTANCE); }
+
+    private static RubyString defaultTimeoutMessage(final ThreadContext context) {
+        RubyString message = RubyString.newString(context.runtime, TIMEOUT_MESSAGE);
+        message.setFrozen(true);
+        return message;
+    }
+
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, Block block) {
-        return timeout(context, recv, seconds, exceptionType, RubyString.newString(context.runtime, "execution expired").freeze(context), block);
+        return timeout(context, recv, seconds, exceptionType, defaultTimeoutMessage(context), block);
     }
 
     @JRubyMethod(module = true)
@@ -88,12 +101,12 @@ public class Timeout {
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
 
-        IRubyObject id = new RubyObject(runtime, runtime.getObject());
-        Runnable timeoutRunnable = exceptionType.isNil() ?
+        final IRubyObject id = exceptionType.isNil() ? new RubyObject(runtime, runtime.getObject()) : null;
+        Runnable timeoutRunnable = id != null ?
                 TimeoutTask.newAnonymousTask(currentThread, timeout, latch, id, message.convertToString()) :
                 TimeoutTask.newTaskWithException(currentThread, timeout, latch, exceptionType, message.convertToString());
 
-        ScheduledThreadPoolExecutor executor = (ScheduledThreadPoolExecutor) timeout.getInternalVariables().getInternalVariable("__executor__");
+        ScheduledThreadPoolExecutor executor = (ScheduledThreadPoolExecutor) timeout.getInternalVariable("__executor__");
 
         try {
             return yieldWithTimeout(executor, context, seconds, block, timeoutRunnable, latch);
@@ -101,7 +114,7 @@ public class Timeout {
             // if it's the exception we're expecting
             if (re.getException().getMetaClass() == getTimeoutError(timeout)) {
                 // and we were not given a specific exception
-                if ( exceptionType.isNil() ) {
+                if (id != null) {
                     raiseTimeoutErrorIfMatches(context, timeout, re, id);
                 }
             }
@@ -112,6 +125,7 @@ public class Timeout {
     }
 
     private static boolean nilOrZeroSeconds(final ThreadContext context, final IRubyObject seconds) {
+        if (seconds instanceof RubyNumeric) return ((RubyNumeric) seconds).isZero();
         return seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue();
     }
 
