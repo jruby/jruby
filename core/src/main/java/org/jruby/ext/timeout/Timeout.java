@@ -27,7 +27,7 @@
 package org.jruby.ext.timeout;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,9 +63,11 @@ public class Timeout {
         // Timeout module methods
         timeout.defineAnnotatedMethods(Timeout.class);
 
-        timeout.setInternalVariable(
-                EXECUTOR_VARIABLE,
-                new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory()));
+
+        ScheduledThreadPoolExecutor executor =
+                new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
+        executor.setRemoveOnCancelPolicy(true);
+        timeout.setInternalVariable(EXECUTOR_VARIABLE, executor);
     }
 
 
@@ -134,13 +136,13 @@ public class Timeout {
         final Runnable runnable, final AtomicBoolean latch) throws RaiseException {
 
         final long micros = (long) ( RubyTime.convertTimeInterval(context, seconds) * 1000000 );
-        Future timeoutFuture = null;
+        ScheduledFuture timeoutFuture = null;
         try {
             timeoutFuture = executor.schedule(runnable, micros, TimeUnit.MICROSECONDS);
             return block.yield(context, seconds);
         }
         finally {
-            if ( timeoutFuture != null ) killTimeoutThread(executor, context, timeoutFuture, latch);
+            if ( timeoutFuture != null ) killTimeoutThread(context, timeoutFuture, latch);
             // ... when timeoutFuture == null there's likely an error thrown from schedule
         }
     }
@@ -199,12 +201,9 @@ public class Timeout {
 
     }
 
-    private static void killTimeoutThread(ScheduledThreadPoolExecutor executor, ThreadContext context, final Future timeoutFuture, final AtomicBoolean latch) {
+    private static void killTimeoutThread(ThreadContext context, ScheduledFuture timeoutFuture, AtomicBoolean latch) {
         if (latch.compareAndSet(false, true) && timeoutFuture.cancel(false)) {
-            // ok, exception will not fire
-            if (timeoutFuture instanceof Runnable) {
-                executor.remove((Runnable) timeoutFuture);
-            }
+            // ok, exception will not fire (also cancel caused task to be removed)
         } else {
             // future is not cancellable, wait for it to run and then poll
             try {
