@@ -348,6 +348,8 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
             return ((RubyFixnum) this).op_plus_one(context);
+        } else if (this instanceof RubyBignum) {
+            return ((RubyBignum) this).op_plus(context, 1);
         } else {
             return numFuncall(context, this, sites(context).op_plus, RubyFixnum.one(context.runtime));
         }
