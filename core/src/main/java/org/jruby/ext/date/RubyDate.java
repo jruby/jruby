@@ -1178,7 +1178,14 @@ public class RubyDate extends RubyObject {
     // All years divisible by 4 are leap years in the Gregorian calendar,
     // except for years divisible by 100 and not by 400.
     private static boolean isGregorianLeap(final long year) {
-        return year % 4 == 0 && year % 100 != 0 || year % 400 == 0;
+        long uy = (year >= 0) ? year : -year;
+        if ((uy & 3) != 0)
+            return false;
+
+        long century = uy / 100;
+        if (uy != century * 100)
+            return true;
+        return (century & 3) == 0;
     }
 
     @JRubyMethod(name = "leap?")
