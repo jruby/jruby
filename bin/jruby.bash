@@ -85,7 +85,8 @@ while [ -h "$SELF_PATH" ]; do
     # 3) get the physical pwd
     # 4) append the basename
     SYM="$(readlink "$SELF_PATH")"
-    SELF_PATH="$(cd "$BASE_DIR" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
+    BASE_SYM=$(cd -P -- "$(dirname -- "$SELF_PATH")" >/dev/null && pwd -P)
+    SELF_PATH="$(cd "$BASE_SYM" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
 done
 
 JRUBY_HOME="${SELF_PATH%/*/*}"
