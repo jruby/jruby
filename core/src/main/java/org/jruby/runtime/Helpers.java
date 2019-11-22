@@ -386,8 +386,8 @@ public class Helpers {
         }
     }
 
-    private static class MethodMissingMethod extends DynamicMethod {
-        private final CacheEntry entry;
+    public static class MethodMissingMethod extends DynamicMethod {
+        public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
 
@@ -2534,6 +2534,13 @@ public class Helpers {
 
     public static <T> T[] arrayOf(T... values) {
         return values;
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject... values) {
+        IRubyObject[] newValues = new IRubyObject[values.length + 1];
+        newValues[0] = first;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        return newValues;
     }
 
     public static <T> T[] arrayOf(Class<T> t, int size, T fill) {
