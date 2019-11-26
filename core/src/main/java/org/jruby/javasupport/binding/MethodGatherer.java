@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -151,9 +153,8 @@ public class MethodGatherer {
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
-            // only add class's methods if it's public or we can set accessible
-            // (see JRUBY-4799)
-            if (Modifier.isPublic(klass.getModifiers()) || JavaUtil.CAN_SET_ACCESSIBLE) {
+            // only add class's methods if it's public (JIRA issue JRUBY-4799)
+            if (Modifier.isPublic(klass.getModifiers())) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
@@ -272,9 +273,24 @@ public class MethodGatherer {
     private static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
         @Override
         public Class<?>[] computeValue(Class cls) {
-            return cls.getInterfaces();
+            Class<?>[] baseInterfaces = cls.getInterfaces();
+
+            // Expand each interface's parent interfaces using a set
+            Set<Class<?>> interfaceSet = new HashSet<>();
+
+            addAllInterfaces(interfaceSet, cls);
+
+            return interfaceSet.toArray(new Class<?>[interfaceSet.size()]);
+        }
+
+        void addAllInterfaces(Set<Class<?>> set, Class<?> ifc) {
+            for (Class<?> i : ifc.getInterfaces()) {
+                set.add(i);
+                addAllInterfaces(set, i);
+            }
         }
     };
+
     private static final ClassValue<Boolean> IS_SCALA = new ClassValue<Boolean>() {
         @Override
         protected Boolean computeValue(Class<?> type) {
