@@ -819,13 +819,14 @@ public class Pack {
         byte[] buf = input.unsafeBytes();
         int begin = input.begin();
         int length = input.realSize();
+        int end = begin + length;
 
         if (length % 4 != 0) throw runtime.newArgumentError("invalid base64");
 
         int p = begin;
         byte[] out = new byte[3 * ((length + 3) / 4)];
 
-        while (p < length && s != '=') {
+        while (p < end && s != '=') {
             // obtain a
             s = buf[p++];
             a = b64_xtable[s];
@@ -857,7 +858,7 @@ public class Pack {
             out[index++] = (byte) (c << 6 | d);
         }
 
-        if (p < begin + length) throw runtime.newArgumentError("invalid base64");
+        if (p < end) throw runtime.newArgumentError("invalid base64");
 
         if (a != -1 && b != -1) {
             if (c == -1 && s == '=') {
