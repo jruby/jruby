@@ -274,21 +274,19 @@ public class Dir {
             char cstart, cend;
             if(escape && _pat[pat] == '\\') {
                 pat++;
+                if(pat >= pend) return -1;
             }
-            if(pat >= pend) {
-                return -1;
-            }
-            cstart = cend = (char)(_pat[pat++]&0xFF);
+            cstart = cend = (char)(_pat[pat++] & 0xFF);
+            if(pat >= pend) return -1;
             if(_pat[pat] == '-' && _pat[pat+1] != ']') {
                 pat++;
                 if(escape && _pat[pat] == '\\') {
                     pat++;
-                }
-                if(pat >= pend) {
-                    return -1;
+                    if(pat >= pend) return -1;
                 }
 
                 cend = (char)(_pat[pat++] & 0xFF);
+                if(pat >= pend) return -1;
             }
 
             if (nocase) {
