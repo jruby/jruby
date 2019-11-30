@@ -96,21 +96,9 @@ describe "ConditionVariable#signal" do
       end
     end
 
-    catch :timed_out do
-      while [t1, t2].any?(&:alive?)
-        # Time out if in the next five seconds neither thread is seen to be
-        # running.  This will either mean that the threads have terminated
-        # (checked below), or that both have been asleep this whole time.
-        start = Time.now
-        until t1.stop? ^ t2.stop?
-          throw :timed_out if Time.now - start >= 5
-          Thread.pass
-        end
-        Thread.pass
-      end
-    end
-
     # Check that both threads terminated without exception
-    [t1, t2].map(&:status).should == [false, false]
+    t1.join
+    t2.join
+    m.locked?.should == false
   end
 end

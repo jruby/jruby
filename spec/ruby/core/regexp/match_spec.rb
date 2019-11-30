@@ -38,6 +38,10 @@ describe "Regexp#match" do
     -> { Regexp.allocate.match('foo') }.should raise_error(TypeError)
   end
 
+  it "raises TypeError on an uninitialized Regexp" do
+    -> { Regexp.allocate.match('foo'.encode("UTF-16LE")) }.should raise_error(TypeError)
+  end
+
   describe "with [string, position]" do
     describe "when given a positive position" do
       it "matches the input at a given position" do
@@ -87,18 +91,26 @@ describe "Regexp#match" do
     end
   end
 
-  ruby_version_is ""..."2.7" do
+  ruby_version_is ""..."3.0" do
     it "resets $~ if passed nil" do
-      # set $~
-      /./.match("a")
-      $~.should be_kind_of(MatchData)
+      suppress_warning do
+        # set $~
+        /./.match("a")
+        $~.should be_kind_of(MatchData)
 
-      /1/.match(nil)
-      $~.should be_nil
+        /1/.match(nil)
+        $~.should be_nil
+      end
     end
   end
 
-  ruby_version_is "2.7" do
+  ruby_version_is "2.7"..."3.0" do
+    it "warns the deprecation when the given argument is nil" do
+      -> { /foo/.match(nil) }.should complain(/given argument is nil; this will raise a TypeError in the next release/)
+    end
+  end
+
+  ruby_version_is "3.0" do
     it "raises TypeError when the given argument is nil" do
       -> { /foo/.match(nil) }.should raise_error(TypeError)
     end
@@ -137,13 +149,21 @@ describe "Regexp#match?" do
     /str/i.match?('string', 1).should be_false
   end
 
-  ruby_version_is ""..."2.7" do
+  ruby_version_is ""..."3.0" do
     it "returns false when given nil" do
-      /./.match?(nil).should be_false
+      suppress_warning do
+        /./.match?(nil).should be_false
+      end
     end
   end
 
-  ruby_version_is "2.7" do
+  ruby_version_is "2.7"..."3.0" do
+    it "warns the deprecation" do
+      -> { /./.match?(nil) }.should complain(/given argument is nil; this will raise a TypeError in the next release/)
+    end
+  end
+
+  ruby_version_is "3.0" do
     it "raises TypeError when given nil" do
       -> { /./.match?(nil) }.should raise_error(TypeError)
     end
