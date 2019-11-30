@@ -1,1 +1,2 @@
 fails:SystemCallError.new accepts an optional third argument specifying the location
+fails:SystemCallError.new coerces location if it is not a String

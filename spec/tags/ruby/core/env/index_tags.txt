@@ -1,2 +1,3 @@
 fails:ENV.index returns the index associated with the passed value
 fails:ENV.index raises TypeError if the argument is not a String and does not respond to #to_str
+fails:ENV.index warns about deprecation
