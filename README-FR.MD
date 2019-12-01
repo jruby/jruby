@@ -78,7 +78,7 @@ Yukihiro Matsumoto <matz@netlab.co.jp>.
 
 Contact projet: Thomas E Enebo <tom.enebo@gmail.com>
 
-## License
+## Licence
 
 JRuby vous est licencié sous 3 licences - EPL 2.0, GPL 2 et LGPL 2.1.
 Certains composents ont d'autres licences ou droits d'auteurs. Regardez le fichier [COPYING](COPYING)
