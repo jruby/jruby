@@ -10,6 +10,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
@@ -150,8 +151,11 @@ public abstract class InvokeSite extends MutableCallSite {
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
+        MethodHandle mh = null;
+        boolean methodMissing = false;
 
         if (methodMissing(entry, caller)) {
+            methodMissing = true;
             // Test thresholds so we don't do this forever (#4596)
             if (testThresholds(selfClass) == CacheAction.FAIL) {
                 logFail();
@@ -159,10 +163,25 @@ public abstract class InvokeSite extends MutableCallSite {
             } else {
                 logMethodMissing();
             }
-            return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
+            method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
+            if (method instanceof Helpers.MethodMissingMethod) {
+                entry = ((Helpers.MethodMissingMethod) method).entry;
+                method = entry.method;
+            } else {
+                entry = new CacheEntry(
+                        method,
+                        selfClass,
+                        entry.token);
+            }
+            try {
+                mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                Helpers.throwException(t);
+            }
+        } else {
+            mh = getHandle(self, entry);
         }
-
-        MethodHandle mh = getHandle(self, entry);
 
         if (literalClosure) {
             mh = Binder.from(mh.type())
@@ -174,13 +193,21 @@ public abstract class InvokeSite extends MutableCallSite {
 
         if (literalClosure) {
             try {
-                return method.call(context, self, entry.sourceModule, methodName, args, block);
+                if (methodMissing) {
+                    return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                } else {
+                    return method.call(context, self, entry.sourceModule, methodName, args, block);
+                }
             } finally {
                 block.escape();
             }
         }
 
-        return method.call(context, self, entry.sourceModule, methodName, args, block);
+        if (methodMissing) {
+            return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+        } else {
+            return method.call(context, self, entry.sourceModule, methodName, args, block);
+        }
     }
 
     private static final MethodHandles.Lookup LOOKUP = lookup();
