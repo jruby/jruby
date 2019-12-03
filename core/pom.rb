@@ -274,16 +274,16 @@ project 'JRuby Core' do
 
   plugin :shade do
     execute_goals( 'shade',
-                   :id => 'create lib/jruby.jar',
-                   :phase => 'package',
+                   id: 'create lib/jruby.jar',
+                   phase: 'package',
                    relocations: [
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                    ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main',
-                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   'createSourcesJar' => '${create.sources.jar}'
+                   outputFile: '${jruby.basedir}/lib/jruby.jar',
+                   transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         mainClass: 'org.jruby.Main',
+                                         manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
+                   createSourcesJar: '${create.sources.jar}'
     )
   end
 
@@ -294,14 +294,15 @@ project 'JRuby Core' do
       # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
       plugin :shade do
         execute_goals( 'shade',
-                       :id => 'shade the asm classes',
-                       :phase => 'package',
-                       'artifactSet' => {
+                       id: 'shade the asm classes',
+                       phase: 'package',
+                       artifactSet: {
                          # IMPORTANT these needs to match exclusions in
                          # maven/jruby-complete/pom.rb
-                         'includes' => [ 'com.github.jnr:jnr-ffi',
-                                         'me.qmx.jitescript:jitescript',
-                                         'org.ow2.asm:*' ]
+                         includes: [ 'com.github.jnr:jnr-ffi',
+                                     'me.qmx.jitescript:jitescript',
+                                     'org.ow2.asm:*'
+                         ]
                        },
                        relocations: [
                            {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
