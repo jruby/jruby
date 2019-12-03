@@ -276,6 +276,9 @@ project 'JRuby Core' do
     execute_goals( 'shade',
                    id: 'create lib/jruby.jar',
                    phase: 'package',
+                   artifactSet: {
+                       excludes: 'javax.annotation:javax.annotation-api'
+                   },
                    relocations: [
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                    ],
@@ -283,7 +286,7 @@ project 'JRuby Core' do
                    transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          mainClass: 'org.jruby.Main',
                                          manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   createSourcesJar: '${create.sources.jar}'
+                   createSourcesJar: '${create.sources.jar}',
     )
   end
 
@@ -294,7 +297,7 @@ project 'JRuby Core' do
       # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
       plugin :shade do
         execute_goals( 'shade',
-                       id: 'shade the asm classes',
+                       id: 'shade dependencies into jar',
                        phase: 'package',
                        artifactSet: {
                          # IMPORTANT these needs to match exclusions in
@@ -302,7 +305,8 @@ project 'JRuby Core' do
                          includes: [ 'com.github.jnr:jnr-ffi',
                                      'me.qmx.jitescript:jitescript',
                                      'org.ow2.asm:*'
-                         ]
+                         ],
+                         excludes: 'javax.annotation:javax.annotation-api'
                        },
                        relocations: [
                            {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
@@ -311,8 +315,9 @@ project 'JRuby Core' do
                        transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main',
                                          'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.core'}}],
-                       filters:
-                           {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+                       filters: [
+                           {artifact: 'com.headius:invokebinder', excludes: '**/module-info.class'}
+                       ]
         )
       end
     end
