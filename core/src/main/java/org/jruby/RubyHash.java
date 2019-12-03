@@ -310,6 +310,7 @@ public class RubyHash extends RubyObject implements Map {
         hashes = other.internalCopyHashes();
         size = other.size;
         extents = other.extents;
+        strategy = other.strategy;
     }
 
     public RubyHash(Ruby runtime, RubyClass klass) {
@@ -369,6 +370,7 @@ public class RubyHash extends RubyObject implements Map {
     private final void allocFirst() {
         entries = new IRubyObject[MRI_INITIAL_CAPACITY << 1];
         hashes = new int[MRI_INITIAL_CAPACITY];
+        strategy = LINEAR;
     }
 
     private final void allocFirst(final int buckets) {
@@ -377,6 +379,7 @@ public class RubyHash extends RubyObject implements Map {
         if (buckets <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS) {
             allocFirst();
         } else {
+            strategy = ADDRESSED;
             int nextPowOfTwo = nextPowOfTwo(buckets);
             entries = new IRubyObject[nextPowOfTwo << 1];
             bins = new int[nextPowOfTwo << 1];
@@ -511,6 +514,8 @@ public class RubyHash extends RubyObject implements Map {
         bins = newBins;
         this.hashes = newHashes;
         this.entries = newEntries;
+
+        strategy = ADDRESSED;
     }
 
     private static int START(long startEnd) {
@@ -555,24 +560,10 @@ public class RubyHash extends RubyObject implements Map {
 
     public IRubyObject internalPut(final IRubyObject key, final IRubyObject value) {
       checkResize();
-      int bin, index;
-      IRubyObject result;
+
       final int hash = hashValue(key);
 
-      if (shouldSearchLinear()) {
-          index = internalGetIndexLinearSearch(hash, key);
-          result = internalSetValue(index, value);
-          if (result != null) return result;
-          internalPutLinearSearch(hash, key, value);
-      } else {
-          bin = internalGetBinOpenAddressing(hash, key);
-          result = internalSetValueByBin(bin, value);
-          if (result != null) return result;
-          internalPutOpenAdressing(hash, bin, key, value);
-      }
-
-      // no existing entry
-      return null;
+      return strategy.put(this, key, hash, value);
     }
 
     final boolean internalPutIfNoKey(final IRubyObject key, final IRubyObject value) {
@@ -596,34 +587,6 @@ public class RubyHash extends RubyObject implements Map {
         return getLength() <= MAX_CAPACITY_FOR_TABLES_WITHOUT_BINS;
     }
 
-    private final IRubyObject internalPutOpenAdressing(final int hash, int bin, final IRubyObject key, final IRubyObject value) {
-        checkIterating();
-
-        int[] bins = this.bins;
-
-        int localBin = (bin == EMPTY_BIN) ? bucketIndex(hash, bins.length) : bin;
-        int index = bins[localBin];
-
-        int end = getEnd();
-        IRubyObject[] entries = this.entries;
-
-        set(entries, end, key, value);
-
-        while(index != EMPTY_BIN && index != DELETED_BIN) {
-            localBin = secondaryBucketIndex(localBin, bins.length);
-            index = bins[localBin];
-        }
-
-        bins[localBin] = end;
-        hashes[end] = hash;
-
-        size++;
-        setEnd(end + 1);
-
-        // no existing entry
-        return null;
-    }
-
     private int getEnd() {
         return END(extents);
     }
@@ -640,23 +603,6 @@ public class RubyHash extends RubyObject implements Map {
         extents = (extents & 0xFFFFFFFFL) | (((long) newStart) << 32);
     }
 
-    private final IRubyObject internalPutLinearSearch(final int hash, final IRubyObject key, final IRubyObject value) {
-        checkIterating();
-
-        int end = getEnd();
-        IRubyObject[] entries = this.entries;
-
-        set(entries, end, key, value);
-
-        hashes[end] = hash;
-
-        size++;
-        setEnd(end + 1);
-
-        // no existing entry
-        return null;
-    }
-
     private final IRubyObject internalSetValue(final int index, final IRubyObject value) {
         if (index < 0) return null;
 
@@ -668,43 +614,11 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    private final IRubyObject internalSetValueByBin(final int bin, final IRubyObject value) {
-        if (bin < 0) return null;
-        int index = bins[bin];
-        return internalSetValue(index, value);
-    }
-
     // get implementation
 
     private final IRubyObject internalGetValue(final int index) {
         if (index < 0) return null;
         return entryValue(entries, index);
-    }
-
-    private final int internalGetBinOpenAddressing(final int hash, final IRubyObject key) {
-        int[] bins = this.bins;
-
-        int bin = bucketIndex(hash, bins.length);
-        int index = bins[bin];
-
-        IRubyObject[] entries = this.entries;
-        int[] hashes = this.hashes;
-
-        for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
-            if (round == bins.length) break;
-
-            if (index != DELETED_BIN) {
-                IRubyObject otherKey = entryKey(entries, index);
-                int otherHash = hashes[index];
-
-                if (internalKeyExist(key, hash, otherKey, otherHash)) return bin;
-            }
-
-            bin = secondaryBucketIndex(bin, bins.length);
-            index = bins[bin];
-        }
-
-        return EMPTY_BIN;
     }
 
     private static IRubyObject entryKey(IRubyObject[] entries, int index) {
@@ -728,37 +642,11 @@ public class RubyHash extends RubyObject implements Map {
         set(entries, index, null, null);
     }
 
-    private final int internalGetIndexLinearSearch(final int hash, final IRubyObject key) {
-        long extents = this.extents;
-        int start = START(extents);
-        int end = END(extents);
-        IRubyObject[] entries = this.entries;
-        int[] hashes = this.hashes;
-
-        for(int i = start; i < end; i++) {
-            IRubyObject otherKey = entryKey(entries, i);
-            if (otherKey == null) continue;
-
-            int otherHash = hashes[i];
-
-            if (internalKeyExist(key, hash, otherKey, otherHash)) return i;
-        }
-        return EMPTY_BIN;
-    }
-
     protected IRubyObject internalGet(IRubyObject key) { // specialized for value
         if (isEmpty()) return null;
         final int hash = hashValue(key);
-        int index;
 
-        if (shouldSearchLinear()) {
-            index = internalGetIndexLinearSearch(hash, key);
-        } else {
-            final int bin = internalGetBinOpenAddressing(hash, key);
-            if (bin < 0) return null;
-            index = bins[bin];
-        }
-        return internalGetValue(index);
+        return strategy.get(this, key, hash);
     }
 
     protected RubyHashEntry internalGetEntry(IRubyObject key) {
@@ -770,8 +658,8 @@ public class RubyHash extends RubyObject implements Map {
         return internalGetEntry(key);
     }
 
-    private boolean internalKeyExist(IRubyObject key, int hash, IRubyObject otherKey, int otherHash) {
-        return (hash == otherHash && (key == otherKey || (!isComparedByIdentity() && key.eql(otherKey))));
+    private static boolean internalKeyExist(IRubyObject key, int hash, IRubyObject otherKey, int otherHash, boolean identity) {
+        return (hash == otherHash && (key == otherKey || (!identity && key.eql(otherKey))));
     }
 
     // delete implementation
@@ -1274,7 +1162,7 @@ public class RubyHash extends RubyObject implements Map {
                 // cannot be non-EMPTY_BIN and not contain a valid newEntry.
                 IRubyObject otherKey = entryKey(newEntries, index);
                 int otherHash = newHashes[index];
-                if (internalKeyExist(key, hash, otherKey, otherHash)) {
+                if (internalKeyExist(key, hash, otherKey, otherHash, isComparedByIdentity())) {
                     // exists, we do not need to add this key
                     exists = true;
                     break;
@@ -1319,7 +1207,7 @@ public class RubyHash extends RubyObject implements Map {
             for(int j = 0; j < i; j++) {
                 int otherHash = hashes[j];
                 IRubyObject otherKey = entryKey(newEntries, j);
-                if (internalKeyExist(key, newHash, otherKey, otherHash)) {
+                if (internalKeyExist(key, newHash, otherKey, otherHash, isComparedByIdentity())) {
                     exists = true;
                     break;
                 }
@@ -1389,32 +1277,8 @@ public class RubyHash extends RubyObject implements Map {
 
     protected void op_asetForString(Ruby runtime, RubyString key, IRubyObject value) {
         final int hash = hashValue(key);
-        if (shouldSearchLinear()) {
-            final int index = internalGetIndexLinearSearch(hash, key);
-            if (internalSetValue(index, value) != null) return;
-            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
-            checkResize();
 
-            // It could be that we changed from linear search to open addressing with the resize
-            if (shouldSearchLinear()){
-                internalPutLinearSearch(hash, key, value);
-            } else {
-                internalPutOpenAdressing(hash, EMPTY_BIN, key, value);
-            }
-            return;
-        } else {
-            int[] bins = this.bins;
-            final int oldBinsLength = bins.length;
-            int bin = internalGetBinOpenAddressing(hash, key);
-            if (internalSetValueByBin(bin, value) != null) return;
-
-            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
-            checkResize();
-            // we need to calculate the bin again if we changed the size
-            if (bins.length != oldBinsLength)
-              bin = internalGetBinOpenAddressing(hash, key);
-            internalPutOpenAdressing(hash, bin, key, value);
-        }
+        strategy.putString(this, key, hash, value);
     }
 
     // returns null when not found to avoid unnecessary getRuntime().getNil() call
@@ -3219,4 +3083,184 @@ public class RubyHash extends RubyObject implements Map {
     public RubyHash rb_clear() {
         return rb_clear(getRuntime().getCurrentContext());
     }
+
+    interface HashStrategy {
+        IRubyObject put(RubyHash self, IRubyObject key, int hash, IRubyObject value);
+        void putString(RubyHash self, RubyString key, int hash, IRubyObject value);
+        void putDirect(RubyHash self, IRubyObject key, int hash, IRubyObject value);
+        IRubyObject get(RubyHash self, IRubyObject key, int hash);
+    }
+
+    static class LinearStrategy implements HashStrategy {
+        public IRubyObject put(RubyHash self, IRubyObject key, int hash, IRubyObject value) {
+            int index = internalGetIndexLinearSearch(self, hash, key);
+            IRubyObject result = self.internalSetValue(index, value);
+            if (result != null) return result;
+            internalPutLinearSearch(self, hash, key, value);
+            return null;
+        }
+
+        @Override
+        public void putString(RubyHash self, RubyString key, int hash, IRubyObject value) {
+            final int index = internalGetIndexLinearSearch(self, hash, key);
+            if (self.internalSetValue(index, value) != null) return;
+            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
+            self.checkResize();
+
+            // It could be that we changed from linear search to open addressing with the resize
+            self.strategy.putDirect(self, key, hash, value);
+        }
+
+        @Override
+        public void putDirect(RubyHash self, IRubyObject key, int hash, IRubyObject value) {
+            internalPutLinearSearch(self, hash, key, value);
+        }
+
+        @Override
+        public IRubyObject get(RubyHash self, IRubyObject key, int hash) {
+            int index = internalGetIndexLinearSearch(self, hash, key);
+
+            return self.internalGetValue(index);
+        }
+
+        private final int internalGetIndexLinearSearch(RubyHash self, final int hash, final IRubyObject key) {
+            long extents = self.extents;
+            int start = START(extents);
+            int end = END(extents);
+            IRubyObject[] entries = self.entries;
+            int[] hashes = self.hashes;
+
+            for(int i = start; i < end; i++) {
+                IRubyObject otherKey = entryKey(entries, i);
+                if (otherKey == null) continue;
+
+                int otherHash = hashes[i];
+
+                if (internalKeyExist(key, hash, otherKey, otherHash, self.isComparedByIdentity())) return i;
+            }
+            return EMPTY_BIN;
+        }
+
+        private final IRubyObject internalPutLinearSearch(RubyHash self, final int hash, final IRubyObject key, final IRubyObject value) {
+            self.checkIterating();
+
+            int end = self.getEnd();
+            IRubyObject[] entries = self.entries;
+
+            set(entries, end, key, value);
+
+            self.hashes[end] = hash;
+
+            self.size++;
+            self.setEnd(end + 1);
+
+            // no existing entry
+            return null;
+        }
+    }
+
+    static class AddressedStrategy implements HashStrategy {
+        @Override
+        public IRubyObject put(RubyHash self, IRubyObject key, int hash, IRubyObject value) {
+            int bin = internalGetBinOpenAddressing(self, hash, key);
+            IRubyObject result = internalSetValueByBin(self, bin, value);
+            if (result != null) return result;
+            internalPutOpenAdressing(self, hash, bin, key, value);
+            return null;
+        }
+
+        @Override
+        public void putString(RubyHash self, RubyString key, int hash, IRubyObject value) {
+            int[] bins = self.bins;
+            final int oldBinsLength = bins.length;
+            int bin = internalGetBinOpenAddressing(self, hash, key);
+            if (internalSetValueByBin(self, bin, value) != null) return;
+
+            if (!key.isFrozen()) key = (RubyString)key.dupFrozen();
+            self.checkResize();
+            // we need to calculate the bin again if we changed the size
+            if (bins.length != oldBinsLength)
+                bin = internalGetBinOpenAddressing(self, hash, key);
+            internalPutOpenAdressing(self, hash, bin, key, value);
+        }
+
+        @Override
+        public void putDirect(RubyHash self, IRubyObject key, int hash, IRubyObject value) {
+            internalPutOpenAdressing(self, hash, EMPTY_BIN, key, value);
+        }
+
+        @Override
+        public IRubyObject get(RubyHash self, IRubyObject key, int hash) {
+            final int bin = internalGetBinOpenAddressing(self, hash, key);
+            if (bin < 0) return null;
+            int index = self.bins[bin];
+
+            return self.internalGetValue(index);
+        }
+
+        private final int internalGetBinOpenAddressing(RubyHash self, final int hash, final IRubyObject key) {
+            int[] bins = self.bins;
+
+            int bin = bucketIndex(hash, bins.length);
+            int index = bins[bin];
+
+            IRubyObject[] entries = self.entries;
+            int[] hashes = self.hashes;
+
+            for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
+                if (round == bins.length) break;
+
+                if (index != DELETED_BIN) {
+                    IRubyObject otherKey = entryKey(entries, index);
+                    int otherHash = hashes[index];
+
+                    if (internalKeyExist(key, hash, otherKey, otherHash, self.isComparedByIdentity())) return bin;
+                }
+
+                bin = secondaryBucketIndex(bin, bins.length);
+                index = bins[bin];
+            }
+
+            return EMPTY_BIN;
+        }
+
+        private final IRubyObject internalSetValueByBin(RubyHash self, final int bin, final IRubyObject value) {
+            if (bin < 0) return null;
+            int index = self.bins[bin];
+            return self.internalSetValue(index, value);
+        }
+
+        private final IRubyObject internalPutOpenAdressing(RubyHash self, final int hash, int bin, final IRubyObject key, final IRubyObject value) {
+            self.checkIterating();
+
+            int[] bins = self.bins;
+
+            int localBin = (bin == EMPTY_BIN) ? bucketIndex(hash, bins.length) : bin;
+            int index = bins[localBin];
+
+            int end = self.getEnd();
+            IRubyObject[] entries = self.entries;
+
+            set(entries, end, key, value);
+
+            while(index != EMPTY_BIN && index != DELETED_BIN) {
+                localBin = secondaryBucketIndex(localBin, bins.length);
+                index = bins[localBin];
+            }
+
+            bins[localBin] = end;
+            self.hashes[end] = hash;
+
+            self.size++;
+            self.setEnd(end + 1);
+
+            // no existing entry
+            return null;
+        }
+    }
+
+    private static final HashStrategy LINEAR = new LinearStrategy();
+    private static final HashStrategy ADDRESSED = new AddressedStrategy();
+
+    private HashStrategy strategy;
 }
