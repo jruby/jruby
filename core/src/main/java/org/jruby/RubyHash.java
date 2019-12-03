@@ -681,64 +681,6 @@ public class RubyHash extends RubyObject implements Map {
         return internalDelete(hashValue(key), MATCH_ENTRY, key, value);
     }
 
-    private final IRubyObject internalDeleteOpenAddressing(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
-        int[] bins = this.bins;
-
-        int bin = bucketIndex(hash, bins.length);
-        int index = bins[bin];
-
-        IRubyObject[] entries = this.entries;
-        int[] hashes = this.hashes;
-
-        for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
-            if (index != DELETED_BIN) {
-                IRubyObject otherKey = entryKey(entries, index);
-                IRubyObject otherValue = entryValue(entries, index);
-
-                if (otherKey != null && matchType.matches(key, value, otherKey, otherValue)) {
-                    bins[bin] = DELETED_BIN;
-                    hashes[index] = 0;
-                    unset(entries, index);
-                    size--;
-
-                    updateStartAndEndPointer();
-                    return otherValue;
-                }
-            }
-            bin = secondaryBucketIndex(bin, bins.length);
-            index = bins[bin];
-        }
-
-        return null;  // no entry found
-    }
-
-    private final IRubyObject internalDeleteLinearSearch(final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
-        long extents = this.extents;
-        int start = START(extents);
-        int end = END(extents);
-        IRubyObject[] entries = this.entries;
-        int[] hashes = this.hashes;
-
-        for(int index = start; index < end; index++) {
-            IRubyObject otherKey = entryKey(entries, index);
-            IRubyObject otherValue = entryValue(entries, index);
-
-            if (otherKey == null) continue;
-
-            if (matchType.matches(key, value, otherKey, otherValue)) {
-                hashes[index] = 0;
-                unset(entries, index);
-                size--;
-
-                updateStartAndEndPointer();
-                return otherValue;
-            }
-        }
-
-        // no entry
-        return null;
-    }
-
     private void updateStartAndEndPointer() {
         if (isEmpty()) {
             extents = 0;
@@ -770,11 +712,8 @@ public class RubyHash extends RubyObject implements Map {
 
     private final IRubyObject internalDelete(final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
         if (isEmpty()) return null;
-        if (shouldSearchLinear()) {
-            return internalDeleteLinearSearch(matchType, key, value);
-        } else {
-            return internalDeleteOpenAddressing(hash, matchType, key, value);
-        }
+
+        return strategy.delete(this, matchType, key, hash, value);
     }
 
     private static abstract class EntryMatchType {
@@ -804,7 +743,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private final int[] internalCopyBins() {
-        if(shouldSearchLinear()) return null;
+        if (shouldSearchLinear()) return null;
         int[] bins = this.bins;
         int[] newBins = new int[bins.length];
         System.arraycopy(bins, 0, newBins, 0, bins.length);
@@ -3089,6 +3028,7 @@ public class RubyHash extends RubyObject implements Map {
         void putString(RubyHash self, RubyString key, int hash, IRubyObject value);
         void putDirect(RubyHash self, IRubyObject key, int hash, IRubyObject value);
         IRubyObject get(RubyHash self, IRubyObject key, int hash);
+        IRubyObject delete(RubyHash self, EntryMatchType matchType, IRubyObject key, int hash, IRubyObject value);
     }
 
     static class LinearStrategy implements HashStrategy {
@@ -3123,6 +3063,11 @@ public class RubyHash extends RubyObject implements Map {
             return self.internalGetValue(index);
         }
 
+        @Override
+        public IRubyObject delete(RubyHash self, EntryMatchType matchType, IRubyObject key, int hash, IRubyObject value) {
+            return internalDeleteLinearSearch(self, matchType, key, value);
+        }
+
         private final int internalGetIndexLinearSearch(RubyHash self, final int hash, final IRubyObject key) {
             long extents = self.extents;
             int start = START(extents);
@@ -3155,6 +3100,33 @@ public class RubyHash extends RubyObject implements Map {
             self.setEnd(end + 1);
 
             // no existing entry
+            return null;
+        }
+
+        private final IRubyObject internalDeleteLinearSearch(RubyHash self, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
+            long extents = self.extents;
+            int start = START(extents);
+            int end = END(extents);
+            IRubyObject[] entries = self.entries;
+            int[] hashes = self.hashes;
+
+            for(int index = start; index < end; index++) {
+                IRubyObject otherKey = entryKey(entries, index);
+                IRubyObject otherValue = entryValue(entries, index);
+
+                if (otherKey == null) continue;
+
+                if (matchType.matches(key, value, otherKey, otherValue)) {
+                    hashes[index] = 0;
+                    unset(entries, index);
+                    self.size--;
+
+                    self.updateStartAndEndPointer();
+                    return otherValue;
+                }
+            }
+
+            // no entry
             return null;
         }
     }
@@ -3196,6 +3168,11 @@ public class RubyHash extends RubyObject implements Map {
             int index = self.bins[bin];
 
             return self.internalGetValue(index);
+        }
+
+        @Override
+        public IRubyObject delete(RubyHash self, EntryMatchType matchType, IRubyObject key, int hash, IRubyObject value) {
+            return internalDeleteOpenAddressing(self, hash, matchType, key, value);
         }
 
         private final int internalGetBinOpenAddressing(RubyHash self, final int hash, final IRubyObject key) {
@@ -3256,6 +3233,37 @@ public class RubyHash extends RubyObject implements Map {
 
             // no existing entry
             return null;
+        }
+
+        private final IRubyObject internalDeleteOpenAddressing(RubyHash self, final int hash, final EntryMatchType matchType, final IRubyObject key, final IRubyObject value) {
+            int[] bins = self.bins;
+
+            int bin = bucketIndex(hash, bins.length);
+            int index = bins[bin];
+
+            IRubyObject[] entries = self.entries;
+            int[] hashes = self.hashes;
+
+            for (int round = 0; round < bins.length && index != EMPTY_BIN; round++) {
+                if (index != DELETED_BIN) {
+                    IRubyObject otherKey = entryKey(entries, index);
+                    IRubyObject otherValue = entryValue(entries, index);
+
+                    if (otherKey != null && matchType.matches(key, value, otherKey, otherValue)) {
+                        bins[bin] = DELETED_BIN;
+                        hashes[index] = 0;
+                        unset(entries, index);
+                        self.size--;
+
+                        self.updateStartAndEndPointer();
+                        return otherValue;
+                    }
+                }
+                bin = secondaryBucketIndex(bin, bins.length);
+                index = bins[bin];
+            }
+
+            return null;  // no entry found
         }
     }
 
