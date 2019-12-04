@@ -32,14 +32,16 @@ import me.qmx.jitescript.JiteClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.lang.invoke.CallSite;
@@ -59,6 +61,16 @@ import static org.jruby.util.CodegenUtils.sig;
 public class RubyObjectSpecializer {
 
     public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    public static final Type ALLOCATE_SIG = Type.getMethodType(sig(IRubyObject.class, Ruby.class, RubyClass.class));
+    public static final String METAFACTORY_SIG = sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class);
+    public static final Handle METAFACTORY_HANDLE = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(LambdaMetafactory.class),
+            "metafactory",
+            METAFACTORY_SIG,
+            false);
+    public static final String CONSTRUCTOR_SIG = sig(void.class, Ruby.class, RubyClass.class);
+    public static final String OBJECTALLOCATOR_SIG = sig(ObjectAllocator.class);
 
     private static ClassAndAllocator getClassForSize(int size) {
         return SPECIALIZED_CLASSES.get(size);
@@ -119,7 +131,7 @@ public class RubyObjectSpecializer {
                 }
 
                 try {
-                    ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].newInstance();
+                    ObjectAllocator allocator = (ObjectAllocator) specialized.getMethod("__allocator__").invoke(null);
 
                     cna = new ClassAndAllocator(specialized, allocator);
 
@@ -208,23 +220,22 @@ public class RubyObjectSpecializer {
                 voidreturn();
             }});
 
-            // allocator class
-            addChildClass(new JiteClass(clsPath + "Allocator", p(Object.class), Helpers.arrayOf(p(ObjectAllocator.class))) {{
-                defineDefaultConstructor();
+            defineMethod("__allocator__", ACC_PUBLIC | ACC_STATIC, sig(ObjectAllocator.class), new CodeBlock() {{
+                line(4);
 
-                defineMethod("allocate", ACC_PUBLIC, sig(IRubyObject.class, Ruby.class, RubyClass.class), new CodeBlock() {{
-                    newobj(clsPath);
-                    dup();
-                    aload(1);
-                    aload(2);
-                    invokespecial(clsPath, "<init>", sig(void.class, Ruby.class, RubyClass.class));
-                    areturn();
-                }});
+                invokedynamic(
+                        "allocate",
+                        OBJECTALLOCATOR_SIG,
+                        METAFACTORY_HANDLE,
+                        ALLOCATE_SIG,
+                        new Handle(Opcodes.H_NEWINVOKESPECIAL, clsPath, "<init>", CONSTRUCTOR_SIG, false),
+                        ALLOCATE_SIG);
+
+                areturn();
             }});
         }};
 
         Class specializedClass = defineClass(jiteClass);
-        defineClass(jiteClass.getChildClasses().get(0));
 
         return specializedClass;
     }
