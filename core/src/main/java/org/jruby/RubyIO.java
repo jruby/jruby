@@ -313,8 +313,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
 
-        runtime.setIO(ioClass);
-
         ioClass.setClassIndex(ClassIndex.IO);
         ioClass.setReifiedClass(RubyIO.class);
 

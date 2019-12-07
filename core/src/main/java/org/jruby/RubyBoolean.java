@@ -103,7 +103,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFalseClass(falseClass);
+
         falseClass.setClassIndex(ClassIndex.FALSE);
         falseClass.setReifiedClass(RubyBoolean.class);
         
@@ -117,7 +117,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     public static RubyClass createTrueClass(Ruby runtime) {
         RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setTrueClass(trueClass);
+
         trueClass.setClassIndex(ClassIndex.TRUE);
         trueClass.setReifiedClass(RubyBoolean.class);
         

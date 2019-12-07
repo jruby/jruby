@@ -75,7 +75,6 @@ public class RubyMethod extends AbstractRubyMethod {
     public static RubyClass createMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setMethod(methodClass);
 
         methodClass.setClassIndex(ClassIndex.METHOD);
         methodClass.setReifiedClass(RubyMethod.class);

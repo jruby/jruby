@@ -58,7 +58,6 @@ public class RubyBignum extends RubyInteger {
         RubyClass bignum = runtime.getInteger();
         runtime.getObject().setConstant("Bignum", bignum);
         runtime.getObject().deprecateConstant(runtime, "Bignum");
-        runtime.setBignum(bignum);
 
         return bignum;
     }

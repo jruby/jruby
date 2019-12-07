@@ -92,7 +92,6 @@ public class RubyComplex extends RubyNumeric {
         };
 
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
-        runtime.setComplex(complexc);
 
         complexc.setClassIndex(ClassIndex.COMPLEX);
         complexc.setReifiedClass(RubyComplex.class);

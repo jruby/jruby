@@ -83,7 +83,6 @@ public class RubyFileStat extends RubyObject {
     public static RubyClass createFileStatClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), ALLOCATOR);
-        runtime.setFileStat(fileStatClass);
 
         fileStatClass.includeModule(runtime.getModule("Comparable"));
         fileStatClass.defineAnnotatedMethods(RubyFileStat.class);

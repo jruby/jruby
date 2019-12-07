@@ -78,7 +78,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
-        runtime.setNilClass(nilClass);
+
         nilClass.setClassIndex(ClassIndex.NIL);
         nilClass.setReifiedClass(RubyNil.class);
         

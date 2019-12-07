@@ -227,12 +227,14 @@ public class RubyRandom extends RubyObject {
     public static RubyClass createRandomClass(Ruby runtime) {
         RubyClass randomClass = runtime
                 .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
+
         randomClass.defineAnnotatedMethods(RubyRandom.class);
+
         RubyRandom defaultRand = new RubyRandom(runtime, randomClass);
         defaultRand.random = new RandomType(randomSeed(runtime));
         randomClass.setConstant("DEFAULT", defaultRand);
         runtime.setDefaultRand(defaultRand.random);
-        runtime.setRandomClass(randomClass);
+
         return randomClass;
     }
 

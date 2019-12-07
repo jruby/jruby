@@ -50,7 +50,6 @@ import static org.jruby.runtime.Helpers.invokedynamic;
 public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
-        runtime.setComparable(comparableModule);
 
         comparableModule.defineAnnotatedMethods(RubyComparable.class);
 

@@ -58,7 +58,6 @@ public class RubyGC {
 
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
-        runtime.setGC(result);
         
         result.defineAnnotatedMethods(RubyGC.class);
         

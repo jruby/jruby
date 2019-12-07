@@ -373,8 +373,6 @@ public class RubyTime extends RubyObject {
         timeClass.setClassIndex(ClassIndex.TIME);
         timeClass.setReifiedClass(RubyTime.class);
 
-        runtime.setTime(timeClass);
-
         timeClass.includeModule(runtime.getComparable());
 
         timeClass.defineAnnotatedMethods(RubyTime.class);

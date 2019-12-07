@@ -90,7 +90,6 @@ public class RubyRange extends RubyObject {
 
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
-        runtime.setRange(result);
 
         result.setClassIndex(ClassIndex.RANGE);
         result.setReifiedClass(RubyRange.class);
