@@ -1,5 +1,14 @@
-### Environment
+---
+name: Bug report
+about: Create a JRuby bug report
+title: ''
+labels: ''
+assignees: ''
 
+---
+
+**Environment**
+  
 Provide at least:
 * JRuby version (`jruby -v`) and command line (flags, JRUBY_OPTS, etc)
 * Operating system and platform (e.g. `uname -a`)
@@ -9,12 +18,16 @@ Other relevant info you may wish to add:
 * Application/framework version (e.g. Rails, Sinatra)
 * Environment variables
 
-### Expected Behavior
+**Expected Behavior**
 
 * Describe your expectation of how JRuby should behave, perhaps by showing how CRuby/MRI behaves.
 * Provide an executable Ruby script or a link to an example repository.
 
-### Actual Behavior
+**Actual Behavior**
 
 * Describe or show the actual behavior.
 * Provide text or screen capture showing the behavior.
+
+**If You Need Help**
+
+* Join us on Matrix at https://matrix.to/#/#jruby:matrix.org
