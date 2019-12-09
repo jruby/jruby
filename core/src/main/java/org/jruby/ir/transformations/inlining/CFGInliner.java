@@ -294,20 +294,17 @@ public class CFGInliner {
 
         // Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg(null);
-        List yieldSites = ii.getYieldSites();
+        List<Tuple<BasicBlock, YieldInstr>> yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
-            // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
-            // if we inline the closure at all those yield sites!
-
-            // currently we will only inline a single block into a single yield.
-            if (yieldSites.size() > 1) return "cannot inline a scope with two or more yields";
+            // FIXME: Do we care if we have too many yields?
 
             if (!(closureArg instanceof WrappedIRClosure)) {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
             }
 
-            Tuple t = (Tuple) yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+            for (Tuple t: yieldSites) {
+                inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+            }
         }
 
         // Optimize cfg by merging straight-line bbs (just one piece of what CFG.optimize does)
