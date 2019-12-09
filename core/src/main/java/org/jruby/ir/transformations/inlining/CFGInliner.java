@@ -285,6 +285,10 @@ public class CFGInliner {
         failurePathBB.addInstr(new JumpInstr(hostCloneInfo == null ? splitBBLabel : hostCloneInfo.getRenamedLabel(splitBBLabel)));
         call.blockInlining();
 
+        // We made a new BB with a call which can always raise an exception so add exception edge.
+        cfg.addEdge(failurePathBB, callBB.exceptionBB(), EdgeType.EXCEPTION);
+        cfg.setRescuerBB(failurePathBB, callBB.exceptionBB());
+
         cfg.addEdge(beforeInlineBB, failurePathBB, CFG.EdgeType.REGULAR);
         cfg.addEdge(failurePathBB, afterInlineBB, CFG.EdgeType.REGULAR);
 
