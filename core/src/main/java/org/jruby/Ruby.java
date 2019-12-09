@@ -281,14 +281,7 @@ public final class Ruby implements Constantizable {
         this.parserStats        = new ParserStats(this);
         this.caches             = new Caches();
 
-        Random myRandom;
-        try {
-            myRandom = new SecureRandom();
-        } catch (Throwable t) {
-            LOG.debug("unable to instantiate SecureRandom, falling back on Random", t);
-            myRandom = new Random();
-        }
-        this.random = myRandom;
+        this.random = initRandom();
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             this.hashSeedK0 = -561135208506705104l;
@@ -627,6 +620,17 @@ public final class Ruby implements Constantizable {
         for (String scriptName : this.config.getRequiredLibraries()) {
             topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
         }
+    }
+
+    private Random initRandom() {
+        Random myRandom;
+        try {
+            myRandom = new SecureRandom();
+        } catch (Throwable t) {
+            LOG.debug("unable to instantiate SecureRandom, falling back on Random", t);
+            myRandom = new Random();
+        }
+        return myRandom;
     }
 
     public void registerMBeans() {
