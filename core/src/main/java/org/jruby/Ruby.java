@@ -254,11 +254,7 @@ public final class Ruby implements Constantizable {
         this.config             = config;
         this.threadService      = new ThreadService(this);
 
-        if( config.isProfiling() ) {
-            this.profilingServiceLookup = new ProfilingServiceLookup(this);
-        } else {
-            this.profilingServiceLookup = null;
-        }
+        profilingServiceLookup = config.isProfiling() ? new ProfilingServiceLookup(this) : null;
 
         constant = OptoFactory.newConstantWrapper(Ruby.class, this);
 
@@ -414,12 +410,7 @@ public final class Ruby implements Constantizable {
         context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
-        RubyClass dataClass = null;
-        if (profile.allowClass("Data")) {
-            dataClass = defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-            getObject().deprecateConstant(this, "Data");
-        }
-        this.dataClass = dataClass;
+        dataClass = initDataClass();
 
         comparableModule = RubyComparable.createComparable(this);
         enumerableModule = RubyEnumerable.createEnumerableModule(this);
@@ -442,35 +433,12 @@ public final class Ruby implements Constantizable {
         encodingService.defineEncodings();
         encodingService.defineAliases();
 
-        // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
-        String encoding = this.config.getExternalEncoding();
-        if (encoding != null && !encoding.equals("")) {
-            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-            setDefaultExternalEncoding(loadedEncoding);
-        } else {
-            Encoding consoleEncoding = encodingService.getConsoleEncoding();
-            Encoding availableEncoding = consoleEncoding == null ? encodingService.getLocaleEncoding() : consoleEncoding;
-            setDefaultExternalEncoding(availableEncoding);
-        }
-
-        // Filesystem should always have a value
-        if (Platform.IS_WINDOWS) {
-            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(this));
-        } else {
-            setDefaultFilesystemEncoding(getDefaultExternalEncoding());
-        }
-
-        encoding = this.config.getInternalEncoding();
-        if (encoding != null && !encoding.equals("")) {
-            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
-            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
-            setDefaultInternalEncoding(loadedEncoding);
-        }
+        initDefaultEncodings();
 
         complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(this) : null;
         rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(this) : null;
         hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(this) : null;
+
         if (profile.allowClass("Array")) {
             arrayClass = RubyArray.createArrayClass(this);
             emptyFrozenArray = newEmptyArray();
@@ -539,6 +507,9 @@ public final class Ruby implements Constantizable {
 
         fiberClass = new ThreadFiberLibrary().createFiberClass(this);
 
+        // everything booted, so SizedQueue should be available; set up root fiber
+        ThreadFiber.initRootFiber(context, context.getThread());
+
         // set up defined messages
         initDefinedMessages();
 
@@ -564,7 +535,7 @@ public final class Ruby implements Constantizable {
         getLoadService().init(this.config.getLoadPaths());
 
         // out of base boot mode
-        bootingCore = false;
+        coreIsBooted = true;
 
         // Don't load boot-time libraries when debugging IR
         if (!RubyInstanceConfig.DEBUG_PARSER) {
@@ -594,9 +565,6 @@ public final class Ruby implements Constantizable {
 
         SecurityHelper.checkCryptoRestrictions(this);
 
-        // everything booted, so SizedQueue should be available; set up root fiber
-        ThreadFiber.initRootFiber(context, context.getThread());
-
         if(this.config.isProfiling()) {
             // additional twiddling for profiled mode
             getLoadService().require("jruby/profiler/shutdown_hook");
@@ -614,12 +582,44 @@ public final class Ruby implements Constantizable {
         deprecatedNetworkStackProperty();
 
         // Done booting JRuby runtime
-        bootingRuntime = false;
+        runtimeIsBooted = true;
+    }
 
-        // Require in all libraries specified on command line
-        for (String scriptName : this.config.getRequiredLibraries()) {
-            topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
+    private void initDefaultEncodings() {
+        // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
+        String encoding = this.config.getExternalEncoding();
+        if (encoding != null && !encoding.equals("")) {
+            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultExternalEncoding(loadedEncoding);
+        } else {
+            Encoding consoleEncoding = encodingService.getConsoleEncoding();
+            Encoding availableEncoding = consoleEncoding == null ? encodingService.getLocaleEncoding() : consoleEncoding;
+            setDefaultExternalEncoding(availableEncoding);
         }
+
+        // Filesystem should always have a value
+        if (Platform.IS_WINDOWS) {
+            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(this));
+        } else {
+            setDefaultFilesystemEncoding(getDefaultExternalEncoding());
+        }
+
+        encoding = this.config.getInternalEncoding();
+        if (encoding != null && !encoding.equals("")) {
+            Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
+            if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
+            setDefaultInternalEncoding(loadedEncoding);
+        }
+    }
+
+    private RubyClass initDataClass() {
+        RubyClass dataClass = null;
+        if (profile.allowClass("Data")) {
+            dataClass = defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+            getObject().deprecateConstant(this, "Data");
+        }
+        return dataClass;
     }
 
     private Random initRandom() {
@@ -643,7 +643,6 @@ public final class Ruby implements Constantizable {
 
     void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
-        this.staticScopeFactory = new StaticScopeFactory(this);
         this.in                 = config.getInput();
         this.out                = config.getOutput();
         this.err                = config.getError();
@@ -679,9 +678,20 @@ public final class Ruby implements Constantizable {
     public static Ruby newInstance(RubyInstanceConfig config) {
         Ruby ruby = new Ruby(config);
 
+        ruby.loadRequiredLibraries();
+
         setGlobalRuntimeFirstTimeOnly(ruby);
 
         return ruby;
+    }
+
+    private void loadRequiredLibraries() {
+        ThreadContext context = getCurrentContext();
+
+        // Require in all libraries specified on command line
+        for (String scriptName : this.config.getRequiredLibraries()) {
+            topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
+        }
     }
 
     /**
@@ -1724,10 +1734,12 @@ public final class Ruby implements Constantizable {
         return topSelf;
     }
 
+    @Deprecated
     public IRubyObject getRootFiber() {
         return rootFiber;
     }
 
+    @Deprecated
     public void setRootFiber(IRubyObject fiber) {
         rootFiber = fiber;
     }
@@ -3142,9 +3154,8 @@ public final class Ruby implements Constantizable {
         return globalVariables;
     }
 
-    // For JSR 223 support: see http://scripting.java.net/
+    @Deprecated
     public void setGlobalVariables(GlobalVariables globalVariables) {
-        this.globalVariables = globalVariables;
     }
 
     /**
@@ -4651,11 +4662,11 @@ public final class Ruby implements Constantizable {
     }
 
     public boolean isBootingCore() {
-        return bootingCore;
+        return !coreIsBooted;
     }
 
     public boolean isBooting() {
-        return bootingRuntime;
+        return !runtimeIsBooted;
     }
 
     public CoverageData getCoverageData() {
@@ -5023,23 +5034,27 @@ public final class Ruby implements Constantizable {
     private static final EventHook[] EMPTY_HOOKS = new EventHook[0];
     private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
+
     private boolean globalAbortOnExceptionEnabled = false;
     private IRubyObject reportOnException;
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
     private boolean siphashEnabled;
 
+    @Deprecated
     private long globalState = 1;
 
     // Default objects
     private final IRubyObject topSelf;
-    private IRubyObject rootFiber;
     private final RubyNil nilObject;
     private final IRubyObject[] singleNilArray;
     private final RubyBoolean trueObject;
     private final RubyBoolean falseObject;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
+
+    @Deprecated
+    private IRubyObject rootFiber;
 
     private boolean verbose, warningsEnabled, debug;
     private IRubyObject verboseValue;
@@ -5154,17 +5169,18 @@ public final class Ruby implements Constantizable {
     private final RubyModule enumerableModule;
     private final RubyModule mathModule;
     private final RubyModule marshalModule;
-    private RubyModule etcModule;
     private final RubyModule fileTestModule;
     private final RubyModule gcModule;
     private final RubyModule objectSpaceModule;
     private final RubyModule processModule;
+    private final RubyModule warningModule;
+
+    private RubyModule etcModule;
     private RubyModule procUIDModule;
     private RubyModule procGIDModule;
     private RubyModule procSysModule;
     private RubyModule precisionModule;
     private RubyModule errnoModule;
-    private final RubyModule warningModule;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
             superMethodMissing, normalMethodMissing, defaultMethodMissing, defaultModuleMethodMissing,
@@ -5194,10 +5210,10 @@ public final class Ruby implements Constantizable {
     private final JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
-    private BeanManager beanManager;
+    private final BeanManager beanManager;
 
     // Parser stats
-    private ParserStats parserStats;
+    private final ParserStats parserStats;
 
     // Compilation
     private final JITCompiler jitCompiler;
@@ -5232,7 +5248,7 @@ public final class Ruby implements Constantizable {
     private Encoding defaultInternalEncoding, defaultExternalEncoding, defaultFilesystemEncoding;
     private final EncodingService encodingService;
 
-    private GlobalVariables globalVariables = new GlobalVariables(this);
+    private final GlobalVariables globalVariables = new GlobalVariables(this);
     private final RubyWarnings warnings = new RubyWarnings(this);
     private final WarnCallback regexpWarnings = new WarnCallback() {
         @Override
@@ -5319,13 +5335,13 @@ public final class Ruby implements Constantizable {
     // Count of built-in warning backtraces generated by code running in this runtime
     private final AtomicInteger warningCount = new AtomicInteger();
 
-    private Invalidator
+    private final Invalidator
             fixnumInvalidator = OptoFactory.newGlobalInvalidator(0),
             floatInvalidator = OptoFactory.newGlobalInvalidator(0);
     private boolean fixnumReopened, floatReopened;
 
-    private volatile boolean bootingCore = true;
-    private volatile boolean bootingRuntime = true;
+    private final boolean coreIsBooted;
+    private final boolean runtimeIsBooted;
 
     private RubyHash envObject;
 
@@ -5335,7 +5351,7 @@ public final class Ruby implements Constantizable {
     private static volatile Ruby globalRuntime;
 
     /** The "thread local" runtime. Set to the global runtime if unset. */
-    private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
+    private static final ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
 
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     final Random random;
@@ -5344,7 +5360,7 @@ public final class Ruby implements Constantizable {
     private final long hashSeedK0;
     private final long hashSeedK1;
 
-    private StaticScopeFactory staticScopeFactory;
+    private final StaticScopeFactory staticScopeFactory;
 
     private final IRManager irManager;
 
@@ -5388,7 +5404,7 @@ public final class Ruby implements Constantizable {
      *
      * Access must be synchronized.
      */
-    private ConcurrentHashMap<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<FStringEqual, WeakReference<RubyString>> dedupMap = new ConcurrentHashMap<>();
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
