@@ -107,7 +107,7 @@ public class RubyComplex extends RubyNumeric {
             complexc.undefineMethod(undef);
         }
 
-        complexc.defineConstant("I", RubyComplex.newComplexConvert(runtime.getCurrentContext(), RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
+        complexc.defineConstant("I", RubyComplex.convert(runtime.getCurrentContext(), complexc, RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
 
         return complexc;
     }
@@ -428,6 +428,7 @@ public class RubyComplex extends RubyNumeric {
     public static IRubyObject newComplexConvert(ThreadContext context, IRubyObject x, IRubyObject y) {
         return convert(context, context.runtime.getComplex(), x, y);
     }
+
 
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
