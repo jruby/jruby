@@ -63,6 +63,8 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
         // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()
         // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
         // do we handle this sticky situation?
+        // System.out.println("GUARG: " + (receiver.getMetaClass().getGeneration() == getExpectedVersion()) + ", OBJ: " + receiver + ", VERS: " + receiver.getMetaClass().getGeneration() + ", EVERSE: " + getExpectedVersion());
+
         return (receiver.getMetaClass().getGeneration() == getExpectedVersion());
     }
 

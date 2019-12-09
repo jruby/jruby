@@ -1003,10 +1003,11 @@ public abstract class IRScope implements ParseResult {
         return null;
     }
 
-    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    private FullInterpreterContext inlineMethodCommon(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {
         alreadyHasInline = true;
-        // FIXME: Tried prepareFullBuild here and for methodToInline and a couple of missing callsiteid errors happened in spec:ruby:fast
-        if (getFullInterpreterContext() == null) return inlineFailed("inline into startup interpreter scope");
+
+        // Host may still be running in startup interp...promote it to full.
+        if (getFullInterpreterContext() == null) prepareFullBuild();
 
         // FIXME: So a potential problem is closures contain local variables in the method being inlined then we will nuke
         // those scoped variables and the closure cannot see them.  One idea is since for deoptimization we will need to
@@ -1022,17 +1023,16 @@ public abstract class IRScope implements ParseResult {
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
-        RubyModule implClass = compilable.getImplementationClass();
 
         String error = new CFGInliner(newContext).inlineMethod(methodToInline, implClass, classToken, basicBlock, call, cloneHost);
 
         return error == null ? newContext : inlineFailed(error);
     }
 
-    public void inlineMethod(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethod(IRMethod methodToInline, RubyModule metaclass, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, metaclass, callsiteId, classToken, cloneHost);
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
@@ -1045,10 +1045,10 @@ public abstract class IRScope implements ParseResult {
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
     }
 
-    public void inlineMethodJIT(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethodJIT(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, callsiteId, classToken, cloneHost);
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
@@ -1064,10 +1064,10 @@ public abstract class IRScope implements ParseResult {
         manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
-    public void inlineMethodCompiled(IRMethod methodToInline, long callsiteId, int classToken, boolean cloneHost) {
+    public void inlineMethodCompiled(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {
         if (alreadyHasInline) return;
 
-        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, callsiteId, classToken, cloneHost);
+        FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, callsiteId, classToken, cloneHost);
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
             return;
