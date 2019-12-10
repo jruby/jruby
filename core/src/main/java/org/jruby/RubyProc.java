@@ -344,7 +344,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "lambda?")
     public IRubyObject lambda_p(ThreadContext context) {
-        return context.runtime.newBoolean(isLambda());
+        return RubyBoolean.newBoolean(context, isLambda());
     }
 
     private boolean isLambda() {

@@ -316,7 +316,7 @@ public class RubyException extends RubyObject {
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                 callMethod(context, "message").equals(other.callMethod(context, "message")) &&
                 callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
-        return context.runtime.newBoolean(equal);
+        return RubyBoolean.newBoolean(context, equal);
     }
 
     @JRubyMethod(name = "cause")

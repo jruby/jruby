@@ -2353,7 +2353,7 @@ public class OpenFile implements Finalizable {
                             }
                             break retry;
                         }
-                        return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, (posix.getErrno() == null) ? 0 : posix.getErrno().longValue());
+                        return noalloc ? context.tru : RubyFixnum.newFixnum(runtime, (posix.getErrno() == null) ? 0 : posix.getErrno().longValue());
                     }
                     if (res == EConvResult.InvalidByteSequence ||
                             res == EConvResult.IncompleteInput ||

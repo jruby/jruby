@@ -1295,7 +1295,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "autoclose?")
     public IRubyObject autoclose(ThreadContext context) {
-        return context.runtime.newBoolean(isAutoclose());
+        return RubyBoolean.newBoolean(context, isAutoclose());
     }
 
     @JRubyMethod(name = "autoclose=")
@@ -1319,7 +1319,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: rb_io_binmode_p
     @JRubyMethod(name = "binmode?")
     public IRubyObject op_binmode(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, getOpenFileChecked().isBinmode());
+        return RubyBoolean.newBoolean(context, getOpenFileChecked().isBinmode());
     }
 
     // rb_io_syswrite
@@ -1524,14 +1524,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
     @JRubyMethod
     public RubyBoolean sync(ThreadContext context) {
-        Ruby runtime = context.runtime;
         OpenFile fptr;
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
         fptr.lock();
         try {
-            return (fptr.getMode() & OpenFile.SYNC) != 0 ? runtime.getTrue() : runtime.getFalse();
+            return (fptr.getMode() & OpenFile.SYNC) != 0 ? context.tru : context.fals;
         } finally {
             fptr.unlock();
         }
@@ -1837,7 +1836,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // rb_io_eof
     @JRubyMethod(name = {"eof?", "eof"})
     public RubyBoolean eof_p(ThreadContext context) {
-        Ruby runtime = context.runtime;
         OpenFile fptr;
 
         fptr = getOpenFileChecked();
@@ -1846,8 +1844,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             fptr.checkCharReadable(context);
 
-            if (fptr.READ_CHAR_PENDING()) return runtime.getFalse();
-            if (fptr.READ_DATA_PENDING()) return runtime.getFalse();
+            if (fptr.READ_CHAR_PENDING()) return context.fals;
+            if (fptr.READ_DATA_PENDING()) return context.fals;
             fptr.READ_CHECK(context);
             //        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
             //        if (!NEED_READCONV(fptr) && NEED_NEWLINE_DECORATOR_ON_READ(fptr)) {
@@ -1855,13 +1853,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             //        }
             //        #endif
             if (fptr.fillbuf(context) < 0) {
-                return runtime.getTrue();
+                return context.tru;
             }
         } finally {
             if (locked) fptr.unlock();
         }
 
-        return runtime.getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = {"tty?", "isatty"})
@@ -1950,7 +1948,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "closed?")
     public RubyBoolean closed_p(ThreadContext context) {
-        return context.runtime.newBoolean(isClosed());
+        return RubyBoolean.newBoolean(context, isClosed());
     }
 
     /**

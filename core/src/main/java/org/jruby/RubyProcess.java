@@ -237,7 +237,7 @@ public class RubyProcess {
             if (!PosixShim.WAIT_MACROS.WIFEXITED(status)) {
                 return context.nil;
             }
-            return context.runtime.newBoolean(PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
+            return RubyBoolean.newBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
         @JRubyMethod(name = {"coredump?"})

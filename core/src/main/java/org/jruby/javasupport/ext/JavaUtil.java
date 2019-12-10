@@ -133,7 +133,7 @@ public abstract class JavaUtil {
         @JRubyMethod(name = { "include?", "member?" }) // @override Enumerable#include?
         public static RubyBoolean include_p(final ThreadContext context, final IRubyObject self, final IRubyObject obj) {
             final java.util.Collection coll = unwrapIfJavaObject(self);
-            return context.runtime.newBoolean( coll.contains( obj.toJava(java.lang.Object.class) ) );
+            return RubyBoolean.newBoolean(context,  coll.contains( obj.toJava(java.lang.Object.class) ) );
         }
 
         // NOTE: first might conflict with some Java types (e.g. java.util.Deque) thus providing a ruby_ alias

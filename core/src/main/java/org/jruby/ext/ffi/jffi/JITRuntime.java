@@ -384,7 +384,7 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newBoolean(ThreadContext context, int value) {
-        return context.runtime.newBoolean((value & 0x1) != 0);
+        return RubyBoolean.newBoolean(context, (value & 0x1) != 0);
     }
 
     public static IRubyObject newBoolean(Ruby runtime, int value) {
@@ -392,7 +392,7 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newBoolean(ThreadContext context, long value) {
-        return context.runtime.newBoolean((value & 0x1L) != 0);
+        return RubyBoolean.newBoolean(context, (value & 0x1L) != 0);
     }
 
     public static IRubyObject newBoolean(Ruby runtime, long value) {

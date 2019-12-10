@@ -1085,12 +1085,9 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public RubyBoolean compare(final ThreadContext context, VisitorWithState<RubyHash> visitor, IRubyObject other) {
-
-        Ruby runtime = context.runtime;
-
         if (!(other instanceof RubyHash)) {
             if (!sites(context).respond_to_to_hash.respondsTo(context, other, other)) {
-                return runtime.getFalse();
+                return context.fals;
             }
             return Helpers.rbEqual(context, other, this);
         }
@@ -1098,16 +1095,16 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash otherHash = (RubyHash) other;
 
         if (this.size != otherHash.size) {
-            return runtime.getFalse();
+            return context.fals;
         }
 
         try {
             visitAll(context, visitor, otherHash);
         } catch (Mismatch e) {
-            return runtime.getFalse();
+            return context.fals;
         }
 
-        return runtime.getTrue();
+        return context.tru;
     }
 
     private static final VisitorWithState<RubyHash> FindMismatchUsingEqualVisitor = new VisitorWithState<RubyHash>() {
@@ -1185,7 +1182,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash otherHash = ((RubyBasicObject) other).convertToHash();
         if (size() >= otherHash.size()) return context.fals;
 
-        return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
+        return RubyBoolean.newBoolean(context, hash_le(otherHash));
     }
 
     @JRubyMethod(name = "<=", required = 1)
@@ -1193,7 +1190,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash otherHash = other.convertToHash();
         if (size() > otherHash.size()) return context.fals;
 
-        return RubyBoolean.newBoolean(context.runtime, hash_le(otherHash));
+        return RubyBoolean.newBoolean(context, hash_le(otherHash));
     }
 
     @JRubyMethod(name = ">", required = 1)
@@ -1292,12 +1289,12 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
     public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
-        Ruby runtime = context.runtime;
-        return internalGetEntry(key) == NO_ENTRY ? runtime.getFalse() : runtime.getTrue();
+        return internalGetEntry(key) == NO_ENTRY ? context.fals : context.tru;
     }
 
     public RubyBoolean has_key_p(IRubyObject key) {
-        return internalGetEntry(key) == NO_ENTRY ? metaClass.runtime.getFalse() : metaClass.runtime.getTrue();
+        Ruby runtime = metaClass.runtime;
+        return internalGetEntry(key) == NO_ENTRY ? runtime.getFalse() : runtime.getTrue();
     }
 
     private static class Found extends RuntimeException {
@@ -1348,7 +1345,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
     public RubyBoolean has_value_p(ThreadContext context, IRubyObject expected) {
-        return context.runtime.newBoolean(hasValue(context, expected));
+        return RubyBoolean.newBoolean(context, hasValue(context, expected));
     }
 
     private volatile int iteratorCount;
@@ -2095,7 +2092,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "compare_by_identity?")
     public IRubyObject compare_by_identity_p(ThreadContext context) {
-        return context.runtime.newBoolean(isComparedByIdentity());
+        return RubyBoolean.newBoolean(context, isComparedByIdentity());
     }
 
     @JRubyMethod
@@ -2787,7 +2784,8 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public RubyBoolean empty_p() {
-        return size == 0 ? metaClass.runtime.getTrue() : metaClass.runtime.getFalse();
+        Ruby runtime = metaClass.runtime;
+        return size == 0 ? runtime.getTrue() : runtime.getFalse();
     }
 
     @Deprecated

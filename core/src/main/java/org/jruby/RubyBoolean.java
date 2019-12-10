@@ -133,6 +133,10 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
 
+    public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
+    }
+
     static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
 
     public static class False extends RubyBoolean {

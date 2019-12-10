@@ -87,7 +87,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        return context.runtime.newBoolean( length() == 0 );
+        return RubyBoolean.newBoolean(context,  length() == 0 );
     }
 
     @JRubyMethod(name = "[]")
@@ -117,30 +117,30 @@ public final class ArrayJavaProxy extends JavaProxy {
         if ( componentClass.isPrimitive() ) {
             switch (componentClass.getName().charAt(0)) {
                 case 'b':
-                    if (componentClass == byte.class) return context.runtime.newBoolean( includes(context, (byte[]) array, obj) );
-                    else /* if (componentClass == boolean.class) */ return context.runtime.newBoolean( includes(context, (boolean[]) array, obj) );
+                    if (componentClass == byte.class) return RubyBoolean.newBoolean(context,  includes(context, (byte[]) array, obj) );
+                    else /* if (componentClass == boolean.class) */ return RubyBoolean.newBoolean(context,  includes(context, (boolean[]) array, obj) );
                     // break;
                 case 's':
-                    /* if (componentClass == short.class) */ return context.runtime.newBoolean( includes(context, (short[]) array, obj) );
+                    /* if (componentClass == short.class) */ return RubyBoolean.newBoolean(context,  includes(context, (short[]) array, obj) );
                     // break;
                 case 'c':
-                    /* if (componentClass == char.class) */ return context.runtime.newBoolean( includes(context, (char[]) array, obj) );
+                    /* if (componentClass == char.class) */ return RubyBoolean.newBoolean(context,  includes(context, (char[]) array, obj) );
                     // break;
                 case 'i':
-                    /* if (componentClass == int.class) */ return context.runtime.newBoolean( includes(context, (int[]) array, obj) );
+                    /* if (componentClass == int.class) */ return RubyBoolean.newBoolean(context,  includes(context, (int[]) array, obj) );
                     // break;
                 case 'l':
-                    /* if (componentClass == long.class) */ return context.runtime.newBoolean( includes(context, (long[]) array, obj) );
+                    /* if (componentClass == long.class) */ return RubyBoolean.newBoolean(context,  includes(context, (long[]) array, obj) );
                     // break;
                 case 'f':
-                    /* if (componentClass == float.class) */ return context.runtime.newBoolean( includes(context, (float[]) array, obj) );
+                    /* if (componentClass == float.class) */ return RubyBoolean.newBoolean(context,  includes(context, (float[]) array, obj) );
                     // break;
                 case 'd':
-                    /* if (componentClass == double.class) */ return context.runtime.newBoolean( includes(context, (double[]) array, obj) );
+                    /* if (componentClass == double.class) */ return RubyBoolean.newBoolean(context,  includes(context, (double[]) array, obj) );
                     // break;
             }
         }
-        return context.runtime.newBoolean( includes(context, (Object[]) array, obj) );
+        return RubyBoolean.newBoolean(context,  includes(context, (Object[]) array, obj) );
     }
 
     private boolean includes(final ThreadContext context, final Object[] array, final IRubyObject obj) {
@@ -542,7 +542,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if ( other instanceof RubyArray ) {
             // we respond_to? to_ary thus shall handle [1].to_java == [1]
-            return context.runtime.newBoolean( equalsRubyArray((RubyArray) other) );
+            return RubyBoolean.newBoolean(context,  equalsRubyArray((RubyArray) other) );
         }
         return eql_p(context, other);
     }
@@ -571,7 +571,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         else if ( obj.getClass().isArray() ) {
             equals = arraysEquals(getObject(), obj);
         }
-        return context.runtime.newBoolean(equals);
+        return RubyBoolean.newBoolean(context, equals);
     }
 
     @Override

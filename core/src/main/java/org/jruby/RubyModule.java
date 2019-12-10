@@ -1112,19 +1112,21 @@ public class RubyModule extends RubyObject {
 
         if (jrubyConstant == null) return false;
 
+        Ruby runtime = getRuntime();
+
         Class tp = field.getType();
         IRubyObject realVal;
 
         try {
             if(tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
-                realVal = RubyNumeric.int2fix(getRuntime(), field.getInt(null));
+                realVal = RubyNumeric.int2fix(runtime, field.getInt(null));
             } else if(tp == Boolean.class || tp == Boolean.TYPE) {
-                realVal = field.getBoolean(null) ? getRuntime().getTrue() : getRuntime().getFalse();
+                realVal = field.getBoolean(null) ? runtime.getTrue() : runtime.getFalse();
             } else {
-                realVal = getRuntime().getNil();
+                realVal = runtime.getNil();
             }
         } catch(Exception e) {
-            realVal = getRuntime().getNil();
+            realVal = runtime.getNil();
         }
 
         String[] names = jrubyConstant.value();
@@ -1346,7 +1348,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "singleton_class?")
     public IRubyObject singleton_class_p(ThreadContext context) {
-        return context.runtime.newBoolean(isSingleton());
+        return RubyBoolean.newBoolean(context, isSingleton());
     }
 
     public void addMethod(String id, DynamicMethod method) {
@@ -2578,7 +2580,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "===", required = 1)
     @Override
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(isInstance(obj));
+        return RubyBoolean.newBoolean(context, isInstance(obj));
     }
 
     /**
@@ -2599,9 +2601,9 @@ public class RubyModule extends RubyObject {
 
         RubyModule otherModule = (RubyModule) other;
         if(otherModule.isIncluded()) {
-            return context.runtime.newBoolean(otherModule.isSame(this));
+            return RubyBoolean.newBoolean(context, otherModule.isSame(this));
         } else {
-            return context.runtime.newBoolean(isSame(otherModule));
+            return RubyBoolean.newBoolean(context, isSame(otherModule));
         }
     }
 
@@ -3179,21 +3181,21 @@ public class RubyModule extends RubyObject {
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
         DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
 
-        return context.runtime.newBoolean(!method.isUndefined() && method.getVisibility() == PUBLIC);
+        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PUBLIC);
     }
 
     @JRubyMethod(name = "protected_method_defined?", required = 1)
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol) {
         DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
 
-        return context.runtime.newBoolean(!method.isUndefined() && method.getVisibility() == PROTECTED);
+        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PROTECTED);
     }
 
     @JRubyMethod(name = "private_method_defined?", required = 1)
     public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
         DynamicMethod method = searchMethod(TypeConverter.checkID(symbol).idString());
 
-        return context.runtime.newBoolean(!method.isUndefined() && method.getVisibility() == PRIVATE);
+        return RubyBoolean.newBoolean(context, !method.isUndefined() && method.getVisibility() == PRIVATE);
     }
 
     @JRubyMethod(name = "public_class_method", rest = true)

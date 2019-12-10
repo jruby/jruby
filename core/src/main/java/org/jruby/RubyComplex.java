@@ -693,13 +693,13 @@ public class RubyComplex extends RubyNumeric {
             boolean test = f_equal(context, real, otherComplex.real).isTrue() &&
                     f_equal(context, image, otherComplex.image).isTrue();
 
-            return context.runtime.newBoolean(test);
+            return RubyBoolean.newBoolean(context, test);
         }
 
         if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             boolean test = f_equal(context, real, other).isTrue() && f_zero_p(context, image);
 
-            return context.runtime.newBoolean(test);
+            return RubyBoolean.newBoolean(context, test);
         }
         
         return f_equal(context, other, this);
@@ -857,7 +857,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(equals(context, other));
+        return RubyBoolean.newBoolean(context, equals(context, other));
     }
 
     private boolean equals(ThreadContext context, Object other) {

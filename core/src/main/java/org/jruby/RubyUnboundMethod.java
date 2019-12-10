@@ -88,7 +88,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override

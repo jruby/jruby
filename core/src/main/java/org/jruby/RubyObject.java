@@ -383,7 +383,7 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(equalInternal(context, this, other));
+        return RubyBoolean.newBoolean(context, equalInternal(context, this, other));
     }
 
     /**

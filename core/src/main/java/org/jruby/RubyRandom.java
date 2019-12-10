@@ -623,7 +623,7 @@ public class RubyRandom extends RubyObject {
         if (!getType().equals(obj.getType())) {
             return context.fals;
         }
-        return context.runtime.newBoolean(random.equals(((RubyRandom) obj).random));
+        return RubyBoolean.newBoolean(context, random.equals(((RubyRandom) obj).random));
     }
 
     // c: random_state

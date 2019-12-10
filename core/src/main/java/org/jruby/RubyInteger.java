@@ -119,12 +119,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(isNegative());
+        return RubyBoolean.newBoolean(context, isNegative());
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(isPositive());
+        return RubyBoolean.newBoolean(context, isPositive());
     }
 
     @Override

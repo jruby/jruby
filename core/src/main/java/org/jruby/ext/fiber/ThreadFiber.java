@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
@@ -248,7 +249,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject __alive__(ThreadContext context) {
-        return context.runtime.newBoolean(alive());
+        return RubyBoolean.newBoolean(context, alive());
     }
     
     @JRubyMethod(meta = true)

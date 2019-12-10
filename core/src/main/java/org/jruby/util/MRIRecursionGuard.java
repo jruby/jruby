@@ -143,6 +143,7 @@ public class MRIRecursionGuard {
 
     private void recursivePush(IRubyObject list, IRubyObject obj, IRubyObject paired_obj) {
         IRubyObject pair_list;
+        Ruby runtime = this.runtime;
         final ThreadContext context = runtime.getCurrentContext();
         if (paired_obj == null) {
             ((RubyHash) list).op_aset(context, obj, runtime.getTrue());

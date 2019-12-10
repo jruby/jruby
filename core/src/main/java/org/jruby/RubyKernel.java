@@ -803,7 +803,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"block_given?", "iterator?"}, module = true, visibility = PRIVATE, reads = BLOCK)
     public static RubyBoolean block_given_p(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(context.getCurrentFrame().getBlock().isGiven());
+        return RubyBoolean.newBoolean(context, context.getCurrentFrame().getBlock().isGiven());
     }
 
     @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, module = true, visibility = PRIVATE)

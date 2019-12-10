@@ -871,7 +871,7 @@ public class RubyNumeric extends RubyObject {
     */
     @JRubyMethod(name = "real?")
     public IRubyObject real_p(ThreadContext context) {
-        return context.runtime.newBoolean(isReal());
+        return RubyBoolean.newBoolean(context, isReal());
     }
 
     public boolean isReal() { return true; } // only RubyComplex isn't real

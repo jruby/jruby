@@ -1003,7 +1003,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
         synchronized (locals) {
-            return context.runtime.newBoolean(locals.containsKey(key));
+            return RubyBoolean.newBoolean(context, locals.containsKey(key));
         }
     }
 
@@ -1031,7 +1031,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
-            return context.runtime.newBoolean(locals.containsKey(key));
+            return RubyBoolean.newBoolean(context, locals.containsKey(key));
         }
     }
 

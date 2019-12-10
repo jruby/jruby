@@ -648,7 +648,7 @@ public class RubyConverter extends RubyObject {
 
         ec2 = ((RubyConverter)other).ec;
 
-        return context.runtime.newBoolean(ec1.equals(ec2));
+        return RubyBoolean.newBoolean(context, ec1.equals(ec2));
     }
     
     public static class EncodingErrorMethods {

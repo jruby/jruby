@@ -1017,11 +1017,11 @@ public class RubyBignum extends RubyInteger {
         } else if (other instanceof RubyFloat) {
             double a = ((RubyFloat) other).value;
             if (Double.isNaN(a)) return context.fals;
-            return RubyBoolean.newBoolean(context.runtime, a == big2dbl(this));
+            return RubyBoolean.newBoolean(context, a == big2dbl(this));
         } else {
             return other.op_eqq(context, this);
         }
-        return RubyBoolean.newBoolean(context.runtime, value.compareTo(otherValue) == 0);
+        return RubyBoolean.newBoolean(context, value.compareTo(otherValue) == 0);
     }
 
     /** rb_big_eql
@@ -1087,7 +1087,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(isZero());
+        return RubyBoolean.newBoolean(context, isZero());
     }
 
     @Override
@@ -1201,22 +1201,20 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        Ruby runtime = context.runtime;
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
         if (op_lt_site.retrieveCache(metaClass).method.isBuiltin()) {
-            return runtime.newBoolean(value.signum() < 0);
+            return RubyBoolean.newBoolean(context, value.signum() < 0);
         }
-        return op_lt_site.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_lt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        Ruby runtime = context.runtime;
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.retrieveCache(metaClass).method.isBuiltin()) {
-            return runtime.newBoolean(value.signum() > 0);
+            return RubyBoolean.newBoolean(context, value.signum() > 0);
         }
-        return op_gt_site.call(context, this, this, RubyFixnum.zero(runtime));
+        return op_gt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
     }
 
     @Override

@@ -94,7 +94,7 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(stress);
+        return RubyBoolean.newBoolean(context, stress);
     }
 
     @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)

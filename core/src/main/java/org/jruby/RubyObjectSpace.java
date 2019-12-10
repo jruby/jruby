@@ -208,7 +208,7 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = "key?")
         public IRubyObject key_p(ThreadContext context, IRubyObject key) {
-            return context.runtime.newBoolean(map.get(key) != null);
+            return RubyBoolean.newBoolean(context, map.get(key) != null);
         }
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();

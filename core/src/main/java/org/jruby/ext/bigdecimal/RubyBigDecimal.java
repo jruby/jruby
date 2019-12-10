@@ -1390,7 +1390,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case '=': {
                     if (falsyEqlCheck(context, arg)) return context.fals;
                     IRubyObject res = callCoerced(context, sites(context).op_eql, arg, false);
-                    return context.runtime.newBoolean(res != context.nil && res != context.fals);
+                    return RubyBoolean.newBoolean(context, res != context.nil && res != context.fals);
                 }
                 case '!':
                     if (falsyEqlCheck(context, arg)) return context.tru;
@@ -1413,12 +1413,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
         switch (op) {
             case '*': return context.runtime.newFixnum(e);
-            case '=': return context.runtime.newBoolean(e == 0);
-            case '!': return context.runtime.newBoolean(e != 0);
-            case 'G': return context.runtime.newBoolean(e >= 0);
-            case '>': return context.runtime.newBoolean(e >  0);
-            case 'L': return context.runtime.newBoolean(e <= 0);
-            case '<': return context.runtime.newBoolean(e <  0);
+            case '=': return RubyBoolean.newBoolean(context, e == 0);
+            case '!': return RubyBoolean.newBoolean(context, e != 0);
+            case 'G': return RubyBoolean.newBoolean(context, e >= 0);
+            case '>': return RubyBoolean.newBoolean(context, e >  0);
+            case 'L': return RubyBoolean.newBoolean(context, e <= 0);
+            case '<': return RubyBoolean.newBoolean(context, e <  0);
         }
         return context.nil;
     }
@@ -1630,7 +1630,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p(ThreadContext context) {
-        return context.runtime.newBoolean(isNaN());
+        return RubyBoolean.newBoolean(context, isNaN());
     }
 
     @Override
@@ -2111,7 +2111,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(isZero());
+        return RubyBoolean.newBoolean(context, isZero());
     }
 
     @Deprecated

@@ -1957,10 +1957,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = sites(context).op_equal.call(context, a, a, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -1972,10 +1971,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b, CallSite equal) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = equal.call(context, a, a, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -1987,10 +1985,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEql(ThreadContext context, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = invokedynamic(context, a, EQL, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**

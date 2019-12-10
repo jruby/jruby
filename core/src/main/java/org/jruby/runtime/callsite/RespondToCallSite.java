@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.RubyBoolean;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -99,7 +100,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
             if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context), context.runtime.newBoolean(includePrivate)).isTrue();
+        return super.call(context, caller, self, getRespondToNameSym(context), RubyBoolean.newBoolean(context, includePrivate)).isTrue();
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
@@ -166,6 +167,6 @@ public class RespondToCallSite extends MonomorphicCallSite {
         CacheEntry respondToLookupResult = klass.searchWithCache(newString);
         boolean respondsTo = Helpers.respondsToMethod(respondToLookupResult.method, checkVisibility);
 
-        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, context.runtime.newBoolean(respondsTo));
+        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, RubyBoolean.newBoolean(context, respondsTo));
     }
 }
