@@ -122,18 +122,8 @@ public class MethodIndex {
         return callSite != null ? callSite : new MonomorphicCallSite(name);
     }
 
-    public static CallSite getProfilingCallSite(String name, IRScope scope, long callsiteId) {
-        // fast and safe respond_to? call site logic
-        if (name.equals("respond_to?")) return new RespondToCallSite();
-
-        CallSite callSite = null;
-
-        // only use fast ops if we're not tracing
-        if (RubyInstanceConfig.FASTOPS_COMPILE_ENABLED && !(RubyInstanceConfig.FULL_TRACE_ENABLED)) {
-            callSite = getFastFixnumOpsCallSite(name);
-        }
-
-        return callSite != null ? callSite : new ProfilingCachingCallSite(name, scope, callsiteId);
+    public static CallSite getProfilingCallSite(CallType callType, String name, IRScope scope, long callsiteId) {
+        return new ProfilingCachingCallSite(callType, name, scope, callsiteId);
     }
 
     public static boolean hasFastFixnumOps(String name) {
