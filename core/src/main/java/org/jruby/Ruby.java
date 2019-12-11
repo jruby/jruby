@@ -258,18 +258,7 @@ public final class Ruby implements Constantizable {
 
         constant = OptoFactory.newConstantWrapper(Ruby.class, this);
 
-        // force JRubyClassLoader to init if possible
-        if (!Ruby.isSecurityRestricted()) {
-            if (config.isClassloaderDelegate()){
-                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
-            }
-            else {
-                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
-            }
-        }
-        else {
-            jrubyClassLoader = null; // a NullClassLoader object would be better ...
-        }
+        this.jrubyClassLoader = initJRubyClassLoader(config);
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
@@ -297,11 +286,7 @@ public final class Ruby implements Constantizable {
 
         checkpointInvalidator = OptoFactory.newConstantInvalidator(this);
 
-        if (config.isObjectSpaceEnabled()) {
-            objectSpacer = ENABLED_OBJECTSPACE;
-        } else {
-            objectSpacer = DISABLED_OBJECTSPACE;
-        }
+        this.objectSpacer = initObjectSpacer(config);
 
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
         filenoUtil = new FilenoUtil(posix);
@@ -363,22 +348,7 @@ public final class Ruby implements Constantizable {
         objectClass.includeModule(kernelModule);
 
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
-        if (this.config.getKernelGsubDefined()) {
-            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
-
-                @Override
-                public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    switch (args.length) {
-                        case 1:
-                            return RubyKernel.gsub(context1, self, args[0], block);
-                        case 2:
-                            return RubyKernel.gsub(context1, self, args[0], args[1], block);
-                        default:
-                            throw newArgumentError(String.format("wrong number of arguments %d for 1..2", args.length));
-                    }
-                }
-            });
-        }
+        initKernelGsub(kernel);
 
         // Object is ready, create top self
         topSelf = TopSelfFactory.createTopSelf(this, false);
@@ -539,40 +509,13 @@ public final class Ruby implements Constantizable {
 
         // Don't load boot-time libraries when debugging IR
         if (!RubyInstanceConfig.DEBUG_PARSER) {
-            // initialize Java support
-            initJavaSupport();
-
-            // init Ruby-based kernel
-            initRubyKernel();
-
-            // Define blank modules for feature detection in preludes
-            if (!this.config.isDisableGems()) {
-                defineModule("Gem");
-            }
-            if (!this.config.isDisableDidYouMean()) {
-                defineModule("DidYouMean");
-            }
-
-            // Provide some legacy libraries
-            loadService.provide("enumerator", "enumerator.rb");
-            loadService.provide("rational", "rational.rb");
-            loadService.provide("complex", "complex.rb");
-            loadService.provide("thread", "thread.rb");
-
-            // Load preludes
-            initRubyPreludes();
+            initBootLibraries();
         }
 
         SecurityHelper.checkCryptoRestrictions(this);
 
         if(this.config.isProfiling()) {
-            // additional twiddling for profiled mode
-            getLoadService().require("jruby/profiler/shutdown_hook");
-
-            // recache core methods, since they'll have profiling wrappers now
-            kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
-            RubyKernel.recacheBuiltinMethods(this, kernelModule);
-            RubyBasicObject.recacheBuiltinMethods(this);
+            initProfiling();
         }
 
         if (this.config.getLoadGemfile()) {
@@ -583,6 +526,87 @@ public final class Ruby implements Constantizable {
 
         // Done booting JRuby runtime
         runtimeIsBooted = true;
+    }
+
+    private void initProfiling() {
+        // additional twiddling for profiled mode
+        getLoadService().require("jruby/profiler/shutdown_hook");
+
+        // recache core methods, since they'll have profiling wrappers now
+        kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
+        RubyKernel.recacheBuiltinMethods(this, kernelModule);
+        RubyBasicObject.recacheBuiltinMethods(this);
+    }
+
+    private void initBootLibraries() {
+        // initialize Java support
+        initJavaSupport();
+
+        // init Ruby-based kernel
+        initRubyKernel();
+
+        // Define blank modules for feature detection in preludes
+        if (!this.config.isDisableGems()) {
+            defineModule("Gem");
+        }
+        if (!this.config.isDisableDidYouMean()) {
+            defineModule("DidYouMean");
+        }
+
+        // Provide some legacy libraries
+        loadService.provide("enumerator", "enumerator.rb");
+        loadService.provide("rational", "rational.rb");
+        loadService.provide("complex", "complex.rb");
+        loadService.provide("thread", "thread.rb");
+
+        // Load preludes
+        initRubyPreludes();
+    }
+
+    private void initKernelGsub(RubyModule kernel) {
+        if (this.config.getKernelGsubDefined()) {
+            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
+
+                @Override
+                public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    switch (args.length) {
+                        case 1:
+                            return RubyKernel.gsub(context1, self, args[0], block);
+                        case 2:
+                            return RubyKernel.gsub(context1, self, args[0], args[1], block);
+                        default:
+                            throw newArgumentError(String.format("wrong number of arguments %d for 1..2", args.length));
+                    }
+                }
+            });
+        }
+    }
+
+    private ObjectSpacer initObjectSpacer(RubyInstanceConfig config) {
+        ObjectSpacer objectSpacer;
+        if (config.isObjectSpaceEnabled()) {
+            objectSpacer = ENABLED_OBJECTSPACE;
+        } else {
+            objectSpacer = DISABLED_OBJECTSPACE;
+        }
+        return objectSpacer;
+    }
+
+    private JRubyClassLoader initJRubyClassLoader(RubyInstanceConfig config) {
+        // force JRubyClassLoader to init if possible
+        JRubyClassLoader jrubyClassLoader;
+        if (!Ruby.isSecurityRestricted()) {
+            if (config.isClassloaderDelegate()){
+                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+            }
+            else {
+                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
+            }
+        }
+        else {
+            jrubyClassLoader = null; // a NullClassLoader object would be better ...
+        }
+        return jrubyClassLoader;
     }
 
     private void initDefaultEncodings() {
