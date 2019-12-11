@@ -1019,7 +1019,17 @@ public abstract class IRScope implements ParseResult {
         // are IR methods (or are native but can be substituted with IR methods).
         //
         // Note: we can look for scoped methods and make this less conservative.
-        if (!methodToInline.getClosures().isEmpty()) return inlineFailed("inline a method which contains nested closures");
+        if (!methodToInline.getClosures().isEmpty()) {
+            boolean accessInaccessibleLocalVariables = false;
+            for (IRClosure closure: methodToInline.getClosures()) {
+                if (closure.flags.contains(ACCESS_PARENTS_LOCAL_VARIABLES)) {
+                    accessInaccessibleLocalVariables = true;
+                    break;
+                }
+            }
+            if (accessInaccessibleLocalVariables) return inlineFailed("inline a method which contains nested closures which access methods lvars");
+        }
+
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
