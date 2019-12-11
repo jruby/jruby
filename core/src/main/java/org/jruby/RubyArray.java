@@ -2049,7 +2049,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         boolean useSmallHash = realLength <= 10;
 
-        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+        RubyHash hash = RubyHash.newHash(runtime);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject elt = eltInternal(i).checkArrayType();
@@ -2062,11 +2062,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 throw context.runtime.newArgumentError("wrong array length at " + i + " (expected 2, was " + ary.getLength() + ")");
             }
 
-            if (useSmallHash) {
-                hash.fastASetSmall(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
-            } else {
-                hash.fastASet(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
-            }
+            hash.fastASet(runtime, ary.eltInternal(0), ary.eltInternal(1), true);
         }
         return hash;
     }
