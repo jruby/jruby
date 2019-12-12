@@ -80,6 +80,8 @@ public class MethodGatherer {
         INSTANCE_RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
         // "initialize" has meaning only for an instance (as opposed to a class)
         INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
+        // "equal?" should not be overridden (GH-5990)
+        INSTANCE_RESERVED_NAMES.put("equal?", new AssignedName("equal?", Priority.RESERVED));
     }
 
     // TODO: other reserved names?
