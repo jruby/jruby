@@ -72,7 +72,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static RubyClass createEncodingClass(Ruby runtime) {
         RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setEncoding(encodingc);
+
         encodingc.setClassIndex(ClassIndex.ENCODING);
         encodingc.setReifiedClass(RubyEncoding.class);
         encodingc.kindOf = new RubyModule.JavaClassKindOf(RubyEncoding.class);
@@ -528,7 +528,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "ascii_compatible?")
     public IRubyObject asciiCompatible_p(ThreadContext context) {
-        return context.runtime.newBoolean(getEncoding().isAsciiCompatible());
+        return RubyBoolean.newBoolean(context, getEncoding().isAsciiCompatible());
     }
 
     @JRubyMethod(name = {"to_s", "name"})
@@ -580,7 +580,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "dummy?")
     public IRubyObject dummy_p(ThreadContext context) {
-        return context.runtime.newBoolean(isDummy);
+        return RubyBoolean.newBoolean(context, isDummy);
     }
 
     @JRubyMethod(name = "compatible?", meta = true)

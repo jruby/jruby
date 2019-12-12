@@ -458,9 +458,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof(ThreadContext context) {
         checkReadable();
-        Ruby runtime = context.runtime;
-        if (ptr.pos < ptr.string.size()) return runtime.getFalse();
-        return runtime.getTrue();
+        if (ptr.pos < ptr.string.size()) return context.fals;
+        return context.tru;
     }
 
     private boolean isEndOfString() {

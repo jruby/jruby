@@ -73,7 +73,6 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
         RubyClass newClass = 
         	runtime.defineClass("UnboundMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setUnboundMethod(newClass);
 
         newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
         newClass.setReifiedClass(RubyUnboundMethod.class);
@@ -89,7 +88,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "==", required = 1)
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean( equals(other) );
+        return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override

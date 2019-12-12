@@ -71,7 +71,6 @@ public class RubyEnumerable {
 
     public static RubyModule createEnumerableModule(Ruby runtime) {
         RubyModule enumModule = runtime.defineModule("Enumerable");
-        runtime.setEnumerable(enumModule);
 
         enumModule.defineAnnotatedMethods(RubyEnumerable.class);
 

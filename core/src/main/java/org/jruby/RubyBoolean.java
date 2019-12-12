@@ -103,7 +103,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFalseClass(falseClass);
+
         falseClass.setClassIndex(ClassIndex.FALSE);
         falseClass.setReifiedClass(RubyBoolean.class);
         
@@ -117,7 +117,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     public static RubyClass createTrueClass(Ruby runtime) {
         RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setTrueClass(trueClass);
+
         trueClass.setClassIndex(ClassIndex.TRUE);
         trueClass.setReifiedClass(RubyBoolean.class);
         
@@ -131,6 +131,10 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
+    }
+
+    public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
     }
 
     static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);

@@ -18,6 +18,7 @@ import com.headius.backport9.modules.Modules;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyMethod;
@@ -160,7 +161,7 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "__persistent__", meta = true)
     public static IRubyObject persistent(final ThreadContext context, final IRubyObject clazz) {
-        return context.runtime.newBoolean(((RubyClass) clazz).getRealClass().getCacheProxy());
+        return RubyBoolean.newBoolean(context, ((RubyClass) clazz).getRealClass().getCacheProxy());
     }
 
     @Override
@@ -312,7 +313,7 @@ public class JavaProxy extends RubyObject {
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
         if ( other instanceof JavaProxy ) {
             boolean equal = getObject() == ((JavaProxy) other).getObject();
-            return context.runtime.newBoolean(equal);
+            return RubyBoolean.newBoolean(context, equal);
         }
         return context.fals;
     }

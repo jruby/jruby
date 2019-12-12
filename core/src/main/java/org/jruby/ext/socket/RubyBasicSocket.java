@@ -114,7 +114,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "do_not_reverse_lookup")
     public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
-        return context.runtime.newBoolean(doNotReverseLookup);
+        return RubyBoolean.newBoolean(context, doNotReverseLookup);
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup=")
@@ -125,7 +125,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(meta = true)
     public static IRubyObject do_not_reverse_lookup(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(context.runtime.isDoNotReverseLookupEnabled());
+        return RubyBoolean.newBoolean(context, context.runtime.isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup=", meta = true)

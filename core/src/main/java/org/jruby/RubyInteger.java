@@ -70,7 +70,6 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setInteger(integer);
 
         integer.setClassIndex(ClassIndex.INTEGER);
         integer.setReifiedClass(RubyInteger.class);
@@ -120,12 +119,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(isNegative());
+        return RubyBoolean.newBoolean(context, isNegative());
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(isPositive());
+        return RubyBoolean.newBoolean(context, isPositive());
     }
 
     @Override

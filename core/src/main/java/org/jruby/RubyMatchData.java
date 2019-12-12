@@ -71,7 +71,6 @@ public class RubyMatchData extends RubyObject {
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
-        runtime.setMatchData(matchDataClass);
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
@@ -81,6 +80,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.getMetaClass().undefineMethod("new");
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
+
         return matchDataClass;
     }
 

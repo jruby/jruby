@@ -132,7 +132,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setSymbol(symbolClass);
+
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.setClassIndex(ClassIndex.SYMBOL);
         symbolClass.setReifiedClass(RubySymbol.class);
@@ -504,13 +504,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(this == other);
+        return RubyBoolean.newBoolean(context, this == other);
     }
 
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(this == other);
+        return RubyBoolean.newBoolean(context, this == other);
     }
 
     @Deprecated

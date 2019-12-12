@@ -142,7 +142,7 @@ public class Pointer extends AbstractMemory {
      */
     @JRubyMethod(name = "null?")
     public IRubyObject null_p(ThreadContext context) {
-        return context.runtime.newBoolean(getMemoryIO().isNull());
+        return RubyBoolean.newBoolean(context, getMemoryIO().isNull());
     }
 
 
@@ -172,7 +172,7 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(this == obj
+        return RubyBoolean.newBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
                 || (obj instanceof Pointer && ((Pointer) obj).getAddress() == getAddress()));
     }

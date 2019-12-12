@@ -116,13 +116,14 @@ public class RubyConverter extends RubyObject {
 
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getData(), CONVERTER_ALLOCATOR, runtime.getEncoding());
-        runtime.setConverter(converterc);
+
         converterc.setClassIndex(ClassIndex.CONVERTER);
         converterc.setReifiedClass(RubyConverter.class);
         converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
 
         converterc.defineAnnotatedMethods(RubyConverter.class);
         converterc.defineAnnotatedConstants(RubyConverter.class);
+
         return converterc;
     }
 
@@ -647,7 +648,7 @@ public class RubyConverter extends RubyObject {
 
         ec2 = ((RubyConverter)other).ec;
 
-        return context.runtime.newBoolean(ec1.equals(ec2));
+        return RubyBoolean.newBoolean(context, ec1.equals(ec2));
     }
     
     public static class EncodingErrorMethods {

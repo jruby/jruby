@@ -81,7 +81,6 @@ public class RubyProcess {
 
     public static RubyModule createProcessModule(Ruby runtime) {
         RubyModule process = runtime.defineModule("Process");
-        runtime.setProcess(process);
 
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -238,7 +237,7 @@ public class RubyProcess {
             if (!PosixShim.WAIT_MACROS.WIFEXITED(status)) {
                 return context.nil;
             }
-            return context.runtime.newBoolean(PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
+            return RubyBoolean.newBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
         @JRubyMethod(name = {"coredump?"})

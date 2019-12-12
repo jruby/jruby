@@ -1066,7 +1066,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         check();
         otherRegex.check();
 
-        return context.runtime.newBoolean(str.equal(otherRegex.str) && options.equals(otherRegex.options));
+        return RubyBoolean.newBoolean(context, str.equal(otherRegex.str) && options.equals(otherRegex.options));
     }
 
     @Deprecated
@@ -1356,7 +1356,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "casefold?")
     public IRubyObject casefold_p(ThreadContext context) {
-        return context.runtime.newBoolean(getOptions().isIgnorecase());
+        return RubyBoolean.newBoolean(context, getOptions().isIgnorecase());
     }
 
     /** rb_reg_source
@@ -1549,7 +1549,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "fixed_encoding?")
     public IRubyObject fixed_encoding_p(ThreadContext context) {
-        return context.runtime.newBoolean(options.isFixed());
+        return RubyBoolean.newBoolean(context, options.isFixed());
     }
 
     /** rb_reg_nth_match

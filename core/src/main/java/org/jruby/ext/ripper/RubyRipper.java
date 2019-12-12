@@ -31,6 +31,7 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyNumeric;
@@ -310,12 +311,12 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isEndSeen());
+        return RubyBoolean.newBoolean(context, parser.isEndSeen());
     }
 
     @JRubyMethod(name = "error?")
     public IRubyObject error_p(ThreadContext context) {
-        return context.runtime.newBoolean(parser.isError());
+        return RubyBoolean.newBoolean(context, parser.isError());
     }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
@@ -354,7 +355,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return context.runtime.newBoolean(parser.getYYDebug());
+        return RubyBoolean.newBoolean(context, parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")
