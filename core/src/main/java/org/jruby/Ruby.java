@@ -1758,16 +1758,6 @@ public final class Ruby implements Constantizable {
         return topSelf;
     }
 
-    @Deprecated
-    public IRubyObject getRootFiber() {
-        return rootFiber;
-    }
-
-    @Deprecated
-    public void setRootFiber(IRubyObject fiber) {
-        rootFiber = fiber;
-    }
-
     public void setCurrentDirectory(String dir) {
         currentDirectory = dir;
     }
@@ -1818,9 +1808,6 @@ public final class Ruby implements Constantizable {
 
     public RubyModule getKernel() {
         return kernelModule;
-    }
-    @Deprecated
-    void setKernel(RubyModule kernelModule) {
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -1905,134 +1892,77 @@ public final class Ruby implements Constantizable {
     public RubyModule getComparable() {
         return comparableModule;
     }
-    @Deprecated
-    void setComparable(RubyModule comparableModule) {
-    }
 
     public RubyClass getNumeric() {
         return numericClass;
-    }
-    @Deprecated
-    void setNumeric(RubyClass numericClass) {
     }
 
     public RubyClass getFloat() {
         return floatClass;
     }
-    @Deprecated
-    void setFloat(RubyClass floatClass) {
-    }
 
     public RubyClass getInteger() {
         return integerClass;
-    }
-    @Deprecated
-    void setInteger(RubyClass integerClass) {
     }
 
     public RubyClass getFixnum() {
         return fixnumClass;
     }
-    @Deprecated
-    void setFixnum(RubyClass fixnumClass) {
-    }
 
     public RubyClass getComplex() {
         return complexClass;
-    }
-    @Deprecated
-    void setComplex(RubyClass complexClass) {
     }
 
     public RubyClass getRational() {
         return rationalClass;
     }
-    @Deprecated
-    void setRational(RubyClass rationalClass) {
-    }
 
     public RubyModule getEnumerable() {
         return enumerableModule;
-    }
-    @Deprecated
-    void setEnumerable(RubyModule enumerableModule) {
     }
 
     public RubyClass getEnumerator() {
         return enumeratorClass;
     }
-    @Deprecated
-    void setEnumerator(RubyClass enumeratorClass) {
-    }
 
     public RubyClass getYielder() {
         return yielderClass;
-    }
-    @Deprecated
-    void setYielder(RubyClass yielderClass) {
     }
 
     public RubyClass getGenerator() {
         return generatorClass;
     }
-    @Deprecated
-    public void setGenerator(RubyClass generatorClass) {
-    }
 
     public RubyClass getFiber() {
         return fiberClass;
-    }
-    @Deprecated
-    public void setFiber(RubyClass fiberClass) {
     }
 
     public RubyClass getString() {
         return stringClass;
     }
-    @Deprecated
-    void setString(RubyClass stringClass) {
-    }
 
     public RubyClass getEncoding() {
         return encodingClass;
-    }
-    @Deprecated
-    void setEncoding(RubyClass encodingClass) {
     }
 
     public RubyClass getConverter() {
         return converterClass;
     }
-    @Deprecated
-    void setConverter(RubyClass converterClass) {
-    }
 
     public RubyClass getSymbol() {
         return symbolClass;
-    }
-    @Deprecated
-    void setSymbol(RubyClass symbolClass) {
     }
 
     public RubyClass getArray() {
         return arrayClass;
     }
-    @Deprecated
-    void setArray(RubyClass arrayClass) {
-    }
 
     public RubyClass getHash() {
         return hashClass;
     }
-    @Deprecated
-    void setHash(RubyClass hashClass) {
-    }
 
     public RubyClass getRange() {
         return rangeClass;
-    }
-    @Deprecated
-    void setRange(RubyClass rangeClass) {
     }
 
     /** Returns the "true" instance from the instance pool.
@@ -2063,141 +1993,81 @@ public final class Ruby implements Constantizable {
     public RubyClass getNilClass() {
         return nilClass;
     }
-    @Deprecated
-    void setNilClass(RubyClass nilClass) {
-    }
 
     public RubyClass getTrueClass() {
         return trueClass;
-    }
-    @Deprecated
-    void setTrueClass(RubyClass trueClass) {
     }
 
     public RubyClass getFalseClass() {
         return falseClass;
     }
-    @Deprecated
-    void setFalseClass(RubyClass falseClass) {
-    }
 
     public RubyClass getProc() {
         return procClass;
-    }
-    @Deprecated
-    void setProc(RubyClass procClass) {
     }
 
     public RubyClass getBinding() {
         return bindingClass;
     }
-    @Deprecated
-    void setBinding(RubyClass bindingClass) {
-    }
 
     public RubyClass getMethod() {
         return methodClass;
-    }
-    @Deprecated
-    void setMethod(RubyClass methodClass) {
     }
 
     public RubyClass getUnboundMethod() {
         return unboundMethodClass;
     }
-    @Deprecated
-    void setUnboundMethod(RubyClass unboundMethodClass) {
-    }
 
     public RubyClass getMatchData() {
         return matchDataClass;
-    }
-    @Deprecated
-    void setMatchData(RubyClass matchDataClass) {
     }
 
     public RubyClass getRegexp() {
         return regexpClass;
     }
-    @Deprecated
-    void setRegexp(RubyClass regexpClass) {
-    }
 
     public RubyClass getTime() {
         return timeClass;
-    }
-    @Deprecated
-    void setTime(RubyClass timeClass) {
     }
 
     public RubyModule getMath() {
         return mathModule;
     }
-    @Deprecated
-    void setMath(RubyModule mathModule) {
-    }
 
     public RubyModule getMarshal() {
         return marshalModule;
-    }
-    @Deprecated
-    void setMarshal(RubyModule marshalModule) {
     }
 
     public RubyClass getBignum() {
         return bignumClass;
     }
-    @Deprecated
-    void setBignum(RubyClass bignumClass) {
-    }
 
     public RubyClass getDir() {
         return dirClass;
-    }
-    @Deprecated
-    void setDir(RubyClass dirClass) {
     }
 
     public RubyClass getFile() {
         return fileClass;
     }
-    @Deprecated
-    void setFile(RubyClass fileClass) {
-    }
 
     public RubyClass getFileStat() {
         return fileStatClass;
-    }
-    @Deprecated
-    void setFileStat(RubyClass fileStatClass) {
     }
 
     public RubyModule getFileTest() {
         return fileTestModule;
     }
-    @Deprecated
-    void setFileTest(RubyModule fileTestModule) {
-    }
 
     public RubyClass getIO() {
         return ioClass;
-    }
-    @Deprecated
-    void setIO(RubyClass ioClass) {
     }
 
     public RubyClass getThread() {
         return threadClass;
     }
-    @Deprecated
-    void setThread(RubyClass threadClass) {
-    }
 
     public RubyClass getThreadGroup() {
         return threadGroupClass;
-    }
-    @Deprecated
-    void setThreadGroup(RubyClass threadGroupClass) {
     }
 
     public RubyThreadGroup getDefaultThreadGroup() {
@@ -2210,22 +2080,13 @@ public final class Ruby implements Constantizable {
     public RubyClass getContinuation() {
         return continuationClass;
     }
-    @Deprecated
-    void setContinuation(RubyClass continuationClass) {
-    }
 
     public RubyClass getStructClass() {
         return structClass;
     }
-    @Deprecated
-    void setStructClass(RubyClass structClass) {
-    }
 
     public RubyClass getRandomClass() {
         return randomClass;
-    }
-    @Deprecated
-    void setRandomClass(RubyClass randomClass) {
     }
 
     public IRubyObject getTmsStruct() {
@@ -2252,22 +2113,13 @@ public final class Ruby implements Constantizable {
     public RubyModule getGC() {
         return gcModule;
     }
-    @Deprecated
-    void setGC(RubyModule gcModule) {
-    }
 
     public RubyModule getObjectSpaceModule() {
         return objectSpaceModule;
     }
-    @Deprecated
-    void setObjectSpaceModule(RubyModule objectSpaceModule) {
-    }
 
     public RubyModule getProcess() {
         return processModule;
-    }
-    @Deprecated
-    void setProcess(RubyModule processModule) {
     }
 
     public RubyClass getProcStatus() {
@@ -2325,19 +2177,12 @@ public final class Ruby implements Constantizable {
         return warningModule;
     }
 
-    @Deprecated
-    public void setWarning(RubyModule warningModule) {
-    }
-
     public RubyModule getErrno() {
         return errnoModule;
     }
 
     public RubyClass getException() {
         return exceptionClass;
-    }
-    @Deprecated
-    void setException(RubyClass exceptionClass) {
     }
 
     public RubyClass getNameError() {
@@ -5038,6 +4883,159 @@ public final class Ruby implements Constantizable {
             if (mriRecursionGuard != null) return mriRecursionGuard;
             return mriRecursionGuard = new MRIRecursionGuard(this);
         }
+    }
+
+    @Deprecated
+    public IRubyObject getRootFiber() {
+        return rootFiber;
+    }
+    @Deprecated
+    public void setRootFiber(IRubyObject fiber) {
+        rootFiber = fiber;
+    }
+    @Deprecated
+    void setKernel(RubyModule kernelModule) {
+    }
+    @Deprecated
+    void setComparable(RubyModule comparableModule) {
+    }
+    @Deprecated
+    void setNumeric(RubyClass numericClass) {
+    }
+    @Deprecated
+    void setFloat(RubyClass floatClass) {
+    }
+    @Deprecated
+    void setInteger(RubyClass integerClass) {
+    }
+    @Deprecated
+    void setFixnum(RubyClass fixnumClass) {
+    }
+    @Deprecated
+    void setComplex(RubyClass complexClass) {
+    }
+    @Deprecated
+    void setRational(RubyClass rationalClass) {
+    }
+    @Deprecated
+    void setEnumerable(RubyModule enumerableModule) {
+    }
+    @Deprecated
+    void setEnumerator(RubyClass enumeratorClass) {
+    }
+    @Deprecated
+    void setYielder(RubyClass yielderClass) {
+    }
+    @Deprecated
+    public void setGenerator(RubyClass generatorClass) {
+    }
+    @Deprecated
+    public void setFiber(RubyClass fiberClass) {
+    }
+    @Deprecated
+    void setString(RubyClass stringClass) {
+    }
+    @Deprecated
+    void setEncoding(RubyClass encodingClass) {
+    }
+    @Deprecated
+    void setConverter(RubyClass converterClass) {
+    }
+    @Deprecated
+    void setSymbol(RubyClass symbolClass) {
+    }
+    @Deprecated
+    void setArray(RubyClass arrayClass) {
+    }
+    @Deprecated
+    void setHash(RubyClass hashClass) {
+    }
+    @Deprecated
+    void setRange(RubyClass rangeClass) {
+    }
+    @Deprecated
+    void setNilClass(RubyClass nilClass) {
+    }
+    @Deprecated
+    void setTrueClass(RubyClass trueClass) {
+    }
+    @Deprecated
+    void setFalseClass(RubyClass falseClass) {
+    }
+    @Deprecated
+    void setProc(RubyClass procClass) {
+    }
+    @Deprecated
+    void setBinding(RubyClass bindingClass) {
+    }
+    @Deprecated
+    void setMethod(RubyClass methodClass) {
+    }
+    @Deprecated
+    void setUnboundMethod(RubyClass unboundMethodClass) {
+    }
+    @Deprecated
+    void setMatchData(RubyClass matchDataClass) {
+    }
+    @Deprecated
+    void setRegexp(RubyClass regexpClass) {
+    }
+    @Deprecated
+    void setTime(RubyClass timeClass) {
+    }
+    @Deprecated
+    void setMath(RubyModule mathModule) {
+    }
+    @Deprecated
+    void setMarshal(RubyModule marshalModule) {
+    }
+    @Deprecated
+    void setBignum(RubyClass bignumClass) {
+    }
+    @Deprecated
+    void setDir(RubyClass dirClass) {
+    }
+    @Deprecated
+    void setFile(RubyClass fileClass) {
+    }
+    @Deprecated
+    void setFileStat(RubyClass fileStatClass) {
+    }
+    @Deprecated
+    void setFileTest(RubyModule fileTestModule) {
+    }
+    @Deprecated
+    void setIO(RubyClass ioClass) {
+    }
+    @Deprecated
+    void setThread(RubyClass threadClass) {
+    }
+    @Deprecated
+    void setThreadGroup(RubyClass threadGroupClass) {
+    }
+    @Deprecated
+    void setContinuation(RubyClass continuationClass) {
+    }
+    @Deprecated
+    void setStructClass(RubyClass structClass) {
+    }
+    @Deprecated
+    void setRandomClass(RubyClass randomClass) {
+    }
+    @Deprecated
+    void setGC(RubyModule gcModule) {
+    }
+    @Deprecated
+    void setObjectSpaceModule(RubyModule objectSpaceModule) {
+    }
+    @Deprecated
+    void setProcess(RubyModule processModule) {
+    }
+    @Deprecated
+    public void setWarning(RubyModule warningModule) {
+    }
+    @Deprecated
+    void setException(RubyClass exceptionClass) {
     }
 
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
