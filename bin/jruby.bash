@@ -382,7 +382,16 @@ do
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
-        java_args=("${java_args[@]}" "-Xprof") ;;
+        async_profiler_lib=${JRUBY_HOME}/lib/libasyncProfiler.so
+        if [ -f $async_profiler_lib ]; then
+          java_args+="-agentpath:${async_profiler_lib}=start,interval=500us,flat=1000,file=sample.txt"
+        else
+          if [[ $is_java9 ]]; then
+            echo "Warning: the --sample flag requires the jruby-async-profiler gem to be installed"
+          else
+            java_args=("${java_args[@]}" "-Xprof")
+          fi
+        fi ;;
      --record)
         java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
      --ng-server)
