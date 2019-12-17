@@ -24,7 +24,6 @@ mode=""
 
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
-JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
 
 # Determine how to call expr (jruby/jruby#5091)
 # On Alpine linux, expr takes no -- arguments, and 'expr --' echoes '--'.
@@ -184,28 +183,9 @@ process_java_opts $pwd_jruby_java_opts_file
 
 # ----- Process special JRuby options into JVM options -------------------------------
 
-# space-separated list of special flags
-JRUBY_OPTS_SPECIAL="--ng"
 unset JRUBY_OPTS_TEMP
-function process_special_opts {
-    case $1 in
-        --ng) nailgun_client=true;;
-        *) break;;
-    esac
-}
 for opt in ${JRUBY_OPTS[@]}; do
-    for special in ${JRUBY_OPTS_SPECIAL[@]}; do
-        if [ $opt != $special ]; then
-            JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
-        else
-            # make sure flags listed in JRUBY_OPTS_SPECIAL are processed
-            case "$opt" in
-            --ng)
-                add_log "Enabling Nailgun client"
-                process_special_opts $opt;;
-            esac
-        fi
-    done
+    JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
     if [ $opt == "-server" ]; then # JRUBY-4204
         add_log "Enabling -server mode"
         JAVA_VM="-server"
@@ -385,15 +365,11 @@ do
         java_args=("${java_args[@]}" "-Xprof") ;;
      --record)
         java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
-     --ng-server)
-        # Start up as Nailgun server
-        java_class=$JAVA_CLASS_NGSERVER
-        VERIFY_JRUBY=true ;;
      --no-bootclasspath)
         NO_BOOTCLASSPATH=true ;;
-     --ng)
-        # Use native Nailgun client to toss commands to server
-        process_special_opts "--ng" ;;
+     --ng*)
+       echo "Error: Nailgun is no longer supported"
+       exit 1 ;;
      --environment) print_environment_log=1 ;;
      # warn but ignore
      --1.8) echo "warning: --1.8 ignored" ;;
@@ -482,26 +458,7 @@ fi
 # Include all options from files at the beginning of the Java command line
 JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 
-if [ "$nailgun_client" != "" ]; then
-
-  # Run using Nailgun client
-
-  if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    jvm_command=$JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
-  else
-    echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
-    exit 1
-  fi
-
-elif [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
-
-  # Remove JRuby from boot classpath if requested
-
-  if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
-    echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
-    use_exec=false
-    JRUBY_OPTS=''
-  fi
+if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
 
   jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" "${classpath_args[@]}" \
     "-Djruby.home=$JRUBY_HOME" \
