@@ -68,7 +68,7 @@ public class Block {
      */
     private RubyProc proc = null;
 
-    public Type type = Type.NORMAL;
+    public final Type type;
 
     private final Binding binding;
 
@@ -90,14 +90,19 @@ public class Block {
         NULL_BLOCK.getBinding().getFrame().updateFrame(null, null, "", NULL_BLOCK);
     }
 
-    public Block(BlockBody body, Binding binding) {
+    public Block(BlockBody body, Binding binding, Type type) {
         assert binding != null;
         this.body = body;
         this.binding = binding;
+        this.type = type;
+    }
+
+    public Block(BlockBody body, Binding binding) {
+        this(body, binding, Type.NORMAL);
     }
 
     public Block(BlockBody body) {
-        this(body, Block.NULL_BLOCK.getBinding());
+        this(body, Block.NULL_BLOCK.getBinding(), Type.NORMAL);
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {
@@ -187,18 +192,24 @@ public class Block {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(body, binding);
+        Block newBlock = new Block(body, binding, type);
 
-        newBlock.type = type;
+        newBlock.escapeBlock = this;
+
+        return newBlock;
+    }
+
+    public Block cloneBlockAsType(Type newType) {
+        Block newBlock = new Block(body, binding, newType);
+
         newBlock.escapeBlock = this;
 
         return newBlock;
     }
 
     public Block cloneBlockAndBinding() {
-        Block newBlock = new Block(body, binding.clone());
+        Block newBlock = new Block(body, binding.clone(), type);
 
-        newBlock.type = type;
         newBlock.escapeBlock = this;
 
         return newBlock;
@@ -215,9 +226,8 @@ public class Block {
                 oldBinding.getFile(),
                 oldBinding.getLine());
 
-        Block newBlock = new Block(body, binding);
+        Block newBlock = new Block(body, binding, type);
 
-        newBlock.type = type;
         newBlock.escapeBlock = this;
 
         return newBlock;

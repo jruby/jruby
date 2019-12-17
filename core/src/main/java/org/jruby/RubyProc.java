@@ -174,7 +174,7 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getMethod(),
                     oldBinding.getFile(),
                     oldBinding.getLine());
-            block = new Block(procBlock.getBody(), newBinding);
+            block = new Block(procBlock.getBody(), newBinding, type);
 
             // Mark as escaped, so non-local flow errors immediately
             block.escape();
@@ -184,15 +184,18 @@ public class RubyProc extends RubyObject implements DataType {
             StaticScope newScope = oldScope.duplicate();
             block.getBody().setStaticScope(newScope);
         } else {
-            // just use as is
-            block = procBlock;
+            // just use as is unless type differs
+            if (type != procBlock.type) {
+                block = procBlock.cloneBlockAsType(type);
+            } else {
+                block = procBlock;
+            }
         }
 
         // force file/line info into the new block's binding
         block.getBinding().setFile(block.getBody().getFile());
         block.getBinding().setLine(block.getBody().getLine());
 
-        block.type = type;
         block.setProcObject(this);
 
         // pre-request dummy scope to avoid clone overhead in lightweight blocks
