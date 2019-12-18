@@ -17,22 +17,6 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected MethodHandle normalYieldSpecificHandle;
     protected MethodHandle normalYieldUnwrapHandle;
 
-    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, IRBlockBody evalTypeBody, long encodedSignature) {
-        super(closure, Signature.decode(encodedSignature), evalTypeBody);
-        // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
-        this.handle = handle;
-        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);
-        // This is gross and should be done in IR rather than in the handles.
-        this.callHandle = MethodHandles.foldArguments(callHandle, CHECK_ARITY);
-        this.yieldDirectHandle = MethodHandles.insertArguments(
-                MethodHandles.insertArguments(handle, 2, closure.getStaticScope()),
-                4,
-                Block.NULL_BLOCK);
-
-        // Done in the interpreter (WrappedIRClosure) but we do it here
-        closure.getStaticScope().determineModule();
-    }
-
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
         super(closure, Signature.decode(encodedSignature));
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild

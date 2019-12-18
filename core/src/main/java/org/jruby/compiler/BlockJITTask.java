@@ -84,7 +84,6 @@ class BlockJITTask extends JITCompiler.Task {
                 new CompiledIRBlockBody(
                         JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
                         body.getIRScope(),
-                        body,
                         ((IRClosure) body.getIRScope()).getSignature().encode()));
     }
 

@@ -80,6 +80,8 @@ public class Block {
     /** What block to use for determining escape; defaults to this */
     private final Block escapeBlock;
 
+    EvalType evalType;
+
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
@@ -122,17 +124,17 @@ public class Block {
         //
         // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
         // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
-        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, body.getEvalType());
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
         if (type == Block.Type.LAMBDA) newScope.setLambda(true);
         return newScope;
     }
 
     public EvalType getEvalType() {
-        return body.getEvalType();
+        return evalType;
     }
 
     public void setEvalType(EvalType evalType) {
-        body.setEvalType(evalType);
+        this.evalType = evalType;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
