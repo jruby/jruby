@@ -50,7 +50,7 @@ import java.lang.invoke.MethodHandles;
 public abstract class BlockBody {
 
     protected final Signature signature;
-    protected volatile MethodHandle testBlockBody;
+    protected MethodHandle testBlockBody;
 
     public BlockBody(Signature signature) {
         this.signature = signature;
