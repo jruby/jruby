@@ -41,7 +41,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private transient boolean dontInline;
     private transient boolean[] splatMap;
-    private transient boolean procNew;
+    protected transient boolean procNew;
     private boolean potentiallyRefined;
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
