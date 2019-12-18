@@ -98,7 +98,7 @@ public class Block {
         this.escapeBlock = escapeBlock;
     }
 
-    private Block(BlockBody body, Binding binding, Type type) {
+    public Block(BlockBody body, Binding binding, Type type) {
         assert binding != null;
         this.body = body;
         this.binding = binding;

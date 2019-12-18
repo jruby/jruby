@@ -14,6 +14,19 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final int lineNumber;
     protected final IRClosure closure;
     final ThreadLocal<EvalType> evalType;
+    final IRBlockBody evalTypeBody;
+
+    public IRBlockBody(IRScope closure, Signature signature, IRBlockBody evalTypeBody) {
+        // ThreadLocal not set by default to avoid having many thread-local values initialized
+        // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
+        // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
+        super(closure.getStaticScope(), signature);
+        this.closure = (IRClosure) closure;
+        this.fileName = closure.getFile();
+        this.lineNumber = closure.getLine();
+        this.evalType = null;
+        this.evalTypeBody = evalTypeBody;
+    }
 
     public IRBlockBody(IRScope closure, Signature signature) {
         // ThreadLocal not set by default to avoid having many thread-local values initialized
@@ -24,18 +37,19 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         this.fileName = closure.getFile();
         this.lineNumber = closure.getLine();
         this.evalType = new ThreadLocal<>();
+        this.evalTypeBody = this;
     }
 
     public final EvalType getEvalType() {
-        final EvalType type = this.evalType.get();
+        final EvalType type = evalTypeBody.evalType.get();
         return type == null ? EvalType.NONE : type;
     }
 
     public void setEvalType(final EvalType type) {
         if (type == null || type == EvalType.NONE) {
-            this.evalType.remove();
+            evalTypeBody.evalType.remove();
         } else {
-            this.evalType.set(type);
+            evalTypeBody.evalType.set(type);
         }
     }
 
