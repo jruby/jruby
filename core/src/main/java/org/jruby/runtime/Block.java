@@ -78,7 +78,7 @@ public class Block {
     private boolean escaped;
 
     /** What block to use for determining escape; defaults to this */
-    private Block escapeBlock = this;
+    private final Block escapeBlock;
 
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -90,11 +90,20 @@ public class Block {
         NULL_BLOCK.getBinding().getFrame().updateFrame(null, null, "", NULL_BLOCK);
     }
 
-    public Block(BlockBody body, Binding binding, Type type) {
+    private Block(BlockBody body, Binding binding, Type type, Block escapeBlock) {
         assert binding != null;
         this.body = body;
         this.binding = binding;
         this.type = type;
+        this.escapeBlock = escapeBlock;
+    }
+
+    private Block(BlockBody body, Binding binding, Type type) {
+        assert binding != null;
+        this.body = body;
+        this.binding = binding;
+        this.type = type;
+        this.escapeBlock = this;
     }
 
     public Block(BlockBody body, Binding binding) {
@@ -192,25 +201,19 @@ public class Block {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(body, binding, type);
-
-        newBlock.escapeBlock = this;
+        Block newBlock = new Block(body, binding, type, this);
 
         return newBlock;
     }
 
     public Block cloneBlockAsType(Type newType) {
-        Block newBlock = new Block(body, binding, newType);
-
-        newBlock.escapeBlock = this;
+        Block newBlock = new Block(body, binding, newType, this);
 
         return newBlock;
     }
 
     public Block cloneBlockAndBinding() {
-        Block newBlock = new Block(body, binding.clone(), type);
-
-        newBlock.escapeBlock = this;
+        Block newBlock = new Block(body, binding.clone(), type, this);
 
         return newBlock;
     }
@@ -226,9 +229,7 @@ public class Block {
                 oldBinding.getFile(),
                 oldBinding.getLine());
 
-        Block newBlock = new Block(body, binding, type);
-
-        newBlock.escapeBlock = this;
+        Block newBlock = new Block(body, binding, type, this);
 
         return newBlock;
     }
