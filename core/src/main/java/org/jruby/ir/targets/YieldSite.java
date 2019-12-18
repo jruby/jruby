@@ -27,6 +27,9 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class YieldSite extends MutableCallSite {
     private final boolean unwrap;
+    private int bindCount;
+
+    private static final int MAX_REBIND = 2;
 
     private static final Logger LOG = LoggerFactory.getLogger(YieldSite.class);
 
@@ -70,36 +73,42 @@ public class YieldSite extends MutableCallSite {
     }
 
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject arg) throws Throwable {
-        if (Options.INVOKEDYNAMIC_YIELD.load()) {
-            BlockBody body = block.getBody();
-            MethodHandle target;
-
-            if (block.getBody() instanceof CompiledIRBlockBody) {
-                CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
-
+        if (++bindCount < MAX_REBIND && Options.INVOKEDYNAMIC_YIELD.load()) {
+            if (++bindCount >= MAX_REBIND) {
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                    LOG.info("yield \tbound directly as yield:" + Bootstrap.logBlock(block));
+                    LOG.info("yield \tdisabled due to polymorphism:" + Bootstrap.logBlock(block));
                 }
-
-                target = unwrap ? compiledBody.getNormalYieldUnwrapHandle() : compiledBody.getNormalYieldHandle();
             } else {
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                    LOG.info("yield \tbound indirectly as yield:" + Bootstrap.logBlock(block));
+                BlockBody body = block.getBody();
+                MethodHandle target;
+
+                if (block.getBody() instanceof CompiledIRBlockBody) {
+                    CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
+
+                    if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                        LOG.info("yield \tbound directly as yield:" + Bootstrap.logBlock(block));
+                    }
+
+                    target = unwrap ? compiledBody.getNormalYieldUnwrapHandle() : compiledBody.getNormalYieldHandle();
+                } else {
+                    if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                        LOG.info("yield \tbound indirectly as yield:" + Bootstrap.logBlock(block));
+                    }
+
+                    target = Binder.from(type())
+                            .append(unwrap)
+                            .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "yield");
                 }
 
-                target = Binder.from(type())
-                        .append(unwrap)
-                        .invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "yield");
+                MethodHandle fallback = getTarget();
+                MethodHandle test = body.getTestBlockBody();
+
+                MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
+
+                setTarget(guard);
+
+                return (IRubyObject) target.invokeExact(context, block, arg);
             }
-
-            MethodHandle fallback = getTarget();
-            MethodHandle test = body.getTestBlockBody();
-
-            MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
-
-            setTarget(guard);
-
-            return (IRubyObject) target.invokeExact(context, block, arg);
         }
 
         return IRRuntimeHelpers.yield(context, block, arg, unwrap);
@@ -107,35 +116,41 @@ public class YieldSite extends MutableCallSite {
 
     public IRubyObject yieldSpecific(ThreadContext context, Block block) throws Throwable {
         if (Options.INVOKEDYNAMIC_YIELD.load()) {
-            BlockBody body = block.getBody();
-            MethodHandle target;
-
-            if (block.getBody() instanceof CompiledIRBlockBody) {
-                CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
-
+            if (++bindCount >= MAX_REBIND) {
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                    LOG.info("yield \tbound directly as yieldSpecific:" + Bootstrap.logBlock(block));
+                    LOG.info("yield \tdisabled due to polymorphism:" + Bootstrap.logBlock(block));
                 }
-
-                target = compiledBody.getNormalYieldSpecificHandle();
             } else {
-                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                    LOG.info("yield \tbound indirectly as yieldSpecific:" + Bootstrap.logBlock(block));
+                BlockBody body = block.getBody();
+                MethodHandle target;
+
+                if (block.getBody() instanceof CompiledIRBlockBody) {
+                    CompiledIRBlockBody compiledBody = (CompiledIRBlockBody) block.getBody();
+
+                    if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                        LOG.info("yield \tbound directly as yieldSpecific:" + Bootstrap.logBlock(block));
+                    }
+
+                    target = compiledBody.getNormalYieldSpecificHandle();
+                } else {
+                    if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                        LOG.info("yield \tbound indirectly as yieldSpecific:" + Bootstrap.logBlock(block));
+                    }
+
+                    target = Binder.from(type())
+                            .permute(1, 0)
+                            .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
                 }
 
-                target = Binder.from(type())
-                        .permute(1, 0)
-                        .invokeVirtualQuiet(MethodHandles.lookup(), "yieldSpecific");
+                MethodHandle fallback = getTarget();
+                MethodHandle test = body.getTestBlockBody();
+
+                MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
+
+                setTarget(guard);
+
+                return (IRubyObject) target.invokeExact(context, block);
             }
-
-            MethodHandle fallback = getTarget();
-            MethodHandle test = body.getTestBlockBody();
-
-            MethodHandle guard = MethodHandles.guardWithTest(test, target, fallback);
-
-            setTarget(guard);
-
-            return (IRubyObject) target.invokeExact(context, block);
         }
 
         return block.yieldSpecific(context);
