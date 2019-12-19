@@ -80,7 +80,7 @@ public class Block {
     /** What block to use for determining escape; defaults to this */
     private final Block escapeBlock;
 
-    EvalType evalType;
+    private final EvalType evalType;
 
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -92,12 +92,13 @@ public class Block {
         NULL_BLOCK.getBinding().getFrame().updateFrame(null, null, "", NULL_BLOCK);
     }
 
-    private Block(BlockBody body, Binding binding, Type type, Block escapeBlock) {
+    private Block(BlockBody body, Binding binding, Type type, Block escapeBlock, EvalType evalType) {
         assert binding != null;
         this.body = body;
         this.binding = binding;
         this.type = type;
         this.escapeBlock = escapeBlock;
+        this.evalType = evalType;
     }
 
     public Block(BlockBody body, Binding binding, Type type) {
@@ -106,6 +107,7 @@ public class Block {
         this.binding = binding;
         this.type = type;
         this.escapeBlock = this;
+        this.evalType = EvalType.NONE;
     }
 
     public Block(BlockBody body, Binding binding) {
@@ -131,10 +133,6 @@ public class Block {
 
     public EvalType getEvalType() {
         return evalType;
-    }
-
-    public void setEvalType(EvalType evalType) {
-        this.evalType = evalType;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -203,24 +201,30 @@ public class Block {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(body, binding, type, this);
-
-        return newBlock;
+        return cloneBlockAsType(type);
     }
 
     public Block cloneBlockAsType(Type newType) {
-        Block newBlock = new Block(body, binding, newType, this);
+        Block newBlock = new Block(body, binding, newType, this, evalType);
 
         return newBlock;
     }
 
     public Block cloneBlockAndBinding() {
-        Block newBlock = new Block(body, binding.clone(), type, this);
+        return cloneBlockAndBinding(evalType);
+    }
+
+    public Block cloneBlockAndBinding(EvalType evalType) {
+        Block newBlock = new Block(body, binding.clone(), type, this, evalType);
 
         return newBlock;
     }
 
     public Block cloneBlockAndFrame() {
+        return cloneBlockAndFrame(EvalType.NONE);
+    }
+
+    public Block cloneBlockAndFrame(EvalType evalType) {
         Binding oldBinding = binding;
         Binding binding = new Binding(
                 oldBinding.getSelf(),
@@ -231,27 +235,27 @@ public class Block {
                 oldBinding.getFile(),
                 oldBinding.getLine());
 
-        Block newBlock = new Block(body, binding, type, this);
+        Block newBlock = new Block(body, binding, type, this, evalType);
 
         return newBlock;
     }
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
-        Block block = cloneBlock();
+        Block newBlock = new Block(body, binding, type, this, evalType);
+
+        Block block = newBlock;
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);
-        block.setEvalType(evalType);
 
         return block;
     }
 
     public Block deepCloneBlockForEval(IRubyObject self, EvalType evalType) {
-        Block block = cloneBlockAndBinding();
+        Block block = cloneBlockAndBinding(evalType);
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);
-        block.setEvalType(evalType);
 
         return block;
     }
