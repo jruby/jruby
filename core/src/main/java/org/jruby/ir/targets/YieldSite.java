@@ -73,7 +73,7 @@ public class YieldSite extends MutableCallSite {
     }
 
     public IRubyObject yield(ThreadContext context, Block block, IRubyObject arg) throws Throwable {
-        if (++bindCount < MAX_REBIND && Options.INVOKEDYNAMIC_YIELD.load()) {
+        if (Options.INVOKEDYNAMIC_YIELD.load()) {
             if (++bindCount >= MAX_REBIND) {
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                     LOG.info("yield \tdisabled due to polymorphism:" + Bootstrap.logBlock(block));
