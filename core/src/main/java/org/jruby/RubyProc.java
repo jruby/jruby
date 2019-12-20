@@ -51,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.RubyStringBuilder.types;
 
 /**
@@ -261,11 +262,52 @@ public class RubyProc extends RubyObject implements DataType {
         return args;
     }
 
+    private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
+        if (type == Block.Type.LAMBDA) {
+            blockBody.getSignature().checkArity(context.runtime, args);
+        }
+
+        return args;
+    }
+
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, omit = true)
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
+        return block.call(
+                context,
+                prepareArgs(context, type, block.getBody(), args),
+                blockCallArg);
+    }
 
-        return block.call(context, preppedArgs, blockCallArg);
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
+    public final IRubyObject call(ThreadContext context, Block blockCallArg) {
+        return block.call(
+                context,
+                checkArityForLambda(context, type, block.getBody(), NULL_ARRAY),
+                blockCallArg);
+    }
+
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
+    public final IRubyObject call(ThreadContext context, IRubyObject arg0, Block blockCallArg) {
+        return block.call(
+                context,
+                prepareArgs(context, type, block.getBody(), arrayOf(arg0)),
+                blockCallArg);
+    }
+
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
+    public final IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block blockCallArg) {
+        return block.call(
+                context,
+                checkArityForLambda(context, type, block.getBody(), arg0, arg1),
+                blockCallArg);
+    }
+
+    @JRubyMethod(name = {"call", "[]", "yield", "==="}, omit = true)
+    public final IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block blockCallArg) {
+        return block.call(
+                context,
+                checkArityForLambda(context, type, block.getBody(), arg0, arg1, arg2),
+                blockCallArg);
     }
 
     public final IRubyObject call(ThreadContext context, IRubyObject arg) {
