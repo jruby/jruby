@@ -25,14 +25,6 @@ mode=""
 JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
 java_class=$JAVA_CLASS_JRUBY_MAIN
 
-# Determine how to call expr (jruby/jruby#5091)
-# On Alpine linux, expr takes no -- arguments, and 'expr --' echoes '--'.
-_expr_dashed=$(expr -- 2>/dev/null)
-if [ "$_expr_dashed" != '--' ] ; then
-  alias expr="expr --"
-fi
-unset _expr_dashed
-
 # OpenJDK tries really hard to prevent you from using urandom.
 # See https://bugs.openjdk.java.net/browse/JDK-6202721
 # Non-file URL causes fallback to slow threaded SeedGenerator.
@@ -316,14 +308,8 @@ do
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
-     -X*)
-        val=${1:2}
-        if expr "$val" : '.*[.]' > /dev/null; then
-          java_args=("${java_args[@]}" "-Djruby.${val}")
-        else
-          ruby_args=("${ruby_args[@]}" "-X${val}")
-        fi
-        ;;
+     -X*.*)
+        java_args=("${java_args[@]}" "-Djruby.${1#-X}") ;;
      # Match switches that take an argument
      -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
