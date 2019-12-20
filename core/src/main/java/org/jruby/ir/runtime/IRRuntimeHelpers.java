@@ -2050,9 +2050,6 @@ public class IRRuntimeHelpers {
             self = useBindingSelf(block.getBinding());
         }
 
-        // Clear block's eval type
-        block.setEvalType(EvalType.NONE);
-
         // Return self in case it has been updated
         return self;
     }
