@@ -265,7 +265,7 @@ public class RubyProc extends RubyObject implements DataType {
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
         IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
-        return call(context, preppedArgs, null, blockCallArg);
+        return block.call(context, preppedArgs, blockCallArg);
     }
 
     public final IRubyObject call(ThreadContext context, IRubyObject arg) {
@@ -274,10 +274,6 @@ public class RubyProc extends RubyObject implements DataType {
 
     public final IRubyObject call(ThreadContext context, IRubyObject... args) {
         return block.call(context, args);
-    }
-
-    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
-        return call(context, args, self, null, passedBlock);
     }
 
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule sourceModule, Block passedBlock) {
@@ -370,6 +366,11 @@ public class RubyProc extends RubyObject implements DataType {
     @Deprecated
     public IRubyObject to_s19() {
         return to_s();
+    }
+
+    @Deprecated
+    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
+        return block.call(context, args, passedBlock);
     }
 
 }
