@@ -252,42 +252,37 @@ set -- $JRUBY_OPTS "$@"
 while [ $# -gt 0 ]
 do
     case $1 in
-    # Stuff after '-J' in this argument goes to JVM
-    -J*)
-        val=${1:2}
-        if [ "${val:0:4}" = "-Xmx" ]; then
-            JAVA_MEM="$val"
-        elif [ "${val:0:4}" = "-Xms" ]; then
-            JAVA_MEM_MIN="$val"
-        elif [ "${val:0:4}" = "-Xss" ]; then
-            JAVA_STACK="$val"
-        elif [ -z "${val}" ]; then
-            "$JAVACMD" -help
-            echo "(Prepend -J in front of these options when using 'jruby' command)"
-            exit
-        elif [ "${val}" = "-X" ]; then
-            "$JAVACMD" -X
-            echo "(Prepend -J in front of these options when using 'jruby' command)"
-            exit
-        elif [ "${val}" = "-classpath" ]; then
-            CP="$CP$CP_DELIMITER$2"
-            CLASSPATH=""
-            shift
-        elif [ "${val}" = "-cp" ]; then
-            CP="$CP$CP_DELIMITER$2"
-            CLASSPATH=""
-            shift
-        else
-            if [ "${val:0:3}" = "-ea" ]; then
-                VERIFY_JRUBY="yes"
-                java_args=("${java_args[@]}" "${1:2}")
-            elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
-                JAVA_SECURITY_EGD=${val:20}
-            else
-                java_args=("${java_args[@]}" "${1:2}")
-            fi
-        fi
-        ;;
+     # Stuff after '-J' in this argument goes to JVM
+     -J-Xmx*)
+         JAVA_MEM="${1#-J}" ;;
+     -J-Xms*)
+         JAVA_MEM_MIN="${1#-J}" ;;
+     -J-Xss*)
+         JAVA_STACK="${1#-J}" ;;
+     -J)
+         "$JAVACMD" -help
+         echo "(Prepend -J in front of these options when using 'jruby' command)"
+         exit ;;
+     -J-X)
+         "$JAVACMD" -X
+         echo "(Prepend -J in front of these options when using 'jruby' command)"
+         exit ;;
+     -J-classpath)
+         CP="$CP$CP_DELIMITER$2"
+         CLASSPATH=""
+         shift ;;
+     -J-cp)
+         CP="$CP$CP_DELIMITER$2"
+         CLASSPATH=""
+         shift ;;
+     -J-ea*)
+         VERIFY_JRUBY="yes"
+         java_args=("${java_args[@]}" "${1#-J}") ;;
+     -J-Djava.security.egd=*)
+         JAVA_SECURITY_EGD=${1#-J-Djava.security.egd=} ;;
+     # This must be the last check for -J
+     -J*)
+         java_args=("${java_args[@]}" "${1#-J}") ;;
      # Pass -X... and -X? search options through
      -X*\.\.\.|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
