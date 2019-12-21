@@ -171,25 +171,11 @@ process_java_opts "$installed_jruby_java_opts_file"
 process_java_opts "$home_jruby_java_opts_file"
 process_java_opts "$pwd_jruby_java_opts_file"
 
-# ----- Process special JRuby options into JVM options -------------------------------
-
-unset JRUBY_OPTS_TEMP
-for opt in ${JRUBY_OPTS[@]}; do
-    JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
-    if [ $opt == "-server" ]; then # JRUBY-4204
-        add_log "Enabling -server mode"
-        JAVA_VM="-server"
-    fi
-done
-JRUBY_OPTS=${JRUBY_OPTS_TEMP}
-
 # Capture some Java options to be passed separately
 unset JAVA_OPTS_TEMP
 JAVA_OPTS_TEMP=""
 for opt in "${JAVA_OPTS[@]}"; do
   case $opt in
-    -server)
-      JAVA_VM="-server";;
     -Xmx*)
       JAVA_MEM="$opt";;
     -Xms*)
@@ -333,18 +319,12 @@ do
         JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
         java_args=("${java_args[@]}" "-sourcepath" "$JDB_SOURCEPATH")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
-     --client)
-        JAVA_VM=-client
-        echo "Warning: the --client flag is deprecated and has no effect most JVMs" ;;
-     --server)
-        JAVA_VM=-server
-        echo "Warning: the --server flag is deprecated and has no effect most JVMs" ;;
+     --client|--server|--noclient)
+        echo "Warning: the $1 flag is deprecated and has no effect most JVMs" ;;
      --dev)
         process_java_opts "$dev_mode_opts_file"
         # For OpenJ9 use environment variable to enable quickstart and shareclasses
         export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses" ;;
-     --noclient)         # JRUBY-4296
-        unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
      --record)
