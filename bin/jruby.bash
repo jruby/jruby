@@ -284,15 +284,18 @@ do
      -J*)
          java_args=("${java_args[@]}" "${1#-J}") ;;
      # Pass -X... and -X? search options through
-     -X*\.\.\.|-X*\?)
+     -X*...|-X*\?)
         ruby_args=("${ruby_args[@]}" "$1") ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*.*)
         java_args=("${java_args[@]}" "-Djruby.${1#-X}") ;;
      # Match switches that take an argument
-     -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
+     -C|-e|-I|-S)
+        ruby_args=("${ruby_args[@]}" "$1" "$2")
+        shift ;;
      # Match same switches with argument stuck together
-     -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
+     -e*|-I*|-S*)
+        ruby_args=("${ruby_args[@]}" "$1" ) ;;
      # Run with JMX management enabled
      --manage)
         java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote")
@@ -329,19 +332,26 @@ do
      --ng*)
        echo "Error: Nailgun is no longer supported"
        exit 1 ;;
-     --environment) print_environment_log=1 ;;
+     --environment)
+       print_environment_log=1 ;;
      # warn but ignore
-     --1.8) echo "warning: --1.8 ignored" ;;
+     --1.8)
+       echo "warning: --1.8 ignored" ;;
      # warn but ignore
-     --1.9) echo "warning: --1.9 ignored" ;;
+     --1.9)
+       echo "warning: --1.9 ignored" ;;
      # warn but ignore
-     --2.0) echo "warning: --1.9 ignored" ;;
+     --2.0)
+       echo "warning: --1.9 ignored" ;;
      # Abort processing on the double dash
-     --) break ;;
+     --)
+       break ;;
      # Other opts go to ruby
-     -*) ruby_args=("${ruby_args[@]}" "$1") ;;
+     -*)
+       ruby_args=("${ruby_args[@]}" "$1") ;;
      # Abort processing on first non-opt arg
-     *) break ;;
+     *)
+       break ;;
     esac
     shift
 done
