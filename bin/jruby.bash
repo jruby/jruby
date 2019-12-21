@@ -102,9 +102,8 @@ jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
 add_log
 add_log "JRuby executable:"
 add_log "  $BASH_SOURCE"
-command_line_options="$@"
 add_log "JRuby command line options:"
-add_log "  $command_line_options"
+add_log "  $*"
 add_log "Current directory:"
 add_log "  $(pwd)"
 
