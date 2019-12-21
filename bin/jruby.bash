@@ -292,9 +292,6 @@ do
      -C|-e|-I|-S)
         ruby_args+=("$1" "$2")
         shift ;;
-     # Match same switches with argument stuck together
-     -e*|-I*|-S*)
-        ruby_args+=("$1") ;;
      # Run with JMX management enabled
      --manage)
         java_args+=("-Dcom.sun.management.jmxremote")
@@ -334,14 +331,8 @@ do
      --environment)
        print_environment_log=1 ;;
      # warn but ignore
-     --1.8)
-       echo "warning: --1.8 ignored" ;;
-     # warn but ignore
-     --1.9)
-       echo "warning: --1.9 ignored" ;;
-     # warn but ignore
-     --2.0)
-       echo "warning: --1.9 ignored" ;;
+     --1.8|--1.9|--2.0)
+       echo "warning: $1 ignored" ;;
      # Abort processing on the double dash
      --)
        break ;;
