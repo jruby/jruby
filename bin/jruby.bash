@@ -276,32 +276,32 @@ do
          shift ;;
      -J-ea*)
          VERIFY_JRUBY="yes"
-         java_args=("${java_args[@]}" "${1#-J}") ;;
+         java_args+=("${1#-J}") ;;
      -J-Djava.security.egd=*)
          JAVA_SECURITY_EGD=${1#-J-Djava.security.egd=} ;;
      # This must be the last check for -J
      -J*)
-         java_args=("${java_args[@]}" "${1#-J}") ;;
+         java_args+=("${1#-J}") ;;
      # Pass -X... and -X? search options through
      -X*...|-X*\?)
-        ruby_args=("${ruby_args[@]}" "$1") ;;
+        ruby_args+=("$1") ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*.*)
-        java_args=("${java_args[@]}" "-Djruby.${1#-X}") ;;
+        java_args+=("-Djruby.${1#-X}") ;;
      # Match switches that take an argument
      -C|-e|-I|-S)
-        ruby_args=("${ruby_args[@]}" "$1" "$2")
+        ruby_args+=("$1" "$2")
         shift ;;
      # Match same switches with argument stuck together
      -e*|-I*|-S*)
-        ruby_args=("${ruby_args[@]}" "$1" ) ;;
+        ruby_args+=("$1") ;;
      # Run with JMX management enabled
      --manage)
-        java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote")
-        java_args=("${java_args[@]}" "-Djruby.management.enabled=true") ;;
+        java_args+=("-Dcom.sun.management.jmxremote")
+        java_args+=("-Djruby.management.enabled=true") ;;
      # Don't launch a GUI window, no matter what
      --headless)
-        java_args=("${java_args[@]}" "-Djava.awt.headless=true") ;;
+        java_args+=("-Djava.awt.headless=true") ;;
      # Run under JDB
      --jdb)
         if [ -z "$JAVA_HOME" ] ; then
@@ -314,8 +314,8 @@ do
           fi
         fi
         JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
-        java_args=("${java_args[@]}" "-sourcepath" "$JDB_SOURCEPATH")
-        JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
+        java_args+=("-sourcepath" "$JDB_SOURCEPATH")
+        JRUBY_OPTS+=("-X+C") ;;
      --client|--server|--noclient)
         echo "Warning: the $1 flag is deprecated and has no effect most JVMs" ;;
      --dev)
@@ -323,9 +323,9 @@ do
         # For OpenJ9 use environment variable to enable quickstart and shareclasses
         export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses" ;;
      --sample)
-        java_args=("${java_args[@]}" "-Xprof") ;;
+        java_args+=("-Xprof") ;;
      --record)
-        java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
+        java_args+=("-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
      --no-bootclasspath)
         NO_BOOTCLASSPATH=true ;;
      --ng*)
@@ -347,7 +347,7 @@ do
        break ;;
      # Other opts go to ruby
      -*)
-       ruby_args=("${ruby_args[@]}" "$1") ;;
+       ruby_args+=("$1") ;;
      # Abort processing on first non-opt arg
      *)
        break ;;
@@ -357,11 +357,11 @@ done
 
 # Force JDK to use specified java.security.egd rand source
 if [ -n "$JAVA_SECURITY_EGD" ]; then
-  java_args=("${java_args[@]}" "-Djava.security.egd=$JAVA_SECURITY_EGD")
+  java_args+=("-Djava.security.egd=$JAVA_SECURITY_EGD")
 fi
 
 # Append the rest of the arguments
-ruby_args=("${ruby_args[@]}" "$@")
+ruby_args+=("$@")
 
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args[@]}"
