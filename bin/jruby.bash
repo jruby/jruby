@@ -425,26 +425,20 @@ fi
 # Include all options from files at the beginning of the Java command line
 JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
 
+# Don't quote JAVA_OPTS; we want it to expand
+jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}")
+
 if [ "$NO_BOOTCLASSPATH" ] || [ "$VERIFY_JRUBY" ]; then
-
-  # Don't quote JAVA_OPTS; we want it to expand
-  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" "${classpath_args[@]}" \
-    "-Djruby.home=$JRUBY_HOME" \
-    "-Djruby.lib=$JRUBY_HOME/lib" "-Djruby.script=jruby" \
-    "-Djruby.shell=$JRUBY_SHELL" \
-    "$java_class" "$@")
-
+  jvm_command+=("${classpath_args[@]}")
 else
+  jvm_command+=(-Xbootclasspath/a:"$JRUBY_CP" \
+    -classpath "$CP$CP_DELIMITER$CLASSPATH" "-Djruby.home=$JRUBY_HOME")
+fi
 
-  # Run normally
-
-  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-    "-Djruby.home=$JRUBY_HOME" \
+jvm_command+=("-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" "-Djruby.script=jruby" \
     "-Djruby.shell=$JRUBY_SHELL" \
     "$java_class" "$@")
-
-fi
 
 add_log
 add_log "Java command line:"
