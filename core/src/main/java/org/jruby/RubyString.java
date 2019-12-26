@@ -4067,13 +4067,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
 
     @Deprecated
-    public IRubyObject split19(ThreadContext context) { return split(context, Block.NULL_BLOCK); }
+    public RubyArray split19(ThreadContext context) { return split(context); }
 
     @Deprecated
-    public IRubyObject split19(ThreadContext context, IRubyObject arg0) { return split(context, arg0, Block.NULL_BLOCK); }
+    public RubyArray split19(ThreadContext context, IRubyObject arg0) { return split(context, arg0); }
 
     @Deprecated
-    public IRubyObject split19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) { return split(context, arg0, arg1, Block.NULL_BLOCK); }
+    public RubyArray split19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) { return split(context, arg0, arg1); }
 
     private void populateCapturesForSplit(Ruby runtime, RubyArray result, RubyMatchData match) {
         for (int i = 1; i < match.numRegs(); i++) {
@@ -4083,14 +4083,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
-    public IRubyObject split(ThreadContext context, Block block) {
-        return split(context, context.nil, block);
+    public RubyArray split(ThreadContext context) {
+        return split(context, context.nil);
+    }
+
+    public RubyArray split(ThreadContext context, IRubyObject arg0) {
+        return splitCommon(context, arg0, false, 0, 0, true);
     }
 
     @JRubyMethod(name = "split", writes = BACKREF)
-    public IRubyObject split(ThreadContext context, IRubyObject arg0, Block block) {
-        RubyArray array = splitCommon(context, arg0, false, 0, 0, true);
+    public IRubyObject splitWithBlock(ThreadContext context, Block block) {
+        return splitWithBlock(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, Block block) {
+        RubyArray array = split(context, arg0);
         if (!block.isGiven()) {
             return array;
         }
@@ -4102,8 +4110,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
-    public IRubyObject split(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+    public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
         RubyArray array = null;
         if (lim <= 0) {
@@ -4115,6 +4122,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             array = splitCommon(context, arg0, true, lim, 1, true);
         }
 
+        return array;
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyArray array = split(context, arg0, arg1);
         if (!block.isGiven()) {
             return array;
         }
