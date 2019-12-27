@@ -141,7 +141,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public Encoding getMarshalEncoding() {
         return getEncoding();
     }
-    // FIXME: Maybe these should not be static?
+
     static final WeakValuedMap<ByteList, Regex> patternCache = new WeakValuedMap();
     static final WeakValuedMap<ByteList, Regex> quotedPatternCache = new WeakValuedMap();
     static final WeakValuedMap<ByteList, Regex> preprocessedPatternCache = new WeakValuedMap();
