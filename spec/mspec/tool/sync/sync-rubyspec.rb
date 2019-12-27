@@ -12,7 +12,6 @@ IMPLS = {
   },
   mri: {
     git: "https://github.com/ruby/ruby.git",
-    master: "trunk",
   },
 }
 
@@ -46,10 +45,6 @@ class RubyImplementation
 
   def git_url
     @data[:git]
-  end
-
-  def default_branch
-    @data[:master] || "master"
   end
 
   def repo_name
@@ -99,7 +94,7 @@ def update_repo(impl)
   Dir.chdir(impl.repo_name) do
     puts Dir.pwd
 
-    sh "git", "checkout", impl.default_branch
+    sh "git", "checkout", "master"
     sh "git", "pull"
   end
 end
@@ -162,12 +157,7 @@ end
 def test_new_specs
   require "yaml"
   Dir.chdir(SOURCE_REPO) do
-    versions = YAML.load_file(".travis.yml")
-    versions = if versions.include? "matrix"
-      versions["matrix"]["include"].map { |job| job["rvm"] }
-    else
-      versions["rvm"]
-    end
+    versions = YAML.load_file("#{MSPEC_REPO}/.travis.yml").fetch("rvm")
     versions = versions.grep(/^\d+\./) # Test on MRI
     min_version, max_version = versions.minmax
 
