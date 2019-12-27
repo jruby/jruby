@@ -4083,28 +4083,60 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
     public RubyArray split(ThreadContext context) {
         return split(context, context.nil);
     }
 
-    @JRubyMethod(name = "split", writes = BACKREF)
     public RubyArray split(ThreadContext context, IRubyObject arg0) {
         return splitCommon(context, arg0, false, 0, 0, true);
     }
 
     @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, Block block) {
+        return splitWithBlock(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, Block block) {
+        RubyArray array = split(context, arg0);
+        if (!block.isGiven()) {
+            return array;
+        }
+
+        for (int i = 0; i < array.getLength(); i++) {
+            block.yield(context, array.eltOk(i));
+        }
+
+        return this;
+    }
+
     public RubyArray split(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         final int lim = RubyNumeric.num2int(arg1);
+        RubyArray array = null;
         if (lim <= 0) {
-            return splitCommon(context, arg0, false, lim, 1, true);
+            array = splitCommon(context, arg0, false, lim, 1, true);
+        } else if (lim == 1) {
+            Ruby runtime = context.runtime;
+            array = value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
         } else {
-            if (lim == 1) {
-                Ruby runtime = context.runtime;
-                return value.getRealSize() == 0 ? runtime.newArray() : runtime.newArray(this.strDup(runtime));
-            }
-            return splitCommon(context, arg0, true, lim, 1, true);
+            array = splitCommon(context, arg0, true, lim, 1, true);
         }
+
+        return array;
+    }
+
+    @JRubyMethod(name = "split", writes = BACKREF)
+    public IRubyObject splitWithBlock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyArray array = split(context, arg0, arg1);
+        if (!block.isGiven()) {
+            return array;
+        }
+
+        for (int i = 0; i < array.getLength(); i++) {
+            block.yield(context, array.eltOk(i));
+        }
+
+        return this;
     }
 
     @Deprecated
