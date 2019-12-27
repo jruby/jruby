@@ -491,18 +491,24 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
+    @Deprecated // not used
     public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
         return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
 
     // rb_reg_preprocess_dregexp
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
+        return preprocessDRegexp(runtime.getCurrentContext(), options, strings);
+    }
+
+    // rb_reg_preprocess_dregexp
+    public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject... args) {
         RubyString string = null;
         Encoding regexpEnc = null;
 
-        for (int i = 0; i < strings.length; i++) {
-            RubyString str = strings[i].convertToString();
-            regexpEnc = processDRegexpElement(runtime, options, regexpEnc, runtime.getCurrentContext().encodingHolder(), str);
+        for (int i = 0; i < args.length; i++) {
+            RubyString str = args[i].convertToString();
+            regexpEnc = processDRegexpElement(context.runtime, options, regexpEnc, context.encodingHolder(), str);
             string = string == null ? (RubyString) str.dup() : string.append19(str);
         }
 
@@ -511,22 +517,39 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return string;
     }
 
+    public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0) {
+        return processElementIntoResult(context.runtime, null, arg0, options, null, context.encodingHolder());
+    }
+
+    @Deprecated // not used
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
         return processElementIntoResult(runtime, null, arg0, options, null, runtime.getCurrentContext().encodingHolder());
     }
 
+    public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1) {
+        return processElementIntoResult(context.runtime, null, arg0, arg1, options, null, context.encodingHolder());
+    }
+
+    @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, RegexpOptions options) {
         return processElementIntoResult(runtime, null, arg0, arg1, options, null, runtime.getCurrentContext().encodingHolder());
     }
 
+    public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return processElementIntoResult(context.runtime, null, arg0, arg1, arg2, options, null, context.encodingHolder());
+    }
+
+    @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, RegexpOptions options) {
         return processElementIntoResult(runtime, null, arg0, arg1, arg2, options, null, runtime.getCurrentContext().encodingHolder());
     }
 
+    @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, RegexpOptions options) {
         return processElementIntoResult(runtime, null, arg0, arg1, arg2, arg3, options, null, runtime.getCurrentContext().encodingHolder());
     }
 
+    @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, RegexpOptions options) {
         return processElementIntoResult(runtime, null, arg0, arg1, arg2, arg3, arg4, options, null, runtime.getCurrentContext().encodingHolder());
     }

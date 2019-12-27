@@ -73,7 +73,7 @@ public class DRegexpObjectSite extends ConstructObjectSite {
 
     // dynamic regexp
     public RubyRegexp construct(ThreadContext context, RubyString[] pieces) {
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
