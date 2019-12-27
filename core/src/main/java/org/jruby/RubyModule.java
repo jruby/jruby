@@ -3787,11 +3787,13 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
-        RubyArray array = runtime.newArray(constantNames.size());
+        RubyArray array = RubyArray.newBlankArrayInternal(runtime, constantNames.size());
 
+        int i = 0;
         for (String name : constantNames) {
-            array.append(runtime.newSymbol(name));
+            array.storeInternal(i++, runtime.newSymbol(name));
         }
+        array.realLength = i;
         return array;
     }
 
