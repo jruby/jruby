@@ -495,12 +495,12 @@ public class RubyMatchData extends RubyObject {
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
         if (obj instanceof RubySymbol) {
-            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)((RubySymbol)obj).id2name());
-        } else if (obj instanceof RubyString) {
-            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)obj);
-        } else {
-            return RubyNumeric.num2int(obj);
+            return nameToBackrefNumber(runtime, pattern, regs, ((RubySymbol) obj).to_s(runtime));
         }
+        if (obj instanceof RubyString) {
+            return nameToBackrefNumber(runtime, pattern, regs, (RubyString) obj);
+        }
+        return RubyNumeric.num2int(obj);
     }
 
     // MRI: namev_to_backref_number
@@ -604,9 +604,10 @@ public class RubyMatchData extends RubyObject {
             if (num >= 0) return RubyRegexp.nth_match(num, this);
         } else {
             if (idx instanceof RubySymbol) {
-                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)((RubySymbol)idx).id2name()), this);
-            } else if (idx instanceof RubyString) {
-                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)idx), this);
+                return RubyRegexp.nth_match(nameToBackrefNumber(((RubySymbol) idx).to_s(metaClass.runtime)), this);
+            }
+            if (idx instanceof RubyString) {
+                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString) idx), this);
             }
         }
         return null;
