@@ -3643,19 +3643,25 @@ public class RubyModule extends RubyObject {
         return runtime.newBoolean(value != null);
     }
 
+    public IRubyObject const_get(IRubyObject symbol) {
+        return const_get(getRuntime().getCurrentContext(), new IRubyObject[]{symbol});
+    }
+
+    @Deprecated
+    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
+
     /** rb_mod_const_get
      *
      */
-    public IRubyObject const_get(IRubyObject symbol) {
-        return const_get_2_0(getRuntime().getCurrentContext(), new IRubyObject[]{symbol});
-    }
-
-    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
-        return const_get_2_0(context, args);
-    }
-
     @JRubyMethod(name = "const_get", required = 1, optional = 1)
-    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
         final Ruby runtime = context.runtime;
         boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
