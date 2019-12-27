@@ -151,6 +151,16 @@ describe "C-API IO function" do
     end
   end
 
+  describe "rb_io_set_nonblock" do
+    platform_is_not :windows do
+      it "returns true when nonblock flag is set" do
+        require 'io/nonblock'
+        @o.rb_io_set_nonblock(@io)
+        @io.nonblock?.should be_true
+      end
+    end
+  end
+
   # NOTE: unlike the name might suggest in MRI this function checks if an
   # object is frozen, *not* if it's tainted.
   describe "rb_io_taint_check" do
@@ -220,7 +230,7 @@ describe "C-API IO function" do
   end
 
   describe "rb_io_check_writable" do
-    it "does not raise an exeption if the IO is opened for writing" do
+    it "does not raise an exception if the IO is opened for writing" do
       # The MRI function is void, so we use should_not raise_error
       -> { @o.rb_io_check_writable(@w_io) }.should_not raise_error
     end
