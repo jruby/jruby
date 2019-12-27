@@ -680,6 +680,12 @@ public class RubyRandom extends RubyObject {
         return this;
     }
 
+    // c: random_s_bytes
+    @JRubyMethod(meta = true)
+    public static IRubyObject bytes(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        return ((RubyRandom) (context.runtime.getRandomClass()).getConstant("DEFAULT")).bytes(context, arg);
+    }
+
     // c: rb_random_bytes
     @JRubyMethod(name = "bytes")
     public IRubyObject bytes(ThreadContext context, IRubyObject arg) {
