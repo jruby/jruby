@@ -1974,7 +1974,7 @@ public class RubyEnumerable {
         if (hasUncoercible) {
             final RubySymbol each = runtime.newSymbol("each");
             for (int i = 0; i < args.length; i++) {
-                newArgs[i] = args[i].callMethod(context, "to_enum", each);
+                newArgs[i] = sites(context).to_enum.call(context, args[i], args[i], each); // args[i].to_enum(:each)
             }
 
             return zipCommonEnum(context, self, newArgs, block);
