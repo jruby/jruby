@@ -477,9 +477,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
-        if (pattern == null) {
-            throw runtime.newIndexError("undefined group name reference: " + str);
-        }
+        assert pattern != null;
         ByteList value = str.getByteList();
         try {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
