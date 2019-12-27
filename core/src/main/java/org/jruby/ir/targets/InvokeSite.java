@@ -44,11 +44,11 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.invoke.MethodHandles.constant;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
+import static org.jruby.runtime.invokedynamic.JRubyCallSite.SITE_ID;
 
 /**
 * Created by headius on 10/23/14.
@@ -60,8 +60,6 @@ public abstract class InvokeSite extends MutableCallSite {
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.setDebugEnable(true);
     }
     private static final boolean LOG_BINDING = LOG.isDebugEnabled();
-
-    private static final AtomicLong SITE_ID = new AtomicLong(1);
 
     final Signature signature;
     final Signature fullSignature;
@@ -630,7 +628,6 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         // Continue with logic for PIC, BIND, and REBIND
-        tracker.addType(testClass.id);
 
         SmartHandle test;
 
@@ -664,6 +661,8 @@ public abstract class InvokeSite extends MutableCallSite {
 
         setTarget(gwt);
 
+        tracker.addType(testClass.id);
+
         return target;
     }
 
@@ -675,13 +674,13 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private void logBind(CacheAction action) {
         if (LOG_BINDING) {
-            LOG.debug(methodName + "\ttriggered site #" + siteID + " " + action + " (" + file + ":" + line + ")");
+            LOG.debug(methodName + "\ttriggered site #" + siteID + ' ' + action + " (" + file + ":" + line + ")");
         }
     }
 
     private void logPic(DynamicMethod method) {
         if (LOG_BINDING) {
-            LOG.debug(methodName + "\tadded to PIC " + logMethod(method));
+            LOG.debug(methodName + "\tsite #" + siteID + " added to PIC " + logMethod(method));
         }
     }
 
@@ -705,20 +704,17 @@ public abstract class InvokeSite extends MutableCallSite {
 
     CacheAction testThresholds(RubyModule testClass) {
         if (tracker.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
-                (!tracker.hasSeenType(testClass.id)
-                        && tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
+                (!tracker.hasSeenType(testClass.id) && tracker.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
             // Thresholds exceeded
             return CacheAction.FAIL;
         } else {
             // if we've cached no types, and the site is bound and we haven't seen this new type...
             if (tracker.seenTypesCount() > 0 && getTarget() != null && !tracker.hasSeenType(testClass.id)) {
                 // stack it up into a PIC
-                tracker.addType(testClass.id);
                 return CacheAction.PIC;
             } else {
                 // wipe out site with this new type and method
                 tracker.clearTypes();
-                tracker.addType(testClass.id);
                 return boundOnce ? CacheAction.REBIND : CacheAction.BIND;
             }
         }
