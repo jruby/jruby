@@ -186,19 +186,23 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return the new symbol
      */
     public RubySymbol asWriter() {
-        ByteList bytes = getBytes().dup();
+        ByteList bytes = getBytes();
+        ByteList dup = bytes.dup(bytes.length() + 1);
 
-        bytes.append((byte) '=');
+        dup.append((byte) '=');
 
-        return newIDSymbol(metaClass.runtime, bytes);
+        return newIDSymbol(metaClass.runtime, dup);
     }
 
     public RubySymbol asInstanceVariable() {
-        ByteList bytes = getBytes().dup();
+        ByteList bytes = getBytes();
 
-        bytes.prepend((byte) '@');
+        ByteList dup = new ByteList(bytes.length() + 1);
+        dup.setEncoding(ByteList.safeEncoding(bytes.getEncoding()));
+        dup.append((byte) '@');
+        dup.append(bytes);
 
-        return newIDSymbol(metaClass.runtime, bytes);
+        return newIDSymbol(metaClass.runtime, dup);
     }
 
     /**
@@ -460,7 +464,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
         result.setEncoding(str.getEncoding());
         result.append((byte)':');
-        result.append(str.getBytes());
+        result.append(str.getByteList());
 
         return RubyString.newString(runtime, result);
     }
