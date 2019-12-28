@@ -90,7 +90,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final int id;
     private final ByteList symbolBytes;
     private final int hashCode;
-    private Object constant;
+    private transient Object constant;
 
     /**
      *

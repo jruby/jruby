@@ -52,7 +52,7 @@ import org.jruby.util.ByteList;
 public class RubyNil extends RubyObject implements Constantizable {
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);

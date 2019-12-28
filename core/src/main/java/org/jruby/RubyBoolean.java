@@ -53,7 +53,7 @@ import org.jruby.util.ByteList;
 public class RubyBoolean extends RubyObject implements Constantizable {
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
