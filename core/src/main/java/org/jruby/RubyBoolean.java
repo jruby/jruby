@@ -162,8 +162,8 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString false_to_s(IRubyObject fals) {
-            return RubyString.newStringShared(fals.getRuntime(), FALSE_BYTES);
+        public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
+            return RubyString.newStringShared(context.runtime, FALSE_BYTES);
         }
 
         @Override
@@ -200,8 +200,8 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString true_to_s(IRubyObject tru) {
-            return RubyString.newStringShared(tru.getRuntime(), TRUE_BYTES);
+        public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
+            return RubyString.newStringShared(context.runtime, TRUE_BYTES);
         }
 
         @Override
@@ -226,9 +226,9 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(getRuntime(), 20);
+            return RubyFixnum.newFixnum(metaClass.runtime, 20);
         } else {
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(metaClass.runtime);
         }
     }
 

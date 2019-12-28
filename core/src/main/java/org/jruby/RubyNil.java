@@ -166,7 +166,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     @Override
     @JRubyMethod
     public IRubyObject inspect() {
-        return RubyNil.inspect(getRuntime());
+        return RubyNil.inspect(metaClass.runtime);
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")
@@ -201,6 +201,11 @@ public class RubyNil extends RubyObject implements Constantizable {
     }
 
     @JRubyMethod(name = "nil?")
+    public RubyBoolean nil_p(ThreadContext context) {
+        return context.tru;
+    }
+
+    @Deprecated
     public IRubyObject nil_p() {
         return getRuntime().getTrue();
     }
@@ -217,7 +222,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(8);
+        return RubyFixnum.newFixnum(metaClass.runtime, 8);
     }
     
     @Override
