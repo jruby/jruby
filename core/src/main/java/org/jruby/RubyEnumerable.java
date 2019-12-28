@@ -314,14 +314,14 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            each(context, self, new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
+            each(context, self, new JavaInternalBlockBody(runtime, Signature.OPTIONAL) {
                 long i = len; // Atomic ?
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                    return doYield(context, null, packEnumValues(context, args));
+                    return yield(context, packEnumValues(context, args));
                 }
                 @Override
-                protected IRubyObject doYield(ThreadContext context, Block unused, IRubyObject value) {
+                public IRubyObject yield(ThreadContext context, IRubyObject value) {
                     synchronized (result) {
                         result.append(value);
                         if (--i == 0) throw JumpException.SPECIAL_JUMP;
