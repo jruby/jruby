@@ -579,7 +579,8 @@ public class RubyModule extends RubyObject {
     public RubyString rubyBaseName() {
         String baseName = getBaseName();
 
-        return baseName == null ? null : (RubyString) getRuntime().newSymbol(baseName).to_s();
+        final Ruby runtime = metaClass.runtime;
+        return baseName == null ? null : runtime.newSymbol(baseName).to_s(runtime);
     }
 
     private RubyString calculateAnonymousRubyName() {
@@ -2093,14 +2094,14 @@ public class RubyModule extends RubyObject {
      *  this method should be used only as an API to define/open nested classes
      */
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return getRuntime().defineClassUnder(name, superClass, allocator, this);
+        return superClass.runtime.defineClassUnder(name, superClass, allocator, this);
     }
 
     /** rb_define_module_under
      *  this method should be used only as an API to define/open nested module
      */
     public RubyModule defineModuleUnder(String name) {
-        return getRuntime().defineModuleUnder(name, this);
+        return metaClass.runtime.defineModuleUnder(name, this);
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
@@ -2381,10 +2382,15 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject name() {
-        return name19();
+        return name(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod(name = "name")
+    public IRubyObject name(ThreadContext context) {
+        return getBaseName() == null ? context.nil : rubyName().strDup(context.runtime);
+    }
+
+    @Deprecated
     public IRubyObject name19() {
         return getBaseName() == null ? getRuntime().getNil() : rubyName().strDup(getRuntime());
     }
