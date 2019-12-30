@@ -104,14 +104,13 @@ public class RaiseException extends JumpException {
 
         if (backtrace == null) {
             backtrace = Helpers.invokeChecked(context, exception, sites(context).backtrace);
+            if (backtrace == null || backtrace.isNil()) {
+                // does not respond_to?(:backtrace) or backtrace overridden, capture at this point in stack
+                exception.captureBacktrace(context);
+                setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
+            }
         } else {
             exception.setBacktrace(backtrace);
-        }
-
-        if (backtrace == null || backtrace.isNil()) {
-            // No backtrace provided or overridden, capture at this point in stack
-            exception.captureBacktrace(context);
-            setStackTrace(RaiseException.javaTraceFromRubyTrace(exception.getBacktraceElements()));
         }
     }
 
