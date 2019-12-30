@@ -67,8 +67,8 @@ public class RaiseException extends JumpException {
         return new RaiseException(exception, backtrace);
     }
 
-    public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg) {
-        return RubyException.newException(runtime, excptnClass, msg).toThrowable();
+    public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg) {
+        return RubyException.newException(runtime, exceptionClass, msg).toThrowable();
     }
 
     public static RaiseException from(Ruby runtime, RubyClass excptnClass, String msg, IRubyObject backtrace) {
@@ -171,7 +171,9 @@ public class RaiseException extends JumpException {
 
     @Deprecated
     public RaiseException(RubyException exception, IRubyObject backtrace) {
-        this(exception.getMessageAsJavaString(), exception);
+        // this(exception.getMessageAsJavaString(), exception) would preRaise twice!
+        super(exception.getMessageAsJavaString());
+        setException(exception);
         preRaise(exception.getRuntime().getCurrentContext(), backtrace);
     }
 

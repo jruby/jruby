@@ -205,12 +205,12 @@ public class RubyException extends RubyObject {
         }
     };
 
-    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
+    public static RubyException newException(Ruby runtime, RubyClass exceptionClass, String msg) {
         if (msg == null) {
             msg = "No message available";
         }
 
-        return (RubyException) excptnClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
+        return (RubyException) exceptionClass.newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, msg), Block.NULL_BLOCK);
     }
 
 
