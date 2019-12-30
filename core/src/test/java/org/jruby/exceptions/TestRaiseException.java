@@ -6,6 +6,7 @@ package org.jruby.exceptions;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.test.TestRubyBase;
@@ -16,7 +17,7 @@ public class TestRaiseException extends TestRubyBase {
         IRubyObject ex = runtime.evalScriptlet("ex = nil; " +
                         "begin; raise 'with-backtrace'; rescue => e; ex = e end; ex"
         );
-        assertEquals("org.jruby.RubyException", ex.getClass().getName());
+        assertEquals("org.jruby.RubyRuntimeError", ex.getClass().getName());
         assertNotNil(((RubyException) ex).getBacktrace());
         RubyArray backtrace = (RubyArray) (((RubyException) ex).getBacktrace());
         assertFalse(backtrace.isEmpty());
@@ -35,7 +36,7 @@ public class TestRaiseException extends TestRubyBase {
             fail();
         }
         catch (RaiseException ex) {
-            assert ex.toString().startsWith("org.jruby.exceptions.RaiseException: (StandardError)");
+            assert ex.toString().startsWith("org.jruby.exceptions.StandardError: (StandardError)");
 
             StackTraceElement[] stack = ex.getStackTrace();
             assertEquals(3, stack.length);
@@ -57,6 +58,15 @@ public class TestRaiseException extends TestRubyBase {
             // instead of just the message (as to_s does)
             assertNotNull( ex.getException().toString() );
         }
+    }
+
+    public void testFormLegacyOnlyPreRaisesOnce() {
+        final int count = runtime.getExceptionCount();
+
+        final IRubyObject ex = runtime.getRuntimeError().newInstance(runtime.getCurrentContext(), Block.NULL_BLOCK);
+        RaiseException.from((RubyException) ex, runtime.newArrayLight());
+
+        assertEquals( count + 1, runtime.getExceptionCount() );
     }
 
     public void testJavaGeneratedBacktrace() {
