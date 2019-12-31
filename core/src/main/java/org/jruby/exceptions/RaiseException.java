@@ -64,6 +64,13 @@ public class RaiseException extends JumpException {
         preRaise(exception.getRuntime().getCurrentContext(), RubyException.retrieveBacktrace(exception), true);
     }
 
+    @Override
+    public final Throwable fillInStackTrace() {
+        // NOTE: super logic (RubyInstanceConfig.JUMPS_HAVE_BACKTRACE) is not relevant for RaiseException
+
+        return this; // do not auto-fill from Throwable.<init> we fill (setStackTrace) in preRaise(...)
+    }
+
     @Deprecated
     public static RaiseException from(RubyException exception, IRubyObject backtrace) {
         return new RaiseException(exception, backtrace);
