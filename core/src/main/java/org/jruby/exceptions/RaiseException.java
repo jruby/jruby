@@ -128,7 +128,19 @@ public class RaiseException extends JumpException {
     }
 
     private void setStackTraceFromException() {
-        setStackTrace(javaTraceFromRubyTrace(exception.getBacktraceElements()));
+        RubyStackTraceElement[] rubyTrace = exception.getBacktraceElements();
+        if (rubyTrace.length > 5 && "getStackTrace".equals(rubyTrace[0].getMethodName())) { // -Xbacktrace.style=raw
+            int skip = 0;
+            if ("preRaise".equals(rubyTrace[4].getMethodName())) {
+                skip = 5;
+            } else if ("preRaise".equals(rubyTrace[3].getMethodName())) {
+                skip = 4;
+            }
+            // NOTE: we could skip more useless Throwable.<init> hierarchy constructor trace
+            //  up to org.jruby.exceptions.RaiseException.from ?
+            rubyTrace = Arrays.copyOfRange(rubyTrace, skip, rubyTrace.length);
+        }
+        setStackTrace(javaTraceFromRubyTrace(rubyTrace));
     }
 
     private StackTraceElement[] skipFillInStackTracePart(StackTraceElement[] trace) {
