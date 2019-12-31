@@ -38,6 +38,7 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.jruby.exceptions.TestRaiseException;
 import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
