@@ -173,7 +173,7 @@ process_java_opts "$pwd_jruby_java_opts_file"
 # Capture some Java options to be passed separately
 unset JAVA_OPTS_TEMP
 JAVA_OPTS_TEMP=""
-for opt in "${JAVA_OPTS[@]}"; do
+for opt in $JAVA_OPTS; do
   case $opt in
     -Xmx*)
       JAVA_MEM="$opt";;
