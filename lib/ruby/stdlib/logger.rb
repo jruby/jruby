@@ -783,7 +783,7 @@ private
       end
     end
 
-    if /mswin|mingw/ =~ RUBY_PLATFORM
+    if /mswin|mingw/ =~ RbConfig::CONFIG['host_os']
       def lock_shift_log
         yield
       end

@@ -131,7 +131,7 @@ class Dir
         t = Time.now.strftime("%Y%m%d")
         path = "#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}"\
                "#{n ? %[-#{n}] : ''}#{suffix||''}"
-        # use the second form here because chdir + ./ files won't open right (jruby/jruby#3698)
+        # We use the second form here because chdir + ./ files won't open right (http://bugs.jruby.org/3698)
         # path = File.join(tmpdir, path)
         path = File.expand_path(path, tmpdir)
         yield(path, n, opts, origdir)
