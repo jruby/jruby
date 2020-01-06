@@ -201,6 +201,6 @@ class PPAbstractSyntaxTree < Test::Unit::TestCase
     expected = "(SCOPE@1:0-1:1 tbl: [] args: nil body: (LIT@1:0-1:1 1))"
     assert_equal(expected, PP.singleline_pp(ast, ''.dup), ast)
   end
-end if defined? RubyVM::AbstractSyntaxTree
+end
 
 end

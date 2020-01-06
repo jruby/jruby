@@ -197,6 +197,7 @@ class TestMethod < Test::Unit::TestCase
     def o.foo; end
     assert_kind_of(Integer, o.method(:foo).hash)
     assert_equal(Array.instance_method(:map).hash, Array.instance_method(:collect).hash)
+    assert_kind_of(String, o.method(:foo).hash.to_s)
   end
 
   def test_owner
@@ -596,6 +597,11 @@ class TestMethod < Test::Unit::TestCase
     assert_equal([[:req, :a], [:opt, :b], [:keyrest, :o]], self.class.instance_method(:pmk5).parameters)
     assert_equal([[:req, :a], [:opt, :b], [:req, :c], [:keyrest, :o]], self.class.instance_method(:pmk6).parameters)
     assert_equal([[:req, :a], [:opt, :b], [:rest, :c], [:req, :d], [:keyrest, :o]], self.class.instance_method(:pmk7).parameters)
+  end
+
+  def test_hidden_parameters
+    instance_eval("def m((_)"+",(_)"*256+");end")
+    assert_empty(method(:m).parameters.map{|_,n|n}.compact)
   end
 
   def test_public_method_with_zsuper_method
