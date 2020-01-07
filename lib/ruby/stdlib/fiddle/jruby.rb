@@ -1,3 +1,7 @@
+# This is part of JRuby's FFI-based fiddle implementation.
+# It should be maintaind as part of the JRuby repository, as it has no
+# equivalent file in CRuby.
+
 require 'ffi'
 
 module Fiddle
