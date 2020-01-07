@@ -53,7 +53,6 @@ public abstract class IRVisitor {
     public void CheckArityInstr(CheckArityInstr checkarityinstr) { error(checkarityinstr); }
     public void CheckForLJEInstr(CheckForLJEInstr checkforljeinstr) { error(checkforljeinstr); }
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) { error(classsuperinstr); }
-    public void ConstMissingInstr(ConstMissingInstr constmissinginstr) { error(constmissinginstr); }
     public void CopyInstr(CopyInstr copyinstr) { error(copyinstr); }
     public void DefineClassInstr(DefineClassInstr defineclassinstr) { error(defineclassinstr); }
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) { error(defineclassmethodinstr); }

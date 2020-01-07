@@ -147,8 +147,13 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         encode(encoding.getName());
     }
 
+    @Override
     public void encode(RubySymbol symbol) {
-        encode(symbol.getBytes());
+        if (symbol == null) {
+            encode(NULL_STRING);
+        } else {
+            encode(symbol.getBytes());
+        }
     }
 
     @Override

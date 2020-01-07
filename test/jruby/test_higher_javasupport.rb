@@ -304,7 +304,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal [10, 1234], array.entries
     assert_equal 10, array.min
 
-    assert_raises(ArgumentError) { array[3] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[3] } # IndexOutOfBoundsException
 
     array = Java::int[5].new
     assert_equal 5, array.size
@@ -313,8 +313,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 1, array[1]
     assert_equal 4, array.max
 
-    assert_raises(ArgumentError) { array[6] } # IndexOutOfBoundsException
-    assert_raises(ArgumentError) { array[-1] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[6] } # IndexOutOfBoundsException
+    assert_raises(IndexError) { array[-1] } # IndexOutOfBoundsException
 
     room_array = Room[1].new
     assert_equal 1, room_array.length
@@ -633,6 +633,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal("java.nio.channels.Pipe$SinkChannel",
                  Pipe::SinkChannel.java_class.name)
     assert(Pipe::SinkChannel.instance_methods.include?(:keyFor))
+  end
+  
+  def test_inner_classes_should_not_be_nested
+    Java::JavaAwt::Desktop::Action
+    assert_raises(NameError){ Java::JavaAwt::Desktop::Action::Action }
   end
 
   def test_subclasses_and_their_return_types

@@ -74,21 +74,14 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     }
 
     @Override
-    public InterpreterContext ensureInstrsReady() {
-        // FIXME: duplicated from MixedModeIRMethod
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        return ic;
+    protected void printMethodIR() {
+        // no-op
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -101,7 +94,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, block, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -114,7 +107,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -127,7 +120,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -140,7 +133,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -151,7 +144,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -164,7 +157,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -177,7 +170,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -190,7 +183,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -203,25 +196,12 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, Block.NULL_BLOCK);
 
         try {
-            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, Block.NULL_BLOCK, implementationClass.getMethodLocation(), name);
+            return (IRubyObject) this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
             return null; // not reached
         }
-    }
-
-    public String getFile() {
-        return method.getFile();
-    }
-
-    public int getLine() {
-        return method.getLine();
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + '@' + Integer.toHexString(hashCode()) + ' ' + method + ' ' + getSignature();
     }
 
 }

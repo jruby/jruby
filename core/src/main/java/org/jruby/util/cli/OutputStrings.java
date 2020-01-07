@@ -1,9 +1,11 @@
 package org.jruby.util.cli;
 
 import com.headius.options.Option;
+import java.time.LocalDate;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
+
 /**
  * Utility methods to generate the command-line output strings for help,
  * extended options, properties, version, and copyright strings.
@@ -49,6 +51,7 @@ public class OutputStrings {
                 .append("  --jdb             runs JRuby process under JDB\n")
                 .append("  --properties      List all configuration Java properties\n")
                 .append("                      (prepend \"jruby.\" when passing directly to Java)\n")
+                .append("  --environment     Log environment and command line flags but do not run JRuby\n")
                 .append("  --sample          run with profiling using the JVM's sampling profiler\n")
                 .append("  --profile         run with instrumented (timed) profiling, flat format\n")
                 .append("  --profile.api     activate Ruby profiler API\n")
@@ -130,6 +133,6 @@ public class OutputStrings {
     }
 
     public static String getCopyrightString() {
-        return "JRuby - Copyright (C) 2001-2016 The JRuby Community (and contribs)";
+        return String.format("JRuby - Copyright (C) 2001-%s The JRuby Community (and contribs)", LocalDate.now().getYear());
     }
 }

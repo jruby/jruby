@@ -342,6 +342,26 @@ describe "Single-method Java interfaces" do
 
     expect(interfaces).to include(SingleMethodInterface.java_class)
   end
+
+  it "preserves singleton Proc behavior and callbacks" do
+    pr = proc { }
+    def pr.singleton_method_added(name)
+      (@names ||= []) << [name, self]
+    end
+
+    old_singleton_class = pr.singleton_class
+
+    r = Runnable.impl(&pr)
+
+    def pr.another_method; end
+
+    expect(pr.singleton_class).to eq old_singleton_class
+
+    expect(pr.instance_variable_get(:@names)).to eq [
+        [:singleton_method_added, pr],
+        [:another_method, pr]
+    ]
+  end
 end
 
 describe "A bean-like Java interface" do

@@ -75,11 +75,16 @@ public class Fixnum extends ImmutableLiteral {
     }
 
     public static Fixnum decode(IRReaderDecoder d) {
-        return new Fixnum(d.decodeLong());
+        return d.getCurrentScope().getManager().newFixnum(d.decodeLong());
     }
 
     @Override
     public String toString() {
         return "Fixnum:" + value;
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
     }
 }

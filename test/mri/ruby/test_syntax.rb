@@ -759,10 +759,13 @@ eom
     assert_syntax_error('<<~ "#{}"', /unexpected <</)
   end
 
+<<<<<<< HEAD
   def test_dedented_heredoc_concatenation
     assert_equal("\n0\n1", eval("<<~0 '1'\n \n0\#{}\n0"))
   end
 
+=======
+>>>>>>> master
   def test_heredoc_mixed_encoding
     assert_syntax_error(<<-'HEREDOC', 'UTF-8 mixed within Windows-31J source')
       #encoding: cp932

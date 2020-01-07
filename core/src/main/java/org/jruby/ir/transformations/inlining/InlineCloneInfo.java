@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.CallBase;
@@ -25,7 +26,7 @@ import org.jruby.util.ByteList;
  * Context object when performing an inline.
  */
 public class InlineCloneInfo extends CloneInfo {
-    private static Integer globalInlineCount = 0;
+    private static AtomicInteger globalInlineCount = new AtomicInteger(0);
 
     private CFG hostCFG;
 
@@ -66,10 +67,7 @@ public class InlineCloneInfo extends CloneInfo {
         this.canMapArgsStatically = !containsSplat(callArgs);
         this.argsArray = this.canMapArgsStatically ?  null : getHostScope().createTemporaryVariable();
         this.scopeBeingInlined = scopeBeingInlined;
-        synchronized(globalInlineCount) {
-            this.inlineVarPrefix = new ByteList(("%in" + globalInlineCount + "_").getBytes());
-            globalInlineCount++;
-        }
+        this.inlineVarPrefix = new ByteList(("%in" + globalInlineCount.getAndIncrement() + "_").getBytes());
     }
 
     public boolean isClosure() {

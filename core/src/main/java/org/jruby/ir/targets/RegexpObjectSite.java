@@ -25,11 +25,13 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class RegexpObjectSite extends LazyObjectSite {
+    protected final ByteList pattern;
     protected final RegexpOptions options;
 
-    public RegexpObjectSite(MethodType type, int embeddedOptions) {
+    public RegexpObjectSite(MethodType type, ByteList pattern, int embeddedOptions) {
         super(type);
 
+        this.pattern = pattern;
         this.options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
     }
 
@@ -37,15 +39,15 @@ public class RegexpObjectSite extends LazyObjectSite {
             Opcodes.H_INVOKESTATIC,
             p(RegexpObjectSite.class),
             "bootstrap",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class),
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
             false);
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int options) {
-        return new RegexpObjectSite(type, options).bootstrap(lookup);
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int options) {
+        return new RegexpObjectSite(type, Bootstrap.bytelist(value, encodingName), options).bootstrap(lookup);
     }
 
     // normal regexp
-    public IRubyObject construct(ThreadContext context, ByteList pattern) {
+    public IRubyObject construct(ThreadContext context) {
         RubyRegexp regexp = IRRuntimeHelpers.newLiteralRegexp(context, pattern, options);
 
         return regexp;

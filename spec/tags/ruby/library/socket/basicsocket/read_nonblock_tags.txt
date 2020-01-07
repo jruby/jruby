@@ -1,0 +1,4 @@
+fails:BasicSocket#read_nonblock using IPv4 receives data after it's ready
+fails:BasicSocket#read_nonblock using IPv4 does not set the IO in nonblock mode
+fails:BasicSocket#read_nonblock using IPv6 receives data after it's ready
+fails:BasicSocket#read_nonblock using IPv6 does not set the IO in nonblock mode

@@ -83,8 +83,8 @@ public class Tempfile extends RubyFile implements Finalizable {
         super(runtime, type);
     }
 
-    @JRubyMethod(optional = 3, visibility = Visibility.PRIVATE)
-    @Override // (basename="", tmpdir=nil, mode: 0, **options)
+    @JRubyMethod(optional = 4, visibility = Visibility.PRIVATE)
+    @Override
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unused) {
         if (args.length == 0) {
             args = new IRubyObject[] { RubyString.newEmptyString(context.runtime) };
@@ -234,7 +234,12 @@ public class Tempfile extends RubyFile implements Finalizable {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 2, meta = true)
+    @Deprecated
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return open(context, recv, args, block);
+    }
+
+    @JRubyMethod(optional = 4, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);

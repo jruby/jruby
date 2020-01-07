@@ -381,13 +381,13 @@ public class RubyLexer extends LexingCommon {
     }
 
     public void compile_error(String message) {
-        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message);
+        throw new SyntaxException(PID.BAD_HEX_NUMBER, getFile(), ruby_sourceline, lexb.toString(), message, lex_p);
     }
 
     // FIXME: How does lexb.toString() vs getCurrentLine() differ.
     public void compile_error(PID pid, String message) {
         String src = createAsEncodedString(lex_lastline.unsafeBytes(), lex_lastline.begin(), lex_lastline.length(), getEncoding());
-        throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message);
+        throw new SyntaxException(pid, getFile(), ruby_sourceline, src, message, lex_p);
     }
 
     public void heredoc_restore(HeredocTerm here) {
@@ -668,6 +668,7 @@ public class RubyLexer extends LexingCommon {
     private int hereDocumentIdentifier() throws IOException {
         int c = nextc(); 
         int term;
+        int indent = 0;
 
         int func = 0;
         if (c == '-') {
@@ -676,8 +677,7 @@ public class RubyLexer extends LexingCommon {
         } else if (c == '~') {
             c = nextc();
             func = STR_FUNC_INDENT;
-            heredoc_indent = Integer.MAX_VALUE;
-            heredoc_line_indent = 0;
+            indent = Integer.MAX_VALUE;
         }
         
         ByteList markerValue;
@@ -733,6 +733,8 @@ public class RubyLexer extends LexingCommon {
         }
         
         yaccValue = QQ;
+        heredoc_indent = indent;
+        heredoc_line_indent = 0;
         flush();
         return RubyParser.tSTRING_BEG;
     }

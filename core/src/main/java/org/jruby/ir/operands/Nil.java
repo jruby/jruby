@@ -35,4 +35,9 @@ public class Nil extends ImmutableLiteral {
     public void visit(IRVisitor visitor) {
         visitor.Nil(this);
     }
+
+    @Override
+    public boolean isFalseyImmediate() {
+        return true;
+    }
 }

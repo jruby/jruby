@@ -35,6 +35,14 @@ namespace :spec do
           :spec_target => ":fast"
   end
 
+  desc "Run slow specs"
+  task :'ruby:slow' do
+    mspec :compile_mode => "OFF",
+          :format => MSPEC_FORMAT,
+          :spec_target => ":slow",
+          :jruby_opts => "-I. --dev --debug"
+  end
+
   desc "Run rubyspecs expected to pass"
   task :ci => ['spec:tagged']
 

@@ -44,6 +44,9 @@ public class RubyFatal extends RubyException {
     static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
         RubyClass fatalClass = runtime.defineClass("Fatal", exceptionClass, (r, klass) -> new RubyFatal(runtime, klass));
 
+        // Remove the constant so it's not accessible (jruby/jruby#5648)
+        runtime.getObject().deleteConstant("Fatal");
+
         return fatalClass;
     }
 

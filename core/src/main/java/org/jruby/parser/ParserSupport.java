@@ -590,7 +590,7 @@ public class ParserSupport {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), lexer.getLineOffset(), "found = in conditional, should be ==");
+                warnings.warn(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found = in conditional, should be ==");
             }
             return true;
         } 
@@ -1156,13 +1156,13 @@ public class ParserSupport {
                                         ByteList keywordRestArgName, BlockArgNode blockArg) {
         if (keywordRestArgName == null) return new ArgsTailHolder(position, keywordArg, null, blockArg);
 
-        ByteList restKwargsName = keywordRestArgName;
-        String raw = restKwargsName.toString();
+        RubySymbol restKwargsName = symbolID(keywordRestArgName);
+        String id = restKwargsName.idString();
 
-        int slot = currentScope.exists(raw);
-        if (slot == -1) slot = currentScope.addVariable(raw);
+        int slot = currentScope.exists(id);
+        if (slot == -1) slot = currentScope.addVariable(id);
 
-        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, symbolID(restKwargsName), slot);
+        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
 
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }
@@ -1351,14 +1351,14 @@ public class ParserSupport {
         List<Integer> locals = new ArrayList<Integer>();
         StaticScope scope = getCurrentScope();
 
+        Ruby runtime = getConfiguration().getRuntime();
         for (int i = 0; i < length; i++) {
             if (RubyLexer.getKeyword(names[i]) == null && !Character.isUpperCase(names[i].charAt(0))) {
-                String id = names[i];
+                String id = runtime.newSymbol(names[i]).idString();
                 int slot = scope.isDefined(id);
                 if (slot >= 0) {
                     // If verbose and the variable is not just another named capture, warn
                     if (warnings.isVerbose() && !scope.isNamedCapture(slot)) {
-                        Ruby runtime = getConfiguration().getRuntime();
                         warnings.warn(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), getPosition(regexpNode).getLine(), str(runtime, "named capture conflicts a local variable - " , ids(runtime, names[i])));
                     }
                     locals.add(slot);

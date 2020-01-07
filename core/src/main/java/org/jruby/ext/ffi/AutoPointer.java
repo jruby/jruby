@@ -7,6 +7,7 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
@@ -94,7 +95,7 @@ public class AutoPointer extends Pointer {
         ClassData classData = (ClassData) ffiHandle;
 
         // If no release method is defined, then memory leaks will result.
-        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache(getMetaClass().getMetaClass(), classData.releaseCallSite.getMethodName()).method;
+        DynamicMethod releaseMethod = classData.releaseCallSite.retrieveCache((IRubyObject) getMetaClass()).method;
         if (releaseMethod.isUndefined()) {
             throw runtime.newRuntimeError("release method undefined");
 
@@ -130,7 +131,7 @@ public class AutoPointer extends Pointer {
         }
 
         ReleaserData releaserData = (ReleaserData) ffiHandle;
-        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser.getMetaClass(), releaserData.releaseCallSite.getMethodName()).method;
+        DynamicMethod releaseMethod = releaserData.releaseCallSite.retrieveCache(releaser).method;
         // If no release method is defined, then memory leaks will result.
         if (releaseMethod.isUndefined()) {
             throw context.runtime.newRuntimeError("call method undefined");
@@ -175,7 +176,7 @@ public class AutoPointer extends Pointer {
 
     @JRubyMethod(name = "autorelease?")
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(reaper != null ? !reaper.unmanaged : false);
+        return RubyBoolean.newBoolean(context, reaper != null ? !reaper.unmanaged : false);
     }
 
     private void setReaper(Reaper reaper) {

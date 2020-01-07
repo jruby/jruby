@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -64,12 +65,12 @@ public class DataConverter {
     @JRubyMethod(name = "reference_required?", module=true)
     public static IRubyObject reference_required_p(ThreadContext context, IRubyObject self) {
         Object ref = module(self).getInternalVariable("reference_required");
-        return context.runtime.newBoolean(!(ref instanceof IRubyObject) || ((IRubyObject) ref).isTrue());
+        return RubyBoolean.newBoolean(context, !(ref instanceof IRubyObject) || ((IRubyObject) ref).isTrue());
     }
 
     @JRubyMethod(name = "reference_required", module=true, optional = 1)
     public static IRubyObject reference_required(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        module(self).setInternalVariable("reference_required", context.runtime.newBoolean(args.length < 1 || args[0].isTrue()));
+        module(self).setInternalVariable("reference_required", RubyBoolean.newBoolean(context, args.length < 1 || args[0].isTrue()));
         return self;
     }
 }

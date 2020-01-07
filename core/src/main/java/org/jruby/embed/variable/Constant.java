@@ -1,4 +1,4 @@
-/**
+/*
  * **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
@@ -54,7 +54,7 @@ public class Constant extends AbstractVariable {
      * Returns an instance of this class. This factory method is used when a constant
      * is put in {@link BiVariableMap}.
      *
-     * @param runtime
+     * @param receiver object that this constant/variable is in.
      * @param name a variable name
      * @param javaObject Java object that should be assigned to.
      * @return the instance of Constant
@@ -88,7 +88,6 @@ public class Constant extends AbstractVariable {
     /**
      * Retrieves constants from Ruby after the evaluation or method invocation.
      *
-     * @param runtime Ruby runtime
      * @param receiver receiver object returned when a script is evaluated.
      * @param vars map to save retrieved constants.
      */
@@ -205,10 +204,10 @@ public class Constant extends AbstractVariable {
             // SSS FIXME: With rubyclass stack gone, this needs a replacement
             if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
             if (rubyModule == null) return;
-            rubyModule.storeConstant(name, irubyObject);
+            rubyModule.storeConstant(name, rubyObject);
         }
         else {
-            receiver.getMetaClass().storeConstant(name, irubyObject);
+            receiver.getMetaClass().storeConstant(name, rubyObject);
         }
         runtime.getConstantInvalidator(name).invalidate();
         //initialized = true;

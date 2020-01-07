@@ -34,16 +34,7 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyHash;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
@@ -98,7 +89,7 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true, name = "native_posix?")
     public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
-        return context.runtime.newBoolean(context.runtime.getPosix().isNative());
+        return RubyBoolean.newBoolean(context, context.runtime.getPosix().isNative());
     }
 
     @Deprecated
@@ -124,8 +115,8 @@ public class JRubyUtilLibrary implements Library {
         boolean raw = false, path = false;
         if (args.length > 1 && args[1] instanceof RubyHash) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) args[1], "raw", "path");
-            raw  = values[0] != null && values[0] != RubyBasicObject.UNDEF && values[0].isTrue();
-            path = values[1] != null && values[1] != RubyBasicObject.UNDEF && values[1].isTrue();
+            raw  = values[0] != null && values[0].isTrue();
+            path = values[1] != null && values[1].isTrue();
         }
         
         try {
@@ -163,6 +154,23 @@ public class JRubyUtilLibrary implements Library {
             extra_gem_paths[i++] = runtime.newString(gemPath);
         }
         return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
+    }
+
+    @JRubyMethod(name = "current_directory", meta = true) // used from JRuby::ProcessManager
+    public static IRubyObject current_directory(ThreadContext context, IRubyObject recv) {
+        final Ruby runtime = context.runtime;
+        return runtime.newString(runtime.getCurrentDirectory());
+    }
+
+    @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager
+    public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
+                                                   IRubyObject status, IRubyObject pid) {
+        RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
+                status.convertToInteger().getLongValue(),
+                pid.convertToInteger().getLongValue()
+        );
+        context.setLastExitStatus(processStatus);
+        return processStatus;
     }
 
     // used from jruby/kernel/proc.rb

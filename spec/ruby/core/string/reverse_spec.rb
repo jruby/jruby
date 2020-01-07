@@ -10,15 +10,15 @@ describe "String#reverse" do
     "".reverse.should == ""
   end
 
-  it "taints the result if self is tainted" do
-    "".taint.reverse.tainted?.should == true
-    "m".taint.reverse.tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints the result if self is tainted" do
+      "".taint.reverse.tainted?.should == true
+      "m".taint.reverse.tainted?.should == true
+    end
   end
 
-  with_feature :encoding do
-    it "reverses a string with multi byte characters" do
-      "微軟正黑體".reverse.should == "體黑正軟微"
-    end
+  it "reverses a string with multi byte characters" do
+    "微軟正黑體".reverse.should == "體黑正軟微"
   end
 
 end
@@ -33,20 +33,18 @@ describe "String#reverse!" do
   end
 
   it "raises a #{frozen_error_class} on a frozen instance that is modified" do
-    lambda { "anna".freeze.reverse!  }.should raise_error(frozen_error_class)
-    lambda { "hello".freeze.reverse! }.should raise_error(frozen_error_class)
+    -> { "anna".freeze.reverse!  }.should raise_error(frozen_error_class)
+    -> { "hello".freeze.reverse! }.should raise_error(frozen_error_class)
   end
 
   # see [ruby-core:23666]
   it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
-    lambda { "".freeze.reverse! }.should raise_error(frozen_error_class)
+    -> { "".freeze.reverse! }.should raise_error(frozen_error_class)
   end
 
-  with_feature :encoding do
-    it "reverses a string with multi byte characters" do
-      str = "微軟正黑體"
-      str.reverse!
-      str.should == "體黑正軟微"
-    end
+  it "reverses a string with multi byte characters" do
+    str = "微軟正黑體"
+    str.reverse!
+    str.should == "體黑正軟微"
   end
 end

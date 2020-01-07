@@ -2,8 +2,7 @@ require_relative '../../../spec_helper'
 require 'stringio'
 require 'zlib'
 
-describe "GzipReader#read" do
-
+describe "Zlib::GzipReader#read" do
   before :each do
     @data = '12345abcde'
     @zip = [31, 139, 8, 0, 44, 220, 209, 71, 0, 3, 51, 52, 50, 54, 49, 77,
@@ -29,7 +28,7 @@ describe "GzipReader#read" do
 
   it "does not accept a negative length to read" do
     gz = Zlib::GzipReader.new @io
-    lambda {
+    -> {
       gz.read(-1)
     }.should raise_error(ArgumentError)
   end
@@ -49,7 +48,7 @@ describe "GzipReader#read" do
   end
 
   describe "at the end of data" do
-    it "returns empty string if length prameter is not specified or 0" do
+    it "returns empty string if length parameter is not specified or 0" do
       gz = Zlib::GzipReader.new @io
       gz.read # read till the end
       gz.read(0).should == ""
@@ -57,12 +56,11 @@ describe "GzipReader#read" do
       gz.read(nil).should == ""
     end
 
-    it "returns nil if length prameter is positive" do
+    it "returns nil if length parameter is positive" do
       gz = Zlib::GzipReader.new @io
       gz.read # read till the end
       gz.read(1).should be_nil
       gz.read(2**16).should be_nil
     end
   end
-
 end

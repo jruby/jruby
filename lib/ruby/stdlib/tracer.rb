@@ -142,12 +142,12 @@ class Tracer
     stdout.print "Trace off\n" if Tracer.verbose?
   end
 
-  def add_filter(&p) # :nodoc:
-    @filters.push p
+  def add_filter(p = nil, &block) # :nodoc:
+    @filters.push(p || proc(&block))
   end
 
-  def set_get_line_procs(file, &p) # :nodoc:
-    @get_line_procs[file] = p
+  def set_get_line_procs(file, p, &block) # :nodoc:
+    @get_line_procs[file] = p || proc(&block)
   end
 
   def get_line(file, line) # :nodoc:
@@ -248,8 +248,8 @@ class Tracer
   #     puts "line number executed is #{line}"
   #   })
 
-  def Tracer.set_get_line_procs(file_name, &p)
-    Single.set_get_line_procs(file_name, p)
+  def Tracer.set_get_line_procs(file_name, p = nil, &block)
+    Single.set_get_line_procs(file_name, p || proc(&block))
   end
 
   ##
@@ -261,8 +261,8 @@ class Tracer
   #     "Kernel" == klass.to_s
   #   end
 
-  def Tracer.add_filter(&p)
-    Single.add_filter(p)
+  def Tracer.add_filter(p = nil, &block)
+    Single.add_filter(p || proc(&block))
   end
 end
 

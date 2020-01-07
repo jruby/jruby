@@ -14,10 +14,12 @@ describe "String#rstrip" do
     "\x00 \x00hello\x00 \x00".rstrip.should == "\x00 \x00hello"
   end
 
-  it "taints the result when self is tainted" do
-    "".taint.rstrip.tainted?.should == true
-    "ok".taint.rstrip.tainted?.should == true
-    "ok    ".taint.rstrip.tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints the result when self is tainted" do
+      "".taint.rstrip.tainted?.should == true
+      "ok".taint.rstrip.tainted?.should == true
+      "ok    ".taint.rstrip.tainted?.should == true
+    end
   end
 end
 
@@ -41,12 +43,12 @@ describe "String#rstrip!" do
   end
 
   it "raises a #{frozen_error_class} on a frozen instance that is modified" do
-    lambda { "  hello  ".freeze.rstrip! }.should raise_error(frozen_error_class)
+    -> { "  hello  ".freeze.rstrip! }.should raise_error(frozen_error_class)
   end
 
   # see [ruby-core:23666]
   it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
-    lambda { "hello".freeze.rstrip! }.should raise_error(frozen_error_class)
-    lambda { "".freeze.rstrip!      }.should raise_error(frozen_error_class)
+    -> { "hello".freeze.rstrip! }.should raise_error(frozen_error_class)
+    -> { "".freeze.rstrip!      }.should raise_error(frozen_error_class)
   end
 end

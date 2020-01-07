@@ -212,9 +212,9 @@ public class GlobalVariable extends AbstractVariable {
     public void tryEagerInjection(final IRubyObject receiver) {
         // wreckages of global local vars might remain on runtime, which may cause
         // assertion error since those names doesn't start from "$"
-        final String name = this.name.startsWith("$") ? this.name : ("$" + this.name);
+        final String name = this.name.startsWith("$") ? this.name : ('$' + this.name);
         synchronized (getRuntime()) {
-            getRuntime().getGlobalVariables().set(name.intern(), irubyObject);
+            getRuntime().getGlobalVariables().set(name, rubyObject);
         }
     }
 
@@ -225,7 +225,7 @@ public class GlobalVariable extends AbstractVariable {
     @Override
     public void remove() {
         synchronized (getRuntime()) {
-            getRuntime().getGlobalVariables().clear(name.intern());
+            getRuntime().getGlobalVariables().clear(name);
         }
     }
 

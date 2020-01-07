@@ -3,6 +3,7 @@ package org.jruby.ext.ffi;
 
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -216,18 +217,18 @@ public abstract class Type extends RubyObject {
         @Override
         @JRubyMethod(name = "==", required = 1)
         public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-            return context.runtime.newBoolean(this.equals(obj));
+            return RubyBoolean.newBoolean(context, this.equals(obj));
         }
 
         @Override
         @JRubyMethod(name = "equal?", required = 1)
         public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-            return context.runtime.newBoolean(this.equals(obj));
+            return RubyBoolean.newBoolean(context, this.equals(obj));
         }
         
         @JRubyMethod(name = "eql?", required = 1)
         public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
-            return context.runtime.newBoolean(this.equals(obj));
+            return RubyBoolean.newBoolean(context, this.equals(obj));
         }
 
     }

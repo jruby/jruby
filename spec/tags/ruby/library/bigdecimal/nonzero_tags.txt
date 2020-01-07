@@ -1,1 +1,0 @@
-fails:BigDecimal#nonzero? returns nil otherwise

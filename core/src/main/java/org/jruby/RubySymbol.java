@@ -108,7 +108,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";
 
         this.symbol = internedSymbol;
-        if (codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
+        if (symbolBytes.getEncoding() != USASCIIEncoding.INSTANCE &&
+                codeRangeScan(symbolBytes.getEncoding(), symbolBytes) == CR_7BIT) {
             symbolBytes = symbolBytes.dup();
             symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
         }
@@ -131,7 +132,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     public static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setSymbol(symbolClass);
+
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.setClassIndex(ClassIndex.SYMBOL);
         symbolClass.setReifiedClass(RubySymbol.class);
@@ -176,7 +177,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      */
     @Override
     public final String toString() {
-        return StringSupport.byteListAsString(symbolBytes);
+        return RubyEncoding.decodeISO(symbolBytes);
     }
 
     public final ByteList getBytes() {
@@ -192,7 +193,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         bytes.append((byte) '=');
 
-        return newIDSymbol(getRuntime(), bytes);
+        return newIDSymbol(metaClass.runtime, bytes);
     }
 
     public RubySymbol asInstanceVariable() {
@@ -200,7 +201,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         bytes.prepend((byte) '@');
 
-        return newIDSymbol(getRuntime(), bytes);
+        return newIDSymbol(metaClass.runtime, bytes);
     }
 
     /**
@@ -440,7 +441,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public IRubyObject inspect() {
-        return inspect(getRuntime());
+        return inspect(metaClass.runtime);
     }
 
     @JRubyMethod(name = "inspect")
@@ -455,7 +456,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         RubyString str = RubyString.newString(runtime, symbolBytes);
 
-        if (!(isPrintable() && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol))) {
+        if (!(isPrintable(runtime) && (resenc.equals(symbolBytes.getEncoding()) || str.isAsciiOnly()) && isSymbolName19(symbol))) {
             str = str.inspect(runtime);
         }
 
@@ -474,7 +475,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public IRubyObject to_s() {
-        return to_s(getRuntime());
+        return to_s(metaClass.runtime);
     }
 
     @JRubyMethod
@@ -487,7 +488,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public IRubyObject id2name() {
-        return to_s(getRuntime());
+        return to_s(metaClass.runtime);
     }
 
     @JRubyMethod
@@ -497,25 +498,25 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public RubyString asString() {
-        return to_s(getRuntime());
+        return to_s(metaClass.runtime);
     }
 
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(this == other);
+        return RubyBoolean.newBoolean(context, this == other);
     }
 
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(this == other);
+        return RubyBoolean.newBoolean(context, this == other);
     }
 
     @Deprecated
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        return metaClass.runtime.newFixnum(hashCode());
     }
 
     @JRubyMethod
@@ -638,7 +639,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = {"length", "size"})
     public IRubyObject length() {
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = metaClass.runtime;
         return RubyFixnum.newFixnum(runtime, newShared(runtime).strLength());
     }
 
@@ -729,7 +730,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         BlockBody body = new SymbolProcBody(context.runtime, symbol);
 
         return RubyProc.newProc(context.runtime,
-                                new Block(body, Binding.DUMMY),
+                                new Block(body, Block.NULL_BLOCK.getBinding()),
                                 Block.Type.PROC);
     }
 
@@ -737,7 +738,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         BlockBody body = new SymbolProcBody(context.runtime, symbol, scope);
 
         return RubyProc.newProc(context.runtime,
-                new Block(body, Binding.DUMMY),
+                new Block(body, Block.NULL_BLOCK.getBinding()),
                 Block.Type.PROC);
     }
 
@@ -786,8 +787,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return true;
     }
 
-    private boolean isPrintable() {
-        Ruby runtime = getRuntime();
+    private boolean isPrintable(final Ruby runtime) {
         int p = symbolBytes.getBegin();
         int end = p + symbolBytes.getRealSize();
         byte[] bytes = symbolBytes.getUnsafeBytes();
@@ -1017,7 +1017,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                symbol = createSymbol(bytes.toString(), bytes, hash, hard);
+                symbol = createSymbol(
+                        RubyEncoding.decodeISO(bytes),
+                        bytes,
+                        hash,
+                        hard);
             }
 
             return symbol;

@@ -297,6 +297,7 @@ public class TypeConverter {
     // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
+        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
 
         ThreadContext context = runtime.getCurrentContext();
         TypeConverterSites sites = sites(context);
@@ -387,8 +388,8 @@ public class TypeConverter {
 
         ClassIndex xt = x.getMetaClass().getClassIndex();
 
-        // MISSING: special error for T_DATA of a certain type
-        if (xt != type.getClassIndex()) {
+        // MISSING: special error for T_DATA of a certain type (isInstance is attempt at similar behavior)
+        if (xt != type.getClassIndex() && !type.isInstance(x)) {
             Ruby runtime = context.runtime;
             throw context.runtime.newTypeError(str(runtime, "wrong argument type ", types(runtime, x.getMetaClass()), " (expected ", types(runtime, type), ")"));
         }
@@ -495,7 +496,7 @@ public class TypeConverter {
         // grab it's string representation without calling a method which properly encodes
         // the string.
         if (obj instanceof RubyString) {
-            return new String(ByteList.plain(((RubyString) obj).getByteList()), RubyEncoding.ISO).intern();
+            return RubyEncoding.decodeISO(((RubyString) obj).getByteList()).intern();
         }
         return obj.asJavaString().intern();
     }

@@ -29,9 +29,11 @@ describe "StringIO#<< when passed [Object]" do
     @io.string.should == "example\000\000\000\000\000\000\000\000just testing"
   end
 
-  it "taints self's String when the passed argument is tainted" do
-    (@io << "test".taint)
-    @io.string.tainted?.should be_true
+  ruby_version_is ""..."2.7" do
+    it "taints self's String when the passed argument is tainted" do
+      (@io << "test".taint)
+      @io.string.tainted?.should be_true
+    end
   end
 
   it "does not taint self when the passed argument is tainted" do
@@ -55,11 +57,11 @@ end
 describe "StringIO#<< when self is not writable" do
   it "raises an IOError" do
     io = StringIO.new("test", "r")
-    lambda { io << "test" }.should raise_error(IOError)
+    -> { io << "test" }.should raise_error(IOError)
 
     io = StringIO.new("test")
     io.close_write
-    lambda { io << "test" }.should raise_error(IOError)
+    -> { io << "test" }.should raise_error(IOError)
   end
 end
 

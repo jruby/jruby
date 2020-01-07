@@ -1,2 +1,1 @@
-fails:Enumerator#peek_values does not advance the position of the current element
-fails:Enumerator#peek_values returns an empty array if yield is called without arguments
+fails(new Ruby impl of Enumerator#next brought some bugs with):Enumerator#peek_values returns an array with only nil if yield is called with nil

@@ -1,1 +1,0 @@
-fails:BigDecimal#zero? returns true if self does equal zero

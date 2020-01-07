@@ -273,8 +273,8 @@ public abstract class BlockBody {
             // I thought only procs & lambdas can be called, and blocks are yielded to.
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature, type == Block.Type.NORMAL && args[0] instanceof RubyArray);
-            } else if (getSignature().arityValue() == 1 && !getSignature().restKwargs()) {
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature, args[0] instanceof RubyArray && type == Block.Type.NORMAL);
+            } else if (signature.arityValue() == 1 && !signature.restKwargs()) {
                 // discard excess arguments
                 args = args.length == 0 ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }

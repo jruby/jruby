@@ -50,7 +50,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, args);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, args);
         }
         return cacheAndCall(caller, selfType, args, context, self, name);
     }
@@ -62,7 +62,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, args, block);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, args, block);
         }
         return cacheAndCall(caller, selfType, block, args, context, self, name);
     }
@@ -112,7 +112,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name);
         }
         return cacheAndCall(caller, selfType, context, self, name);
     }
@@ -124,7 +124,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, block);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name);
     }
@@ -144,7 +144,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, arg1);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, arg1);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1);
     }
@@ -156,7 +156,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, arg1, block);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, arg1, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1);
     }
@@ -176,7 +176,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, arg1, arg2);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, arg1, arg2);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2);
     }
@@ -188,7 +188,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, arg1, arg2, block);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, arg1, arg2, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2);
     }
@@ -208,7 +208,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, arg1, arg2, arg3);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, arg1, arg2, arg3);
         }
         return cacheAndCall(caller, selfType, context, self, name, arg1, arg2, arg3);
     }
@@ -220,7 +220,7 @@ public class SuperCallSite extends CallSite {
 
         SuperTuple myCache = cache;
         if (selfType != null && myCache.cacheOk(name, selfType)) {
-            return myCache.cache.method.call(context, self, selfType, name, arg1, arg2, arg3, block);
+            return myCache.cache.method.call(context, self, cache.cache.sourceModule, name, arg1, arg2, arg3, block);
         }
         return cacheAndCall(caller, selfType, block, context, self, name, arg1, arg2, arg3);
     }
@@ -240,7 +240,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, args, block);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, args, block);
+        return method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, IRubyObject[] args, ThreadContext context, IRubyObject self, String name) {
@@ -250,7 +250,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, args);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, args);
+        return method.call(context, self, entry.sourceModule, name, args);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, String name) {
@@ -260,7 +260,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name);
+        return method.call(context, self, entry.sourceModule, name);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, String name) {
@@ -270,7 +270,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, block);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, block);
+        return method.call(context, self, entry.sourceModule, name, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
@@ -280,7 +280,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, arg);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, arg);
+        return method.call(context, self, entry.sourceModule, name, arg);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
@@ -290,7 +290,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, arg, block);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, arg, block);
+        return method.call(context, self, entry.sourceModule, name, arg, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2) {
@@ -300,7 +300,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, arg1, arg2);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, arg1, arg2);
+        return method.call(context, self, entry.sourceModule, name, arg1, arg2);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2) {
@@ -310,7 +310,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, arg1, arg2, block);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, arg1, arg2, block);
+        return method.call(context, self, entry.sourceModule, name, arg1, arg2, block);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, ThreadContext context, IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -320,7 +320,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, arg1, arg2, arg3);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, arg1, arg2, arg3);
+        return method.call(context, self, entry.sourceModule, name, arg1, arg2, arg3);
     }
 
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, ThreadContext context, IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -330,7 +330,7 @@ public class SuperCallSite extends CallSite {
             return callMethodMissing(context, self, selfType, name, method, arg1, arg2, arg3, block);
         }
         cache = new SuperTuple(name, entry);
-        return method.call(context, self, selfType, name, arg1, arg2, arg3, block);
+        return method.call(context, self, entry.sourceModule, name, arg1, arg2, arg3, block);
     }
 
     protected IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass selfType, String name, DynamicMethod method, IRubyObject[] args) {
@@ -380,7 +380,7 @@ public class SuperCallSite extends CallSite {
     protected static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self, RubyModule frameClass, String frameName) {
         Helpers.checkSuperDisabledOrOutOfMethod(context, frameClass, frameName);
 
-        return Helpers.findImplementerIfNecessary(self.getMetaClass(), frameClass).getSuperClass();
+        return frameClass.getSuperClass();
     }
 
 }

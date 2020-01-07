@@ -1925,7 +1925,10 @@ public class ScriptingContainerTest {
         instance.setErrorWriter(writer);
         String expResult = System.getProperty("user.dir");
         String result = instance.getCurrentDirectory();
-        assertEquals(expResult, result);
+
+        try {
+            assertEquals(new File(expResult).getCanonicalFile(), new File(result).getCanonicalFile());
+        } catch (Exception e) {}
 
         instance.terminate();
     }
@@ -1992,7 +1995,10 @@ public class ScriptingContainerTest {
             expResult = System.getProperty("java.io.tmpdir");
         }
         String result = instance.getHomeDirectory();
-        assertEquals(expResult, result);
+
+        try {
+            assertEquals(new File(expResult).getCanonicalFile(), new File(result).getCanonicalFile());
+        } catch (Exception e) {}
 
         instance.terminate();
     }
@@ -2357,33 +2363,20 @@ public class ScriptingContainerTest {
      * Test of getJitThreshold method, of class ScriptingContainer.
      */
     @Test
-    public void testGetJitThreshold() {
+    public void testGetSetJitThreshold() {
         logger1.info("getJitThreshold");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        int expResult = 50;
-        int result = instance.getJitThreshold();
-        assertEquals(expResult, result);
+        assertEquals(Constants.JIT_THRESHOLD, instance.getJitThreshold());
+        assertTrue(instance.getJitThreshold() > 0);
 
-        instance.terminate();
-    }
-
-    /**
-     * Test of setJitThreshold method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetJitThreshold() {
         logger1.info("setJitThreshold");
-        int threshold = 0;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setJitThreshold(threshold);
+        instance.setJitThreshold(0);
+        assertEquals(0, instance.getJitThreshold());
+        assertEquals(0, instance.getProvider().getRubyInstanceConfig().getJitThreshold());
 
         instance.terminate();
     }
@@ -2392,33 +2385,20 @@ public class ScriptingContainerTest {
      * Test of getJitMax method, of class ScriptingContainer.
      */
     @Test
-    public void testGetJitMax() {
+    public void testGetSetJitMax() {
         logger1.info("getJitMax");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        int expResult = 4096;
-        int result = instance.getJitMax();
-        assertEquals(expResult, result);
+        assertEquals(Constants.JIT_MAX_LIMIT, instance.getJitMax());
+        assertTrue(instance.getJitMax() > 0);
 
-        instance.terminate();
-    }
-
-    /**
-     * Test of setJitMax method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetJitMax() {
         logger1.info("setJitMax");
-        int max = 0;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setJitMax(max);
+        instance.setJitMax(-1);
+        assertEquals(-1, instance.getJitMax());
+        assertEquals(-1, instance.getProvider().getRubyInstanceConfig().getJitMax());
 
         instance.terminate();
     }

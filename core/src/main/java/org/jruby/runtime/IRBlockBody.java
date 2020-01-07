@@ -94,16 +94,14 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
         IRubyObject[] args;
         if (canCallDirect()) {
-            if (arg0 instanceof RubyArray) {
-                // Unwrap the array arg
+            if (arg0 instanceof RubyArray) { // Unwrap the array arg
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
             } else {
                 args = new IRubyObject[] { arg0 };
             }
             return yieldDirect(context, block, args, null);
         } else {
-            if (arg0 instanceof RubyArray) {
-                // Unwrap the array arg
+            if (arg0 instanceof RubyArray) { // Unwrap the array arg
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, signature, true);
 
                 // FIXME: arity error is against new args but actual error shows arity of original args.
@@ -142,12 +140,12 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         return yieldSpecificMultiArgsCommon(context, block, arg0, arg1, arg2);
     }
 
-    private IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
+    public static IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
         final IRubyObject ary = Helpers.aryToAry(context, value);
 
-        if (ary == context.nil) return new IRubyObject[] { value };
-
         if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArray();
+
+        if (ary == context.nil) return new IRubyObject[] { value };
 
         throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
     }

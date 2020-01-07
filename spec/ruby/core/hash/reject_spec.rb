@@ -32,9 +32,11 @@ describe "Hash#reject" do
       HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
     end
 
-    it "does not taint the resulting hash" do
-      h = { a: 1 }.taint
-      h.reject {false}.tainted?.should == false
+    ruby_version_is ''...'2.7' do
+      it "does not taint the resulting hash" do
+        h = { a: 1 }.taint
+        h.reject {false}.tainted?.should == false
+      end
     end
   end
 
@@ -88,11 +90,11 @@ describe "Hash#reject!" do
   end
 
   it "raises a #{frozen_error_class} if called on a frozen instance that is modified" do
-    lambda { HashSpecs.empty_frozen_hash.reject! { true } }.should raise_error(frozen_error_class)
+    -> { HashSpecs.empty_frozen_hash.reject! { true } }.should raise_error(frozen_error_class)
   end
 
   it "raises a #{frozen_error_class} if called on a frozen instance that would not be modified" do
-    lambda { HashSpecs.frozen_hash.reject! { false } }.should raise_error(frozen_error_class)
+    -> { HashSpecs.frozen_hash.reject! { false } }.should raise_error(frozen_error_class)
   end
 
   it_behaves_like :hash_iteration_no_block, :reject!

@@ -95,7 +95,7 @@ public class CallBlock19 extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
-        return callback.call(context, value);
+        return callback.call(context, value, Block.NULL_BLOCK);
     }
 
     /**

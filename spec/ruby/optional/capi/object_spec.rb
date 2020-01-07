@@ -230,7 +230,7 @@ describe "CApiObject" do
       obj = mock("rb_check_convert_type")
       obj.should_receive(:to_array).and_return("string")
 
-      lambda do
+      -> do
         @o.rb_check_convert_type(obj, "Array", "to_array")
       end.should raise_error(TypeError)
     end
@@ -255,7 +255,7 @@ describe "CApiObject" do
       obj = mock("rb_convert_type")
       obj.should_receive(:to_array).and_return(nil)
 
-      lambda do
+      -> do
         @o.rb_convert_type(obj, "Array", "to_array")
       end.should raise_error(TypeError)
     end
@@ -264,7 +264,7 @@ describe "CApiObject" do
       obj = mock("rb_convert_type")
       obj.should_receive(:to_array).and_return("string")
 
-      lambda do
+      -> do
         @o.rb_convert_type(obj, "Array", "to_array")
       end.should raise_error(TypeError)
     end
@@ -308,13 +308,13 @@ describe "CApiObject" do
     it "sends #to_ary to the argument and raises TypeError if it's not a kind of Array" do
       obj = mock("to_ary")
       obj.should_receive(:to_ary).and_return(Object.new)
-      lambda { @o.rb_check_array_type obj }.should raise_error(TypeError)
+      -> { @o.rb_check_array_type obj }.should raise_error(TypeError)
     end
 
     it "does not rescue exceptions raised by #to_ary" do
       obj = mock("to_ary")
       obj.should_receive(:to_ary).and_raise(frozen_error_class)
-      lambda { @o.rb_check_array_type obj }.should raise_error(frozen_error_class)
+      -> { @o.rb_check_array_type obj }.should raise_error(frozen_error_class)
     end
   end
 
@@ -356,13 +356,13 @@ describe "CApiObject" do
     it "sends #to_str to the argument and raises TypeError if it's not a kind of String" do
       obj = mock("to_str")
       obj.should_receive(:to_str).and_return(Object.new)
-      lambda { @o.rb_check_string_type obj }.should raise_error(TypeError)
+      -> { @o.rb_check_string_type obj }.should raise_error(TypeError)
     end
 
     it "does not rescue exceptions raised by #to_str" do
       obj = mock("to_str")
       obj.should_receive(:to_str).and_raise(RuntimeError)
-      lambda { @o.rb_check_string_type obj }.should raise_error(RuntimeError)
+      -> { @o.rb_check_string_type obj }.should raise_error(RuntimeError)
     end
   end
 
@@ -414,11 +414,13 @@ describe "CApiObject" do
   end
 
   describe "FL_TEST" do
-    it "returns correct status for FL_TAINT" do
-      obj = Object.new
-      @o.FL_TEST(obj, "FL_TAINT").should == 0
-      obj.taint
-      @o.FL_TEST(obj, "FL_TAINT").should_not == 0
+    ruby_version_is ''...'2.7' do
+      it "returns correct status for FL_TAINT" do
+        obj = Object.new
+        @o.FL_TEST(obj, "FL_TAINT").should == 0
+        obj.taint
+        @o.FL_TEST(obj, "FL_TAINT").should_not == 0
+      end
     end
 
     it "returns correct status for FL_FREEZE" do
@@ -570,61 +572,67 @@ describe "CApiObject" do
   end
 
   describe "OBJ_TAINT" do
-    it "taints the object" do
-      obj = mock("tainted")
-      @o.OBJ_TAINT(obj)
-      obj.tainted?.should be_true
+    ruby_version_is ''...'2.7' do
+      it "taints the object" do
+        obj = mock("tainted")
+        @o.OBJ_TAINT(obj)
+        obj.tainted?.should be_true
+      end
     end
   end
 
   describe "OBJ_TAINTED" do
-    it "returns C true if the object is tainted" do
-      obj = mock("tainted")
-      obj.taint
-      @o.OBJ_TAINTED(obj).should be_true
-    end
+    ruby_version_is ''...'2.7' do
+      it "returns C true if the object is tainted" do
+        obj = mock("tainted")
+        obj.taint
+        @o.OBJ_TAINTED(obj).should be_true
+      end
 
-    it "returns C false if the object is not tainted" do
-      obj = mock("untainted")
-      @o.OBJ_TAINTED(obj).should be_false
+      it "returns C false if the object is not tainted" do
+        obj = mock("untainted")
+        @o.OBJ_TAINTED(obj).should be_false
+      end
     end
   end
 
   describe "OBJ_INFECT" do
-    it "does not taint the first argument if the second argument is not tainted" do
-      host   = mock("host")
-      source = mock("source")
-      @o.OBJ_INFECT(host, source)
-      host.tainted?.should be_false
-    end
+    ruby_version_is ''...'2.7' do
+      it "does not taint the first argument if the second argument is not tainted" do
+        host   = mock("host")
+        source = mock("source")
+        @o.OBJ_INFECT(host, source)
+        host.tainted?.should be_false
+      end
 
-    it "taints the first argument if the second argument is tainted" do
-      host   = mock("host")
-      source = mock("source").taint
-      @o.OBJ_INFECT(host, source)
-      host.tainted?.should be_true
-    end
+      it "taints the first argument if the second argument is tainted" do
+        host   = mock("host")
+        source = mock("source").taint
+        @o.OBJ_INFECT(host, source)
+        host.tainted?.should be_true
+      end
 
-    it "does not untrust the first argument if the second argument is trusted" do
-      host   = mock("host")
-      source = mock("source")
-      @o.OBJ_INFECT(host, source)
-      host.untrusted?.should be_false
-    end
+      it "does not untrust the first argument if the second argument is trusted" do
+        host   = mock("host")
+        source = mock("source")
+        @o.OBJ_INFECT(host, source)
+        host.untrusted?.should be_false
+      end
 
-    it "untrusts the first argument if the second argument is untrusted" do
-      host   = mock("host")
-      source = mock("source").untrust
-      @o.OBJ_INFECT(host, source)
-      host.untrusted?.should be_true
-    end
+      it "untrusts the first argument if the second argument is untrusted" do
+        host   = mock("host")
+        source = mock("source").untrust
+        @o.OBJ_INFECT(host, source)
+        host.untrusted?.should be_true
+      end
 
-    it "propagates both taint and distrust" do
-      host   = mock("host")
-      source = mock("source").taint.untrust
-      @o.OBJ_INFECT(host, source)
-      host.tainted?.should be_true
-      host.untrusted?.should be_true
+      it "propagates both taint and distrust" do
+        host   = mock("host")
+        source = mock("source").taint.untrust
+        @o.OBJ_INFECT(host, source)
+        host.tainted?.should be_true
+        host.untrusted?.should be_true
+      end
     end
   end
 
@@ -639,7 +647,7 @@ describe "CApiObject" do
   describe "rb_obj_instance_eval" do
     it "evaluates the block in the object context, that includes private methods" do
       obj = ObjectTest
-      lambda do
+      -> do
         @o.rb_obj_instance_eval(obj) { include Kernel }
       end.should_not raise_error(NoMethodError)
     end
@@ -659,26 +667,28 @@ describe "CApiObject" do
   end
 
   describe "rb_obj_taint" do
-    it "marks the object passed as tainted" do
-      obj = ""
-      obj.tainted?.should == false
-      @o.rb_obj_taint(obj)
-      obj.tainted?.should == true
-    end
+    ruby_version_is ''...'2.7' do
+      it "marks the object passed as tainted" do
+        obj = ""
+        obj.tainted?.should == false
+        @o.rb_obj_taint(obj)
+        obj.tainted?.should == true
+      end
 
-    it "raises a #{frozen_error_class} if the object passed is frozen" do
-      lambda { @o.rb_obj_taint("".freeze) }.should raise_error(frozen_error_class)
+      it "raises a #{frozen_error_class} if the object passed is frozen" do
+        -> { @o.rb_obj_taint("".freeze) }.should raise_error(frozen_error_class)
+      end
     end
   end
 
   describe "rb_check_frozen" do
     it "raises a #{frozen_error_class} if the obj is frozen" do
-      lambda { @o.rb_check_frozen("".freeze) }.should raise_error(frozen_error_class)
+      -> { @o.rb_check_frozen("".freeze) }.should raise_error(frozen_error_class)
     end
 
     it "does nothing when object isn't frozen" do
       obj = ""
-      lambda { @o.rb_check_frozen(obj) }.should_not raise_error(TypeError)
+      -> { @o.rb_check_frozen(obj) }.should_not raise_error(TypeError)
     end
   end
 
@@ -718,23 +728,23 @@ describe "CApiObject" do
     it "raises a TypeError if #to_int does not return an Integer" do
       x = mock("to_int")
       x.should_receive(:to_int).and_return("5")
-      lambda { @o.rb_to_int(x) }.should raise_error(TypeError)
+      -> { @o.rb_to_int(x) }.should raise_error(TypeError)
     end
 
     it "raises a TypeError if called with nil" do
-      lambda { @o.rb_to_int(nil) }.should raise_error(TypeError)
+      -> { @o.rb_to_int(nil) }.should raise_error(TypeError)
     end
 
     it "raises a TypeError if called with true" do
-      lambda { @o.rb_to_int(true) }.should raise_error(TypeError)
+      -> { @o.rb_to_int(true) }.should raise_error(TypeError)
     end
 
     it "raises a TypeError if called with false" do
-      lambda { @o.rb_to_int(false) }.should raise_error(TypeError)
+      -> { @o.rb_to_int(false) }.should raise_error(TypeError)
     end
 
     it "raises a TypeError if called with a String" do
-      lambda { @o.rb_to_int("1") }.should raise_error(TypeError)
+      -> { @o.rb_to_int("1") }.should raise_error(TypeError)
     end
   end
 
@@ -770,7 +780,7 @@ describe "CApiObject" do
     end
 
     it "raises a TypeError if arg is no class or module" do
-      lambda{
+      ->{
         @o.rb_class_inherited_p(1, 2)
       }.should raise_error(TypeError)
     end
@@ -851,6 +861,29 @@ describe "CApiObject" do
 
       it "does not throw an error if the instance variable is not a valid Ruby name" do
         @o.rb_ivar_defined(@test, :bar).should == false
+      end
+    end
+
+    # The `generic_iv_tbl` table and `*_generic_ivar` functions are for mutable
+    # objects which do not store ivars directly in MRI such as RString, because
+    # there is no member iv_index_tbl (ivar table) such as in RObject and RClass.
+
+    describe "rb_copy_generic_ivar for objects which do not store ivars directly" do
+      it "copies the instance variables from one object to another" do
+        original = "abc"
+        original.instance_variable_set(:@foo, :bar)
+        clone = "def"
+        @o.rb_copy_generic_ivar(clone, original)
+        clone.instance_variable_get(:@foo).should == :bar
+      end
+    end
+
+    describe "rb_free_generic_ivar for objects which do not store ivars directly" do
+      it "removes the instance variables from an object" do
+        o = "abc"
+        o.instance_variable_set(:@baz, :flibble)
+        @o.rb_free_generic_ivar(o)
+        o.instance_variables.should == []
       end
     end
   end

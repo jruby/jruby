@@ -348,7 +348,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name="null?")
     public IRubyObject null_p(ThreadContext context) {
-        return context.runtime.newBoolean(getMemory().getMemoryIO().isNull());
+        return RubyBoolean.newBoolean(context, getMemory().getMemoryIO().isNull());
     }
 
     @JRubyMethod(name = "order", required = 0)

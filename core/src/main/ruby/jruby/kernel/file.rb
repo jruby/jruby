@@ -146,7 +146,7 @@ if JRuby::Util::ON_WINDOWS
 end
 
 # flock support for Solaris
-if org.jruby.platform.Platform::IS_SOLARIS
+if JRuby::Util::ON_SOLARIS
   begin
     require 'ffi'
   rescue LoadError

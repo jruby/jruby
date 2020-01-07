@@ -116,16 +116,6 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected synchronized Map<String, IRubyObject> getClassVariables() {
-        return origin.getClassVariables();
-    }
-
-    @Override
-    protected Map<String, IRubyObject> getClassVariablesForRead() {
-        return origin.getClassVariablesForRead();
-    }
-
-    @Override
     protected boolean variableTableContains(String name) {
         return origin.variableTableContains(name);
     }
@@ -184,16 +174,6 @@ public class IncludedModuleWrapper extends IncludedModule {
     protected IRubyObject constantTableRemove(String name) {
         // this _is_ legal (when removing an undef)
         return origin.constantTableRemove(name);
-    }
-
-    @Override
-    protected Map<String, Autoload> getAutoloadMap() {
-        return origin.getAutoloadMap();
-    }
-
-    @Override
-    protected synchronized Map<String, Autoload> getAutoloadMapForWrite() {
-        return origin.getAutoloadMapForWrite();
     }
 
     @Override

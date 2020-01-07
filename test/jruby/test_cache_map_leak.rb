@@ -1,9 +1,12 @@
 require 'test/unit'
-require 'java'
-
-class TestMe; end
 
 class TestCacheMapLeak < Test::Unit::TestCase
+
+  class TestMe; end
+
+  def setup
+    require 'jruby'
+  end
 
   def setup_test
     @num = 100

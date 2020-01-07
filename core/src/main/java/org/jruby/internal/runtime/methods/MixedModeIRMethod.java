@@ -1,12 +1,10 @@
 package org.jruby.internal.runtime.methods;
 
 import java.io.ByteArrayOutputStream;
-import org.jruby.MetaClass;
-import org.jruby.RubyClass;
+
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
@@ -16,7 +14,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -25,18 +22,12 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
-    private volatile int callCount = 0;
-    private volatile DynamicMethod actualMethod;
+    private volatile DynamicMethod actualMethod; // JIT-ed method
 
     public MixedModeIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(method, visibility, implementationClass);
 
-        // disable JIT if JIT is disabled
-        if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT() ||
-                Options.JIT_THRESHOLD.load() < 0) {
-            callCount = -1;
-        }
-
+        if (!implementationClass.getRuntime().getInstanceConfig().isJitEnabled()) setCallCount(-1);
         // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
         method.compilable = this;
     }
@@ -61,35 +52,25 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
     }
 
-    // FIXME: for subclasses we should override this method since it can be simple get
-    // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
-    public InterpreterContext ensureInstrsReady() {
-        if (method instanceof IRMethod) {
-            return ((IRMethod) method).lazilyAcquireInterpreterContext();
-        }
-
-        InterpreterContext ic = method.getInterpreterContext();
-
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) {
-            ByteArrayOutputStream baos = IRDumper.printIR(method, false);
-
-            LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
-        }
-
-        return ic;
+    @Override
+    protected void printMethodIR() {
+        ByteArrayOutputStream baos = IRDumper.printIR(method, false);
+        LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) tryJit(context);
+        // try jit before checking actualMethod, so we use jitted version immediately if it's ready
+        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, args, block);
+            return jittedMethod.call(context, self, clazz, name, args, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
+
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, args, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -116,13 +97,15 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) tryJit(context);
+        // try jit before checking actualMethod, so we use jitted version immediately if it's ready
+        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, block);
+            return jittedMethod.call(context, self, clazz, name, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
+
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -149,13 +132,15 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) tryJit(context);
+        // try jit before checking actualMethod, so we use jitted version immediately if it's ready
+        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, arg0, block);
+            return jittedMethod.call(context, self, clazz, name, arg0, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
+
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -182,13 +167,15 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (callCount >= 0) tryJit(context);
+        // try jit before checking actualMethod, so we use jitted version immediately if it's ready
+        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, arg0, arg1, block);
+            return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
+
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -214,13 +201,16 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
-        if (callCount >= 0) tryJit(context);
+
+        // try jit before checking actualMethod, so we use jitted version immediately if it's ready
+        if (callCount >= 0) tryJit(context, this);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
-            return jittedMethod.call(context, self, getImplementationClass().getMethodLocation(), name, arg0, arg1, arg2, block);
+            return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
         }
-        return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
+
+        return INTERPRET_METHOD(context, ensureInstrsReady(), clazz, self, name, arg0, arg1, arg2, block);
     }
 
     private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
@@ -266,16 +256,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         getImplementationClass().invalidateCacheDescendants();
     }
 
-    private void tryJit(ThreadContext context) {
-        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
-
-        synchronized (this) {
-            if (callCount >= 0 && callCount++ >= Options.JIT_THRESHOLD.load()) {
-                context.runtime.getJITCompiler().buildThresholdReached(context, this);
-            }
-        }
-    }
-
     @Override
     public DynamicMethod dup() {
         MixedModeIRMethod x = (MixedModeIRMethod) super.dup();
@@ -283,12 +263,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         x.actualMethod = actualMethod;
 
         return x;
-    }
-
-    public void setCallCount(int callCount) {
-        synchronized (this) {
-            this.callCount = callCount;
-        }
     }
 
 }

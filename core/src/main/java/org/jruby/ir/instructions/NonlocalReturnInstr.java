@@ -11,16 +11,16 @@ import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
-    public final RubySymbol methodName; // Primarily a debugging aid
+    public final String methodId; // Primarily a debugging aid
 
-    public NonlocalReturnInstr(Operand returnValue, RubySymbol methodName) {
+    public NonlocalReturnInstr(Operand returnValue, String methodId) {
         super(Operation.NONLOCAL_RETURN, returnValue);
-        this.methodName = methodName;
+        this.methodId = methodId;
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + methodName };
+        return new String[] { "name: " + methodId };
     }
 
     public boolean computeScopeFlags(IRScope scope) {
@@ -30,7 +30,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo info) {
-        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(getReturnValue().cloneForInlining(info), methodName);
+        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(getReturnValue().cloneForInlining(info), methodId);
 
         InlineCloneInfo ii = (InlineCloneInfo) info;
         if (ii.isClosure()) {
@@ -46,7 +46,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
                 return v == null ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
             }
 
-            return new NonlocalReturnInstr(getReturnValue().cloneForInlining(ii), methodName);
+            return new NonlocalReturnInstr(getReturnValue().cloneForInlining(ii), methodId);
         } else {
             throw new UnsupportedOperationException("Nonlocal returns shouldn't show up outside closures.");
         }
@@ -56,11 +56,11 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getReturnValue());
-        e.encode(methodName);
+        e.encode(methodId);
     }
 
     public static NonlocalReturnInstr decode(IRReaderDecoder d) {
-        return new NonlocalReturnInstr(d.decodeOperand(), d.decodeSymbol());
+        return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString());
     }
 
     @Override

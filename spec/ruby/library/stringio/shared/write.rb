@@ -45,9 +45,11 @@ describe :stringio_write_string, shared: true do
     @io.pos.should eql(4)
   end
 
-  it "taints self's String when the passed argument is tainted" do
-    @io.send(@method, "test".taint)
-    @io.string.tainted?.should be_true
+  ruby_version_is ""..."2.7" do
+    it "taints self's String when the passed argument is tainted" do
+      @io.send(@method, "test".taint)
+      @io.string.tainted?.should be_true
+    end
   end
 
   it "does not taint self when the passed argument is tainted" do
@@ -59,11 +61,11 @@ end
 describe :stringio_write_not_writable, shared: true do
   it "raises an IOError" do
     io = StringIO.new("test", "r")
-    lambda { io.send(@method, "test") }.should raise_error(IOError)
+    -> { io.send(@method, "test") }.should raise_error(IOError)
 
     io = StringIO.new("test")
     io.close_write
-    lambda { io.send(@method, "test") }.should raise_error(IOError)
+    -> { io.send(@method, "test") }.should raise_error(IOError)
   end
 end
 

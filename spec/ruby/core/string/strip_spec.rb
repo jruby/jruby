@@ -13,10 +13,12 @@ describe "String#strip" do
     " \x00 goodbye \x00 ".strip.should == "\x00 goodbye"
   end
 
-  it "taints the result when self is tainted" do
-    "".taint.strip.tainted?.should == true
-    "ok".taint.strip.tainted?.should == true
-    "  ok  ".taint.strip.tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints the result when self is tainted" do
+      "".taint.strip.tainted?.should == true
+      "ok".taint.strip.tainted?.should == true
+      "  ok  ".taint.strip.tainted?.should == true
+    end
   end
 end
 
@@ -49,12 +51,12 @@ describe "String#strip!" do
   end
 
   it "raises a #{frozen_error_class} on a frozen instance that is modified" do
-    lambda { "  hello  ".freeze.strip! }.should raise_error(frozen_error_class)
+    -> { "  hello  ".freeze.strip! }.should raise_error(frozen_error_class)
   end
 
   # see #1552
   it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
-    lambda {"hello".freeze.strip! }.should raise_error(frozen_error_class)
-    lambda {"".freeze.strip!      }.should raise_error(frozen_error_class)
+    -> {"hello".freeze.strip! }.should raise_error(frozen_error_class)
+    -> {"".freeze.strip!      }.should raise_error(frozen_error_class)
   end
 end

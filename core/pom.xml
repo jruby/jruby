@@ -60,7 +60,7 @@ DO NOT MODIFIY - GENERATED CODE
     <test.dir>test</test.dir>
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
-    <tzdata.version>2013d</tzdata.version>
+    <tzdata.version>2019c</tzdata.version>
     <version.ruby>2.6.0</version.ruby>
     <version.ruby.major>2.6</version.ruby.major>
     <version.ruby.minor>0</version.ruby.minor>
@@ -96,7 +96,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.19</version>
+      <version>0.23</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -107,7 +107,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.20</version>
+      <version>0.24</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -118,7 +118,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.49</version>
+      <version>3.0.51</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -129,7 +129,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.9.12</version>
+      <version>0.9.14</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -140,7 +140,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.1.9</version>
+      <version>2.1.11</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -156,12 +156,12 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.25</version>
+      <version>2.1.30</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.41</version>
+      <version>1.0.46</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -248,13 +248,14 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
-      <artifactId>modulator</artifactId>
-      <version>1.0</version>
+      <artifactId>backport9</artifactId>
+      <version>1.3</version>
     </dependency>
     <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>backport9</artifactId>
-      <version>1.1</version>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.1</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
   <build>
@@ -431,6 +432,24 @@ DO NOT MODIFIY - GENERATED CODE
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
+          <execution>
+            <id>scope-generator</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <arguments>
+                <argument>-Djruby.bytecode.version=${base.java.version}</argument>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.jruby.runtime.scope.DynamicScopeGenerator</argument>
+                <argument>${project.build.outputDirectory}</argument>
+              </arguments>
+              <executable>java</executable>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -600,6 +619,9 @@ DO NOT MODIFIY - GENERATED CODE
               <goal>shade</goal>
             </goals>
             <configuration>
+              <artifactSet>
+                <excludes>javax.annotation:javax.annotation-api</excludes>
+              </artifactSet>
               <relocations>
                 <relocation>
                   <pattern>org.objectweb</pattern>
@@ -657,7 +679,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -669,6 +691,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -680,12 +703,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -703,7 +732,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -715,6 +744,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -726,12 +756,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -749,7 +785,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -761,6 +797,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -772,12 +809,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -795,7 +838,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -807,6 +850,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -818,12 +862,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -841,7 +891,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -853,6 +903,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -864,12 +915,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -887,7 +944,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -899,6 +956,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -910,12 +968,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -933,7 +997,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -945,6 +1009,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -956,12 +1021,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -979,7 +1050,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -991,6 +1062,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -1002,12 +1074,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -1025,7 +1103,7 @@ DO NOT MODIFIY - GENERATED CODE
             <artifactId>maven-shade-plugin</artifactId>
             <executions>
               <execution>
-                <id>shade the asm classes</id>
+                <id>shade dependencies into jar</id>
                 <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
@@ -1037,6 +1115,7 @@ DO NOT MODIFIY - GENERATED CODE
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
                     </includes>
+                    <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
                   <relocations>
                     <relocation>
@@ -1048,12 +1127,18 @@ DO NOT MODIFIY - GENERATED CODE
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                     </relocation>
                   </relocations>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.jruby.Main</mainClass>
+                      <manifestEntries>
+                        <Automatic-Module-Name>org.jruby.core</Automatic-Module-Name>
+                      </manifestEntries>
+                    </transformer>
+                  </transformers>
                   <filters>
                     <filter>
                       <artifact>com.headius:invokebinder</artifact>
-                      <excludes>
-                        <exclude>**/module-info.class</exclude>
-                      </excludes>
+                      <excludes>**/module-info.class</excludes>
                     </filter>
                   </filters>
                 </configuration>
@@ -1236,20 +1321,6 @@ DO NOT MODIFIY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>java9</id>
-      <activation>
-        <jdk>[9,)</jdk>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>javax.annotation</groupId>
-          <artifactId>javax.annotation-api</artifactId>
-          <version>1.3.1</version>
-          <scope>compile</scope>
-        </dependency>
-      </dependencies>
     </profile>
   </profiles>
 </project>

@@ -1,8 +1,12 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -11,23 +15,24 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineClassInstr extends TwoOperandResultBaseInstr implements FixedArityInstr {
-    private final IRClassBody newIRClassBody;
+    private final IRClassBody body;
 
-    public DefineClassInstr(Variable result, IRClassBody newIRClassBody, Operand container, Operand superClass) {
+    public DefineClassInstr(Variable result, IRClassBody body, Operand container, Operand superClass) {
         super(Operation.DEF_CLASS, result, container, superClass == null ? UndefinedValue.UNDEFINED : superClass);
 
         assert result != null: "DefineClassInstr result is null";
 
-        this.newIRClassBody = newIRClassBody;
+        this.body = body;
     }
 
     public IRClassBody getNewIRClassBody() {
-        return newIRClassBody;
+        return body;
     }
 
     public Operand getContainer() {
@@ -40,13 +45,13 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClassBody,
+        return new DefineClassInstr(ii.getRenamedVariable(result), body,
                 getContainer().cloneForInlining(ii), getSuperClass().cloneForInlining(ii));
     }
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] {"name: " + newIRClassBody.getId() };
+        return new String[] {"name: " + body.getId() };
     }
 
     @Override
@@ -66,7 +71,42 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
         Object container = getContainer().retrieve(context, self, currScope, currDynScope, temp);
         Object superClass = getSuperClass().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.newInterpretedClassBody(context, newIRClassBody, container, superClass);
+        RubyModule clazz = IRRuntimeHelpers.newRubyClassFromIR(context.runtime, body, superClass, container);
+
+        //if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        return INTERPRET_CLASS(context, clazz);
+    }
+
+    private IRubyObject INTERPRET_CLASS(ThreadContext context, RubyModule clazz) {
+        InterpreterContext ic = body.getInterpreterContext();
+        String id = body.getId();
+        if (ic == null) {
+            System.out.println("IC REMOVED FOR: " + this);
+            System.out.println("BODY: " + body);
+        }
+        boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
+
+        if (!hasExplicitCallProtocol) pre(ic, context, clazz, null, clazz);
+
+        try {
+            ThreadContext.pushBacktrace(context, id, ic.getFileName(), context.getLine());
+            return ic.getEngine().interpret(context, null, clazz, ic, clazz.getMethodLocation(), id, Block.NULL_BLOCK);
+        } finally {
+            body.cleanupAfterExecution();
+            if (!hasExplicitCallProtocol) post(ic, context);
+            ThreadContext.popBacktrace(context);
+        }
+    }
+
+    private void post(InterpreterContext ic, ThreadContext context) {
+        context.popFrame();
+        if (ic.popDynScope()) context.popScope();
+    }
+
+    private void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, RubyModule implClass) {
+        context.preMethodFrameOnly(implClass, name, self);
+        if (ic.pushNewDynScope()) context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
     }
 
     @Override

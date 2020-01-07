@@ -1,0 +1,2 @@
+fails:Struct.new raises ArgumentError when there is a duplicate member
+fails:Struct.new keyword_init: true option raises when there is a duplicate member

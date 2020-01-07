@@ -1,9 +1,11 @@
 package org.jruby.runtime;
 
+import java.io.ByteArrayOutputStream;
+
 import org.jruby.EvalType;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
@@ -15,16 +17,14 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
     protected boolean pushScope;
     protected boolean reuseParentScope;
     private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-    private volatile int callCount = 0;
     private InterpreterContext interpreterContext;
+    private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
@@ -32,12 +32,9 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         this.pushScope = true;
         this.reuseParentScope = false;
 
-        // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
-        // promote to full build here if we are -X-C.
-        if (!closure.getManager().getInstanceConfig().getCompileMode().shouldJIT() ||
-                Options.JIT_THRESHOLD.load() < 0) {
-            callCount = -1;
-        }
+        // JIT currently JITs blocks along with their method and no on-demand by themselves.
+        // We only promote to full build here if we are -X-C.
+        if (!closure.getManager().getInstanceConfig().isJitEnabled()) setCallCount(-1);
     }
 
     @Override
@@ -99,11 +96,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public String getClassName(ThreadContext context) {
-        return closure.getId();
-    }
-
-    @Override
     public String getName() {
         return closure.getId();
     }
@@ -156,36 +148,35 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     private void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+        final Ruby runtime = context.runtime;
+        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
-        if (callCount >= 0) {
-            synchronized (this) {
-                // check call count again
-                if (callCount < 0) return;
-
-                if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-                    callCount = -1;
+        if (this.callCount < 0) return;
+        // we don't synchronize callCount++ it does not matter if count isn't accurate
+        if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+            synchronized (this) { // disable same jit tasks from entering queue twice
+                if (this.callCount >= 0) {
+                    this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
                     // ensure we've got code ready for JIT
                     ensureInstrsReady();
                     closure.getNearestTopLocalVariableScope().prepareForCompilation();
 
-                    // if we don't have an explicit protocol, disable JIT
                     if (!closure.hasExplicitCallProtocol()) {
                         if (Options.JIT_LOGGING.load()) {
                             LOG.info("JIT failed; no protocol found in block: " + closure);
                         }
-                        return;
+                        return; // do not JIT if we don't have an explicit protocol
                     }
 
-                    context.runtime.getJITCompiler().buildThresholdReached(context, this);
+                    runtime.getJITCompiler().buildThresholdReached(context, this);
                 }
             }
         }
     }
 
     public RubyModule getImplementationClass() {
-        return null;
+        return closure.getStaticScope().getModule();
     }
 
 }

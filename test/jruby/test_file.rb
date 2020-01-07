@@ -1371,4 +1371,12 @@ class TestFile < Test::Unit::TestCase
     assert File.exist?(File.dirname(__FILE__) + '/')
   end
 
+  def test_inspect
+    file = File.new('.')
+    assert_equal "#<File:.>", file.inspect
+    file.define_singleton_method(:tty?) { true }
+    def file.path; 'zzz' end
+    assert_equal "#<File:.>", file.inspect
+  end
+
 end

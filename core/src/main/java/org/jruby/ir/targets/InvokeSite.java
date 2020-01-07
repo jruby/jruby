@@ -10,6 +10,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
@@ -150,8 +151,11 @@ public abstract class InvokeSite extends MutableCallSite {
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
+        MethodHandle mh = null;
+        boolean methodMissing = false;
 
         if (methodMissing(entry, caller)) {
+            methodMissing = true;
             // Test thresholds so we don't do this forever (#4596)
             if (testThresholds(selfClass) == CacheAction.FAIL) {
                 logFail();
@@ -159,10 +163,25 @@ public abstract class InvokeSite extends MutableCallSite {
             } else {
                 logMethodMissing();
             }
-            return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
+            method = Helpers.selectMethodMissing(context, selfClass, entry.method.getVisibility(), methodName, callType);
+            if (method instanceof Helpers.MethodMissingMethod) {
+                entry = ((Helpers.MethodMissingMethod) method).entry;
+                method = entry.method;
+            } else {
+                entry = new CacheEntry(
+                        method,
+                        selfClass,
+                        entry.token);
+            }
+            try {
+                mh = Bootstrap.buildMethodMissingHandle(this, entry, self);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                Helpers.throwException(t);
+            }
+        } else {
+            mh = getHandle(self, entry);
         }
-
-        MethodHandle mh = getHandle(self, selfClass, method);
 
         if (literalClosure) {
             mh = Binder.from(mh.type())
@@ -174,13 +193,21 @@ public abstract class InvokeSite extends MutableCallSite {
 
         if (literalClosure) {
             try {
-                return method.call(context, self, selfClass, methodName, args, block);
+                if (methodMissing) {
+                    return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                } else {
+                    return method.call(context, self, entry.sourceModule, methodName, args, block);
+                }
             } finally {
                 block.escape();
             }
         }
 
-        return method.call(context, self, selfClass, methodName, args, block);
+        if (methodMissing) {
+            return method.call(context, self, entry.sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+        } else {
+            return method.call(context, self, entry.sourceModule, methodName, args, block);
+        }
     }
 
     private static final MethodHandles.Lookup LOOKUP = lookup();
@@ -209,7 +236,7 @@ public abstract class InvokeSite extends MutableCallSite {
         CacheEntry entry = cache;
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, name, args, block);
+            return entry.method.call(context, self, entry.sourceModule, name, args, block);
         }
 
         entry = selfClass.searchWithCache(name);
@@ -220,7 +247,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         cache = entry;
 
-        return entry.method.call(context, self, selfClass, name, args, block);
+        return entry.method.call(context, self, entry.sourceModule, name, args, block);
     }
 
     /**
@@ -239,7 +266,7 @@ public abstract class InvokeSite extends MutableCallSite {
         CacheEntry entry = cache;
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, name, arg0, block);
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
         }
 
         entry = selfClass.searchWithCache(name);
@@ -250,7 +277,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         cache = entry;
 
-        return entry.method.call(context, self, selfClass, name, arg0, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, block);
     }
 
     /**
@@ -262,7 +289,7 @@ public abstract class InvokeSite extends MutableCallSite {
         CacheEntry entry = cache;
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
         }
 
         entry = selfClass.searchWithCache(name);
@@ -273,7 +300,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         cache = entry;
 
-        return entry.method.call(context, self, selfClass, name, arg0, arg1, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
     }
 
     /**
@@ -285,7 +312,7 @@ public abstract class InvokeSite extends MutableCallSite {
         CacheEntry entry = cache;
 
         if (entry.typeOk(selfClass)) {
-            return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+            return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
         }
 
         entry = selfClass.searchWithCache(name);
@@ -296,7 +323,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         cache = entry;
 
-        return entry.method.call(context, self, selfClass, name, arg0, arg1, arg2, block);
+        return entry.method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
     /**
@@ -331,26 +358,28 @@ public abstract class InvokeSite extends MutableCallSite {
         return binder.binder();
     }
 
-    MethodHandle getHandle(IRubyObject self, RubyClass dispatchClass, DynamicMethod method) throws Throwable {
+    MethodHandle getHandle(IRubyObject self, CacheEntry entry) throws Throwable {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
-        MethodHandle mh = buildNewInstanceHandle(method, self);
-        if (mh == null) mh = buildNotEqualHandle(method, self);
-        if (mh == null) mh = Bootstrap.buildNativeHandle(this, method, blockGiven);
-        if (mh == null) mh = buildJavaFieldHandle(this, method, self);
-        if (mh == null) mh = Bootstrap.buildIndyHandle(this, method, method.getImplementationClass());
-        if (mh == null) mh = Bootstrap.buildJittedHandle(this, method, blockGiven);
-        if (mh == null) mh = Bootstrap.buildAttrHandle(this, method, self, dispatchClass);
-        if (mh == null) mh = buildAliasHandle(method, self, dispatchClass);
-        if (mh == null) mh = buildStructHandle(method, self, dispatchClass);
-        if (mh == null) mh = Bootstrap.buildGenericHandle(this, method, dispatchClass);
+        MethodHandle mh = buildNewInstanceHandle(entry, self);
+        if (mh == null) mh = buildNotEqualHandle(entry, self);
+        if (mh == null) mh = Bootstrap.buildNativeHandle(this, entry, blockGiven);
+        if (mh == null) mh = buildJavaFieldHandle(this, entry, self);
+        if (mh == null) mh = Bootstrap.buildIndyHandle(this, entry);
+        if (mh == null) mh = Bootstrap.buildJittedHandle(this, entry, blockGiven);
+        if (mh == null) mh = Bootstrap.buildAttrHandle(this, entry, self);
+        if (mh == null) mh = buildAliasHandle(entry, self);
+        if (mh == null) mh = buildStructHandle(entry);
+        if (mh == null) mh = Bootstrap.buildGenericHandle(this, entry);
 
         assert mh != null : "we should have a method handle of some sort by now";
 
         return mh;
     }
 
-    MethodHandle buildJavaFieldHandle(InvokeSite site, DynamicMethod method, IRubyObject self) throws Throwable {
+    MethodHandle buildJavaFieldHandle(InvokeSite site, CacheEntry entry, IRubyObject self) throws Throwable {
+        DynamicMethod method = entry.method;
+
         if (method instanceof InstanceFieldGetter) {
             // only matching arity
             if (site.arity != 0 || site.signature.lastArgType() == Block.class) return null;
@@ -424,8 +453,9 @@ public abstract class InvokeSite extends MutableCallSite {
         return null;
     }
 
-    MethodHandle buildNewInstanceHandle(DynamicMethod method, IRubyObject self) {
+    MethodHandle buildNewInstanceHandle(CacheEntry entry, IRubyObject self) {
         MethodHandle mh = null;
+        DynamicMethod method = entry.method;
 
         if (method == self.getRuntime().getBaseNewMethod()) {
             RubyClass recvClass = (RubyClass) self;
@@ -454,8 +484,9 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    MethodHandle buildNotEqualHandle(DynamicMethod method, IRubyObject self) {
+    MethodHandle buildNotEqualHandle(CacheEntry entry, IRubyObject self) {
         MethodHandle mh = null;
+        DynamicMethod method = entry.method;
 
         Ruby runtime = self.getRuntime();
 
@@ -463,6 +494,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
             CallSite equalSite = null;
 
+            // FIXME: poor test for built-in != and !~
             if (method.getImplementationClass() == runtime.getBasicObject() && name().equals("!=")) {
                 equalSite = SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:==", type(), literalClosure ? 1 : 0, file, line);
             } else if (method.getImplementationClass() == runtime.getKernel() && name().equals("!~")) {
@@ -491,11 +523,12 @@ public abstract class InvokeSite extends MutableCallSite {
         return object == nil || object == fals ? tru : fals;
     }
 
-    MethodHandle buildAliasHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
+    MethodHandle buildAliasHandle(CacheEntry entry, IRubyObject self) throws Throwable {
         MethodHandle mh = null;
+        DynamicMethod method = entry.method;
 
         if (method instanceof PartialDelegatingMethod) {
-            mh = getHandle(self, dispatchClass, ((PartialDelegatingMethod) method).getDelegate());
+            mh = getHandle(self, new CacheEntry(((PartialDelegatingMethod) method).getDelegate(), entry.sourceModule, entry.token));
         } else if (method instanceof AliasMethod) {
             AliasMethod alias = (AliasMethod) method;
             DynamicMethod innerMethod = alias.getRealMethod();
@@ -503,7 +536,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
             // Use a second site to mimic invocation from AliasMethod
             InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type(), literalClosure ? 1 : 0, file, line);
-            mh = innerSite.getHandle(self, dispatchClass, innerMethod);
+            mh = innerSite.getHandle(self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
 
             alias.setHandle(mh);
 
@@ -515,8 +548,9 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    MethodHandle buildStructHandle(DynamicMethod method, IRubyObject self, RubyClass dispatchClass) throws Throwable {
+    MethodHandle buildStructHandle(CacheEntry entry) throws Throwable {
         MethodHandle mh = null;
+        DynamicMethod method = entry.method;
 
         if (method instanceof RubyStruct.Accessor) {
             if (arity == 0) {
@@ -743,11 +777,6 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + ' ' + method.getImplementationClass() + ']';
-    }
-
-    @JIT
-    public static boolean testMetaclass(RubyClass metaclass, IRubyObject self) {
-        return metaclass == RubyBasicObject.getMetaClass(self);
     }
 
     @JIT

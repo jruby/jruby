@@ -204,7 +204,7 @@ public class JZlibInflate extends ZStream {
                 case com.jcraft.jzlib.JZlib.Z_OK:
                     flater.setInput(string.convertToString().getByteList().bytes(),
                             true);
-                    return getRuntime().getTrue();
+                    return context.tru;
                 case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                     break;
                 default:
@@ -212,14 +212,14 @@ public class JZlibInflate extends ZStream {
             }
         }
         if (string.convertToString().getByteList().length() <= 0) {
-            return getRuntime().getFalse();
+            return context.fals;
         }
         flater.setInput(string.convertToString().getByteList().bytes(), true);
         switch (flater.sync()) {
             case com.jcraft.jzlib.JZlib.Z_OK:
-                return getRuntime().getTrue();
+                return context.tru;
             case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
-                return getRuntime().getFalse();
+                return context.fals;
             default:
                 throw RubyZlib.newStreamError(getRuntime(), "stream error");
         }

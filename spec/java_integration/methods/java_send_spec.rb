@@ -8,12 +8,12 @@ describe "A Java object's java_send method" do
 
   it "works with name only for no-arg methods" do
     expect(@list.java_send(:toString)).to eq("[]")
-    expect(java.lang.System.java_send(:currentTimeMillis).class).to eq(Fixnum)
+    expect(java.lang.System.java_send(:currentTimeMillis).class).to eq(Integer)
   end
 
   it "works with name plus empty arg list for no-arg methods" do
     expect(@list.java_send(:toString, [])).to eq("[]")
-    expect(java.lang.System.java_send(:currentTimeMillis, []).class).to eq(Fixnum)
+    expect(java.lang.System.java_send(:currentTimeMillis, []).class).to eq(Integer)
   end
 
   it "works with a signature" do

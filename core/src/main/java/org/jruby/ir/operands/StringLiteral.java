@@ -33,12 +33,6 @@ public class StringLiteral extends Operand implements Stringable {
         this.frozenString = new FrozenString(val, coderange, file, line);
     }
 
-    protected StringLiteral(String string, ByteList bytelist, int coderange, String file, int line) {
-        super();
-
-        this.frozenString = new FrozenString(string, bytelist, coderange, file, line);
-    }
-
     public StringLiteral(String s) {
         this.frozenString = new FrozenString(s);
     }

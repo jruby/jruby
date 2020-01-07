@@ -1,2 +1,0 @@
-fails:Kernel#exit! exits with the given status
-fails:Kernel.exit! exits with the given status

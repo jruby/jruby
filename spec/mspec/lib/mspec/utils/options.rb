@@ -34,7 +34,7 @@ class MSpecOptions
 
   attr_accessor :config, :banner, :width, :options
 
-  def initialize(banner="", width=30, config=nil)
+  def initialize(banner = "", width = 30, config = nil)
     @banner   = banner
     @config   = config
     @width    = width
@@ -123,7 +123,7 @@ class MSpecOptions
 
   # Parses an array of command line entries, calling blocks for
   # registered options.
-  def parse(argv=ARGV)
+  def parse(argv = ARGV)
     argv = Array(argv).dup
 
     while entry = argv.shift
@@ -384,7 +384,7 @@ class MSpecOptions
   def repeat
     on("-R", "--repeat", "NUMBER",
        "Repeatedly run an example NUMBER times") do |o|
-      MSpec.repeat = o.to_i
+      MSpec.repeat = Integer(o)
     end
   end
 
@@ -416,6 +416,14 @@ class MSpecOptions
   def interrupt
     on("--int-spec", "Control-C interupts the current spec only") do
       config[:abort] = false
+    end
+  end
+
+  def timeout
+    on("--timeout", "TIMEOUT", "Abort if a spec takes longer than TIMEOUT seconds") do |timeout|
+      require 'mspec/runner/actions/timeout'
+      timeout = Float(timeout)
+      TimeoutAction.new(timeout).register
     end
   end
 

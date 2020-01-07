@@ -53,4 +53,8 @@ public interface BlockCallback {
     default IRubyObject call(ThreadContext context, IRubyObject... args) {
         return call(context, args, Block.NULL_BLOCK);
     }
+
+    default IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+        return call(context, new IRubyObject[] { arg }, block);
+    }
  }

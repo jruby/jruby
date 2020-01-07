@@ -232,7 +232,7 @@ public class RubyTime extends RubyObject {
             dtz = getTimeZoneFromHHMM(runtime, "", !sign.equals("-"), hours, minutes, seconds);
         } else {
             RubyNumeric numericOffset = numExact(context, utcOffset);
-            int newOffset = (int) Math.round(numericOffset.convertToFloat().getDoubleValue() * 1000);
+            int newOffset = (int) Math.round(numericOffset.convertToFloat().value * 1000);
             dtz = getTimeZoneWithOffset(runtime, "", newOffset);
         }
 
@@ -373,8 +373,6 @@ public class RubyTime extends RubyObject {
         timeClass.setClassIndex(ClassIndex.TIME);
         timeClass.setReifiedClass(RubyTime.class);
 
-        runtime.setTime(timeClass);
-
         timeClass.includeModule(runtime.getComparable());
 
         timeClass.defineAnnotatedMethods(RubyTime.class);
@@ -497,7 +495,7 @@ public class RubyTime extends RubyObject {
     }
 
     public final RubyTime localtime() {
-        return localtime(getRuntime().getCurrentContext());
+        return localtime(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "localtime")
@@ -533,7 +531,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
     public RubyBoolean gmt() {
-        return getRuntime().newBoolean(isUTC());
+        return metaClass.runtime.newBoolean(isUTC());
     }
 
     public boolean isUTC() {
@@ -542,11 +540,11 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"getgm", "getutc"})
     public RubyTime getgm() {
-        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), nsec);
+        return newTime(metaClass.runtime, dt.withZone(DateTimeZone.UTC), nsec);
     }
 
     public final RubyTime getlocal() {
-        return getlocal(getRuntime().getCurrentContext());
+        return getlocal(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "getlocal")
@@ -589,7 +587,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.runtime.newBoolean(cmp((RubyTime) other) == 0);
+            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) == 0);
         }
         if (other == context.nil) {
             return context.fals;
@@ -601,7 +599,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">=", required = 1)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.runtime.newBoolean(cmp((RubyTime) other) >= 0);
+            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) >= 0);
         }
 
         return RubyComparable.op_ge(context, this, other);
@@ -610,7 +608,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = ">", required = 1)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.runtime.newBoolean(cmp((RubyTime) other) > 0);
+            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) > 0);
         }
 
         return RubyComparable.op_gt(context, this, other);
@@ -619,7 +617,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=", required = 1)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.runtime.newBoolean(cmp((RubyTime) other) <= 0);
+            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) <= 0);
         }
 
         return RubyComparable.op_le(context, this, other);
@@ -628,7 +626,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<", required = 1)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.runtime.newBoolean(cmp((RubyTime) other) < 0);
+            return RubyBoolean.newBoolean(context, cmp((RubyTime) other) < 0);
         }
 
         return RubyComparable.op_lt(context, this, other);
@@ -740,7 +738,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.runtime.newBoolean(RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
         }
 
         return context.fals;
@@ -818,8 +816,8 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     @Override
-    public RubyArray to_a() {
-        return RubyArray.newArrayNoCopy(getRuntime(), sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
+    public RubyArray to_a(ThreadContext context) {
+        return RubyArray.newArrayNoCopy(context.runtime, sec(), min(), hour(), mday(), month(), year(), wday(), yday(), isdst(), zone());
     }
 
     @JRubyMethod
@@ -964,6 +962,41 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public RubyInteger yday() {
         return getRuntime().newFixnum(dt.getDayOfYear());
+    }
+
+    @JRubyMethod(name = "sunday?")
+    public RubyBoolean sunday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 0);
+    }
+
+    @JRubyMethod(name = "monday?")
+    public RubyBoolean monday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 1);
+    }
+
+    @JRubyMethod(name = "tuesday?")
+    public RubyBoolean tuesday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 2);
+    }
+
+    @JRubyMethod(name = "wednesday?")
+    public RubyBoolean wednesday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 3);
+    }
+
+    @JRubyMethod(name = "thursday?")
+    public RubyBoolean thursday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 4);
+    }
+
+    @JRubyMethod(name = "friday?")
+    public RubyBoolean friday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 5);
+    }
+
+    @JRubyMethod(name = "saturday?")
+    public RubyBoolean saturday_p(ThreadContext context) {
+        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 6);
     }
 
     @Deprecated
@@ -1219,7 +1252,7 @@ public class RubyTime extends RubyObject {
             if (arg instanceof RubyFloat) {
                 // use integral and decimal forms to calculate nanos
                 long seconds = RubyNumeric.float2long((RubyFloat) arg);
-                double dbl = ((RubyFloat) arg).getDoubleValue();
+                double dbl = ((RubyFloat) arg).value;
 
                 long nano = (long)((dbl - seconds) * 1000000000);
 
@@ -1526,7 +1559,12 @@ public class RubyTime extends RubyObject {
      * @since 9.2
      */
     public java.time.Instant toInstant() {
-        return java.time.Instant.ofEpochMilli(getTimeInMillis()).plusNanos(getNSec());
+        final long millis = getTimeInMillis();
+        // Keep this long cast to work on Java 8
+        long sec = Math.floorDiv(millis, (long) 1000);
+        // Keep this long cast to work on Java 8
+        long nanoAdj = getNSec() + (Math.floorMod(millis, (long) 1000) * 1_000_000);
+        return java.time.Instant.ofEpochSecond(sec, nanoAdj);
     }
 
     /**
@@ -1577,7 +1615,7 @@ public class RubyTime extends RubyObject {
             seconds = 0; boolean raise = true;
             if ( sec instanceof JavaProxy ) {
                 try { // support java.lang.Number proxies
-                    seconds = sec.convertToFloat().getDoubleValue(); raise = false;
+                    seconds = sec.convertToFloat().value; raise = false;
                 } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
             }
 
@@ -1822,7 +1860,7 @@ public class RubyTime extends RubyObject {
                 if (flo.isNegative()) {
                     throw runtime.newArgumentError("argument out of range.");
                 }
-                double micros = flo.getDoubleValue();
+                double micros = flo.value;
                 dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 nanos = (long) Math.rint((micros * 1000) % 1_000_000);
             } else {

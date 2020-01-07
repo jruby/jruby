@@ -188,17 +188,15 @@ public class HeredocTerm extends StrTerm {
             // MRI has extra pointer which makes our code look a little bit more strange in comparison
             do {
                 lexer.pushback(c);
-                
-                Encoding enc[] = new Encoding[1];
-                enc[0] = lexer.getEncoding();
-                
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok, enc)) == EOF) {
+
+                StringTerm stringTerm = new StringTerm(flags, '\0', '\n');
+                if ((c = stringTerm.parseStringIntoBuffer(lexer, src, tok, lexer.getEncoding())) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }
                 if (c != '\n') {
                     lexer.setValue(lexer.createStr(tok, 0));
-                    lexer.flush_string_content(enc[0]);
+                    lexer.flush_string_content(stringTerm.encodingOut);
                     return RipperParser.tSTRING_CONTENT;
                 }
                 tok.append(lexer.nextc());
@@ -206,7 +204,7 @@ public class HeredocTerm extends StrTerm {
                 if (lexer.getHeredocIndent() > 0) {
                     lexer.lex_goto_eol();
                     lexer.setValue(lexer.createStr(tok, 0));
-                    lexer.flush_string_content(enc[0]);
+                    lexer.flush_string_content(stringTerm.encodingOut);
                     return RipperParser.tSTRING_CONTENT;
                 }
 

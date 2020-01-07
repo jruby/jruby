@@ -219,6 +219,10 @@ public class Profiler {
 
     private static void outputProfileStats() {
         ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
+        // ENEBO: Removes when getThreadPollInstrsCount()...when profiling revisited we need to find good metric.
+        //   I am unsure total count of threadpoll has much correlation to # visited since one may be on back end of
+        //   a single loop and all the rest are never actually visited.
+        /*
         Collections.sort(scopes, new java.util.Comparator<IRScope> () {
             @Override
             public int compare(IRScope a, IRScope b) {
@@ -234,7 +238,7 @@ public class Profiler {
                 if (aCount == bCount) return 0;
                 return (aCount < bCount) ? 1 : -1;
             }
-        });
+        });*/
 
 
         /*

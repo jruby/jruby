@@ -5,6 +5,7 @@ require 'yaml'
 # This test demonstrates and verifies the marshalling fix for JRUBY-1877.
 class TestMarshalGemspec < Test::Unit::TestCase
   def setup
+    require 'yaml'
     @gemspec = YAML::load <<-YAML
 --- !ruby/object:Gem::Specification 
 name: activerecord-jdbcderby-adapter

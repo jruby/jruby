@@ -33,7 +33,6 @@ import java.util.List;
 
 import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -134,5 +133,10 @@ public class RootNode extends Node implements ParseResult {
     // Is coverage enabled and is this a valid source file for coverage to apply?
     public boolean needsCoverage() {
         return needsCodeCoverage;
+    }
+
+    @Override
+    public boolean executesOnce() {
+        return true;
     }
 }

@@ -132,7 +132,16 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public RubySymbol decodeSymbol() {
-        return currentScope.getManager().getRuntime().newSymbol(decodeByteList());
+        int strLength = decodeInt();
+
+        if (strLength == NULL_STRING) return null;
+
+        byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
+        buf.get(bytes);
+
+        Encoding encoding = decodeEncoding();
+
+        return currentScope.getManager().getRuntime().newSymbol(new ByteList(bytes, encoding, false));
     }
 
     @Override
@@ -249,7 +258,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case CHECK_FOR_LJE: return CheckForLJEInstr.decode(this);
             case CLASS_SUPER: return ClassSuperInstr.decode(this);
             case CLASS_VAR_MODULE: return GetClassVarContainerModuleInstr.decode(this);
-            case CONST_MISSING: return ConstMissingInstr.decode(this);
             case COPY: return CopyInstr.decode(this);
             case DEF_CLASS: return DefineClassInstr.decode(this);
             case DEF_CLASS_METH: return DefineClassMethodInstr.decode(this);

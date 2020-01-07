@@ -1,20 +1,17 @@
 package org.jruby.ir.interpreter;
 
 import java.io.ByteArrayOutputStream;
-import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
 import org.jruby.ir.IRBuilder;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
 import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -27,7 +24,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -48,19 +44,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static void runBeginBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, StaticScope currScope, Object[] temp) {
-        if (beBlocks == null) return;
-
-        for (IRClosure b: beBlocks) {
-            // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
-            blk.yield(context, null);
-        }
-    }
-
     @Override
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.getInterpreterContext();
+        InterpreterContext ic = irScope.getInterpreterContext();
 
         if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
@@ -88,16 +74,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         IRRuntimeHelpers.prepareScriptScope(context, scope);
 
+        context.preNodeEval(self);
         context.setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            runBeginBlocks(ic.getBeginBlocks(), context, self, scope, null);
             return INTERPRET_ROOT(context, self, ic, currModule, name);
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
+            irScope.cleanupAfterExecution();
             dumpStats();
             context.popScope();
+            context.postNodeEval();
         }
     }
 
@@ -160,14 +148,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
                                           String file, int lineNumber, String name, Block blockArg, EvalType evalType) {
         StaticScope ss = evalScope.getStaticScope();
-        BeginEndInterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType);
+        InterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType);
 
         evalScope.setEvalType(evalType);
         context.pushScope(evalScope);
         try {
             evalScope.growIfNeeded();
-
-            runBeginBlocks(ic.getBeginBlocks(), context, self, ss, null);
 
             return Interpreter.INTERPRET_EVAL(context, self, ic, ic.getStaticScope().getModule(), IRubyObject.NULL_ARRAY, name, blockArg);
         } finally {
@@ -200,7 +186,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static BeginEndInterpreterContext prepareIC(ThreadContext context, DynamicScope evalScope, IRubyObject src,
+    private static InterpreterContext prepareIC(ThreadContext context, DynamicScope evalScope, IRubyObject src,
                                                         String file, int lineNumber, EvalType evalType) {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
@@ -219,7 +205,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
+        InterpreterContext ic = IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
 
         if (IRRuntimeHelpers.isDebug()) LOG.info(script.debugOutput());
 

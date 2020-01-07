@@ -14,14 +14,9 @@ extern "C" {
  * On TruffleRuby RSTRING_PTR and the bytes remain in managed memory
  * until they must be written to native memory.
  * In some specs we want to test using the native memory. */
-char* NATIVE_RSTRING_PTR(VALUE str) {
-  char* ptr = RSTRING_PTR(str);
-  char** native = malloc(sizeof(char*));
-  *native = ptr;
-  ptr = *native;
-  free(native);
-  return ptr;
-}
+#ifndef NATIVE_RSTRING_PTR
+#define NATIVE_RSTRING_PTR(str) RSTRING_PTR(str)
+#endif
 
 VALUE string_spec_rb_cstr2inum(VALUE self, VALUE str, VALUE inum) {
   int num = FIX2INT(inum);
@@ -124,6 +119,10 @@ VALUE string_spec_rb_str_conv_enc_opts(VALUE self, VALUE str, VALUE from, VALUE 
   return rb_str_conv_enc_opts(str, from_enc, to_enc, FIX2INT(ecflags), ecopts);
 }
 
+VALUE string_spec_rb_str_drop_bytes(VALUE self, VALUE str, VALUE len) {
+  return rb_str_drop_bytes(str, NUM2LONG(len));
+}
+
 VALUE string_spec_rb_str_export(VALUE self, VALUE str) {
   return rb_str_export(str);
 }
@@ -174,6 +173,10 @@ VALUE string_spec_rb_str_new2(VALUE self, VALUE str) {
 
 VALUE string_spec_rb_str_encode(VALUE self, VALUE str, VALUE enc, VALUE flags, VALUE opts) {
   return rb_str_encode(str, enc, FIX2INT(flags), opts);
+}
+
+VALUE string_spec_rb_str_export_to_enc(VALUE self, VALUE str, VALUE enc) {
+  return rb_str_export_to_enc(str, rb_to_encoding(enc));
 }
 
 VALUE string_spec_rb_str_new_cstr(VALUE self, VALUE str) {
@@ -230,6 +233,11 @@ VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
 
 VALUE string_spec_rb_str_times(VALUE self, VALUE str, VALUE times) {
   return rb_str_times(str, times);
+}
+
+VALUE string_spec_rb_str_modify_expand(VALUE self, VALUE str, VALUE size) {
+  rb_str_modify_expand(str, FIX2LONG(size));
+  return str;
 }
 
 VALUE string_spec_rb_str_resize(VALUE self, VALUE str, VALUE size) {
@@ -353,6 +361,14 @@ static VALUE string_spec_rb_sprintf2(VALUE self, VALUE str, VALUE repl1, VALUE r
   return rb_sprintf(RSTRING_PTR(str), RSTRING_PTR(repl1), RSTRING_PTR(repl2));
 }
 
+static VALUE string_spec_rb_sprintf3(VALUE self, VALUE str) {
+  return rb_sprintf("Result: %"PRIsVALUE".", str);
+}
+
+static VALUE string_spec_rb_sprintf4(VALUE self, VALUE str) {
+  return rb_sprintf("Result: %+"PRIsVALUE".", str);
+}
+
 static VALUE string_spec_rb_vsprintf_worker(char* fmt, ...) {
   va_list varargs;
   VALUE str;
@@ -395,6 +411,18 @@ static VALUE string_spec_rb_str_modify(VALUE self, VALUE str) {
   return str;
 }
 
+static VALUE string_spec_rb_utf8_str_new_static(VALUE self) {
+  return rb_utf8_str_new_static("nokogiri", 8);
+}
+
+static VALUE string_spec_rb_utf8_str_new(VALUE self) {
+  return rb_utf8_str_new("nokogiri", 8);
+}
+
+static VALUE string_spec_rb_utf8_str_new_cstr(VALUE self) {
+  return rb_utf8_str_new_cstr("nokogiri");
+}
+
 void Init_string_spec(void) {
   VALUE cls = rb_define_class("CApiStringSpecs", rb_cObject);
   rb_define_method(cls, "rb_cstr2inum", string_spec_rb_cstr2inum, 2);
@@ -410,6 +438,7 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_cmp", string_spec_rb_str_cmp, 2);
   rb_define_method(cls, "rb_str_conv_enc", string_spec_rb_str_conv_enc, 3);
   rb_define_method(cls, "rb_str_conv_enc_opts", string_spec_rb_str_conv_enc_opts, 5);
+  rb_define_method(cls, "rb_str_drop_bytes", string_spec_rb_str_drop_bytes, 2);
   rb_define_method(cls, "rb_str_export", string_spec_rb_str_export, 1);
   rb_define_method(cls, "rb_str_export_locale", string_spec_rb_str_export_locale, 1);
   rb_define_method(cls, "rb_str_dup", string_spec_rb_str_dup, 1);
@@ -422,6 +451,7 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_new_offset", string_spec_rb_str_new_offset, 3);
   rb_define_method(cls, "rb_str_new2", string_spec_rb_str_new2, 1);
   rb_define_method(cls, "rb_str_encode", string_spec_rb_str_encode, 4);
+  rb_define_method(cls, "rb_str_export_to_enc", string_spec_rb_str_export_to_enc, 2);
   rb_define_method(cls, "rb_str_new_cstr", string_spec_rb_str_new_cstr, 1);
   rb_define_method(cls, "rb_external_str_new", string_spec_rb_external_str_new, 1);
   rb_define_method(cls, "rb_external_str_new_cstr", string_spec_rb_external_str_new_cstr, 1);
@@ -435,6 +465,7 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_tainted_str_new2", string_spec_rb_tainted_str_new2, 1);
   rb_define_method(cls, "rb_str_plus", string_spec_rb_str_plus, 2);
   rb_define_method(cls, "rb_str_times", string_spec_rb_str_times, 2);
+  rb_define_method(cls, "rb_str_modify_expand", string_spec_rb_str_modify_expand, 2);
   rb_define_method(cls, "rb_str_resize", string_spec_rb_str_resize, 2);
   rb_define_method(cls, "rb_str_resize_RSTRING_LEN", string_spec_rb_str_resize_RSTRING_LEN, 2);
   rb_define_method(cls, "rb_str_set_len", string_spec_rb_str_set_len, 2);
@@ -457,6 +488,8 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_free", string_spec_rb_str_free, 1);
   rb_define_method(cls, "rb_sprintf1", string_spec_rb_sprintf1, 2);
   rb_define_method(cls, "rb_sprintf2", string_spec_rb_sprintf2, 3);
+  rb_define_method(cls, "rb_sprintf3", string_spec_rb_sprintf3, 1);
+  rb_define_method(cls, "rb_sprintf4", string_spec_rb_sprintf4, 1);
   rb_define_method(cls, "rb_vsprintf", string_spec_rb_vsprintf, 4);
   rb_define_method(cls, "rb_str_equal", string_spec_rb_str_equal, 2);
   rb_define_method(cls, "rb_usascii_str_new", string_spec_rb_usascii_str_new, 2);
@@ -464,6 +497,9 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_String", string_spec_rb_String, 1);
   rb_define_method(cls, "rb_string_value_cstr", string_spec_rb_string_value_cstr, 1);
   rb_define_method(cls, "rb_str_modify", string_spec_rb_str_modify, 1);
+  rb_define_method(cls, "rb_utf8_str_new_static", string_spec_rb_utf8_str_new_static, 0);
+  rb_define_method(cls, "rb_utf8_str_new", string_spec_rb_utf8_str_new, 0);
+  rb_define_method(cls, "rb_utf8_str_new_cstr", string_spec_rb_utf8_str_new_cstr, 0);
 }
 
 #ifdef __cplusplus

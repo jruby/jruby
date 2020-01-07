@@ -42,4 +42,13 @@ class TestJar < Test::Unit::TestCase
     Dir.chdir(@@work_dir)
   end
 
+
+  # JRUBY-4760
+  def test_access_file_with_dotdot
+    assert_nothing_raised {
+      jar = File.join(File.dirname(__FILE__), 'jar_with_relative_require1.jar')
+      File.open("file:#{jar}!/test/../foo.rb")
+    }
+  end
+
 end

@@ -1616,6 +1616,38 @@ public final class StringSupport {
         return string.getCodeRange() == CR_7BIT || encoding.maxLength() == 1;
     }
 
+    /**
+     *
+     * @param source string to find index within
+     * @param other string to match in source
+     * @param offset in bytes to start looking
+     * @param enc encoding to use to walk the source string.
+     * @return
+     */
+    public static int index(ByteList source, ByteList other, int offset, Encoding enc) {
+        int sourceLen = source.realSize();
+        int sourceBegin = source.begin();
+        int otherLen = other.realSize();
+
+        if (otherLen == 0) return offset;
+        if (sourceLen - offset < otherLen) return -1;
+
+        byte[] sourceBytes = source.getUnsafeBytes();
+        int p = sourceBegin + offset;
+        int end = p + sourceLen;
+
+        while (true) {
+            int pos = source.indexOf(other, p - sourceBegin);
+            if (pos < 0) return pos;
+            pos -= (p - sourceBegin);
+            int t = enc.rightAdjustCharHead(sourceBytes, p, p + pos, end);
+            if (t == p + pos) return pos + offset;
+            if ((sourceLen -= t - p) <= 0) return -1;
+            offset += t - p;
+            p = t;
+        }
+    }
+
     public static int index(CodeRangeable sourceString, CodeRangeable otherString, int offset, Encoding enc) {
         if (otherString.scanForCodeRange() == CR_BROKEN) return -1;
 
@@ -1883,7 +1915,7 @@ public final class StringSupport {
         return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
     }
 
-    private static int NULL_POINTER = -1;
+    private static final int NULL_POINTER = -1;
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, IRubyObject opts, Block block, boolean wantarray) {
         Ruby runtime = context.runtime;

@@ -43,12 +43,24 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getJitThreshold();
     }
 
+    public void setJitThreshold(int threshold) {
+        ruby.get().getInstanceConfig().setJitThreshold(threshold);
+    }
+
     public int getJitMax() {
         return ruby.get().getInstanceConfig().getJitMax();
     }
 
+    public void setJitMax(int max) {
+        ruby.get().getInstanceConfig().setJitMax(max);
+    }
+
     public int getJitMaxSize() {
         return ruby.get().getInstanceConfig().getJitMaxSize();
+    }
+
+    public void setJitMaxSize(int maxSize) {
+        ruby.get().getInstanceConfig().setJitMaxSize(maxSize);
     }
 
     public boolean isRunRubyInProcess() {
@@ -151,8 +163,4 @@ public class Config implements ConfigMBean {
         return ruby.get().getInstanceConfig().getExcludedMethods().toString();
     }
 
-    @Deprecated
-    public String getCompatVersion() {
-        return org.jruby.CompatVersion.RUBY2_1.name();
-    }
 }

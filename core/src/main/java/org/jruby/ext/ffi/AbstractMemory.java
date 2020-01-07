@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -192,7 +193,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(this.equals(obj));
+        return RubyBoolean.newBoolean(context, this.equals(obj));
     }
     
     /**

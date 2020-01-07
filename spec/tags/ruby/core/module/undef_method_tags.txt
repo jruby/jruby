@@ -1,0 +1,4 @@
+fails:Module#undef_method raises a NameError when passed a missing name for a module
+fails:Module#undef_method raises a NameError when passed a missing name for a class
+fails:Module#undef_method raises a NameError when passed a missing name for a singleton class
+fails:Module#undef_method raises a NameError when passed a missing name for a metaclass

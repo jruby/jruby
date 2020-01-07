@@ -1,2 +1,0 @@
-fails:Array#values_at when passed a range fills with nil if the index is out of the range
-fails:Array#values_at when passed a range on an empty array fills with nils if the index is out of the range

@@ -21,7 +21,7 @@ static int set_non_blocking(int fd) {
   int flags = 1;
   return ioctl(fd, FIOBIO, &flags);
 #else
-# define SET_NON_BLOCKING_FAILS_ALWAYS 1
+#define SET_NON_BLOCKING_FAILS_ALWAYS 1
   errno = ENOSYS;
   return -1;
 #endif
@@ -115,13 +115,13 @@ VALUE io_spec_rb_io_taint_check(VALUE self, VALUE io) {
 
 #define RB_IO_WAIT_READABLE_BUF 13
 
-#if SET_NON_BLOCKING_FAILS_ALWAYS
+#ifdef SET_NON_BLOCKING_FAILS_ALWAYS
 NORETURN(VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p));
 #endif
 
 VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
   int fd = io_spec_get_fd(io);
-#if !SET_NON_BLOCKING_FAILS_ALWAYS
+#ifndef SET_NON_BLOCKING_FAILS_ALWAYS
   char buf[RB_IO_WAIT_READABLE_BUF];
   int ret, saved_errno;
 #endif
@@ -129,7 +129,7 @@ VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
   if (set_non_blocking(fd) == -1)
     rb_sys_fail("set_non_blocking failed");
 
-#if !SET_NON_BLOCKING_FAILS_ALWAYS
+#ifndef SET_NON_BLOCKING_FAILS_ALWAYS
   if(RTEST(read_p)) {
     if (read(fd, buf, RB_IO_WAIT_READABLE_BUF) != -1) {
       return Qnil;
@@ -165,6 +165,16 @@ VALUE io_spec_rb_io_wait_writable(VALUE self, VALUE io) {
 VALUE io_spec_rb_thread_wait_fd(VALUE self, VALUE io) {
   rb_thread_wait_fd(io_spec_get_fd(io));
   return Qnil;
+}
+
+VALUE io_spec_rb_wait_for_single_fd(VALUE self, VALUE io, VALUE events, VALUE secs, VALUE usecs) {
+  int fd = io_spec_get_fd(io);
+  struct timeval tv;
+  if (!NIL_P(secs)) {
+    tv.tv_sec = FIX2INT(secs);
+    tv.tv_usec = FIX2INT(usecs);
+  }
+  return INT2FIX(rb_wait_for_single_fd(fd, FIX2INT(events), NIL_P(secs) ? NULL : &tv));
 }
 
 VALUE io_spec_rb_thread_fd_writable(VALUE self, VALUE io) {
@@ -220,6 +230,7 @@ void Init_io_spec(void) {
   rb_define_method(cls, "rb_io_wait_writable", io_spec_rb_io_wait_writable, 1);
   rb_define_method(cls, "rb_thread_wait_fd", io_spec_rb_thread_wait_fd, 1);
   rb_define_method(cls, "rb_thread_fd_writable", io_spec_rb_thread_fd_writable, 1);
+  rb_define_method(cls, "rb_wait_for_single_fd", io_spec_rb_wait_for_single_fd, 4);
   rb_define_method(cls, "rb_io_binmode", io_spec_rb_io_binmode, 1);
   rb_define_method(cls, "rb_fd_fix_cloexec", io_spec_rb_fd_fix_cloexec, 1);
   rb_define_method(cls, "rb_cloexec_open", io_spec_rb_cloexec_open, 3);

@@ -23,13 +23,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 * Created by headius on 5/24/14.
 */
 public class ChannelFD implements Closeable {
-    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil) {
+    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil, int flags) {
         assert fd != null;
         this.ch = fd;
         this.posix = posix;
         this.filenoUtil = filenoUtil;
+        this.openflags = flags;
 
-        initFileno();
+        initFileno(false);
         initChannelTypes();
 
         refs = new AtomicInteger(1);
@@ -38,8 +39,22 @@ public class ChannelFD implements Closeable {
         filenoUtil.registerWrapper(fakeFileno, this);
     }
 
-    private void initFileno() {
+    public ChannelFD(Channel fd, POSIX posix, FilenoUtil filenoUtil) {
+        this(fd, posix, filenoUtil, -1);
+    }
+
+    private void initFileno(boolean allocate) {
         realFileno = FilenoUtil.filenoFrom(ch);
+        if (Platform.IS_WINDOWS && realFileno == -1 && openflags >= 0) {
+            if (allocate) {
+                // TODO: ensure we aren't leaking multiple handles for the same channel/handle
+                realFileno = filenoUtil.filenoFromHandleIn(ch, openflags); // TODO: ensure these flags are correct for windows
+                needsClosing = realFileno != -1;
+                maybeHandle = false;
+            } else {
+                maybeHandle = true;
+            }
+        }
         if (realFileno == -1) {
             fakeFileno = filenoUtil.getNewFileno();
         } else {
@@ -75,7 +90,7 @@ public class ChannelFD implements Closeable {
         // TODO: not sure how well this combines native and non-native streams
         // simulate dup2 by forcing filedes's channel into filedes2
         this.ch = dup2Source.ch;
-        initFileno();
+        initFileno(false);
         initChannelTypes();
 
         this.refs = dup2Source.refs;
@@ -93,6 +108,18 @@ public class ChannelFD implements Closeable {
 
     public int bestFileno() {
         return realFileno == -1 ? fakeFileno : realFileno;
+    }
+
+    // lazily create windows resources
+    public int bestFileno(boolean forceFileno) {
+        if (maybeHandle && forceFileno) {
+            initFileno(true);
+            assert maybeHandle == false : "lazy handle creation state changed";
+            // Hopefully we don't overwrite existing files
+            filenoUtil.registerWrapper(realFileno, this);
+            filenoUtil.registerWrapper(fakeFileno, this);
+        }
+        return bestFileno();
     }
 
     private void finish() throws IOException {
@@ -114,6 +141,9 @@ public class ChannelFD implements Closeable {
                 // if we're the last referrer, close the channel
                 try {
                     ch.close();
+                    if (needsClosing) {
+                        filenoUtil.closeFilenoHandle(realFileno);
+                    }
                 } finally {
                     filenoUtil.unregisterWrapper(realFileno);
                     filenoUtil.unregisterWrapper(fakeFileno);
@@ -160,8 +190,11 @@ public class ChannelFD implements Closeable {
     public int realFileno;
     public int fakeFileno;
     private AtomicInteger refs;
-    public FileLock currentLock;
+    public ThreadLocal<FileLock> currentLock = new ThreadLocal<>();
     private final POSIX posix;
     public boolean isNativeFile = false;
     private final FilenoUtil filenoUtil;
+    private boolean needsClosing = false;
+    private boolean maybeHandle = false;
+    private final int openflags;
 }

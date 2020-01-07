@@ -1,26 +1,31 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # jruby.bash - Start Script for the JRuby interpreter
-#
-# Environment Variable Prequisites
-#
-#   JRUBY_OPTS    (Optional) Default JRuby command line args
-#   JRUBY_SHELL   Where/What is system shell
-#
-#   JAVA_HOME     Must point at your Java Development Kit installation.
-#
 # -----------------------------------------------------------------------------
 
+# ----- Set variable defaults --------------
+
 cygwin=false
+use_exec=true
+java_opts_from_files=""
+JRUBY_SHELL=/bin/sh
 
-# ----- Identify OS we are running under --------------------------------------
-case "`uname`" in
-  CYGWIN*) cygwin=true;;
-  Darwin) darwin=true;;
-  MINGW*) jruby.exe "$@"; exit $?;;
-esac
+if [ -z "$JRUBY_OPTS" ] ; then
+  JRUBY_OPTS=""
+fi
 
-# ----- Determine how to call expr (jruby/jruby#5091) -------------------------
+if [ -z "$JAVA_STACK" ] ; then
+  JAVA_STACK=-Xss2048k
+fi
+
+declare -a java_args
+declare -a ruby_args
+mode=""
+
+JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
+java_class=$JAVA_CLASS_JRUBY_MAIN
+
+# Determine how to call expr (jruby/jruby#5091)
 # On Alpine linux, expr takes no -- arguments, and 'expr --' echoes '--'.
 _expr_dashed=$(expr -- 2>/dev/null)
 if [ "$_expr_dashed" != '--' ] ; then
@@ -28,68 +33,110 @@ if [ "$_expr_dashed" != '--' ] ; then
 fi
 unset _expr_dashed
 
-# ----- Verify and Set Required Environment Variables -------------------------
-if [ -z "$JAVA_VM" ]; then
-  JAVA_VM=-client
+# OpenJDK tries really hard to prevent you from using urandom.
+# See https://bugs.openjdk.java.net/browse/JDK-6202721
+# Non-file URL causes fallback to slow threaded SeedGenerator.
+# See https://bz.apache.org/bugzilla/show_bug.cgi?id=56139
+if [ -r "/dev/urandom" ]; then
+  JAVA_SECURITY_EGD="file:/dev/urandom"
 fi
 
+# Gather environment information as we go
+environment_log=$'JRuby Environment\n================='
+function add_log() {
+    environment_log+=$'\n'"$1"
+}
+
+# Logic to process "arguments files" on both Java 8 and Java 9+
+unset java_opts_from_files
+function process_java_opts {
+  java_opts_file=$1
+  if [[ -r $java_opts_file ]]; then
+    add_log
+    add_log "Adding Java options from: $java_opts_file"
+
+    while read -r line; do
+      if [[ $line ]]; then
+          add_log "  $line"
+      fi
+    done < $java_opts_file
+
+    # On Java 9+, add an @argument for the given file.
+    # On earlier versions the file contents will be read and expanded on the Java command line.
+    if [[ $is_java9 ]]; then
+      java_opts_from_files="$java_opts_from_files @$java_opts_file"
+    else
+      java_opts_from_files="$java_opts_from_files $(cat $java_opts_file)"
+    fi
+  fi
+}
+
+# ----- Determine JRUBY_HOME based on this executable's path ------------------
+
 # get the absolute path of the executable
-SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+BASE_DIR=$(cd -P -- "$(dirname -- "$BASH_SOURCE")" >/dev/null && pwd -P)
+SELF_PATH="$BASE_DIR/$(basename -- "$BASH_SOURCE")"
 
 # resolve symlinks
 while [ -h "$SELF_PATH" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
-    # 3) get the pwd
+    # 3) get the physical pwd
     # 4) append the basename
-    DIR=$(dirname -- "$SELF_PATH")
-    SYM=$(readlink "$SELF_PATH")
-    SELF_PATH=$(cd "$DIR" && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
+    SYM="$(readlink "$SELF_PATH")"
+    BASE_SYM=$(cd -P -- "$(dirname -- "$SELF_PATH")" >/dev/null && pwd -P)
+    SELF_PATH="$(cd "$BASE_SYM" && cd $(dirname -- "$SYM") && pwd -P)/$(basename -- "$SYM")"
 done
 
-PRG=$SELF_PATH
+JRUBY_HOME="${SELF_PATH%/*/*}"
 
-JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
-if [ "$JRUBY_HOME_1" = '.' ] ; then
-  cwd=`pwd`
-  JRUBY_HOME=`dirname $cwd` # JRUBY-2699
-else
-  JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
-fi
+# ----- File paths for various options and files we'll process later ----------
 
-if [ -z "$JRUBY_OPTS" ] ; then
-  JRUBY_OPTS=""
-fi
+# Module options to open up packages we need to reflect
+jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
-JRUBY_OPTS_SPECIAL="--ng" # space-separated list of special flags
-unset JRUBY_OPTS_TEMP
-function process_special_opts {
-    case $1 in
-        --ng) nailgun_client=true;;
-        *) break;;
-    esac
-}
-for opt in ${JRUBY_OPTS[@]}; do
-    for special in ${JRUBY_OPTS_SPECIAL[@]}; do
-        if [ $opt != $special ]; then
-            JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
-        else
-            # make sure flags listed in JRUBY_OPTS_SPECIAL are processed
-            case "$opt" in
-            --ng)
-                process_special_opts $opt;;
-            esac
-        fi
-    done
-    if [ $opt == "-server" ]; then # JRUBY-4204
-        JAVA_VM="-server"
-    fi
-done
-JRUBY_OPTS=${JRUBY_OPTS_TEMP}
+# Cascading .java_opts files for localized JVM flags
+installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
+home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 
+# Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
+dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
+
+# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
+jruby_jsa_file=${JRUBY_HOME}/lib/jruby.jsa
+
+# ----- Initialize environment log -------------------------
+
+add_log
+add_log "JRuby executable:"
+add_log "  $BASH_SOURCE"
+command_line_options="$@"
+add_log "JRuby command line options:"
+add_log "  $command_line_options"
+add_log "Current directory:"
+add_log "  $(pwd)"
+
+add_log
+add_log "Environment:"
+add_log "  JRUBY_HOME: $JRUBY_HOME"
+add_log "  JRUBY_OPTS: $JRUBY_OPTS"
+add_log "  JAVA_OPTS: $JAVA_OPTS"
+
+# ----- Discover JVM and prep environment to run it ---------------------------
+
+# Detect cygwin, darwin, and mingw environments
+case "`uname`" in
+  CYGWIN*) cygwin=true;;
+  Darwin) darwin=true;;
+  MINGW*) jruby.exe "$@"; exit $?;;
+esac
+
+# Determine where the java command is and ensure we have a good JAVA_HOME
 if [ -z "$JAVACMD" ] ; then
   if [ -z "$JAVA_HOME" ] ; then
     JAVACMD='java'
+    JAVA_HOME=$(dirname $(dirname `which java`))
   else
     if $cygwin; then
       JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/java"
@@ -97,13 +144,56 @@ if [ -z "$JAVACMD" ] ; then
       JAVACMD="$JAVA_HOME/bin/java"
     fi
   fi
+else
+  expanded_javacmd=`which $JAVACMD`
+  if [[ -z "$JAVA_HOME" && -x $expanded_javacmd ]] ; then
+    JAVA_HOME=$(dirname $(dirname $expanded_javacmd))
+  fi
 fi
 
-if [ -z "$JAVA_STACK" ] ; then
-  JAVA_STACK=-Xss2048k
+# Detect Java 9+ by the presence of a jmods directory in JAVA_HOME
+if [ -d $JAVA_HOME/jmods ]; then
+  is_java9=1
 fi
 
-# process JAVA_OPTS
+add_log "  JAVACMD: $JAVACMD"
+add_log "  JAVA_HOME: $JAVA_HOME"
+
+if [[ $is_java9 ]]; then
+  add_log
+  add_log "Detected Java modules at $JAVA_HOME/jmods"
+fi
+
+# ----- Process .java_opts files ----------------------------------------------
+
+# We include options on the java command line in the following order:
+#
+# * JRuby installed bin/.jruby.java_opts (empty by default)
+# * user directory .jruby.java_opts
+# * current directory .jruby.java_opts
+# * dev mode options from bin/.dev_mode.java_opts, if --dev is specified
+# * module options from bin/.jruby.module_opts if modules are detected
+# * JAVA_OPTS environment variable
+# * command line flags
+
+# Add local and global .jruby.java_opts
+process_java_opts $installed_jruby_java_opts_file
+process_java_opts $home_jruby_java_opts_file
+process_java_opts $pwd_jruby_java_opts_file
+
+# ----- Process special JRuby options into JVM options -------------------------------
+
+unset JRUBY_OPTS_TEMP
+for opt in ${JRUBY_OPTS[@]}; do
+    JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
+    if [ $opt == "-server" ]; then # JRUBY-4204
+        add_log "Enabling -server mode"
+        JAVA_VM="-server"
+    fi
+done
+JRUBY_OPTS=${JRUBY_OPTS_TEMP}
+
+# Capture some Java options to be passed separately
 unset JAVA_OPTS_TEMP
 JAVA_OPTS_TEMP=""
 for opt in ${JAVA_OPTS[@]}; do
@@ -123,18 +213,11 @@ done
 
 JAVA_OPTS=$JAVA_OPTS_TEMP
 
-
-# If you're seeing odd exceptions, you may have a bad JVM install.
-# Uncomment this and report the version to the JRuby team along with error.
-#$JAVACMD -version
-
-JRUBY_SHELL=/bin/sh
-
-# ----- Set Up The Boot Classpath -------------------------------------------
+# ----- Set up the JRuby class/module path ------------------------------------
 
 CP_DELIMITER=":"
 
-# add main jruby jar to the bootclasspath
+# add main jruby jar to the classpath
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
       continue
@@ -154,7 +237,7 @@ if $cygwin; then
     JRUBY_CP=`cygpath -p -w "$JRUBY_CP"`
 fi
 
-# ----- Set Up The System Classpath -------------------------------------------
+# ----- Add additional jars from lib to classpath -----------------------------
 
 if [ "$JRUBY_PARENT_CLASSPATH" != "" ]; then
     # Use same classpath propagated from parent jruby
@@ -185,24 +268,7 @@ if $cygwin; then
     CP_DELIMITER=";"
 fi
 
-# ----- Execute The Requested Command -----------------------------------------
-JAVA_ENCODING=""
-
-if [ -r "/dev/urandom" ]; then
-  # OpenJDK tries really hard to prevent you from using urandom.
-  # See https://bugs.openjdk.java.net/browse/JDK-6202721
-  # Non-file URL causes fallback to slow threaded SeedGenerator.
-  # See https://bz.apache.org/bugzilla/show_bug.cgi?id=56139
-  JAVA_SECURITY_EGD="file:/dev/urandom"
-fi
-
-declare -a java_args
-declare -a ruby_args
-mode=""
-
-JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
-java_class=$JAVA_CLASS_JRUBY_MAIN
-JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
+# ----- Continue processing JRuby options into JVM options --------------------
 
 # Split out any -J argument for passing to the JVM.
 # Scanning for args is aborted by '--'.
@@ -221,11 +287,11 @@ do
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
             $JAVACMD -help
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-X" ]; then
             $JAVACMD -X
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-classpath" ]; then
             CP="$CP$CP_DELIMITER$2"
@@ -238,8 +304,7 @@ do
         else
             if [ "${val:0:3}" = "-ea" ]; then
                 VERIFY_JRUBY="yes"
-            elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
-                JAVA_ENCODING=${val:16}
+                java_args=("${java_args[@]}" "${1:2}")
             elif [ "${val:0:20}" = "-Djava.security.egd=" ]; then
                 JAVA_SECURITY_EGD=${val:20}
             else
@@ -280,32 +345,32 @@ do
           else
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
-        fi 
+        fi
         JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
         java_args=("${java_args[@]}" "-sourcepath" "$JDB_SOURCEPATH")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
-        JAVA_VM=-client ;;
-     --server)
-        JAVA_VM=-server ;;
-     --dev)
         JAVA_VM=-client
-        JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false" ;;
+        echo "Warning: the --client flag is deprecated and has no effect most JVMs" ;;
+     --server)
+        JAVA_VM=-server
+        echo "Warning: the --server flag is deprecated and has no effect most JVMs" ;;
+     --dev)
+        process_java_opts $dev_mode_opts_file
+        # For OpenJ9 use environment variable to enable quickstart and shareclasses
+        export OPENJ9_JAVA_OPTIONS="-Xquickstart -Xshareclasses" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)
         java_args=("${java_args[@]}" "-Xprof") ;;
      --record)
         java_args=("${java_args[@]}" "-XX:+FlightRecorder" "-XX:StartFlightRecording=dumponexit=true") ;;
-     --ng-server)
-        # Start up as Nailgun server
-        java_class=$JAVA_CLASS_NGSERVER
-        VERIFY_JRUBY=true ;;
      --no-bootclasspath)
         NO_BOOTCLASSPATH=true ;;
-     --ng)
-        # Use native Nailgun client to toss commands to server
-        process_special_opts "--ng" ;;
+     --ng*)
+       echo "Error: Nailgun is no longer supported"
+       exit 1 ;;
+     --environment) print_environment_log=1 ;;
      # warn but ignore
      --1.8) echo "warning: --1.8 ignored" ;;
      # warn but ignore
@@ -322,15 +387,7 @@ do
     shift
 done
 
-# Force file.encoding to UTF-8 when on Mac, since Apple JDK defaults to MacRoman (JRUBY-3576)
-if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
-  java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
-elif [[ -n "$JAVA_ENCODING" ]]; then
-  java_args=("${java_args[@]}" "-Dfile.encoding=$JAVA_ENCODING")
-fi
-
-# Force OpenJDK-based JVMs to use /dev/urandom for random number generation
-# See https://github.com/jruby/jruby/issues/4685 among others.
+# Force JDK to use specified java.security.egd rand source
 if [[ -n "$JAVA_SECURITY_EGD" ]]; then
   java_args=("${java_args[@]}" "-Djava.security.egd=$JAVA_SECURITY_EGD")
 fi
@@ -345,7 +402,10 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
+# ----- Tweak console environment for cygwin ------------------------------------------
+
 if $cygwin; then
+  use_exec=false
   JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
   JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
 
@@ -364,92 +424,83 @@ if $cygwin; then
 
 fi
 
-# Allow overriding default JSA file location
-if [ "$JRUBY_JSA" == "" ]; then
-  JRUBY_JSA=${JRUBY_HOME}/lib/jruby.jsa
-fi
+# ----- Module and Class Data Sharing flags for Java 9+ -----------------------
 
-# Determine whether to pass module-related flags
-classmod_flag="-classpath"
-if [ -d $JAVA_HOME/jmods ]; then
-  # Use module path instead of classpath
-  classmod_flag="--module-path"
+if [[ $is_java9 ]]; then
+  # Use module path instead of classpath for the jruby libs
+  classpath_args=(--module-path "$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH")
 
   # Switch to non-boot path since we can't use bootclasspath on 9+
   NO_BOOTCLASSPATH=1
 
+  # Add base opens we need for Ruby compatibility
+  process_java_opts $jruby_module_opts_file
+
+  # Allow overriding default JSA file location
+  if [ "$JRUBY_JSA" == "" ]; then
+    JRUBY_JSA=$jruby_jsa_file
+  fi
+
   # If we have a jruby.jsa file, enable AppCDS
   if [ -f $JRUBY_JSA ]; then
+    add_log
+    add_log "Detected Class Data Sharing archive:"
+    add_log "  $JRUBY_JSA"
+
     JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
   fi
-
-  # Add base opens we need for Ruby compatibility
-  JAVA_OPTS="$JAVA_OPTS --add-opens java.base/java.io=org.jruby.dist --add-opens java.base/java.nio.channels=org.jruby.dist"
+else
+  classpath_args=(-classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH")
 fi
 
-# Run JRuby!
-if [ "$nailgun_client" != "" ]; then
-  if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
-  else
-    echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
-    exit 1
-  fi
-else
+# ----- Final prepration of the Java command line -----------------------------
+
+# Include all options from files at the beginning of the Java command line
+JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
+
 if [[ "$NO_BOOTCLASSPATH" != "" || "$VERIFY_JRUBY" != "" ]]; then
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Running with instrumented profiler"
-  fi
 
-  if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
-    echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
-    JRUBY_OPTS=''
-  fi
-
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" ${classmod_flag} "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" "${classpath_args[@]}" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $mode "$@"
+    $java_class $mode "$@")
+
+else
+
+  # Run normally
+
+  jvm_command=("$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "-Djruby.home=$JRUBY_HOME" \
+    "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+    "-Djruby.shell=$JRUBY_SHELL" \
+    $java_class $mode "$@")
+
+fi
+
+full_java_command="${jvm_command[@]}"
+add_log
+add_log "Java command line:"
+add_log "  $full_java_command"
+
+if [[ $print_environment_log ]]; then
+  echo "$environment_log"
+  exit 0
+fi
+
+# ----- Run JRuby! ------------------------------------------------------------
+
+if $use_exec; then
+  exec "${jvm_command[@]}"
+else
+  "${jvm_command[@]}"
 
   # Record the exit status immediately, or it will be overridden.
   JRUBY_STATUS=$?
-
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Profiling results:"
-      cat profile.txt
-      rm profile.txt
-  fi
 
   if $cygwin; then
     stty icanon echo > /dev/null 2>&1
   fi
 
   exit $JRUBY_STATUS
-else
-  if $cygwin; then
-    # exec doed not work correctly with cygwin bash
-    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
-
-    # Record the exit status immediately, or it will be overridden.
-    JRUBY_STATUS=$?
-
-    stty icanon echo > /dev/null 2>&1
-
-    exit $JRUBY_STATUS
-  else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
-  fi
 fi
-fi
-
-# Be careful adding code down here, you might override the exit
-# status of the jruby invocation.

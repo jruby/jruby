@@ -83,7 +83,12 @@ public class Block {
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
-    public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY);
+    public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY, new Binding(null, new Frame(), Visibility.PUBLIC));
+
+    static {
+        // Ensure dummy frame is updated with NULL_BLOCK since it may clinit first.
+        NULL_BLOCK.getBinding().getFrame().updateFrame(null, null, "", NULL_BLOCK);
+    }
 
     public Block(BlockBody body, Binding binding) {
         assert binding != null;
@@ -92,7 +97,7 @@ public class Block {
     }
 
     public Block(BlockBody body) {
-        this(body, Binding.DUMMY);
+        this(body, Block.NULL_BLOCK.getBinding());
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {
@@ -302,6 +307,14 @@ public class Block {
 
     public void escape() {
         escapeBlock.escaped = true;
+    }
+
+    public Visibility getVisibility() {
+        return binding.getFrame().getVisibility();
+    }
+
+    public void setVisibility(Visibility vis) {
+        binding.getFrame().setVisibility(vis);
     }
 
     @Override

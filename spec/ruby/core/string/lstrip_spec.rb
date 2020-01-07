@@ -14,10 +14,12 @@ describe "String#lstrip" do
    "\x00hello".lstrip.should == "\x00hello"
   end
 
-  it "taints the result when self is tainted" do
-    "".taint.lstrip.tainted?.should == true
-    "ok".taint.lstrip.tainted?.should == true
-    "   ok".taint.lstrip.tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints the result when self is tainted" do
+      "".taint.lstrip.tainted?.should == true
+      "ok".taint.lstrip.tainted?.should == true
+      "   ok".taint.lstrip.tainted?.should == true
+    end
   end
 end
 
@@ -39,12 +41,12 @@ describe "String#lstrip!" do
   end
 
   it "raises a #{frozen_error_class} on a frozen instance that is modified" do
-    lambda { "  hello  ".freeze.lstrip! }.should raise_error(frozen_error_class)
+    -> { "  hello  ".freeze.lstrip! }.should raise_error(frozen_error_class)
   end
 
   # see [ruby-core:23657]
   it "raises a #{frozen_error_class} on a frozen instance that would not be modified" do
-    lambda { "hello".freeze.lstrip! }.should raise_error(frozen_error_class)
-    lambda { "".freeze.lstrip!      }.should raise_error(frozen_error_class)
+    -> { "hello".freeze.lstrip! }.should raise_error(frozen_error_class)
+    -> { "".freeze.lstrip!      }.should raise_error(frozen_error_class)
   end
 end

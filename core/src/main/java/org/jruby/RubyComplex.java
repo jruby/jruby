@@ -92,7 +92,6 @@ public class RubyComplex extends RubyNumeric {
         };
 
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
-        runtime.setComplex(complexc);
 
         complexc.setClassIndex(ClassIndex.COMPLEX);
         complexc.setReifiedClass(RubyComplex.class);
@@ -108,7 +107,7 @@ public class RubyComplex extends RubyNumeric {
             complexc.undefineMethod(undef);
         }
 
-        complexc.defineConstant("I", RubyComplex.newComplexConvert(runtime.getCurrentContext(), RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
+        complexc.defineConstant("I", RubyComplex.convert(runtime.getCurrentContext(), complexc, RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
 
         return complexc;
     }
@@ -149,6 +148,10 @@ public class RubyComplex extends RubyNumeric {
      */
     public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x) {
         return new RubyComplex(runtime, runtime.getComplex(), x, RubyFixnum.zero(runtime));
+    }
+
+    public static RubyComplex newComplexRawImage(Ruby runtime, IRubyObject image) {
+        return new RubyComplex(runtime, runtime.getComplex(), RubyFixnum.zero(runtime), image);
     }
 
     /** rb_complex_new1
@@ -426,6 +429,7 @@ public class RubyComplex extends RubyNumeric {
         return convert(context, context.runtime.getComplex(), x, y);
     }
 
+
     @Deprecated
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
@@ -689,13 +693,13 @@ public class RubyComplex extends RubyNumeric {
             boolean test = f_equal(context, real, otherComplex.real).isTrue() &&
                     f_equal(context, image, otherComplex.image).isTrue();
 
-            return context.runtime.newBoolean(test);
+            return RubyBoolean.newBoolean(context, test);
         }
 
         if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
             boolean test = f_equal(context, real, other).isTrue() && f_zero_p(context, image);
 
-            return context.runtime.newBoolean(test);
+            return RubyBoolean.newBoolean(context, test);
         }
         
         return f_equal(context, other, this);
@@ -853,7 +857,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(equals(context, other));
+        return RubyBoolean.newBoolean(context, equals(context, other));
     }
 
     private boolean equals(ThreadContext context, Object other) {
@@ -878,7 +882,7 @@ public class RubyComplex extends RubyNumeric {
      */
     private static boolean signbit(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFloat) {
-            double value = ((RubyFloat)x).getDoubleValue();
+            double value = ((RubyFloat) x).value;
             return !Double.isNaN(value) && Double.doubleToLongBits(value) < 0;
         }
         return f_negative_p(context, x);

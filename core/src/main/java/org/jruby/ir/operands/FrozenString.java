@@ -22,44 +22,38 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
     public final ByteList bytelist;
-    public final String   string;
     public final int      coderange;
+    public String string;
     public final String file;
     public final int line;
 
     /**
      * Used by persistence and by .freeze optimization
      */
-    public FrozenString(ByteList byteList, int cr, String file, int line) {
-        this(internedStringFromByteList(byteList), byteList, cr, file, line);
-    }
-
-    protected FrozenString(String string, ByteList bytelist, int coderange, String file, int line) {
+    public FrozenString(ByteList bytelist, int coderange, String file, int line) {
         super();
 
         this.bytelist = bytelist;
         this.coderange = coderange;
-        this.string = string;
         this.file = file;
         this.line = line;
     }
 
     public FrozenString(RubySymbol symbol) {
-        this(symbol.idString(), symbol.getBytes());
+        this(symbol.getBytes());
     }
 
     /**
      * IRBuild.buildGetDefinition returns a frozen string and this is for all intern'd Java strings.
      */
     public FrozenString(String s) {
-        this(s, ByteList.create(s));
+        this(ByteList.create(s));
     }
 
-    private FrozenString(String string, ByteList byteList) {
+    private FrozenString(ByteList byteList) {
         super();
 
         this.bytelist = byteList;
-        this.string = string;
         this.coderange = StringSupport.CR_7BIT;
         this.file = "<dummy>";
         this.line = -1;
@@ -97,7 +91,7 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
 
     @Override
     public String toString() {
-        return "frozen:\"" + string + "\"";
+        return "frozen:\"" + bytelist + "\"";
     }
 
     @Override
@@ -120,7 +114,11 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
     }
 
     public String getString() {
-        return string;
+        String cached = string;
+        if (cached == null) {
+            string = cached = internedStringFromByteList(bytelist);
+        }
+        return cached;
     }
 
     public String getFile() {
@@ -144,5 +142,12 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         return new FrozenString(d.decodeByteList(), d.decodeInt(), d.decodeString(), d.decodeInt());
     }
 
-    public int getCodeRange() { return coderange; }
+    public int getCodeRange() {
+        return coderange;
+    }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

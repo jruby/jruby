@@ -1,2 +1,0 @@
-fails:Enumerator#each appends given arguments to receiver.each
-fails:Enumerator#each returns the same value from receiver.each if block and arguments are given

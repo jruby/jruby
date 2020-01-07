@@ -1,2 +1,0 @@
-fails:Enumerator::Lazy#flat_map sets #size to nil
-fails:Enumerator::Lazy#flat_map on a nested Lazy sets #size to nil

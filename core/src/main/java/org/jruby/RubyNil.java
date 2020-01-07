@@ -78,7 +78,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
-        runtime.setNilClass(nilClass);
+
         nilClass.setClassIndex(ClassIndex.NIL);
         nilClass.setReifiedClass(RubyNil.class);
         
@@ -195,7 +195,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "|", required = 1)
     public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newBoolean(obj.isTrue());
+        return RubyBoolean.newBoolean(context, obj.isTrue());
     }
     
     /** nil_xor
@@ -203,7 +203,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "^", required = 1)
     public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newBoolean(obj.isTrue());
+        return RubyBoolean.newBoolean(context, obj.isTrue());
     }
 
     @Override

@@ -1,1 +1,0 @@
-fails:Mutex#lock blocks the caller if already locked

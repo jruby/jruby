@@ -88,7 +88,7 @@ public class DefinedVariableNode extends FlowGraphNode<DefinedVariablesProblem, 
 
     private void identifyUndefinedVarsInClosure(Set<Variable> undefinedVars, IRClosure cl, int nestingLevel) {
         int clBaseDepth = nestingLevel + (cl.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE) ? 0 : 1);
-        cl.setUpUseDefLocalVarMaps();
+        cl.getFullInterpreterContext().setUpUseDefLocalVarMaps();
         for (LocalVariable lv: cl.getUsedLocalVariables()) {
             // This can happen where an outer scope variable
             // is not used in this scope but is used in a nested

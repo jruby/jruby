@@ -91,9 +91,6 @@ public final class Frame {
     /** whether this frame has been captured into a binding **/
     boolean captured;
 
-    /** A dummy frame **/
-    public static final Frame DUMMY = new Frame();
-
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
      * when needed.
@@ -102,16 +99,26 @@ public final class Frame {
     }
 
     /**
+     * Used only by static init to avoid accessing NULL_BLOCK before initialized.
+     * @param nullBlock
+     */
+    private Frame(Block nullBlock) {
+        this.block = nullBlock;
+    }
+
+    /**
      * Copy constructor, since Frame objects are pre-allocated and updated
      * when needed.
      */
     private Frame(Frame frame) {
-        assert frame.block != null : "Block uses null object pattern.  It should NEVER be null";
+        Block block = frame.block;
+
+        block.getClass(); // null check
 
         this.self = frame.self;
         this.name = frame.name;
         this.klazz = frame.klazz;
-        this.block = frame.block;
+        this.block = block;
         this.visibility = frame.visibility;
     }
 
@@ -140,7 +147,9 @@ public final class Frame {
      * @param frame The frame whose data to duplicate in this frame
      */
     public void updateFrame(Frame frame) {
-        assert frame.block != null : "Block uses null object pattern.  It should NEVER be null";
+        Block block = frame.block;
+
+        block.getClass(); // null check
 
         this.self = frame.self;
         this.name = frame.name;
@@ -158,13 +167,31 @@ public final class Frame {
      * @param block The block passed to the method
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name, Block block) {
-        assert block != null : "Block uses null object pattern.  It should NEVER be null";
+        block.getClass(); // null check
 
         this.self = self;
         this.name = name;
         this.klazz = klazz;
         this.block = block;
         this.visibility = Visibility.PUBLIC;
+    }
+
+    /**
+     * Update the frame based on the given values.
+     *
+     * @param klazz The class against which the method is being called
+     * @param self The 'self' for the method
+     * @param name The name under which the method is being invoked
+     * @param block The block passed to the method
+     */
+    public void updateFrame(RubyModule klazz, IRubyObject self, String name, Visibility visibility, Block block) {
+        block.getClass(); // null check
+
+        this.self = self;
+        this.name = name;
+        this.klazz = klazz;
+        this.block = block;
+        this.visibility = visibility;
     }
 
     /**
@@ -347,4 +374,7 @@ public final class Frame {
 
         return sb.toString();
     }
+
+    @Deprecated
+    public static final Frame DUMMY = new Frame();
 }

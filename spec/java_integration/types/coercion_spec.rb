@@ -40,7 +40,7 @@ describe "Java String and primitive-typed methods" do
 
     expect(CoreTypeMethods.getVoid).to eq(nil)
 
-    expect(CoreTypeMethods.getBigInteger).to eq(1234567890123456789012345678901234567890)
+    expect(CoreTypeMethods.getBigInteger).to eq(1234567890_1234567890_1234567890_1234567890)
   end
 
   it "should be coerced from Ruby types when passing parameters" do
@@ -222,23 +222,23 @@ describe "Java String and primitive-typed fields" do
   it "coerce to Ruby types when retrieved" do
     # static
     expect(JavaFields.stringStaticField).to be_kind_of(String)
-    expect(JavaFields.stringStaticField).to eq("foo");
+    expect(JavaFields.stringStaticField).to eq('000');
 
     expect(JavaFields.byteStaticField).to be_kind_of(Integer)
     expect(JavaFields.byteStaticField).to eq(1)
     expect(JavaFields.shortStaticField).to be_kind_of(Integer)
     expect(JavaFields.shortStaticField).to eq(2)
     expect(JavaFields.charStaticField).to be_kind_of(Integer)
-    expect(JavaFields.charStaticField).to eq(2)
+    expect(JavaFields.charStaticField).to eq('3'.ord)
     expect(JavaFields.intStaticField).to be_kind_of(Integer)
     expect(JavaFields.intStaticField).to eq(4)
     expect(JavaFields.longStaticField).to be_kind_of(Integer)
-    expect(JavaFields.longStaticField).to eq(8)
+    expect(JavaFields.longStaticField).to eq(5)
 
     expect(JavaFields.floatStaticField).to be_kind_of(Float)
-    expect(JavaFields.floatStaticField).to eq(4.5)
+    expect(JavaFields.floatStaticField).to eq(6.0)
     expect(JavaFields.doubleStaticField).to be_kind_of(Float)
-    expect(JavaFields.doubleStaticField).to eq(8.5)
+    expect(JavaFields.doubleStaticField).to eq(7.2)
 
     expect(JavaFields.trueStaticField).to be_kind_of(TrueClass)
     expect(JavaFields.trueStaticField).to eq(true)
@@ -248,31 +248,29 @@ describe "Java String and primitive-typed fields" do
     expect(JavaFields.nullStaticField).to be_kind_of(NilClass)
     expect(JavaFields.nullStaticField).to eq(nil)
 
-    expect(JavaFields.bigIntegerStaticField).to be_kind_of(Bignum)
-    expect(JavaFields.bigIntegerStaticField).to eq(
-      1234567890123456789012345678901234567890
-    )
+    expect(JavaFields.bigIntegerStaticField).to be_kind_of(Integer) # Bignum
+    expect(JavaFields.bigIntegerStaticField).to eq(111_111_111_111_111_111_110)
 
     # instance
     jf = JavaFields.new
     expect(jf.stringField).to be_kind_of(String)
-    expect(jf.stringField).to eq("foo");
+    expect(jf.stringField).to eq("000");
 
     expect(jf.byteField).to be_kind_of(Integer)
     expect(jf.byteField).to eq(1)
     expect(jf.shortField).to be_kind_of(Integer)
     expect(jf.shortField).to eq(2)
     expect(jf.charField).to be_kind_of(Integer)
-    expect(jf.charField).to eq(2)
+    expect(jf.charField).to eq(84)
     expect(jf.intField).to be_kind_of(Integer)
     expect(jf.intField).to eq(4)
     expect(jf.longField).to be_kind_of(Integer)
-    expect(jf.longField).to eq(8)
+    expect(jf.longField).to eq(5)
 
     expect(jf.floatField).to be_kind_of(Float)
-    expect(jf.floatField).to eq(4.5)
+    expect(jf.floatField).to eq(6.0)
     expect(jf.doubleField).to be_kind_of(Float)
-    expect(jf.doubleField).to eq(8.5)
+    expect(jf.doubleField).to eq(7.2)
 
     expect(jf.trueField).to be_kind_of(TrueClass)
     expect(jf.trueField).to eq(true)
@@ -282,10 +280,8 @@ describe "Java String and primitive-typed fields" do
     expect(jf.nullField).to be_kind_of(NilClass)
     expect(jf.nullField).to eq(nil)
 
-    expect(jf.bigIntegerField).to be_kind_of(Bignum)
-    expect(jf.bigIntegerField).to eq(
-      1234567890123456789012345678901234567890
-    )
+    expect(jf.bigIntegerField).to be_kind_of(Integer) # Bignum
+    expect(jf.bigIntegerField).to eq(111_111_111_111_111_111_111)
   end
 end
 
@@ -297,16 +293,16 @@ describe "Java primitive-box-typed fields" do
     expect(JavaFields.shortObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.shortObjStaticField).to eq(2)
     expect(JavaFields.charObjStaticField).to be_kind_of(Integer)
-    expect(JavaFields.charObjStaticField).to eq(2)
+    expect(JavaFields.charObjStaticField).to eq('3'.ord)
     expect(JavaFields.intObjStaticField).to be_kind_of(Integer)
     expect(JavaFields.intObjStaticField).to eq(4)
     expect(JavaFields.longObjStaticField).to be_kind_of(Integer)
-    expect(JavaFields.longObjStaticField).to eq(8)
+    expect(JavaFields.longObjStaticField).to eq(5)
 
     expect(JavaFields.floatObjStaticField).to be_kind_of(Float)
-    expect(JavaFields.floatObjStaticField).to eq(4.5)
+    expect(JavaFields.floatObjStaticField).to eq(6.0)
     expect(JavaFields.doubleObjStaticField).to be_kind_of(Float)
-    expect(JavaFields.doubleObjStaticField).to eq(8.5)
+    expect(JavaFields.doubleObjStaticField).to eq(7.2)
 
     expect(JavaFields.trueObjStaticField).to be_kind_of(TrueClass)
     expect(JavaFields.trueObjStaticField).to eq(true)
@@ -320,16 +316,16 @@ describe "Java primitive-box-typed fields" do
     expect(jf.shortObjField).to be_kind_of(Integer)
     expect(jf.shortObjField).to eq(2)
     expect(jf.charObjField).to be_kind_of(Integer)
-    expect(jf.charObjField).to eq(2)
+    expect(jf.charObjField).to eq('T'.ord)
     expect(jf.intObjField).to be_kind_of(Integer)
     expect(jf.intObjField).to eq(4)
     expect(jf.longObjField).to be_kind_of(Integer)
-    expect(jf.longObjField).to eq(8)
+    expect(jf.longObjField).to eq(5)
 
     expect(jf.floatObjField).to be_kind_of(Float)
-    expect(jf.floatObjField).to eq(4.5)
+    expect(jf.floatObjField).to eq(6.0)
     expect(jf.doubleObjField).to be_kind_of(Float)
-    expect(jf.doubleObjField).to eq(8.5)
+    expect(jf.doubleObjField).to eq(7.2)
 
     expect(jf.trueObjField).to be_kind_of(TrueClass)
     expect(jf.trueObjField).to eq(true)
@@ -851,12 +847,16 @@ describe "Time#to_java" do
   end
 
   describe 'java 8 types' do
-    it "coerces to java.time.Instant" do
+    it "coerces to Instant" do
       t = Time.at(0)
       expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
+
+      t = Time.new(2019, 04, 18, 14, 30, (50 * 1_000_000_000 + 123456780) / 1_000_000_000r, '-03:00')
+      j = java.time.ZonedDateTime.of(2019, 04, 18, 14, 30, 50, 123456780, java.time.ZoneId.of('-03:00'))
+      expect(t.to_java(java.time.Instant)).to eq(j.toInstant)
     end
 
-    it "coerces to Temporal to Instant" do
+    it "coerces a Temporal to Instant" do
       t = Time.at(0, 123456.789)
       d = t.to_java(java.time.temporal.Temporal)
       expect(d.class).to eq(java.time.Instant)
@@ -953,7 +953,7 @@ describe "Date/DateTime#to_java" do
   end
 
   describe 'java 8 types' do
-    it "coerces to java.time.Instant" do
+    it "coerces to Instant" do
       t = Date.new(0)
       expect(t.to_java(java.time.Instant).class).to eq(java.time.Instant)
       local_date = java.time.LocalDate.of(-1, 12, 30) # joda-time vs ruby-date rules
@@ -964,7 +964,7 @@ describe "Date/DateTime#to_java" do
       expect(t.to_java(java.time.Instant)).to eq(java.time.Instant::EPOCH.plusSeconds(42))
     end
 
-    it "coerces to Temporal to Instant" do
+    it "coerces a Temporal to Instant" do
       t = Time.at(0, 123456.789).to_datetime
       d = t.to_java(java.time.temporal.Temporal)
       expect(d.class).to eq(java.time.Instant)
@@ -984,6 +984,34 @@ describe "Date/DateTime#to_java" do
       expect(d.class).to eq(java.time.LocalDateTime)
       expect(d).to eq(java.time.LocalDateTime.of(2002, 10, 31, 12, 24, 48))
     end
+  end
+end
+
+describe "java.time.Instant#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.Instant').to_time).to eq t
+  end
+end
+
+describe "java.time.LocalDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.LocalDateTime').to_time).to eq t
+  end
+end
+
+describe "java.time.OffsetDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.OffsetDateTime').to_time).to eq t
+  end
+end
+
+describe "java.time.ZonedDateTime#to_time" do
+  it 'works' do # NOTE: write a better spec
+    t = Time.now
+    expect(t.to_java('java.time.ZonedDateTime').to_time).to eq t
   end
 end
 
