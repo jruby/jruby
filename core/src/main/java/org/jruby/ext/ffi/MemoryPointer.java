@@ -124,7 +124,7 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(this == obj
+        return RubyBoolean.newBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
                 || (obj instanceof MemoryPointer
                 && ((MemoryPointer) obj).getAddress() == getAddress())
@@ -147,6 +147,6 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = "autorelease?")
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
+        return RubyBoolean.newBoolean(context, ((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
     }
 }

@@ -59,8 +59,6 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warning.defineAnnotatedMethods(RubyWarnings.class);
         warning.extend_object(warning);
 
-        runtime.setWarning(warning);
-
         return warning;
     }
 

@@ -53,7 +53,7 @@ import org.jruby.util.ByteList;
 public class RubyBoolean extends RubyObject implements Constantizable {
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
@@ -103,7 +103,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFalseClass(falseClass);
+
         falseClass.setClassIndex(ClassIndex.FALSE);
         falseClass.setReifiedClass(RubyBoolean.class);
         
@@ -117,7 +117,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     public static RubyClass createTrueClass(Ruby runtime) {
         RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setTrueClass(trueClass);
+
         trueClass.setClassIndex(ClassIndex.TRUE);
         trueClass.setReifiedClass(RubyBoolean.class);
         
@@ -131,6 +131,10 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
+    }
+
+    public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
     }
 
     static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
@@ -158,8 +162,8 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString false_to_s(IRubyObject fals) {
-            return RubyString.newStringShared(fals.getRuntime(), FALSE_BYTES);
+        public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
+            return RubyString.newStringShared(context.runtime, FALSE_BYTES);
         }
 
         @Override
@@ -196,8 +200,8 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString true_to_s(IRubyObject tru) {
-            return RubyString.newStringShared(tru.getRuntime(), TRUE_BYTES);
+        public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
+            return RubyString.newStringShared(context.runtime, TRUE_BYTES);
         }
 
         @Override
@@ -222,9 +226,9 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(getRuntime(), 20);
+            return RubyFixnum.newFixnum(metaClass.runtime, 20);
         } else {
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(metaClass.runtime);
         }
     }
 

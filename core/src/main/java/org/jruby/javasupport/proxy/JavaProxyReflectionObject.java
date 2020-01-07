@@ -69,7 +69,7 @@ public class JavaProxyReflectionObject extends RubyObject {
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return context.runtime.newBoolean( this.equals(obj) );
+        return RubyBoolean.newBoolean(context,  this.equals(obj) );
     }
 
     @Deprecated
@@ -89,7 +89,7 @@ public class JavaProxyReflectionObject extends RubyObject {
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return context.runtime.newBoolean(this == obj);
+        return RubyBoolean.newBoolean(context, this == obj);
     }
 
     @Override

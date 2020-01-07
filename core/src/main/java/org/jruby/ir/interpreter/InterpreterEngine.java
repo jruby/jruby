@@ -509,7 +509,7 @@ public class InterpreterEngine {
             }
 
             case BOX_BOOLEAN: {
-                RubyBoolean f = context.runtime.newBoolean(getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+                RubyBoolean f = RubyBoolean.newBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }

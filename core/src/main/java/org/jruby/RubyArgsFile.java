@@ -574,7 +574,7 @@ public class RubyArgsFile extends RubyObject {
 
         data.next_argv(context);
 
-        return RubyBoolean.newBoolean(context.runtime, isClosed(context, data.currentFile));
+        return RubyBoolean.newBoolean(context, isClosed(context, data.currentFile));
     }
 
     private static boolean isClosed(ThreadContext context, IRubyObject currentFile) {

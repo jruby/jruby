@@ -4,6 +4,7 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -160,7 +161,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = { "autorelease?", "autorelease" })
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.runtime.newBoolean(autorelease);
+        return RubyBoolean.newBoolean(context, autorelease);
     }
 
     @Override

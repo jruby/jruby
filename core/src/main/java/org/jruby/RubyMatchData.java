@@ -71,7 +71,6 @@ public class RubyMatchData extends RubyObject {
 
     public static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
-        runtime.setMatchData(matchDataClass);
 
         matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
         matchDataClass.setReifiedClass(RubyMatchData.class);
@@ -81,6 +80,7 @@ public class RubyMatchData extends RubyObject {
 
         matchDataClass.getMetaClass().undefineMethod("new");
         matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
+
         return matchDataClass;
     }
 
@@ -432,8 +432,8 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod
     @Override
-    public RubyArray to_a() {
-        return match_array(metaClass.runtime, 0);
+    public RubyArray to_a(ThreadContext context) {
+        return match_array(context.runtime, 0);
     }
 
     @JRubyMethod(rest = true)
@@ -477,9 +477,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, ByteListHolder str) {
-        if (pattern == null) {
-            throw runtime.newIndexError("undefined group name reference: " + str);
-        }
+        assert pattern != null;
         ByteList value = str.getByteList();
         try {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
@@ -495,12 +493,12 @@ public class RubyMatchData extends RubyObject {
 
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
         if (obj instanceof RubySymbol) {
-            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)((RubySymbol)obj).id2name());
-        } else if (obj instanceof RubyString) {
-            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)obj);
-        } else {
-            return RubyNumeric.num2int(obj);
+            return nameToBackrefNumber(runtime, pattern, regs, ((RubySymbol) obj).to_s(runtime));
         }
+        if (obj instanceof RubyString) {
+            return nameToBackrefNumber(runtime, pattern, regs, (RubyString) obj);
+        }
+        return RubyNumeric.num2int(obj);
     }
 
     // MRI: namev_to_backref_number
@@ -576,26 +574,26 @@ public class RubyMatchData extends RubyObject {
 
     @Deprecated
     public IRubyObject op_aref19(IRubyObject idx, IRubyObject rest) {
-        return op_aref(idx, rest);
+        return op_aref(getRuntime().getCurrentContext(), idx, rest);
     }
 
     /** match_aref
      *
      */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
         check();
         IRubyObject result = op_arefCommon(idx);
-        return result == null ? to_a().aref(idx) : result;
+        return result == null ? to_a(context).aref(idx) : result;
     }
 
     /** match_aref
     *
     */
     @JRubyMethod(name = "[]")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+    public IRubyObject op_aref(ThreadContext context, IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a().aref(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(idx)) == null ? to_a(context).aref(idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(IRubyObject idx) {
@@ -604,9 +602,10 @@ public class RubyMatchData extends RubyObject {
             if (num >= 0) return RubyRegexp.nth_match(num, this);
         } else {
             if (idx instanceof RubySymbol) {
-                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)((RubySymbol)idx).id2name()), this);
-            } else if (idx instanceof RubyString) {
-                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString)idx), this);
+                return RubyRegexp.nth_match(nameToBackrefNumber(((RubySymbol) idx).to_s(metaClass.runtime)), this);
+            }
+            if (idx instanceof RubyString) {
+                return RubyRegexp.nth_match(nameToBackrefNumber((RubyString) idx), this);
             }
         }
         return null;
@@ -870,6 +869,22 @@ public class RubyMatchData extends RubyObject {
      */
     public int numRegs() {
         return regs == null ? 1 : regs.numRegs;
+    }
+
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        return match_array(getRuntime(), 0);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(IRubyObject idx) {
+        return op_aref(getRuntime().getCurrentContext(), idx);
+    }
+
+    @Deprecated
+    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
+        return op_aref(getRuntime().getCurrentContext(), idx, rest);
     }
 
 }

@@ -309,7 +309,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
         initializedCheck();
-        return context.runtime.newBoolean(count.get() == 0);
+        return RubyBoolean.newBoolean(context, count.get() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})
@@ -481,7 +481,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "closed?")
     public IRubyObject closed_p(ThreadContext context) {
         initializedCheck();
-        return context.runtime.newBoolean(closed);
+        return RubyBoolean.newBoolean(context, closed);
     }
 
     public synchronized void shutdown() throws InterruptedException {

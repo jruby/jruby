@@ -1251,7 +1251,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "!=", required = 1)
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
-        return context.runtime.newBoolean(!sites(context).op_equal.call(context, this, this, other).isTrue());
+        return RubyBoolean.newBoolean(context, !sites(context).op_equal.call(context, this, this, other).isTrue());
     }
 
     /**
@@ -2082,13 +2082,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     final RubyBoolean respond_to_p(ThreadContext context, IRubyObject methodName, final boolean includePrivate) {
-        final Ruby runtime = context.runtime;
         final String name = methodName.asJavaString();
-        if (getMetaClass().respondsToMethod(name, !includePrivate)) return runtime.getTrue();
+        if (getMetaClass().respondsToMethod(name, !includePrivate)) return context.tru;
         // MRI (1.9) always passes down a symbol when calling respond_to_missing?
-        if ( ! (methodName instanceof RubySymbol) ) methodName = runtime.newSymbol(name);
-        IRubyObject respond = sites(context).respond_to_missing.call(context, this, this, methodName, runtime.newBoolean(includePrivate));
-        return runtime.newBoolean( respond.isTrue() );
+        if ( ! (methodName instanceof RubySymbol) ) methodName = context.runtime.newSymbol(name);
+        IRubyObject respond = sites(context).respond_to_missing.call(context, this, this, methodName, RubyBoolean.newBoolean(context, includePrivate));
+        return RubyBoolean.newBoolean(context, respond.isTrue());
     }
 
     /** rb_obj_id
@@ -2163,7 +2162,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      */
     public RubyBoolean tainted_p(ThreadContext context) {
-        return context.runtime.newBoolean(isTaint());
+        return RubyBoolean.newBoolean(context, isTaint());
     }
 
     /** rb_obj_taint
@@ -2255,7 +2254,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     a.frozen?   #=> true
      */
     public RubyBoolean frozen_p(ThreadContext context) {
-        return context.runtime.newBoolean(isFrozen());
+        return RubyBoolean.newBoolean(context, isFrozen());
     }
 
     /** rb_obj_is_instance_of
@@ -2310,7 +2309,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             throw context.runtime.newTypeError("class or module required");
         }
 
-        return context.runtime.newBoolean(((RubyModule) type).isInstance(this));
+        return RubyBoolean.newBoolean(context, ((RubyModule) type).isInstance(this));
     }
 
     /** rb_obj_methods
@@ -2572,9 +2571,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *  The default to_a method is deprecated.
      */
-    public RubyArray to_a() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
-        return getRuntime().newArray(this);
+    public RubyArray to_a(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
+        return runtime.newArray(this);
     }
 
     /** rb_obj_instance_eval
@@ -2804,7 +2804,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return
      */
     public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
-        return context.runtime.newBoolean(!sites(context).match.call(context, this, this, arg).isTrue());
+        return RubyBoolean.newBoolean(context, !sites(context).match.call(context, this, this, arg).isTrue());
     }
 
 
@@ -2831,7 +2831,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_defined?("@c")   #=> false
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
-        return context.runtime.newBoolean(variableTableContains(validateInstanceVariable(name)));
+        return RubyBoolean.newBoolean(context, variableTableContains(validateInstanceVariable(name)));
     }
 
     /** rb_obj_ivar_get
@@ -3224,6 +3224,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Deprecated
     public IRubyObject op_match19(ThreadContext context, IRubyObject arg) {
         return context.nil;
+    }
+
+    @Deprecated
+    public RubyArray to_a() {
+        return to_a(getRuntime().getCurrentContext());
     }
 
     @Deprecated

@@ -91,7 +91,7 @@ public class RubyStruct extends RubyObject {
 
     public static RubyClass createStructClass(Ruby runtime) {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setStructClass(structClass);
+
         structClass.setClassIndex(ClassIndex.STRUCT);
         structClass.includeModule(runtime.getEnumerable());
         structClass.setReifiedClass(RubyStruct.class);
@@ -263,7 +263,7 @@ public class RubyStruct extends RubyObject {
 
         if (block.isGiven()) {
             // Since this defines a new class, run the block as a module-eval.
-            block.setEvalType(EvalType.MODULE_EVAL);
+            block = block.cloneBlockForEval(newStruct, EvalType.MODULE_EVAL);
             // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
             block.getBinding().setVisibility(Visibility.PUBLIC);
             block.yieldNonArray(runtime.getCurrentContext(), newStruct, newStruct);
@@ -519,13 +519,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private SizeFn enumSizeFn() {
-        final RubyStruct self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.size();
-            }
-        };
+        return (context, args) -> size();
     }
 
     public IRubyObject set(IRubyObject value, int index) {
@@ -628,8 +622,8 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(name = {"to_a", "values"})
     @Override
-    public RubyArray to_a() {
-        return getRuntime().newArray(values);
+    public RubyArray to_a(ThreadContext context) {
+        return context.runtime.newArray(values);
     }
 
     @JRubyMethod
@@ -964,6 +958,12 @@ public class RubyStruct extends RubyObject {
         public IRubyObject call(ThreadContext context, RubyStruct self, IRubyObject obj, boolean recur) {
             return self.inspectStruct(context, recur);
         }
+    }
+
+    @Deprecated
+    @Override
+    public RubyArray to_a() {
+        return getRuntime().newArray(values);
     }
 
 }

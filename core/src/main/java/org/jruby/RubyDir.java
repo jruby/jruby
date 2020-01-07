@@ -94,7 +94,6 @@ public class RubyDir extends RubyObject implements Closeable {
 
     public static RubyClass createDirClass(Ruby runtime) {
         RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), DIR_ALLOCATOR);
-        runtime.setDir(dirClass);
 
         dirClass.setClassIndex(ClassIndex.DIR);
         dirClass.setReifiedClass(RubyDir.class);

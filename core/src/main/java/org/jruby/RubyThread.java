@@ -432,7 +432,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // it must provide an allocator that can create empty object instances which
         // initialize then fills with appropriate data.
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setThread(threadClass);
 
         threadClass.setClassIndex(ClassIndex.THREAD);
         threadClass.setReifiedClass(RubyThread.class);
@@ -1004,7 +1003,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
         synchronized (locals) {
-            return context.runtime.newBoolean(locals.containsKey(key));
+            return RubyBoolean.newBoolean(context, locals.containsKey(key));
         }
     }
 
@@ -1032,7 +1031,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
-            return context.runtime.newBoolean(locals.containsKey(key));
+            return RubyBoolean.newBoolean(context, locals.containsKey(key));
         }
     }
 

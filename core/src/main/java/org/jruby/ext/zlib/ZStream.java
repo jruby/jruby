@@ -29,6 +29,7 @@ package org.jruby.ext.zlib;
 
 import com.jcraft.jzlib.JZlib;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
@@ -157,8 +158,7 @@ public abstract class ZStream extends RubyObject {
     @JRubyMethod(name = "finished?")
     public IRubyObject finished_p(ThreadContext context) {
         checkClosed();
-        Ruby runtime = context.getRuntime();
-        return internalFinished() ? runtime.getTrue() : runtime.getFalse();
+        return RubyBoolean.newBoolean(context, internalFinished());
     }
 
     @JRubyMethod(name = {"close", "end"})

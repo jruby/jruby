@@ -1,3 +1,7 @@
+# This is part of JRuby's FFI-based fiddle implementation.
+# It should be maintained as part of the JRuby repository, as it has no
+# equivalent file in CRuby.
+
 require 'ffi'
 
 module Fiddle
@@ -162,6 +166,14 @@ module Fiddle
       else
         raise ArgumentError.new("invalid free func")
       end
+    end
+
+    module LibC
+      extend FFI::Library
+      ffi_lib FFI::Library::LIBC
+      MALLOC = attach_function :malloc, [ :size_t ], :pointer
+      REALLOC = attach_function :realloc, [ :pointer, :size_t ], :pointer
+      FREE = attach_function :free, [ :pointer ], :void
     end
 
     def self.malloc(size, free = nil)

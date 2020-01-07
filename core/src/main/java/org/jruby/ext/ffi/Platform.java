@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -323,6 +324,32 @@ public class Platform {
         module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
         module.defineAnnotatedMethods(Platform.class);
     }
+
+    @JRubyMethod(name = "windows?", module=true)
+    public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
+        return RubyBoolean.newBoolean(context, OS == OS.WINDOWS);
+    }
+    @JRubyMethod(name = "mac?", module=true)
+    public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
+        return RubyBoolean.newBoolean(context, OS == OS.DARWIN);
+    }
+    @JRubyMethod(name = "unix?", module=true)
+    public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
+        return RubyBoolean.newBoolean(context, Platform.getPlatform().isUnix());
+    }
+    @JRubyMethod(name = "bsd?", module=true)
+    public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
+        return RubyBoolean.newBoolean(context, Platform.getPlatform().isBSD());
+    }
+    @JRubyMethod(name = "linux?", module=true)
+    public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
+        return RubyBoolean.newBoolean(context, OS == OS.LINUX);
+    }
+    @JRubyMethod(name = "solaris?", module=true)
+    public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
+        return RubyBoolean.newBoolean(context, OS == OS.SOLARIS);
+    }
+
     /**
      * An extension over <code>System.getProperty</code> method.
      * Handles security restrictions, and returns the default

@@ -109,7 +109,12 @@ public abstract class IRBytecodeAdapter {
                     }
                     break;
                 case FUNCTIONAL:
-                    siteClass = FunctionalCachingCallSite.class;
+                    if (profileCandidate) {
+                        profiled = true;
+                        siteClass = ProfilingCachingCallSite.class;
+                    } else {
+                        siteClass = FunctionalCachingCallSite.class;
+                    }
                     break;
                 case VARIABLE:
                     siteClass = VariableCachingCallSite.class;
@@ -120,7 +125,7 @@ public abstract class IRBytecodeAdapter {
             if (profiled) {
                 method.getstatic(className, scopeFieldName, ci(IRScope.class));
                 method.ldc(call.getCallSiteId());
-                signature = sig(siteClass, String.class, IRScope.class, long.class);
+                signature = sig(CallType.class, siteClass, String.class, IRScope.class, long.class);
             } else {
                 signature = sig(siteClass, String.class);
             }

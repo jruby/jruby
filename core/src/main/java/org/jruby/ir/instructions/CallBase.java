@@ -41,7 +41,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     private transient boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private transient boolean dontInline;
     private transient boolean[] splatMap;
-    private transient boolean procNew;
+    protected transient boolean procNew;
     private boolean potentiallyRefined;
     private transient Set<FrameField> frameReads;
     private transient Set<FrameField> frameWrites;
@@ -185,11 +185,16 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         switch (callType) {
             case NORMAL:
                 if (IRManager.IR_INLINER && hasLiteralClosure) {
-                    return MethodIndex.getProfilingCallSite(name, scope, callsiteId);
+                    return MethodIndex.getProfilingCallSite(callType, name, scope, callsiteId);
                 } else {
                     return MethodIndex.getCallSite(name);
                 }
-            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
+            case FUNCTIONAL:
+                if (IRManager.IR_INLINER && hasLiteralClosure) {
+                    return MethodIndex.getProfilingCallSite(callType, name, scope, callsiteId);
+                } else {
+                    return MethodIndex.getFunctionalCallSite(name);
+                }
             case VARIABLE: return MethodIndex.getVariableCallSite(name);
             case SUPER: return MethodIndex.getSuperCallSite();
             case UNKNOWN:

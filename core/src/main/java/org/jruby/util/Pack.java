@@ -809,7 +809,86 @@ public class Pack {
         return (RubyArray) unpackInternal(context, encoded, formatString, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY, block);
     }
 
+    private static RubyString unpackBase46Strict(Ruby runtime, ByteList input) {
+        int index = 0; // current index of out
+        int s = -1;
+        int a = -1;
+        int b = -1;
+        int c = 0;
+
+        byte[] buf = input.unsafeBytes();
+        int begin = input.begin();
+        int length = input.realSize();
+        int end = begin + length;
+
+        if (length % 4 != 0) throw runtime.newArgumentError("invalid base64");
+
+        int p = begin;
+        byte[] out = new byte[3 * ((length + 3) / 4)];
+
+        while (p < end && s != '=') {
+            // obtain a
+            s = buf[p++];
+            a = b64_xtable[s];
+            if (a == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain b
+            s = buf[p++];
+            b = b64_xtable[s];
+            if (b == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain c
+            s = buf[p++];
+            c = b64_xtable[s];
+            if (s == '=') {
+                if (buf[p++] != '=') throw runtime.newArgumentError("invalid base64");
+                break;
+            }
+            if (c == -1) throw runtime.newArgumentError("invalid base64");
+
+            // obtain d
+            s = buf[p++];
+            int d = b64_xtable[s];
+            if (s == '=') break;
+            if (d == -1) throw runtime.newArgumentError("invalid base64");
+
+            // calculate based on a, b, c and d
+            out[index++] = (byte) (a << 2 | b >> 4);
+            out[index++] = (byte) (b << 4 | c >> 2);
+            out[index++] = (byte) (c << 6 | d);
+        }
+
+        if (p < end) throw runtime.newArgumentError("invalid base64");
+
+        if (a != -1 && b != -1) {
+            if (c == -1 && s == '=') {
+                if ((b & 15) > 0) throw runtime.newArgumentError("invalid base64");
+                out[index++] = (byte)((a << 2 | b >> 4) & 255);
+            } else if(c != -1 && s == '=') {
+                if ((c & 3) > 0) throw runtime.newArgumentError("invalid base64");
+                out[index++] = (byte)((a << 2 | b >> 4) & 255);
+                out[index++] = (byte)((b << 4 | c >> 2) & 255);
+            }
+        }
+        return runtime.newString(new ByteList(out, 0, index));
+    }
+
     public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
+        int formatLength = formatString.realSize();
+
+        // Strict m0 is commmonly used in cookie handling so it has a fast path.
+        if (formatLength >= 1) {
+            byte first = (byte) (formatString.get(0) & 0xff);
+
+            if (first == 'm') {
+                if (formatLength == 2) {
+                    byte second = (byte) (formatString.get(1) & 0xff);
+
+                    if (second == '0') return unpackBase46Strict(context.runtime, encoded.getByteList());
+                }
+            }
+        }
+
         return unpackInternal(context, encoded, formatString, UNPACK_1, block);
     }
 
@@ -1748,12 +1827,14 @@ public class Pack {
      * Same as pack but defaults tainting of output to false.
      */
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor());
+        RubyString buffer = runtime.newString();
+        return packCommon(runtime.getCurrentContext(), list, formatString, false, executor(), buffer);
     }
 
     @Deprecated
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        return pack(context, list, formatString);
+        RubyString buffer = runtime.newString();
+        return pack(context, list, formatString, buffer);
     }
 
     @Deprecated
@@ -1763,8 +1844,8 @@ public class Pack {
             result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
     }
 
-    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString) {
-        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor());
+    public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString, RubyString buffer) {
+        RubyString pack = packCommon(context, list, formatString.getByteList(), formatString.isTaint(), executor(), buffer);
         return (RubyString) pack.infectBy(formatString);
     }
 
@@ -1780,9 +1861,11 @@ public class Pack {
         int idx;
     }
 
-    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor) {
+    private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString, boolean tainted, ConverterExecutor executor, RubyString buffer) {
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
-        ByteList result = new ByteList();
+
+        buffer.modify();
+        ByteList result = buffer.getByteList();
         boolean taintOutput = tainted;
         PackInts packInts = new PackInts(list.size(), 0);
         int type;
@@ -1907,21 +1990,20 @@ public class Pack {
             }
         }
 
-        RubyString output = RubyString.newString(context.runtime, result);
-        if (taintOutput) output.setTaint(true);
+        if (taintOutput) buffer.setTaint(true);
 
         switch (enc_info) {
             case 1:
-                output.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
+                buffer.setEncodingAndCodeRange(USASCII, StringSupport.CR_7BIT);
                 break;
             case 2:
-                output.associateEncoding(UTF8);
+                buffer.associateEncoding(UTF8);
                 break;
             default:
                 /* do nothing, keep ASCII-8BIT */
         }
 
-        return output;
+        return buffer;
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {

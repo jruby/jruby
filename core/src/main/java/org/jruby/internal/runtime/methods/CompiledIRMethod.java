@@ -18,7 +18,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CompiledIRMethod extends AbstractIRMethod implements Compilable<DynamicMethod>  {
-    private MethodHandle variable;
 
     private MethodHandle specific;
     private final int specificArity;
@@ -33,7 +32,6 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         super(method, visibility, implementationClass);
 
 
-        this.variable = variable;
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
@@ -56,7 +54,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     }
 
     public void setVariable(MethodHandle variable) {
-        this.variable = variable;
+        super.setHandle(variable);
     }
 
     public void setSpecific(MethodHandle specific) {
@@ -81,7 +79,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, block, clazz, name);
+            return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, block, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);
@@ -144,7 +142,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         try {
-            return (IRubyObject) this.variable.invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
+            return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
         }
         catch (Throwable t) {
             Helpers.throwException(t);

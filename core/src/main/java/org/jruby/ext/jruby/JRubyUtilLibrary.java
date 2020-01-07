@@ -89,7 +89,7 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true, name = "native_posix?")
     public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
-        return context.runtime.newBoolean(context.runtime.getPosix().isNative());
+        return RubyBoolean.newBoolean(context, context.runtime.getPosix().isNative());
     }
 
     @Deprecated

@@ -33,6 +33,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -385,8 +386,8 @@ public class Helpers {
         }
     }
 
-    private static class MethodMissingMethod extends DynamicMethod {
-        private final CacheEntry entry;
+    public static class MethodMissingMethod extends DynamicMethod {
+        public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
 
@@ -1956,10 +1957,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = sites(context).op_equal.call(context, a, a, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -1971,10 +1971,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b, CallSite equal) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = equal.call(context, a, a, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -1986,10 +1985,9 @@ public class Helpers {
      * @return
      */
     public static RubyBoolean rbEql(ThreadContext context, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.runtime;
-        if (a == b) return runtime.getTrue();
+        if (a == b) return context.tru;
         IRubyObject res = invokedynamic(context, a, EQL, b);
-        return runtime.newBoolean(res.isTrue());
+        return RubyBoolean.newBoolean(context, res.isTrue());
     }
 
     /**
@@ -2380,6 +2378,43 @@ public class Helpers {
         return invokedynamic(context, self, MethodNames.values()[index], arg0);
     }
 
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts
+     * @return false if `exception: false`, true otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, RubyHash opts) {
+        return ArgsUtil.extractKeywordArg(context, opts, "exception") != context.fals;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param opts the keyword args hash
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject opts, boolean defValue) {
+        IRubyObject hash = TypeConverter.checkHashType(context.runtime, opts);
+        if (hash != context.nil) {
+            return extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
+        return defValue;
+    }
+
+    /**
+     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * @param context
+     * @param args method args
+     * @param defValue to return when no keyword options
+     * @return false if `exception: false`, true (or default value) otherwise
+     */
+    public static boolean extractExceptionOnlyArg(ThreadContext context, IRubyObject[] args, boolean defValue) {
+        if (args.length == 0) return defValue;
+        return extractExceptionOnlyArg(context, args[args.length - 1], defValue);
+    }
+
     public static void throwException(final Throwable e) {
         Helpers.<RuntimeException>throwsUnchecked(e);
     }
@@ -2496,6 +2531,13 @@ public class Helpers {
 
     public static <T> T[] arrayOf(T... values) {
         return values;
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject... values) {
+        IRubyObject[] newValues = new IRubyObject[values.length + 1];
+        newValues[0] = first;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        return newValues;
     }
 
     public static <T> T[] arrayOf(Class<T> t, int size, T fill) {

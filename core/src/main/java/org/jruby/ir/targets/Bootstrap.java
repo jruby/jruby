@@ -620,6 +620,23 @@ public class Bootstrap {
         return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
     }
 
+    static MethodHandle buildMethodMissingHandle(InvokeSite site, CacheEntry entry, IRubyObject self) {
+        SmartBinder binder;
+        DynamicMethod method = entry.method;
+
+        binder = SmartBinder.from(site.signature)
+                .permute("context", "self", "arg.*", "block")
+                .insert(2, new String[]{"rubyClass", "name", "argName"}, new Class[]{RubyModule.class, String.class, IRubyObject.class}, entry.sourceModule, site.name(), self.getRuntime().newSymbol(site.methodName))
+                .insert(0, "method", DynamicMethod.class, method)
+                .collect("args", "arg.*");
+
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+            LOG.info(site.name() + "\tbound to method_missing for " + method + ", " + Bootstrap.logMethod(method));
+        }
+
+        return binder.invokeVirtualQuiet(LOOKUP, "call").handle();
+    }
+
     static MethodHandle buildAttrHandle(InvokeSite site, CacheEntry entry, IRubyObject self) {
         DynamicMethod method = entry.method;
 
@@ -1353,7 +1370,7 @@ public class Bootstrap {
     }
 
     static String logBlock(Block block) {
-        return "[" + block.getBody() + " " + block.getFrame() + "]";
+        return "[" + block.getBody().getFile() + ":" + block.getBody().getLine() + "]";
     }
 
     private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);

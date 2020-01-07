@@ -76,23 +76,18 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private FeedValue feedValue;
 
-    public static void defineEnumerator(Ruby runtime) {
-        final RubyModule Enumerable = runtime.getModule("Enumerable");
-
-        final RubyClass Enumerator;
-        Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ALLOCATOR);
+    public static RubyClass defineEnumerator(Ruby runtime, RubyModule Enumerable) {
+        final RubyClass Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ALLOCATOR);
 
         Enumerator.includeModule(Enumerable);
         Enumerator.defineAnnotatedMethods(RubyEnumerator.class);
-        runtime.setEnumerator(Enumerator);
-
-        RubyGenerator.createGeneratorClass(runtime);
-        RubyYielder.createYielderClass(runtime);
 
         final RubyClass FeedValue;
         FeedValue = runtime.defineClassUnder("FeedValue", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, Enumerator);
         FeedValue.defineAnnotatedMethods(FeedValue.class);
         Enumerator.setConstantVisibility(runtime, "FeedValue", true);
+
+        return Enumerator;
     }
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
@@ -216,7 +211,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                 if (size != null && !size.respondsTo("call")) size = null;
                 sizeFn = ((RubyEnumerator) object).sizeFn;
             } else {
-                sizeFn = RubyEnumerable.enumSizeFn(context, object);
+                sizeFn = RubyEnumerable.enumSizeFn(object);
             }
         }
 
@@ -492,12 +487,12 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @JRubyMethod(required = 1)
     public IRubyObject each_with_object(final ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
-                enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, enumSizeFn(context));
+                enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, enumSizeFn());
     }
 
     @JRubyMethod
     public IRubyObject with_object(ThreadContext context, final IRubyObject arg, final Block block) {
-        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) : enumeratorizeWithSize(context, this, "with_object", new IRubyObject[]{arg}, enumSizeFn(context));
+        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) : enumeratorizeWithSize(context, this, "with_object", new IRubyObject[]{arg}, enumSizeFn());
     }
 
     @JRubyMethod(rest = true)
@@ -535,7 +530,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @JRubyMethod
     public final IRubyObject size(ThreadContext context) {
         if (sizeFn != null) {
-            return sizeFn.size(methodArgs);
+            return sizeFn.size(context, methodArgs);
         }
 
         IRubyObject size = this.size;
@@ -561,14 +556,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return -1;
     }
 
-    private SizeFn enumSizeFn(final ThreadContext context) {
-        final RubyEnumerator self = this;
-        return new SizeFn() {
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                return self.size(context);
-            }
-        };
+    private SizeFn enumSizeFn() {
+        return (context, args) -> this.size(context);
     }
 
     private IRubyObject with_index_common(ThreadContext context, final Block block, final String rubyMethodName, IRubyObject arg) {
@@ -576,8 +565,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
         if ( ! block.isGiven() ) {
             return arg.isNil() ?
-                    enumeratorizeWithSize(context, this, rubyMethodName, enumSizeFn(context)) :
-                        enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{runtime.newFixnum(index)}, enumSizeFn(context));
+                    enumeratorizeWithSize(context, this, rubyMethodName, enumSizeFn()) :
+                        enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{runtime.newFixnum(index)}, enumSizeFn());
         }
 
         return RubyEnumerable.callEach(runtime, context, this, new RubyEnumerable.EachWithIndex(block, index));
@@ -667,7 +656,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
      * TODO (CON): fix this to receive context and state to we're not reallocating it all the time
      */
     public interface SizeFn {
-        IRubyObject size(IRubyObject[] args);
+        IRubyObject size(ThreadContext context, IRubyObject[] args);
     }
 
     private static JavaSites.FiberSites sites(ThreadContext context) {

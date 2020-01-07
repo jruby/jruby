@@ -893,12 +893,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "julian?")
     public RubyBoolean julian_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, isJulian());
+        return RubyBoolean.newBoolean(context, isJulian());
     }
 
     @JRubyMethod(name = "gregorian?")
     public RubyBoolean gregorian_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, ! isJulian());
+        return RubyBoolean.newBoolean(context, ! isJulian());
     }
 
     public final boolean isJulian() {
@@ -1161,13 +1161,13 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "julian_leap?", meta = true)
     public static IRubyObject julian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
         final RubyInteger y = year.convertToInteger();
-        return context.runtime.newBoolean(isJulianLeap(y.getLongValue()));
+        return RubyBoolean.newBoolean(context, isJulianLeap(y.getLongValue()));
     }
 
     @JRubyMethod(name = "gregorian_leap?", alias = "leap?", meta = true)
     public static IRubyObject gregorian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
         final RubyInteger y = year.convertToInteger();
-        return context.runtime.newBoolean(isGregorianLeap(y.getLongValue()));
+        return RubyBoolean.newBoolean(context, isGregorianLeap(y.getLongValue()));
     }
 
     // All years divisible by 4 are leap years in the Julian calendar.
@@ -1178,13 +1178,20 @@ public class RubyDate extends RubyObject {
     // All years divisible by 4 are leap years in the Gregorian calendar,
     // except for years divisible by 100 and not by 400.
     private static boolean isGregorianLeap(final long year) {
-        return year % 4 == 0 && year % 100 != 0 || year % 400 == 0;
+        long uy = (year >= 0) ? year : -year;
+        if ((uy & 3) != 0)
+            return false;
+
+        long century = uy / 100;
+        if (uy != century * 100)
+            return true;
+        return (century & 3) == 0;
     }
 
     @JRubyMethod(name = "leap?")
     public IRubyObject leap_p(ThreadContext context) {
         final long year = dt.getYear();
-        return context.runtime.newBoolean( isJulian() ? isJulianLeap(year) : isGregorianLeap(year) );
+        return RubyBoolean.newBoolean(context,  isJulian() ? isJulianLeap(year) : isGregorianLeap(year) );
     }
 
     //
@@ -2427,7 +2434,7 @@ public class RubyDate extends RubyObject {
             set_hash(context, hash, "mday", cstr2num(context.runtime, d, bp, ep));
         }
 
-        if (comp != null) set_hash(context, hash, "_comp", context.runtime.newBoolean(comp));
+        if (comp != null) set_hash(context, hash, "_comp", RubyBoolean.newBoolean(context, comp));
 
         return hash;
     }

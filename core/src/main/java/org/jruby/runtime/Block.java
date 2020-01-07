@@ -68,7 +68,7 @@ public class Block {
      */
     private RubyProc proc = null;
 
-    public Type type = Type.NORMAL;
+    public final Type type;
 
     private final Binding binding;
 
@@ -78,7 +78,9 @@ public class Block {
     private boolean escaped;
 
     /** What block to use for determining escape; defaults to this */
-    private Block escapeBlock = this;
+    private final Block escapeBlock;
+
+    private final EvalType evalType;
 
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
@@ -90,14 +92,30 @@ public class Block {
         NULL_BLOCK.getBinding().getFrame().updateFrame(null, null, "", NULL_BLOCK);
     }
 
-    public Block(BlockBody body, Binding binding) {
+    private Block(BlockBody body, Binding binding, Type type, Block escapeBlock, EvalType evalType) {
         assert binding != null;
         this.body = body;
         this.binding = binding;
+        this.type = type;
+        this.escapeBlock = escapeBlock;
+        this.evalType = evalType;
+    }
+
+    public Block(BlockBody body, Binding binding, Type type) {
+        assert binding != null;
+        this.body = body;
+        this.binding = binding;
+        this.type = type;
+        this.escapeBlock = this;
+        this.evalType = EvalType.NONE;
+    }
+
+    public Block(BlockBody body, Binding binding) {
+        this(body, binding, Type.NORMAL);
     }
 
     public Block(BlockBody body) {
-        this(body, Block.NULL_BLOCK.getBinding());
+        this(body, Block.NULL_BLOCK.getBinding(), Type.NORMAL);
     }
 
     public DynamicScope allocScope(DynamicScope parentScope) {
@@ -108,17 +126,13 @@ public class Block {
         //
         // FIXME: Rather than modify static-scope, it seems we ought to set a field in block-body which is then
         // used to tell dynamic-scope that it is a dynamic scope for a thread body.  Anyway, to be revisited later!
-        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, body.getEvalType());
+        DynamicScope newScope = DynamicScope.newDynamicScope(body.getStaticScope(), parentScope, evalType);
         if (type == Block.Type.LAMBDA) newScope.setLambda(true);
         return newScope;
     }
 
     public EvalType getEvalType() {
-        return body.getEvalType();
-    }
-
-    public void setEvalType(EvalType evalType) {
-        body.setEvalType(evalType);
+        return evalType;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
@@ -187,24 +201,30 @@ public class Block {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(body, binding);
+        return cloneBlockAsType(type);
+    }
 
-        newBlock.type = type;
-        newBlock.escapeBlock = this;
+    public Block cloneBlockAsType(Type newType) {
+        Block newBlock = new Block(body, binding, newType, this, evalType);
 
         return newBlock;
     }
 
     public Block cloneBlockAndBinding() {
-        Block newBlock = new Block(body, binding.clone());
+        return cloneBlockAndBinding(evalType);
+    }
 
-        newBlock.type = type;
-        newBlock.escapeBlock = this;
+    public Block cloneBlockAndBinding(EvalType evalType) {
+        Block newBlock = new Block(body, binding.clone(), type, this, evalType);
 
         return newBlock;
     }
 
     public Block cloneBlockAndFrame() {
+        return cloneBlockAndFrame(EvalType.NONE);
+    }
+
+    public Block cloneBlockAndFrame(EvalType evalType) {
         Binding oldBinding = binding;
         Binding binding = new Binding(
                 oldBinding.getSelf(),
@@ -215,30 +235,27 @@ public class Block {
                 oldBinding.getFile(),
                 oldBinding.getLine());
 
-        Block newBlock = new Block(body, binding);
-
-        newBlock.type = type;
-        newBlock.escapeBlock = this;
+        Block newBlock = new Block(body, binding, type, this, evalType);
 
         return newBlock;
     }
 
     public Block cloneBlockForEval(IRubyObject self, EvalType evalType) {
-        Block block = cloneBlock();
+        Block newBlock = new Block(body, binding, type, this, evalType);
+
+        Block block = newBlock;
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);
-        block.setEvalType(evalType);
 
         return block;
     }
 
     public Block deepCloneBlockForEval(IRubyObject self, EvalType evalType) {
-        Block block = cloneBlockAndBinding();
+        Block block = cloneBlockAndBinding(evalType);
 
         block.getBinding().setSelf(self);
         block.getBinding().getFrame().setSelf(self);
-        block.setEvalType(evalType);
 
         return block;
     }

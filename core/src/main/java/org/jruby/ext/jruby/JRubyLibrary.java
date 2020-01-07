@@ -86,12 +86,12 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableGems());
         }
 
         @JRubyMethod(name = "did_you_mean_disabled?")
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
+            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 

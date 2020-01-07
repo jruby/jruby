@@ -166,6 +166,8 @@ class TestDir < Test::Unit::TestCase
     # Test unescaped special char that is meant to be used with another
     # (i.e. bogus glob pattern)
     assert_equal([], Dir.glob("{"))
+    assert_equal([], Dir.glob('[*BoGuS_RANDOM-stuff'))
+    Dir.glob('[*') # used to ArrayIndexOutOfBoundsException
   end
 
   def test_glob_empty_string

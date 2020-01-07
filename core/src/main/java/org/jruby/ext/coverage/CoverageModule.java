@@ -85,9 +85,10 @@ public class CoverageModule {
         for (Map.Entry<String, int[]> entry : coverage.entrySet()) {
             if (entry.getKey().equals(CoverageData.STARTED)) continue; // ignore our hidden marker
 
-            RubyArray ary = RubyArray.newArray(runtime, entry.getValue().length);
-            for (int i = 0; i < entry.getValue().length; i++) {
-                int integer = entry.getValue()[i];
+            final int[] val = entry.getValue();
+            RubyArray ary = RubyArray.newArray(runtime, val.length);
+            for (int i = 0; i < val.length; i++) {
+                int integer = val[i];
                 ary.store(i, integer == -1 ? context.nil : runtime.newFixnum(integer));
             }
             covHash.fastASetCheckString(runtime, RubyString.newString(runtime, entry.getKey()), ary);

@@ -102,7 +102,7 @@ public class IRMethod extends IRScope {
         this.defNode = null;
     }
 
-    public synchronized BasicBlock[] prepareForCompilation() {
+    public BasicBlock[] prepareForCompilation() {
         buildMethodImpl();
 
         return super.prepareForCompilation();

@@ -29,6 +29,7 @@
 package org.jruby.ext.io.wait;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
@@ -79,18 +80,17 @@ public class IOWaitLibrary implements Library {
     @JRubyMethod(name = "ready?")
     public static IRubyObject ready(ThreadContext context, IRubyObject _io) {
         RubyIO io = (RubyIO)_io;
-        Ruby runtime = context.runtime;
         OpenFile fptr;
 //        ioctl_arg n;
 
         fptr = io.getOpenFileChecked();
         fptr.checkReadable(context);
-        if (fptr.readPending() != 0) return runtime.getTrue();
+        if (fptr.readPending() != 0) return context.tru;
         // TODO: better effort to get available bytes from our channel
 //        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qnil;
 //        if (ioctl(fptr->fd, FIONREAD, &n)) return Qnil;
 //        if (n > 0) return Qtrue;
-        return runtime.newBoolean(fptr.readyNow(context));
+        return RubyBoolean.newBoolean(context, fptr.readyNow(context));
     }
 
     @JRubyMethod(optional = 1)

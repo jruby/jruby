@@ -473,10 +473,9 @@ public class RubyGlobal {
         }
 
         @Override
-        public RubyHash to_hash() {
-            Ruby runtime = getRuntime();
-            RubyHash hash = RubyHash.newHash(runtime);
-            hash.replace(runtime.getCurrentContext(), this);
+        public RubyHash to_hash(ThreadContext context) {
+            RubyHash hash = RubyHash.newHash(context.runtime);
+            hash.replace(context, this);
             return hash;
         }
 
