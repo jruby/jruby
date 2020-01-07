@@ -579,7 +579,8 @@ public class RubyModule extends RubyObject {
     public RubyString rubyBaseName() {
         String baseName = getBaseName();
 
-        return baseName == null ? null : (RubyString) getRuntime().newSymbol(baseName).to_s();
+        final Ruby runtime = metaClass.runtime;
+        return baseName == null ? null : runtime.newSymbol(baseName).to_s(runtime);
     }
 
     private RubyString calculateAnonymousRubyName() {
@@ -772,9 +773,8 @@ public class RubyModule extends RubyObject {
     }
 
     private void yieldRefineBlock(ThreadContext context, RubyModule refinement, Block block) {
-        block = block.cloneBlockAndFrame();
+        block = block.cloneBlockAndFrame(EvalType.MODULE_EVAL);
 
-        block.setEvalType(EvalType.MODULE_EVAL);
         block.getBinding().setSelf(refinement);
 
         RubyModule overlayModule = block.getBody().getStaticScope().getOverlayModuleForWrite(context);
@@ -2094,14 +2094,14 @@ public class RubyModule extends RubyObject {
      *  this method should be used only as an API to define/open nested classes
      */
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return getRuntime().defineClassUnder(name, superClass, allocator, this);
+        return superClass.runtime.defineClassUnder(name, superClass, allocator, this);
     }
 
     /** rb_define_module_under
      *  this method should be used only as an API to define/open nested module
      */
     public RubyModule defineModuleUnder(String name) {
-        return getRuntime().defineModuleUnder(name, this);
+        return metaClass.runtime.defineModuleUnder(name, this);
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
@@ -2382,10 +2382,15 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject name() {
-        return name19();
+        return name(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod(name = "name")
+    public IRubyObject name(ThreadContext context) {
+        return getBaseName() == null ? context.nil : rubyName().strDup(context.runtime);
+    }
+
+    @Deprecated
     public IRubyObject name19() {
         return getBaseName() == null ? getRuntime().getNil() : rubyName().strDup(getRuntime());
     }
@@ -3644,19 +3649,25 @@ public class RubyModule extends RubyObject {
         return runtime.newBoolean(value != null);
     }
 
+    public IRubyObject const_get(IRubyObject symbol) {
+        return const_get(getRuntime().getCurrentContext(), new IRubyObject[]{symbol});
+    }
+
+    @Deprecated
+    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
+
+    @Deprecated
+    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+        return const_get(context, args);
+    }
+
     /** rb_mod_const_get
      *
      */
-    public IRubyObject const_get(IRubyObject symbol) {
-        return const_get_2_0(getRuntime().getCurrentContext(), new IRubyObject[]{symbol});
-    }
-
-    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
-        return const_get_2_0(context, args);
-    }
-
     @JRubyMethod(name = "const_get", required = 1, optional = 1)
-    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject const_get(ThreadContext context, IRubyObject... args) {
         final Ruby runtime = context.runtime;
         boolean inherit = args.length == 1 || ( ! args[1].isNil() && args[1].isTrue() );
 
@@ -3782,11 +3793,13 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.runtime;
 
         Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
-        RubyArray array = runtime.newArray(constantNames.size());
+        RubyArray array = RubyArray.newBlankArrayInternal(runtime, constantNames.size());
 
+        int i = 0;
         for (String name : constantNames) {
-            array.append(runtime.newSymbol(name));
+            array.storeInternal(i++, runtime.newSymbol(name));
         }
+        array.realLength = i;
         return array;
     }
 

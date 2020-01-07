@@ -52,7 +52,7 @@ import org.jruby.util.ByteList;
 public class RubyNil extends RubyObject implements Constantizable {
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);
@@ -166,7 +166,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     @Override
     @JRubyMethod
     public IRubyObject inspect() {
-        return RubyNil.inspect(getRuntime());
+        return RubyNil.inspect(metaClass.runtime);
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")
@@ -208,7 +208,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Override
     @JRubyMethod(name = "nil?")
-    public IRubyObject nil_p(ThreadContext context) {
+    public RubyBoolean nil_p(ThreadContext context) {
         return context.tru;
     }
 
@@ -229,7 +229,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(8);
+        return RubyFixnum.newFixnum(metaClass.runtime, 8);
     }
     
     @Override

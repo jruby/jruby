@@ -65,12 +65,10 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
         // do we handle this sticky situation?
         boolean matches = receiver.getMetaClass().getGeneration() == getExpectedVersion();
 
-        /*
         if (!matches) {
-            System.out.println("GUARD: " + (receiver.getMetaClass().getGeneration() == getExpectedVersion()) + ", OBJ: " +
-                    receiver + ", VERS: " + receiver.getMetaClass().getGeneration() + ", EVERSE: " + getExpectedVersion());
+            //System.out.println("GUARD: " + (receiver.getMetaClass().getGeneration() == getExpectedVersion()) + ", OBJ: " +
+            //        receiver + ", VERS: " + receiver.getMetaClass().getGeneration() + ", EVERSE: " + getExpectedVersion());
         }
-         */
 
         return matches;
     }

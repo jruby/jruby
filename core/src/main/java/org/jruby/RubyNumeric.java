@@ -515,10 +515,9 @@ public class RubyNumeric extends RubyObject {
         if (other.isSpecialConst() || other instanceof RubyFloat) {
             other = other.inspect();
         } else {
-            other = other.getMetaClass().name();
+            other = other.getMetaClass().name(context);
         }
-        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
-                other, getMetaClass()));
+        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s", other, getMetaClass()));
     }
 
     /** rb_num_coerce_bin

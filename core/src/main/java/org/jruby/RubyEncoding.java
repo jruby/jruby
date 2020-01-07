@@ -86,7 +86,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     private Encoding encoding;
     private final ByteList name;
     private final boolean isDummy;
-    private final Object constant;
+    private final transient Object constant;
 
     private RubyEncoding(Ruby runtime, byte[] name, int p, int end, boolean isDummy) {
         this(runtime, new ByteList(name, p, end), null, isDummy);

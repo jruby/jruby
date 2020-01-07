@@ -323,6 +323,7 @@ public class JavaSites {
 
     public static class EnumerableSites {
         public final CheckedSites size_checked = new CheckedSites("size");
+        public final CachingCallSite to_enum = new FunctionalCachingCallSite("to_enum");
     }
 
     public static class ComparableSites {

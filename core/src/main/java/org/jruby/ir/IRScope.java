@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
@@ -26,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
@@ -1031,6 +1031,9 @@ public abstract class IRScope implements ParseResult {
         }
 
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
+        if (newContext == null) {
+            return inlineFailed("FIXME: BBs are not linearized???");
+        }
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
 
@@ -1059,11 +1062,14 @@ public abstract class IRScope implements ParseResult {
         if (alreadyHasInline) return;
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, callsiteId, classToken, cloneHost);
+        Ruby runtime = manager.getRuntime();
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            runtime.getInlineStats().incrementInlineFailedCount();
             return;
         } else {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+            runtime.getInlineStats().incrementInlineSuccessCount();
         }
 
         // We are not running any JIT-specific passes here.
@@ -1071,7 +1077,7 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+        runtime.getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
     public void inlineMethodCompiled(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {

@@ -68,6 +68,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.management.Caches;
+import org.jruby.management.InlineStats;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
@@ -264,6 +265,7 @@ public final class Ruby implements Constantizable {
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
+        this.inlineStats        = new InlineStats();
         this.caches             = new Caches();
 
         this.random = initRandom();
@@ -663,6 +665,7 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(parserStats);
         this.beanManager.register(runtimeBean);
         this.beanManager.register(caches);
+        this.beanManager.register(inlineStats);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -1266,6 +1269,10 @@ public final class Ruby implements Constantizable {
 
     public JITCompiler getJITCompiler() {
         return jitCompiler;
+    }
+
+    public InlineStats getInlineStats() {
+        return inlineStats;
     }
 
     /**
@@ -5236,6 +5243,8 @@ public final class Ruby implements Constantizable {
 
     // Parser stats
     private final ParserStats parserStats;
+
+    private InlineStats inlineStats;
 
     // Compilation
     private final JITCompiler jitCompiler;

@@ -1,0 +1,1 @@
+fails:NameError#dup copies the name and receiver

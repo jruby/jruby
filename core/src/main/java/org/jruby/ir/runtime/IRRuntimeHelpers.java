@@ -1646,7 +1646,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject[] pieces, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1656,7 +1656,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1666,7 +1666,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1676,7 +1676,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1686,7 +1686,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2, arg3);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1696,7 +1696,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, arg4, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2, arg3, arg4);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -2050,9 +2050,6 @@ public class IRRuntimeHelpers {
             self = useBindingSelf(block.getBinding());
         }
 
-        // Clear block's eval type
-        block.setEvalType(EvalType.NONE);
-
         // Return self in case it has been updated
         return self;
     }
@@ -2140,9 +2137,7 @@ public class IRRuntimeHelpers {
             string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
         }
 
-        string.setFrozen(true);
-
-        return string;
+        return freezeLiteralString(string);
     }
 
     @JIT
