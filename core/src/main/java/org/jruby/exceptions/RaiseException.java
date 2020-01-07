@@ -118,10 +118,6 @@ public class RaiseException extends JumpException {
             exception.setBacktrace(backtrace);
             if (!backtrace.isNil() && !isEmptyArray(backtrace)) {
                 exception.captureBacktrace(context);
-            } else { // !backtrace.isNil()
-                //fillInStackTraceSkip(1 + 2); // TODO: we fill the stack due backwards compatibility
-                // we likely want a flag like -Xexception.java.trace to fine control filling in the stack-trace
-                // (but ONLY for sub-classes of RaiseException?)
             }
             setStackTraceFromException();
         }
