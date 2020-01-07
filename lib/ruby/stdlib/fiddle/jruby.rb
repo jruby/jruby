@@ -164,6 +164,14 @@ module Fiddle
       end
     end
 
+    module LibC
+      extend FFI::Library
+      ffi_lib FFI::Library::LIBC
+      MALLOC = attach_function :malloc, [ :size_t ], :pointer
+      REALLOC = attach_function :realloc, [ :pointer, :size_t ], :pointer
+      FREE = attach_function :free, [ :pointer ], :void
+    end
+
     def self.malloc(size, free = nil)
       self.new(LibC.malloc(size), size, free ? free : LibC::FREE)
     end
