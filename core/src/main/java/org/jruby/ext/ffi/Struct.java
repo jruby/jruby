@@ -21,7 +21,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     private AbstractMemory memory;
     private volatile Object[] referenceCache;
     private volatile IRubyObject[] valueCache;
-    
+
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new Struct(runtime, klass);
