@@ -130,9 +130,6 @@ public abstract class Factory {
             if (ffi.getClass(CallbackInfo.CLASS_NAME) == null) {
                 CallbackInfo.createCallbackInfoClass(runtime, ffi);
             }
-            if (ffi.getClass("Enum") == null) {
-                Enum.createEnumClass(runtime, ffi);
-            }
             if (ffi.getClass("Enums") == null) {
                 Enums.createEnumsClass(runtime, ffi);
             }
