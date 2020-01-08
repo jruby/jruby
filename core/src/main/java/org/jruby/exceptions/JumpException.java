@@ -126,7 +126,7 @@ public class JumpException extends RuntimeException {
         return this;
     }
     
-    protected Throwable originalFillInStackTrace() {
+    protected final Throwable originalFillInStackTrace() {
         return super.fillInStackTrace();
     }
 }
