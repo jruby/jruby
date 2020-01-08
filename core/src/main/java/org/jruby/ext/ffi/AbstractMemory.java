@@ -1880,13 +1880,14 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     private IRubyObject putBytes(ThreadContext context, long off, ByteList bl, int idx, int len) {
-        if (idx < 0 || idx > bl.length()) {
-            throw context.runtime.newRangeError("invalid string index");
+        if (idx < 0) {
+            throw context.runtime.newRangeError("index can not be less than zero");
         }
 
-        if (len < 0 || len > (bl.length() - idx)) {
-            throw context.runtime.newRangeError("invalid length");
+        if ((idx + len) > bl.length()) {
+            throw context.runtime.newRangeError("index+length is greater than size of string");
         }
+
         getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
 
         return this;
