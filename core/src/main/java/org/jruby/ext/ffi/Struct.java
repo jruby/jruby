@@ -112,8 +112,14 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
                 throw runtime.newRuntimeError("no valid struct layout for " + ((RubyClass) structClass).getName());
             }
 
-            // Cache the layout on the Struct metaclass for faster retrieval next time
-            ((RubyClass) structClass).setFFIHandle(layout);
+            // FIXME: This cache breaks repeat layouts against the same class, since the first layout
+            // gets cached. It broke struct_spec.rb where it reopens PairLayout in two successive specs,
+            // but has never been reported to JRuby as a bug. This may be a case worth preventing with
+            // a hard error, to avoid the need to constantly re-retrieve the layout.
+
+//            // Cache the layout on the Struct metaclass for faster retrieval next time
+//            ((RubyClass) structClass).setFFIHandle(layout);
+
             return (StructLayout) layout;
 
         } catch (ClassCastException ex) {
