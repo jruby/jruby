@@ -37,6 +37,8 @@ module TestLibrary
       "freebsd"
     when /openbsd/
       "openbsd"
+    when /dragonfly/
+      "dragonflybsd"
     when /sunos|solaris/
       "solaris"
     when /mswin|mingw/

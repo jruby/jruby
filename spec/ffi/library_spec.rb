@@ -73,7 +73,7 @@ describe "Library" do
         end
       }.to raise_error(LoadError)
     end
-    
+
   end
 
   unless RbConfig::CONFIG['target_os'] =~ /mswin|mingw/
@@ -259,12 +259,12 @@ describe "Library" do
     expect(lib.get).to eq(val)
   end
 
+  class GlobalStruct < FFI::Struct
+    layout :data, :long
+  end
+
   [ 0, 0x7fffffff, -0x80000000, -1 ].each do |i|
     it "structure" do
-      class GlobalStruct < FFI::Struct
-        layout :data, :long
-      end
-
       lib = Module.new do |m|
         m.extend FFI::Library
         ffi_lib TestLibrary::PATH

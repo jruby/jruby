@@ -46,6 +46,8 @@ module FFI
       "netbsd"
     when /openbsd/
       "openbsd"
+    when /dragonfly/
+      "dragonflybsd"
     when /sunos|solaris/
       "solaris"
     when /mingw|mswin/
@@ -92,9 +94,10 @@ module FFI
     IS_FREEBSD = is_os("freebsd")
     IS_NETBSD = is_os("netbsd")
     IS_OPENBSD = is_os("openbsd")
+    IS_DRAGONFLYBSD = is_os("dragonfly")
     IS_SOLARIS = is_os("solaris")
     IS_WINDOWS = is_os("windows")
-    IS_BSD = IS_MAC || IS_FREEBSD || IS_NETBSD || IS_OPENBSD
+    IS_BSD = IS_MAC || IS_FREEBSD || IS_NETBSD || IS_OPENBSD || IS_DRAGONFLYBSD
 
     # Add the version for known ABI breaks
     name_version = "12" if IS_FREEBSD && OSVERSION >= 12 # 64-bit inodes
@@ -166,12 +169,6 @@ module FFI
     # @return [Boolean]
     def self.unix?
       !IS_WINDOWS
-    end
-
-    # Test if current OS is a Linux
-    # @return [Boolean]
-    def self.linux?
-      IS_LINUX
     end
   end
 end

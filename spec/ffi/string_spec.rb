@@ -16,23 +16,6 @@ describe "String tests" do
     attach_function :string_null, [ ], :string
   end
 
-  it "MemoryPointer#get_string returns a tainted string" do
-    mp = FFI::MemoryPointer.new 1024
-    mp.put_string(0, "test\0")
-    str = mp.get_string(0)
-    expect(str.tainted?).to be true
-  end
-
-  it "String returned by a method is tainted" do
-    mp = FFI::MemoryPointer.new :pointer
-    sp = FFI::MemoryPointer.new 1024
-    sp.put_string(0, "test")
-    mp.put_pointer(0, sp)
-    str = StrLibTest.ptr_ret_pointer(mp, 0)
-    expect(str).to eq("test")
-    expect(str).to be_tainted
-  end
-
   it "A String can be passed to a :pointer argument" do
     str = "string buffer"
     expect(StrLibTest.pointer_string_equals(str, str)).to eq(1)
@@ -44,15 +27,6 @@ describe "String tests" do
     expect { StrLibTest.string_equals(s, s) }.to raise_error(ArgumentError)
   end
 
-  it "Tainted String parameter should throw a SecurityError" do
-    $SAFE = 1
-    str = "test"
-    str.taint
-    begin
-      expect(LibTest.string_equals(str, str)).to be false
-    rescue SecurityError
-    end
-  end if false
   it "casts nil as NULL pointer" do
     expect(StrLibTest.string_dummy(nil)).to be_nil
   end

@@ -47,7 +47,7 @@ module FFI
 
     if lib && File.basename(lib) == lib
       lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
-      r = Platform::IS_GNU ? "\\.so($|\\.[1234567890]+)" : "\\.#{Platform::LIBSUFFIX}$"
+      r = Platform::IS_WINDOWS || Platform::IS_MAC ? "\\.#{Platform::LIBSUFFIX}$" : "\\.so($|\\.[1234567890]+)"
       lib += ".#{Platform::LIBSUFFIX}" unless lib =~ /#{r}/
     end
 
@@ -65,16 +65,16 @@ module FFI
   #
   # A basic usage may be:
   #  require 'ffi'
-  #  
+  #
   #  module Hello
   #    extend FFI::Library
   #    ffi_lib FFI::Library::LIBC
   #    attach_function 'puts', [ :string ], :int
   #  end
-  #  
+  #
   #  Hello.puts("Hello, World")
   #
-  # 
+  #
   module Library
     CURRENT_PROCESS = FFI::CURRENT_PROCESS
     LIBC = FFI::Platform::LIBC
@@ -87,7 +87,7 @@ module FFI
       raise RuntimeError.new("must only be extended by module") unless mod.kind_of?(Module)
     end
 
-    
+
     # @param [Array] names names of libraries to load
     # @return [Array<DynamicLibrary>]
     # @raise {LoadError} if a library cannot be opened
