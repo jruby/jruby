@@ -522,8 +522,8 @@ public class RubyLexer extends LexingCommon {
                 yaccValue = new RationalNode(getPosition(), new FixnumNode(getPosition(), numerator.longValueExact()),
                         new FixnumNode(getPosition(), denominator.longValueExact()));
             } catch (ArithmeticException ae) {
-                // FIXME: Rational supports Bignum numerator and denominator
-                compile_error(PID.RATIONAL_OUT_OF_RANGE, "Rational (" + numerator + "/" + denominator + ") out of range.");
+                yaccValue = new RationalNode(getPosition(), new BignumNode(getPosition(), numerator.toBigIntegerExact()),
+                        new BignumNode(getPosition(), denominator.toBigIntegerExact()));
             }
             return considerComplex(RubyParser.tRATIONAL, suffix);
         }
