@@ -2492,14 +2492,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Scope(Scope scope) {
-        IRScope irScope = scope.getScope();
-        String name = JavaNameMangler.encodeScopeForBacktrace(irScope) + '$' + methodIndex++ + "_IRSCope";
-        if (scopeMap.get(name) == null) {
-            scopeMap.put(name, irScope);
-            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, name, ci(IRScope.class), null, null).visitEnd();
-        }
-        jvmAdapter().getstatic(jvm.clsData().clsName, name, ci(IRScope.class));
-        jvmAdapter().invokestatic(p(Helpers.class), "getStaticScope", sig(StaticScope.class, IRScope.class));
+        jvmMethod().loadStaticScope();
     }
 
     @Override
