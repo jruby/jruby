@@ -52,7 +52,6 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.RubyStringBuilder;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -154,7 +153,6 @@ public class RubyException extends RubyObject {
 
     public static RubyClass createExceptionClass(Ruby runtime) {
         RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
-        runtime.setException(exceptionClass);
 
         exceptionClass.setClassIndex(ClassIndex.EXCEPTION);
         exceptionClass.setReifiedClass(RubyException.class);
@@ -376,7 +374,6 @@ public class RubyException extends RubyObject {
     public IRubyObject getBacktrace() {
         IRubyObject backtraceObject = backtrace.backtraceObject;
         if (backtraceObject != null) return backtraceObject;
-
 
         return backtrace.backtraceObject = backtrace.generateBacktrace(getRuntime());
     }
