@@ -1234,17 +1234,18 @@ public final class ThreadContext {
     }
 
     public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
+        if (runtime.isDebug()) return; // leave true default
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
     }
 
     @JIT
     public void exceptionBacktraceOn() {
-        this.exceptionRequiresBacktrace = true;
+        setExceptionRequiresBacktrace(true);
     }
 
     @JIT
     public void exceptionBacktraceOff() {
-        this.exceptionRequiresBacktrace = false;
+        setExceptionRequiresBacktrace(false);
     }
 
     private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
