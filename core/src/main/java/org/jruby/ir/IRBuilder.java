@@ -2607,7 +2607,7 @@ public class IRBuilder {
         return buildEnsureInternal(ensureNode.getBodyNode(), ensureNode.getEnsureNode());
     }
 
-    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensurerNode) {
+    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensureNode) {
         // Save $!
         final Variable savedGlobalException = createTemporaryVariable();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -2620,18 +2620,18 @@ public class IRBuilder {
         // Push a new ensure block node onto the stack of ensure bodies being built
         // The body's instructions are stashed and emitted later.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope,
-            (ensureBodyNode instanceof RescueNode) ? (RescueNode)ensureBodyNode : null,
+            (ensureBodyNode instanceof RescueNode) ? (RescueNode) ensureBodyNode : null,
             getCurrentLoop(),
             activeRescuers.peek());
 
         // Record $! save var if we had a non-empty rescue node.
         // $! will be restored from it where required.
-        if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
+        if (ensureBodyNode instanceof RescueNode) {
             ebi.savedGlobalException = savedGlobalException;
         }
 
         ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
+        Operand ensureRetVal = ensureNode == null ? manager.getNil() : build(ensureNode);
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -2652,7 +2652,7 @@ public class IRBuilder {
 
         // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
         // (vs. returning from protected body)
-        boolean isEnsureExpr = ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
+        boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
 
         // Clone the ensure body and jump to the end
         if (isEnsureExpr) {
@@ -2672,7 +2672,7 @@ public class IRBuilder {
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Now emit the ensure body's stashed instructions
-        if (ensurerNode != null) {
+        if (ensureNode != null) {
             ebi.emitBody(this);
         }
 
