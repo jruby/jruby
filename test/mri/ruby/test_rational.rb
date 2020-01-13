@@ -971,10 +971,6 @@ class Rational_Test < Test::Unit::TestCase
     assert_equal 0, x, bug
   end
 
-  def test_big_overflow
-    assert_eql(0.0174532925199432957r, Rational(174532925199432957, 10000000000000000000))
-  end
-
   def test_positive_p
     assert_predicate(1/2r, :positive?)
     assert_not_predicate(-1/2r, :positive?)
