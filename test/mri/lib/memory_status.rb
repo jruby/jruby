@@ -8,6 +8,8 @@ module Memory
   keys = []
 
   case
+  when RUBY_ENGINE == "jruby"
+    # do nothing, no memory leak testing will run
   when File.exist?(procfile = "/proc/self/status") && (pat = /^Vm(\w+):\s+(\d+)/) =~ (data = File.binread(procfile))
     PROC_FILE = procfile
     VM_PAT = pat

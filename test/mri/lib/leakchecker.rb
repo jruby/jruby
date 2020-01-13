@@ -12,7 +12,7 @@ class LeakChecker
   def check(test_name)
     leaks = [
       check_fd_leak(test_name),
-      check_thread_leak(test_name),
+      #check_thread_leak(test_name), # JRuby: misreports finalizing threads
       check_tempfile_leak(test_name),
       check_env(test_name),
       check_encodings(test_name),
@@ -63,16 +63,22 @@ class LeakChecker
     if !fd_leaked.empty?
       leaked = true
       h = {}
-      ObjectSpace.each_object(IO) {|io|
-        inspect = io.inspect
-        begin
-          autoclose = io.autoclose?
-          fd = io.fileno
-        rescue IOError # closed IO object
-          next
-        end
-        (h[fd] ||= []) << [io, autoclose, inspect]
-      }
+      begin
+        ObjectSpace.each_object(IO) {|io|
+          inspect = io.inspect
+          begin
+            autoclose = io.autoclose?
+            fd = io.fileno
+          rescue IOError # closed IO object
+            next
+          end
+          (h[fd] ||= []) << [io, autoclose, inspect]
+        }
+      rescue RuntimeError => ex
+        # JRuby: ObjectSpace is disabled; each_object will only work with Class
+        warn ex.inspect if $VERBOSE
+        return nil
+      end
       fd_leaked.each {|fd|
         str = ''.dup
         if h[fd]
@@ -117,7 +123,8 @@ class LeakChecker
 
     class << Tempfile::Remover
       prepend LeakChecker::TempfileCounter
-    end
+    end if defined? Tempfile::Remover
+    # JRuby: detection won't work - relies on MRI impl details
   end
 
   def find_tempfiles(prev_count=-1)
@@ -127,9 +134,15 @@ class LeakChecker
     if prev_count == count
       [prev_count, []]
     else
-      tempfiles = ObjectSpace.each_object(Tempfile).find_all {|t|
-        t.instance_variable_defined?(:@tmpfile) and t.path
-      }
+      begin
+        tempfiles = ObjectSpace.each_object(Tempfile).find_all {|t|
+          t.instance_variable_defined?(:@tmpfile) and t.path
+        }
+      rescue RuntimeError => ex
+        # JRuby: ObjectSpace is disabled; each_object will only work with Class
+        warn ex.inspect if $VERBOSE
+        tempfiles = []
+      end
       [count, tempfiles]
     end
   end

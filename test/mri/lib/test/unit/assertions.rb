@@ -515,11 +515,23 @@ EOT
         $VERBOSE = verbose
       end
 
-      def assert_valid_syntax(code, *args, **opt)
-        prepare_syntax_check(code, *args, **opt) do |src, fname, line, mesg|
+      def check_syntax(src, filename, line)
+        if defined? RubyVM::InstructionSequence
+          RubyVM::InstructionSequence.compile(src, filename, filename, line)
+        else
+          src = <<-WRAPPED
+#{src}
+            BEGIN { throw :tag, :ok }
+          WRAPPED
+          assert_equal(:ok, catch(:tag) { eval(src, binding, filename, line)})
+        end
+      end
+
+      def assert_valid_syntax(code, *args)
+        prepare_syntax_check(code, *args) do |src, fname, line, mesg|
           yield if defined?(yield)
           assert_nothing_raised(SyntaxError, mesg) do
-            assert_equal(:ok, syntax_check(src, fname, line), mesg)
+            check_syntax(src, fname, line)
           end
         end
       end
@@ -528,7 +540,7 @@ EOT
         prepare_syntax_check(code, *args) do |src, fname, line, mesg|
           yield if defined?(yield)
           e = assert_raise(SyntaxError, mesg) do
-            syntax_check(src, fname, line)
+            check_syntax(src, fname, line)
           end
           assert_match(error, e.message, mesg)
           e
