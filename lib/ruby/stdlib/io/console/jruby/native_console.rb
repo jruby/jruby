@@ -1,9 +1,9 @@
 # Load appropriate native bits for BSD or Linux
 case RbConfig::CONFIG['host_os'].downcase
 when /darwin|openbsd|freebsd|netbsd/
-  require 'io/console/bsd_console'
+  require_relative 'bsd_console'
 when /linux/
-  require 'io/console/linux_console'
+  require_relative 'linux_console'
 else
   raise LoadError.new("no native io/console support")
 end

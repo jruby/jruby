@@ -83,7 +83,7 @@ fileutils/test_verbose.rb
 
 io/wait/test_io_wait.rb
 io/nonblock/test_flush.rb
-#io/console/test_io_console.rb
+io/console/test_io_console.rb
 
 json/json_addition_test.rb
 json/json_common_interface_test.rb
