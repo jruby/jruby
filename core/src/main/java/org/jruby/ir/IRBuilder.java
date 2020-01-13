@@ -3697,10 +3697,16 @@ public class IRBuilder {
                 // 3. migrated closure (LJE) [dynamic]
                 // 4. eval/for (return) [static]
                 boolean definedWithinMethod = scope.getNearestMethod() != null;
-                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
+                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) {
                     addInstr(new CheckForLJEInstr(definedWithinMethod));
-                addInstr(new NonlocalReturnInstr(retVal,
-                        definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
+                }
+                // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
+                if (!activeRescueBlockStack.empty()) {
+                    RescueBlockInfo rbi = activeRescueBlockStack.peek();
+                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                }
+
+                addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
             }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();

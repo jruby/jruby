@@ -398,6 +398,19 @@ describe "Predefined global $!" do
       $!.should == nil
     end
 
+    it "should be cleared when an exception is rescued even when a non-local return from block" do
+      [ 1 ].each do
+        begin
+          raise StandardError.new('err')
+        rescue => e
+          $!.should == e
+          return
+        end
+      end
+
+      $!.should == nil
+    end
+
     it "should not be cleared when an exception is not rescued" do
       e = StandardError.new
       begin
