@@ -2224,6 +2224,15 @@ public class RubyEnumerable {
         return result;
     }
 
+    @JRubyMethod(rest = true)
+    public static IRubyObject chain(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+        IRubyObject [] enums = new IRubyObject[args.length + 1];
+        enums[0] = self;
+        System.arraycopy(args, 0, enums, 1, args.length);
+        
+        return RubyChain.newChain(context, enums);
+    }
+
     @Deprecated
     public static IRubyObject chunk(ThreadContext context, IRubyObject self, final IRubyObject[] args, final Block block) {
         switch (Arity.checkArgumentCount(context.runtime, args, 0, 1)) {
