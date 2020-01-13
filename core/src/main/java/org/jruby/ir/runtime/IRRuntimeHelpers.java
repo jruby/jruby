@@ -1475,22 +1475,15 @@ public class IRRuntimeHelpers {
         return newRubyModule;
     }
 
-    @Interp
-    public static DynamicMethod newInterpretedClassBody(ThreadContext context, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
-
-        return new InterpretedIRBodyMethod(irClassBody, newRubyClass);
-    }
-
     @JIT
-    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
+    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id, IRScope irClassBody, Object container, Object superClass) {
+        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, id, irClassBody, superClass, container);
 
         return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
     }
 
     @Interp @JIT
-    public static RubyModule newRubyClassFromIR(Ruby runtime, IRScope irClassBody, Object superClass, Object container) {
+    public static RubyModule newRubyClassFromIR(Ruby runtime, String id, IRScope irClassBody, Object superClass, Object container) {
         if (!(container instanceof RubyModule)) {
             throw runtime.newTypeError("no outer class/module");
         }
@@ -1509,7 +1502,7 @@ public class IRRuntimeHelpers {
                 sc = (RubyClass) superClass;
             }
 
-            newRubyClass = ((RubyModule)container).defineOrGetClassUnder(irClassBody.getId(), sc);
+            newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc);
         }
 
         irClassBody.getStaticScope().setModule(newRubyClass);
