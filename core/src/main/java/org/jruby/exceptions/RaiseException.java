@@ -43,6 +43,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyStandardError;
 import org.jruby.RubyString;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
@@ -111,13 +112,13 @@ public class RaiseException extends JumpException {
 
         if (backtrace == null) {
             if (capture) { // only false to support legacy RaiseException construction (not setting trace)
-                exception.captureBacktrace(context);
+                if (requiresBacktrace(context)) exception.captureBacktrace(context);
                 setStackTraceFromException();
             }
         } else {
             exception.setBacktrace(backtrace);
             if (!backtrace.isNil() && !isEmptyArray(backtrace)) {
-                exception.captureBacktrace(context);
+                if (requiresBacktrace(context)) exception.captureBacktrace(context);
             }
             setStackTraceFromException();
         }
@@ -270,12 +271,9 @@ public class RaiseException extends JumpException {
         }
     }
 
-    @Deprecated
     private boolean requiresBacktrace(ThreadContext context) {
         // We can only omit backtraces of descendents of Standard error for 'foo rescue nil'
-        return context.exceptionRequiresBacktrace ||
-                !context.runtime.getStandardError().isInstance(exception) ||
-                context.runtime.isDebug();
+        return context.exceptionRequiresBacktrace || !(exception instanceof RubyStandardError);
     }
 
     private static boolean isEmptyArray(final IRubyObject ary) {
