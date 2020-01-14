@@ -1198,19 +1198,7 @@ public abstract class IRScope implements ParseResult {
      */
     public void captureParentRefinements(ThreadContext context) {
         if (maybeUsingRefinements()) {
-            for (IRScope cur = this.getLexicalParent(); cur != null; cur = cur.getLexicalParent()) {
-                RubyModule overlay = cur.staticScope.getOverlayModuleForRead();
-                if (overlay != null && !overlay.getRefinements().isEmpty()) {
-                    // capture current refinements at definition time
-                    RubyModule myOverlay = staticScope.getOverlayModuleForWrite(context);
-
-                    // FIXME: MRI does a copy-on-write thing here with the overlay
-                    myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
-
-                    // only search until we find an overlay
-                    break;
-                }
-            }
+            getStaticScope().captureParentRefinements(context);
         }
     }
 

@@ -723,4 +723,26 @@ public class StaticScope implements Serializable {
         }
         return omod;
     }
+
+    /**
+     * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.  Caller must
+     * decide whether this scope is using (or maybe) using refinements.
+     *
+     * @param context
+     */
+    public void captureParentRefinements(ThreadContext context) {
+        for (StaticScope cur = this.getEnclosingScope(); cur != null; cur = cur.getEnclosingScope()) {
+            RubyModule overlay = getOverlayModuleForRead();
+            if (overlay != null && !overlay.getRefinements().isEmpty()) {
+                // capture current refinements at definition time
+                RubyModule myOverlay = getOverlayModuleForWrite(context);
+
+                // FIXME: MRI does a copy-on-write thing here with the overlay
+                myOverlay.getRefinementsForWrite().putAll(overlay.getRefinements());
+
+                // only search until we find an overlay
+                break;
+            }
+        }
+    }
 }
