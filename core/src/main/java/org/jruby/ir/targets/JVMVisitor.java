@@ -1209,8 +1209,9 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
         visit(defineclassinstr.getSuperClass());
+        jvmAdapter().ldc(true);
         jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class,
-                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, Object.class));
+                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, Object.class, Boolean.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(defineclassinstr.getResult());
