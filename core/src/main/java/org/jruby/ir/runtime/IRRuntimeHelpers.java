@@ -1476,31 +1476,18 @@ public class IRRuntimeHelpers {
 
     @Interp @JIT
     public static RubyModule newRubyClassFromIR(Ruby runtime, String id, StaticScope scope, IRScope irClassBody, Object superClass, Object container) {
-        if (!(container instanceof RubyModule)) {
-            throw runtime.newTypeError("no outer class/module");
-        }
+        if (!(container instanceof RubyModule)) throw runtime.newTypeError("no outer class/module");
 
-        if (scope == null) {
-            System.out.println("SCOPE IS NULL and original scope is: " + irClassBody.getStaticScope());
-        } else if (scope != irClassBody.getStaticScope()) {
-            System.out.println("Wrong static scope passed in");
-        }
-        RubyModule newRubyClass;
-
-        if (irClassBody instanceof IRMetaClassBody) {
-            newRubyClass = ((RubyModule)container).getMetaClass();
+        RubyClass sc;
+        if (superClass == UndefinedValue.UNDEFINED) {
+            sc = null;
         } else {
-            RubyClass sc;
-            if (superClass == UndefinedValue.UNDEFINED) {
-                sc = null;
-            } else {
-                RubyClass.checkInheritable((IRubyObject) superClass);
+            RubyClass.checkInheritable((IRubyObject) superClass);
 
-                sc = (RubyClass) superClass;
-            }
-
-            newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc);
+            sc = (RubyClass) superClass;
         }
+
+        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc);
 
         scope.setModule(newRubyClass);
 
