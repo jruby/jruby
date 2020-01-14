@@ -71,7 +71,7 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
         Object container = getContainer().retrieve(context, self, currScope, currDynScope, temp);
         Object superClass = getSuperClass().retrieve(context, self, currScope, currDynScope, temp);
 
-        RubyModule clazz = IRRuntimeHelpers.newRubyClassFromIR(context.runtime, body.getId(), body, superClass, container);
+        RubyModule clazz = IRRuntimeHelpers.newRubyClassFromIR(context.runtime, body.getId(), body.getStaticScope(), body, superClass, container);
 
         //if (IRRuntimeHelpers.isDebug()) doDebug();
 

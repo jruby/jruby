@@ -73,7 +73,6 @@ public class JVMVisitor extends IRVisitor {
     public JVMVisitor(Ruby runtime) {
         this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
         this.methodIndex = 0;
-        this.scopeMap = new HashMap();
         this.runtime = runtime;
     }
 
@@ -97,6 +96,14 @@ public class JVMVisitor extends IRVisitor {
         Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
 
         for (Map.Entry<String, IRScope> entry : scopeMap.entrySet()) {
+            try {
+                result.getField(entry.getKey()).set(null, entry.getValue());
+            } catch (Exception e) {
+                throw new NotCompilableException(e);
+            }
+        }
+
+        for (Map.Entry<String, StaticScope> entry : staticScopeMap.entrySet()) {
             try {
                 result.getField(entry.getKey()).set(null, entry.getValue());
             } catch (Exception e) {
@@ -134,6 +141,7 @@ public class JVMVisitor extends IRVisitor {
         // want the live IRScope instance of the callers scope.
         String savedScopeName = currentScopeName;
         currentScopeName = name + "_IRScope";
+        currentStaticScopeName = name + "_StaticScope";
 
         BasicBlock[] bbs = scope.prepareForCompilation();
 
@@ -154,6 +162,12 @@ public class JVMVisitor extends IRVisitor {
         if (scopeMap.get(scopeField) == null) {
             scopeMap.put(scopeField, scope);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
+        }
+
+        String staticScopeField = currentStaticScopeName;
+        if (staticScopeMap.get(staticScopeField) == null) {
+            staticScopeMap.put(staticScopeField, scope.getStaticScope());
+            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, staticScopeField, ci(StaticScope.class), null, null).visitEnd();
         }
 
         if (!scope.hasExplicitCallProtocol()) {
@@ -1192,10 +1206,12 @@ public class JVMVisitor extends IRVisitor {
         Handle handle = emitModuleBody(newIRClassBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().ldc(newIRClassBody.getId());
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_StaticScope", ci(StaticScope.class));
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
         visit(defineclassinstr.getSuperClass());
-        jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, IRScope.class, Object.class, Object.class));
+        jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class,
+                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, Object.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(defineclassinstr.getResult());
@@ -2614,7 +2630,9 @@ public class JVMVisitor extends IRVisitor {
     private final Ruby runtime;
     private int methodIndex;
     private String currentScopeName;
-    private Map<String, IRScope> scopeMap;
+    private String currentStaticScopeName;
+    private Map<String, IRScope> scopeMap = new HashMap();
+    private Map<String, StaticScope> staticScopeMap = new HashMap();
     private String file;
     private int lastLine = -1;
 

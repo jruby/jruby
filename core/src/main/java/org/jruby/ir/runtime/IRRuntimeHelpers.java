@@ -1467,18 +1467,23 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id, IRScope irClassBody, Object container, Object superClass) {
-        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, id, irClassBody, superClass, container);
+    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id, StaticScope scope, IRScope irClassBody, Object container, Object superClass) {
+        RubyModule newRubyClass = newRubyClassFromIR(context.runtime, id, scope, irClassBody, superClass, container);
 
         return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass);
     }
 
     @Interp @JIT
-    public static RubyModule newRubyClassFromIR(Ruby runtime, String id, IRScope irClassBody, Object superClass, Object container) {
+    public static RubyModule newRubyClassFromIR(Ruby runtime, String id, StaticScope scope, IRScope irClassBody, Object superClass, Object container) {
         if (!(container instanceof RubyModule)) {
             throw runtime.newTypeError("no outer class/module");
         }
 
+        if (scope == null) {
+            System.out.println("SCOPE IS NULL and original scope is: " + irClassBody.getStaticScope());
+        } else if (scope != irClassBody.getStaticScope()) {
+            System.out.println("Wrong static scope passed in");
+        }
         RubyModule newRubyClass;
 
         if (irClassBody instanceof IRMetaClassBody) {
@@ -1496,7 +1501,7 @@ public class IRRuntimeHelpers {
             newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc);
         }
 
-        irClassBody.getStaticScope().setModule(newRubyClass);
+        scope.setModule(newRubyClass);
 
         irClassBody.captureParentRefinements(runtime.getCurrentContext());
 
