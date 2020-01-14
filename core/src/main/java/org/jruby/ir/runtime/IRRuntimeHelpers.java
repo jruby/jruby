@@ -1448,13 +1448,14 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, String id,
-                                                      StaticScope scope, IRScope irModule, Object rubyContainer) {
-        RubyModule newRubyModule = newRubyModuleFromIR(context, id, scope, irModule, rubyContainer);
+                                                      StaticScope scope, IRScope irModule, Object rubyContainer, boolean maybeRefined) {
+        RubyModule newRubyModule = newRubyModuleFromIR(context, id, scope, rubyContainer, maybeRefined);
         return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule);
     }
 
     @Interp @JIT
-    public static RubyModule newRubyModuleFromIR(ThreadContext context, String id, StaticScope scope, IRScope irModule, Object rubyContainer) {
+    public static RubyModule newRubyModuleFromIR(ThreadContext context, String id, StaticScope scope,
+                                                 Object rubyContainer, boolean maybeRefined) {
         if (!(rubyContainer instanceof RubyModule)) {
             throw context.runtime.newTypeError("no outer class/module");
         }
@@ -1462,7 +1463,7 @@ public class IRRuntimeHelpers {
         RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id);
         scope.setModule(newRubyModule);
 
-        irModule.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         return newRubyModule;
     }
