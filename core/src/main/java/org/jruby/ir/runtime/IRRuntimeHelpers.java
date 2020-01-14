@@ -1437,11 +1437,11 @@ public class IRRuntimeHelpers {
     private static RubyClass newMetaClassFromIR(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {
         RubyClass singletonClass = Helpers.getSingletonClass(runtime, obj);
 
-        StaticScope metaClassScope = metaClassBody.getStaticScope();
+        StaticScope scope = metaClassBody.getStaticScope();
 
-        metaClassScope.setModule(singletonClass);
+        scope.setModule(singletonClass);
 
-        metaClassBody.captureParentRefinements(runtime.getCurrentContext());
+        if (metaClassBody.maybeUsingRefinements()) scope.captureParentRefinements(runtime.getCurrentContext());
 
         return singletonClass;
     }
@@ -1505,7 +1505,7 @@ public class IRRuntimeHelpers {
         RubySymbol methodName = method.getName();
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        method.captureParentRefinements(context);
+        if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
         DynamicMethod newMethod;
         if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
@@ -1563,7 +1563,7 @@ public class IRRuntimeHelpers {
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, methodName, currVisibility);
 
-        method.captureParentRefinements(context);
+        if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
         DynamicMethod newMethod;
         if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
