@@ -732,7 +732,7 @@ public class StaticScope implements Serializable {
      */
     public void captureParentRefinements(ThreadContext context) {
         for (StaticScope cur = this.getEnclosingScope(); cur != null; cur = cur.getEnclosingScope()) {
-            RubyModule overlay = getOverlayModuleForRead();
+            RubyModule overlay = cur.getOverlayModuleForRead();
             if (overlay != null && !overlay.getRefinements().isEmpty()) {
                 // capture current refinements at definition time
                 RubyModule myOverlay = getOverlayModuleForWrite(context);
