@@ -126,6 +126,30 @@ describe JRuby::Profiler, "::ProfileData" do
     end
     
   end
+
+  context "when profiling refined methods" do
+    def profile
+      refinement = Module.new do
+        refine(String) do
+          def to_s
+            super
+          end
+        end
+      end
+
+      @profile_data = JRuby::Profiler.profile do
+        @call_to_s_result = "string".to_s
+      end
+    end
+
+    before do
+      profile
+    end
+
+    it "should complete successfully" do
+      @call_to_s_result.should == "string"
+    end
+  end
 end
 
 
