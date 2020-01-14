@@ -1211,7 +1211,7 @@ public class JVMVisitor extends IRVisitor {
         visit(defineclassinstr.getSuperClass());
         jvmAdapter().ldc(newIRClassBody.maybeUsingRefinements());
         jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class,
-                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, Object.class, Boolean.class));
+                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, Object.class, boolean.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(defineclassinstr.getResult());
@@ -1342,7 +1342,7 @@ public class JVMVisitor extends IRVisitor {
         visit(definemoduleinstr.getContainer());
         jvmAdapter().ldc(newIRModuleBody.maybeUsingRefinements());
         jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class,
-                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, Boolean.class));
+                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class, boolean.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(definemoduleinstr.getResult());
