@@ -1231,11 +1231,14 @@ public class JVMVisitor extends IRVisitor {
                 context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 METHOD_SIGNATURE_VARARGS.type(),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, IRubyObject.class, boolean.class),
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, StaticScope.class, IRScope.class, IRubyObject.class, boolean.class));
 
+        jvmAdapter().ldc(method.getId());
+        jvmAdapter().getstatic(jvm.clsData().clsName, context.getBaseName() + "_StaticScope", ci(StaticScope.class));
         jvmAdapter().getstatic(jvm.clsData().clsName, context.getBaseName() + "_IRScope", ci(IRScope.class));
         visit(defineclassmethodinstr.getContainer());
+        jvmAdapter().ldc(method.maybeUsingRefinements());
 
         // add method
         jvmMethod().adapter.invokestatic(p(IRRuntimeHelpers.class), "defCompiledClassMethod", defSignature);
@@ -1262,12 +1265,15 @@ public class JVMVisitor extends IRVisitor {
                 context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 variable,
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, DynamicScope.class, IRubyObject.class, boolean.class),
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, StaticScope.class, IRScope.class, DynamicScope.class, IRubyObject.class, boolean.class));
 
+        a.ldc(method.getId());
+        a.getstatic(jvm.clsData().clsName, context.getBaseName() + "_StaticScope", ci(StaticScope.class));
         a.getstatic(jvm.clsData().clsName, context.getBaseName() + "_IRScope", ci(IRScope.class));
         jvmLoadLocal(DYNAMIC_SCOPE);
         jvmMethod().loadSelf();
+        jvmAdapter().ldc(method.maybeUsingRefinements());
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);

@@ -1519,11 +1519,11 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
-        String id = method.getId();
+    public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, String id, StaticScope scope,
+                                              IRScope method, IRubyObject obj, boolean maybeRefined) {
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
-        method.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(id, new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
@@ -1534,11 +1534,12 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
-        String id = method.getId();
+    public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
+                                              int specificArity, String id, StaticScope scope, IRScope method,
+                                              IRubyObject obj, boolean maybeRefined) {
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
-        method.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
 
@@ -1578,15 +1579,16 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, IRScope method, DynamicScope currDynScope, IRubyObject self) {
+    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, String id, StaticScope scope,
+                                                 IRScope method, DynamicScope currDynScope, IRubyObject self, boolean maybeRefined) {
         Ruby runtime = context.runtime;
-        RubySymbol methodName = method.getName();
+        RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
-        method.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz);
 
@@ -1595,15 +1597,17 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, DynamicScope currDynScope, IRubyObject self) {
+    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
+                                                 int specificArity, String id, StaticScope scope, IRScope method,
+                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined) {
         Ruby runtime = context.runtime;
-        RubySymbol methodName = method.getName();
+        RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
 
-        method.captureParentRefinements(context);
+        if (maybeRefined) scope.captureParentRefinements(context);
 
         DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz);
 
