@@ -62,7 +62,7 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object container = getContainer().retrieve(context, self, currScope, currDynScope, temp);
 
-        RubyModule clazz = IRRuntimeHelpers.newRubyModuleFromIR(context, body.getId(), body, container);
+        RubyModule clazz = IRRuntimeHelpers.newRubyModuleFromIR(context, body.getId(), body.getStaticScope(), body, container);
 
         //if (IRRuntimeHelpers.isDebug()) doDebug();
 

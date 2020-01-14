@@ -1337,9 +1337,11 @@ public class JVMVisitor extends IRVisitor {
         Handle handle = emitModuleBody(newIRModuleBody);
         jvmMethod().pushHandle(handle);
         jvmAdapter().ldc(newIRModuleBody.getId());
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_StaticScope", ci(StaticScope.class));
         jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemoduleinstr.getContainer());
-        jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, IRScope.class, Object.class));
+        jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class,
+                java.lang.invoke.MethodHandle.class, String.class, StaticScope.class, IRScope.class, Object.class));
 
         jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class));
         jvmStoreLocal(definemoduleinstr.getResult());
