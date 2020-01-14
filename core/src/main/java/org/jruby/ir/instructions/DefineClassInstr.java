@@ -81,10 +81,6 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
     private IRubyObject INTERPRET_CLASS(ThreadContext context, RubyModule clazz) {
         InterpreterContext ic = body.getInterpreterContext();
         String id = body.getId();
-        if (ic == null) {
-            System.out.println("IC REMOVED FOR: " + this);
-            System.out.println("BODY: " + body);
-        }
         boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
 
         if (!hasExplicitCallProtocol) pre(ic, context, clazz, null, clazz);
