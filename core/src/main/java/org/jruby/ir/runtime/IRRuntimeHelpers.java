@@ -1502,8 +1502,8 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
-        RubySymbol methodName = method.getName();
-        RubyClass rubyClass = checkClassForDef(context, method, obj);
+        String id = method.getId();
+        RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
@@ -1514,39 +1514,41 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
 
-        rubyClass.addMethod(methodName.idString(), newMethod);
-        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", methodName);
+        rubyClass.addMethod(id, newMethod);
+        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, IRScope method, IRubyObject obj) {
-        RubySymbol methodName = method.getName();
-        RubyClass rubyClass = checkClassForDef(context, method, obj);
+        String id = method.getId();
+        RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         method.captureParentRefinements(context);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(methodName.idString(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
+        rubyClass.addMethod(id, new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass));
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
-            obj.callMethod(context, "singleton_method_added", methodName);
+            obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
         }
     }
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, IRubyObject obj) {
-        RubyClass rubyClass = checkClassForDef(context, method, obj);
+        String id = method.getId();
+        RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         method.captureParentRefinements(context);
 
-        rubyClass.addMethod(method.getId(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
+        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass));
 
-        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
+        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
     }
 
-    private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
+    private static RubyClass checkClassForDef(ThreadContext context, String id, IRubyObject obj) {
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol || obj instanceof RubyFloat) {
-            throw context.runtime.newTypeError(str(context.runtime, "can't define singleton method \"", method.getName(), "\" for ", obj.getMetaClass().rubyBaseName()));
+            throw context.runtime.newTypeError(str(context.runtime, "can't define singleton method \"",
+                    ids(context.runtime, id), "\" for ", obj.getMetaClass().rubyBaseName()));
         }
 
         // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
