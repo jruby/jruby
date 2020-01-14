@@ -141,7 +141,6 @@ public class JVMVisitor extends IRVisitor {
         // want the live IRScope instance of the callers scope.
         String savedScopeName = currentScopeName;
         currentScopeName = name + "_IRScope";
-        currentStaticScopeName = name + "_StaticScope";
 
         BasicBlock[] bbs = scope.prepareForCompilation();
 
@@ -158,13 +157,13 @@ public class JVMVisitor extends IRVisitor {
         jvm.pushmethod(name, scope, signature, specificArity);
 
         // store IRScope in map for insertion into class later
-        String scopeField = currentScopeName;
+        String scopeField = name + "_IRScope";
         if (scopeMap.get(scopeField) == null) {
             scopeMap.put(scopeField, scope);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
         }
 
-        String staticScopeField = currentStaticScopeName;
+        String staticScopeField = name + "_StaticScope";
         if (staticScopeMap.get(staticScopeField) == null) {
             staticScopeMap.put(staticScopeField, scope.getStaticScope());
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, staticScopeField, ci(StaticScope.class), null, null).visitEnd();
@@ -2632,7 +2631,6 @@ public class JVMVisitor extends IRVisitor {
     private final Ruby runtime;
     private int methodIndex;
     private String currentScopeName;
-    private String currentStaticScopeName;
     private Map<String, IRScope> scopeMap = new HashMap();
     private Map<String, StaticScope> staticScopeMap = new HashMap();
     private String file;
