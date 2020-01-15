@@ -65,7 +65,11 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeSymbol());
+        RubySymbol symbol = d.decodeSymbol();
+
+        if (symbol == null) return KW_REST_ARG_DUMMY;
+        
+        return new Symbol(symbol);
     }
 
     @Override
