@@ -61,7 +61,7 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
 
-        e.encode(getBytes());
+        e.encode(symbol);
     }
 
     public static Symbol decode(IRReaderDecoder d) {
