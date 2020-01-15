@@ -83,12 +83,10 @@ public class IRReader implements IRPersistenceValues {
         int nextLabelInt = decoder.decodeInt();
 
         boolean isEND = false;
-        if (type == IRScopeType.CLOSURE) {
-            isEND = decoder.decodeBoolean();
-        }
 
         Signature signature;
         if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
+            isEND = decoder.decodeBoolean();
             signature = Signature.decode(decoder.decodeLong());
         } else {
             signature = Signature.OPTIONAL;
