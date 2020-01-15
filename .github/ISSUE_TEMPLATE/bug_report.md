@@ -7,12 +7,16 @@ assignees: ''
 
 ---
 
+<!--
+
 Thank you for reporting an issue! This guide will help us respond to your
 report quickly. Please try to provide as much information as possible.
 
-If you need help, feel free to join the JRuby chat room:
+If you need help, feel free to join the JRuby chat room on Matrix:
 
-* [JRuby Room on Matrix](https://matrix.to/#/#jruby:matrix.org)
+* https://matrix.to/#/#jruby:matrix.org
+
+-->
 
 **Environment Information**
   
