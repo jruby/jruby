@@ -2,14 +2,10 @@ package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
 
-import org.jruby.MetaClass;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -21,23 +17,24 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     private MethodHandle specific;
     private final int specificArity;
+    private String encodedArgumentDescriptors;
 
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
-                            RubyModule implementationClass) {
-        this(variable, null, -1, method, visibility, implementationClass);
+                            RubyModule implementationClass, String encodedArgumentDescriptors) {
+        this(variable, null, -1, method, visibility, implementationClass, encodedArgumentDescriptors);
     }
 
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
-                            Visibility visibility, RubyModule implementationClass) {
+                            Visibility visibility, RubyModule implementationClass, String encodedArgumentDescriptors) {
         super(method, visibility, implementationClass);
-
 
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
         this.specificArity = method.receivesKeywordArgs() ? -1 : specificArity;
-        this.method.getStaticScope().determineModule();
+        staticScope.determineModule();
 
+        this.encodedArgumentDescriptors = encodedArgumentDescriptors;
         assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
@@ -63,7 +60,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return ((IRMethod)method).getArgumentDescriptors();
+        return ArgumentDescriptor.decode(implementationClass.getRuntime(), encodedArgumentDescriptors);
     }
 
     @Override

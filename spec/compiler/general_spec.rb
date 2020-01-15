@@ -68,12 +68,18 @@ module JITSpecUtils
         org.jruby.RubyModule.java_class,
         java.lang.String.java_class)
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod)
+    if method.kind_of?(org.jruby.ir.IRMethod) || method.kind_of?(org.jruby.ir.IRClosure)
+      descriptors = org.jruby.runtime.ArgumentDescriptor.encode(method.argument_descriptors)
+    else
+      descriptors = ""
+    end
 
     return org.jruby.internal.runtime.methods.CompiledIRMethod.new(
         handle,
         method,
         org.jruby.runtime.Visibility::PUBLIC,
-        currModule)
+        currModule,
+        descriptors)
   end
 
   def compile_run(src, filename, line)

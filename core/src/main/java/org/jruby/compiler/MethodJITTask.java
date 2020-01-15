@@ -39,6 +39,7 @@ import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.util.collections.IntHashMap;
 
 class MethodJITTask extends JITCompiler.Task {
@@ -88,7 +89,8 @@ class MethodJITTask extends JITCompiler.Task {
                             variable,
                             method.getIRScope(),
                             method.getVisibility(),
-                            method.getImplementationClass()));
+                            method.getImplementationClass(),
+                            ArgumentDescriptor.encode(method.getArgumentDescriptors())));
 
         } else {
             // also specific-arity
@@ -100,7 +102,8 @@ class MethodJITTask extends JITCompiler.Task {
                                 entry.getKey(),
                                 method.getIRScope(),
                                 method.getVisibility(),
-                                method.getImplementationClass()));
+                                method.getImplementationClass(),
+                                ArgumentDescriptor.encode(method.getArgumentDescriptors())));
                 break; // FIXME: only supports one arity
             }
         }
