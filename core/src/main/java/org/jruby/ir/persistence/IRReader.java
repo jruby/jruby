@@ -101,8 +101,7 @@ public class IRReader implements IRPersistenceValues {
             file = decoder.decodeString();
         } else {
             name = decoder.decodeByteList();
-            parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
-
+            parent = decoder.decodeScope();
         }
 
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
