@@ -4618,14 +4618,9 @@ public final class Ruby implements Constantizable {
             return duped;
         }
 
-        // Get cached wrapper or create new
+        // Populate thread-local wrapper
         FStringEqual wrapper = DEDUP_WRAPPER_CACHE.get();
-        if (wrapper == null) {
-            wrapper = new FStringEqual(string);
-            DEDUP_WRAPPER_CACHE.set(wrapper);
-        } else {
-            wrapper.string = string;
-        }
+        wrapper.string = string;
 
         WeakReference<RubyString> dedupedRef = dedupMap.get(wrapper);
         RubyString deduped;
@@ -4668,23 +4663,28 @@ public final class Ruby implements Constantizable {
 
     static class FStringEqual {
         RubyString string;
-        FStringEqual(RubyString string) {
-            this.string = string;
-        }
         public boolean equals(Object other) {
             if (other instanceof FStringEqual) {
                 RubyString otherString = ((FStringEqual) other).string;
-                return this.string.equals(otherString) && this.string.getEncoding() == otherString.getEncoding();
+                RubyString string = this.string;
+
+                if (string == null || otherString == null) return false;
+
+                return string.equals(otherString) && string.getEncoding() == otherString.getEncoding();
             }
             return false;
         }
 
         public int hashCode() {
+            RubyString string = this.string;
+
+            if (string == null) return 0;
+
             return string.hashCode();
         }
     }
 
-    private final ThreadLocal<FStringEqual> DEDUP_WRAPPER_CACHE = new ThreadLocal<>();
+    private final ThreadLocal<FStringEqual> DEDUP_WRAPPER_CACHE = ThreadLocal.withInitial(FStringEqual::new);
 
     public int getRuntimeNumber() {
         return runtimeNumber;
