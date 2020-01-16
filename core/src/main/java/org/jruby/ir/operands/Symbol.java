@@ -68,7 +68,7 @@ public class Symbol extends ImmutableLiteral implements Stringable {
         RubySymbol symbol = d.decodeSymbol();
 
         if (symbol == null) return KW_REST_ARG_DUMMY;
-        
+
         return new Symbol(symbol);
     }
 
