@@ -89,7 +89,7 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     @Override
     public InterpreterContext ensureInstrsReady() {
         // AbstractIRMethod.getMethodData() calls this and we want IC since we have not eliminated any get/put fields.
-        return method.getInterpreterContext();
+        return getIRScope().getInterpreterContext();
     }
 
     @Override

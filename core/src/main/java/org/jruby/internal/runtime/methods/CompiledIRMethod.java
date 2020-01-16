@@ -1,11 +1,15 @@
 package org.jruby.internal.runtime.methods;
 
 import java.lang.invoke.MethodHandle;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -19,27 +23,49 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     private final int specificArity;
     private String encodedArgumentDescriptors;
 
-    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
-                            RubyModule implementationClass, String encodedArgumentDescriptors) {
-        this(variable, null, -1, method, visibility, implementationClass, encodedArgumentDescriptors);
+    public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope, Callable<IRScope> methodCallback, Visibility visibility,
+                            RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs) {
+        this(variable, null, -1, id, line, scope, methodCallback, visibility, implementationClass, encodedArgumentDescriptors, recievesKeywordArgs);
     }
 
+    // Used by spec:compiler
+    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass,
+                            String encodedArgumentDescriptors) {
+        this(variable, null, -1, method.getId(), method.getLine(), method.getStaticScope(), () -> { return method; },
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs());
+    }
+
+    // Used by spec:compiler
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
                             Visibility visibility, RubyModule implementationClass, String encodedArgumentDescriptors) {
-        super(method, visibility, implementationClass);
+        this(variable, specific, specificArity, method.getId(), method.getLine(), method.getStaticScope(), () -> { return method; },
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs());
+    }
+
+    // Ruby Class/Module constructor (feels like we should maybe have a subtype here...
+    public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope,
+                            Callable<IRScope> methodCallback, Visibility visibility, RubyModule implementationClass) {
+        this(variable, null, -1, id, line, scope, methodCallback, visibility, implementationClass, "", false);
+    }
+
+    public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, String id, int line,
+                            StaticScope scope, Callable<IRScope> methodCallback, Visibility visibility, RubyModule implementationClass,
+                            String encodedArgumentDescriptors, boolean receivesKeywordArgs) {
+            super(methodCallback, scope, id, line, visibility, implementationClass);
 
         this.specific = specific;
         // deopt unboxing if we have to process kwargs hash (although this really has nothing to do with arg
         // unboxing -- it was a simple path to hacking this in).
-        this.specificArity = method.receivesKeywordArgs() ? -1 : specificArity;
+        this.specificArity = receivesKeywordArgs ? -1 : specificArity;
         staticScope.determineModule();
 
         this.encodedArgumentDescriptors = encodedArgumentDescriptors;
-        assert method.hasExplicitCallProtocol();
+        //assert method.hasExplicitCallProtocol();
 
         setHandle(variable);
 
-        method.compilable = this;
+        // FIXME: inliner breaks with this line commented out
+        // method.compilable = this;
     }
 
     public MethodHandle getHandleFor(int arity) {

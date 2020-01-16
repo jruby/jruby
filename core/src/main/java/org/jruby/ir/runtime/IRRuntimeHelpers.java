@@ -1450,7 +1450,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, String id,
                                                       StaticScope scope, IRScope irModule, Object rubyContainer, boolean maybeRefined) {
         RubyModule newRubyModule = newRubyModuleFromIR(context, id, scope, rubyContainer, maybeRefined);
-        return new CompiledIRMethod(handle, irModule, Visibility.PUBLIC, newRubyModule, "");
+        return new CompiledIRMethod(handle,id, irModule.getLine(), scope, () -> { return irModule; }, Visibility.PUBLIC, newRubyModule);
     }
 
     @Interp @JIT
@@ -1474,7 +1474,7 @@ public class IRRuntimeHelpers {
                                                      Object superClass, boolean maybeRefined) {
         RubyModule newRubyClass = newRubyClassFromIR(context.runtime, id, scope, superClass, container, maybeRefined);
 
-        return new CompiledIRMethod(handle, irClassBody, Visibility.PUBLIC, newRubyClass, "");
+        return new CompiledIRMethod(handle, id, irClassBody.getLine(), scope, () -> { return irClassBody; }, Visibility.PUBLIC, newRubyClass);
     }
 
     @Interp @JIT
@@ -1528,7 +1528,7 @@ public class IRRuntimeHelpers {
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(id,
-                new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors));
+                new CompiledIRMethod(handle, null, -1, id, method.getLine(), scope, () -> { return method; }, Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, method.receivesKeywordArgs()));
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
@@ -1544,8 +1544,9 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC,
-                rubyClass, encodedArgumentDescriptors));
+        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, method.getLine(), scope,
+                () -> { return method; }, Visibility.PUBLIC,
+                rubyClass, encodedArgumentDescriptors, method.receivesKeywordArgs()));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
     }
@@ -1595,7 +1596,8 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        DynamicMethod newMethod = new CompiledIRMethod(handle, method, newVisibility, clazz, encodedArgumentDescriptors);
+        DynamicMethod newMethod = new CompiledIRMethod(handle, null, -1, id, method.getLine(), scope, () -> { return method; },
+                newVisibility, clazz, encodedArgumentDescriptors, method.receivesKeywordArgs());
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
@@ -1615,8 +1617,8 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, method, newVisibility, clazz,
-                encodedArgumentDescriptors);
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, id, method.getLine(), scope,
+                () -> { return method; }, newVisibility, clazz, encodedArgumentDescriptors, method.receivesKeywordArgs());
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);

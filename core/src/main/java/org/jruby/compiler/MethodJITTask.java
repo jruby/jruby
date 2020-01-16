@@ -87,6 +87,8 @@ class MethodJITTask extends JITCompiler.Task {
             method.completeBuild(
                     new CompiledIRMethod(
                             variable,
+                            null,
+                            -1,
                             method.getIRScope(),
                             method.getVisibility(),
                             method.getImplementationClass(),
