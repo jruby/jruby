@@ -75,18 +75,20 @@ public class ArgumentDescriptor {
      * @return an array of descriptors
      */
     public static ArgumentDescriptor[] decode(Ruby runtime, String encodedDescriptors) {
-        String[] encodedStringDescriptors = encodedDescriptors.split(ENCODING_DELIMETER);
-        int length = encodedDescriptors.length();
+        if (encodedDescriptors.isEmpty()) return EMPTY_ARRAY;
 
-        if (length == 0) return EMPTY_ARRAY;
+        String[] encodedStringDescriptors = encodedDescriptors.split(ENCODING_DELIMETER);
+        int length = encodedStringDescriptors.length;
+
         ArgumentDescriptor[] descriptors = new ArgumentDescriptor[length];
 
         for (int i = 0; i < length; i++) {
             String descriptor = encodedStringDescriptors[i];
             char type = descriptor.charAt(0);
-            String id = descriptor.substring(1);
+            String id = descriptor.length() == 1 ? "" : descriptor.substring(1);
+            RubySymbol symbol = ANONYMOUS_ENCODED.equals(id) ? null : runtime.newSymbol(id);
 
-            descriptors[i] = new ArgumentDescriptor(ArgumentType.valueOf(type), runtime.newSymbol(id));
+            descriptors[i] = new ArgumentDescriptor(ArgumentType.valueOf(type), symbol);
         }
 
         return descriptors;
