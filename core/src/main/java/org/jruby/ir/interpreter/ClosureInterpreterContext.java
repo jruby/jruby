@@ -1,7 +1,7 @@
 package org.jruby.ir.interpreter;
 
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.instructions.Instr;
@@ -16,7 +16,7 @@ public class ClosureInterpreterContext extends InterpreterContext {
         super(scope, instructions);
     }
 
-    public ClosureInterpreterContext(IRClosure scope, Callable<List<Instr>> instructions) {
+    public ClosureInterpreterContext(IRClosure scope, Supplier<List<Instr>> instructions) {
         super(scope, instructions);
     }
 

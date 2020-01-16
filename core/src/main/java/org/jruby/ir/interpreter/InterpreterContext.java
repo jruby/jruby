@@ -3,7 +3,7 @@ package org.jruby.ir.interpreter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Stack;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
@@ -46,7 +46,7 @@ public class InterpreterContext {
     private boolean metaClassBodyScope;
 
     private InterpreterEngine engine;
-    public final Callable<List<Instr>> instructionsCallback;
+    public final Supplier<List<Instr>> instructionsCallback;
 
     private final IRScope scope;
 
@@ -62,7 +62,7 @@ public class InterpreterContext {
         this.instructionsCallback = null; // engine != null
     }
 
-    public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) {
+    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions) {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
@@ -71,11 +71,8 @@ public class InterpreterContext {
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
-            try {
-                setInstructions(instructionsCallback.call());
-            } catch (Exception e) {
-                Helpers.throwException(e);
-            }
+            setInstructions(instructionsCallback.get());
+
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
             setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);

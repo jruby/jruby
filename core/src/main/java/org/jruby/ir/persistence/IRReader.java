@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -58,11 +59,7 @@ public class IRReader implements IRPersistenceValues {
             final IRScope scope = pair.getKey();
             final int instructionsOffset = pair.getValue();
 
-            scope.allocateInterpreterContext(new Callable<List<Instr>>() {
-                public List<Instr> call() {
-                    return file.decodeInstructionsAt(scope, instructionsOffset);
-                }
-            });
+            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, instructionsOffset));
         }
 
         // Run through all scopes again and ensure they've calculated flags.
