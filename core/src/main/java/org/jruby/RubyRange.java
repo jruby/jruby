@@ -40,6 +40,7 @@ package org.jruby;
 import java.io.IOException;
 import java.util.List;
 import org.jcodings.Encoding;
+import org.jruby.RubyArithmeticSequence;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
@@ -590,13 +591,20 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, final Block block) {
-        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : enumeratorizeWithSize(context, this, "step", stepSizeFn());
+        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : step(context, context.nil, block);
     }
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, IRubyObject step, final Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn());
+            if (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) {
+                return RubyArithmeticSequence.newArithmeticSequence(context, begin, end, !step.isNil() ? step : RubyFixnum.one(context.runtime), isExclusive ? context.tru : context.fals);
+            }
+            if (step.isNil()) {
+                return enumeratorizeWithSize(context, this, "step", new IRubyObject[]{step}, stepSizeFn());
+            } else {
+                return enumeratorizeWithSize(context, this, "step", stepSizeFn());
+            }
         }
 
         if (!(step instanceof RubyNumeric)) {
