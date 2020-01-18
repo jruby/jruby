@@ -987,7 +987,7 @@ public class RubyKernel {
 
         RubyString relativePath = RubyFile.get_path(context, name);
 
-        String file = context.getCurrentStaticScope().getFile();
+        String file = context.getCurrentStaticScope().getIRScope().getFile();
 
         if (file == null || file.matches("\\A\\((.*)\\)")) {
             throw runtime.newLoadError("cannot infer basepath");
