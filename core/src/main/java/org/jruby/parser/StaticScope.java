@@ -677,6 +677,18 @@ public class StaticScope implements Serializable {
         this.namedCaptures = newNamedCaptures;
     }
 
+    /**
+     * Determine if we happen to be within a method definition.
+     * @return true if so
+     */
+    public boolean isWithinMethod() {
+        for (StaticScope current = this; current != null; current = current.getEnclosingScope()) {
+            if (current.getScopeType().isMethod()) return true;
+        }
+
+        return false;
+    }
+
     public boolean isNamedCapture(int index) {
         boolean[] namedCaptures = this.namedCaptures;
         return namedCaptures != null && index < namedCaptures.length && namedCaptures[index];

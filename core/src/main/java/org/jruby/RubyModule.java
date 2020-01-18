@@ -86,6 +86,7 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.MethodGatherer;
@@ -837,8 +838,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "using", required = 1, visibility = PRIVATE, reads = {SELF, SCOPE})
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
         if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
-        // FIXME: This is a lame test and I am unsure it works with JIT'd bodies...
-        if (context.getCurrentStaticScope().getIRScope() instanceof IRMethod) {
+        if (context.getCurrentStaticScope().isWithinMethod()) {
             throw context.runtime.newRuntimeError("Module#using is not permitted in methods");
         }
 
