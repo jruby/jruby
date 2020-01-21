@@ -168,7 +168,7 @@ public class IRRuntimeHelpers {
 
         assert returnToScope != null: "accidental return scope";
 
-        throw IRReturnJump.create(currentScope.getStaticScope().getIRScope(), returnToScope, returnValue);
+        throw IRReturnJump.create(currentScope.getStaticScope(), returnToScope, returnValue);
     }
 
     // Finds static scope of where we want to *return* to.
