@@ -156,6 +156,11 @@ public class JVMVisitor extends IRVisitor {
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
         }
 
+        if (scope.needsBinding() || !scope.hasExplicitCallProtocol()) {
+            // declare dynamic scope local only if we'll need it
+            jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
+        }
+
         if (!scope.hasExplicitCallProtocol()) {
             // No call protocol, dynscope has been prepared for us
             jvmMethod().loadContext();
