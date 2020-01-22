@@ -24,9 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 abstract class ClassData {
 
-    public ClassData(String clsName, ClassVisitor cls) {
+    public ClassData(String clsName, ClassVisitor cls, JVMVisitor visitor) {
         this.clsName = clsName;
         this.cls = cls;
+        this.visitor = visitor;
     }
 
     public IRBytecodeAdapter method() {
@@ -80,6 +81,7 @@ abstract class ClassData {
     }
 
     public ClassVisitor cls;
+    public final JVMVisitor visitor;
     public final String clsName;
     final Stack<MethodData> methodStack = new Stack();
     public final AtomicInteger cacheFieldCount = new AtomicInteger(0);

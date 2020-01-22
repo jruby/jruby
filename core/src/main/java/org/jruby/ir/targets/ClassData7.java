@@ -19,8 +19,8 @@ import org.objectweb.asm.commons.Method;
  */
 class ClassData7 extends ClassData {
 
-    public ClassData7(String clsName, ClassVisitor cls) {
-        super(clsName, cls);
+    public ClassData7(String clsName, ClassVisitor cls, JVMVisitor visitor) {
+        super(clsName, cls, visitor);
     }
 
     public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {

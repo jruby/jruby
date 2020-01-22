@@ -145,14 +145,12 @@ public class JVMVisitor extends IRVisitor {
         String scopeField = name + "_StaticScope";
 
         StaticScope staticScope = scope.getStaticScope();
+        String staticScopeDescriptor = Helpers.describeScope(staticScope);
 
         if (staticScopeMap.get(scopeField) == null) {
             staticScopeMap.put(scopeField, staticScope);
+            staticScopeDescriptorMap.put(scopeField, staticScopeDescriptor);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(StaticScope.class), null, null).visitEnd();
-
-            // for AOT embed the entirety of the static scope into the class file
-            String staticScopeDescriptor = Helpers.describeScope(staticScope);
-            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, scopeField + "_Descriptor", ci(String.class), null, staticScopeDescriptor).visitEnd();
         }
 
         jvm.pushmethod(name, scope, scopeField, signature, specificArity);
@@ -335,7 +333,7 @@ public class JVMVisitor extends IRVisitor {
         // Note: no index attached because there should be at most one script body per .class
         String name = JavaNameMangler.encodeScopeForBacktrace(script);
         String clsName = jvm.scriptToClass(script.getFile());
-        jvm.pushscript(clsName, script.getFile());
+        jvm.pushscript(this, clsName, script.getFile());
 
         emitScope(script, name, signatureFor(script, false), false, true);
 
@@ -352,7 +350,7 @@ public class JVMVisitor extends IRVisitor {
     protected void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(method.getFile());
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
-        jvm.pushscript(clsName, method.getFile());
+        jvm.pushscript(this, clsName, method.getFile());
 
         emitWithSignatures(method, context, name);
 
@@ -363,7 +361,7 @@ public class JVMVisitor extends IRVisitor {
     protected void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(closure.getFile());
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
-        jvm.pushscript(clsName, closure.getFile());
+        jvm.pushscript(this, clsName, closure.getFile());
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
 
@@ -407,7 +405,7 @@ public class JVMVisitor extends IRVisitor {
         String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
 
         String clsName = jvm.scriptToClass(method.getFile());
-        jvm.pushscript(clsName, method.getFile());
+        jvm.pushscript(this, clsName, method.getFile());
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
@@ -2635,6 +2633,7 @@ public class JVMVisitor extends IRVisitor {
     private final Ruby runtime;
     private int methodIndex;
     private Map<String, StaticScope> staticScopeMap = new HashMap();
+    public final Map<String, String> staticScopeDescriptorMap = new HashMap();
     private String file;
     private int lastLine = -1;
     private boolean embedScopes = false;

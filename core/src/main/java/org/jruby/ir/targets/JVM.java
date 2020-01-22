@@ -51,7 +51,7 @@ public abstract class JVM {
         return clsData().methodData();
     }
 
-    public abstract void pushscript(String clsName, String filename);
+    public abstract void pushscript(JVMVisitor visitor, String clsName, String filename);
 
     public void popclass() {
         clsStack.pop();

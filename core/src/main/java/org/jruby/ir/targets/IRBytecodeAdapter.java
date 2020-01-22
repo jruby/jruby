@@ -318,9 +318,11 @@ public abstract class IRBytecodeAdapter {
         Label after = newLabel();
         adapter.ifnonnull(after);
         adapter.pop();
-        adapter.getstatic(classData.clsName, field + "_Descriptor", ci(String.class));
+        adapter.ldc(classData.visitor.staticScopeDescriptorMap.get(field));
         loadStaticScope();
         invokeHelper("restoreScope", StaticScope.class, String.class, StaticScope.class);
+        adapter.dup();
+        adapter.putstatic(classData.clsName, field, ci(StaticScope.class));
         adapter.label(after);
     }
 
@@ -724,6 +726,6 @@ public abstract class IRBytecodeAdapter {
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
     protected final Signature signature;
-    private final ClassData classData;
+    protected final ClassData classData;
     public int ipc = 0;  // counter for dumping instr index when in DEBUG
 }

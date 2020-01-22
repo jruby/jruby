@@ -23,8 +23,8 @@ import java.util.Stack;
  * @author headius
  */
 class ClassData6 extends ClassData {
-    public ClassData6(String clsName, ClassVisitor cls) {
-        super(clsName, cls);
+    public ClassData6(String clsName, ClassVisitor cls, JVMVisitor visitor) {
+        super(clsName, cls, visitor);
     }
 
     public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
