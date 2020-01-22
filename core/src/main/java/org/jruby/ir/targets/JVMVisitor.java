@@ -1314,8 +1314,8 @@ public class JVMVisitor extends IRVisitor {
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
                 jvm.clsData().clsName,
-                bodyHandle.getName() + "_IRScope",
-                ci(IRScope.class),
+                bodyHandle.getName() + "_StaticScope",
+                ci(StaticScope.class),
                 false);
 
         jvmMethod().loadContext();

@@ -225,8 +225,8 @@ public class Bootstrap {
     @JIT
     public static CallSite openMetaClass(Lookup lookup, String name, MethodType type, MethodHandle body, MethodHandle scope) {
         try {
-            IRScope irScope = (IRScope) scope.invokeExact();
-            return new ConstantCallSite(insertArguments(OPEN_META_CLASS_HANDLE, 2, body, irScope));
+            StaticScope staticScope = (StaticScope) scope.invokeExact();
+            return new ConstantCallSite(insertArguments(OPEN_META_CLASS_HANDLE, 2, body, staticScope));
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -235,12 +235,12 @@ public class Bootstrap {
 
     private static final MethodHandle OPEN_META_CLASS_HANDLE =
             Binder
-                    .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class, MethodHandle.class, IRScope.class)
+                    .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class, MethodHandle.class, StaticScope.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "openMetaClass");
 
     @JIT
-    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, MethodHandle body, IRScope scope) {
-        return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope, object);
+    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, MethodHandle body, StaticScope scope) {
+        return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope.getIRScope(), object);
     }
 
     public static final Handle CHECK_ARITY = new Handle(
