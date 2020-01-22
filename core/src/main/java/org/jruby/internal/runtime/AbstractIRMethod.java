@@ -19,12 +19,9 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
 
-import java.util.concurrent.Callable;
-
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
     protected final Signature signature;
-    protected final Callable<IRScope> methodCallback;
     protected IRScope method;
     protected final int line;
     protected final StaticScope staticScope;
@@ -34,16 +31,15 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
     // Interpreted and Jitted but live IRScope known constructor
     public AbstractIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        this(() -> { return method; }, method.getStaticScope(), method.getId(), method.getLine(), visibility, implementationClass);
+        this(method.getStaticScope(), method.getId(), method.getLine(), visibility, implementationClass);
         // It is a little hinky to have a callback when we just set method anyways, but debugging in main constructor might need method before we set it.
         this.method = method;
     }
 
     // Compiled where IRScope must be retrieved at a later date if actually needed
-    public AbstractIRMethod(Callable<IRScope> methodCallback, StaticScope scope, String id, int line, Visibility visibility,
+    public AbstractIRMethod(StaticScope scope, String id, int line, Visibility visibility,
                             RubyModule implementationClass) {
         super(implementationClass, visibility, id);
-        this.methodCallback = methodCallback;
         this.staticScope = scope;
         this.staticScope.determineModule();
         this.signature = staticScope.getSignature();
@@ -81,7 +77,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
     public IRScope getIRScope() {
         try {
-            if (method == null) method = methodCallback.call();
+            if (method == null) method = staticScope.getIRScope();
             return method;
         } catch (Exception e) {
             return null;
