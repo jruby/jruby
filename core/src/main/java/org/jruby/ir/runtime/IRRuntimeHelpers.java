@@ -1447,13 +1447,11 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, String id,
+    public static DynamicMethod newCompiledModuleBody(ThreadContext context, MethodHandle handle, String id, int line,
                                                       StaticScope scope, Object rubyContainer, boolean maybeRefined) {
         RubyModule newRubyModule = newRubyModuleFromIR(context, id, scope, rubyContainer, maybeRefined);
 
-        IRScope irModule = scope.getIRScope();
-
-        return new CompiledIRMethod(handle,id, irModule.getLine(), scope, () -> { return irModule; }, Visibility.PUBLIC, newRubyModule);
+        return new CompiledIRMethod(handle,id, line, scope, () -> { return scope.getIRScope(); }, Visibility.PUBLIC, newRubyModule);
     }
 
     @Interp @JIT
@@ -1472,14 +1470,12 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id,
+    public static DynamicMethod newCompiledClassBody(ThreadContext context, MethodHandle handle, String id, int line,
                                                      StaticScope scope, Object container,
                                                      Object superClass, boolean maybeRefined) {
         RubyModule newRubyClass = newRubyClassFromIR(context.runtime, id, scope, superClass, container, maybeRefined);
 
-        IRScope irClassBody = scope.getIRScope();
-
-        return new CompiledIRMethod(handle, id, irClassBody.getLine(), scope, () -> { return irClassBody; }, Visibility.PUBLIC, newRubyClass);
+        return new CompiledIRMethod(handle, id, line, scope, () -> { return scope.getIRScope(); }, Visibility.PUBLIC, newRubyClass);
     }
 
     @Interp @JIT
@@ -1524,18 +1520,17 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, String id, StaticScope scope,
-                                              String encodedArgumentDescriptors,
-                                              IRubyObject obj, boolean maybeRefined) {
+    public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, String id, int line,
+                                              StaticScope scope, String encodedArgumentDescriptors,
+                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs) {
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        IRScope method = scope.getIRScope();
-
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(id,
-                new CompiledIRMethod(handle, null, -1, id, method.getLine(), scope, () -> { return method; }, Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, method.receivesKeywordArgs()));
+                new CompiledIRMethod(handle, null, -1, id, line, scope, () -> { return scope.getIRScope(); },
+                        Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs));
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
@@ -1544,18 +1539,16 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
-                                              int specificArity, String id, StaticScope scope,
+                                              int specificArity, String id, int line, StaticScope scope,
                                               String encodedArgumentDescriptors,
-                                              IRubyObject obj, boolean maybeRefined) {
+                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs) {
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        IRScope method = scope.getIRScope();
-
-        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, method.getLine(), scope,
-                () -> { return method; }, Visibility.PUBLIC,
-                rubyClass, encodedArgumentDescriptors, method.receivesKeywordArgs()));
+        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
+                () -> { return scope.getIRScope(); }, Visibility.PUBLIC,
+                rubyClass, encodedArgumentDescriptors, receivesKeywordArgs));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
     }
@@ -1593,9 +1586,10 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, String id, StaticScope scope,
-                                                 String encodedArgumentDescriptors,
-                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined) {
+    public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, String id, int line,
+                                                 StaticScope scope, String encodedArgumentDescriptors,
+                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
+                                                 boolean receivesKeywordArgs) {
         Ruby runtime = context.runtime;
         RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
@@ -1605,10 +1599,8 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        IRScope method = scope.getIRScope();
-
-        DynamicMethod newMethod = new CompiledIRMethod(handle, null, -1, id, method.getLine(), scope, () -> { return method; },
-                newVisibility, clazz, encodedArgumentDescriptors, method.receivesKeywordArgs());
+        DynamicMethod newMethod = new CompiledIRMethod(handle, null, -1, id, line, scope, () -> { return scope.getIRScope(); },
+                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
@@ -1616,9 +1608,10 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
-                                                 int specificArity, String id, StaticScope scope,
+                                                 int specificArity, String id, int line, StaticScope scope,
                                                  String encodedArgumentDescriptors,
-                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined) {
+                                                 DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
+                                                 boolean receivesKeywordArgs) {
         Ruby runtime = context.runtime;
         RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
@@ -1628,10 +1621,8 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        IRScope method = scope.getIRScope();
-
-        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, id, method.getLine(), scope,
-                () -> { return method; }, newVisibility, clazz, encodedArgumentDescriptors, method.receivesKeywordArgs());
+        DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
+                () -> { return scope.getIRScope(); }, newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
