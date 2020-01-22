@@ -137,10 +137,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitScope(IRScope scope, String name, Signature signature, boolean specificArity, boolean print) {
-        // We record this name so we can reference the unique scope field name for profiled callsites since we
-        // want the live IRScope instance of the callers scope.
-        String savedScopeName = currentScopeName;
-        currentScopeName = name + "_IRScope";
+        String scopeField = name + "_IRScope";
 
         BasicBlock[] bbs = scope.prepareForCompilation();
 
@@ -154,10 +151,9 @@ public class JVMVisitor extends IRVisitor {
 
         emitClosures(scope, print);
 
-        jvm.pushmethod(name, scope, signature, specificArity);
+        jvm.pushmethod(name, scope, scopeField, signature, specificArity);
 
         // store IRScope in map for insertion into class later
-        String scopeField = name + "_IRScope";
         if (scopeMap.get(scopeField) == null) {
             scopeMap.put(scopeField, scope);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
@@ -280,12 +276,12 @@ public class JVMVisitor extends IRVisitor {
         }
 
         jvm.popmethod();
-        currentScopeName = savedScopeName;
     }
 
     protected void emitVarargsMethodWrapper(IRScope scope, String variableName, String specificName, Signature variableSignature, Signature specificSignature) {
+        String scopeField = specificName + "_IRScope";
 
-        jvm.pushmethod(variableName, scope, variableSignature, false);
+        jvm.pushmethod(variableName, scope, scopeField, variableSignature, false);
 
         IRBytecodeAdapter m = jvmMethod();
 
@@ -622,7 +618,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine, currentScopeName, arrayderefinstr);
+        jvmMethod().invokeArrayDeref(file, lastLine, jvm.methodData().scopeField, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -632,7 +628,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             jvmMethod().loadSelf();
             visit(asstring.getReceiver());
-            jvmMethod().invokeAsString(file, lastLine, currentScopeName, asstring);
+            jvmMethod().invokeAsString(file, lastLine, jvm.methodData().scopeField, asstring);
             jvmStoreLocal(asstring.getResult());
         } else {
             visit(asstring.getReceiver());
@@ -1105,10 +1101,10 @@ public class JVMVisitor extends IRVisitor {
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.invokeSelf(file, lastLine, currentScopeName, call, arity);
+                m.invokeSelf(file, lastLine, jvm.methodData().scopeField, call, arity);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, currentScopeName, call, arity);
+                m.invokeOther(file, lastLine, jvm.methodData().scopeField, call, arity);
                 break;
         }
 

@@ -61,8 +61,8 @@ public abstract class JVM {
         return clsData().method();
     }
 
-    public void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity) {
-        clsData().pushmethod(name, scope, signature, specificArity);
+    public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
+        clsData().pushmethod(name, scope, scopeField, signature, specificArity);
         method().startMethod();
     }
 
