@@ -708,6 +708,10 @@ public class StaticScope implements Serializable {
         return file;
     }
 
+    public void setFile(String file) {
+        this.file = file;
+    }
+
     public StaticScope duplicate() {
         StaticScope dupe = new StaticScope(type, enclosingScope, variableNames == null ? NO_NAMES : variableNames);
         // irScope is not guaranteed to be set onto StaticScope until it is executed for the first time.

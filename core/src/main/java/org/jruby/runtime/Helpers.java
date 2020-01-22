@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import jnr.constants.platform.Errno;
 import org.jruby.*;
@@ -48,6 +49,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1743,6 +1745,36 @@ public class Helpers {
     public static StaticScope decodeScopeAndDetermineModule(ThreadContext context, StaticScope parent, String scopeString) {
         StaticScope scope = decodeScope(context, parent, scopeString);
         scope.determineModule();
+
+        return scope;
+    }
+
+    public static String describeScope(StaticScope scope) {
+        Signature signature = scope.getSignature();
+        String descriptor =
+                scope.getType().name() + ';'
+                + scope.getFile() + ';'
+                + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
+                + scope.getFirstKeywordIndex() + ";" +
+                + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode());
+
+        return descriptor;
+    }
+
+    public static StaticScope restoreScope(String descriptor, StaticScope enclosingScope) {
+        String[] bits = descriptor.split(";");
+
+        StaticScope.Type type = StaticScope.Type.valueOf(bits[0]);
+        String file = bits[1];
+
+        String[] varNames = bits[2].split(",");
+        int kwIndex = Integer.parseInt(bits[3]);
+        Signature signature = Signature.decode(Long.parseLong(bits[4]));
+
+        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, varNames, kwIndex);
+
+        scope.setSignature(signature);
+        scope.setFile(file);
 
         return scope;
     }

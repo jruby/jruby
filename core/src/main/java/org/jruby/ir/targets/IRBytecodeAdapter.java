@@ -312,6 +312,18 @@ public abstract class IRBytecodeAdapter {
         return new org.objectweb.asm.Label();
     }
 
+    public void getStaticScope(String field) {
+        adapter.getstatic(classData.clsName, field, ci(StaticScope.class));
+        adapter.dup();
+        Label after = newLabel();
+        adapter.ifnonnull(after);
+        adapter.pop();
+        adapter.getstatic(classData.clsName, field + "_Descriptor", ci(String.class));
+        loadStaticScope();
+        invokeHelper("restoreScope", StaticScope.class, String.class, StaticScope.class);
+        adapter.label(after);
+    }
+
     /**
      * Stack required: none
      *

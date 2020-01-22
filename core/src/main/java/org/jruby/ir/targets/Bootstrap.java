@@ -226,7 +226,7 @@ public class Bootstrap {
     public static CallSite openMetaClass(Lookup lookup, String name, MethodType type, MethodHandle body, MethodHandle scope) {
         try {
             StaticScope staticScope = (StaticScope) scope.invokeExact();
-            return new ConstantCallSite(insertArguments(OPEN_META_CLASS_HANDLE, 2, body, staticScope));
+            return new ConstantCallSite(insertArguments(OPEN_META_CLASS_HANDLE, 4, body, staticScope));
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -235,11 +235,14 @@ public class Bootstrap {
 
     private static final MethodHandle OPEN_META_CLASS_HANDLE =
             Binder
-                    .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class, MethodHandle.class, StaticScope.class)
+                    .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class, StaticScope.class, MethodHandle.class, StaticScope.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "openMetaClass");
 
     @JIT
-    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, MethodHandle body, StaticScope scope) {
+    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, String descriptor, StaticScope parent, MethodHandle body, StaticScope scope) {
+        if (scope == null) {
+            scope = Helpers.restoreScope(descriptor, parent);
+        }
         return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope.getIRScope(), object);
     }
 
