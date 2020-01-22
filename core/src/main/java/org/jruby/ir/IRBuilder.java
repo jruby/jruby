@@ -6,6 +6,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.ir.instructions.*;
@@ -3416,8 +3417,10 @@ public class IRBuilder {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), nearestLVarScope.getStaticScope(),
+        StaticScope staticScope = nearestLVarScope.getStaticScope().duplicate();
+        IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), staticScope,
                 Signature.from(postExeNode), CommonByteLists._END_, true);
+        staticScope.setIRScope(endClosure);
         endClosure.setIsEND();
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
