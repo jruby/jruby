@@ -784,8 +784,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
                 getClassData().clsName,
-                handle.getName() + "_IRScope",
-                ci(IRScope.class),
+                handle.getName() + "_StaticScope",
+                ci(StaticScope.class),
                 false);
         long encodedSignature = signature.encode();
         adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);

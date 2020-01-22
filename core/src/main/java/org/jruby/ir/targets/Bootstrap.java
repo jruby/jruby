@@ -1333,7 +1333,8 @@ public class Bootstrap {
     }
 
     public static CallSite prepareBlock(Lookup lookup, String name, MethodType type, MethodHandle bodyHandle, MethodHandle scopeHandle, long encodedSignature) throws Throwable {
-        IRScope scope = (IRScope)scopeHandle.invokeExact();
+        StaticScope staticScope = (StaticScope) scopeHandle.invokeExact();
+        IRScope scope = staticScope.getIRScope();
 
         CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, scope, encodedSignature);
 
