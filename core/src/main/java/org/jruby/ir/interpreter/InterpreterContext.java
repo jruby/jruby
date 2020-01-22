@@ -72,6 +72,7 @@ public class InterpreterContext {
     public InterpreterEngine getEngine() {
         if (engine == null) {
             setInstructions(instructionsCallback.get());
+            scope.computeScopeFlags();
 
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
@@ -81,9 +82,8 @@ public class InterpreterContext {
     }
 
     public Instr[] getInstructions() {
-        if (instructions == null) {
-            getEngine();
-        }
+        if (instructions == null) getEngine();
+
         return instructions == null ? NO_INSTRUCTIONS : instructions;
     }
 
@@ -203,22 +203,32 @@ public class InterpreterContext {
     }
 
     public boolean hasExplicitCallProtocol() {
+        if (instructions == null) getEngine();
+
         return hasExplicitCallProtocol;
     }
 
     public boolean pushNewDynScope() {
+        if (instructions == null) getEngine();
+
         return pushNewDynScope;
     }
 
     public boolean reuseParentDynScope() {
+        if (instructions == null) getEngine();
+
         return reuseParentDynScope;
     }
 
     public boolean popDynScope() {
+        if (instructions == null) getEngine();
+
         return popDynScope;
     }
 
     public boolean receivesKeywordArguments() {
+        if (instructions == null) getEngine();
+
         return receivesKeywordArguments;
     }
 
@@ -229,7 +239,7 @@ public class InterpreterContext {
         buf.append(getFileName()).append(':').append(scope.getLine());
         if (getName() != null) buf.append(' ').append(getName()).append("\n");
 
-        if (instructions == null) {
+        if (getInstructions() == null) {
             buf.append("  No Instructions.  Full Build before linearizeInstr?");
         } else {
             buf.append(toStringInstrs()).append("\n");

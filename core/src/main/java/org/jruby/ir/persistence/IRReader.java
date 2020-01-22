@@ -52,21 +52,10 @@ public class IRReader implements IRPersistenceValues {
         KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
         for (int i = 0; i < scopesToRead; i++) {
             scopes[i] = decodeScopeHeader(manager, file);
-        }
-
-        // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
-        for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            final IRScope scope = pair.getKey();
-            final int instructionsOffset = pair.getValue();
+            final IRScope scope = scopes[i].getKey();
+            final int instructionsOffset = scopes[i].getValue();
 
             scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, instructionsOffset));
-        }
-
-        // Run through all scopes again and ensure they've calculated flags.
-        // This also forces lazy instrs from above to eagerly decode.
-        for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            final IRScope scope = pair.getKey();
-            scope.computeScopeFlags();
         }
 
         return scopes[0].getKey(); // topmost scope;
