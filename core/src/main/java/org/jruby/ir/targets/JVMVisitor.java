@@ -426,7 +426,7 @@ public class JVMVisitor extends IRVisitor {
     private void emitClosures(IRScope s, boolean print) {
         // Emit code for all nested closures
         for (IRClosure c: s.getClosures()) {
-            c.setHandle(emitClosure(c, print));
+            emitClosure(c, print);
         }
     }
 
@@ -434,14 +434,19 @@ public class JVMVisitor extends IRVisitor {
         /* Compile the closure like a method */
         String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
 
+
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
-        return new Handle(
+        Handle handle = new Handle(
                 Opcodes.H_INVOKESTATIC,
                 jvm.clsData().clsName,
                 name,
                 sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()),
                 false);
+
+        closuresMap.put(closure, handle);
+
+        return handle;
     }
 
     protected Handle emitModuleBody(IRModuleBody method) {
@@ -2618,7 +2623,7 @@ public class JVMVisitor extends IRVisitor {
         visit(closure.getSelf());
         jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().prepareBlock(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
+        jvmMethod().prepareBlock(closuresMap.get(closure), closure.getSignature(), jvm.clsData().clsName);
     }
 
     private SkinnyMethodAdapter jvmAdapter() {
@@ -2632,6 +2637,7 @@ public class JVMVisitor extends IRVisitor {
     private final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;
+    private Map<IRClosure, Handle> closuresMap = new HashMap();
     private Map<String, StaticScope> staticScopeMap = new HashMap();
     public final Map<String, String> staticScopeDescriptorMap = new HashMap();
     private String file;

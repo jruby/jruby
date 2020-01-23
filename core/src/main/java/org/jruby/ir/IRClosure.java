@@ -23,7 +23,6 @@ import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
-import org.objectweb.asm.Handle;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
@@ -45,9 +44,6 @@ public class IRClosure extends IRScope {
 
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
-
-    /** Added for JIT purposes */
-    private Handle handle;
 
     // Used by other constructions and by IREvalScript as well
     protected IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, ByteList prefix) {
@@ -363,18 +359,9 @@ public class IRClosure extends IRScope {
         return signature;
     }
 
-    public void setHandle(Handle handle) {
-        this.handle = handle;
-    }
-
-    public Handle getHandle() {
-        return handle;
-    }
-
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argDesc;
     }
-
 
     /**
      * Set upon completion of IRBuild of this IRClosure.
