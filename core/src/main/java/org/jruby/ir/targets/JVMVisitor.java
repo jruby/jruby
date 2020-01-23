@@ -1314,7 +1314,7 @@ public class JVMVisitor extends IRVisitor {
 
         jvmMethod().loadContext();
         visit(definemetaclassinstr.getObject());
-        jvmAdapter().getstatic(jvm.clsData().clsName, scopeField + "_Descriptor", ci(String.class));
+        jvmAdapter().ldc(staticScopeDescriptorMap.get(scopeField));
         jvmMethod().loadStaticScope();
 
         jvmAdapter().invokedynamic(
