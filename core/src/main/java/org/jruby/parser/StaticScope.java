@@ -34,6 +34,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.function.BiConsumer;
 import java.util.function.IntFunction;
@@ -51,6 +53,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -125,6 +128,8 @@ public class StaticScope implements Serializable {
     private RubyModule overlayModule;
 
     private volatile MethodHandle constructor;
+
+    private volatile Collection<String> ivarNames;
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -757,5 +762,19 @@ public class StaticScope implements Serializable {
                 break;
             }
         }
+    }
+
+    public Collection<String> getInstanceVariableNames() {
+        if (ivarNames != null) return ivarNames;
+
+        if (irScope instanceof IRMethod) {
+            return ivarNames = ((IRMethod) irScope).getMethodData().getIvarNames();
+        }
+
+        return ivarNames = Collections.EMPTY_LIST;
+    }
+
+    public void setInstanceVariableNames(Collection<String> ivarWrites) {
+        this.ivarNames = ivarWrites;
     }
 }

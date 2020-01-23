@@ -19,6 +19,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
 
+import java.util.Collection;
+
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
     protected final Signature signature;
@@ -151,12 +153,18 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     /**
      * Additional metadata about this method.
      */
+    @Override
     public MethodData getMethodData() {
         if (methodData == null) {
             methodData = ((IRMethod) getIRScope()).getMethodData();
         }
 
         return methodData;
+    }
+
+    @Override
+    public Collection<String> getInstanceVariableNames() {
+        return staticScope.getInstanceVariableNames();
     }
 
     @Override

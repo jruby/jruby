@@ -38,6 +38,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 
+import java.util.Collection;
+
 public abstract class DelegatingDynamicMethod extends DynamicMethod {
     protected final DynamicMethod delegate;
 
@@ -182,6 +184,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     @Override
     public MethodData getMethodData() {
         return delegate.getMethodData();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Collection<String> getInstanceVariableNames() {
+        return delegate.getInstanceVariableNames();
     }
 
     @Override

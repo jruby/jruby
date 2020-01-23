@@ -86,7 +86,6 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.targets.Bootstrap;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.MethodGatherer;
@@ -105,7 +104,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.ivars.MethodData;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
@@ -5109,7 +5107,7 @@ public class RubyModule extends RubyObject {
         while (cls != null) {
             Map<String, DynamicMethod> methods = cls.getNonIncludedClass().getMethodLocation().getMethods();
 
-            methods.forEach((name, method) -> set.addAll(method.getMethodData().getIvarNames()));
+            methods.forEach((name, method) -> set.addAll(method.getInstanceVariableNames()));
 
             cls = cls.getSuperClass();
         }

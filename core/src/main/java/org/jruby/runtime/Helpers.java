@@ -17,6 +17,8 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1751,12 +1753,17 @@ public class Helpers {
 
     public static String describeScope(StaticScope scope) {
         Signature signature = scope.getSignature();
+        Collection<String> instanceVariableNames = scope.getInstanceVariableNames();
         String descriptor =
                 scope.getType().name() + ';'
                 + scope.getFile() + ';'
                 + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
-                + scope.getFirstKeywordIndex() + ";" +
-                + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode());
+                + scope.getFirstKeywordIndex() + ';' +
+                + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode()) + ';'
+                + scope.getIRScope().getScopeType().name() + ';'
+                + (instanceVariableNames.size() > 0
+                        ? instanceVariableNames.stream().collect(Collectors.joining(","))
+                        : "NONE");
 
         return descriptor;
     }
@@ -1770,11 +1777,16 @@ public class Helpers {
         String[] varNames = bits[2].split(",");
         int kwIndex = Integer.parseInt(bits[3]);
         Signature signature = Signature.decode(Long.parseLong(bits[4]));
+        IRScopeType scopeType = IRScopeType.valueOf(bits[5]);
+        String encodedIvars = bits[6];
+        Collection<String> ivarNames = encodedIvars.equals("NONE") ? Collections.EMPTY_LIST : Arrays.asList(encodedIvars.split(","));
 
         StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, varNames, kwIndex);
 
         scope.setSignature(signature);
         scope.setFile(file);
+        scope.setScopeType(scopeType);
+        scope.setInstanceVariableNames(ivarNames);
 
         return scope;
     }
