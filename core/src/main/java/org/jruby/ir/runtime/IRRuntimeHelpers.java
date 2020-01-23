@@ -39,6 +39,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
@@ -1429,7 +1430,10 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newCompiledMetaClass(ThreadContext context, MethodHandle handle, IRScope metaClassBody, IRubyObject obj) {
         RubyClass singletonClass = newMetaClassFromIR(context.runtime, metaClassBody, obj);
 
-        return new CompiledIRNoProtocolMethod(handle, metaClassBody, singletonClass);
+        StaticScope scope = metaClassBody.getStaticScope();
+
+        return new CompiledIRNoProtocolMethod(handle, scope, metaClassBody.getFile(), metaClassBody.getLine(),
+                singletonClass, !metaClassBody.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED));
     }
 
     private static RubyClass newMetaClassFromIR(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {

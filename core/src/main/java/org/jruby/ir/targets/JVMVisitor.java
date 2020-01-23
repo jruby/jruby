@@ -1742,8 +1742,7 @@ public class JVMVisitor extends IRVisitor {
     public void PushMethodBindingInstr(PushMethodBindingInstr pushbindinginstr) {
         IRScope scope = jvm.methodData().scope;
 
-        if (scope.isScriptScope() &&
-                scope.getRootLexicalScope() != null) {
+        if (scope.isScriptScope() && scope.getRootLexicalScope() != null) {
             // script scope, so we don't push a new scope; instead we push the top-level scope it provides
             jvmMethod().loadContext();
             jvmMethod().loadStaticScope();
