@@ -5,6 +5,8 @@ import java.lang.invoke.MethodHandle;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -19,35 +21,38 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     private MethodHandle specific;
     private final int specificArity;
     private String encodedArgumentDescriptors;
+    private boolean needsToFindImplementer;
 
     public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope, Visibility visibility,
-                            RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs) {
-        this(variable, null, -1, id, line, scope, visibility, implementationClass, encodedArgumentDescriptors, recievesKeywordArgs);
+                            RubyModule implementationClass, String encodedArgumentDescriptors, boolean recievesKeywordArgs, boolean needsToFindImplementer) {
+        this(variable, null, -1, id, line, scope, visibility, implementationClass, encodedArgumentDescriptors, recievesKeywordArgs, needsToFindImplementer);
     }
 
     // Used by spec:compiler
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass,
                             String encodedArgumentDescriptors) {
         this(variable, null, -1, method.getId(), method.getLine(), method.getStaticScope(),
-                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs());
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
+                !(method instanceof IRMethod && !method.getFlags().contains(IRFlags.REQUIRES_CLASS)));
     }
 
     // Used by spec:compiler
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method,
                             Visibility visibility, RubyModule implementationClass, String encodedArgumentDescriptors) {
         this(variable, specific, specificArity, method.getId(), method.getLine(), method.getStaticScope(),
-                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs());
+                visibility, implementationClass, encodedArgumentDescriptors, method.receivesKeywordArgs(),
+                !(method instanceof IRMethod && !method.getFlags().contains(IRFlags.REQUIRES_CLASS)));
     }
 
     // Ruby Class/Module constructor (feels like we should maybe have a subtype here...
     public CompiledIRMethod(MethodHandle variable, String id, int line, StaticScope scope,
                             Visibility visibility, RubyModule implementationClass) {
-        this(variable, null, -1, id, line, scope, visibility, implementationClass, "", false);
+        this(variable, null, -1, id, line, scope, visibility, implementationClass, "", false, false);
     }
 
     public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, String id, int line,
                             StaticScope scope, Visibility visibility, RubyModule implementationClass,
-                            String encodedArgumentDescriptors, boolean receivesKeywordArgs) {
+                            String encodedArgumentDescriptors, boolean receivesKeywordArgs, boolean needsToFindImplementer) {
             super(scope, id, line, visibility, implementationClass);
 
         this.specific = specific;
@@ -222,4 +227,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
         }
     }
 
+    public boolean needsToFindImplementer() {
+        return needsToFindImplementer;
+    }
 }

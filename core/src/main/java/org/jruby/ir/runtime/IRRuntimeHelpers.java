@@ -39,7 +39,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
@@ -52,7 +51,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -1522,15 +1520,17 @@ public class IRRuntimeHelpers {
     @JIT
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle handle, String id, int line,
                                               StaticScope scope, String encodedArgumentDescriptors,
-                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs) {
+                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs,
+                                              boolean needsToFindImplementer) {
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(id,
-                new CompiledIRMethod(handle, null, -1, id, line, scope,
-                        Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs));
+                new CompiledIRMethod(handle, null, -1, id, line, scope, Visibility.PUBLIC, rubyClass,
+                        encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
+
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
             obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
@@ -1541,13 +1541,14 @@ public class IRRuntimeHelpers {
     public static void defCompiledClassMethod(ThreadContext context, MethodHandle variable, MethodHandle specific,
                                               int specificArity, String id, int line, StaticScope scope,
                                               String encodedArgumentDescriptors,
-                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs) {
+                                              IRubyObject obj, boolean maybeRefined, boolean receivesKeywordArgs,
+                                              boolean needsToFindImplementer) {
         RubyClass rubyClass = checkClassForDef(context, id, obj);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
         rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
-                Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs));
+                Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
     }
@@ -1588,7 +1589,7 @@ public class IRRuntimeHelpers {
     public static void defCompiledInstanceMethod(ThreadContext context, MethodHandle handle, String id, int line,
                                                  StaticScope scope, String encodedArgumentDescriptors,
                                                  DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
-                                                 boolean receivesKeywordArgs) {
+                                                 boolean receivesKeywordArgs, boolean needsToFindImplementer) {
         Ruby runtime = context.runtime;
         RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
@@ -1599,7 +1600,7 @@ public class IRRuntimeHelpers {
         if (maybeRefined) scope.captureParentRefinements(context);
 
         DynamicMethod newMethod = new CompiledIRMethod(handle, null, -1, id, line, scope,
-                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs);
+                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
@@ -1610,7 +1611,7 @@ public class IRRuntimeHelpers {
                                                  int specificArity, String id, int line, StaticScope scope,
                                                  String encodedArgumentDescriptors,
                                                  DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
-                                                 boolean receivesKeywordArgs) {
+                                                 boolean receivesKeywordArgs, boolean needsToFindImplementer) {
         Ruby runtime = context.runtime;
         RubySymbol methodName = runtime.newSymbol(id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
@@ -1621,7 +1622,7 @@ public class IRRuntimeHelpers {
         if (maybeRefined) scope.captureParentRefinements(context);
 
         DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
-                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs);
+                newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);

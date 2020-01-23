@@ -1223,8 +1223,8 @@ public class JVMVisitor extends IRVisitor {
                 context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 METHOD_SIGNATURE_VARARGS.type(),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class));
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class, boolean.class),
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, IRubyObject.class, boolean.class, boolean.class, boolean.class));
 
         jvmAdapter().ldc(method.getId());
         jvmAdapter().ldc(method.getLine());
@@ -1233,6 +1233,7 @@ public class JVMVisitor extends IRVisitor {
         visit(defineclassmethodinstr.getContainer());
         jvmAdapter().ldc(method.maybeUsingRefinements());
         jvmAdapter().ldc(method.receivesKeywordArgs());
+        jvmAdapter().ldc(method.getFlags().contains(IRFlags.REQUIRES_CLASS));
 
         // add method
         jvmMethod().adapter.invokestatic(p(IRRuntimeHelpers.class), "defCompiledClassMethod", defSignature);
@@ -1259,8 +1260,8 @@ public class JVMVisitor extends IRVisitor {
                 context.getSpecificName(),
                 context.getNativeSignaturesExceptVariable(),
                 variable,
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class),
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class));
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class, boolean.class),
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, String.class, int.class, StaticScope.class, String.class, DynamicScope.class, IRubyObject.class, boolean.class, boolean.class, boolean.class));
 
         a.ldc(method.getId());
         a.ldc(method.getLine());
@@ -1270,6 +1271,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         jvmAdapter().ldc(method.maybeUsingRefinements());
         jvmAdapter().ldc(method.receivesKeywordArgs());
+        jvmAdapter().ldc(method.getFlags().contains(IRFlags.REQUIRES_CLASS));
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
