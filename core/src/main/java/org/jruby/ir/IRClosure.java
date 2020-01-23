@@ -57,7 +57,6 @@ public class IRClosure extends IRScope {
         ByteList name = prefix.dup();
         name.append(Integer.toString(closureId).getBytes());
         setByteName(name);
-        this.body = null;
     }
 
     /** Used by cloning code */
@@ -66,12 +65,7 @@ public class IRClosure extends IRScope {
         super(c, lexicalParent);
         this.closureId = closureId;
         super.setByteName(fullName);
-        if (getManager().isDryRun()) {
-            this.body = null;
-        } else {
-            boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
-            this.body = shouldJit ? new MixedModeIRBlockBody(c, c.getSignature()) : new InterpretedIRBlockBody(c, c.getSignature());
-        }
+
         isEND = c.isEND;
 
         this.signature = c.signature;
@@ -107,13 +101,6 @@ public class IRClosure extends IRScope {
         if (staticScope != null) {
             staticScope.setIRScope(this);
             staticScope.setScopeType(this.getScopeType());
-        }
-
-        if (getManager().isDryRun()) {
-            this.body = null;
-        } else {
-            boolean shouldJit = manager.getInstanceConfig().getCompileMode().shouldJIT();
-            this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
         }
 
         if (needsCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
@@ -186,7 +173,12 @@ public class IRClosure extends IRScope {
     }
 
     public BlockBody getBlockBody() {
-        return body;
+        BlockBody body = this.body;
+
+        if (body != null) return body;
+
+        boolean shouldJit = getManager().getInstanceConfig().getCompileMode().shouldJIT();
+        return this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
     }
 
     // FIXME: This is too strict.  We can use any closure which does not dip below the define_method closure.  This
