@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -38,7 +39,7 @@ public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
         Object value1 = getArg1().retrieve(context, self, currScope, currDynScope, temp);
         Object value2 = getArg2().retrieve(context, self, currScope, currDynScope, temp);
-        boolean eql = getArg2() == context.getRuntime().getIRManager().getNil() || getArg2() == UndefinedValue.UNDEFINED ?
+        boolean eql = getArg2() == Nil.NIL || getArg2() == UndefinedValue.UNDEFINED ?
                 value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
         return !eql ? getJumpTarget().getTargetPC() : ipc;
     }

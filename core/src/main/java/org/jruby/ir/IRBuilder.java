@@ -543,7 +543,7 @@ public class IRBuilder {
 
         receiveBlockArgs(node);
 
-        Operand closureRetVal = node.getBody() == null ? manager.getNil() : build(node.getBody());
+        Operand closureRetVal = node.getBody() == null ? Nil.NIL : build(node.getBody());
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
@@ -615,11 +615,11 @@ public class IRBuilder {
     // Return the last argument in the list as this represents rhs of the overall attrassign expression
     // e.g. 'a[1] = 2 #=> 2' or 'a[1] = 1,2,3 #=> [1,2,3]'
     protected Operand buildAttrAssignCallArgs(List<Operand> argsList, Node args, boolean containsAssignment) {
-        if (args == null) return manager.getNil();
+        if (args == null) return Nil.NIL;
 
         switch (args.getNodeType()) {
             case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
-                Operand last = manager.getNil();
+                Operand last = Nil.NIL;
                 for (Node n: ((ListNode) args).children()) {
                     last = buildWithOrder(n, containsAssignment);
                     argsList.add(last);
@@ -829,7 +829,7 @@ public class IRBuilder {
         Operand oldName = build(alias.getOldName());
         addInstr(new AliasInstr(newName, oldName));
 
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     // Translate "ret = (a && b)" --> "ret = (a ? b : false)" -->
@@ -911,7 +911,7 @@ public class IRBuilder {
         if (attrAssignNode.isLazy()) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new CopyInstr(result, Nil.NIL));
             addInstr(new LabelInstr(endLabel));
         }
 
@@ -1127,7 +1127,7 @@ public class IRBuilder {
         if (compileLazyLabel) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new CopyInstr(result, Nil.NIL));
             addInstr(new LabelInstr(endLabel));
         }
 
@@ -1263,7 +1263,7 @@ public class IRBuilder {
 
         if (!hasElse) {
             addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new CopyInstr(result, Nil.NIL));
             addInstr(new JumpInstr(endLabel));
         }
 
@@ -1379,7 +1379,7 @@ public class IRBuilder {
 
         if (!hasElse) {
             addInstr(new LabelInstr(elseLabel));
-            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new CopyInstr(result, Nil.NIL));
             addInstr(new JumpInstr(endLabel));
         }
 
@@ -1616,7 +1616,7 @@ public class IRBuilder {
         // exc === Exception; Run the rescue block
         addInstr(new LabelInstr(caughtLabel));
         Object v2 = rescueBlock.run(); // YIELD: Run the protected code block
-        if (v2 != null) addInstr(new CopyInstr(rv, manager.getNil()));
+        if (v2 != null) addInstr(new CopyInstr(rv, Nil.NIL));
 
         // End
         addInstr(new LabelInstr(rEndLabel));
@@ -1654,13 +1654,13 @@ public class IRBuilder {
             for (Node elt: array.children()) {
                 Operand result = buildGetDefinition(elt);
 
-                addInstr(createBranch(result, manager.getNil(), undefLabel));
+                addInstr(createBranch(result, Nil.NIL, undefLabel));
             }
 
             addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(undefLabel));
-            addInstr(new CopyInstr(tmpVar, manager.getNil()));
+            addInstr(new CopyInstr(tmpVar, Nil.NIL));
             addInstr(new LabelInstr(doneLabel));
 
             return tmpVar;
@@ -1732,7 +1732,7 @@ public class IRBuilder {
                             }
                     )
             );
-            addInstr(createBranch(tmpVar, manager.getNil(), undefLabel));
+            addInstr(createBranch(tmpVar, Nil.NIL, undefLabel));
             Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), DefinedMessage.SUPER.getText());
             return buildDefnCheckIfThenPaths(undefLabel, superDefnVal);
         }
@@ -1771,7 +1771,7 @@ public class IRBuilder {
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
-            addInstr(new CopyInstr(tmpVar, manager.getNil()));
+            addInstr(new CopyInstr(tmpVar, Nil.NIL));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(defLabel));
             addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.CONSTANT.getText())));
@@ -1812,7 +1812,7 @@ public class IRBuilder {
                     Label done = getNewLabel();
                     Variable result = createTemporaryVariable();
                     Operand test = buildGetDefinition(((Colon2Node) colon).getLeftNode());
-                    addInstr(createBranch(test, manager.getNil(), bad));
+                    addInstr(createBranch(test, Nil.NIL, bad));
                     Operand lhs = build(((Colon2Node) colon).getLeftNode());
                     addInstr(
                             new RuntimeHelperCall(
@@ -1828,7 +1828,7 @@ public class IRBuilder {
                     );
                     addInstr(new JumpInstr(done));
                     addInstr(new LabelInstr(bad));
-                    addInstr(new CopyInstr(result, manager.getNil()));
+                    addInstr(new CopyInstr(result, Nil.NIL));
                     addInstr(new LabelInstr(done));
 
                     return result;
@@ -1840,7 +1840,7 @@ public class IRBuilder {
                  public Operand run() {
                  // Nothing to do -- ignore the exception, and restore stashed error info!
                  addInstr(new RestoreErrorInfoInstr(errInfo));
-                 return manager.getNil();
+                     return Nil.NIL;
                  }
             };
 
@@ -1867,7 +1867,7 @@ public class IRBuilder {
                             }
                     )
             );
-            addInstr(createBranch(tmpVar, manager.getNil(), undefLabel));
+            addInstr(createBranch(tmpVar, Nil.NIL, undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), "method");
             return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
         }
@@ -1879,7 +1879,7 @@ public class IRBuilder {
                 public Operand run() {
                     final Label undefLabel = getNewLabel();
                     Operand receiverDefn = buildGetDefinition(callNode.getReceiverNode());
-                    addInstr(createBranch(receiverDefn, manager.getNil(), undefLabel));
+                    addInstr(createBranch(receiverDefn, Nil.NIL, undefLabel));
                     Variable tmpVar = createTemporaryVariable();
                     addInstr(
                             new RuntimeHelperCall(
@@ -1898,7 +1898,9 @@ public class IRBuilder {
 
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
+                public Operand run() {
+                    return Nil.NIL;
+                } // Nothing to do if we got an exception
             };
 
             // Try verifying definition, and if we get an exception, throw it out, and return nil
@@ -1912,7 +1914,7 @@ public class IRBuilder {
                 public Operand run() {
                     final Label  undefLabel = getNewLabel();
                     Operand receiverDefn = buildGetDefinition(attrAssign.getReceiverNode());
-                    addInstr(createBranch(receiverDefn, manager.getNil(), undefLabel));
+                    addInstr(createBranch(receiverDefn, Nil.NIL, undefLabel));
                     /* --------------------------------------------------------------------------
                      * This basically combines checks from CALLNODE and FCALLNODE
                      *
@@ -1941,7 +1943,7 @@ public class IRBuilder {
                                     }
                             )
                     );
-                    addInstr(createBranch(tmpVar, manager.getNil(), undefLabel));
+                    addInstr(createBranch(tmpVar, Nil.NIL, undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), "assignment");
                     return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
                 }
@@ -1949,7 +1951,9 @@ public class IRBuilder {
 
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
+                public Operand run() {
+                    return Nil.NIL;
+                } // Nothing to do if we got an exception
             };
 
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
@@ -1965,7 +1969,7 @@ public class IRBuilder {
         Variable tmpVar = getValueInTemporaryVariable(defVal);
         addInstr(new JumpInstr(defLabel));
         addInstr(new LabelInstr(undefLabel));
-        addInstr(new CopyInstr(tmpVar, manager.getNil()));
+        addInstr(new CopyInstr(tmpVar, Nil.NIL));
         addInstr(new LabelInstr(defLabel));
         return tmpVar;
     }
@@ -1987,21 +1991,21 @@ public class IRBuilder {
             for (int i = 0; i < ((ArrayNode) node).size(); i++) {
                 Node iterNode = ((ArrayNode) node).get(i);
                 Operand def = buildGetDefinition(iterNode);
-                if (def == manager.getNil()) { // Optimization!
-                    rv = manager.getNil();
+                if (def == Nil.NIL) { // Optimization!
+                    rv = Nil.NIL;
                     break;
                 } else if (!def.hasKnownValue()) { // Optimization!
                     failPathReqd = true;
-                    addInstr(createBranch(def, manager.getNil(), failLabel));
+                    addInstr(createBranch(def, Nil.NIL, failLabel));
                 }
             }
         } else {
             Operand def = buildGetDefinition(node);
-            if (def == manager.getNil()) { // Optimization!
-                rv = manager.getNil();
+            if (def == Nil.NIL) { // Optimization!
+                rv = Nil.NIL;
             } else if (!def.hasKnownValue()) { // Optimization!
                 failPathReqd = true;
-                addInstr(createBranch(def, manager.getNil(), failLabel));
+                addInstr(createBranch(def, Nil.NIL, failLabel));
             }
         }
 
@@ -2224,7 +2228,7 @@ public class IRBuilder {
                 addInstr(BNEInstr.create(variableAssigned, argVar, UndefinedValue.UNDEFINED));
                 // We add this extra nil copy because we do not know if we have a circular defininition of
                 // argVar: proc { |a=a| } or proc { |a = foo(bar(a))| }.
-                addInstr(new CopyInstr(argVar, manager.getNil()));
+                addInstr(new CopyInstr(argVar, Nil.NIL));
                 // This bare build looks weird but OptArgNode is just a marker and value is either a LAsgnNode
                 // or a DAsgnNode.  So building the value will end up having a copy(var, assignment).
                 build(optArg.getValue());
@@ -2508,7 +2512,7 @@ public class IRBuilder {
             piece = ((StringLiteral)piece).frozenString;
         }
 
-        return piece == null ? manager.getNil() : piece;
+        return piece == null ? Nil.NIL : piece;
     }
 
     public Operand buildDRegexp(Variable result, DRegexpNode node) {
@@ -2632,7 +2636,7 @@ public class IRBuilder {
         }
 
         ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensureNode == null ? manager.getNil() : build(ensureNode);
+        Operand ensureRetVal = ensureNode == null ? Nil.NIL : build(ensureNode);
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -2785,7 +2789,8 @@ public class IRBuilder {
 
         addInstr(new ThrowExceptionInstr(exception));
 
-        return manager.getNil(); // not-reached
+        // not-reached
+        return Nil.NIL;
     }
 
     public Operand buildFloat(FloatNode node) {
@@ -2902,7 +2907,7 @@ public class IRBuilder {
         } else {
             thenNull = true;
             if (result == null) result = createTemporaryVariable();
-            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new CopyInstr(result, Nil.NIL));
             addInstr(new JumpInstr(doneLabel));
         }
 
@@ -2918,12 +2923,12 @@ public class IRBuilder {
             }
         } else {
             elseNull = true;
-            addInstr(new CopyInstr(result, manager.getNil()));
+            addInstr(new CopyInstr(result, Nil.NIL));
         }
 
         if (thenNull && elseNull) {
             addInstr(new LabelInstr(doneLabel));
-            return manager.getNil();
+            return Nil.NIL;
         } else if (thenUnil && elseUnil) {
             return U_NIL;
         } else {
@@ -2961,7 +2966,7 @@ public class IRBuilder {
         afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
-        Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
+        Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : build(iterNode.getBodyNode());
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_RETURN, getName(), getFileName(), iterNode.getEndLine() + 1));
@@ -3144,7 +3149,7 @@ public class IRBuilder {
     }
 
     public Operand buildNil() {
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
@@ -3205,7 +3210,7 @@ public class IRBuilder {
 
         addInstr(new JumpInstr(endLabel));
         addInstr(new LabelInstr(lazyLabel));
-        addInstr(new CopyInstr(result, manager.getNil()));
+        addInstr(new CopyInstr(result, Nil.NIL));
         addInstr(new LabelInstr(endLabel));
 
         return result;
@@ -3297,7 +3302,7 @@ public class IRBuilder {
             l2 = getNewLabel();
             v1 = buildGetDefinition(orNode.getFirstNode());
             addInstr(new CopyInstr(flag, v1));
-            addInstr(createBranch(flag, manager.getNil(), l2)); // if v1 is undefined, go to v2's computation
+            addInstr(createBranch(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
         v1 = build(orNode.getFirstNode()); // build of 'x'
         addInstr(new CopyInstr(flag, v1));
@@ -3402,7 +3407,7 @@ public class IRBuilder {
         build(body);
 
         // END does not have either explicit or implicit return, so we add one
-        addInstr(new ReturnInstr(new Nil()));
+        addInstr(new ReturnInstr(Nil.NIL));
 
         return scope.allocateInterpreterContext(instructions);
     }
@@ -3430,7 +3435,7 @@ public class IRBuilder {
         // might be broken currently. We could either fix it or consider dropping support
         // for END blocks altogether or only support them in the toplevel. Not worth the pain.
         addInstr(new RecordEndBlockInstr(topLevel, new WrappedIRClosure(buildSelf(), endClosure)));
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
@@ -3444,7 +3449,7 @@ public class IRBuilder {
 
         afterPrologueIndex += beginInstrs.size();
 
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     public Operand buildRational(RationalNode rationalNode) {
@@ -3479,7 +3484,7 @@ public class IRBuilder {
                 throwSyntaxError(redoNode, "Invalid redo");
             }
         }
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     public Operand buildRegexp(RegexpNode reNode) {
@@ -3530,7 +3535,7 @@ public class IRBuilder {
         addInstr(manager.needsBacktrace(needsBacktrace));
 
         // Body
-        Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
+        Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
         Variable rv = createTemporaryVariable();
         if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode());
 
@@ -3672,7 +3677,7 @@ public class IRBuilder {
             // Retries effectively create a loop
             scope.setHasLoopsFlag();
         }
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     private Operand processEnsureRescueBlocks(Operand retVal) {
@@ -3743,7 +3748,7 @@ public class IRBuilder {
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
-        Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
+        Operand returnValue = rootNode.getBodyNode() == null ? Nil.NIL : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
 
         return scope.allocateInterpreterContext(instructions);
@@ -3861,7 +3866,7 @@ public class IRBuilder {
                 (!isWhile && conditionNode.getNodeType().alwaysTrue()))) {
             // we won't enter the loop -- just build the condition node
             build(conditionNode);
-            return manager.getNil();
+            return Nil.NIL;
         } else {
             IRLoop loop = new IRLoop(scope, getCurrentLoop());
             Variable loopResult = loop.loopResult;
@@ -3897,7 +3902,7 @@ public class IRBuilder {
 
             // Loop result -- nil always
             addInstr(new LabelInstr(setupResultLabel));
-            addInstr(new CopyInstr(loopResult, manager.getNil()));
+            addInstr(new CopyInstr(loopResult, Nil.NIL));
 
             // Loop end -- breaks jump here bypassing the result set up above
             addInstr(new LabelInstr(loop.loopEndLabel));
@@ -3916,7 +3921,7 @@ public class IRBuilder {
     public Operand buildVAlias(VAliasNode valiasNode) {
         addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
 
-        return manager.getNil();
+        return Nil.NIL;
     }
 
     public Operand buildVCall(Variable result, VCallNode node) {

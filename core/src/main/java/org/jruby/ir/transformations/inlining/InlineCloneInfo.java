@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.CallBase;
@@ -14,6 +15,7 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
@@ -119,7 +121,7 @@ public class InlineCloneInfo extends CloneInfo {
     }
 
     public Operand getCallClosure() {
-        return call.getClosureArg(scope.getManager().getNil());
+        return call.getClosureArg(Nil.NIL);
     }
 
     public Variable getCallResultVariable() {

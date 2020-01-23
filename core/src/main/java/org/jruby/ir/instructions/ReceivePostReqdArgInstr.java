@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -59,7 +60,8 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
             Operand argVal;
             if (remaining <= argIndex) {
                 // SSS: FIXME: Argh!
-                argVal = ii.getHostScope().getManager().getNil();
+                ii.getHostScope();
+                argVal = Nil.NIL;
             } else {
                 argVal = (remaining > postReqdArgsCount) ? ii.getArg(n - postReqdArgsCount + argIndex) : ii.getArg(preReqdArgsCount + argIndex);
             }

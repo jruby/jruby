@@ -61,7 +61,6 @@ public class IRManager {
 
     private int dummyMetaClassCount = 0;
     private final IRModuleBody object;
-    private final Nil nil = new Nil();
     private final Boolean tru = new Boolean(true);
     private final Boolean fals = new Boolean(false);
     private final StandardError standardError = new StandardError();
@@ -108,10 +107,6 @@ public class IRManager {
 
     public void setDryRun(boolean value) {
         this.dryRun = value;
-    }
-
-    public Nil getNil() {
-        return nil;
     }
 
     public StandardError getStandardError() {

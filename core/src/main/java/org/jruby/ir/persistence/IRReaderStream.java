@@ -10,7 +10,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
-import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -44,21 +43,18 @@ import static com.headius.backport9.buffer.Buffers.positionBuffer;
  */
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
-    private IRManager manager;
     private final List<IRScope> scopes = new ArrayList<>();
     private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
     /** Filename to use for the script */
     private final ByteList filename;
 
-    public IRReaderStream(IRManager manager, InputStream stream, ByteList filename) {
+    public IRReaderStream(InputStream stream, ByteList filename) {
         ByteBuffer buf = readIntoBuffer(stream);
-        this.manager = manager;
         this.buf = buf;
         this.filename = filename;
     }
 
-    public IRReaderStream(IRManager manager, File file, ByteList filename) {
-        this.manager = manager;
+    public IRReaderStream(File file, ByteList filename) {
         ByteBuffer buf = null;
         try (FileInputStream fis = new FileInputStream(file)){
             buf = readIntoBuffer(fis);
@@ -485,7 +481,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case IR_EXCEPTION: return IRException.decode(this);
             case LABEL: return Label.decode(this);
             case LOCAL_VARIABLE: return LocalVariable.decode(this);
-            case NIL: return manager.getNil();
+            case NIL: return Nil.NIL;
             case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
             case OBJECT_CLASS: return new ObjectClass();

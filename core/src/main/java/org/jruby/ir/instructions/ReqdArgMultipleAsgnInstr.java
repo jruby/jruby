@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
+import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
@@ -48,7 +49,7 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
             Array a = (Array)val;
             int n = a.size();
             int i = IRRuntimeHelpers.irReqdArgMultipleAsgnIndex(n, preArgsCount, index, postArgsCount);
-            return i == -1 ? scope.getManager().getNil() : a.get(i);
+            return i == -1 ? Nil.NIL : a.get(i);
         } else {
             return null;
         }
