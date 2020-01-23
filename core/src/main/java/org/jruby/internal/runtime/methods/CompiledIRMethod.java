@@ -66,6 +66,8 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
         setHandle(variable);
 
+        this.needsToFindImplementer = needsToFindImplementer;
+
         // FIXME: inliner breaks with this line commented out
         // method.compilable = this;
     }
