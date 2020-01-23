@@ -257,6 +257,7 @@ public class JRubyLibrary implements Library {
         manager.setDryRun(true);
         IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
         scope.setScriptDynamicScope(node.getScope());
+        scope.getStaticScope().setIRScope(scope);
         return scope;
     }
 
