@@ -5,37 +5,22 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.specialized.RubyArraySpecialized;
-import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.RegexpOptions;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
-import java.math.BigInteger;
-
-import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.params;
 import static org.jruby.util.CodegenUtils.sig;
 

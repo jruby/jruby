@@ -6,35 +6,26 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
@@ -49,7 +40,6 @@ import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -780,7 +770,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className) {
+    public void prepareBlock(Handle handle, String file, int line, String encodedArgumentDescriptors, org.jruby.runtime.Signature signature, String className) {
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
                 getClassData().clsName,
@@ -788,7 +778,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 ci(StaticScope.class),
                 false);
         long encodedSignature = signature.encode();
-        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class), Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature);
+        adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class),
+                Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature, file, line, encodedArgumentDescriptors);
     }
 
     @Override

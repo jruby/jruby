@@ -1,8 +1,6 @@
 package org.jruby.runtime;
 
 import com.headius.invokebinder.Binder;
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -19,8 +17,8 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected MethodHandle normalYieldUnwrapHandle;
     private String encodedArgumentDescriptors;
 
-    public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
-        super(closure.getStaticScope(), closure.getFile(), closure.getLine(), Signature.decode(encodedSignature));
+    public CompiledIRBlockBody(MethodHandle handle, StaticScope scope, String file, int line, String encodedArgumentDescriptors, long encodedSignature) {
+        super(scope, file, line, Signature.decode(encodedSignature));
 
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
@@ -35,7 +33,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
         // Done in the interpreter (WrappedIRClosure) but we do it here
         scope.determineModule();
 
-        encodedArgumentDescriptors = ArgumentDescriptor.encode(((IRClosure) closure).getArgumentDescriptors());
+        this.encodedArgumentDescriptors = encodedArgumentDescriptors;
     }
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();

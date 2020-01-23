@@ -1331,15 +1331,19 @@ public class Bootstrap {
                 Opcodes.H_INVOKESTATIC,
                 p(Bootstrap.class),
                 "prepareBlock",
-                sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, long.class),
+                sig(CallSite.class, Lookup.class, String.class,
+                        MethodType.class, MethodHandle.class,  MethodHandle.class, long.class,
+                        String.class, int.class, String.class),
                 false);
     }
 
-    public static CallSite prepareBlock(Lookup lookup, String name, MethodType type, MethodHandle bodyHandle, MethodHandle scopeHandle, long encodedSignature) throws Throwable {
+    public static CallSite prepareBlock(Lookup lookup, String name, MethodType type,
+                                        MethodHandle bodyHandle,  MethodHandle scopeHandle, long encodedSignature,
+                                        String file, int line, String encodedArgumentDescriptors
+                                        ) throws Throwable {
         StaticScope staticScope = (StaticScope) scopeHandle.invokeExact();
-        IRScope scope = staticScope.getIRScope();
 
-        CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, scope, encodedSignature);
+        CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, staticScope, file, line, encodedArgumentDescriptors, encodedSignature);
 
         Binder binder = Binder.from(type);
 
@@ -1347,19 +1351,20 @@ public class Bootstrap {
 
         // This optimization can't happen until we can see into the method we're calling to know if it reifies the block
         if (false) {
-            if (scope.needsBinding()) {
-                if (scope.needsFrame()) {
+            /*
+            if (needsBinding) {
+                if (needsFrame) {
                     binder = binder.fold(FRAME_SCOPE_BINDING);
                 } else {
                     binder = binder.fold(SCOPE_BINDING);
                 }
             } else {
-                if (scope.needsFrame()) {
+                if (needsFrame) {
                     binder = binder.fold(FRAME_BINDING);
                 } else {
                     binder = binder.fold(SELF_BINDING);
                 }
-            }
+            }*/
         }
 
         MethodHandle blockMaker = binder.drop(1, 3)

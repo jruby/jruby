@@ -712,7 +712,8 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, self, dynamicScope
      */
-    public abstract void prepareBlock(Handle handle, org.jruby.runtime.Signature signature, String className);
+    public abstract void prepareBlock(Handle handle, String file, int line, String encodedArgumentDescriptors,
+                                      org.jruby.runtime.Signature signature, String className);
 
     /**
      * Perform a === call appropriate for a case/when statement.

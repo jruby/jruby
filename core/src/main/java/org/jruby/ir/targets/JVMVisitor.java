@@ -2623,7 +2623,8 @@ public class JVMVisitor extends IRVisitor {
         visit(closure.getSelf());
         jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().prepareBlock(closuresMap.get(closure), closure.getSignature(), jvm.clsData().clsName);
+        jvmMethod().prepareBlock(closuresMap.get(closure), closure.getFile(), closure.getLine(),
+                ArgumentDescriptor.encode(closure.getArgumentDescriptors()), closure.getSignature(), jvm.clsData().clsName);
     }
 
     private SkinnyMethodAdapter jvmAdapter() {
