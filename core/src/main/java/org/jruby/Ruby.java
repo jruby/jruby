@@ -2483,7 +2483,7 @@ public final class Ruby implements Constantizable {
 
         try {
             // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderStream(IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
             return (ParseResult) parseFileAndGetAST(in, file, scope, lineNumber, false);
@@ -2504,7 +2504,7 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.IR_READING) return (ParseResult) parseFileFromMainAndGetAST(in, file, scope);
 
         try {
-            return IRReader.load(getIRManager(), new IRReaderStream(IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file), new ByteList(file.getBytes())));
         } catch (IOException ex) {
             if (config.isVerbose()) {
                 LOG.info(ex);

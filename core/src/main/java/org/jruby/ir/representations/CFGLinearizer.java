@@ -4,7 +4,6 @@ import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.operands.Nil;
 
 import java.util.BitSet;
 import java.util.Iterator;
@@ -91,8 +90,7 @@ public class CFGLinearizer {
             BasicBlock current = list[i];
 
             if (current.isExitBB()) { // exit not last
-                cfg.getManager();
-                current.addInstr(new ReturnInstr(Nil.NIL));
+                current.addInstr(new ReturnInstr(cfg.getManager().getNil()));
                 continue;
             }
 

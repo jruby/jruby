@@ -42,7 +42,7 @@ public class EnsureTempsAssigned extends CompilerPass {
         TemporaryVariable first = null;
         for (TemporaryVariable name : names) {
             if (first == null) {
-                bb.getInstrs().add(index++, new CopyInstr(name, Nil.NIL));
+                bb.getInstrs().add(index++, new CopyInstr(name, new Nil()));
                 first = name;
             } else {
                 bb.getInstrs().add(index++, new CopyInstr(name, first));

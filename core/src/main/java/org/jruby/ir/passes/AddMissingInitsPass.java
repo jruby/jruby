@@ -45,9 +45,9 @@ public class AddMissingInitsPass extends CompilerPass {
             //    clobber an already updated tmp. The entryBB will not have
             //    any loads of lvars, so lvars aren't subject to this problem).
             if (v instanceof LocalVariable) {
-                bb.getInstrs().add(new CopyInstr(v, Nil.NIL));
+                bb.getInstrs().add(new CopyInstr(v, new Nil()));
             } else {
-                bb.getInstrs().add(0, new CopyInstr(v, Nil.NIL));
+                bb.getInstrs().add(0, new CopyInstr(v, new Nil()));
             }
         }
 
