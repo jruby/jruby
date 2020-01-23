@@ -104,15 +104,16 @@ public class IRClosure extends IRScope {
         this.signature = signature;
         lexicalParent.addClosure(this);
 
+        if (staticScope != null) {
+            staticScope.setIRScope(this);
+            staticScope.setScopeType(this.getScopeType());
+        }
+
         if (getManager().isDryRun()) {
             this.body = null;
         } else {
             boolean shouldJit = manager.getInstanceConfig().getCompileMode().shouldJIT();
             this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
-            if (staticScope != null && !isBeginEndBlock) {
-                staticScope.setIRScope(this);
-                staticScope.setScopeType(this.getScopeType());
-            }
         }
 
         if (needsCoverage) getFlags().add(IRFlags.CODE_COVERAGE);
