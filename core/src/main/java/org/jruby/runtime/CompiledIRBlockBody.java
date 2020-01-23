@@ -1,6 +1,7 @@
 package org.jruby.runtime;
 
 import com.headius.invokebinder.Binder;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -16,21 +17,25 @@ public class CompiledIRBlockBody extends IRBlockBody {
     protected MethodHandle normalYieldHandle;
     protected MethodHandle normalYieldSpecificHandle;
     protected MethodHandle normalYieldUnwrapHandle;
+    private String encodedArgumentDescriptors;
 
     public CompiledIRBlockBody(MethodHandle handle, IRScope closure, long encodedSignature) {
-        super(closure, Signature.decode(encodedSignature));
+        super(closure.getStaticScope(), closure.getFile(), closure.getLine(), Signature.decode(encodedSignature));
+
         // evalType copied (shared) on MixedModeIRBlockBody#completeBuild
         this.handle = handle;
-        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, closure.getStaticScope(), null);
+        MethodHandle callHandle = MethodHandles.insertArguments(handle, 2, scope, null);
         // This is gross and should be done in IR rather than in the handles.
         this.callHandle = MethodHandles.foldArguments(callHandle, CHECK_ARITY);
         this.yieldDirectHandle = MethodHandles.insertArguments(
-                MethodHandles.insertArguments(handle, 2, closure.getStaticScope()),
+                MethodHandles.insertArguments(handle, 2, scope),
                 4,
                 Block.NULL_BLOCK);
 
         // Done in the interpreter (WrappedIRClosure) but we do it here
-        closure.getStaticScope().determineModule();
+        scope.determineModule();
+
+        encodedArgumentDescriptors = ArgumentDescriptor.encode(((IRClosure) closure).getArgumentDescriptors());
     }
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -53,7 +58,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     @Override
     public ArgumentDescriptor[] getArgumentDescriptors() {
-        return closure.getArgumentDescriptors();
+        return ArgumentDescriptor.decode(scope.getModule().getRuntime(), encodedArgumentDescriptors);
     }
 
     @Override

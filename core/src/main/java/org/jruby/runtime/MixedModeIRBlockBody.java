@@ -2,7 +2,6 @@ package org.jruby.runtime;
 
 import java.io.ByteArrayOutputStream;
 
-import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
@@ -26,11 +25,13 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     private InterpreterContext interpreterContext;
     private int callCount = 0;
     private volatile CompiledIRBlockBody jittedBody;
+    private IRClosure closure;
 
     public MixedModeIRBlockBody(IRClosure closure, Signature signature) {
         super(closure, signature);
         this.pushScope = true;
         this.reuseParentScope = false;
+        this.closure = closure;
 
         // JIT currently JITs blocks along with their method and no on-demand by themselves.
         // We only promote to full build here if we are -X-C.
@@ -170,6 +171,11 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
 
     public RubyModule getImplementationClass() {
         return closure.getStaticScope().getModule();
+    }
+
+    @Override
+    public IRClosure getScope() {
+        return closure;
     }
 
 }
