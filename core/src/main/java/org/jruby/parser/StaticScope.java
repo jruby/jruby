@@ -31,7 +31,6 @@ package org.jruby.parser;
 
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -80,7 +79,6 @@ import org.jruby.util.IdUtil;
 public class StaticScope implements Serializable {
     public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
