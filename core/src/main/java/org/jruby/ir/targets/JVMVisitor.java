@@ -140,8 +140,6 @@ public class JVMVisitor extends IRVisitor {
 
         Map<BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
-        emitClosures(scope, print);
-
         String scopeField = name + "_StaticScope";
 
         StaticScope staticScope = scope.getStaticScope();
@@ -149,9 +147,12 @@ public class JVMVisitor extends IRVisitor {
 
         if (staticScopeMap.get(scopeField) == null) {
             staticScopeMap.put(scopeField, staticScope);
+            scopeFieldMap.put(staticScope, scopeField);
             staticScopeDescriptorMap.put(scopeField, staticScopeDescriptor);
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(StaticScope.class), null, null).visitEnd();
         }
+
+        emitClosures(scope, print);
 
         jvm.pushmethod(name, scope, scopeField, signature, specificArity);
 
@@ -2624,8 +2625,8 @@ public class JVMVisitor extends IRVisitor {
         visit(closure.getSelf());
         jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().prepareBlock(closuresMap.get(closure), closure.getFile(), closure.getLine(),
-                ArgumentDescriptor.encode(closure.getArgumentDescriptors()), closure.getSignature(), jvm.clsData().clsName);
+        jvmMethod().prepareBlock(closure, scopeFieldMap.get(closure.getStaticScope().getEnclosingScope()), closuresMap.get(closure), closure.getFile(), closure.getLine(),
+                ArgumentDescriptor.encode(closure.getArgumentDescriptors()), closure.getSignature());
     }
 
     private SkinnyMethodAdapter jvmAdapter() {
@@ -2640,7 +2641,8 @@ public class JVMVisitor extends IRVisitor {
     private final Ruby runtime;
     private int methodIndex;
     private Map<IRClosure, Handle> closuresMap = new HashMap();
-    private Map<String, StaticScope> staticScopeMap = new HashMap();
+    public Map<String, StaticScope> staticScopeMap = new HashMap();
+    public Map<StaticScope, String> scopeFieldMap = new HashMap();
     public final Map<String, String> staticScopeDescriptorMap = new HashMap();
     private String file;
     private int lastLine = -1;

@@ -9,6 +9,7 @@ import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
@@ -712,8 +713,8 @@ public abstract class IRBytecodeAdapter {
      *
      * Stack required: context, self, dynamicScope
      */
-    public abstract void prepareBlock(Handle handle, String file, int line, String encodedArgumentDescriptors,
-                                      org.jruby.runtime.Signature signature, String className);
+    public abstract void prepareBlock(IRClosure closure, String parentScopeField, Handle handle, String file, int line, String encodedArgumentDescriptors,
+                                      org.jruby.runtime.Signature signature);
 
     /**
      * Perform a === call appropriate for a case/when statement.

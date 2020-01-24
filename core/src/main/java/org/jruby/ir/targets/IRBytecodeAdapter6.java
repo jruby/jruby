@@ -19,6 +19,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -770,16 +771,32 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     @Override
-    public void prepareBlock(Handle handle, String file, int line, String encodedArgumentDescriptors, org.jruby.runtime.Signature signature, String className) {
+    public void prepareBlock(IRClosure closure, String parentScopeField, Handle handle, String file, int line, String encodedArgumentDescriptors, org.jruby.runtime.Signature signature) {
+        String className = getClassData().clsName;
+
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
-                getClassData().clsName,
+                className,
                 handle.getName() + "_StaticScope",
                 ci(StaticScope.class),
                 false);
+        Handle setScopeHandle = new Handle(
+                Opcodes.H_PUTSTATIC,
+                className,
+                handle.getName() + "_StaticScope",
+                ci(StaticScope.class),
+                false);
+        Handle parentScopeHandle = new Handle(
+                Opcodes.H_GETSTATIC,
+                className,
+                parentScopeField,
+                ci(StaticScope.class),
+                false);
+        String scopeDescriptor = Helpers.describeScope(closure.getStaticScope());
+
         long encodedSignature = signature.encode();
         adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class),
-                Bootstrap.prepareBlock(), handle, scopeHandle, encodedSignature, file, line, encodedArgumentDescriptors);
+                Bootstrap.prepareBlock(), handle, scopeHandle, setScopeHandle, parentScopeHandle, scopeDescriptor, encodedSignature, file, line, encodedArgumentDescriptors);
     }
 
     @Override

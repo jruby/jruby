@@ -1332,16 +1332,21 @@ public class Bootstrap {
                 p(Bootstrap.class),
                 "prepareBlock",
                 sig(CallSite.class, Lookup.class, String.class,
-                        MethodType.class, MethodHandle.class,  MethodHandle.class, long.class,
+                        MethodType.class, MethodHandle.class,  MethodHandle.class, MethodHandle.class, MethodHandle.class, String.class, long.class,
                         String.class, int.class, String.class),
                 false);
     }
 
     public static CallSite prepareBlock(Lookup lookup, String name, MethodType type,
-                                        MethodHandle bodyHandle,  MethodHandle scopeHandle, long encodedSignature,
+                                        MethodHandle bodyHandle,  MethodHandle scopeHandle, MethodHandle setScopeHandle, MethodHandle parentHandle, String scopeDescriptor, long encodedSignature,
                                         String file, int line, String encodedArgumentDescriptors
                                         ) throws Throwable {
         StaticScope staticScope = (StaticScope) scopeHandle.invokeExact();
+
+        if (staticScope == null) {
+            staticScope = Helpers.restoreScope(scopeDescriptor, (StaticScope) parentHandle.invokeExact());
+            setScopeHandle.invokeExact(staticScope);
+        }
 
         CompiledIRBlockBody body = new CompiledIRBlockBody(bodyHandle, staticScope, file, line, encodedArgumentDescriptors, encodedSignature);
 
