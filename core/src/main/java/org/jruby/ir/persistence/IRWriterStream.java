@@ -7,6 +7,8 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -41,6 +43,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final OutputStream stream;
     private final IRWriterAnalyzer analyzer;
+    private int startInstructionOffset;  // This is only used for debugging output of to figure out length of encoded instructions.
 
     int headersOffset = -1;
     int poolOffset = -1;
@@ -131,6 +134,11 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     }
 
     @Override
+    public boolean isAnalyzer() {
+        return false;
+    }
+
+    @Override
     public void encode(ByteList value) {
         encode(value.bytes());
         encode(value.getEncoding());
@@ -144,7 +152,13 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(Encoding encoding) {
-        encode(encoding.getName());
+        if (encoding == USASCIIEncoding.INSTANCE) {
+            encode(USASCII);
+        } else if (encoding == UTF8Encoding.INSTANCE) {
+            encode(UTF8);
+        } else {
+            encode(encoding.getName());
+        }
     }
 
     @Override
@@ -152,7 +166,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         if (symbol == null) {
             encode(NULL_STRING);
         } else {
-            encode(symbol.getBytes());
+            encode(symbol.getBytes()); // This looks weird but Bytelist is {byte[], Encoding}.
         }
     }
 
@@ -244,17 +258,31 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void endEncodingScopeHeader(IRScope scope) {
-        encode(getScopeInstructionOffset(scope)); // Write out offset to where this scopes instrs are
+        int offset = getScopeInstructionOffset(scope);
+        if (IRWriter.shouldLog(this)) System.out.println("endEncodingScopeHeader: instructions offset: " + offset);
+        encode(offset); // Write out offset to where this scopes instrs are
     }
 
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
         addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
-        encode(scope.getInterpreterContext().getInstructions().length); // Allows us to right-size when reconstructing instr list.
+        int instruction_count = scope.getInterpreterContext().getInstructions().length;
+
+        if (IRWriter.shouldLog(this)) {
+            startInstructionOffset = offset();
+            System.out.println("startEncodingScopeInstrs: start offset = " + startInstructionOffset);
+            System.out.println("startEncodingScopeInstrs: instrs to encode = " + instruction_count);
+        }
+
+        encode(instruction_count); // Allows us to right-size when reconstructing instr list.
     }
 
     @Override
     public void endEncodingScopeInstrs(IRScope scope) {
+        if (IRWriter.shouldLog(this)) {
+            System.out.println("endEncodingScopeInstrs: end offset = " + offset());
+            System.out.println("endEncodingScopeInstrs: instruction length = " + (offset() - startInstructionOffset) + " bytes");
+        }
     }
 
     @Override

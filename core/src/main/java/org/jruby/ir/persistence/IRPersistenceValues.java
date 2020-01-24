@@ -33,4 +33,7 @@ interface IRPersistenceValues {
     public final static int PROLOGUE_LENGTH = 3 * 4; // 3 raw ints {version, scope_offset, pool_offset}
 
     public final static int NULL_STRING = -1;
+
+    public final static int USASCII = -1;
+    public final static int UTF8 = -2;
 }

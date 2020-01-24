@@ -15,6 +15,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.passes.*;
+import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -1218,12 +1219,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void persistScopeHeader(IRWriterEncoder file) {
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("IRScopeType = " + getScopeType());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: type       = " + getScopeType());
         file.encode(getScopeType()); // type is enum of kind of scope
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Line # = " + getLine());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: line       = " + getLine());
         file.encode(getLine());
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("# of temp vars = " + getTemporaryVariablesCount());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: temp count = " + getTemporaryVariablesCount());
         file.encode(getTemporaryVariablesCount());
+        if (IRWriter.shouldLog(file)) System.out.println("IRScope.persistScopeHeader: next label = " + getTemporaryVariablesCount());
         file.encode(getNextLabelIndex());
     }
 }

@@ -75,15 +75,18 @@ public class IRWriter {
     // other scopes: {type,name,linenumber,lexical_parent_name, lexical_parent_line,{static_scope}, instrs_offset}
     // for non-for scopes is_for,arity, and arg_type will be 0.
     private static void persistScopeHeader(IRWriterEncoder file, IRScope scope) {
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Writing Scope Header");
+        if (shouldLog(file)) System.out.println("persistScopeHeader(start)");
         file.startEncodingScopeHeader(scope);
-        scope.persistScopeHeader(file);
+        scope.persistScopeHeader(file); // impls in IRClosure and IRScope.
 
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("NAME = " + scope.getId());
         if (scope instanceof IRScriptBody) {
-            file.encode(scope.getId());
+            if (shouldLog(file)) System.out.println("persistScopeHeader: file = " + scope.getFile());
+            file.encode(scope.getFile());
         } else {
-            file.encode(scope.getName());
+            if (shouldLog(file)) System.out.println("persistScopeHeader: id   = " + scope.getId());
+            file.encode(scope.getName().getBytes());
+            if (shouldLog(file)) System.out.println("persistScopeHeader(encode parent)");
             file.encode(scope.getLexicalParent());
         }
 
@@ -95,21 +98,28 @@ public class IRWriter {
     // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
     private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
         Map<RubySymbol, LocalVariable> localVariables = scope.getLocalVariables();
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("PERSISTING LVARS (" + localVariables.size() + ")");
+        if (shouldLog(file)) System.out.println("persistLocalVariables: size = " + localVariables.size());
         file.encode(localVariables.size());
         for (RubySymbol name: localVariables.keySet()) {
-            file.encode(name);
             int offset = localVariables.get(name).getOffset();
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
+            if (shouldLog(file)) System.out.println("persistLocalVariables:     name(offset) = " + name + "(" + offset + ")");
+            file.encode(name);
             file.encode(offset); // No need to write depth..it is zero.
         }
     }
 
-    // {type,[variables],signature}
+    // {type,[variables],first_keyword_index,signature}
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
+        if (shouldLog(file)) System.out.println("persistStaticScope");
         file.encode(staticScope.getType());
+        // This naively looks like a bug because these represent id's and not properly encoded names BUT all of those
+        // symbols for these ids will be created when IRScope loads the LocalVariable versions of these...so this is ok.
         file.encode(staticScope.getVariables());
         file.encode(staticScope.getFirstKeywordIndex());
         file.encode(staticScope.getSignature());
+    }
+
+    public static boolean shouldLog(IRWriterEncoder encoder) {
+        return RubyInstanceConfig.IR_WRITING_DEBUG && !encoder.isAnalyzer();
     }
 }

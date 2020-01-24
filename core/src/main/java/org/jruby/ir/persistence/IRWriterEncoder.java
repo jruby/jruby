@@ -21,6 +21,8 @@ import org.jruby.util.ByteList;
  */
 public interface IRWriterEncoder {
 
+    public boolean isAnalyzer();
+
     public void encode(ByteList bytelist);
     public void encode(Encoding encoding);
     public void encode(RubySymbol value);

@@ -11,6 +11,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRWriter;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -373,7 +374,11 @@ public class IRClosure extends IRScope {
     public void persistScopeHeader(IRWriterEncoder file) {
         super.persistScopeHeader(file);
 
-        file.encode(isEND());
+        if (getScopeType() == IRScopeType.CLOSURE) {
+            if (IRWriter.shouldLog(file)) System.out.println("IRClosure.persistScopeHeader: type       = " + isEND());
+            file.encode(isEND());
+        }
+        if (IRWriter.shouldLog(file)) System.out.println("IRClosure.persistScopeHeader: type       = " + getSignature());
         file.encode(getSignature());
     }
 }

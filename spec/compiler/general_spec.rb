@@ -20,10 +20,49 @@ module InterpreterSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield eval(src, TOPLEVEL_BINDING, filename, line) unless (ENV['INTERPRETER_TEST'] == 'false')
+    yield eval(src, TOPLEVEL_BINDING, filename, line)
   end
 
   def self.name; "interpreter"; end
+end
+
+module PersistenceSpecUtils
+  include CompilerSpecUtils
+
+  def run_in_method(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    run( "def __temp; #{src}; end; __temp", filename, line)
+  end
+
+  def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
+    yield encode_decode_run(src, filename, line)
+  end
+
+  def self.name; "persistence"; end
+
+  private
+
+  def encode_decode_run(src, filename, line)
+    runtime = JRuby.runtime
+    manager = runtime.getIRManager()
+    manager.dry_run = true
+
+    method = JRuby.compile_ir(src, filename, false, line - 1)
+
+    top_self = runtime.top_self
+
+    # encode and decode
+    baos = java.io.ByteArrayOutputStream.new
+    writer = org.jruby.ir.persistence.IRWriterStream.new(baos)
+    org.jruby.ir.persistence.IRWriter.persist(writer, method)
+
+    bais = java.io.ByteArrayInputStream.new(baos.to_byte_array)
+    reader = org.jruby.ir.persistence.IRReaderStream.new(manager, bais, org.jruby.util.ByteList.new(filename.to_java.getBytes))
+    method = org.jruby.ir.persistence.IRReader.load(manager, reader)
+
+    # interpret
+    interpreter = org.jruby.ir.interpreter.Interpreter.new
+    interpreter.execute(runtime, method, top_self)
+  end
 end
 
 module JITSpecUtils
@@ -34,7 +73,7 @@ module JITSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield compile_run(src, filename, line) unless (ENV['COMPILER_TEST'] == 'false')
+    yield compile_run(src, filename, line)
   end
 
   def self.name; "jit"; end
@@ -97,6 +136,7 @@ end
 
 modes = []
 modes << InterpreterSpecUtils unless (ENV['INTERPRETER_TEST'] == 'false')
+modes << PersistenceSpecUtils unless (ENV['PERSISTENCE_TEST'] == 'false')
 modes << JITSpecUtils unless (ENV['COMPILER_TEST'] == 'false')
 
 Block = org.jruby.runtime.Block
