@@ -101,19 +101,7 @@ public class JVMVisitor extends IRVisitor {
      * This will set all scope fields in the given class to the already-live static scopes.
      */
     public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
-        file = scope.getFile();
-        lastLine = -1;
-        Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
-
-        for (Map.Entry<String, StaticScope> entry : staticScopeMap.entrySet()) {
-            try {
-                result.getField(entry.getKey()).set(null, entry.getValue());
-            } catch (Exception e) {
-                throw new NotCompilableException(e);
-            }
-        }
-
-        return result;
+        return defineFromBytecode(scope, code, jrubyClassLoader, true);
     }
 
     /**
@@ -122,9 +110,23 @@ public class JVMVisitor extends IRVisitor {
      * Top-level script bytecode does not need to set all static scopes, since it can build from root at runtime.
      */
     public Class defineScriptFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
+        return defineFromBytecode(scope, code, jrubyClassLoader, !Options.COMPILE_CACHE_CLASSES.load());
+    }
+
+    public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader, boolean setScopes) {
         file = scope.getFile();
         lastLine = -1;
         Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
+
+        if (setScopes) {
+            for (Map.Entry<String, StaticScope> entry : staticScopeMap.entrySet()) {
+                try {
+                    result.getField(entry.getKey()).set(null, entry.getValue());
+                } catch (Exception e) {
+                    throw new NotCompilableException(e);
+                }
+            }
+        }
 
         return result;
     }
