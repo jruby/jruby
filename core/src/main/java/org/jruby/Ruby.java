@@ -1131,6 +1131,10 @@ public final class Ruby implements Constantizable {
      * @return The result of executing the script
      */
     public IRubyObject runNormally(Node scriptNode, boolean wrap) {
+        return runNormally(scriptNode, getTopSelf(), wrap);
+    }
+
+    public IRubyObject runNormally(Node scriptNode, IRubyObject self, boolean wrap) {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
@@ -1145,7 +1149,7 @@ public final class Ruby implements Constantizable {
                 return getNil();
             }
 
-            return runScript(scriptAndCode.script(), wrap);
+            return runScript(scriptAndCode.script(), self, wrap);
         } else {
             // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
 //            failForcedCompile(scriptNode);
@@ -1222,7 +1226,11 @@ public final class Ruby implements Constantizable {
     }
 
     public IRubyObject runScript(Script script, boolean wrap) {
-        return script.load(getCurrentContext(), getTopSelf(), wrap);
+        return runScript(script, getTopSelf(), wrap);
+    }
+
+    public IRubyObject runScript(Script script, IRubyObject self, boolean wrap) {
+        return script.load(getCurrentContext(), self, wrap);
     }
 
     /**
@@ -2792,7 +2800,7 @@ public final class Ruby implements Constantizable {
     static final String ROOT_FRAME_NAME = "(root)";
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
-        IRubyObject self = getTopSelf();
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {
@@ -2809,7 +2817,7 @@ public final class Ruby implements Constantizable {
     }
 
     public void loadScope(IRScope scope, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
 
         if (wrap) {
             // toss an anonymous module into the search path
@@ -2831,14 +2839,13 @@ public final class Ruby implements Constantizable {
             root.getStaticScope().setModule(getObject());
         }
 
-        runNormally(root, wrap);
+        runNormally(root, self, wrap);
     }
 
     public StaticScope setupWrappedToplevel(IRubyObject self, StaticScope top) {
         // toss an anonymous module into the search path
-        RubyBasicObject newSelf = (RubyBasicObject) self.rbClone();
         RubyModule wrapper = RubyModule.newModule(this);
-        newSelf.extend(new IRubyObject[] {wrapper});
+        ((RubyBasicObject) self).extend(new IRubyObject[] {wrapper});
         StaticScope newTop = staticScopeFactory.newLocalScope(null);
         top.setPreviousCRefScope(newTop);
         top.setModule(wrapper);
