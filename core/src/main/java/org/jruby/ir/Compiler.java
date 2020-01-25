@@ -77,21 +77,20 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
     }
 
     public static Script getScriptFromClass(Class compiled) {
-        MethodHandle _compiledHandle;
+        MethodHandle scriptHandle;
+
         try {
-            Method compiledMethod = compiled.getMethod("run", ThreadContext.class, IRubyObject.class);
-            _compiledHandle = MethodHandles.publicLookup().unreflect(compiledMethod);
+            Method scriptMethod = compiled.getMethod("run", ThreadContext.class, IRubyObject.class, boolean.class);
+            scriptHandle = MethodHandles.publicLookup().unreflect(scriptMethod);
         } catch (Throwable t) {
             throw new NotCompilableException("failed to load script from class" + compiled.getName(), t);
         }
-
-        final MethodHandle compiledHandle = _compiledHandle;
 
         return new AbstractScript() {
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
-                    return (IRubyObject) compiledHandle.invokeWithArguments(context, self);
+                    return (IRubyObject) scriptHandle.invokeWithArguments(context, self, false);
                 } catch (Throwable t) {
                     Helpers.throwException(t);
                     return null; // not reached
@@ -101,7 +100,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             @Override
             public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
                 try {
-                    return (IRubyObject) compiledHandle.invokeWithArguments(context, self);
+                    return (IRubyObject) scriptHandle.invokeWithArguments(context, self, wrap);
                 } catch (IRBreakJump bj) {
                     throw IRException.BREAK_LocalJumpError.getException(context.runtime);
                 } catch (Throwable t) {
