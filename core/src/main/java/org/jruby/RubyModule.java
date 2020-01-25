@@ -2300,12 +2300,15 @@ public class RubyModule extends RubyObject {
             IRBlockBody body = (IRBlockBody) block.getBody();
             IRClosure closure = body.getScope();
 
-            // Ask closure to give us a method equivalent.
-            IRMethod method = closure.convertToMethod(name.getBytes());
-            if (method != null) {
-                newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
-                return name;
+            // closure may be null from AOT scripts
+            if (closure != null) {
+                // Ask closure to give us a method equivalent.
+                IRMethod method = closure.convertToMethod(name.getBytes());
+                if (method != null) {
+                    newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
+                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                    return name;
+                }
             }
         }
 
