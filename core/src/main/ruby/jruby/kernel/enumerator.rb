@@ -345,7 +345,7 @@ class Enumerator
         else
           yielder << res
         end
-      end.__set_inspect :flat_map
+      end.__set_inspect :collect_concat
     end
 
     def zip(*args)
