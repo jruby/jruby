@@ -1409,7 +1409,10 @@ public class JVMVisitor extends IRVisitor {
                 sig(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class, StaticScope.class),
                 Bootstrap.OPEN_META_CLASS,
                 bodyHandle,
-                scopeHandle);
+                scopeHandle,
+                metaClassBody.getLine(),
+                metaClassBody.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? 1 : 0,
+                metaClassBody.maybeUsingRefinements() ? 1 : 0);
 
         jvmStoreLocal(definemetaclassinstr.getResult());
     }
