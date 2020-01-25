@@ -73,6 +73,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.CommonByteLists;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
@@ -932,6 +933,25 @@ public final class Ruby implements Constantizable {
             script.setFileName(filename);
             runInterpreter(script);
             return;
+        }
+
+        if (Options.COMPILE_CACHE_CLASSES.load()) {
+            // Try loading from precompiled class file
+            String clsName = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
+            try {
+                Class scriptClass = jrubyClassLoader.loadClass(clsName.replace("/", "."));
+
+                Script script = Compiler.getScriptFromClass(scriptClass);
+
+                System.err.println("running from class " + scriptClass.getName());
+
+                runScript(script);
+
+                return;
+            } catch (ClassNotFoundException cnfe) {
+                // ignore and proceed to parse and execute
+                System.err.println("no class found for script " + filename);
+            }
         }
 
         ParseResult parseResult = parseFromMain(filename, inputStream);

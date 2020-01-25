@@ -10,7 +10,9 @@ import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.operands.IRException;
+import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.Block;
@@ -18,7 +20,11 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.cli.Options;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -50,6 +56,18 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
         } catch (NotCompilableException nce) {
             throw nce;
+        }
+
+        if (Options.COMPILE_CACHE_CLASSES.load()) {
+            // write class to IR storage
+            File path = IRFileExpert.getIRClassFile(JVM.scriptToClass(scope.getFile()));
+            try (FileOutputStream fos = new FileOutputStream(path)) {
+                fos.write(bytecode);
+
+                System.err.println("saved compiled script as " + path);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
         }
 
         Script script = getScriptFromClass(compiled);

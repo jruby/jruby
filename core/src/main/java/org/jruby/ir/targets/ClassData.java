@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author headius
  */
-abstract class ClassData {
+public abstract class ClassData {
 
     public ClassData(String clsName, ClassVisitor cls, JVMVisitor visitor) {
         this.clsName = clsName;

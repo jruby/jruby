@@ -2698,7 +2698,7 @@ public class JVMVisitor extends IRVisitor {
         return jvm.method();
     }
 
-    private final JVM jvm;
+    public final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;
     private Map<IRClosure, Handle> closuresMap = new HashMap();
