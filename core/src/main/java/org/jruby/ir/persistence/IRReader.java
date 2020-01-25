@@ -162,11 +162,12 @@ public class IRReader implements IRPersistenceValues {
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {
         StaticScope.Type type = decoder.decodeStaticScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: type = " + type);
+        String file = decoder.decodeString();
         String[] ids = decoder.decodeStringArray();
         int firstKeywordIndex = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: keyword index = " + firstKeywordIndex);
 
-        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, ids, firstKeywordIndex);
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, file, ids, firstKeywordIndex);
 
         Signature signature = decoder.decodeSignature();
         scope.setSignature(signature);

@@ -141,9 +141,7 @@ public class StaticScope implements Serializable {
      *
      */
     protected StaticScope(Type type, StaticScope enclosingScope, String file) {
-        this(type, enclosingScope, NO_NAMES);
-
-        this.file = file;
+        this(type, enclosingScope, file, NO_NAMES, -1);
     }
 
     /**
@@ -153,7 +151,7 @@ public class StaticScope implements Serializable {
      * @param enclosingScope the lexically containing scope.
      */
     protected StaticScope(Type type, StaticScope enclosingScope) {
-        this(type, enclosingScope, NO_NAMES);
+        this(type, enclosingScope, null, NO_NAMES, -1);
     }
 
     /**
@@ -166,6 +164,10 @@ public class StaticScope implements Serializable {
      * @param names          The list of interned String variable names.
      */
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names, int firstKeywordIndex) {
+        this(type, enclosingScope, null ,names, firstKeywordIndex);
+    }
+
+    protected StaticScope(Type type, StaticScope enclosingScope, String file, String[] names, int firstKeywordIndex) {
         assert names != null : "names is not null";
 
         this.enclosingScope = enclosingScope;
@@ -176,10 +178,11 @@ public class StaticScope implements Serializable {
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
         this.firstKeywordIndex = firstKeywordIndex;
+        this.file = file;
     }
 
     protected StaticScope(Type type, StaticScope enclosingScope, String[] names) {
-        this(type, enclosingScope, names, -1);
+        this(type, enclosingScope, null, names, -1);
     }
 
     public int getFirstKeywordIndex() {
@@ -712,6 +715,10 @@ public class StaticScope implements Serializable {
     }
 
     public String getFile() {
+        if (file == null) {
+            System.out.println("IR thinks: " + getIRScope());
+            new Exception().printStackTrace();
+        }
         return file;
     }
 
@@ -727,6 +734,7 @@ public class StaticScope implements Serializable {
         dupe.setScopeType(scopeType);
         dupe.setPreviousCRefScope(previousCRefScope);
         dupe.setModule(cref);
+        dupe.setFile(file);
         dupe.setSignature(signature);
 
         return dupe;

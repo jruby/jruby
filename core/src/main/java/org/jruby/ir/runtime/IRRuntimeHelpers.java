@@ -2181,9 +2181,15 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
+        String file = currScope.getFile();
+
+        if (file == null) {
+            System.out.println("IR IS: " + currScope.getIRScope());
+            new Exception().printStackTrace();
+        }
+
         // FIXME: Not very efficient to do all this every time
-        IRScope irScope = currScope.getIRScope();
-        return context.runtime.newString(irScope == null ? currScope.getFile() : irScope.getFile());
+        return context.runtime.newString(file);
     }
 
     @JIT

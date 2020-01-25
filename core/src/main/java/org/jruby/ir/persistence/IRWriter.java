@@ -114,6 +114,7 @@ public class IRWriter {
         file.encode(staticScope.getType());
         // This naively looks like a bug because these represent id's and not properly encoded names BUT all of those
         // symbols for these ids will be created when IRScope loads the LocalVariable versions of these...so this is ok.
+        file.encode(staticScope.getFile());
         file.encode(staticScope.getVariables());
         file.encode(staticScope.getFirstKeywordIndex());
         file.encode(staticScope.getSignature());

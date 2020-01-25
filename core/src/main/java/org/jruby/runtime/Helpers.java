@@ -1781,10 +1781,9 @@ public class Helpers {
         String encodedIvars = bits[6];
         Collection<String> ivarNames = encodedIvars.equals("NONE") ? Collections.EMPTY_LIST : Arrays.asList(encodedIvars.split(","));
 
-        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, varNames, kwIndex);
+        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, file, varNames, kwIndex);
 
         scope.setSignature(signature);
-        scope.setFile(file);
         scope.setScopeType(scopeType);
         scope.setInstanceVariableNames(ivarNames);
 

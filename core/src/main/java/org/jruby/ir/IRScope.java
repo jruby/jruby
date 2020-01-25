@@ -136,6 +136,10 @@ public abstract class IRScope implements ParseResult {
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
+
+        if (staticScope != null && !(this instanceof IRScriptBody) && !(this instanceof IREvalScript)) {
+            staticScope.setFile(getFile());
+        }
     }
 
     public IRScope(IRManager manager, IRScope lexicalParent, ByteList name, int lineNumber, StaticScope staticScope) {
