@@ -392,7 +392,9 @@ public class JVMVisitor extends IRVisitor {
 
         // set scope's module to self class
         method.aload(3);
-        method.aload(2);
+        method.aload(0);
+        method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        method.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
         method.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
 
         // set scope's filename
