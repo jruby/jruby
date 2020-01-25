@@ -715,10 +715,6 @@ public class StaticScope implements Serializable {
     }
 
     public String getFile() {
-        if (file == null) {
-            System.out.println("IR thinks: " + getIRScope());
-            new Exception().printStackTrace();
-        }
         return file;
     }
 

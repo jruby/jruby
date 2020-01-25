@@ -2183,11 +2183,6 @@ public class IRRuntimeHelpers {
     public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
         String file = currScope.getFile();
 
-        if (file == null) {
-            System.out.println("IR IS: " + currScope.getIRScope());
-            new Exception().printStackTrace();
-        }
-
         // FIXME: Not very efficient to do all this every time
         return context.runtime.newString(file);
     }
