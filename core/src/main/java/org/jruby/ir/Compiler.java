@@ -53,7 +53,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             visitor = new JVMVisitor(runtime);
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             bytecode = visitor.compileToBytecode(scope, context);
-            compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
+            compiled = visitor.defineScriptFromBytecode(scope, bytecode, classLoader);
         } catch (NotCompilableException nce) {
             throw nce;
         }

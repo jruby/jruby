@@ -95,6 +95,11 @@ public class JVMVisitor extends IRVisitor {
         return code();
     }
 
+    /**
+     * Define a scope's compiled class from bytecode.
+     *
+     * This will set all scope fields in the given class to the already-live static scopes.
+     */
     public Class defineFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
         file = scope.getFile();
         lastLine = -1;
@@ -107,6 +112,19 @@ public class JVMVisitor extends IRVisitor {
                 throw new NotCompilableException(e);
             }
         }
+
+        return result;
+    }
+
+    /**
+     * Define a class from a top-level script's bytecode.
+     *
+     * Top-level script bytecode does not need to set all static scopes, since it can build from root at runtime.
+     */
+    public Class defineScriptFromBytecode(IRScope scope, byte[] code, ClassDefiningClassLoader jrubyClassLoader) {
+        file = scope.getFile();
+        lastLine = -1;
+        Class result = jrubyClassLoader.defineClass(c(JVM.scriptToClass(file)), code);
 
         return result;
     }
