@@ -384,12 +384,19 @@ public class JVMVisitor extends IRVisitor {
         // instantiate script scope
         registerScopeField(script, scopeField);
 
+        // FIXME: duplicated from IRBytecodeAdapter6
+        method.getstatic(clsName, scopeField, ci(StaticScope.class));
+        method.dup();
+        org.objectweb.asm.Label after = new org.objectweb.asm.Label();
+        method.ifnonnull(after);
+        method.pop();
         method.ldc(staticScopeDescriptorMap.get(scopeField));
         method.aconst_null();
 
         method.invokestatic(p(Helpers.class), "restoreScope", sig(StaticScope.class, String.class, StaticScope.class));
         method.dup();
         method.putstatic(clsName, scopeField, ci(StaticScope.class));
+        method.label(after);
         method.astore(3);
 
         // set scope's module to self class
