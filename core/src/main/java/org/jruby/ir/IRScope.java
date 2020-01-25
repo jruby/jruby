@@ -164,10 +164,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING || RubyInstanceConfig.RECORD_LEXICAL_HIERARCHY) {
-            lexicalChildren = new ArrayList<>(1);
-            if (lexicalParent != null) lexicalParent.addChildScope(this);
-        }
+        lexicalChildren = new ArrayList<>(1);
+        if (lexicalParent != null) lexicalParent.addChildScope(this);
     }
 
     public int getScopeId() {
