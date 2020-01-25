@@ -142,15 +142,7 @@ public class JVMVisitor extends IRVisitor {
 
         String scopeField = name + "_StaticScope";
 
-        StaticScope staticScope = scope.getStaticScope();
-        String staticScopeDescriptor = Helpers.describeScope(staticScope);
-
-        if (staticScopeMap.get(scopeField) == null) {
-            staticScopeMap.put(scopeField, staticScope);
-            scopeFieldMap.put(staticScope, scopeField);
-            staticScopeDescriptorMap.put(scopeField, staticScopeDescriptor);
-            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(StaticScope.class), null, null).visitEnd();
-        }
+        StaticScope staticScope = registerScopeField(scope, scopeField);
 
         emitClosures(scope, print);
 
@@ -269,6 +261,20 @@ public class JVMVisitor extends IRVisitor {
         jvm.popmethod();
     }
 
+    private StaticScope registerScopeField(IRScope scope, String scopeField) {
+        StaticScope staticScope = scope.getStaticScope();
+        String staticScopeDescriptor = Helpers.describeScope(staticScope);
+
+        if (staticScopeMap.get(scopeField) == null) {
+            staticScopeMap.put(scopeField, staticScope);
+            scopeFieldMap.put(staticScope, scopeField);
+            staticScopeDescriptorMap.put(scopeField, staticScopeDescriptor);
+            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(StaticScope.class), null, null).visitEnd();
+        }
+
+        return staticScope;
+    }
+
     protected void emitVarargsMethodWrapper(IRScope scope, String variableName, String specificName, Signature variableSignature, Signature specificSignature) {
         String scopeField = specificName + "_StaticScope";
 
@@ -330,13 +336,68 @@ public class JVMVisitor extends IRVisitor {
         return METHOD_SIGNATURE_BASE.insertArgs(BLOCK_ARG_NAME, new String[]{"args"}, IRubyObject[].class);
     }
 
+    private static final Signature RUN_SIGNATURE =
+            Signature.returning(IRubyObject.class)
+            .appendArg("runtime", Ruby.class);
+
     protected void emitScriptBody(IRScriptBody script) {
-        // Note: no index attached because there should be at most one script body per .class
-        String name = JavaNameMangler.encodeScopeForBacktrace(script);
+        String scopeName = JavaNameMangler.encodeScopeForBacktrace(script);
+        String scopeField = scopeName + "_StaticScope";
         String clsName = jvm.scriptToClass(script.getFile());
+        Signature signature = signatureFor(script, false);
+
+        // Note: no index attached because there should be at most one script body per .class
         jvm.pushscript(this, clsName, script.getFile());
 
-        emitScope(script, name, signatureFor(script, false), false, true);
+        SkinnyMethodAdapter method = new SkinnyMethodAdapter(
+                jvm.cls(),
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                "run",
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class), null, null);
+        method.start();
+
+        // save self class
+        method.aload(1);
+        method.invokeinterface(p(IRubyObject.class), "getMetaClass", sig(RubyClass.class));
+        method.astore(2);
+
+        // instantiate script scope
+        registerScopeField(script, scopeField);
+
+        method.ldc(staticScopeDescriptorMap.get(scopeField));
+        method.aconst_null();
+
+        method.invokestatic(p(Helpers.class), "restoreScope", sig(StaticScope.class, String.class, StaticScope.class));
+        method.dup();
+        method.putstatic(clsName, scopeField, ci(StaticScope.class));
+        method.astore(3);
+
+        // set scope's module to self class
+        method.aload(3);
+        method.aload(2);
+        method.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
+
+        // set scope's filename
+        method.aload(3);
+        method.ldc(script.getFile());
+        method.invokevirtual(p(StaticScope.class), "setFile", sig(void.class, String.class));
+
+        // execute script method
+        method.aload(0); // context
+        method.aload(3); // static scope
+        method.aload(1); // self
+        method.aconst_null(); // args
+        method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class)); // block
+        method.aload(2); // self class
+        method.aconst_null(); // call name
+
+        method.invokestatic(clsName, scopeName, sig(signature.type().returnType(), signature.type().parameterArray()));
+        method.areturn();
+
+        method.end();
+
+        // proceed with script body compilation
+        emitScope(script, scopeName, signature, false, true);
 
         jvm.cls().visitEnd();
         jvm.popclass();
