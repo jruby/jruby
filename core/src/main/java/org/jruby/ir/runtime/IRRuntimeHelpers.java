@@ -2186,7 +2186,7 @@ public class IRRuntimeHelpers {
     @JIT @Interp
     public static RubyString getFileNameStringFromScope(ThreadContext context, StaticScope currScope) {
         // FIXME: Not very efficient to do all this every time
-        return context.runtime.newString(currScope.getIRScope().getFile());
+        return context.runtime.newString(currScope.getFile());
     }
 
     @JIT
