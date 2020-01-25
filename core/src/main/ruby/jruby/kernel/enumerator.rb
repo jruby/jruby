@@ -220,11 +220,11 @@ class Enumerator
       end.__set_inspect :select
     end
     def find_all
-      _block_error(:select) unless block_given?
+      _block_error(:find_all) unless block_given?
       Lazy.new(self) do |yielder, *values|
         values = values.first unless values.size > 1
         yielder.yield values if yield values
-      end.__set_inspect :select
+      end.__set_inspect :find_all
     end
 
     def reject
