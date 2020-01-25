@@ -162,29 +162,28 @@ class Enumerator
       super(n)
     end
 
-    [
-        :with_index,
-        :each_slice,
-        :each_entry,
-        :each_cons,
-    ].each do |method|
-      module_eval do
-        define_method(method) do |*args|
-          return to_enum(method, *args) unless block_given?
-          super
-        end
-      end
+    def with_index(*args)
+      return to_enum(:with_index, *args) unless block_given?
+      super
+    end
+    def each_slice(*args)
+      return to_enum(:each_slice, *args) unless block_given?
+      super
+    end
+    def each_entry(*args)
+      return to_enum(:each_entry, *args) unless block_given?
+      super
+    end
+    def each_cons(*args)
+      return to_enum(:each_cons, *args) unless block_given?
+      super
     end
 
-    [
-        :slice_after,
-        :slice_before
-    ].each do |method|
-      module_eval do
-        define_method(method) do |*|
-          super.lazy
-        end
-      end
+    def slice_after(*)
+      super.lazy
+    end
+    def slice_before(*)
+      super.lazy
     end
 
     def slice_when
@@ -199,33 +198,33 @@ class Enumerator
       super.lazy
     end
 
-    [
-        :map,
-        :collect
-    ].each do |method|
-      module_eval do
-        define_method(method) do ||
-          _block_error(method) unless block_given?
-          Lazy.new(self, enumerator_size) do |yielder, *values|
-            yielder << yield(*values)
-          end.__set_inspect method
-        end
-      end
+    def map
+      _block_error(:map) unless block_given?
+      Lazy.new(self, enumerator_size) do |yielder, *values|
+        yielder << yield(*values)
+      end.__set_inspect :map
     end
 
-    [
-        :select,
-        :find_all
-    ].each do |method|
-      module_eval do
-        define_method(method) do ||
-          _block_error(method) unless block_given?
-          Lazy.new(self) do |yielder, *values|
-            values = values.first unless values.size > 1
-            yielder.yield values if yield values
-          end.__set_inspect method
-        end
-      end
+    def collect
+      _block_error(:collect) unless block_given?
+      Lazy.new(self, enumerator_size) do |yielder, *values|
+        yielder << yield(*values)
+      end.__set_inspect :collect
+    end
+
+    def select
+      _block_error(:select) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield values if yield values
+      end.__set_inspect :select
+    end
+    def find_all
+      _block_error(:select) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        values = values.first unless values.size > 1
+        yielder.yield values if yield values
+      end.__set_inspect :select
     end
 
     def reject
@@ -322,25 +321,31 @@ class Enumerator
       end.__set_inspect :take_while
     end
 
-    [
-        :flat_map,
-        :collect_concat
-    ].each do |method|
-      module_eval do
-        define_method(method) do
-          _block_error(method) unless block_given?
-          Lazy.new(self) do |yielder, *values|
-            res = yield(*values)
-            if ary = JRuby::Type.is_array?(res)
-              ary.each { |x| yielder << x }
-            elsif res.respond_to?(:each) && res.respond_to?(:force)
-              res.each { |x| yielder << x }
-            else
-              yielder << res
-            end
-          end.__set_inspect method
+    def flat_map
+      _block_error(:flat_map) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        res = yield(*values)
+        if ary = JRuby::Type.is_array?(res)
+          ary.each { |x| yielder << x }
+        elsif res.respond_to?(:each) && res.respond_to?(:force)
+          res.each { |x| yielder << x }
+        else
+          yielder << res
         end
-      end
+      end.__set_inspect :flat_map
+    end
+    def collect_concat
+      _block_error(:flat_map) unless block_given?
+      Lazy.new(self) do |yielder, *values|
+        res = yield(*values)
+        if ary = JRuby::Type.is_array?(res)
+          ary.each { |x| yielder << x }
+        elsif res.respond_to?(:each) && res.respond_to?(:force)
+          res.each { |x| yielder << x }
+        else
+          yielder << res
+        end
+      end.__set_inspect :flat_map
     end
 
     def zip(*args)
