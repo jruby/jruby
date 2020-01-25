@@ -168,23 +168,23 @@ class Enumerator
         :each_entry,
         :each_cons,
     ].each do |method|
-      module_eval <<-EOT, __FILE__, __LINE__ + 1
-        def #{method}(*args)                                     # def cycle(*args)
-          return to_enum(:#{method}, *args) unless block_given?  #   return to_enum(:cycle, *args) unless block_given?
-          super                                                  #   super
-        end                                                      # end
-      EOT
+      module_eval do
+        define_method(method) do |*args|
+          return to_enum(method, *args) unless block_given?
+          super
+        end
+      end
     end
 
     [
         :slice_after,
         :slice_before
     ].each do |method|
-      module_eval <<-EOT, __FILE__, __LINE__ + 1
-        def #{method}(*)
+      module_eval do
+        define_method(method) do |*|
           super.lazy
         end
-      EOT
+      end
     end
 
     def slice_when
@@ -203,29 +203,29 @@ class Enumerator
         :map,
         :collect
     ].each do |method|
-      module_eval <<-EOT, __FILE__, __LINE__ + 1
-        def #{method}
-          _block_error(:#{method}) unless block_given?
+      module_eval do
+        define_method(method) do ||
+          _block_error(method) unless block_given?
           Lazy.new(self, enumerator_size) do |yielder, *values|
             yielder << yield(*values)
-          end.__set_inspect :#{method}
+          end.__set_inspect method
         end
-      EOT
+      end
     end
 
     [
         :select,
         :find_all
     ].each do |method|
-      module_eval <<-EOT, __FILE__, __LINE__ + 1
-        def #{method}
-          _block_error(:#{method}) unless block_given?
+      module_eval do
+        define_method(method) do ||
+          _block_error(method) unless block_given?
           Lazy.new(self) do |yielder, *values|
             values = values.first unless values.size > 1
             yielder.yield values if yield values
-          end.__set_inspect :#{method}
+          end.__set_inspect method
         end
-      EOT
+      end
     end
 
     def reject
@@ -326,9 +326,9 @@ class Enumerator
         :flat_map,
         :collect_concat
     ].each do |method|
-      module_eval <<-EOT, __FILE__, __LINE__ + 1
-        def #{method}
-          _block_error(:#{method}) unless block_given?
+      module_eval do
+        define_method(method) do
+          _block_error(method) unless block_given?
           Lazy.new(self) do |yielder, *values|
             res = yield(*values)
             if ary = JRuby::Type.is_array?(res)
@@ -338,9 +338,9 @@ class Enumerator
             else
               yielder << res
             end
-          end.__set_inspect :#{method}
+          end.__set_inspect method
         end
-      EOT
+      end
     end
 
     def zip(*args)
