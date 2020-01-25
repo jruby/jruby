@@ -19,7 +19,7 @@ public class IRFor extends IRClosure {
     }
 
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
-        this(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, FOR_LOOP);
+        this(manager, lexicalParent, lineNumber, staticScope, signature, FOR_LOOP);
     }
 
     /** Used by cloning code */

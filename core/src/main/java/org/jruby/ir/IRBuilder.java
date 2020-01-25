@@ -3417,7 +3417,9 @@ public class IRBuilder {
         IRScope topLevel = scope.getRootLexicalScope();
         IRScope nearestLVarScope = scope.getNearestTopLocalVariableScope();
 
-        StaticScope staticScope = nearestLVarScope.getStaticScope().duplicate();
+        StaticScope parentScope = nearestLVarScope.getStaticScope();
+        StaticScope staticScope = parentScope.duplicate();
+        staticScope.setEnclosingScope(parentScope);
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getLine(), staticScope,
                 Signature.from(postExeNode), CommonByteLists._END_, true);
         staticScope.setIRScope(endClosure);

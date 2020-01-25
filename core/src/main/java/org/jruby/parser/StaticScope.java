@@ -82,7 +82,7 @@ public class StaticScope implements Serializable {
 
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
-    final protected StaticScope enclosingScope;
+    protected StaticScope enclosingScope;
 
     // Live reference to module
     private transient RubyModule cref = null;
@@ -365,6 +365,10 @@ public class StaticScope implements Serializable {
      */
     public StaticScope getEnclosingScope() {
         return enclosingScope;
+    }
+
+    public void setEnclosingScope(StaticScope parent) {
+        this.enclosingScope = parent;
     }
 
     /**
