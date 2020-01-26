@@ -404,6 +404,16 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(USES_EVAL);
     }
 
+    public boolean anyUsesEval() {
+        boolean usesEval = usesEval();
+
+        for (IRScope child : getLexicalScopes()) {
+            usesEval |= child.anyUsesEval();
+        }
+
+        return usesEval;
+    }
+
     public boolean usesZSuper() {
         return flags.contains(USES_ZSUPER);
     }
@@ -693,7 +703,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     private static final EnumSet<IRFlags> DEFAULT_SCOPE_FLAGS =
-            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, USES_EVAL, REQUIRES_BACKREF,
+            EnumSet.of(CAN_CAPTURE_CALLERS_BINDING, BINDING_HAS_ESCAPED, REQUIRES_BACKREF,
                     REQUIRES_LASTLINE, REQUIRES_DYNSCOPE, USES_ZSUPER);
 
     private static final EnumSet<IRFlags> NEEDS_DYNAMIC_SCOPE_FLAGS =
@@ -977,7 +987,6 @@ public abstract class IRScope implements ParseResult {
         flags.remove(FLAGS_COMPUTED);
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
         flags.add(BINDING_HAS_ESCAPED);
-        flags.add(USES_EVAL);
         flags.add(USES_ZSUPER);
 
         flags.remove(HAS_BREAK_INSTRS);

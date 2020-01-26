@@ -49,6 +49,11 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         Class compiled;
         byte[] bytecode;
 
+        // Check for eval in any scope, which isn't supported for AOT right now
+        if (scope.anyUsesEval()) {
+            throw new NotCompilableException("AOT not supported for scripts containing eval");
+        }
+
         try {
             visitor = new JVMVisitor(runtime);
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
