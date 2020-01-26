@@ -936,21 +936,11 @@ public final class Ruby implements Constantizable {
         }
 
         if (Options.COMPILE_CACHE_CLASSES.load()) {
-            // Try loading from precompiled class file
-            String clsName = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
-            try {
-                Class scriptClass = jrubyClassLoader.loadClass(clsName.replace("/", "."));
+            Script script = tryScriptFromClass(filename);
 
-                Script script = Compiler.getScriptFromClass(scriptClass);
-
-                System.err.println("running from class " + scriptClass.getName());
-
+            if (script != null) {
                 runScript(script);
-
                 return;
-            } catch (ClassNotFoundException cnfe) {
-                // ignore and proceed to parse and execute
-                System.err.println("no class found for script " + filename);
             }
         }
 
@@ -984,6 +974,23 @@ public final class Ruby implements Constantizable {
             // TODO: Only interpreter supported so far
             runInterpreter(parseResult);
         }
+    }
+
+    private Script tryScriptFromClass(String filename) {
+        // Try loading from precompiled class file
+        String clsName = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
+        try {
+            Class scriptClass = jrubyClassLoader.loadClass(clsName.replace("/", "."));
+
+            System.err.println("found class " + scriptClass.getName() + " for " + filename);
+
+            return Compiler.getScriptFromClass(scriptClass);
+        } catch (ClassNotFoundException cnfe) {
+            // ignore and proceed to parse and execute
+            System.err.println("no class found for script " + filename);
+        }
+
+        return null;
     }
 
     /**
@@ -2837,6 +2844,15 @@ public final class Ruby implements Constantizable {
             wrapWithModule((RubyBasicObject) self, root);
         } else {
             root.getStaticScope().setModule(getObject());
+        }
+
+        if (Options.COMPILE_CACHE_CLASSES.load()) {
+            Script script = tryScriptFromClass(filename);
+
+            if (script != null) {
+                runScript(script, self, wrap);
+                return;
+            }
         }
 
         runNormally(root, self, wrap);
