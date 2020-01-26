@@ -164,7 +164,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void setupLexicalContainment() {
-        lexicalChildren = new ArrayList<>(1);
         if (lexicalParent != null) lexicalParent.addChildScope(this);
     }
 
