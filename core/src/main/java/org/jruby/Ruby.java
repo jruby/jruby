@@ -980,7 +980,11 @@ public final class Ruby implements Constantizable {
         // Try loading from precompiled class file
         String clsName = JavaNameMangler.mangledFilenameForStartupClasspath(filename);
         try {
-            Class scriptClass = jrubyClassLoader.loadClass(clsName.replace("/", "."));
+            ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+
+            if (systemClassLoader.getResource(clsName + ".class") == null) return null;
+
+            Class scriptClass = systemClassLoader.loadClass(clsName.replace("/", "."));
 
             System.err.println("found class " + scriptClass.getName() + " for " + filename);
 
