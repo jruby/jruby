@@ -1755,12 +1755,12 @@ public class Helpers {
         Signature signature = scope.getSignature();
         Collection<String> instanceVariableNames = scope.getInstanceVariableNames();
         String descriptor =
-                scope.getType().name() + ';'
+                Integer.toString(scope.getType().ordinal()) + ';'
                 + scope.getFile() + ';'
                 + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
                 + scope.getFirstKeywordIndex() + ';' +
                 + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode()) + ';'
-                + scope.getIRScope().getScopeType().name() + ';'
+                + scope.getIRScope().getScopeType().ordinal() + ';'
                 + (instanceVariableNames.size() > 0
                         ? instanceVariableNames.stream().collect(Collectors.joining(","))
                         : "NONE");
@@ -1771,13 +1771,13 @@ public class Helpers {
     public static StaticScope restoreScope(String descriptor, StaticScope enclosingScope) {
         String[] bits = descriptor.split(";");
 
-        StaticScope.Type type = StaticScope.Type.valueOf(bits[0]);
+        StaticScope.Type type = StaticScope.Type.fromOrdinal(Integer.parseInt(bits[0]));
         String file = bits[1];
 
         String[] varNames = bits[2].split(",");
         int kwIndex = Integer.parseInt(bits[3]);
         Signature signature = Signature.decode(Long.parseLong(bits[4]));
-        IRScopeType scopeType = IRScopeType.valueOf(bits[5]);
+        IRScopeType scopeType = IRScopeType.fromOrdinal(Integer.parseInt(bits[5]));
         String encodedIvars = bits[6];
         Collection<String> ivarNames = encodedIvars.equals("NONE") ? Collections.EMPTY_LIST : Arrays.asList(encodedIvars.split(","));
 
