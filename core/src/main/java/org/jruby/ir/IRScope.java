@@ -404,6 +404,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean anyUsesEval() {
+        // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
+        if (this instanceof IRMethod) {
+            ((IRMethod) this).lazilyAcquireInterpreterContext();
+        }
+
         boolean usesEval = usesEval();
 
         for (IRScope child : getLexicalScopes()) {
