@@ -8,6 +8,7 @@ import com.headius.invokebinder.Signature;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -22,6 +23,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -197,8 +199,18 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadFrameClass() {
-        // when present, should be second-to-last element in signature
-        adapter.aload(signature.argCount() - 2);
+        int superNameOffset = signature.argOffset(JVMVisitor.SUPER_NAME_NAME);
+
+        if (superNameOffset == -1) {
+            // load from self block
+            loadSelfBlock();
+            adapter.invokevirtual(p(Block.class), "getBinding", sig(Binding.class));
+            adapter.invokevirtual(p(Binding.class), "getFrame", sig(Frame.class));
+            adapter.invokevirtual(p(Frame.class), "getKlazz", sig(RubyModule.class));
+        } else {
+            // when present, should be second-to-last element in signature
+            adapter.aload(signature.argCount() - 2);
+        }
     }
 
     public void loadFrameName() {

@@ -1393,7 +1393,9 @@ public class Bootstrap {
     private static final MethodHandle FRAME_SCOPE_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameScopeBinding");
     public static Binding frameScopeBinding(ThreadContext context, IRubyObject self, DynamicScope scope) {
         Frame frame = context.getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), scope);
+        Binding binding = new Binding(self, frame, frame.getVisibility(), scope);
+        binding.setMethod(frame.getName());
+        return binding;
     }
 
     private static final MethodHandle FRAME_BINDING = BINDING_MAKER_BINDER.invokeStaticQuiet(LOOKUP, Bootstrap.class, "frameBinding");

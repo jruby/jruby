@@ -1203,6 +1203,11 @@ modes.each do |mode|
       run('a = Class.new { def a; end }; b = Class.new(a) { def a; [defined? super, defined? super()]; end }.new; b.a') do |x|
         expect(x).to eq(["super", "super"])
       end
+
+      # inside a block
+      run('a = Class.new { def a; end }; b = Class.new(a) { def a; proc { [defined? super, defined? super()] }.call; end }.new; b.a') do |x|
+        expect(x).to eq(["super", "super"])
+      end
     end
 
     it "handles defined? method forms" do
