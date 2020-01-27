@@ -2812,6 +2812,16 @@ public final class Ruby implements Constantizable {
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
+
+        if (!wrap && Options.COMPILE_CACHE_CLASSES.load()) {
+            Script script = tryScriptFromClass(scriptName);
+
+            if (script != null) {
+                runScript(script, self, wrap);
+                return;
+            }
+        }
+
         ThreadContext context = getCurrentContext();
 
         try {
@@ -2841,6 +2851,15 @@ public final class Ruby implements Constantizable {
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
 
+        if (!wrap && Options.COMPILE_CACHE_CLASSES.load()) {
+            Script script = tryScriptFromClass(filename);
+
+            if (script != null) {
+                runScript(script, self, wrap);
+                return;
+            }
+        }
+
         ParseResult parseResult = parseFile(filename, in, null);
         RootNode root = (RootNode) parseResult;
 
@@ -2848,15 +2867,6 @@ public final class Ruby implements Constantizable {
             wrapWithModule((RubyBasicObject) self, root);
         } else {
             root.getStaticScope().setModule(getObject());
-        }
-
-        if (Options.COMPILE_CACHE_CLASSES.load()) {
-            Script script = tryScriptFromClass(filename);
-
-            if (script != null) {
-                runScript(script, self, wrap);
-                return;
-            }
         }
 
         runNormally(root, self, wrap);
