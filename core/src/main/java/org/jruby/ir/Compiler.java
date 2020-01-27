@@ -63,6 +63,8 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             throw nce;
         }
 
+        Script script = getScriptFromClass(compiled);
+
         if (Options.COMPILE_CACHE_CLASSES.load()) {
             // write class to IR storage
             File path = IRFileExpert.getIRClassFile(JVM.scriptToClass(scope.getFile()));
@@ -76,8 +78,6 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
                 throw new RuntimeException(ioe);
             }
         }
-
-        Script script = getScriptFromClass(compiled);
 
         return new ScriptAndCode(bytecode, script);
 
