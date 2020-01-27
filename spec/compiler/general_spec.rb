@@ -44,7 +44,6 @@ module PersistenceSpecUtils
   def encode_decode_run(src, filename, line)
     runtime = JRuby.runtime
     manager = runtime.getIRManager()
-    manager.dry_run = true
 
     method = JRuby.compile_ir(src, filename, false, line - 1)
 
