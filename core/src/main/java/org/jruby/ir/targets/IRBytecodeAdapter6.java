@@ -168,7 +168,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
     @Override
     public void invokeAsString(String file, int line, String scopeFieldName, CallBase call) {
-        String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
+        String incomingSig = sig(RubyString.class, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String methodName = getUniqueSiteName(call.getId());
         SkinnyMethodAdapter adapter2 = new SkinnyMethodAdapter(
                 adapter.getClassVisitor(),
@@ -180,7 +180,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
 
         adapter2.aloadMany(0, 1, 2);
         cacheCallSite(adapter2, getClassData().clsName, methodName, scopeFieldName, call);
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "asString", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "asString", sig(RubyString.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class));
         adapter2.areturn();
         adapter2.end();
 

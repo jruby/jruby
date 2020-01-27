@@ -1238,5 +1238,15 @@ modes.each do |mode|
         expect(x).to eq("global-variable")
       end
     end
+
+    it "handles refined AsString constructs" do
+      run('
+          class ThingToRefine; end
+          module RefineForAsString; refine(ThingToRefine) { def to_s; "foo"; end }; end
+          class AsStringWithUsing; using RefineForAsString; def go; /#{ThingToRefine.new}/; end; end
+          AsStringWithUsing.new.go') do |x|
+        expect(x).to eq(/foo/)
+      end
+    end
   end
 end

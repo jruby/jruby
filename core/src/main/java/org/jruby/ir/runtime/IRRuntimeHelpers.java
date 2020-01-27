@@ -2154,14 +2154,16 @@ public class IRRuntimeHelpers {
      * asString using a given call site
      */
     @JIT
-    public static IRubyObject asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
+    public static RubyString asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
         IRubyObject str = site.call(context, caller, target);
 
-        if (!(str instanceof RubyString)) return target.anyToString();
+        if (!(str instanceof RubyString)) {
+            return (RubyString) target.anyToString();
+        }
 
         if (target.isTaint()) str.setTaint(true);
 
-        return str;
+        return (RubyString) str;
     }
 
     @JIT
