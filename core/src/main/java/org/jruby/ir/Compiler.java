@@ -69,7 +69,9 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             try (FileOutputStream fos = new FileOutputStream(path)) {
                 fos.write(bytecode);
 
-                System.err.println("saved compiled script as " + path);
+                if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
+                    System.err.println("saved compiled script as " + path);
+                }
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }

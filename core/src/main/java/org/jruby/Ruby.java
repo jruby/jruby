@@ -986,12 +986,16 @@ public final class Ruby implements Constantizable {
 
             Class scriptClass = systemClassLoader.loadClass(clsName.replace("/", "."));
 
-            System.err.println("found class " + scriptClass.getName() + " for " + filename);
+            if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
+                System.err.println("found class " + scriptClass.getName() + " for " + filename);
+            }
 
             return Compiler.getScriptFromClass(scriptClass);
         } catch (ClassNotFoundException cnfe) {
             // ignore and proceed to parse and execute
-            System.err.println("no class found for script " + filename);
+            if (Options.COMPILE_CACHE_CLASSES_LOGGING.load()) {
+                System.err.println("no class found for script " + filename);
+            }
         }
 
         return null;
