@@ -1431,9 +1431,19 @@ public class JVMVisitor extends IRVisitor {
 
         Handle bodyHandle = emitModuleBody(metaClassBody);
         String scopeField = bodyHandle.getName() + "_StaticScope";
+
+        String clsName = jvm.clsData().clsName;
+
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
-                jvm.clsData().clsName,
+                clsName,
+                scopeField,
+                ci(StaticScope.class),
+                false);
+
+        Handle setScopeHandle = new Handle(
+                Opcodes.H_PUTSTATIC,
+                clsName,
                 scopeField,
                 ci(StaticScope.class),
                 false);
@@ -1449,6 +1459,7 @@ public class JVMVisitor extends IRVisitor {
                 Bootstrap.OPEN_META_CLASS,
                 bodyHandle,
                 scopeHandle,
+                setScopeHandle,
                 metaClassBody.getLine(),
                 metaClassBody.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? 1 : 0,
                 metaClassBody.maybeUsingRefinements() ? 1 : 0);

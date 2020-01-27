@@ -219,14 +219,14 @@ public class Bootstrap {
             Opcodes.H_INVOKESTATIC,
             p(Bootstrap.class),
             "openMetaClass",
-            sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, int.class, int.class, int.class),
+            sig(CallSite.class, Lookup.class, String.class, MethodType.class, MethodHandle.class, MethodHandle.class, MethodHandle.class, int.class, int.class, int.class),
             false);
 
     @JIT
-    public static CallSite openMetaClass(Lookup lookup, String name, MethodType type, MethodHandle body, MethodHandle scope, int line, int dynscopeEliminated, int refinements) {
+    public static CallSite openMetaClass(Lookup lookup, String name, MethodType type, MethodHandle body, MethodHandle scope, MethodHandle setScope, int line, int dynscopeEliminated, int refinements) {
         try {
             StaticScope staticScope = (StaticScope) scope.invokeExact();
-            return new ConstantCallSite(insertArguments(OPEN_META_CLASS_HANDLE, 4, body, staticScope, line, dynscopeEliminated == 1 ? true : false, refinements == 1 ? true : false));
+            return new ConstantCallSite(insertArguments(OPEN_META_CLASS_HANDLE, 4, body, staticScope, setScope, line, dynscopeEliminated == 1 ? true : false, refinements == 1 ? true : false));
         } catch (Throwable t) {
             Helpers.throwException(t);
             return null;
@@ -235,13 +235,14 @@ public class Bootstrap {
 
     private static final MethodHandle OPEN_META_CLASS_HANDLE =
             Binder
-                    .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class, StaticScope.class, MethodHandle.class, StaticScope.class, int.class, boolean.class, boolean.class)
+                    .from(DynamicMethod.class, ThreadContext.class, IRubyObject.class, String.class, StaticScope.class, MethodHandle.class, StaticScope.class, MethodHandle.class, int.class, boolean.class, boolean.class)
                     .invokeStaticQuiet(LOOKUP, Bootstrap.class, "openMetaClass");
 
     @JIT
-    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, String descriptor, StaticScope parent, MethodHandle body, StaticScope scope, int line, boolean dynscopeEliminated, boolean refinements) {
+    public static DynamicMethod openMetaClass(ThreadContext context, IRubyObject object, String descriptor, StaticScope parent, MethodHandle body, StaticScope scope, MethodHandle setScope, int line, boolean dynscopeEliminated, boolean refinements) throws Throwable {
         if (scope == null) {
             scope = Helpers.restoreScope(descriptor, parent);
+            setScope.invokeExact(scope);
         }
         return IRRuntimeHelpers.newCompiledMetaClass(context, body, scope, object, line, dynscopeEliminated, refinements);
     }
