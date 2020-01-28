@@ -59,7 +59,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
         try {
             // If we're caching, use AOT-appropriate bytecode
             visitor = cacheClasses ? JVMVisitor.newForAOT(runtime) : JVMVisitor.newForJIT(runtime);
-            
+
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             bytecode = visitor.compileToBytecode(scope, context);
             compiled = visitor.defineScriptFromBytecode(scope, bytecode, classLoader);
