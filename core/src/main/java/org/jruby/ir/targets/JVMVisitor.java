@@ -2787,7 +2787,6 @@ public class JVMVisitor extends IRVisitor {
     public final Map<String, String> staticScopeDescriptorMap = new HashMap();
     private String file;
     private int lastLine = -1;
-    private boolean embedScopes = false;
 
     private Instr nextInstr; // nextInstr while instruction walking.  For simple peephole optimizations.
     private boolean omitStoreLoad;

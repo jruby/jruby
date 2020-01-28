@@ -24,16 +24,17 @@ class IndyBlockCompiler implements BlockCompiler {
     public void prepareBlock(IRClosure closure, String parentScopeField, Handle handle, String file, int line, String encodedArgumentDescriptors, org.jruby.runtime.Signature signature) {
         String className = compiler.getClassData().clsName;
 
+        String scopeField = handle.getName() + "_StaticScope";
         Handle scopeHandle = new Handle(
                 Opcodes.H_GETSTATIC,
                 className,
-                handle.getName() + "_StaticScope",
+                scopeField,
                 ci(StaticScope.class),
                 false);
         Handle setScopeHandle = new Handle(
                 Opcodes.H_PUTSTATIC,
                 className,
-                handle.getName() + "_StaticScope",
+                scopeField,
                 ci(StaticScope.class),
                 false);
         Handle parentScopeHandle = new Handle(

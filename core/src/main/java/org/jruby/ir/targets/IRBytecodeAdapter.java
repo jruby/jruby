@@ -40,7 +40,6 @@ public class IRBytecodeAdapter {
         this.classData = classData;
 
         this.constantCompiler = new IndyConstantCompiler(this);
-        this.blockCompiler = new IndyBlockCompiler(this);
 
         switch (bytecodeMode) {
             case INDY:
@@ -52,6 +51,7 @@ public class IRBytecodeAdapter {
                 this.instanceVariableCompiler = new IndyInstanceVariableCompiler(this);
                 this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
                 this.yieldCompiler = new IndyYieldCompiler(this);
+                this.blockCompiler = new IndyBlockCompiler(this);
                 this.argumentsCompiler = new IndyArgumentsCompiler(this);
                 break;
             case MIXED:
@@ -63,6 +63,7 @@ public class IRBytecodeAdapter {
                 this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
                 this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
                 this.yieldCompiler = new IndyYieldCompiler(this);
+                this.blockCompiler = new IndyBlockCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
                 break;
             case AOT:
@@ -74,6 +75,7 @@ public class IRBytecodeAdapter {
                 this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
                 this.globalVariableCompiler = new NormalGlobalVariableCompiler(this);
                 this.yieldCompiler = new NormalYieldCompiler(this);
+                this.blockCompiler = new NormalBlockCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
                 break;
             default:

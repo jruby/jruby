@@ -3,14 +3,18 @@ package org.jruby.ir.targets;
 import org.jruby.ir.IRClosure;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
 import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 class NormalBlockCompiler implements BlockCompiler {
@@ -22,30 +26,32 @@ class NormalBlockCompiler implements BlockCompiler {
 
     @Override
     public void prepareBlock(IRClosure closure, String parentScopeField, Handle handle, String file, int line, String encodedArgumentDescriptors, org.jruby.runtime.Signature signature) {
-        String className = compiler.getClassData().clsName;
+        // FIXME: too much bytecode
+        String cacheField = "blockBody" + compiler.getClassData().cacheFieldCount.getAndIncrement();
+        Label done = new Label();
+        compiler.adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(CompiledIRBlockBody.class), null, null).visitEnd();
+        String clsName = compiler.getClassData().clsName;
+        compiler.adapter.getstatic(clsName, cacheField, ci(CompiledIRBlockBody.class));
+        compiler.adapter.dup();
+        compiler.adapter.ifnonnull(done);
+        {
+            compiler.adapter.pop();
+            compiler.adapter.newobj(p(CompiledIRBlockBody.class));
+            compiler.adapter.dup();
 
-        Handle scopeHandle = new Handle(
-                Opcodes.H_GETSTATIC,
-                className,
-                handle.getName() + "_StaticScope",
-                ci(StaticScope.class),
-                false);
-        Handle setScopeHandle = new Handle(
-                Opcodes.H_PUTSTATIC,
-                className,
-                handle.getName() + "_StaticScope",
-                ci(StaticScope.class),
-                false);
-        Handle parentScopeHandle = new Handle(
-                Opcodes.H_GETSTATIC,
-                className,
-                parentScopeField,
-                ci(StaticScope.class),
-                false);
-        String scopeDescriptor = Helpers.describeScope(closure.getStaticScope());
+            compiler.adapter.ldc(handle);
+            compiler.getStaticScope(handle.getName() + "_StaticScope");
+            compiler.adapter.ldc(file);
+            compiler.adapter.ldc(line);
+            compiler.adapter.ldc(encodedArgumentDescriptors);
+            compiler.adapter.ldc(signature.encode());
 
-        long encodedSignature = signature.encode();
-        compiler.adapter.invokedynamic(handle.getName(), sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class),
-                Bootstrap.prepareBlock(), handle, scopeHandle, setScopeHandle, parentScopeHandle, scopeDescriptor, encodedSignature, file, line, encodedArgumentDescriptors);
+            compiler.adapter.invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, StaticScope.class, String.class, int.class, String.class, long.class));
+            compiler.adapter.dup();
+            compiler.adapter.putstatic(clsName, cacheField, ci(CompiledIRBlockBody.class));
+        }
+        compiler.adapter.label(done);
+
+        compiler.invokeIRHelper("prepareBlock", sig(Block.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, BlockBody.class));
     }
 }
