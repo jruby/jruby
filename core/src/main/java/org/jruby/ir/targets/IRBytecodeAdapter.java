@@ -5,44 +5,25 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRManager;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
-import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.FunctionalCachingCallSite;
-import org.jruby.runtime.callsite.MonomorphicCallSite;
-import org.jruby.runtime.callsite.ProfilingCachingCallSite;
-import org.jruby.runtime.callsite.RefinedCachingCallSite;
-import org.jruby.runtime.callsite.VariableCachingCallSite;
-import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.RegexpOptions;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,93 +33,154 @@ import static org.jruby.util.CodegenUtils.*;
  *
  * @author headius
  */
-public abstract class IRBytecodeAdapter {
+public class IRBytecodeAdapter {
     public static final int MAX_ARGUMENTS = 250;
 
     public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
         this.adapter = adapter;
         this.signature = signature;
         this.classData = classData;
+        this.valueCompiler = new IndyValueCompiler(this);
+        this.constantCompiler = new IndyConstantCompiler(this);
+        this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
+        this.yieldCompiler = new IndyYieldCompiler(this);
+        this.blockCompiler = new IndyBlockCompiler(this);
+
+        if (Options.COMPILE_INVOKEDYNAMIC.load()) {
+            this.dynamicValueCompiler = new IndyDynamicValueCompiler(this);
+            this.invocationCompiler = new IndyInvocationCompiler(this);
+            this.branchCompiler = new IndyBranchCompiler(this);
+            this.checkpointCompiler = new IndyCheckpointCompiler(this);
+            this.instanceVariableCompiler = new IndyInstanceVariableCompiler(this);
+            this.argumentsCompiler = new IndyArgumentsCompiler(this);
+        } else {
+            this.dynamicValueCompiler = new NormalDynamicValueCompiler(this);
+            this.invocationCompiler = new NormalInvocationCompiler(this);
+            this.branchCompiler = new NormalBranchCompiler(this);
+            this.checkpointCompiler = new NormalCheckpointCompiler(this);
+            this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
+            this.argumentsCompiler = new NormalArgumentsCompiler(this);
+        }
     }
 
     /**
-     * Utility to lazily construct and cache a call site object.
+     * Get the compiler for constant Ruby values.
      *
-     * @param method the SkinnyMethodAdapter to that's generating the containing method body
-     * @param className the name of the class in which the field will reside
-     * @param siteName the unique name of the site, used for the field
-     * @param call of we are making a callsite for.
+     * @return the value compiler
      */
-    public static void cacheCallSite(SkinnyMethodAdapter method, String className, String siteName, String scopeFieldName, CallBase call) {
-        CallType callType = call.getCallType();
-        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null && IRManager.IR_INLINER;
-        boolean profiled = false;
-        boolean refined = call.isPotentiallyRefined();
+    public ValueCompiler getValueCompiler() {
+        return valueCompiler;
+    }
 
-        boolean specialSite = profiled || refined || profileCandidate;
+    /**
+     * Get the compiler for dynamic values.
+     *
+     * @return the dynamic value compiler
+     */
+    public DynamicValueCompiler getDynamicValueCompiler() {
+        return dynamicValueCompiler;
+    }
 
-        if (!specialSite) {
-            // use indy to cache the site object
-            method.invokedynamic("callSite", sig(CachingCallSite.class), Bootstrap.CALLSITE, call.getId(), callType.ordinal());
+    /**
+     * Get the compiler for invocations.
+     *
+     * @return the invocation compiler
+     */
+    public InvocationCompiler getInvocationCompiler() {
+        return invocationCompiler;
+    }
+
+    /**
+     * Get the compiler for dynamic branches.
+     *
+     * @return the branch compiler
+     */
+    public BranchCompiler getBranchCompiler() {
+        return branchCompiler;
+    }
+
+    /**
+     * Checkpoint compiler.
+     *
+     * @return the checkpoint compiler
+     */
+    public CheckpointCompiler getCheckpointCompiler() {
+        return checkpointCompiler;
+    }
+
+    /**
+     * Get the compiler for Ruby constant lookups.
+     *
+     * @return the constant compiler
+     */
+    public ConstantCompiler getConstantCompiler() {
+        return constantCompiler;
+    }
+
+    /**
+     * Instance variable compiler.
+     *
+     * @return the instance variable compiler
+     */
+    public InstanceVariableCompiler getInstanceVariableCompiler() {
+        return instanceVariableCompiler;
+    }
+
+    /**
+     * Global variable compiler.
+     *
+     * @return the global variable compiler
+     */
+    public GlobalVariableCompiler getGlobalVariableCompiler() {
+        return globalVariableCompiler;
+    }
+
+    /**
+     * Block yielding compiler.
+     *
+     * @return the yield compiler
+     */
+    public YieldCompiler getYieldCompiler() {
+        return yieldCompiler;
+    }
+
+    /**
+     * Block construction compiler.
+     *
+     * @return the block compiler
+     */
+    public BlockCompiler getBlockCompiler() {
+        return blockCompiler;
+    }
+
+    /**
+     * The compiler for argument processing or preparation.
+     *
+     * @return the arguments compiler
+     */
+    public ArgumentsCompiler getArgumentsCompiler() {
+        return argumentsCompiler;
+    }
+
+    public static void buildArrayFromLocals(SkinnyMethodAdapter adapter2, int base, int arity) {
+        if (arity == 0) {
+            adapter2.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
             return;
         }
 
-        // site requires special handling (usually refined or profiled that need scope present)
-        Class<? extends CachingCallSite> siteClass;
-        String signature;
+        adapter2.pushInt(arity);
+        adapter2.invokestatic(p(Helpers.class), "anewarrayIRubyObjects", sig(IRubyObject[].class, int.class));
 
-        // call site object field
-        method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
-
-        // lazily construct it
-        method.getstatic(className, siteName, ci(CachingCallSite.class));
-        method.dup();
-        Label doCall = new Label();
-        method.ifnonnull(doCall);
-        method.pop();
-        method.ldc(call.getId());
-        if (refined) {
-            siteClass = RefinedCachingCallSite.class;
-            signature = sig(siteClass, String.class, StaticScope.class, String.class);
-            method.getstatic(className, scopeFieldName, ci(StaticScope.class));
-            method.ldc(callType.name());
-        } else {
-            switch (callType) {
-                case NORMAL:
-                    if (profileCandidate) {
-                        profiled = true;
-                        siteClass = ProfilingCachingCallSite.class;
-                    } else {
-                        siteClass = MonomorphicCallSite.class;
-                    }
-                    break;
-                case FUNCTIONAL:
-                    if (profileCandidate) {
-                        profiled = true;
-                        siteClass = ProfilingCachingCallSite.class;
-                    } else {
-                        siteClass = FunctionalCachingCallSite.class;
-                    }
-                    break;
-                case VARIABLE:
-                    siteClass = VariableCachingCallSite.class;
-                    break;
-                default:
-                    throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+        for (int i = 0; i < arity; ) {
+            int j = 0;
+            while (i + j < arity && j < Helpers.MAX_SPECIFIC_ARITY_OBJECT_ARRAY) {
+                adapter2.aload(base + i + j);
+                j++;
             }
-            if (profiled) {
-                method.getstatic(className, scopeFieldName, ci(IRScope.class));
-                method.ldc(call.getCallSiteId());
-                signature = sig(CallType.class, siteClass, String.class, IRScope.class, long.class);
-            } else {
-                signature = sig(siteClass, String.class);
-            }
+            adapter2.pushInt(i);
+            adapter2.invokestatic(p(Helpers.class), "aastoreIRubyObjects", sig(IRubyObject[].class, params(IRubyObject[].class, IRubyObject.class, j, int.class)));
+            i += j;
         }
-        method.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
-        method.dup();
-        method.putstatic(className, siteName, ci(CachingCallSite.class));
-
-        method.label(doCall);
     }
 
     public String getUniqueSiteName(String name) {
@@ -262,43 +304,6 @@ public abstract class IRBytecodeAdapter {
         adapter.go_to(label);
     }
 
-    public void branchIfTruthy(Label target) {
-        adapter.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
-        btrue(target);
-    }
-
-    /**
-     * Branch to label if value at top of stack is nil
-     *
-     * stack: obj to check for nilness
-     */
-    public void branchIfNil(Label label) {
-        pushNil();
-        adapter.if_acmpeq(label);
-    }
-
-    public void bfalse(org.objectweb.asm.Label label) {
-        adapter.iffalse(label);
-    }
-
-    public void btrue(org.objectweb.asm.Label label) {
-        adapter.iftrue(label);
-    }
-
-    public void poll() {
-        loadContext();
-        adapter.invokevirtual(p(ThreadContext.class), "pollThreadEvents", sig(void.class));
-    }
-
-    public void pushObjectClass() {
-        loadContext();
-        invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
-    }
-
-    public void pushUndefined() {
-        adapter.getstatic(p(UndefinedValue.class), "UNDEFINED", ci(UndefinedValue.class));
-    }
-
     public void pushHandle(Handle handle) {
         adapter.getMethodVisitor().visitLdcInsn(handle);
     }
@@ -339,140 +344,6 @@ public abstract class IRBytecodeAdapter {
         adapter.label(after);
     }
 
-    /**
-     * Stack required: none
-     *
-     * @param l long value to push as a Fixnum
-     */
-    public abstract void pushFixnum(long l);
-
-    /**
-     * Stack required: none
-     *
-     * @param d double value to push as a Float
-     */
-    public abstract void pushFloat(double d);
-
-    /**
-     * Stack required: none
-     *
-     * @param bl ByteList for the String to push
-     */
-    public abstract void pushString(ByteList bl, int cr);
-
-    /**
-     * Stack required: none
-     *
-     * @param bl ByteList for the String to push
-     */
-    public abstract void pushFrozenString(ByteList bl, int cr, String path, int line);
-
-    /**
-     * Stack required: none
-     *
-     * @param bl ByteList to push
-     */
-    public abstract void pushByteList(ByteList bl);
-
-    /**
-     * Build and save a literal regular expression.
-     *
-     * Stack required: none
-     *
-     * @param options options for the regexp
-     */
-    public abstract void pushRegexp(ByteList source, int options);
-
-    /**
-     * Build a dynamic regexp.
-     *
-     * No stack requirement. The callback must push onto this method's stack the ThreadContext and all arguments for
-     * building the dregexp, matching the given arity.
-     *
-     * @param options options for the regexp
-     * @param arity number of Strings passed in
-     */
-    public abstract void pushDRegexp(Runnable callback, RegexpOptions options, int arity);
-
-    /**
-     * Push a symbol on the stack.
-     *
-     * Stack required: none
-     *
-     * @param bytes the ByteList for the symbol
-     */
-    public abstract void pushSymbol(ByteList bytes);
-
-    /**
-     * Push a Symbol.to_proc on the stack.
-     *
-     * Stack required: none
-     *
-     * @param bytes the ByteList for the symbol
-     */
-    public abstract void pushSymbolProc(ByteList bytes);
-
-        /**
-         * Push the JRuby runtime on the stack.
-         *
-         * Stack required: none
-         */
-    public abstract void loadRuntime();
-
-    /**
-     * Push an encoding on the stack.
-     *
-     * Stack required: none
-     *
-     * @param encoding the encoding to push
-     */
-    public abstract void pushEncoding(Encoding encoding);
-
-    /**
-     * Invoke a method on an object other than self.
-     *
-     * Stack required: context, self, all arguments, optional block
-     *
-     * @param call the call to be invoked
-     */
-    public abstract void invokeOther(String file, int line, String scopeFieldName, CallBase call, int arity);
-
-    /**
-     * Invoke the array dereferencing method ([]) on an object other than self.
-     *
-     * If this invokes against a Hash with a frozen string, it will follow an optimized path.
-     *
-     * Stack required: context, self, target, arg0
-     * @param file
-     * @param line
-     */
-    public abstract void invokeArrayDeref(String file, int line, String scopeFieldName, CallBase call);
-
-    /**
-     * Invoke the to_s method with AsString semantics (tainting, refinements, etc).
-     *
-     * Stack required: context, self, target
-     * @param file
-     * @param line
-     */
-    public abstract void invokeAsString(String file, int line, String scopeFieldName, CallBase call);
-
-    /**
-     * Invoke a fixnum-receiving method on an object other than self.
-     *
-     * Stack required: context, self, receiver (fixnum will be handled separately)
-     *
-     */
-    public abstract void invokeOtherOneFixnum(String file, int line, CallBase call, long fixnum);
-
-    /**
-     * Invoke a float-receiving method on an object other than self.
-     *
-     * Stack required: context, self, receiver (float will be handled separately)
-     *
-     */
-    public abstract void invokeOtherOneFloat(String file, int line, CallBase call, double flote);
-
     public enum BlockPassType {
         NONE(false, false),
         GIVEN(true, false),
@@ -498,248 +369,22 @@ public abstract class IRBytecodeAdapter {
         }
     }
 
-    /**
-     * Invoke a method on self.
-     *
-     * Stack required: context, caller, self, all arguments, optional block
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
-     * @param call to be invoked on self
-     * @param arity of the call.
-     */
-    public abstract void invokeSelf(String file, int line, String scopeFieldName, CallBase call, int arity);
-
-    /**
-     * Invoke a superclass method from an instance context.
-     *
-     * Stack required: context, caller, self, start class, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
-     * @param splatmap a map of arguments to be splatted back into arg list
-     */
-    public abstract void invokeInstanceSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
-
-    /**
-     * Invoke a superclass method from a class context.
-     *
-     * Stack required: context, caller, self, start class, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
-     * @param splatmap a map of arguments to be splatted back into arg list
-     */
-    public abstract void invokeClassSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
-
-    /**
-     * Invoke a superclass method from an unresolved context.
-     *
-     * Stack required: context, caller, self, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
-     * @param splatmap a map of arguments to be splatted back into arg list
-     */
-    public abstract void invokeUnresolvedSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
-
-    /**
-     * Invoke a superclass method from a zsuper in a block.
-     *
-     * Stack required: context, caller, self, arguments[, block]
-     *
-     * @param file the filename of the script making this call
-     * @param line the line number where this call appears
-     * @param name name of the method to invoke
-     * @param arity arity of the arguments on the stack
-     * @param hasClosure whether a block is passed
-     * @param splatmap a map of arguments to be splatted back into arg list
-     */
-    public abstract void invokeZSuper(String file, int line, String name, int arity, boolean hasClosure, boolean[] splatmap);
-
-    /**
-     * Lookup a constant from current context.
-     *
-     * Stack required: context, static scope
-     *
-     * @param name name of the constant
-     * @param noPrivateConsts whether to ignore private constants
-     */
-    public abstract void searchConst(String name, boolean noPrivateConsts);
-
-
-    /**
-     * Lookup a constant from current module.
-     *
-     * Stack required: context, static scope
-     *
-     * @param name name of the constant
-     * @param noPrivateConsts whether to ignore private constants
-     */
-    public abstract void searchModuleForConst(String name, boolean noPrivateConsts, boolean callConstMissing);
-
-    /**
-     * Lookup a constant from a given class or module.
-     *
-     * Stack required: context, module
-     *
-     * @param name name of the constant
-     * @param noPrivateConsts whether to ignore private constants
-     */
-    public abstract void inheritanceSearchConst(String name, boolean noPrivateConsts);
-
-    /**
-     * Lookup a constant from a lexical scope.
-     *
-     * Stack required: context, static scope
-     *
-     * @param name name of the constant
-     */
-    public abstract void lexicalSearchConst(String name);
-
-    /**
-     * Load nil onto the stack.
-     *
-     * Stack required: none
-     */
-    public abstract void pushNil();
-
-    /**
-     * Load a boolean onto the stack.
-     *
-     * Stack required: none
-     *
-     * @param b the boolean to push
-     */
-    public abstract void pushBoolean(boolean b);
-
-    /**
-     * Load a Bignum onto the stack.
-     *
-     * Stack required: none
-     *
-     * @param bigint the value of the Bignum to push
-     */
-    public abstract void pushBignum(BigInteger bigint);
-
-    /**
-     * Store instance variable into self.
-     *
-     * Stack required: self, value
-     * Stack result: empty
-     *
-     * @param name name of variable to store
-     */
-    public abstract void putField(String name);
-
-    /**
-     * Load instance variable from self.
-     *
-     * Stack required: self
-     * Stack result: value from self
-     *
-     * @param name name of variable to load
-     */
-    public abstract void getField(String name);
-
-    /**
-     * Construct an Array from elements on stack.
-     *
-     * Stack required: all elements of array
-     *
-     * @param length number of elements
-     */
-    public abstract void array(int length);
-
-    /**
-     * Construct a Hash from elements on stack.
-     *
-     * Stack required: context, all elements of hash
-     *
-     * @param length number of element pairs
-     */
-    public abstract void hash(int length);
-
-    /**
-     * Construct a Hash based on keyword arguments pasesd to this method, for use in zsuper
-     *
-     * Stack required: context, kwargs hash to dup, remaining elements of hash
-     *
-     * @param length number of element pairs
-     */
-    public abstract void kwargsHash(int length);
-
-    /**
-     * Perform a thread event checkpoint.
-     *
-     * Stack required: none
-     */
-    public abstract void checkpoint();
-
-    /**
-     * Retrieve a global variable with the given name.
-     *
-     * Stack required: none
-     */
-    public abstract void getGlobalVariable(String name, String file, int line);
-
-    /**
-     * Set the global variable with the given name to the value on stack.
-     *
-     * Stack required: the new value
-     */
-    public abstract void setGlobalVariable(String name, String file, int line);
-
-    /**
-     * Yield argument list to a block.
-     *
-     * Stack required: context, block, argument
-     */
-    public abstract void yield(boolean unwrap);
-
-    /**
-     * Yield to a block.
-     *
-     * Stack required: context, block
-     */
-    public abstract void yieldSpecific();
-
-    /**
-     * Yield a number of flat arguments to a block.
-     *
-     * Stack required: context, block
-     */
-    public abstract void yieldValues(int arity);
-
-    /**
-     * Prepare a block for a subsequent call.
-     *
-     * Stack required: context, self, dynamicScope
-     */
-    public abstract void prepareBlock(IRClosure closure, String parentScopeField, Handle handle, String file, int line, String encodedArgumentDescriptors,
-                                      org.jruby.runtime.Signature signature);
-
-    /**
-     * Perform a === call appropriate for a case/when statement.
-     *
-     * Stack required: context, case value, when value
-     */
-    public abstract void callEqq(EQQInstr call);
-
     public SkinnyMethodAdapter adapter;
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
     protected final Signature signature;
     protected final ClassData classData;
+    protected final ValueCompiler valueCompiler;
+    protected final DynamicValueCompiler dynamicValueCompiler;
+    protected final InvocationCompiler invocationCompiler;
+    protected final BranchCompiler branchCompiler;
+    protected final CheckpointCompiler checkpointCompiler;
+    protected final ConstantCompiler constantCompiler;
+    protected final InstanceVariableCompiler instanceVariableCompiler;
+    protected final GlobalVariableCompiler globalVariableCompiler;
+    protected final YieldCompiler yieldCompiler;
+    protected final BlockCompiler blockCompiler;
+    protected final ArgumentsCompiler argumentsCompiler;
     public int ipc = 0;  // counter for dumping instr index when in DEBUG
 }

@@ -7,6 +7,7 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Signature;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author headius
  */
-public abstract class ClassData {
+public class ClassData {
 
     public ClassData(String clsName, ClassVisitor cls, JVMVisitor visitor) {
         this.clsName = clsName;
@@ -73,7 +74,18 @@ public abstract class ClassData {
         return types;
     }
 
-    public abstract void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity);
+    public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
+        Method m = new Method(name, Type.getType(signature.type().returnType()), IRRuntimeHelpers.typesFromSignature(signature));
+        SkinnyMethodAdapter adapter = new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null);
+        methodStack.push(
+                new MethodData(
+                        new IRBytecodeAdapter(adapter, signature, this),
+                        scope,
+                        scopeField,
+                        signature,
+                        specificArity ? scope.getStaticScope().getSignature().required() : -1)
+        );
+    }
 
     public void popmethod() {
         method().endMethod();

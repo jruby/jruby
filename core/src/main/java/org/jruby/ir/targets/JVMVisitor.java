@@ -75,7 +75,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public JVMVisitor(Ruby runtime, boolean embedScopes) {
-        this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
+        this.jvm = new JVM();
         this.methodIndex = 0;
         this.runtime = runtime;
         this.embedScopes = embedScopes;
@@ -732,7 +732,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelf();
         visit(arrayderefinstr.getReceiver());
         visit(arrayderefinstr.getKey());
-        jvmMethod().invokeArrayDeref(file, lastLine, jvm.methodData().scopeField, arrayderefinstr);
+        jvmMethod().getInvocationCompiler().invokeArrayDeref(file, lastLine, jvm.methodData().scopeField, arrayderefinstr);
         jvmStoreLocal(arrayderefinstr.getResult());
     }
 
@@ -742,7 +742,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             jvmMethod().loadSelf();
             visit(asstring.getReceiver());
-            jvmMethod().invokeAsString(file, lastLine, jvm.methodData().scopeField, asstring);
+            jvmMethod().getInvocationCompiler().invokeAsString(file, lastLine, jvm.methodData().scopeField, asstring);
             jvmStoreLocal(asstring.getResult());
         } else {
             visit(asstring.getReceiver());
@@ -763,10 +763,10 @@ public class JVMVisitor extends IRVisitor {
 
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
         if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
-            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget())); // no need to unbox
+            jvmMethod().getBranchCompiler().bfalse(getJVMLabel(bFalseInstr.getJumpTarget())); // no need to unbox
         } else {
             jvmAdapter().invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class)); // unbox
-            jvmMethod().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
+            jvmMethod().getBranchCompiler().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
         }
     }
 
@@ -968,7 +968,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void BNilInstr(BNilInstr bnilinstr) {
         visit(bnilinstr.getArg1());
-        jvmMethod().branchIfNil(getJVMLabel(bnilinstr.getJumpTarget()));
+        jvmMethod().getBranchCompiler().branchIfNil(getJVMLabel(bnilinstr.getJumpTarget()));
     }
 
     @Override
@@ -1043,16 +1043,16 @@ public class JVMVisitor extends IRVisitor {
 
         // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
         if (arg1 instanceof TemporaryBooleanVariable || arg1 instanceof UnboxedBoolean) {
-            jvmMethod().btrue(getJVMLabel(btrueinstr.getJumpTarget())); // no need to unbox, just branch
+            jvmMethod().getBranchCompiler().btrue(getJVMLabel(btrueinstr.getJumpTarget())); // no need to unbox, just branch
         } else {
-            jvmMethod().branchIfTruthy(getJVMLabel(btrueinstr.getJumpTarget())); // unbox and branch
+            jvmMethod().getBranchCompiler().branchIfTruthy(getJVMLabel(btrueinstr.getJumpTarget())); // unbox and branch
         }
     }
 
     @Override
     public void BUndefInstr(BUndefInstr bundefinstr) {
         visit(bundefinstr.getArg1());
-        jvmMethod().pushUndefined();
+        jvmMethod().getValueCompiler().pushUndefined();
         jvmAdapter().if_acmpeq(getJVMLabel(bundefinstr.getJumpTarget()));
     }
 
@@ -1098,7 +1098,7 @@ public class JVMVisitor extends IRVisitor {
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
         ByteList csByteList = new ByteList();
         csByteList.setEncoding(compoundstring.getEncoding());
-        jvmMethod().pushString(csByteList, StringSupport.CR_UNKNOWN);
+        jvmMethod().getValueCompiler().pushString(csByteList, StringSupport.CR_UNKNOWN);
         for (Operand p : compoundstring.getPieces()) {
             visit(p);
             if (p instanceof StringLiteral) {
@@ -1145,7 +1145,7 @@ public class JVMVisitor extends IRVisitor {
             }
         };
 
-        m.pushDRegexp(r, options, operands.length);
+        m.getDynamicValueCompiler().pushDRegexp(r, options, operands.length);
 
         jvmStoreLocal(instr.getResult());
     }
@@ -1215,10 +1215,10 @@ public class JVMVisitor extends IRVisitor {
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.invokeSelf(file, lastLine, jvm.methodData().scopeField, call, arity);
+                m.getInvocationCompiler().invokeSelf(file, lastLine, jvm.methodData().scopeField, call, arity);
                 break;
             case NORMAL:
-                m.invokeOther(file, lastLine, jvm.methodData().scopeField, call, arity);
+                m.getInvocationCompiler().invokeOther(file, lastLine, jvm.methodData().scopeField, call, arity);
                 break;
         }
 
@@ -1508,7 +1508,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             visit(eqqinstr.getReceiver());
             visit(eqqinstr.getArg1());
-            jvmMethod().callEqq(eqqinstr);
+            jvmMethod().getInvocationCompiler().invokeEQQ(eqqinstr);
             if (!omitStoreLoad) jvmStoreLocal(eqqinstr.getResult());
         }
     }
@@ -1548,19 +1548,19 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void GetFieldInstr(GetFieldInstr getfieldinstr) {
         visit(getfieldinstr.getSource());
-        jvmMethod().getField(getfieldinstr.getId());
+        jvmMethod().getInstanceVariableCompiler().getField(getfieldinstr.getId());
         jvmStoreLocal(getfieldinstr.getResult());
     }
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        jvmMethod().getGlobalVariable(getglobalvariableinstr.getTarget().getId(), file, lastLine);
+        jvmMethod().getGlobalVariableCompiler().getGlobalVariable(getglobalvariableinstr.getTarget().getId(), file, lastLine);
         jvmStoreLocal(getglobalvariableinstr.getResult());
     }
 
     @Override
     public void GVarAliasInstr(GVarAliasInstr gvaraliasinstr) {
-        jvmMethod().loadRuntime();
+        jvmMethod().getValueCompiler().pushRuntime();
         visit(gvaraliasinstr.getNewName());
         visit(gvaraliasinstr.getOldName());
         jvmMethod().invokeIRHelper("aliasGlobalVariable", sig(void.class, Ruby.class, Object.class, Object.class));
@@ -1571,7 +1571,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(inheritancesearchconstinstr.getCurrentModule());
 
-        jvmMethod().inheritanceSearchConst(inheritancesearchconstinstr.getId(), false);
+        jvmMethod().getConstantCompiler().inheritanceSearchConst(inheritancesearchconstinstr.getId(), false);
         jvmStoreLocal(inheritancesearchconstinstr.getResult());
     }
 
@@ -1623,16 +1623,16 @@ public class JVMVisitor extends IRVisitor {
 
         switch (operation) {
             case INSTANCE_SUPER:
-                m.invokeInstanceSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeInstanceSuper(file, lastLine, name, args.length, hasClosure, splatMap);
                 break;
             case CLASS_SUPER:
-                m.invokeClassSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeClassSuper(file, lastLine, name, args.length, hasClosure, splatMap);
                 break;
             case UNRESOLVED_SUPER:
-                m.invokeUnresolvedSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeUnresolvedSuper(file, lastLine, name, args.length, hasClosure, splatMap);
                 break;
             case ZSUPER:
-                m.invokeZSuper(file, lastLine, name, args.length, hasClosure, splatMap);
+                m.getInvocationCompiler().invokeZSuper(file, lastLine, name, args.length, hasClosure, splatMap);
                 break;
             default:
                 throw new NotCompilableException("unknown super type " + operation + " in " + instr);
@@ -1655,7 +1655,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(lexicalsearchconstinstr.getDefiningScope());
 
-        jvmMethod().lexicalSearchConst(lexicalsearchconstinstr.getId());
+        jvmMethod().getConstantCompiler().lexicalSearchConst(lexicalsearchconstinstr.getId());
 
         jvmStoreLocal(lexicalsearchconstinstr.getResult());
     }
@@ -1722,7 +1722,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFixnum(file, lastLine, oneFixnumArgNoBlockCallInstr, fixnum);
+        m.getInvocationCompiler().invokeOtherOneFixnum(file, lastLine, oneFixnumArgNoBlockCallInstr, fixnum);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1746,7 +1746,7 @@ public class JVMVisitor extends IRVisitor {
 
         visit(receiver);
 
-        m.invokeOtherOneFloat(file, lastLine, oneFloatArgNoBlockCallInstr, flote);
+        m.getInvocationCompiler().invokeOtherOneFloat(file, lastLine, oneFloatArgNoBlockCallInstr, flote);
 
         if (result != null) {
             jvmStoreLocal(result);
@@ -1956,13 +1956,13 @@ public class JVMVisitor extends IRVisitor {
     public void PutFieldInstr(PutFieldInstr putfieldinstr) {
         visit(putfieldinstr.getTarget());
         visit(putfieldinstr.getValue());
-        jvmMethod().putField(putfieldinstr.getId());
+        jvmMethod().getInstanceVariableCompiler().putField(putfieldinstr.getId());
     }
 
     @Override
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) {
         visit(putglobalvarinstr.getValue());
-        jvmMethod().setGlobalVariable(putglobalvarinstr.getTarget().getId(), file, lastLine);
+        jvmMethod().getGlobalVariableCompiler().setGlobalVariable(putglobalvarinstr.getTarget().getId(), file, lastLine);
     }
 
     @Override
@@ -2263,7 +2263,7 @@ public class JVMVisitor extends IRVisitor {
     public void SearchConstInstr(SearchConstInstr searchconstinstr) {
         jvmMethod().loadContext();
         visit(searchconstinstr.getStartingScope());
-        jvmMethod().searchConst(searchconstinstr.getId(), searchconstinstr.isNoPrivateConsts());
+        jvmMethod().getConstantCompiler().searchConst(searchconstinstr.getId(), searchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(searchconstinstr.getResult());
     }
 
@@ -2272,7 +2272,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(instr.getCurrentModule());
 
-        jvmMethod().searchModuleForConst(instr.getId(), instr.isNoPrivateConsts(), instr.callConstMissing());
+        jvmMethod().getConstantCompiler().searchModuleForConst(instr.getId(), instr.isNoPrivateConsts(), instr.callConstMissing());
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2327,7 +2327,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) {
-        jvmMethod().checkpoint();
+        jvmMethod().getCheckpointCompiler().checkpoint();
     }
 
     @Override
@@ -2397,7 +2397,7 @@ public class JVMVisitor extends IRVisitor {
         visit(yieldinstr.getBlockArg());
 
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
-            jvmMethod().yieldSpecific();
+            jvmMethod().getYieldCompiler().yieldSpecific();
         } else {
             Operand yieldOp = yieldinstr.getYieldArg();
             if (yieldinstr.isUnwrapArray() && yieldOp instanceof Array && ((Array) yieldOp).size() > 1) {
@@ -2405,10 +2405,10 @@ public class JVMVisitor extends IRVisitor {
                 for (Operand yieldValue : yieldValues) {
                     visit(yieldValue);
                 }
-                jvmMethod().yieldValues(yieldValues.size());
+                jvmMethod().getYieldCompiler().yieldValues(yieldValues.size());
             } else {
                 visit(yieldinstr.getYieldArg());
-                jvmMethod().yield(yieldinstr.isUnwrapArray());
+                jvmMethod().getYieldCompiler().yield(yieldinstr.isUnwrapArray());
             }
         }
 
@@ -2456,7 +2456,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) {
         jvmMethod().loadContext();
-        jvmMethod().pushEncoding(getencodinginstr.getEncoding());
+        jvmMethod().getValueCompiler().pushEncoding(getencodinginstr.getEncoding());
         jvmStoreLocal(getencodinginstr.getResult());
     }
 
@@ -2469,17 +2469,17 @@ public class JVMVisitor extends IRVisitor {
             visit(operand);
         }
 
-        jvmMethod().array(array.getElts().length);
+        jvmMethod().getDynamicValueCompiler().array(array.getElts().length);
     }
 
     @Override
     public void Bignum(Bignum bignum) {
-        jvmMethod().pushBignum(bignum.value);
+        jvmMethod().getValueCompiler().pushBignum(bignum.value);
     }
 
     @Override
     public void Boolean(org.jruby.ir.operands.Boolean booleanliteral) {
-        jvmMethod().pushBoolean(booleanliteral.isTrue());
+        jvmMethod().getValueCompiler().pushBoolean(booleanliteral.isTrue());
     }
 
     @Override
@@ -2520,12 +2520,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Fixnum(Fixnum fixnum) {
-        jvmMethod().pushFixnum(fixnum.getValue());
+        jvmMethod().getValueCompiler().pushFixnum(fixnum.getValue());
     }
 
     @Override
     public void FrozenString(FrozenString frozen) {
-        jvmMethod().pushFrozenString(frozen.getByteList(), frozen.getCodeRange(), frozen.getFile(), frozen.getLine());
+        jvmMethod().getValueCompiler().pushFrozenString(frozen.getByteList(), frozen.getCodeRange(), frozen.getFile(), frozen.getLine());
     }
 
     @Override
@@ -2535,7 +2535,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Float(org.jruby.ir.operands.Float flote) {
-        jvmMethod().pushFloat(flote.getValue());
+        jvmMethod().getValueCompiler().pushFloat(flote.getValue());
     }
 
     @Override
@@ -2564,9 +2564,9 @@ public class JVMVisitor extends IRVisitor {
         }
 
         if (kwargs) {
-            jvmMethod().kwargsHash(pairs.size() - 1);
+            jvmMethod().getArgumentsCompiler().kwargsHash(pairs.size() - 1);
         } else {
-            jvmMethod().hash(pairs.size());
+            jvmMethod().getDynamicValueCompiler().hash(pairs.size());
         }
     }
 
@@ -2599,17 +2599,17 @@ public class JVMVisitor extends IRVisitor {
 
             if (depth == 0) {
                 if (location < DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.size()) {
-                    m.pushNil();
+                    m.getValueCompiler().pushNil();
                     m.adapter.invokevirtual(p(DynamicScope.class), DynamicScopeGenerator.SPECIALIZED_GETS_OR_NIL.get(location), sig(IRubyObject.class, IRubyObject.class));
                 } else {
                     m.adapter.pushInt(location);
-                    m.pushNil();
+                    m.getValueCompiler().pushNil();
                     m.adapter.invokevirtual(p(DynamicScope.class), "getValueDepthZeroOrNil", sig(IRubyObject.class, int.class, IRubyObject.class));
                 }
             } else {
                 m.adapter.pushInt(location);
                 m.adapter.pushInt(depth);
-                m.pushNil();
+                m.getValueCompiler().pushNil();
                 m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
             }
         }
@@ -2617,7 +2617,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Nil(Nil nil) {
-        jvmMethod().pushNil();
+        jvmMethod().getValueCompiler().pushNil();
     }
 
     @Override
@@ -2634,7 +2634,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ObjectClass(ObjectClass objectclass) {
-        jvmMethod().pushObjectClass();
+        jvmMethod().getValueCompiler().pushObjectClass();
     }
 
     @Override
@@ -2647,7 +2647,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Regexp(Regexp regexp) {
-        jvmMethod().pushRegexp(regexp.getSource(), regexp.options.toEmbeddedOptions());
+        jvmMethod().getValueCompiler().pushRegexp(regexp.getSource(), regexp.options.toEmbeddedOptions());
     }
 
     @Override
@@ -2694,7 +2694,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void StringLiteral(StringLiteral stringliteral) {
-        jvmMethod().pushString(stringliteral.getByteList(), stringliteral.getCodeRange());
+        jvmMethod().getValueCompiler().pushString(stringliteral.getByteList(), stringliteral.getCodeRange());
     }
 
     @Override
@@ -2706,12 +2706,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Symbol(Symbol symbol) {
-        jvmMethod().pushSymbol(symbol.getBytes());
+        jvmMethod().getValueCompiler().pushSymbol(symbol.getBytes());
     }
 
     @Override
     public void SymbolProc(SymbolProc symbolproc) {
-        jvmMethod().pushSymbolProc(symbolproc.getName().getBytes());
+        jvmMethod().getValueCompiler().pushSymbolProc(symbolproc.getName().getBytes());
     }
 
     @Override
@@ -2741,7 +2741,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UndefinedValue(UndefinedValue undefinedvalue) {
-        jvmMethod().pushUndefined();
+        jvmMethod().getValueCompiler().pushUndefined();
     }
 
     @Override
@@ -2757,7 +2757,7 @@ public class JVMVisitor extends IRVisitor {
         visit(closure.getSelf());
         jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().prepareBlock(closure, scopeFieldMap.get(closure.getStaticScope().getEnclosingScope()), closuresMap.get(closure), closure.getFile(), closure.getLine(),
+        jvmMethod().getBlockCompiler().prepareBlock(closure, scopeFieldMap.get(closure.getStaticScope().getEnclosingScope()), closuresMap.get(closure), closure.getFile(), closure.getLine(),
                 ArgumentDescriptor.encode(closure.getArgumentDescriptors()), closure.getSignature());
     }
 
