@@ -494,12 +494,19 @@ public class IRRuntimeHelpers {
         return runtime.newProc(LAMBDA, block);
     }
 
+    @JIT
     public static IRubyObject yield(ThreadContext context, Block b, IRubyObject yieldVal, boolean unwrapArray) {
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
+    @JIT
     public static IRubyObject yieldSpecific(ThreadContext context, Block b) {
         return b.yieldSpecific(context);
+    }
+
+    @JIT
+    public static IRubyObject yieldValues(ThreadContext context, Block blk, IRubyObject[] args) {
+        return blk.yieldValues(context, args);
     }
 
     public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value,

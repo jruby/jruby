@@ -40,8 +40,6 @@ public class IRBytecodeAdapter {
         this.classData = classData;
 
         this.constantCompiler = new IndyConstantCompiler(this);
-        this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
-        this.yieldCompiler = new IndyYieldCompiler(this);
         this.blockCompiler = new IndyBlockCompiler(this);
 
         switch (bytecodeMode) {
@@ -52,6 +50,8 @@ public class IRBytecodeAdapter {
                 this.branchCompiler = new IndyBranchCompiler(this);
                 this.checkpointCompiler = new IndyCheckpointCompiler(this);
                 this.instanceVariableCompiler = new IndyInstanceVariableCompiler(this);
+                this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
+                this.yieldCompiler = new IndyYieldCompiler(this);
                 this.argumentsCompiler = new IndyArgumentsCompiler(this);
                 break;
             case MIXED:
@@ -61,6 +61,8 @@ public class IRBytecodeAdapter {
                 this.branchCompiler = new NormalBranchCompiler(this);
                 this.checkpointCompiler = new NormalCheckpointCompiler(this);
                 this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
+                this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
+                this.yieldCompiler = new IndyYieldCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
                 break;
             case AOT:
@@ -70,6 +72,8 @@ public class IRBytecodeAdapter {
                 this.branchCompiler = new NormalBranchCompiler(this);
                 this.checkpointCompiler = new NormalCheckpointCompiler(this);
                 this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
+                this.globalVariableCompiler = new NormalGlobalVariableCompiler(this);
+                this.yieldCompiler = new NormalYieldCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
                 break;
             default:
