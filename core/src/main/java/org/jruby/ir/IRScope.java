@@ -91,7 +91,7 @@ public abstract class IRScope implements ParseResult {
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
-    private List<IRScope> lexicalChildren;
+    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>());
 
     /** Parser static-scope that this IR scope corresponds to */
     private final StaticScope staticScope;
@@ -185,13 +185,11 @@ public abstract class IRScope implements ParseResult {
         return (other != null) && (getClass() == other.getClass()) && (scopeId == ((IRScope) other).scopeId);
     }
 
-    protected void addChildScope(IRScope scope) {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+    protected synchronized void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
     }
 
-    public List<IRScope> getLexicalScopes() {
-        if (lexicalChildren == null) lexicalChildren = new ArrayList<>(1);
+    public synchronized List<IRScope> getLexicalScopes() {
         return lexicalChildren;
     }
 
