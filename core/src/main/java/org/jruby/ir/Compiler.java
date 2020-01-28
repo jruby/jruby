@@ -54,8 +54,12 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
             throw new NotCompilableException("AOT not supported for scripts containing eval");
         }
 
+        boolean cacheClasses = Options.COMPILE_CACHE_CLASSES.load();
+
         try {
-            visitor = new JVMVisitor(runtime);
+            // If we're caching, use AOT-appropriate bytecode
+            visitor = cacheClasses ? JVMVisitor.newForAOT(runtime) : JVMVisitor.newForJIT(runtime);
+            
             JVMVisitorMethodContext context = new JVMVisitorMethodContext();
             bytecode = visitor.compileToBytecode(scope, context);
             compiled = visitor.defineScriptFromBytecode(scope, bytecode, classLoader);
@@ -65,7 +69,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoad
 
         Script script = getScriptFromClass(compiled);
 
-        if (Options.COMPILE_CACHE_CLASSES.load()) {
+        if (cacheClasses) {
             // write class to IR storage
             File path = IRFileExpert.getIRClassFile(JVM.scriptToClass(scope.getFile()));
             try (FileOutputStream fos = new FileOutputStream(path)) {

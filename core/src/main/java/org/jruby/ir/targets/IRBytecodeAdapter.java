@@ -7,7 +7,6 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Signature;
 import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -18,7 +17,6 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.cli.Options;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -36,30 +34,46 @@ import static org.jruby.util.CodegenUtils.*;
 public class IRBytecodeAdapter {
     public static final int MAX_ARGUMENTS = 250;
 
-    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
+    public IRBytecodeAdapter(BytecodeMode bytecodeMode, SkinnyMethodAdapter adapter, Signature signature, ClassData classData) {
         this.adapter = adapter;
         this.signature = signature;
         this.classData = classData;
-        this.valueCompiler = new IndyValueCompiler(this);
+
         this.constantCompiler = new IndyConstantCompiler(this);
         this.globalVariableCompiler = new IndyGlobalVariableCompiler(this);
         this.yieldCompiler = new IndyYieldCompiler(this);
         this.blockCompiler = new IndyBlockCompiler(this);
 
-        if (Options.COMPILE_INVOKEDYNAMIC.load()) {
-            this.dynamicValueCompiler = new IndyDynamicValueCompiler(this);
-            this.invocationCompiler = new IndyInvocationCompiler(this);
-            this.branchCompiler = new IndyBranchCompiler(this);
-            this.checkpointCompiler = new IndyCheckpointCompiler(this);
-            this.instanceVariableCompiler = new IndyInstanceVariableCompiler(this);
-            this.argumentsCompiler = new IndyArgumentsCompiler(this);
-        } else {
-            this.dynamicValueCompiler = new NormalDynamicValueCompiler(this);
-            this.invocationCompiler = new NormalInvocationCompiler(this);
-            this.branchCompiler = new NormalBranchCompiler(this);
-            this.checkpointCompiler = new NormalCheckpointCompiler(this);
-            this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
-            this.argumentsCompiler = new NormalArgumentsCompiler(this);
+        switch (bytecodeMode) {
+            case INDY:
+                this.valueCompiler = new IndyValueCompiler(this);
+                this.dynamicValueCompiler = new IndyDynamicValueCompiler(this);
+                this.invocationCompiler = new IndyInvocationCompiler(this);
+                this.branchCompiler = new IndyBranchCompiler(this);
+                this.checkpointCompiler = new IndyCheckpointCompiler(this);
+                this.instanceVariableCompiler = new IndyInstanceVariableCompiler(this);
+                this.argumentsCompiler = new IndyArgumentsCompiler(this);
+                break;
+            case MIXED:
+                this.valueCompiler = new IndyValueCompiler(this);
+                this.dynamicValueCompiler = new NormalDynamicValueCompiler(this);
+                this.invocationCompiler = new NormalInvocationCompiler(this);
+                this.branchCompiler = new NormalBranchCompiler(this);
+                this.checkpointCompiler = new NormalCheckpointCompiler(this);
+                this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
+                this.argumentsCompiler = new NormalArgumentsCompiler(this);
+                break;
+            case AOT:
+                this.valueCompiler = new NormalValueCompiler(this);
+                this.dynamicValueCompiler = new NormalDynamicValueCompiler(this);
+                this.invocationCompiler = new NormalInvocationCompiler(this);
+                this.branchCompiler = new NormalBranchCompiler(this);
+                this.checkpointCompiler = new NormalCheckpointCompiler(this);
+                this.instanceVariableCompiler = new NormalInstanceVariableCompiler(this);
+                this.argumentsCompiler = new NormalArgumentsCompiler(this);
+                break;
+            default:
+                throw new RuntimeException("unknown compile mode: " + bytecodeMode);
         }
     }
 

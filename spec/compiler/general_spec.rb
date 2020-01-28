@@ -95,7 +95,7 @@ module JITSpecUtils
     method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
-    compiler = org.jruby.ir.targets.JVMVisitor.new(runtime)
+    compiler = org.jruby.ir.targets.JVMVisitor.newForJIT(runtime)
     compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod("RUBY$script",
         org.jruby.runtime.ThreadContext.java_class,

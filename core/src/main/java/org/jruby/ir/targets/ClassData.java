@@ -77,9 +77,10 @@ public class ClassData {
     public void pushmethod(String name, IRScope scope, String scopeField, Signature signature, boolean specificArity) {
         Method m = new Method(name, Type.getType(signature.type().returnType()), IRRuntimeHelpers.typesFromSignature(signature));
         SkinnyMethodAdapter adapter = new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null);
+        IRBytecodeAdapter method = new IRBytecodeAdapter(visitor.getBytecodeMode(), adapter, signature, this);
         methodStack.push(
                 new MethodData(
-                        new IRBytecodeAdapter(adapter, signature, this),
+                        method,
                         scope,
                         scopeField,
                         signature,

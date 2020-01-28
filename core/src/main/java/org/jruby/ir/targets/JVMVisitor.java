@@ -70,15 +70,23 @@ public class JVMVisitor extends IRVisitor {
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", SELF_BLOCK_NAME, "scope", "self", "args", BLOCK_ARG_NAME}, ThreadContext.class, Block.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
 
-    public JVMVisitor(Ruby runtime) {
-        this(runtime, false);
-    }
-
-    public JVMVisitor(Ruby runtime, boolean embedScopes) {
+    JVMVisitor(Ruby runtime, BytecodeMode bytecodeMode) {
+        this.bytecodeMode = bytecodeMode;
         this.jvm = new JVM();
         this.methodIndex = 0;
         this.runtime = runtime;
-        this.embedScopes = embedScopes;
+    }
+
+    public static JVMVisitor newForJIT(Ruby runtime) {
+        return new JVMVisitor(runtime, Options.COMPILE_INVOKEDYNAMIC.load() ? BytecodeMode.INDY : BytecodeMode.MIXED);
+    }
+
+    public static JVMVisitor newForAOT(Ruby runtime) {
+        return new JVMVisitor(runtime, BytecodeMode.AOT);
+    }
+
+    public BytecodeMode getBytecodeMode() {
+        return bytecodeMode;
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
@@ -2769,6 +2777,7 @@ public class JVMVisitor extends IRVisitor {
         return jvm.method();
     }
 
+    private final BytecodeMode bytecodeMode;
     public final JVM jvm;
     private final Ruby runtime;
     private int methodIndex;

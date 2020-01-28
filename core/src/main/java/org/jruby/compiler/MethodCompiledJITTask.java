@@ -71,7 +71,7 @@ class MethodCompiledJITTask extends JITCompiler.Task {
 
         final String key = SexpMaker.sha1(methodScope);
         final Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();

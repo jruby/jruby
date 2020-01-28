@@ -271,7 +271,7 @@ public class JRubyLibrary implements Library {
 
         IRScriptBody scope = compileIR(context, args, block);
 
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
         byte[] bytes = visitor.compileToBytecode(scope, methodContext);
 

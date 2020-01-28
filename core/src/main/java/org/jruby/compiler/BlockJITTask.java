@@ -72,7 +72,7 @@ class BlockJITTask extends JITCompiler.Task {
         StaticScope scope = closure.getStaticScope();
         final String key = SexpMaker.sha1(closure);
         final Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         BlockJITClassGenerator generator = new BlockJITClassGenerator(className, blockId, key, runtime, body, visitor);
 
         JVMVisitorMethodContext context = new JVMVisitorMethodContext();
