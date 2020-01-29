@@ -281,7 +281,6 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         try {
             stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
-            stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             flipBuffer(buf);
             stream.write(buf.array(), buf.position(), buf.limit());
             stream.close();

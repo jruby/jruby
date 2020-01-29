@@ -11,7 +11,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ir.*;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
@@ -20,10 +19,7 @@ import org.jruby.runtime.Signature;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -42,8 +38,6 @@ public class IRReader implements IRPersistenceValues {
         }
         int headersOffset = file.decodeIntRaw();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("header_offset = " + headersOffset);
-        int poolOffset = file.decodeIntRaw();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("pool_offset = " + headersOffset);
 
         file.seek(headersOffset);
         int scopesToRead  = file.decodeInt();
