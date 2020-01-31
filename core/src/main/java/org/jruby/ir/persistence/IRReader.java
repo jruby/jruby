@@ -43,19 +43,20 @@ public class IRReader implements IRPersistenceValues {
         int scopesToRead  = file.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("scopes to read = " + scopesToRead);
 
-        KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
+        IRScope firstScope = null;
         for (int i = 0; i < scopesToRead; i++) {
-            scopes[i] = decodeScopeHeader(manager, file);
-            final IRScope scope = scopes[i].getKey();
-            final int instructionsOffset = scopes[i].getValue();
+            IRScope scope = decodeScopeHeader(manager, file);
+            if (firstScope == null) firstScope = scope;
+            int instructionsOffset = file.decodeInt();
+            int poolOffset = file.decodeInt();
 
-            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, instructionsOffset));
+            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, poolOffset, instructionsOffset));
         }
 
-        return scopes[0].getKey(); // topmost scope;
+        return firstScope; // topmost scope;
     }
 
-    private static KeyValuePair<IRScope, Integer> decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
+    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         int line = decoder.decodeInt();
@@ -103,9 +104,7 @@ public class IRReader implements IRPersistenceValues {
 
         decoder.addScope(scope);
 
-        int instructionsOffset = decoder.decodeInt();
-
-        return new KeyValuePair<>(scope, instructionsOffset);
+        return scope;
     }
 
     private static Map<RubySymbol, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {

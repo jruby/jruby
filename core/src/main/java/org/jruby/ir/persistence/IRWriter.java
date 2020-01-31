@@ -83,7 +83,7 @@ public class IRWriter {
         if (scope instanceof IRScriptBody) {
             file.encode(scope.getId());
         } else {
-            file.encode(scope.getName());
+            file.encodeRaw(scope.getName());
             file.encode(scope.getLexicalParent());
         }
 
@@ -98,7 +98,7 @@ public class IRWriter {
         if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("PERSISTING LVARS (" + localVariables.size() + ")");
         file.encode(localVariables.size());
         for (RubySymbol name: localVariables.keySet()) {
-            file.encode(name);
+            file.encodeRaw(name);
             int offset = localVariables.get(name).getOffset();
             if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
             file.encode(offset); // No need to write depth..it is zero.
