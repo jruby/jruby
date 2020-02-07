@@ -9,20 +9,14 @@ package org.jruby.ir.persistence;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubySymbol;
 import org.jruby.ir.*;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
 
 /**
  *
@@ -98,28 +92,9 @@ public class IRReader implements IRPersistenceValues {
         scope.setTemporaryVariableCount(tempVarsCount);
         scope.setNextLabelIndex(nextLabelInt);
 
-        // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
-        // But because of this we have to push decoding lvars to the end of the scope info.
-        scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
-
         decoder.addScope(scope);
 
         return scope;
-    }
-
-    private static Map<RubySymbol, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
-        int size = decoder.decodeInt();
-        Map<RubySymbol, LocalVariable> localVariables = new HashMap(size);
-        for (int i = 0; i < size; i++) {
-            RubySymbol name = scope.getManager().getRuntime().newSymbol(decoder.decodeByteList());
-            int offset = decoder.decodeInt();
-
-            localVariables.put(name, scope instanceof IRClosure ?
-                    // SSS FIXME: do we need to read back locallyDefined boolean?
-                    new ClosureLocalVariable(name, 0, offset) : new LocalVariable(name, 0, offset));
-        }
-
-        return localVariables;
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {

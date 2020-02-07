@@ -815,14 +815,6 @@ public abstract class IRScope implements ParseResult {
         return getFullInterpreterContext().getUsedLocalVariables();
     }
 
-    /**
-     * Set the local variables for this scope. This should only be used by persistence layer.
-     */
-    // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
-        this.localVars = variables;
-    }
-
     public void setNextLabelIndex(int index) {
         nextLabelIndex = index;
     }
