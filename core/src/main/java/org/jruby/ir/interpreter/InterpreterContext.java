@@ -3,7 +3,7 @@ package org.jruby.ir.interpreter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Stack;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
@@ -46,7 +46,7 @@ public class InterpreterContext {
     private boolean metaClassBodyScope;
 
     private InterpreterEngine engine;
-    public final Callable<List<Instr>> instructionsCallback;
+    public final Supplier<List<Instr>> instructionsCallback;
 
     private final IRScope scope;
 
@@ -62,7 +62,7 @@ public class InterpreterContext {
         this.instructionsCallback = null; // engine != null
     }
 
-    public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) {
+    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions) {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
@@ -71,11 +71,9 @@ public class InterpreterContext {
 
     public InterpreterEngine getEngine() {
         if (engine == null) {
-            try {
-                setInstructions(instructionsCallback.call());
-            } catch (Exception e) {
-                Helpers.throwException(e);
-            }
+            setInstructions(instructionsCallback.get());
+            scope.computeScopeFlags();
+
             // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
             // For impl testing - engine = determineInterpreterEngine(scope);
             setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
@@ -84,9 +82,8 @@ public class InterpreterContext {
     }
 
     public Instr[] getInstructions() {
-        if (instructions == null) {
-            getEngine();
-        }
+        if (instructions == null) getEngine();
+
         return instructions == null ? NO_INSTRUCTIONS : instructions;
     }
 
@@ -206,22 +203,32 @@ public class InterpreterContext {
     }
 
     public boolean hasExplicitCallProtocol() {
+        if (instructions == null) getEngine();
+
         return hasExplicitCallProtocol;
     }
 
     public boolean pushNewDynScope() {
+        if (instructions == null) getEngine();
+
         return pushNewDynScope;
     }
 
     public boolean reuseParentDynScope() {
+        if (instructions == null) getEngine();
+
         return reuseParentDynScope;
     }
 
     public boolean popDynScope() {
+        if (instructions == null) getEngine();
+
         return popDynScope;
     }
 
     public boolean receivesKeywordArguments() {
+        if (instructions == null) getEngine();
+
         return receivesKeywordArguments;
     }
 
@@ -232,7 +239,7 @@ public class InterpreterContext {
         buf.append(getFileName()).append(':').append(scope.getLine());
         if (getName() != null) buf.append(' ').append(getName()).append("\n");
 
-        if (instructions == null) {
+        if (getInstructions() == null) {
             buf.append("  No Instructions.  Full Build before linearizeInstr?");
         } else {
             buf.append(toStringInstrs()).append("\n");

@@ -13,7 +13,7 @@ import org.jruby.ir.operands.OperandType;
  * @author enebo
  */
 interface IRPersistenceValues {
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
     public final static int TWO_MEGS = 1024 * 1024 * 2;
 
     // Operands and primitive values can be mixed together
@@ -30,7 +30,7 @@ interface IRPersistenceValues {
     public final static byte DOUBLE = (byte) (PRIMITIVE_BASE + 10);
     public final static byte FULL = (byte) 255;
 
-    public final static int PROLOGUE_LENGTH = 3 * 4; // 3 raw ints {version, scope_offset, pool_offset}
+    public final static int PROLOGUE_LENGTH = 2 * 4; // 2 raw ints {version, scope_offset}
 
     public final static int NULL_STRING = -1;
 }

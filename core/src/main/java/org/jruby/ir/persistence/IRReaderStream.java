@@ -20,12 +20,10 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.parser.StaticScope;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,39 +48,25 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     /** Filename to use for the script */
     private final ByteList filename;
 
-    public IRReaderStream(IRManager manager, InputStream stream, ByteList filename) {
-        ByteBuffer buf = readIntoBuffer(stream);
+    public IRReaderStream(IRManager manager, byte[] bytes, ByteList filename) {
         this.manager = manager;
-        this.buf = buf;
+        this.buf = ByteBuffer.wrap(bytes);
         this.filename = filename;
     }
 
     public IRReaderStream(IRManager manager, File file, ByteList filename) {
         this.manager = manager;
-        ByteBuffer buf = null;
-        try (FileInputStream fis = new FileInputStream(file)){
-            buf = readIntoBuffer(fis);
-        } catch (IOException ex) {
-            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        this.buf = buf;
+        this.buf = readingIntoBuffer(file);
         this.filename = filename;
     }
 
-    private ByteBuffer readIntoBuffer(InputStream stream) {
-        ByteBuffer buf = null;
+    private ByteBuffer readingIntoBuffer(File file) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] bytes = new byte[8192];
-            int r;
-            while ((r = stream.read(bytes)) > 0) baos.write(bytes, 0, r);
-            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("READ IN " + baos.size() + " BYTES OF DATA FROM");
-            buf = ByteBuffer.wrap(baos.toByteArray());
-        } catch (IOException ex) {
-            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
+            return ByteBuffer.wrap(Files.readAllBytes(file.toPath()));
+        } catch (IOException e) {
+            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, e);
         }
-        return buf;
+        return null;
     }
 
     @Override

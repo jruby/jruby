@@ -25,12 +25,6 @@ describe "Array#shuffle" do
     ArraySpecs::MyArray[1, 2, 3].shuffle.should be_an_instance_of(Array)
   end
 
-  it "attempts coercion via #to_hash" do
-    obj = mock('hash')
-    obj.should_receive(:to_hash).once.and_return({})
-    [2, 3].shuffle(obj)
-  end
-
   it "calls #rand on the Object passed by the :random key in the arguments Hash" do
     obj = mock("array_shuffle_random")
     obj.should_receive(:rand).at_least(1).times.and_return(0.5)

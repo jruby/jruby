@@ -36,11 +36,11 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         int       ipc       = 0;
         Object    exception = null;
 
-        if (interpreterContext.receivesKeywordArguments()) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
+        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        if (acceptsKeywordArgument) args = IRRuntimeHelpers.frobnicateKwargsArgument(context, args, interpreterContext.getRequiredArgsCount());
 
         StaticScope currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         int[] rescuePCs = interpreterContext.getRescueIPCs();
 

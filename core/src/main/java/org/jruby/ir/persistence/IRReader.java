@@ -11,7 +11,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ir.*;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
@@ -20,9 +19,7 @@ import org.jruby.runtime.Signature;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -41,8 +38,6 @@ public class IRReader implements IRPersistenceValues {
         }
         int headersOffset = file.decodeIntRaw();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("header_offset = " + headersOffset);
-        int poolOffset = file.decodeIntRaw();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("pool_offset = " + headersOffset);
 
         file.seek(headersOffset);
         int scopesToRead  = file.decodeInt();
@@ -51,25 +46,10 @@ public class IRReader implements IRPersistenceValues {
         KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
         for (int i = 0; i < scopesToRead; i++) {
             scopes[i] = decodeScopeHeader(manager, file);
-        }
+            final IRScope scope = scopes[i].getKey();
+            final int instructionsOffset = scopes[i].getValue();
 
-        // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
-        for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            final IRScope scope = pair.getKey();
-            final int instructionsOffset = pair.getValue();
-
-            scope.allocateInterpreterContext(new Callable<List<Instr>>() {
-                public List<Instr> call() {
-                    return file.decodeInstructionsAt(scope, instructionsOffset);
-                }
-            });
-        }
-
-        // Run through all scopes again and ensure they've calculated flags.
-        // This also forces lazy instrs from above to eagerly decode.
-        for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            final IRScope scope = pair.getKey();
-            scope.computeScopeFlags();
+            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, instructionsOffset));
         }
 
         return scopes[0].getKey(); // topmost scope;
@@ -83,12 +63,10 @@ public class IRReader implements IRPersistenceValues {
         int nextLabelInt = decoder.decodeInt();
 
         boolean isEND = false;
-        if (type == IRScopeType.CLOSURE) {
-            isEND = decoder.decodeBoolean();
-        }
 
         Signature signature;
         if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
+            isEND = decoder.decodeBoolean();
             signature = Signature.decode(decoder.decodeLong());
         } else {
             signature = Signature.OPTIONAL;
@@ -103,8 +81,7 @@ public class IRReader implements IRPersistenceValues {
             file = decoder.decodeString();
         } else {
             name = decoder.decodeByteList();
-            parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
-
+            parent = decoder.decodeScope();
         }
 
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
