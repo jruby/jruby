@@ -538,7 +538,7 @@ public class IRBuilder {
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
 
         receiveBlockArgs(node);
 
@@ -1482,7 +1482,7 @@ public class IRBuilder {
             return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(new GetClassVarContainerModuleInstr(createTemporaryVariable(),
-                    getCurrentScopeVariable(), declContext ? null : buildSelf()));
+                    CurrentScope.INSTANCE, declContext ? null : buildSelf()));
         }
     }
 
@@ -1493,11 +1493,6 @@ public class IRBuilder {
     private Operand findContainerModule() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
         return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
-    }
-
-    private Operand startingSearchScope() {
-        int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? getCurrentScopeVariable() : CurrentScope.INSTANCE;
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
@@ -1543,7 +1538,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(RubySymbol name) {
-        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
+        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, CurrentScope.INSTANCE, false));
     }
 
     public Operand buildColon2(final Colon2Node colon2) {
@@ -1766,7 +1761,7 @@ public class IRBuilder {
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
             RubySymbol constName = ((ConstNode) node).getName();
-            addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
+            addInstr(new LexicalSearchConstInstr(tmpVar, CurrentScope.INSTANCE, constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
@@ -2066,7 +2061,6 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
@@ -2950,11 +2944,11 @@ public class IRBuilder {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
         }
 
-        if (!forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
+        if (!forNode) addCurrentModule();                                // %current_scope/%current_module
         receiveBlockArgs(iterNode);
         // for adds these after processing binding block args because and operations at that point happen relative
         // to the previous scope.
-        if (forNode) addCurrentScopeAndModule();                                // %current_scope/%current_module
+        if (forNode) addCurrentModule();                                // %current_scope/%current_module
 
         // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size() - 1;
@@ -3396,7 +3390,6 @@ public class IRBuilder {
 
     private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
-        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE));
         addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
@@ -3736,7 +3729,7 @@ public class IRBuilder {
         addInstr(manager.newLineNumber(scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
@@ -3753,15 +3746,14 @@ public class IRBuilder {
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
 
-    private void addCurrentScopeAndModule() {
-        addInstr(new CopyInstr(getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
+    private void addCurrentModule() {
         addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
     private InterpreterContext buildRootInner(RootNode rootNode) {
         needsCodeCoverage = rootNode.needsCoverage();
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
@@ -4062,7 +4054,7 @@ public class IRBuilder {
         addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
 
         Operand bodyReturnValue = build(bodyNode);
 
@@ -4216,13 +4208,5 @@ public class IRBuilder {
         if (currentModuleVariable == null) currentModuleVariable = scope.createCurrentModuleVariable();
 
         return currentModuleVariable;
-    }
-
-    public Variable getCurrentScopeVariable() {
-        // SSS: Used in only 1 case in generated IR:
-        // -> searching a constant in the lexical scope hierarchy
-        if (currentScopeVariable == null) currentScopeVariable = scope.createCurrentScopeVariable();
-
-        return currentScopeVariable;
     }
 }
