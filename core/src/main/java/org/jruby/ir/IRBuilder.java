@@ -309,7 +309,6 @@ public class IRBuilder {
     protected int afterPrologueIndex = 0;
     private TemporaryVariable yieldClosureVariable = null;
     private Variable currentModuleVariable = null;
-    private Variable currentScopeVariable;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -3425,8 +3424,6 @@ public class IRBuilder {
 
     public Operand buildPreExe(PreExeNode preExeNode) {
         IRBuilder builder = newIRBuilder(manager, scope);
-
-        builder.currentScopeVariable = currentScopeVariable;  // If already made then we use it in temporary builder
 
         List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
 
