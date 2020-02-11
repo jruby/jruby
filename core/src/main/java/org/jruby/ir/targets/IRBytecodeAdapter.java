@@ -63,8 +63,6 @@ public class IRBytecodeAdapter {
         this.signature = signature;
         this.classData = classData;
 
-        this.constantCompiler = new IndyConstantCompiler(this);
-
         switch (bytecodeMode) {
             case INDY:
                 this.valueCompiler = new IndyValueCompiler(this);
@@ -77,6 +75,7 @@ public class IRBytecodeAdapter {
                 this.yieldCompiler = new IndyYieldCompiler(this);
                 this.blockCompiler = new IndyBlockCompiler(this);
                 this.argumentsCompiler = new IndyArgumentsCompiler(this);
+                this.constantCompiler = new IndyConstantCompiler(this);
                 break;
             case MIXED:
                 this.valueCompiler = new IndyValueCompiler(this);
@@ -89,6 +88,7 @@ public class IRBytecodeAdapter {
                 this.yieldCompiler = new IndyYieldCompiler(this);
                 this.blockCompiler = new IndyBlockCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
+                this.constantCompiler = new IndyConstantCompiler(this);
                 break;
             case AOT:
                 this.valueCompiler = new NormalValueCompiler(this);
@@ -101,6 +101,7 @@ public class IRBytecodeAdapter {
                 this.yieldCompiler = new NormalYieldCompiler(this);
                 this.blockCompiler = new NormalBlockCompiler(this);
                 this.argumentsCompiler = new NormalArgumentsCompiler(this);
+                this.constantCompiler = new NormalConstantCompiler(this);
                 break;
             default:
                 throw new RuntimeException("unknown compile mode: " + bytecodeMode);

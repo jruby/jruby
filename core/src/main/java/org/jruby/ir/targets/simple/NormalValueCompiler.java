@@ -228,15 +228,38 @@ public class NormalValueCompiler implements ValueCompiler {
         method.label(doCall);
     }
 
+    @Override
+    public void pushConstantLookupSite(String className, String siteName, ByteList name) {
+        SkinnyMethodAdapter method = compiler.adapter;
+
+        // constant lookup site object field
+        method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(ConstantLookupSite.class), null, null).visitEnd();
+
+        // lazily construct it
+        method.getstatic(className, siteName, ci(ConstantLookupSite.class));
+        method.dup();
+        Label doLookup = new Label();
+        method.ifnonnull(doLookup);
+        method.pop();
+        method.newobj(p(ConstantLookupSite.class));
+        method.dup();
+        pushSymbol(name);
+        method.invokespecial(p(ConstantLookupSite.class), "<init>", sig(void.class, RubySymbol.class));
+        method.dup();
+        method.putstatic(className, siteName, ci(ConstantLookupSite.class));
+
+        method.label(doLookup);
+    }
+
     public String cacheValuePermanentlyLoadContext(String what, Class type, Object key, Runnable construction) {
-        return cacheValuePermanently(what, type, key, false, sig(type, ThreadContext.class), compiler::loadContext, construction);
+        return cacheValuePermanently(what, type, key, false, MethodType.methodType(type, ThreadContext.class), compiler::loadContext, construction);
     }
 
     public String cacheValuePermanently(String what, Class type, Object key, boolean sync, Runnable construction) {
-        return cacheValuePermanently(what, type, key, sync, sig(type), null, construction);
+        return cacheValuePermanently(what, type, key, sync, MethodType.methodType(type), null, construction);
     }
 
-    public String cacheValuePermanently(String what, Class type, Object key, boolean sync, String signature, Runnable loadState, Runnable construction) {
+    public String cacheValuePermanently(String what, Class type, Object key, boolean sync, MethodType signature, Runnable loadState, Runnable construction) {
         String cacheName = key == null ? null : cacheFieldNames.get(key);
         String clsName = compiler.getClassData().clsName;
 
@@ -244,7 +267,7 @@ public class NormalValueCompiler implements ValueCompiler {
             final String newCacheName = cacheName = newFieldName(what);
             cacheFieldNames.put(key, newCacheName);
 
-            compiler.outline(newCacheName, MethodType.methodType(type), () -> {
+            compiler.outline(newCacheName, signature, () -> {
                 Label done = new Label();
                 Label before = sync ? new Label() : null;
                 Label after = sync ? new Label() : null;
@@ -259,7 +282,7 @@ public class NormalValueCompiler implements ValueCompiler {
 
                 // lock class and check static field again
                 Type classType = Type.getType("L" + clsName.replace('.', '/') + ';');
-                int tempIndex = Type.getMethodType(signature).getArgumentsAndReturnSizes() >> 2 + 1;
+                int tempIndex = Type.getMethodType(sig(signature)).getArgumentsAndReturnSizes() >> 2 + 1;
                 if (sync) {
                     compiler.adapter.ldc(classType);
                     compiler.adapter.dup();
@@ -300,7 +323,7 @@ public class NormalValueCompiler implements ValueCompiler {
 
         if (loadState != null) loadState.run();
 
-        compiler.adapter.invokestatic(clsName, cacheName, signature);
+        compiler.adapter.invokestatic(clsName, cacheName, sig(signature));
 
         return cacheName;
     }

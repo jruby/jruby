@@ -1581,7 +1581,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(inheritancesearchconstinstr.getCurrentModule());
 
-        jvmMethod().getConstantCompiler().inheritanceSearchConst(inheritancesearchconstinstr.getId(), false);
+        jvmMethod().getConstantCompiler().inheritanceSearchConst(inheritancesearchconstinstr.getId(), inheritancesearchconstinstr.getName().getBytes());
         jvmStoreLocal(inheritancesearchconstinstr.getResult());
     }
 
@@ -1665,7 +1665,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(lexicalsearchconstinstr.getDefiningScope());
 
-        jvmMethod().getConstantCompiler().lexicalSearchConst(lexicalsearchconstinstr.getId());
+        jvmMethod().getConstantCompiler().lexicalSearchConst(lexicalsearchconstinstr.getId(), lexicalsearchconstinstr.getName().getBytes());
 
         jvmStoreLocal(lexicalsearchconstinstr.getResult());
     }
@@ -2273,7 +2273,7 @@ public class JVMVisitor extends IRVisitor {
     public void SearchConstInstr(SearchConstInstr searchconstinstr) {
         jvmMethod().loadContext();
         visit(searchconstinstr.getStartingScope());
-        jvmMethod().getConstantCompiler().searchConst(searchconstinstr.getId(), searchconstinstr.isNoPrivateConsts());
+        jvmMethod().getConstantCompiler().searchConst(searchconstinstr.getId(), searchconstinstr.getName().getBytes(), searchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(searchconstinstr.getResult());
     }
 
@@ -2282,7 +2282,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(instr.getCurrentModule());
 
-        jvmMethod().getConstantCompiler().searchModuleForConst(instr.getId(), instr.isNoPrivateConsts(), instr.callConstMissing());
+        jvmMethod().getConstantCompiler().searchModuleForConst(instr.getId(), instr.getName().getBytes(), instr.isNoPrivateConsts(), instr.callConstMissing());
         jvmStoreLocal(instr.getResult());
     }
 

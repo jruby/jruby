@@ -128,4 +128,9 @@ public interface ValueCompiler {
      * Load a CallSite onto the stack
      */
     void pushCallSite(String className, String siteName, String scopeFieldName, CallBase call);
+
+    /**
+     * Load a ConstantLookupSite onto the stack
+     */
+    void pushConstantLookupSite(String className, String siteName, ByteList name);
 }

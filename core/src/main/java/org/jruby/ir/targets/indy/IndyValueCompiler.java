@@ -129,4 +129,9 @@ public class IndyValueCompiler implements ValueCompiler {
 
         normalValueCompiler.pushCallSite(className, siteName, scopeFieldName, call);
     }
+
+    @Override
+    public void pushConstantLookupSite(String className, String siteName, ByteList name) {
+        normalValueCompiler.pushConstantLookupSite(className, siteName, name);
+    }
 }
