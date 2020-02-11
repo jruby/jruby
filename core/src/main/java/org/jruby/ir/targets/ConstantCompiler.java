@@ -9,8 +9,7 @@ public interface ConstantCompiler {
      * @param name            name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void searchConst(String name, boolean noPrivateConsts);
-
+    void searchConst(String name, boolean noPrivateConsts);
 
     /**
      * Lookup a constant from current module.
@@ -20,7 +19,7 @@ public interface ConstantCompiler {
      * @param name            name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void searchModuleForConst(String name, boolean noPrivateConsts, boolean callConstMissing);
+    void searchModuleForConst(String name, boolean noPrivateConsts, boolean callConstMissing);
 
     /**
      * Lookup a constant from a given class or module.
@@ -30,7 +29,7 @@ public interface ConstantCompiler {
      * @param name            name of the constant
      * @param noPrivateConsts whether to ignore private constants
      */
-    public abstract void inheritanceSearchConst(String name, boolean noPrivateConsts);
+    void inheritanceSearchConst(String name, boolean noPrivateConsts);
 
     /**
      * Lookup a constant from a lexical scope.
@@ -39,5 +38,5 @@ public interface ConstantCompiler {
      *
      * @param name name of the constant
      */
-    public abstract void lexicalSearchConst(String name);
+    void lexicalSearchConst(String name);
 }
