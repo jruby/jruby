@@ -203,7 +203,6 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             return;
         }
 
-        SkinnyMethodAdapter adapter2;
         MethodType incoming = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         MethodType outgoing = MethodType.methodType(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
         String incomingSig = sig(incoming);
@@ -291,7 +290,6 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
             adapter.invokevirtual(p(CallSite.class), "call", outgoingSig);
             adapter.areturn();
-            adapter.end();
         });
 
         // now call it
