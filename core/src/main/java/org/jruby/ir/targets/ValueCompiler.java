@@ -1,6 +1,7 @@
 package org.jruby.ir.targets;
 
 import org.jcodings.Encoding;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
@@ -122,4 +123,9 @@ public interface ValueCompiler {
      * @param bigint the value of the Bignum to push
      */
     void pushBignum(BigInteger bigint);
+
+    /**
+     * Load a CallSite onto the stack
+     */
+    void pushCallSite(String className, String siteName, String scopeFieldName, CallBase call);
 }

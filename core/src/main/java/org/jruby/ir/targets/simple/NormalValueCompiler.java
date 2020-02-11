@@ -13,16 +13,30 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRManager;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.ValueCompiler;
+import org.jruby.ir.targets.indy.Bootstrap;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.MonomorphicCallSite;
+import org.jruby.runtime.callsite.ProfilingCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.invoke.MethodType;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -147,6 +161,73 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.invokestatic(p(RubyBignum.class), "newBignum", sig(RubyBignum.class, Ruby.class, String.class));
     }
 
+    @Override
+    public void pushCallSite(String className, String siteName, String scopeFieldName, CallBase call) {
+        CallType callType = call.getCallType();
+        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null && IRManager.IR_INLINER;
+        boolean profiled = false;
+        boolean refined = call.isPotentiallyRefined();
+
+        SkinnyMethodAdapter method = compiler.adapter;
+
+        // site requires special handling (usually refined or profiled that need scope present)
+        Class<? extends CachingCallSite> siteClass;
+        String signature;
+
+        // call site object field
+        method.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, siteName, ci(CachingCallSite.class), null, null).visitEnd();
+
+        // lazily construct it
+        method.getstatic(className, siteName, ci(CachingCallSite.class));
+        method.dup();
+        Label doCall = new Label();
+        method.ifnonnull(doCall);
+        method.pop();
+        method.ldc(call.getId());
+        if (refined) {
+            siteClass = RefinedCachingCallSite.class;
+            signature = sig(siteClass, String.class, StaticScope.class, String.class);
+            method.getstatic(className, scopeFieldName, ci(StaticScope.class));
+            method.ldc(callType.name());
+        } else {
+            switch (callType) {
+                case NORMAL:
+                    if (profileCandidate) {
+                        profiled = true;
+                        siteClass = ProfilingCachingCallSite.class;
+                    } else {
+                        siteClass = MonomorphicCallSite.class;
+                    }
+                    break;
+                case FUNCTIONAL:
+                    if (profileCandidate) {
+                        profiled = true;
+                        siteClass = ProfilingCachingCallSite.class;
+                    } else {
+                        siteClass = FunctionalCachingCallSite.class;
+                    }
+                    break;
+                case VARIABLE:
+                    siteClass = VariableCachingCallSite.class;
+                    break;
+                default:
+                    throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+            }
+            if (profiled) {
+                method.getstatic(className, scopeFieldName, ci(IRScope.class));
+                method.ldc(call.getCallSiteId());
+                signature = sig(CallType.class, siteClass, String.class, IRScope.class, long.class);
+            } else {
+                signature = sig(siteClass, String.class);
+            }
+        }
+        method.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
+        method.dup();
+        method.putstatic(className, siteName, ci(CachingCallSite.class));
+
+        method.label(doCall);
+    }
+
     public String cacheValuePermanentlyLoadContext(String what, Class type, Object key, Runnable construction) {
         return cacheValuePermanently(what, type, key, false, sig(type, ThreadContext.class), compiler::loadContext, construction);
     }
@@ -160,70 +241,61 @@ public class NormalValueCompiler implements ValueCompiler {
         String clsName = compiler.getClassData().clsName;
 
         if (cacheName == null) {
-            cacheName = newFieldName(what);
-            cacheFieldNames.put(key, cacheName);
+            final String newCacheName = cacheName = newFieldName(what);
+            cacheFieldNames.put(key, newCacheName);
 
-            SkinnyMethodAdapter tmp = compiler.adapter;
-            compiler.adapter = new SkinnyMethodAdapter(
-                    compiler.adapter.getClassVisitor(),
-                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                    cacheName,
-                    signature,
-                    null,
-                    null);
+            compiler.outline(newCacheName, MethodType.methodType(type), () -> {
+                Label done = new Label();
+                Label before = sync ? new Label() : null;
+                Label after = sync ? new Label() : null;
+                Label catchbody = sync ? new Label() : null;
+                Label done2 = sync ? new Label() : null;
 
-            Label done = new Label();
-            Label before = sync ? new Label() : null;
-            Label after = sync ? new Label() : null;
-            Label catchbody = sync ? new Label() : null;
-            Label done2 = sync ? new Label() : null;
-
-            compiler.adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheName, ci(type), null, null).visitEnd();
-            compiler.adapter.getstatic(clsName, cacheName, ci(type));
-            compiler.adapter.dup();
-            compiler.adapter.ifnonnull(done);
-            compiler.adapter.pop();
-
-            // lock class and check static field again
-            Type classType = Type.getType("L" + clsName.replace('.', '/') + ';');
-            int tempIndex = Type.getMethodType(signature).getArgumentsAndReturnSizes() >> 2 + 1;
-            if (sync) {
-                compiler.adapter.ldc(classType);
+                compiler.adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, newCacheName, ci(type), null, null).visitEnd();
+                compiler.adapter.getstatic(clsName, newCacheName, ci(type));
                 compiler.adapter.dup();
-                compiler.adapter.astore(tempIndex);
-                compiler.adapter.monitorenter();
-
-                compiler.adapter.trycatch(before, after, catchbody, null);
-
-                compiler.adapter.label(before);
-                compiler.adapter.getstatic(clsName, cacheName, ci(type));
-                compiler.adapter.dup();
-                compiler.adapter.ifnonnull(done2);
+                compiler.adapter.ifnonnull(done);
                 compiler.adapter.pop();
-            }
 
-            construction.run();
-            compiler.adapter.dup();
-            compiler.adapter.putstatic(clsName, cacheName, ci(type));
+                // lock class and check static field again
+                Type classType = Type.getType("L" + clsName.replace('.', '/') + ';');
+                int tempIndex = Type.getMethodType(signature).getArgumentsAndReturnSizes() >> 2 + 1;
+                if (sync) {
+                    compiler.adapter.ldc(classType);
+                    compiler.adapter.dup();
+                    compiler.adapter.astore(tempIndex);
+                    compiler.adapter.monitorenter();
 
-            // unlock class along normal and exceptional exits
-            if (sync) {
-                compiler.adapter.label(done2);
-                compiler.adapter.aload(tempIndex);
-                compiler.adapter.monitorexit();
-                compiler.adapter.go_to(done);
-                compiler.adapter.label(after);
+                    compiler.adapter.trycatch(before, after, catchbody, null);
 
-                compiler.adapter.label(catchbody);
-                compiler.adapter.aload(tempIndex);
-                compiler.adapter.monitorexit();
-                compiler.adapter.athrow();
-            }
+                    compiler.adapter.label(before);
+                    compiler.adapter.getstatic(clsName, newCacheName, ci(type));
+                    compiler.adapter.dup();
+                    compiler.adapter.ifnonnull(done2);
+                    compiler.adapter.pop();
+                }
 
-            compiler.adapter.label(done);
-            compiler.adapter.areturn();
-            compiler.adapter.end();
-            compiler.adapter = tmp;
+                construction.run();
+                compiler.adapter.dup();
+                compiler.adapter.putstatic(clsName, newCacheName, ci(type));
+
+                // unlock class along normal and exceptional exits
+                if (sync) {
+                    compiler.adapter.label(done2);
+                    compiler.adapter.aload(tempIndex);
+                    compiler.adapter.monitorexit();
+                    compiler.adapter.go_to(done);
+                    compiler.adapter.label(after);
+
+                    compiler.adapter.label(catchbody);
+                    compiler.adapter.aload(tempIndex);
+                    compiler.adapter.monitorexit();
+                    compiler.adapter.athrow();
+                }
+
+                compiler.adapter.label(done);
+                compiler.adapter.areturn();
+            });
         }
 
         if (loadState != null) loadState.run();

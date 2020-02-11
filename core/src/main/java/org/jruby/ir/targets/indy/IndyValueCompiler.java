@@ -7,12 +7,18 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.IRManager;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.ValueCompiler;
+import org.jruby.ir.targets.simple.NormalValueCompiler;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 
@@ -23,10 +29,12 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class IndyValueCompiler implements ValueCompiler {
-    private IRBytecodeAdapter compiler;
+    private final IRBytecodeAdapter compiler;
+    private final NormalValueCompiler normalValueCompiler;
 
     public IndyValueCompiler(IRBytecodeAdapter compiler) {
         this.compiler = compiler;
+        this.normalValueCompiler = new NormalValueCompiler(compiler);
     }
 
     public void pushRuntime() {
@@ -100,5 +108,25 @@ public class IndyValueCompiler implements ValueCompiler {
     public void pushBignum(BigInteger bigint) {
         compiler.loadContext();
         compiler.adapter.invokedynamic("bignum", sig(RubyBignum.class, ThreadContext.class), BignumObjectSite.BOOTSTRAP, bigint.toString());
+    }
+
+    @Override
+    public void pushCallSite(String className, String siteName, String scopeFieldName, CallBase call) {
+        CallType callType = call.getCallType();
+        boolean profileCandidate = call.hasLiteralClosure() && scopeFieldName != null && IRManager.IR_INLINER;
+        boolean profiled = false;
+        boolean refined = call.isPotentiallyRefined();
+
+        boolean specialSite = profiled || refined || profileCandidate;
+
+        SkinnyMethodAdapter method = compiler.adapter;
+
+        if (!specialSite) {
+            // use indy to cache the site object
+            method.invokedynamic("callSite", sig(CachingCallSite.class), Bootstrap.CALLSITE, call.getId(), callType.ordinal());
+            return;
+        }
+
+        normalValueCompiler.pushCallSite(className, siteName, scopeFieldName, call);
     }
 }

@@ -41,9 +41,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -384,6 +386,23 @@ public class IRBytecodeAdapter {
         adapter.dup();
         adapter.putstatic(classData.clsName, field, ci(StaticScope.class));
         adapter.label(after);
+    }
+
+    public void outline(String name, MethodType type, Runnable body) {
+        SkinnyMethodAdapter oldAdapter = adapter;
+        adapter = new SkinnyMethodAdapter(
+                oldAdapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                name,
+                sig(type),
+                null,
+                null);
+
+        body.run();
+
+        adapter.end();
+
+        adapter = oldAdapter;
     }
 
     public enum BlockPassType {
