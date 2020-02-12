@@ -810,7 +810,8 @@ public final class ThreadContext {
 
         int traceLength = safeLength(level, length, fullTrace);
 
-        if (traceLength < 0) return nil;
+        // MRI started returning [] instead of nil some time after 1.9 (#4891)
+        if (traceLength < 0) return runtime.newEmptyArray();
 
         RubyArray backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
