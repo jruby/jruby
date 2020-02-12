@@ -10,7 +10,7 @@ AllCops:
 Layout/TrailingWhitespace:
   Enabled: true
 
-Layout/TrailingBlankLines:
+Layout/TrailingEmptyLines:
   Enabled: true
   Exclude:
     - library/coverage/fixtures/some_class.rb
@@ -34,10 +34,10 @@ Lint/InterpolationCheck:
 Lint/LiteralAsCondition:
   Enabled: false
 
-Lint/UnneededRequireStatement:
+Lint/RedundantRequireStatement:
   Enabled: false
 
-Lint/UnneededSplatExpansion:
+Lint/RedundantSplatExpansion:
   Enabled: false
 
 Lint/UnifiedInteger:
@@ -114,6 +114,7 @@ Style/Lambda:
   Exclude:
     - 'language/lambda_spec.rb'
     - 'language/proc_spec.rb'
+    - 'language/numbered_parameters_spec.rb'
     - 'core/kernel/lambda_spec.rb'
 
 Style/EmptyLambdaParameter:

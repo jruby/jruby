@@ -312,7 +312,7 @@ describe "C-API Encoding function" do
     end
 
     it "sets the encoding of a Regexp to that of the second argument" do
-      @s.rb_enc_copy(/regexp/, @obj).encoding.should == Encoding::US_ASCII
+      @s.rb_enc_copy(/regexp/.dup, @obj).encoding.should == Encoding::US_ASCII
     end
   end
 
@@ -363,7 +363,7 @@ describe "C-API Encoding function" do
     end
 
     it "sets the encoding of a Regexp to the encoding" do
-      @s.rb_enc_associate(/regexp/, "BINARY").encoding.should == Encoding::BINARY
+      @s.rb_enc_associate(/regexp/.dup, "BINARY").encoding.should == Encoding::BINARY
     end
 
     it "sets the encoding of a String to a default when the encoding is NULL" do
@@ -380,7 +380,7 @@ describe "C-API Encoding function" do
 
     it "sets the encoding of a Regexp to the encoding" do
       index = @s.rb_enc_find_index("UTF-8")
-      enc = @s.rb_enc_associate_index(/regexp/, index).encoding
+      enc = @s.rb_enc_associate_index(/regexp/.dup, index).encoding
       enc.should == Encoding::UTF_8
     end
 
@@ -477,6 +477,16 @@ describe "C-API Encoding function" do
 
       codepoint.should == 0x24B62
       length.should == 4
+    end
+  end
+
+  describe "rb_enc_str_asciionly_p" do
+    it "returns true for an ASCII string" do
+      @s.rb_enc_str_asciionly_p("hello").should be_true
+    end
+
+    it "returns false for a non-ASCII string" do
+      @s.rb_enc_str_asciionly_p("hüllo").should be_false
     end
   end
 end

@@ -296,11 +296,11 @@ public final class BasicObjectStub {
     }
 
     public static IRubyObject op_equal(IRubyObject self, ThreadContext context, IRubyObject other) {
-        return getRuntime(self).newBoolean(self == other);
+        return RubyBoolean.newBoolean(context, self == other);
     }
 
     public static IRubyObject op_eqq(IRubyObject self, ThreadContext context, IRubyObject other) {
-        return getRuntime(self).newBoolean(self == other);
+        return RubyBoolean.newBoolean(context, self == other);
     }
 
     public static boolean eql(IRubyObject self, IRubyObject other) {

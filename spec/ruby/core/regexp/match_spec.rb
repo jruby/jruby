@@ -5,14 +5,14 @@ describe :regexp_match, shared: true do
   it "returns nil if there is no match" do
     /xyz/.send(@method,"abxyc").should be_nil
   end
+
+  it "returns nil if the object is nil" do
+    /\w+/.send(@method, nil).should be_nil
+  end
 end
 
 describe "Regexp#=~" do
   it_behaves_like :regexp_match, :=~
-
-  it "returns nil if the object is nil" do
-    (/\w+/ =~ nil).should be_nil
-  end
 
   it "returns the index of the first character of the matching region" do
     (/(.)(.)(.)/ =~ "abc").should == 0
@@ -91,29 +91,13 @@ describe "Regexp#match" do
     end
   end
 
-  ruby_version_is ""..."3.0" do
-    it "resets $~ if passed nil" do
-      suppress_warning do
-        # set $~
-        /./.match("a")
-        $~.should be_kind_of(MatchData)
+  it "resets $~ if passed nil" do
+    # set $~
+    /./.match("a")
+    $~.should be_kind_of(MatchData)
 
-        /1/.match(nil)
-        $~.should be_nil
-      end
-    end
-  end
-
-  ruby_version_is "2.7"..."3.0" do
-    it "warns the deprecation when the given argument is nil" do
-      -> { /foo/.match(nil) }.should complain(/given argument is nil; this will raise a TypeError in the next release/)
-    end
-  end
-
-  ruby_version_is "3.0" do
-    it "raises TypeError when the given argument is nil" do
-      -> { /foo/.match(nil) }.should raise_error(TypeError)
-    end
+    /1/.match(nil)
+    $~.should be_nil
   end
 
   it "raises TypeError when the given argument cannot be coerced to String" do
@@ -149,24 +133,8 @@ describe "Regexp#match?" do
     /str/i.match?('string', 1).should be_false
   end
 
-  ruby_version_is ""..."3.0" do
-    it "returns false when given nil" do
-      suppress_warning do
-        /./.match?(nil).should be_false
-      end
-    end
-  end
-
-  ruby_version_is "2.7"..."3.0" do
-    it "warns the deprecation" do
-      -> { /./.match?(nil) }.should complain(/given argument is nil; this will raise a TypeError in the next release/)
-    end
-  end
-
-  ruby_version_is "3.0" do
-    it "raises TypeError when given nil" do
-      -> { /./.match?(nil) }.should raise_error(TypeError)
-    end
+  it "returns false when given nil" do
+    /./.match?(nil).should be_false
   end
 end
 

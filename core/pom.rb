@@ -41,11 +41,11 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.23', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.24', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.51', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.24', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.26', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.53', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.9.14', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.11'
+  jar 'com.github.jnr:jnr-ffi:2.1.12'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
@@ -257,20 +257,25 @@ project 'JRuby Core' do
       includes 'META-INF/**/*'
     end
 
-    resource do
-      directory '${project.basedir}/src/main/resources'
-      includes '${Constants.java}'
-      target_path '${project.build.sourceDirectory}'
-      filtering 'true'
-    end
-
-    resource do
-      directory '${project.basedir}/..'
-      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
-      target_path '${project.build.outputDirectory}/META-INF/'
-    end
   end
 
+  plugin :resources do
+    execute_goals('copy-resources', phase: :initialize,
+                  outputDirectory: '${basedir}',
+                  resources: [
+                    {
+                      directory: 'src/main/resources',
+                      includes: '${Constants.java}',
+                      target_path: '${project.build.sourceDirectory}',
+                      filtering: 'true'
+                    },
+                    {
+                      directory: '..',
+                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ],
+                      target_path: '${project.build.sourceDirectory}/META-INF/'
+                    }
+                  ])
+  end
 
   plugin :shade do
     execute_goals( 'shade',
@@ -429,8 +434,8 @@ project 'JRuby Core' do
 
     plugin :source do
       execute_goals( 'jar-no-fork',
-                     :id => 'pack core sources',
-                     :phase => 'prepare-package' ) # Needs to run before the shade plugin
+                     id: 'pack core sources',
+                     phase: 'prepare-package') # Needs to run before the shade plugin
     end
   end
 end

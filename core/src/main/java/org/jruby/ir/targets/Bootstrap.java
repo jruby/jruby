@@ -1370,7 +1370,7 @@ public class Bootstrap {
     }
 
     static String logBlock(Block block) {
-        return "[" + block.getBody() + " " + block.getFrame() + "]";
+        return "[" + block.getBody().getFile() + ":" + block.getBody().getLine() + "]";
     }
 
     private static final Binder BINDING_MAKER_BINDER = Binder.from(Binding.class, ThreadContext.class, IRubyObject.class, DynamicScope.class);

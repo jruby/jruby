@@ -63,7 +63,6 @@ public class RubyRational extends RubyNumeric {
     
     public static RubyClass createRationalClass(Ruby runtime) {
         RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR);
-        runtime.setRational(rationalc);
 
         rationalc.setClassIndex(ClassIndex.RATIONAL);
         rationalc.setReifiedClass(RubyRational.class);
@@ -441,7 +440,7 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return context.runtime.newBoolean(isZero());
+        return RubyBoolean.newBoolean(context, isZero());
     }
 
     @Override
@@ -456,12 +455,12 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return context.runtime.newBoolean(signum() < 0);
+        return RubyBoolean.newBoolean(context, signum() < 0);
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return context.runtime.newBoolean(signum() > 0);
+        return RubyBoolean.newBoolean(context, signum() > 0);
     }
 
     @Override
@@ -808,14 +807,14 @@ public class RubyRational extends RubyNumeric {
     }
 
     public final IRubyObject op_equal(ThreadContext context, RubyInteger other) {
-        if (num.isZero()) return context.runtime.newBoolean(other.isZero());
+        if (num.isZero()) return RubyBoolean.newBoolean(context, other.isZero());
         if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) return context.fals;
         return f_equal(context, num, other);
     }
 
     final RubyBoolean op_equal(ThreadContext context, RubyRational other) {
-        if (num.isZero()) return context.runtime.newBoolean(other.num.isZero());
-        return context.runtime.newBoolean(
+        if (num.isZero()) return RubyBoolean.newBoolean(context, other.num.isZero());
+        return RubyBoolean.newBoolean(context,
                 f_equal(context, num, other.num).isTrue() && f_equal(context, den, other.den).isTrue());
     }
 

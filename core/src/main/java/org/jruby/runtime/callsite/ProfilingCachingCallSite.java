@@ -34,8 +34,8 @@ public class ProfilingCachingCallSite extends CachingCallSite {
     private final IRScope hostScope;
     private final long callSiteId;
 
-    public ProfilingCachingCallSite(String methodName, IRScope scope, long callSiteId) {
-        super(methodName, CallType.NORMAL);
+    public ProfilingCachingCallSite(CallType callType, String methodName, IRScope scope, long callSiteId) {
+        super(methodName, callType);
 
         this.hostScope = scope;
         this.callSiteId = callSiteId;

@@ -304,7 +304,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyBoolean compare_by_identity_p(ThreadContext context) {
             // NOTE: obviously little we can do to detect - but at least report Java built-in one :
-            return context.runtime.newBoolean( mapDelegate() instanceof java.util.IdentityHashMap );
+            return RubyBoolean.newBoolean(context,  mapDelegate() instanceof java.util.IdentityHashMap );
         }
 
         @Override // re-invent @JRubyMethod(name = "any?")

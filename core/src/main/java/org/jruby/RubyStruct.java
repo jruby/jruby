@@ -91,7 +91,7 @@ public class RubyStruct extends RubyObject {
 
     public static RubyClass createStructClass(Ruby runtime) {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setStructClass(structClass);
+
         structClass.setClassIndex(ClassIndex.STRUCT);
         structClass.includeModule(runtime.getEnumerable());
         structClass.setReifiedClass(RubyStruct.class);
@@ -263,7 +263,7 @@ public class RubyStruct extends RubyObject {
 
         if (block.isGiven()) {
             // Since this defines a new class, run the block as a module-eval.
-            block.setEvalType(EvalType.MODULE_EVAL);
+            block = block.cloneBlockForEval(newStruct, EvalType.MODULE_EVAL);
             // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
             block.getBinding().setVisibility(Visibility.PUBLIC);
             block.yieldNonArray(runtime.getCurrentContext(), newStruct, newStruct);

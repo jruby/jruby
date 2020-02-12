@@ -142,7 +142,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
-        runtime.setString(stringClass);
+
         stringClass.setClassIndex(ClassIndex.STRING);
         stringClass.setReifiedClass(RubyString.class);
         stringClass.kindOf = new RubyModule.JavaClassKindOf(RubyString.class);
@@ -1156,9 +1156,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject op_equalCommon(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-        if (!sites(context).respond_to_to_str.respondsTo(context, this, other)) return runtime.getFalse();
-        return sites(context).equals.call(context, this, other, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
+        if (!sites(context).respond_to_to_str.respondsTo(context, this, other)) return context.fals;
+        return sites(context).equals.call(context, this, other, this).isTrue() ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "-@") // -'foo' returns frozen string
@@ -1716,7 +1715,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString && cmpIsBuiltin(context)) {
-            return context.runtime.newBoolean(op_cmp((RubyString) other) >= 0);
+            return RubyBoolean.newBoolean(context, op_cmp((RubyString) other) >= 0);
         }
         return RubyComparable.op_ge(context, this, other);
     }
@@ -1728,7 +1727,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = ">")
     public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString && cmpIsBuiltin(context)) {
-            return context.runtime.newBoolean(op_cmp((RubyString) other) > 0);
+            return RubyBoolean.newBoolean(context, op_cmp((RubyString) other) > 0);
         }
         return RubyComparable.op_gt(context, this, other);
     }
@@ -1740,7 +1739,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "<=")
     public IRubyObject op_le19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString && cmpIsBuiltin(context)) {
-            return context.runtime.newBoolean(op_cmp((RubyString) other) <= 0);
+            return RubyBoolean.newBoolean(context, op_cmp((RubyString) other) <= 0);
         }
         return RubyComparable.op_le(context, this, other);
     }
@@ -1752,7 +1751,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "<")
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString && cmpIsBuiltin(context)) {
-            return context.runtime.newBoolean(op_cmp((RubyString) other) < 0);
+            return RubyBoolean.newBoolean(context, op_cmp((RubyString) other) < 0);
         }
         return RubyComparable.op_lt(context, sites(context).cmp, this, other);
     }
@@ -1767,12 +1766,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "eql?")
     public IRubyObject str_eql_p19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            if (StringSupport.areComparable(this, otherString) && value.equal(otherString.value)) return runtime.getTrue();
+            if (StringSupport.areComparable(this, otherString) && value.equal(otherString.value)) return context.tru;
         }
-        return runtime.getFalse();
+        return context.fals;
     }
 
     private int caseMap(Ruby runtime, int flags, Encoding enc) {
@@ -4070,9 +4068,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "include?")
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
         RubyString coerced = obj.convertToString();
-        return StringSupport.index(this, coerced, 0, this.checkEncoding(coerced)) == -1 ? runtime.getFalse() : runtime.getTrue();
+        return StringSupport.index(this, coerced, 0, this.checkEncoding(coerced)) == -1 ? context.fals : context.tru;
     }
 
     @JRubyMethod
@@ -6255,12 +6252,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "valid_encoding?")
     public IRubyObject valid_encoding_p(ThreadContext context) {
-        return context.runtime.newBoolean(scanForCodeRange() != CR_BROKEN);
+        return RubyBoolean.newBoolean(context, scanForCodeRange() != CR_BROKEN);
     }
 
     @JRubyMethod(name = "ascii_only?")
     public IRubyObject ascii_only_p(ThreadContext context) {
-        return context.runtime.newBoolean(scanForCodeRange() == CR_7BIT);
+        return RubyBoolean.newBoolean(context, scanForCodeRange() == CR_7BIT);
     }
 
     @JRubyMethod

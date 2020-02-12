@@ -97,7 +97,7 @@ public class StringArraySet extends RubyArray {
 
     @Override
     public final RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return context.runtime.newBoolean(containsString(convertToString(item)));
+        return RubyBoolean.newBoolean(context, containsString(convertToString(item)));
     }
 
     @Override

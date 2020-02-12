@@ -287,4 +287,17 @@ class TestEnumerator < Test::Unit::TestCase
     # assert_raise_with_message(TypeError, /C\u{1f5ff}/) {(1..1).zip(obj)}
   end
 
+  def test_take
+    assert_equal [[]], [[]].to_enum.take(1)
+    assert_equal [[]], [[]].to_enum.take(3)
+    assert_equal [], [[]].to_enum.take(0)
+
+    a = [[1], 2, [[3]], [4]]
+    assert_equal [[1]], a.to_enum.take(1)
+    assert_equal [[1], 2, [[3]]], a.to_enum.take(3)
+    assert_equal a, a.to_enum.take(10)
+
+    assert_equal [], [].to_enum.take(1)
+  end
+
 end

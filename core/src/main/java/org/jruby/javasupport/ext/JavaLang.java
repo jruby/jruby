@@ -348,7 +348,7 @@ public abstract class JavaLang {
         @JRubyMethod(name = "real?")
         public static IRubyObject real_p(final ThreadContext context, final IRubyObject self) {
             java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+            return RubyBoolean.newBoolean(context, val instanceof Integer || val instanceof Long ||
                                                     val instanceof Short || val instanceof Byte ||
                                                     val instanceof Float || val instanceof Double ||
                                                     val instanceof java.math.BigInteger || val instanceof java.math.BigDecimal);
@@ -366,14 +366,14 @@ public abstract class JavaLang {
         @JRubyMethod(name = "integer?")
         public static IRubyObject integer_p(final ThreadContext context, final IRubyObject self) {
             java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            return context.runtime.newBoolean(val instanceof Integer || val instanceof Long ||
+            return RubyBoolean.newBoolean(context, val instanceof Integer || val instanceof Long ||
                                                     val instanceof Short || val instanceof Byte ||
                                                     val instanceof java.math.BigInteger);
         }
 
         @JRubyMethod(name = "zero?")
         public static IRubyObject zero_p(final ThreadContext context, final IRubyObject self) {
-            return context.runtime.newBoolean(isZero(self));
+            return RubyBoolean.newBoolean(context, isZero(self));
         }
 
         private static boolean isZero(final IRubyObject self) {
@@ -409,13 +409,13 @@ public abstract class JavaLang {
         @JRubyMethod(name = "java_identifier_start?", meta = true)
         public static IRubyObject java_identifier_start_p(final ThreadContext context, final IRubyObject self,
                                                           final IRubyObject num) {
-            return context.runtime.newBoolean( java.lang.Character.isJavaIdentifierStart(int_char(num)) );
+            return RubyBoolean.newBoolean(context,  java.lang.Character.isJavaIdentifierStart(int_char(num)) );
         }
 
         @JRubyMethod(name = "java_identifier_part?", meta = true)
         public static IRubyObject java_identifier_part_p(final ThreadContext context, final IRubyObject self,
                                                          final IRubyObject num) {
-            return context.runtime.newBoolean( java.lang.Character.isJavaIdentifierPart(int_char(num)) );
+            return RubyBoolean.newBoolean(context,  java.lang.Character.isJavaIdentifierPart(int_char(num)) );
         }
 
         private static int int_char(IRubyObject num) { // str.ord -> Fixnum
@@ -474,13 +474,13 @@ public abstract class JavaLang {
         @JRubyMethod(name = "annotations?")
         public static IRubyObject annotations_p(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return context.runtime.newBoolean(klass.getAnnotations().length > 0);
+            return RubyBoolean.newBoolean(context, klass.getAnnotations().length > 0);
         }
 
         @JRubyMethod(name = "declared_annotations?")
         public static IRubyObject declared_annotations_p(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return context.runtime.newBoolean(klass.getDeclaredAnnotations().length > 0);
+            return RubyBoolean.newBoolean(context, klass.getDeclaredAnnotations().length > 0);
         }
 
         @JRubyMethod

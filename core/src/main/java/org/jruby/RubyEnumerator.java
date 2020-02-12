@@ -76,23 +76,18 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private FeedValue feedValue;
 
-    public static void defineEnumerator(Ruby runtime) {
-        final RubyModule Enumerable = runtime.getModule("Enumerable");
-
-        final RubyClass Enumerator;
-        Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ALLOCATOR);
+    public static RubyClass defineEnumerator(Ruby runtime, RubyModule Enumerable) {
+        final RubyClass Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), ALLOCATOR);
 
         Enumerator.includeModule(Enumerable);
         Enumerator.defineAnnotatedMethods(RubyEnumerator.class);
-        runtime.setEnumerator(Enumerator);
-
-        RubyGenerator.createGeneratorClass(runtime);
-        RubyYielder.createYielderClass(runtime);
 
         final RubyClass FeedValue;
         FeedValue = runtime.defineClassUnder("FeedValue", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, Enumerator);
         FeedValue.defineAnnotatedMethods(FeedValue.class);
         Enumerator.setConstantVisibility(runtime, "FeedValue", true);
+
+        return Enumerator;
     }
 
     private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {

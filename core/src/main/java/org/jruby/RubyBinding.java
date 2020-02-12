@@ -74,7 +74,6 @@ public class RubyBinding extends RubyObject {
     
     public static RubyClass createBindingClass(Ruby runtime) {
         RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), BINDING_ALLOCATOR);
-        runtime.setBinding(bindingClass);
 
         bindingClass.setClassIndex(ClassIndex.BINDING);
         bindingClass.setReifiedClass(RubyBinding.class);
@@ -141,7 +140,7 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
-        return context.runtime.newBoolean(binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
+        return RubyBoolean.newBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(symbol.asJavaString()) != -1);
     }
 
     @JRubyMethod

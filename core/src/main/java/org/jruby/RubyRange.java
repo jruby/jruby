@@ -90,7 +90,6 @@ public class RubyRange extends RubyObject {
 
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
-        runtime.setRange(result);
 
         result.setClassIndex(ClassIndex.RANGE);
         result.setReifiedClass(RubyRange.class);
@@ -397,7 +396,7 @@ public class RubyRange extends RubyObject {
 
         RubyRange otherRange = (RubyRange) other;
 
-        return context.runtime.newBoolean(isExclusive == otherRange.isExclusive &&
+        return RubyBoolean.newBoolean(context, isExclusive == otherRange.isExclusive &&
                 invokedynamic(context, this.begin, equalityCheck, otherRange.begin).isTrue() &&
                 invokedynamic(context, this.end, equalityCheck, otherRange.end).isTrue());
     }
@@ -755,7 +754,7 @@ public class RubyRange extends RubyObject {
         if (rangeLe(context, begin, obj) == null) {
             return context.fals; // obj < start...end
         }
-        return context.runtime.newBoolean(isExclusive
+        return RubyBoolean.newBoolean(context, isExclusive
                 ? // begin <= obj < end || begin <= obj <= end
                 rangeLt(context, obj, end) != null : rangeLe(context, obj, end) != null);
     }

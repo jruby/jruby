@@ -83,7 +83,16 @@ public class JumpException extends RuntimeException {
         }
     }
     
-    public static class SpecialJump extends FlowControlException { public SpecialJump() {super(Reason.NOREASON); } }
+    public static class SpecialJump extends FlowControlException {
+        public SpecialJump() {
+            super(Reason.NOREASON);
+        }
+        @Override
+        public Throwable fillInStackTrace() {
+            // never fill stack-trace, even if RubyInstanceConfig.JUMPS_HAVE_BACKTRACE
+            return this;
+        }
+    }
     public static final SpecialJump SPECIAL_JUMP = new SpecialJump();
 
     /**
@@ -117,7 +126,7 @@ public class JumpException extends RuntimeException {
         return this;
     }
     
-    protected Throwable originalFillInStackTrace() {
+    protected final Throwable originalFillInStackTrace() {
         return super.fillInStackTrace();
     }
 }

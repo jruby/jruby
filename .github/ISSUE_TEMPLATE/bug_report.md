@@ -7,7 +7,18 @@ assignees: ''
 
 ---
 
-**Environment**
+<!--
+
+Thank you for reporting an issue! This guide will help us respond to your
+report quickly. Please try to provide as much information as possible.
+
+If you need help, feel free to join the JRuby chat room on Matrix:
+
+* https://matrix.to/#/#jruby:matrix.org
+
+-->
+
+**Environment Information**
   
 Provide at least:
 * JRuby version (`jruby -v`) and command line (flags, JRUBY_OPTS, etc)
@@ -27,7 +38,3 @@ Other relevant info you may wish to add:
 
 * Describe or show the actual behavior.
 * Provide text or screen capture showing the behavior.
-
-**If You Need Help**
-
-* Join us on Matrix at https://matrix.to/#/#jruby:matrix.org

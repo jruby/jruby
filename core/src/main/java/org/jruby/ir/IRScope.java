@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.ParseResult;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
@@ -22,11 +23,17 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
@@ -504,7 +511,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
@@ -786,13 +793,6 @@ public abstract class IRScope implements ParseResult {
         return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
-    public Variable createCurrentScopeVariable() {
-        // SSS: Used in only 1 case in generated IR:
-        // -> searching a constant in the lexical scope hierarchy
-        temporaryVariableIndex++;
-        return TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
-    }
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
@@ -806,14 +806,6 @@ public abstract class IRScope implements ParseResult {
      */
     public Set<LocalVariable> getUsedLocalVariables() {
         return getFullInterpreterContext().getUsedLocalVariables();
-    }
-
-    /**
-     * Set the local variables for this scope. This should only be used by persistence layer.
-     */
-    // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
-        this.localVars = variables;
     }
 
     public void setNextLabelIndex(int index) {
@@ -1019,8 +1011,21 @@ public abstract class IRScope implements ParseResult {
         // are IR methods (or are native but can be substituted with IR methods).
         //
         // Note: we can look for scoped methods and make this less conservative.
-        if (!methodToInline.getClosures().isEmpty()) return inlineFailed("inline a method which contains nested closures");
+        if (!methodToInline.getClosures().isEmpty()) {
+            boolean accessInaccessibleLocalVariables = false;
+            for (IRClosure closure: methodToInline.getClosures()) {
+                if (closure.flags.contains(ACCESS_PARENTS_LOCAL_VARIABLES)) {
+                    accessInaccessibleLocalVariables = true;
+                    break;
+                }
+            }
+            if (accessInaccessibleLocalVariables) return inlineFailed("inline a method which contains nested closures which access methods lvars");
+        }
+
         FullInterpreterContext newContext = getFullInterpreterContext().duplicate();
+        if (newContext == null) {
+            return inlineFailed("FIXME: BBs are not linearized???");
+        }
         BasicBlock basicBlock = newContext.findBasicBlockOf(callsiteId);
         CallBase call = (CallBase) basicBlock.siteOf(callsiteId);  // we know it is callBase and not a yield
 
@@ -1049,11 +1054,14 @@ public abstract class IRScope implements ParseResult {
         if (alreadyHasInline) return;
 
         FullInterpreterContext newContext = inlineMethodCommon(methodToInline, implClass, callsiteId, classToken, cloneHost);
+        Ruby runtime = manager.getRuntime();
         if (newContext == null) {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " failed: " + inlineFailed + ".");
+            runtime.getInlineStats().incrementInlineFailedCount();
             return;
         } else {
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("Inline of " + methodToInline + " into " + this + " succeeded.");
+            runtime.getInlineStats().incrementInlineSuccessCount();
         }
 
         // We are not running any JIT-specific passes here.
@@ -1061,7 +1069,7 @@ public abstract class IRScope implements ParseResult {
         newContext.linearizeBasicBlocks();
         this.optimizedInterpreterContext = newContext;
 
-        manager.getRuntime().getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
+        runtime.getJITCompiler().getTaskFor(manager.getRuntime().getCurrentContext(), compilable).run();
      }
 
     public void inlineMethodCompiled(IRMethod methodToInline, RubyModule implClass, long callsiteId, int classToken, boolean cloneHost) {

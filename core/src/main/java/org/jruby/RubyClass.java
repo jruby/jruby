@@ -91,7 +91,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.*;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
-import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;

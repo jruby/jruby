@@ -38,12 +38,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public void setEvalType(EvalType evalType) {
-        super.setEvalType(evalType); // so that getEvalType is correct
-        if (jittedBody != null) jittedBody.setEvalType(evalType);
-    }
-
-    @Override
     public boolean canCallDirect() {
         return jittedBody != null || (interpreterContext != null && interpreterContext.hasExplicitCallProtocol());
     }
@@ -58,7 +52,6 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     @Override
     public void completeBuild(CompiledIRBlockBody blockBody) {
         setCallCount(-1);
-        blockBody.evalType = this.evalType; // share with parent
         this.jittedBody = blockBody;
     }
 

@@ -54,11 +54,10 @@ public class RubyObjectSpace {
      */
     public static RubyModule createObjectSpaceModule(Ruby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
-        runtime.setObjectSpaceModule(objectSpaceModule);
 
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
-        WeakMap.createWeakMap(runtime);
+        WeakMap.createWeakMap(runtime, objectSpaceModule);
 
         return objectSpaceModule;
     }
@@ -180,8 +179,8 @@ public class RubyObjectSpace {
     }
 
     public static class WeakMap extends RubyObject {
-        static void createWeakMap(Ruby runtime) {
-            RubyClass weakMap = runtime.getObjectSpaceModule().defineClassUnder("WeakMap", runtime.getObject(), new ObjectAllocator() {
+        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
+            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), new ObjectAllocator() {
                 public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                     return new WeakMap(runtime, klazz);
                 }
@@ -209,7 +208,7 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = "key?")
         public IRubyObject key_p(ThreadContext context, IRubyObject key) {
-            return context.runtime.newBoolean(map.get(key) != null);
+            return RubyBoolean.newBoolean(context, map.get(key) != null);
         }
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();

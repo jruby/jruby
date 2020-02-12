@@ -33,13 +33,15 @@ public class CompiledIRBlockBody extends IRBlockBody {
         closure.getStaticScope().determineModule();
     }
 
-    private static final MethodHandle VALUE_TO_ARRAY = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(MethodHandles.lookup(), IRRuntimeHelpers.class, "singleBlockArgToArray");
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final MethodHandle WRAP_VALUE = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "wrapValue");
+    private static final MethodHandle VALUE_TO_ARRAY = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "singleBlockArgToArray");
+
+    private static final MethodHandle WRAP_VALUE = Binder.from(IRubyObject[].class, IRubyObject.class).invokeStaticQuiet(LOOKUP, CompiledIRBlockBody.class, "wrapValue");
 
     private static final MethodHandle CHECK_ARITY = Binder
             .from(void.class, ThreadContext.class, Block.class, IRubyObject[].class, Block.class)
-            .invokeStaticQuiet(MethodHandles.lookup(), CompiledIRBlockBody.class, "checkArity");
+            .invokeStaticQuiet(LOOKUP, CompiledIRBlockBody.class, "checkArity");
 
     private static void checkArity(ThreadContext context, Block selfBlock, IRubyObject[] args, Block block) {
         if (selfBlock.type == Block.Type.LAMBDA) {

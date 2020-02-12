@@ -1,5 +1,6 @@
 package org.jruby.javasupport;
 
+import org.jruby.RubyBoolean;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Block;
@@ -61,7 +62,7 @@ public class JavaUtilities {
     @JRubyMethod(name = "valid_java_identifier?", meta = true)
     public static IRubyObject valid_java_identifier_p(ThreadContext context, IRubyObject recv, IRubyObject name) {
         final String javaName = name.convertToString().decodeString();
-        return context.runtime.newBoolean(validJavaIdentifier(javaName));
+        return RubyBoolean.newBoolean(context, validJavaIdentifier(javaName));
     }
 
     private static boolean validJavaIdentifier(final String javaName) {

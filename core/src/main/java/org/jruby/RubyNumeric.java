@@ -80,7 +80,6 @@ public class RubyNumeric extends RubyObject {
 
     public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
-        runtime.setNumeric(numeric);
 
         numeric.setClassIndex(ClassIndex.NUMERIC);
         numeric.setReifiedClass(RubyNumeric.class);
@@ -516,10 +515,9 @@ public class RubyNumeric extends RubyObject {
         if (other.isSpecialConst() || other instanceof RubyFloat) {
             other = other.inspect();
         } else {
-            other = other.getMetaClass().name();
+            other = other.getMetaClass().name(context);
         }
-        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
-                other, getMetaClass()));
+        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s", other, getMetaClass()));
     }
 
     /** rb_num_coerce_bin
@@ -872,7 +870,7 @@ public class RubyNumeric extends RubyObject {
     */
     @JRubyMethod(name = "real?")
     public IRubyObject real_p(ThreadContext context) {
-        return context.runtime.newBoolean(isReal());
+        return RubyBoolean.newBoolean(context, isReal());
     }
 
     public boolean isReal() { return true; } // only RubyComplex isn't real

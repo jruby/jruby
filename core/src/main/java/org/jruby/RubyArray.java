@@ -109,7 +109,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
-        runtime.setArray(arrayc);
 
         arrayc.setClassIndex(ClassIndex.ARRAY);
         arrayc.setReifiedClass(RubyArray.class);
@@ -1453,7 +1452,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "include?", required = 1)
     public RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return context.runtime.newBoolean(includes(context, item));
+        return RubyBoolean.newBoolean(context, includes(context, item));
     }
 
     /** rb_ary_frozen_p
@@ -1462,7 +1461,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "frozen?")
     @Override
     public RubyBoolean frozen_p(ThreadContext context) {
-        return context.runtime.newBoolean(isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
+        return RubyBoolean.newBoolean(context, isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 
     /**
@@ -2186,7 +2185,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p() {
-        return realLength == 0 ? metaClass.runtime.getTrue() : metaClass.runtime.getFalse();
+        Ruby runtime = metaClass.runtime;
+        return realLength == 0 ? runtime.getTrue() : runtime.getFalse();
     }
 
     /** rb_ary_clear

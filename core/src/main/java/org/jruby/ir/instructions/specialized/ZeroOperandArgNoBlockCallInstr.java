@@ -36,8 +36,12 @@ public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ZeroOperandArgNoBlockCallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
+        ZeroOperandArgNoBlockCallInstr zeroOperandArgNoBlockCallInstr = new ZeroOperandArgNoBlockCallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+
+        zeroOperandArgNoBlockCallInstr.setProcNew(procNew);
+
+        return zeroOperandArgNoBlockCallInstr;
     }
 
     @Override

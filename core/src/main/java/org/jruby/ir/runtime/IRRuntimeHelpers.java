@@ -458,7 +458,7 @@ public class IRRuntimeHelpers {
         boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
             || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
 
-        return context.runtime.newBoolean(ret);
+        return RubyBoolean.newBoolean(context, ret);
     }
 
     public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value, CallSite callSite, boolean splattedValue) {
@@ -1020,7 +1020,7 @@ public class IRRuntimeHelpers {
     public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
         if (blk instanceof RubyProc) blk = ((RubyProc) blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return context.runtime.newBoolean( ((Block) blk).isGiven() );
+        return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
     }
 
     public static IRubyObject receiveRestArg(ThreadContext context, Object[] args, int required, int argIndex, boolean acceptsKeywordArguments) {
@@ -1646,7 +1646,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject[] pieces, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1656,7 +1656,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1666,7 +1666,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1676,7 +1676,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1686,7 +1686,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2, arg3);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1696,7 +1696,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRegexp newDynamicRegexp(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, int embeddedOptions) {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
-        RubyString pattern = RubyRegexp.preprocessDRegexp(context.runtime, arg0, arg1, arg2, arg3, arg4, options);
+        RubyString pattern = RubyRegexp.preprocessDRegexp(context, options, arg0, arg1, arg2, arg3, arg4);
         RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
         re.setLiteral();
 
@@ -1769,7 +1769,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
-        return context.runtime.newBoolean(!(obj.isTrue()));
+        return RubyBoolean.newBoolean(context, !(obj.isTrue()));
     }
 
     @JIT
@@ -1791,8 +1791,8 @@ public class IRRuntimeHelpers {
         return new FunctionalCachingCallSite(name);
     }
 
-    public static ProfilingCachingCallSite newProfilingCachingCallSite(String name, IRScope scope, long callSiteId) {
-        return new ProfilingCachingCallSite(name, scope, callSiteId);
+    public static ProfilingCachingCallSite newProfilingCachingCallSite(CallType callType, String name, IRScope scope, long callSiteId) {
+        return new ProfilingCachingCallSite(callType, name, scope, callSiteId);
     }
 
     @JIT
@@ -1813,7 +1813,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes, String filename) {
         try {
-            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes), new ByteList(filename.getBytes())));
+            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), scopeBytes, new ByteList(filename.getBytes())));
         } catch (IOException ioe) {
             // should not happen for bytes
             return null;
@@ -2050,9 +2050,6 @@ public class IRRuntimeHelpers {
             self = useBindingSelf(block.getBinding());
         }
 
-        // Clear block's eval type
-        block.setEvalType(EvalType.NONE);
-
         // Return self in case it has been updated
         return self;
     }
@@ -2140,9 +2137,7 @@ public class IRRuntimeHelpers {
             string.setInstanceVariable(RubyString.DEBUG_INFO_FIELD, info);
         }
 
-        string.setFrozen(true);
-
-        return string;
+        return freezeLiteralString(string);
     }
 
     @JIT
