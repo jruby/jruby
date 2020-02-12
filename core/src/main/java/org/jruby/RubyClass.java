@@ -32,6 +32,7 @@
 package org.jruby;
 
 import org.jruby.javasupport.JavaClass;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -483,7 +484,11 @@ public class RubyClass extends RubyModule {
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -494,8 +499,13 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject[] args, Block block) {
+        return finvokeWithRefinements(context, self, null, name, args, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                                              IRubyObject[] args, Block block) {
         assert args != null;
-        CacheEntry entry = searchWithCache(name);
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -506,7 +516,12 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, arg, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                               IRubyObject arg, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -517,7 +532,12 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg0, IRubyObject arg1, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, arg0, arg1, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                               IRubyObject arg0, IRubyObject arg1, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -528,7 +548,12 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, arg0, arg1, arg2, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
