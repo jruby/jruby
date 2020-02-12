@@ -3479,6 +3479,11 @@ public class IRBuilder {
         return buildEnsureInternal(node, null);
     }
 
+    /**
+     * Global names and aliases that reference the exception in flight
+     */
+    private static final List<String> EXCEPTION_GLOBALS = Arrays.asList("$!", "$ERROR_INFO", "$@", "$ERROR_POSITION");
+
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
@@ -3492,7 +3497,8 @@ public class IRBuilder {
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().idString().equals("$!")) return false;
+        if (body instanceof GlobalVarNode
+                && EXCEPTION_GLOBALS.contains(((GlobalVarNode) body).getName().idString())) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
