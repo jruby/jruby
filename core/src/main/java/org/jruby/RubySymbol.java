@@ -67,6 +67,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
 import org.jruby.util.PerlHash;
 import org.jruby.util.SipHashInline;
+import org.jruby.util.cli.Options;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -486,11 +487,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     final RubyString to_s(Ruby runtime) {
-        if (true) { // Add check for runtime flag here?
-            if (rubyString == null) rubyString = runtime.freezeAndDedupString(RubyString.newStringShared(runtime, symbolBytes));
+        RubyString result = RubyString.newStringShared(runtime, symbolBytes);
+
+        if (Options.SYMBOL_TO_STRING_FROZEN.load()) {
+            if (rubyString == null) rubyString = runtime.freezeAndDedupString(result);
             return rubyString;
         }
-        return RubyString.newStringShared(runtime, symbolBytes);
+
+        return result;
     }
 
     public IRubyObject id2name() {
