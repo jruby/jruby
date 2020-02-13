@@ -130,7 +130,7 @@ public class IRBuilder {
         }
     }
 
-    private static class RescueBlockInfo {
+    static class RescueBlockInfo {
         Label      entryLabel;             // Entry of the rescue block
         Variable   savedExceptionVariable; // Variable that contains the saved $! variable
 
@@ -1397,8 +1397,6 @@ public class IRBuilder {
         Operand superClass = (superNode == null) ? null : build(superNode);
         ByteList className = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
-
-        //System.out.println("MODULE IS SINGLE USE:"  + className +  ", " +  scope.getFile() + ":" + classNode.getEndLine());
 
         IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope(), executesOnce);
         Variable bodyResult = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
@@ -3093,8 +3091,6 @@ public class IRBuilder {
         ByteList moduleName = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
 
-        //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
-
         IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
         Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
@@ -3579,8 +3575,11 @@ public class IRBuilder {
         // Save off exception & exception comparison type
         Variable exc = addResultInstr(new ReceiveRubyExceptionInstr(createTemporaryVariable()));
 
+        manager.setActiveRescueBlockStack(scope, activeRescueBlockStack);
         // Build the actual rescue block(s)
         buildRescueBodyInternal(rescueNode.getRescueNode(), rv, exc, rEndLabel);
+
+        manager.setActiveRescueBlockStack(scope, null);
 
         activeRescueBlockStack.pop();
         return rv;
@@ -3691,9 +3690,14 @@ public class IRBuilder {
                     addInstr(new CheckForLJEInstr(definedWithinMethod));
                 }
                 // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
-                if (!activeRescueBlockStack.empty()) {
-                    RescueBlockInfo rbi = activeRescueBlockStack.peek();
-                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                if (activeRescueBlockStack.empty()) {
+                    // could still be in a parent scope that has the current closure returning (from a method)
+                    Stack<RescueBlockInfo> parentActiveRescueBlockStack = manager.getActiveRescueBlockStack(scope.getNearestMethod());
+                    if (parentActiveRescueBlockStack != null) {
+                        addRestoreErrorInfoInstrIfInsideRescueBlock(parentActiveRescueBlockStack);
+                    }
+                } else { // non-local return from current scope
+                    addRestoreErrorInfoInstrIfInsideRescueBlock(activeRescueBlockStack);
                 }
 
                 addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
@@ -3718,6 +3722,13 @@ public class IRBuilder {
         // The expression that uses this result can never be executed beyond the return and hence the value itself is just
         // a placeholder operand.
         return U_NIL;
+    }
+
+    private void addRestoreErrorInfoInstrIfInsideRescueBlock(final Stack<RescueBlockInfo> activeRescueBlockStack) {
+        if (!activeRescueBlockStack.empty()) {
+            RescueBlockInfo rbi = activeRescueBlockStack.peek();
+            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+        }
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {

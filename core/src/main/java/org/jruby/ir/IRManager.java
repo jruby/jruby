@@ -29,6 +29,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
+import java.util.WeakHashMap;
+
 import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
@@ -395,6 +398,20 @@ public class IRManager {
     private Node parse(ThreadContext context, FileResource file, String fileName) throws IOException {
         try (InputStream stream = file.openInputStream()) {
             return context.runtime.parseFile(stream, fileName, null, 0);
+        }
+    }
+
+    private final WeakHashMap<IRScope, Stack<IRBuilder.RescueBlockInfo>> scopeRescueBlockStack = new WeakHashMap<>();
+
+    Stack<IRBuilder.RescueBlockInfo> getActiveRescueBlockStack(IRScope scope) {
+        return scopeRescueBlockStack.get(scope);
+    }
+
+    void setActiveRescueBlockStack(IRScope scope, Stack<IRBuilder.RescueBlockInfo> stack) {
+        if (stack == null) {
+            scopeRescueBlockStack.remove(scope);
+        } else {
+            scopeRescueBlockStack.put(scope, stack);
         }
     }
 }
