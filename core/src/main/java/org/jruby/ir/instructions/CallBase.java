@@ -268,6 +268,13 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
         if (potentiallySend(getId(), argsCount)) { // ok to look at raw string since we know we are looking for 7bit names.
             Operand meth = getArg1();
+
+            if (isPotentiallyRefined()) {
+                // send within a refined scope needs to reflect refinements
+                modifiedScope = true;
+                flags.add(REQUIRES_DYNSCOPE);
+            }
+
             if (meth instanceof StringLiteral) {
                 // This logic is intended to reduce the framing impact of send if we can
                 // statically determine the sent name and we know it does not need to be

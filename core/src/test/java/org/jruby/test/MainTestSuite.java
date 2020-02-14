@@ -38,7 +38,9 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.jruby.exceptions.TestRaiseException;
 import org.jruby.ext.posix.JavaFileStatTest;
+import org.jruby.ext.tracepoint.TracePointTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
@@ -87,13 +89,14 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRbConfigLibrary.class);
         suite.addTestSuite(TestParser.class);
         suite.addTestSuite(JRubyThreadContextTest.class);
-        suite.addTestSuite(JavaFileStatTest.class);
         suite.addTestSuite(TestJavaReentrantExceptions.class);
         suite.addTestSuite(EventHookTest.class);
         suite.addTestSuite(TestMethodFactories.class);
         suite.addTestSuite(RubyTimeOutputFormatterTest.class);
         suite.addTestSuite(org.jruby.lexer.yacc.StringTermTest.class);
         suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
+        suite.addTestSuite(JavaFileStatTest.class);
+        suite.addTestSuite(TracePointTest.class);
         suite.addTestSuite(TestRubyNKF.class);
         suite.addTestSuite(StandardErrorLoggerTest.class);
         suite.addTestSuite(ParameterSubstitutionTest.class);

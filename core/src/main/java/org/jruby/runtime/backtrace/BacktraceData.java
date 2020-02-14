@@ -58,12 +58,13 @@ public class BacktraceData implements Serializable {
         return constructBacktrace(Collections.EMPTY_MAP);
 
     }
+
     private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods) {
         return constructBacktrace(boundMethods, Integer.MAX_VALUE);
     }
 
     private RubyStackTraceElement[] constructBacktrace(Map<String, Map<String, String>> boundMethods, int count) {
-        ArrayList<RubyStackTraceElement> trace = new ArrayList<>();
+        ArrayList<RubyStackTraceElement> trace = new ArrayList<>(count == Integer.MAX_VALUE ? 16 : count);
 
         // used for duplicating the previous Ruby frame when masking native calls
         boolean dupFrame = false; String dupFrameName = null;

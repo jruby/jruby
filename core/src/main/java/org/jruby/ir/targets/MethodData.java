@@ -9,6 +9,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
+import org.jruby.runtime.DynamicScope;
 import org.objectweb.asm.Type;
 
 import java.util.HashMap;
@@ -30,9 +31,6 @@ public class MethodData {
         for (int i = 0; i < signature.argCount(); i++) {
             local("$" + signature.argName(i), Type.getType(signature.argType(i)));
         }
-
-        // TODO: this should go into the PushBinding instruction
-        local("$dynamicScope");
     }
 
     public int local(Variable variable, Type type) {

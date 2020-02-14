@@ -469,6 +469,8 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         }
 
         result.append(runtime.newString(EXTERNAL));
+        result.append(runtime.newString(FILESYSTEM));
+        result.append(runtime.newString(INTERNAL));
         result.append(runtime.newString(LOCALE));
 
         return result;

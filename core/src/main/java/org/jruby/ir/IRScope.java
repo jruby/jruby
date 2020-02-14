@@ -23,9 +23,16 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.ir.util.IGVDumper;
 import org.jruby.parser.StaticScope;
 
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
@@ -504,7 +511,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
 
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
@@ -786,13 +793,6 @@ public abstract class IRScope implements ParseResult {
         return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
-    public Variable createCurrentScopeVariable() {
-        // SSS: Used in only 1 case in generated IR:
-        // -> searching a constant in the lexical scope hierarchy
-        temporaryVariableIndex++;
-        return TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
-    }
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
@@ -806,14 +806,6 @@ public abstract class IRScope implements ParseResult {
      */
     public Set<LocalVariable> getUsedLocalVariables() {
         return getFullInterpreterContext().getUsedLocalVariables();
-    }
-
-    /**
-     * Set the local variables for this scope. This should only be used by persistence layer.
-     */
-    // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
-        this.localVars = variables;
     }
 
     public void setNextLabelIndex(int index) {

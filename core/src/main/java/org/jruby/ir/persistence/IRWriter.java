@@ -1,19 +1,13 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubySymbol;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.ByteList;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Write IR data out to persistent store.  IRReader is capable of re-reading this
@@ -83,26 +77,12 @@ public class IRWriter {
         if (scope instanceof IRScriptBody) {
             file.encode(scope.getId());
         } else {
-            file.encode(scope.getName());
+            file.encodeRaw(scope.getName());
             file.encode(scope.getLexicalParent());
         }
 
         persistStaticScope(file, scope.getStaticScope());
-        persistLocalVariables(scope, file);
         file.endEncodingScopeHeader(scope);
-    }
-
-    // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
-    private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
-        Map<RubySymbol, LocalVariable> localVariables = scope.getLocalVariables();
-        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("PERSISTING LVARS (" + localVariables.size() + ")");
-        file.encode(localVariables.size());
-        for (RubySymbol name: localVariables.keySet()) {
-            file.encode(name);
-            int offset = localVariables.get(name).getOffset();
-            if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("    NAME: " + name + "(0:" + offset + ")");
-            file.encode(offset); // No need to write depth..it is zero.
-        }
     }
 
     // {type,[variables],signature}

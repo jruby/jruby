@@ -46,6 +46,7 @@ glob_test
 jruby-complete.jar
 jruby-findbugs.html
 latest_source_cache
+core/src/main/java/META-INF/
 lib/jni
 lib/jruby*.jar
 lib/native
@@ -54,7 +55,7 @@ lib/ruby/gems
 lib/ruby/stdlib/*.jar
 lib/ruby/stdlib/ant*
 lib/ruby/stdlib/cmath.rb
-lib/ruby/stdlib/csv.rb
+lib/ruby/stdlib/csv*
 lib/ruby/stdlib/did_you_mean*
 lib/ruby/stdlib/fileutils.rb
 lib/ruby/stdlib/gauntlet_rdoc.rb

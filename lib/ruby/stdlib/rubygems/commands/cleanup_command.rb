@@ -22,6 +22,12 @@ class Gem::Commands::CleanupCommand < Gem::Command
       options[:check_dev] = value
     end
 
+    add_option('--[no-]user-install',
+               'Cleanup in user\'s home directory instead',
+               'of GEM_HOME.') do |value, options|
+      options[:user_install] = value
+    end
+
     @candidate_gems  = nil
     @default_gems    = []
     @full            = nil
@@ -56,7 +62,7 @@ If no gems are named all gems in GEM_HOME are cleaned.
   def execute
     say "Cleaning up installed gems..."
 
-    if options[:args].empty? then
+    if options[:args].empty?
       done     = false
       last_set = nil
 
@@ -105,7 +111,7 @@ If no gems are named all gems in GEM_HOME are cleaned.
   end
 
   def get_candidate_gems
-    @candidate_gems = unless options[:args].empty? then
+    @candidate_gems = unless options[:args].empty?
                         options[:args].map do |gem_name|
                           Gem::Specification.find_all_by_name gem_name
                         end.flatten
@@ -115,7 +121,6 @@ If no gems are named all gems in GEM_HOME are cleaned.
   end
 
   def get_gems_to_cleanup
-
     gems_to_cleanup = @candidate_gems.select { |spec|
       @primary_gems[spec.name].version != spec.version
     }
@@ -124,8 +129,10 @@ If no gems are named all gems in GEM_HOME are cleaned.
       spec.default_gem?
     }
 
+    uninstall_from = options[:user_install] ? Gem.user_dir : @original_home
+
     gems_to_cleanup = gems_to_cleanup.select { |spec|
-      spec.base_dir == @original_home
+      spec.base_dir == uninstall_from
     }
 
     @default_gems += default_gems
@@ -138,16 +145,16 @@ If no gems are named all gems in GEM_HOME are cleaned.
 
     Gem::Specification.each do |spec|
       if @primary_gems[spec.name].nil? or
-         @primary_gems[spec.name].version < spec.version then
+         @primary_gems[spec.name].version < spec.version
         @primary_gems[spec.name] = spec
       end
     end
   end
 
-  def uninstall_dep spec
+  def uninstall_dep(spec)
     return unless @full.ok_to_remove?(spec.full_name, options[:check_dev])
 
-    if options[:dryrun] then
+    if options[:dryrun]
       say "Dry Run Mode: Would uninstall #{spec.full_name}"
       return
     end

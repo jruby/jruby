@@ -97,7 +97,7 @@ lib/rubygems/defaults/operating_system.rb
     true
   end
 
-  def add_path out, path
+  def add_path(out, path)
     path.each do |component|
       out << "     - #{component}\n"
     end
@@ -119,6 +119,8 @@ lib/rubygems/defaults/operating_system.rb
     out << "  - RUBYGEMS PREFIX: #{Gem.prefix}\n" unless Gem.prefix.nil?
 
     out << "  - RUBY EXECUTABLE: #{Gem.ruby}\n"
+
+    out << "  - GIT EXECUTABLE: #{git_path}\n"
 
     out << "  - EXECUTABLE DIRECTORY: #{Gem.bindir}\n"
 
@@ -155,6 +157,23 @@ lib/rubygems/defaults/operating_system.rb
     add_path out, shell_path
 
     out
+  end
+
+  private
+
+  ##
+  # Git binary path
+
+  def git_path
+    exts = ENV["PATHEXT"] ? ENV["PATHEXT"].split(";") : [""]
+    ENV["PATH"].split(File::PATH_SEPARATOR).each do |path|
+      exts.each do |ext|
+        exe = File.join(path, "git#{ext}")
+        return exe if File.executable?(exe) && !File.directory?(exe)
+      end
+    end
+
+    return nil
   end
 
 end

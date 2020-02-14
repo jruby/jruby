@@ -2,7 +2,7 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
@@ -127,7 +127,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Callable<List<Instr>> instructions) {
+    public InterpreterContext allocateInterpreterContext(Supplier<List<Instr>> instructions) {
         try {
             interpreterContext = new ClosureInterpreterContext(this, instructions);
         } catch (Exception e) {

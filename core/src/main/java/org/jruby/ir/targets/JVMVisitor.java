@@ -156,6 +156,11 @@ public class JVMVisitor extends IRVisitor {
             jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
         }
 
+        if (scope.needsBinding() || !scope.hasExplicitCallProtocol()) {
+            // declare dynamic scope local only if we'll need it
+            jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
+        }
+
         if (!scope.hasExplicitCallProtocol()) {
             // No call protocol, dynscope has been prepared for us
             jvmMethod().loadContext();
@@ -2492,14 +2497,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Scope(Scope scope) {
-        IRScope irScope = scope.getScope();
-        String name = JavaNameMangler.encodeScopeForBacktrace(irScope) + '$' + methodIndex++ + "_IRSCope";
-        if (scopeMap.get(name) == null) {
-            scopeMap.put(name, irScope);
-            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, name, ci(IRScope.class), null, null).visitEnd();
-        }
-        jvmAdapter().getstatic(jvm.clsData().clsName, name, ci(IRScope.class));
-        jvmAdapter().invokestatic(p(Helpers.class), "getStaticScope", sig(StaticScope.class, IRScope.class));
+        jvmMethod().loadStaticScope();
     }
 
     @Override

@@ -96,17 +96,6 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.23</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>jnr-ffi</artifactId>
-          <groupId>com.github.jnr</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-unixsocket</artifactId>
       <version>0.24</version>
       <exclusions>
         <exclusion>
@@ -117,8 +106,19 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-unixsocket</artifactId>
+      <version>0.26</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>jnr-ffi</artifactId>
+          <groupId>com.github.jnr</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.51</version>
+      <version>3.0.53</version>
       <exclusions>
         <exclusion>
           <artifactId>jnr-ffi</artifactId>
@@ -140,7 +140,7 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.1.11</version>
+      <version>2.1.12</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -271,24 +271,6 @@ DO NOT MODIFIY - GENERATED CODE
         <directory>src/main/resources</directory>
         <includes>
           <include>META-INF/**/*</include>
-        </includes>
-      </resource>
-      <resource>
-        <targetPath>${project.build.sourceDirectory}</targetPath>
-        <filtering>true</filtering>
-        <directory>${project.basedir}/src/main/resources</directory>
-        <includes>
-          <include>${Constants.java}</include>
-        </includes>
-      </resource>
-      <resource>
-        <targetPath>${project.build.outputDirectory}/META-INF/</targetPath>
-        <directory>${project.basedir}/..</directory>
-        <includes>
-          <include>BSDL</include>
-          <include>COPYING</include>
-          <include>LEGAL</include>
-          <include>LICENSE.RUBY</include>
         </includes>
       </resource>
     </resources>
@@ -608,6 +590,38 @@ DO NOT MODIFIY - GENERATED CODE
             </manifestEntries>
           </archive>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>initialize</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/main/resources</directory>
+                  <includes>${Constants.java}</includes>
+                  <targetPath>${project.build.sourceDirectory}</targetPath>
+                  <filtering>true</filtering>
+                </resource>
+                <resource>
+                  <directory>..</directory>
+                  <includes>
+                    <include>BSDL</include>
+                    <include>COPYING</include>
+                    <include>LEGAL</include>
+                    <include>LICENSE.RUBY</include>
+                  </includes>
+                  <targetPath>${project.build.sourceDirectory}/META-INF/</targetPath>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>

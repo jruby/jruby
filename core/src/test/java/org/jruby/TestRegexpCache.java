@@ -48,7 +48,7 @@ public class TestRegexpCache extends TestRubyBase {
 
         // Should be the same object if cached
         RubyRegexp regexp = new RubyRegexp(runtime);
-        regexp.initialize_m19(str); // Regexp.new(str)
+        regexp.initialize_m(str); // Regexp.new(str)
 
         assertEquals(1, RubyRegexp.patternCache.size());
 

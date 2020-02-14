@@ -197,7 +197,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
 
         // enable refinements if incoming scope already has an overlay active
-        if (staticScope.getOverlayModuleForRead() != null) {
+        if (staticScope.getOverlayModuleForRead() != null || staticScope.getIRScope().maybeUsingRefinements()) {
             script.setIsMaybeUsingRefinements();
         }
 

@@ -61,11 +61,15 @@ public class Symbol extends ImmutableLiteral implements Stringable {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
 
-        e.encode(getBytes());
+        e.encode(symbol);
     }
 
     public static Symbol decode(IRReaderDecoder d) {
-        return new Symbol(d.decodeSymbol());
+        RubySymbol symbol = d.decodeSymbol();
+
+        if (symbol == null) return KW_REST_ARG_DUMMY;
+
+        return new Symbol(symbol);
     }
 
     @Override

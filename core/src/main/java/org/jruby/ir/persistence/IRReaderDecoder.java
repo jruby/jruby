@@ -60,7 +60,7 @@ public interface IRReaderDecoder {
 
     public Variable decodeVariable();
 
-    public List<Instr> decodeInstructionsAt(IRScope scope, int offset);
+    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int instructionOffset);
     public IRScope getCurrentScope();
     public Map<String, Operand> getVars();
 

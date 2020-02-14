@@ -185,8 +185,8 @@ public abstract class Type extends RubyObject {
             this.sym = runtime.newSymbol(symName);
         }
 
-        @JRubyMethod(name = "to_s")
-        public final IRubyObject to_s(ThreadContext context) {
+        @JRubyMethod(name = "inspect")
+        public final IRubyObject inspect(ThreadContext context) {
             return RubyString.newString(context.runtime,
                     String.format("#<FFI::Type::Builtin:%s size=%d alignment=%d>",
                     nativeType.name(), size, alignment));
