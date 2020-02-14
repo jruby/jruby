@@ -58,6 +58,9 @@ import org.jruby.util.log.LoggerFactory;
  * <code>require</code> and <code>load</code>
  */
 public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
+    static {
+        registerAsParallelCapable();
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(JRubyClassLoader.class);
 
