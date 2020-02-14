@@ -4,6 +4,9 @@ package org.jruby.util;
  * Represents a class loader designed to load exactly one class.
 */
 public class OneShotClassLoader extends ClassLoader implements ClassDefiningClassLoader {
+    static {
+        registerAsParallelCapable();
+    }
 
     public OneShotClassLoader(JRubyClassLoader parent) {
         super(parent);
