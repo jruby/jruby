@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 require 'rubygems/test_case'
 require 'rubygems/installer'
-require 'rubygems/deprecate'
 
 class Gem::Installer
 
@@ -107,18 +106,6 @@ class Gem::InstallerTestCase < Gem::TestCase
     Gem::Installer.path_warning = false
   end
 
-  def util_gem_bindir spec = @spec # :nodoc:
-    spec.bin_dir
-  end
-
-  def util_gem_dir spec = @spec # :nodoc:
-    spec.gem_dir
-  end
-
-  extend Gem::Deprecate
-  deprecate :util_gem_bindir, "@spec.bin_dir", 2016, 10
-  deprecate :util_gem_dir, "@spec.gem_dir", 2016, 10
-
   ##
   # The path where installed executables live
 
@@ -132,9 +119,9 @@ class Gem::InstallerTestCase < Gem::TestCase
   # The executable is also written to the bin dir in @tmpdir and the installed
   # gem directory for +spec+.
 
-  def util_make_exec(spec = @spec, shebang = "#!/usr/bin/ruby")
+  def util_make_exec(spec = @spec, shebang = "#!/usr/bin/ruby", bindir = "bin")
     spec.executables = %w[executable]
-    spec.files << 'bin/executable'
+    spec.bindir = bindir
 
     exec_path = spec.bin_file "executable"
     write_file exec_path do |io|
@@ -196,4 +183,3 @@ class Gem::InstallerTestCase < Gem::TestCase
   end
 
 end
-
