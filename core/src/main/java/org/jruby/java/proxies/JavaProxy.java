@@ -9,9 +9,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import com.headius.backport9.modules.Module;
 import com.headius.backport9.modules.Modules;
@@ -39,6 +41,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -443,26 +446,24 @@ public class JavaProxy extends RubyObject {
 
     private Method getMethod(ThreadContext context, String name, Class... argTypes) {
         Class<?> originalClass = getObject().getClass();
+        Method[] holder = {null};
 
-        try {
-            for (Class<?> clazz = originalClass; clazz != null; clazz = clazz.getSuperclass()) {
-                Module module = Modules.getModule(clazz);
-                Package pkg = clazz.getPackage();
-
-                // Default package cannot be used by modules
-                if (pkg != null) {
-                    if (!module.isExported(pkg.getName())) continue;
+        Predicate<Method[]> predicate = (classMethods) -> {
+            for (Method method : classMethods) {
+                if (method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), argTypes)) {
+                    holder[0] = method;
+                    return false;
                 }
-
-                Method method = clazz.getMethod(name, argTypes);
-
-                if (!Modifier.isPublic(method.getModifiers())) continue;
-
-                return method;
             }
-        } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
-        }
+
+            return true;
+        };
+
+        MethodGatherer.eachAccessibleMethod(
+                originalClass,
+                predicate, predicate);
+
+        if (holder[0] != null) return holder[0];
 
         throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
     }

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -152,6 +153,17 @@ public class MethodGatherer {
     static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
         HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
 
+        eachAccessibleMethod(
+                javaClass,
+                (classMethods) -> { addNewMethods(nameMethods, classMethods, true); return true; },
+                (interfaceMethods) -> { addNewMethods(nameMethods, interfaceMethods, false); return true; });
+
+        return nameMethods;
+    }
+
+    public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
+        HashMap<String, List<Method>> nameMethods = new HashMap<>(32);
+
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
@@ -163,10 +175,10 @@ public class MethodGatherer {
                     // and replacing child methods with equivalent parent methods
                     PartitionedMethods filteredMethods = FILTERED_DECLARED_METHODS.get(klass);
 
-                    addNewMethods(nameMethods, filteredMethods.instanceMethods, true);
+                    if (!classProcessor.test(filteredMethods.instanceMethods)) return;
 
                     if (klass == javaClass) {
-                        addNewMethods(nameMethods, filteredMethods.staticMethods, true);
+                        if (!classProcessor.test(filteredMethods.staticMethods)) return;
                     }
                 }
                 catch (SecurityException e) { /* ignored */ }
@@ -180,13 +192,11 @@ public class MethodGatherer {
                     // parent methods
                     PartitionedMethods filteredMethods = FILTERED_METHODS.get(iface);
 
-                    addNewMethods(nameMethods, filteredMethods.instanceMethods, false);
+                    if (!interfaceProcessor.test(filteredMethods.instanceMethods)) return;
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
         }
-
-        return nameMethods;
     }
 
     private static boolean methodsAreEquivalent(Method child, Method parent) {
