@@ -334,7 +334,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "localstatedir", newFile(normalizedHome, "var").getPath());
         setConfig(context, CONFIG, "DLEXT", "jar");
         if (Platform.IS_WINDOWS) {
-            setConfig(context, CONFIG, "RUBY_SO_NAME", ((arch.equals("i386")) ? "x32" : "x64") + "-msvcrt-" + jrubyScript());
+            setConfig(context, CONFIG, "RUBY_SO_NAME", ((arch.equals("x86_64")) ? "x64-" : "") + "msvcrt-" + jrubyScript());
         } else {
             setConfig(context, CONFIG, "RUBY_SO_NAME", "ruby");
         }
