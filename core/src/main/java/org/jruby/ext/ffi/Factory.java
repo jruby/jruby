@@ -144,8 +144,6 @@ public abstract class Factory {
 
             Platform.createPlatformModule(runtime, ffi);
             IOModule.createIOModule(runtime, ffi);
-            
-            StructByReference.createStructByReferenceClass(runtime, ffi);
         }
     }
     
