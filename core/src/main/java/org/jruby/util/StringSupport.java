@@ -762,7 +762,7 @@ public final class StringSupport {
 
     /**
      * Check whether input object's string value contains a null byte, and if so
-     * throw SecurityError.
+     * throw ArgumentError.
      * @param runtime
      * @param value
      */
@@ -773,7 +773,7 @@ public final class StringSupport {
         final int end = bl.length();
         for (int i = bl.begin(); i < end; ++i) {
             if (array[i] == (byte) 0) {
-                throw runtime.newSecurityError("string contains null byte");
+                throw runtime.newArgumentError("string contains null byte");
             }
         }
     }
