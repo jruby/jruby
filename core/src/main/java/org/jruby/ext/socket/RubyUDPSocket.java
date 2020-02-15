@@ -413,7 +413,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                     port = (int) _port.convertToInteger().getLongValue();
                 }
 
-                addrs = SocketUtils.getRubyInetAddresses(nameStr.getByteList());
+                addrs = SocketUtils.getRubyInetAddresses(nameStr.toString());
             }
 
             RubyString data = _mesg.convertToString();
