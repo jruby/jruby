@@ -53,7 +53,7 @@ module TestLibrary
     unless File.exist?(lib)
       output = nil
       FileUtils.cd(dir) do
-        make = system('which gmake >/dev/null') ? 'gmake' : 'make'
+        make = ENV['MAKE'] || (system('which gmake >/dev/null') ? 'gmake' : 'make')
         output = system(*%{#{make} CPU=#{CPU} OS=#{OS}}.tap{|x| puts x.inspect})
       end
 
