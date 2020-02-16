@@ -124,6 +124,14 @@ abstract public class AbstractMemory extends MemoryObject {
         this.typeSize = typeSize;
     }
 
+    static AbstractMemory cast(ThreadContext context, IRubyObject ptr) {
+        if (!(ptr instanceof AbstractMemory)) {
+            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
+        }
+
+        return (AbstractMemory) ptr;
+    }
+
     @Override
     protected MemoryIO allocateMemoryIO() {
         throw getRuntime().newRuntimeError("allocateMemoryIO should not be called");

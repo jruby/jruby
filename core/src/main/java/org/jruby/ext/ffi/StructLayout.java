@@ -40,7 +40,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -54,7 +53,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
@@ -343,19 +341,11 @@ public final class StructLayout extends Type {
     }
 
     final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
-        }
-
-        return getMember(context.runtime, name).get(context, cache, (AbstractMemory) ptr);
+        return getMember(context.runtime, name).get(context, cache, AbstractMemory.cast(context, ptr));
     }
 
     final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
-        if (!(ptr instanceof AbstractMemory)) {
-            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
-        }
-
-        getMember(context.runtime, name).put(context, cache, (AbstractMemory) ptr, value);
+        getMember(context.runtime, name).put(context, cache, AbstractMemory.cast(context, ptr), value);
     }
 
     @Override
@@ -624,6 +614,9 @@ public final class StructLayout extends Type {
         /** The offset within the memory area of this member */
         private int offset;
 
+        /** The memory operation for this field type */
+        private MemoryOp memoryOp;
+
 
         Field(Ruby runtime, RubyClass klass) {
             this(runtime, klass, DefaultFieldIO.INSTANCE);
@@ -641,12 +634,15 @@ public final class StructLayout extends Type {
             this.type = type;
             this.offset = offset;
             this.io = io;
+            this.memoryOp = MemoryOp.getMemoryOp(type);
         }
 
         void init(IRubyObject name, IRubyObject type, IRubyObject offset) {
             this.name = name;
-            this.type = checkType(type);
+            Type realType = checkType(type);
+            this.type = realType;
             this.offset = RubyNumeric.num2int(offset);
+            this.memoryOp = MemoryOp.getMemoryOp(realType);
         }
 
         void init(IRubyObject name, IRubyObject type, IRubyObject offset, FieldIO io) {
@@ -760,6 +756,29 @@ public final class StructLayout extends Type {
         @JRubyMethod
         public final IRubyObject name(ThreadContext context) {
             return name;
+        }
+
+        @JRubyMethod
+        public final IRubyObject get(ThreadContext context, IRubyObject pointer) {
+            MemoryOp memoryOp = this.memoryOp;
+            if (memoryOp == null) {
+                throw context.runtime.newArgumentError("get not supported for " + type.nativeType.name());
+            }
+
+            return memoryOp.get(context, AbstractMemory.cast(context, pointer), offset);
+        }
+
+        @JRubyMethod
+        public final IRubyObject put(ThreadContext context, IRubyObject pointer, IRubyObject value) {
+            MemoryOp memoryOp = this.memoryOp;
+
+            if (memoryOp == null) {
+                throw context.runtime.newArgumentError("put not supported for " + type.nativeType.name());
+            }
+
+            memoryOp.put(context, AbstractMemory.cast(context, pointer), offset, value);
+
+            return this;
         }
     }
 
