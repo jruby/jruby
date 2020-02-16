@@ -953,6 +953,20 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(optional = 2)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
+            IRubyObject[] newArgs = new IRubyObject[3];
+            numExtractStepArgs(context, args, newArgs);
+            IRubyObject to = newArgs[0], step = newArgs[1], by = newArgs[2];
+
+            if (!by.isNil()) {
+                step = by;
+            }
+            if (step.isNil()) {
+                step = RubyFixnum.one(context.runtime);
+            }
+            if ((to.isNil() || to instanceof RubyNumeric) && step instanceof RubyNumeric) {
+                return RubyArithmeticSequence.newArithmeticSequence(context, this, to, step, context.fals);
+            }
+
             return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(this, args));
         }
 
@@ -962,15 +976,14 @@ public class RubyNumeric extends RubyObject {
     }
 
     /**
-     * MRI: num_step_scan_args
+     * MRI: num_step_extract_args
      */
-    private boolean scanStepArgs(ThreadContext context, IRubyObject[] args, IRubyObject[] newArgs) {
+    private int numExtractStepArgs(ThreadContext context, IRubyObject[] args, IRubyObject[] newArgs) {
         Ruby runtime = context.runtime;
         int argc;
 
         IRubyObject hash;
-        boolean desc;
-        IRubyObject to = context.nil, step = context.nil;
+        newArgs[0] = newArgs[1] = newArgs[2] = context.nil;
 
         hash = ArgsUtil.getOptionsArg(runtime, args);
         if (hash.isNil()) {
@@ -980,20 +993,36 @@ public class RubyNumeric extends RubyObject {
         }
         switch (argc) {
             case 2:
-                newArgs[1] = step = args[1];
+                newArgs[1] = args[1];
             case 1:
-                newArgs[0] = to = args[0];
+                newArgs[0] = args[0];
         }
         if (!hash.isNil()) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, STEP_KEYS);
             if (values[0] != null) {
                 if (argc > 0) throw runtime.newArgumentError("to is given twice");
-                newArgs[0] = to = values[0];
+                newArgs[0] = values[0];
             }
             if (values[1] != null) {
                 if (argc > 1) throw runtime.newArgumentError("step is given twice");
-                newArgs[1] = step = values[1];
+                newArgs[2] = values[1];
             }
+        }
+
+        return argc;
+    }
+
+    /**
+     * MRI: num_step_check_fix_args
+     */
+    private boolean numStepCheckFixArgs(ThreadContext context, int argc, IRubyObject[] newArgs, IRubyObject by) {
+        Ruby runtime = context.runtime;
+        boolean desc;
+        IRubyObject to = newArgs[0];
+        IRubyObject step = newArgs[1];
+
+        if (!by.isNil()) {
+            newArgs[1] = step = by;
         } else {
             /* compatibility */
             if (argc > 1 && step.isNil()) {
@@ -1011,6 +1040,19 @@ public class RubyNumeric extends RubyObject {
             newArgs[0] = to = desc ? dbl2num(runtime, Double.NEGATIVE_INFINITY) : dbl2num(runtime, Double.POSITIVE_INFINITY);
         }
         return desc;
+    }
+
+    /**
+     * MRI: num_step_scan_args
+     */
+    private boolean scanStepArgs(ThreadContext context, IRubyObject[] args, IRubyObject[] newArgs) {
+        IRubyObject [] tmpNewArgs = new IRubyObject[3];
+        int argc = numExtractStepArgs(context, args, tmpNewArgs);
+
+        System.arraycopy(tmpNewArgs, 0, newArgs, 0, 2);
+        IRubyObject by = tmpNewArgs[2];
+
+        return numStepCheckFixArgs(context, argc, newArgs, by);
     }
 
     // MRI: num_step_negative_p
