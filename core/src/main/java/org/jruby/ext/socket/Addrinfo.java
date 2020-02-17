@@ -34,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import org.jruby.util.StringSupport;
 
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
@@ -176,7 +177,7 @@ public class Addrinfo extends RubyObject {
 
                 family = sockaddAry.eltOk(0).convertToString();
                 AddressFamily af = SocketUtils.addressFamilyFromArg(family);
-                ProtocolFamily pf = af != null ? null : SocketUtils.protocolFamilyFromArg(family);
+                ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(family);
 
                 if (af == AF_UNIX || pf == PF_UNIX) { /* ["AF_UNIX", "/tmp/sock"] */
                     IRubyObject path = sockaddAry.eltOk(1).convertToString();
@@ -203,6 +204,7 @@ public class Addrinfo extends RubyObject {
                     if (inetAddress == null) inetAddress = getRubyInetAddress(numericnode);
 
                     this.socketAddress = new InetSocketAddress(inetAddress, _port);
+                    this.pfamily = pf;
 
                     // fall through below to finish setting up
                 } else {
@@ -229,6 +231,7 @@ public class Addrinfo extends RubyObject {
 
                 this.socketAddress = new InetSocketAddress(inetAddress, _port);
 
+                //this.pfamily = SocketUtils.protocolFamilyFromArg(family);
                 if (getInetAddress() instanceof Inet4Address) {
                     this.pfamily = PF_INET;
                 } else {
@@ -304,11 +307,12 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject ip(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        String host = arg.convertToString().toString();
+        String host = StringSupport.checkEmbeddedNulls(context.runtime, arg.convertToString()).toString();
         try {
-            InetAddress addy = InetAddress.getByName(host);
+            InetAddress addy = SocketUtils.getRubyInetAddress(host);
             Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv, addy);
             addrinfo.protocol = Protocol.getProtocolByName("ip");
+            addrinfo.pfamily = (addy instanceof Inet4Address) ? PF_INET : PF_INET6;
 
             return addrinfo;
         } catch (UnknownHostException uhe) {
@@ -663,7 +667,7 @@ public class Addrinfo extends RubyObject {
 
     private static InetAddress getRubyInetAddress(IRubyObject node) {
         try {
-            return SocketUtils.getRubyInetAddresses(node.convertToString().getByteList())[0];
+            return SocketUtils.getRubyInetAddress(node.convertToString().toString());
         } catch (UnknownHostException uhe) {
             return null;
         }
