@@ -52,6 +52,9 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
+import org.jruby.compiler.DummyJITCompiler;
+import org.jruby.compiler.TieredJITCompiler;
+import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
@@ -97,7 +100,6 @@ import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
-import org.jruby.compiler.JITCompiler;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
@@ -263,10 +265,15 @@ public final class Ruby implements Constantizable {
 
         this.staticScopeFactory = new StaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-        this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
         this.inlineStats        = new InlineStats();
         this.caches             = new Caches();
+
+        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+            this.jitCompiler = new DummyJITCompiler();
+        } else {
+            this.jitCompiler = new TieredJITCompiler(this);
+        }
 
         this.random = initRandom();
 

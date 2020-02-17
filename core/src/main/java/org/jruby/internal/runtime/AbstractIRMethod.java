@@ -59,7 +59,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
                 if (self.callCount >= 0) {
                     self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
-                    runtime.getJITCompiler().buildThresholdReached(context, self);
+                    runtime.getJITCompiler().queueForJIT(context, self);
                 }
             }
         }

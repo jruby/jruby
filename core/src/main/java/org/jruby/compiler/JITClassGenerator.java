@@ -46,7 +46,7 @@ public class JITClassGenerator {
 
     public JITClassGenerator(String className, String methodName, String key, Ruby ruby, JVMVisitor visitor) {
         this.methodName = methodName;
-        this.packageName = JITCompiler.RUBY_JIT_PREFIX;
+        this.packageName = TieredJITCompiler.RUBY_JIT_PREFIX;
         this.visitor = visitor;
         if (Options.COMPILE_INVOKEDYNAMIC.load()) {
             // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders

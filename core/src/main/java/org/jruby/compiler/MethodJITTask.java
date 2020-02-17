@@ -41,13 +41,13 @@ import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.util.collections.IntHashMap;
 
-class MethodJITTask extends JITCompiler.Task {
+class MethodJITTask extends TieredJITCompiler.Task {
 
     private final String className;
     private final MixedModeIRMethod method;
     private final String methodName;
 
-    public MethodJITTask(JITCompiler jitCompiler, MixedModeIRMethod method, String className) {
+    public MethodJITTask(TieredJITCompiler jitCompiler, MixedModeIRMethod method, String className) {
         super(jitCompiler);
         this.method = method;
         this.className = className;
@@ -78,7 +78,7 @@ class MethodJITTask extends JITCompiler.Task {
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
         String variableName = context.getVariableName();
-        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
+        MethodHandle variable = TieredJITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
         IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
 
         if (signatures.size() == 0) {
@@ -96,7 +96,7 @@ class MethodJITTask extends JITCompiler.Task {
                 method.completeBuild(
                         new CompiledIRMethod(
                                 variable,
-                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
+                                TieredJITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
                                 entry.getKey(),
                                 method.getIRScope(),
                                 method.getVisibility(),
@@ -123,7 +123,7 @@ class MethodJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(String message, Object... reason) {
-        JITCompiler.log(method, methodName, message, reason);
+        TieredJITCompiler.log(method, methodName, message, reason);
     }
 
     static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,

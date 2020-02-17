@@ -41,13 +41,13 @@ import static org.jruby.compiler.MethodJITTask.*;
 /**
  * Created by enebo on 10/30/18.
  */
-class MethodCompiledJITTask extends JITCompiler.Task {
+class MethodCompiledJITTask extends TieredJITCompiler.Task {
 
     private final String className;
     private final CompiledIRMethod method;
     private final String methodName;
 
-    public MethodCompiledJITTask(JITCompiler jitCompiler, CompiledIRMethod method, String className) {
+    public MethodCompiledJITTask(TieredJITCompiler jitCompiler, CompiledIRMethod method, String className) {
         super(jitCompiler);
         this.method = method;
         this.className = className;
@@ -78,13 +78,13 @@ class MethodCompiledJITTask extends JITCompiler.Task {
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
         String variableName = context.getVariableName();
-        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
+        MethodHandle variable = TieredJITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
         IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
 
         method.setVariable(variable);
         if (signatures.size() != 0) {
             for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                method.setSpecific(JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()));
+                method.setSpecific(TieredJITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()));
                 break; // FIXME: only supports one arity
             }
         }
@@ -107,7 +107,7 @@ class MethodCompiledJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(method, methodName, message, reason);
+        TieredJITCompiler.log(method, methodName, message, reason);
     }
 
 }

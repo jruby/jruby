@@ -37,14 +37,14 @@ import org.jruby.runtime.MixedModeIRBlockBody;
 
 import static org.jruby.compiler.MethodJITTask.*;
 
-class BlockJITTask extends JITCompiler.Task {
+class BlockJITTask extends TieredJITCompiler.Task {
 
     private final String className;
     private final MixedModeIRBlockBody body;
     private final String blockId;
     private final String methodName;
 
-    public BlockJITTask(JITCompiler jitCompiler, MixedModeIRBlockBody body, String className) {
+    public BlockJITTask(TieredJITCompiler jitCompiler, MixedModeIRBlockBody body, String className) {
         super(jitCompiler);
         this.body = body;
         this.className = className;
@@ -60,7 +60,7 @@ class BlockJITTask extends JITCompiler.Task {
         if (excludeModuleName != null) {
             body.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body, blockId, "skipping block in " + excludeModuleName);
+                TieredJITCompiler.log(body, blockId, "skipping block in " + excludeModuleName);
             }
             return;
         }
@@ -82,7 +82,7 @@ class BlockJITTask extends JITCompiler.Task {
         // blocks only have variable-arity
         body.completeBuild(
                 new CompiledIRBlockBody(
-                        JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
+                        TieredJITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
                         body.getIRScope(),
                         ((IRClosure) body.getIRScope()).getSignature().encode()));
     }
@@ -104,7 +104,7 @@ class BlockJITTask extends JITCompiler.Task {
 
     @Override
     protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(body, blockId, message, reason);
+        TieredJITCompiler.log(body, blockId, message, reason);
     }
 
 }

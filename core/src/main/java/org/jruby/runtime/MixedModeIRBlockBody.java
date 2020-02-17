@@ -162,7 +162,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                         return; // do not JIT if we don't have an explicit protocol
                     }
 
-                    runtime.getJITCompiler().buildThresholdReached(context, this);
+                    runtime.getJITCompiler().queueForJIT(context, this);
                 }
             }
         }

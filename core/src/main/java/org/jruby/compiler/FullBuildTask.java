@@ -8,10 +8,10 @@ import org.jruby.ir.interpreter.InterpreterContext;
  */
 class FullBuildTask implements Runnable {
 
-    private final JITCompiler jitCompiler;
+    private final TieredJITCompiler jitCompiler;
     private final Compilable<InterpreterContext> method;
 
-    FullBuildTask(JITCompiler jitCompiler, Compilable<InterpreterContext> method) {
+    FullBuildTask(TieredJITCompiler jitCompiler, Compilable<InterpreterContext> method) {
         this.jitCompiler = jitCompiler;
         this.method = method;
     }
@@ -27,11 +27,11 @@ class FullBuildTask implements Runnable {
             method.completeBuild(method.getIRScope().prepareFullBuild());
 
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method, method.getName(), "done building");
+                TieredJITCompiler.log(method, method.getName(), "done building");
             }
         } catch (Throwable t) {
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method, method.getName(), "could not build; passes run: " + method.getIRScope().getExecutedPasses(), t);
+                TieredJITCompiler.log(method, method.getName(), "could not build; passes run: " + method.getIRScope().getExecutedPasses(), t);
                 if (jitCompiler.config.isJitLoggingVerbose()) {
                     t.printStackTrace();
                 }

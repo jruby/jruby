@@ -157,7 +157,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
                 if (this.callCount >= 0) {
                     this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
-                    runtime.getJITCompiler().buildThresholdReached(context, this);
+                    runtime.getJITCompiler().queueForJIT(context, this);
                 }
             }
         }

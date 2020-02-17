@@ -1,5 +1,9 @@
 package org.jruby.compiler;
 
+import org.jruby.runtime.MethodIndex;
+
+import java.util.Arrays;
+
 public interface JITCompilerMBean {
     long getSuccessCount();
     long getCompileCount();
@@ -13,6 +17,16 @@ public interface JITCompilerMBean {
     long getIRSize();
     long getIRAverageSize();
     long getIRLargestSize();
-    String[] getFrameAwareMethods();
-    String[] getScopeAwareMethods();
+
+    default String[] getFrameAwareMethods() {
+        String[] frameAwareMethods = MethodIndex.FRAME_AWARE_METHODS.toArray(new String[0]);
+        Arrays.sort(frameAwareMethods);
+        return frameAwareMethods;
+    }
+
+    default String[] getScopeAwareMethods() {
+        String[] scopeAwareMethods = MethodIndex.SCOPE_AWARE_METHODS.toArray(new String[0]);
+        Arrays.sort(scopeAwareMethods);
+        return scopeAwareMethods;
+    }
 }

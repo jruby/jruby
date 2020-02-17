@@ -34,7 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import org.jruby.compiler.JITCompiler;
+
+import org.jruby.compiler.TieredJITCompiler;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.ClassDefiningJRubyClassLoader;
@@ -213,7 +214,7 @@ public class HandleFactory {
     private static String createHandleName(Method method) {
         Class returnType = method.getReturnType();
         Class[] paramTypes = method.getParameterTypes();
-        return method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") + '#' + method.getName() + '#' + JITCompiler.getHashForString(pretty(returnType, paramTypes));
+        return method.getDeclaringClass().getCanonicalName().replaceAll("\\.", "__") + '#' + method.getName() + '#' + TieredJITCompiler.getHashForString(pretty(returnType, paramTypes));
     }
     
     public static void loadUnboxedArgument(SkinnyMethodAdapter m, int index, Class type) {
