@@ -2068,6 +2068,8 @@ public class RubyModule extends RubyObject {
      * Determine if a new child of the given class can have its variables reified.
      */
     private boolean isReifiable(Ruby runtime, RubyClass superClass) {
+        if (Options.GRAALVM_NATIVE_COMPILE.load()) return false;
+
         if (superClass == runtime.getObject()) return true;
 
         if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
