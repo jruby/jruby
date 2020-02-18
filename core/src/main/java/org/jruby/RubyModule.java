@@ -325,9 +325,13 @@ public class RubyModule extends RubyObject {
     }
 
     protected final MethodHandle newIdTest() {
-        return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
-                .insert(2, id)
-                .invoke(testModuleMatch);
+        if (!Options.GRAALVM_NATIVE_COMPILE.load()) {
+            return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
+                    .insert(2, id)
+                    .invoke(testModuleMatch);
+        }
+
+        return null;
     }
 
     /** separate path for MetaClass construction
