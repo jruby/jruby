@@ -124,6 +124,14 @@ abstract public class AbstractMemory extends MemoryObject {
         this.typeSize = typeSize;
     }
 
+    static AbstractMemory cast(ThreadContext context, IRubyObject ptr) {
+        if (!(ptr instanceof AbstractMemory)) {
+            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
+        }
+
+        return (AbstractMemory) ptr;
+    }
+
     @Override
     protected MemoryIO allocateMemoryIO() {
         throw getRuntime().newRuntimeError("allocateMemoryIO should not be called");
@@ -594,7 +602,7 @@ abstract public class AbstractMemory extends MemoryObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "write_uint" }, required = 1)
+    @JRubyMethod(name = { "write_uint32", "write_uint" }, required = 1)
     public IRubyObject write_uint(ThreadContext context, IRubyObject value) {
         getMemoryIO().putInt(0, (int) Util.uint32Value(value));
 
@@ -629,11 +637,31 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     /**
+     * Reads a 8 bit unsigned integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "read_uint8" })
+    public IRubyObject read_uint8(ThreadContext context) {
+        return Util.newUnsigned8(context.runtime, getMemoryIO().getByte(0));
+    }
+
+    /**
+     * Reads a 16 bit unsigned integer value from the memory address.
+     *
+     * @return The value read from the address.
+     */
+    @JRubyMethod(name = { "read_uint16" })
+    public IRubyObject read_uint16(ThreadContext context) {
+        return Util.newUnsigned16(context.runtime, getMemoryIO().getShort(0));
+    }
+
+    /**
      * Reads a 32 bit unsigned integer value from the memory address.
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "read_uint" })
+    @JRubyMethod(name = { "read_uint", "read_uint32" })
     public IRubyObject read_uint(ThreadContext context) {
         return Util.newUnsigned32(context.runtime, getMemoryIO().getInt(0));
     }
@@ -665,7 +693,7 @@ abstract public class AbstractMemory extends MemoryObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "write_long_long" }, required = 1)
+    @JRubyMethod(name = { "write_int64", "write_long_long" }, required = 1)
     public IRubyObject write_long_long(ThreadContext context, IRubyObject value) {
         getMemoryIO().putLong(0, Util.int64Value(value));
 
@@ -704,7 +732,7 @@ abstract public class AbstractMemory extends MemoryObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "read_long_long" })
+    @JRubyMethod(name = { "read_int64", "read_long_long" })
     public IRubyObject read_long_long(ThreadContext context) {
         return Util.newSigned64(context.runtime, getMemoryIO().getLong(0));
     }
@@ -736,7 +764,7 @@ abstract public class AbstractMemory extends MemoryObject {
      * @param value The value to write.
      * @return The value written.
      */
-    @JRubyMethod(name = { "write_ulong_long" }, required = 1)
+    @JRubyMethod(name = { "write_uint64", "write_ulong_long" }, required = 1)
     public IRubyObject write_ulong_long(ThreadContext context, IRubyObject value) {
         getMemoryIO().putLong(0, Util.uint64Value(value));
 
@@ -775,7 +803,7 @@ abstract public class AbstractMemory extends MemoryObject {
      *
      * @return The value read from the address.
      */
-    @JRubyMethod(name = { "read_ulong_long" })
+    @JRubyMethod(name = { "read_uint64", "read_ulong_long" })
     public IRubyObject read_ulong_long(ThreadContext context) {
         return Util.newUnsigned64(context.runtime, getMemoryIO().getLong(0));
     }
@@ -1880,13 +1908,14 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     private IRubyObject putBytes(ThreadContext context, long off, ByteList bl, int idx, int len) {
-        if (idx < 0 || idx > bl.length()) {
-            throw context.runtime.newRangeError("invalid string index");
+        if (idx < 0) {
+            throw context.runtime.newRangeError("index can not be less than zero");
         }
 
-        if (len < 0 || len > (bl.length() - idx)) {
-            throw context.runtime.newRangeError("invalid length");
+        if ((idx + len) > bl.length()) {
+            throw context.runtime.newRangeError("index+length is greater than size of string");
         }
+
         getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
 
         return this;
@@ -2049,6 +2078,35 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "slice")
     public final IRubyObject slice(ThreadContext context, IRubyObject offset, IRubyObject size) {
         return slice(context.getRuntime(), RubyNumeric.num2int(offset), RubyNumeric.num2int(size));
+    }
+
+    @JRubyMethod(name = "get")
+    public final IRubyObject put(ThreadContext context, IRubyObject typeName, IRubyObject offset) {
+        Ruby runtime = context.runtime;
+
+        Type type = runtime.getFFI().getTypeResolver().findType(runtime, typeName);
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+
+        if(op != null) {
+            return op.get(context, getMemoryIO(), RubyNumeric.num2long(offset));
+        }
+
+        throw runtime.newArgumentError("undefined type " + typeName);
+    }
+
+    @JRubyMethod(name = "put")
+    public final IRubyObject get(ThreadContext context, IRubyObject typeName, IRubyObject offset, IRubyObject value) {
+        Ruby runtime = context.runtime;
+
+        Type type = runtime.getFFI().getTypeResolver().findType(runtime, typeName);
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+        if(op != null) {
+            op.put(context, getMemoryIO(), RubyNumeric.num2long(offset), value);
+
+            return context.nil;
+        }
+
+        throw runtime.newArgumentError("undefined type " + typeName);
     }
 
     abstract public AbstractMemory order(Ruby runtime, ByteOrder order);

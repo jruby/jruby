@@ -55,11 +55,18 @@ describe "Pointer" do
   end
 
   it "Fixnum cannot be used as a Pointer argument" do
-    expect { PointerTestLib.ptr_ret_int32(0, 0) }.to raise_error
+    expect { PointerTestLib.ptr_ret_int32_t(0, 0) }.to raise_error(ArgumentError)
   end
 
   it "Bignum cannot be used as a Pointer argument" do
-    expect { PointerTestLib.ptr_ret_int32(0xfee1deadbeefcafebabe, 0) }.to raise_error
+    expect { PointerTestLib.ptr_ret_int32_t(0xfee1deadbeefcafebabe, 0) }.to raise_error(ArgumentError)
+  end
+
+  it "#to_ptr" do
+    memory = FFI::MemoryPointer.new :pointer
+    expect(memory.to_ptr).to eq(memory)
+
+    expect(FFI::Pointer::NULL.to_ptr).to eq(FFI::Pointer::NULL)
   end
 
   describe "pointer type methods" do
@@ -87,7 +94,26 @@ describe "Pointer" do
         expect(array[j].address).to eq(address)
       end
     end
-    
+
+    it "#write_array_of_type for uint8" do
+      values = [10, 227, 32]
+      memory = FFI::MemoryPointer.new FFI::TYPE_UINT8, values.size
+      memory.write_array_of_type(FFI::TYPE_UINT8, :put_uint8, values)
+      array = memory.read_array_of_type(FFI::TYPE_UINT8, :read_uint8, values.size)
+      values.each_with_index do |val, j|
+        expect(array[j]).to eq(val)
+      end
+    end
+
+    it "#write_array_of_type for uint32" do
+      values = [10, 227, 32]
+      memory = FFI::MemoryPointer.new FFI::TYPE_UINT32, values.size
+      memory.write_array_of_type(FFI::TYPE_UINT32, :put_uint32, values)
+      array = memory.read_array_of_type(FFI::TYPE_UINT32, :read_uint32, values.size)
+      values.each_with_index do |val, j|
+        expect(array[j]).to eq(val)
+      end
+    end
   end
 
   describe 'NULL' do
@@ -138,15 +164,6 @@ describe "Pointer" do
       expect(FFI::MemoryPointer.new(:int, 1).type_size).to eq(FFI.type_size(:int))
     end
   end
-
-  it "is not eql? for purposes of hash lookup (GH-2995)" do
-    a = FFI::Pointer.new(0)
-    b = FFI::Pointer.new(0)
-
-    expect(a == b).to eq true
-    expect(a.eql? b).to eq false
-    expect(Hash[a,true][b]).to eq nil
-  end
 end
 
 describe "AutoPointer" do
@@ -179,7 +196,8 @@ describe "AutoPointer" do
     def self.release(ptr); end
   end
 
-  it "cleanup via default release method" do
+  # see #427
+  it "cleanup via default release method", :broken => true do
     expect(AutoPointerSubclass).to receive(:release).at_least(loop_count-wiggle_room).times
     AutoPointerTestHelper.reset
     loop_count.times do
@@ -191,7 +209,8 @@ describe "AutoPointer" do
     AutoPointerTestHelper.gc_everything loop_count
   end
 
-  it "cleanup when passed a proc" do
+  # see #427
+  it "cleanup when passed a proc", :broken => true do
     #  NOTE: passing a proc is touchy, because it's so easy to create a memory leak.
     #
     #  specifically, if we made an inline call to
@@ -209,7 +228,8 @@ describe "AutoPointer" do
     AutoPointerTestHelper.gc_everything loop_count
   end
 
-  it "cleanup when passed a method" do
+  # see #427
+  it "cleanup when passed a method", :broken => true do
     expect(AutoPointerTestHelper).to receive(:release).at_least(loop_count-wiggle_room).times
     AutoPointerTestHelper.reset
     loop_count.times do

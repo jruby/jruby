@@ -23,8 +23,6 @@ PREFIX = lib
 LIBEXT ?= so
 LIBNAME = $(PREFIX)test.$(LIBEXT)
 
-export MACOSX_DEPLOYMENT_TARGET=10.4
-
 CCACHE := $(strip $(realpath $(shell which ccache 2> /dev/null)))
 
 TEST_SRCS = $(wildcard $(SRC_DIR)/*.c)

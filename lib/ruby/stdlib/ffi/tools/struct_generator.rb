@@ -1,4 +1,3 @@
-require 'tmpdir'
 require 'tempfile'
 
 module FFI
@@ -8,15 +7,15 @@ module FFI
   #
   # Given the @@@ portion in:
   #
-  #   module Zlib::ZStream < FFI::Struct
+  #   class Zlib::ZStream < FFI::Struct
   #     @@@
   #     name "struct z_stream_s"
   #     include "zlib.h"
-  #   
+  #
   #     field :next_in,   :pointer
   #     field :avail_in,  :uint
   #     field :total_in,  :ulong
-  #   
+  #
   #     # ...
   #     @@@
   #   end
@@ -91,7 +90,7 @@ module FFI
           raise "Compilation error generating struct #{@name} (#{@struct_name}):\n#{output}"
         end
       end
-      
+
       output = `#{binary}`.split "\n"
       File.unlink(binary + (FFI::Platform.windows? ? ".exe" : ""))
       sizeof = output.shift
@@ -130,10 +129,9 @@ module FFI
 
     def generate_layout
       buf = ""
-      buf << "self.size = #{@size}\n"
 
       @fields.each_with_index do |field, i|
-        if i < 1
+        if buf.empty?
           buf << "layout :#{field.name}, :#{field.type}, #{field.offset}"
         else
           buf << "       :#{field.name}, :#{field.type}, #{field.offset}"
