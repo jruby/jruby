@@ -182,7 +182,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         terminateJarIndexCacheEntries();
     }
 
-    protected void terminateJarIndexCacheEntries() {
+    public void terminateJarIndexCacheEntries() {
         for (String jarPath : cachedJarPaths){
             try {
                 // Remove reference from jar cache

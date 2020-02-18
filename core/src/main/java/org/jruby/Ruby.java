@@ -724,6 +724,21 @@ public final class Ruby implements Constantizable {
         return ruby;
     }
 
+    public static Ruby newEphemeralInstance() {
+        Ruby ruby = new Ruby(new RubyInstanceConfig());
+
+        ruby.threadService.teardown();
+        ruby.jrubyClassLoader.terminateJarIndexCacheEntries();
+        ruby.jrubyClassLoader = null;
+
+        return ruby;
+    }
+
+    public void initEphemeralInstance() {
+        threadService.initMainThread();
+        jrubyClassLoader = new JRubyClassLoader(Ruby.class.getClassLoader());
+    }
+
     private void loadRequiredLibraries() {
         ThreadContext context = getCurrentContext();
 
@@ -5248,7 +5263,7 @@ public final class Ruby implements Constantizable {
 
     // Java support
     private JavaSupport javaSupport;
-    private final JRubyClassLoader jrubyClassLoader;
+    private JRubyClassLoader jrubyClassLoader;
 
     // Management/monitoring
     private final BeanManager beanManager;
