@@ -62,6 +62,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.IdUtil;
+import org.jruby.util.cli.Options;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -187,6 +188,10 @@ public class StaticScope implements Serializable {
     }
 
     public DynamicScope construct(DynamicScope parent) {
+        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+            return new ManyVarsDynamicScope(this, parent);
+        }
+
         MethodHandle constructor = this.constructor;
 
         if (constructor == null) constructor = acquireConstructor();
