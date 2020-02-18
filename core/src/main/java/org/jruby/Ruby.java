@@ -297,7 +297,12 @@ public final class Ruby implements Constantizable {
 
         this.objectSpacer = initObjectSpacer(config);
 
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
+        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+            posix = POSIXFactory.getJavaPOSIX(new JRubyPOSIXHandler(this));
+        } else {
+            posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
+        }
+
         filenoUtil = new FilenoUtil(posix);
 
         reinitialize(false);
