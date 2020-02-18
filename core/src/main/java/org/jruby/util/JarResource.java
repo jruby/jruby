@@ -1,6 +1,8 @@
 package org.jruby.util;
 
 import jnr.posix.FileStat;
+import org.jruby.Ruby;
+import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -13,34 +15,32 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
     private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
+        if (Ruby.GRAALVM) {
+            throw new RuntimeException("jar loading is not supported in GraalVM native mode");
+        }
+
         int bang = pathname.indexOf('!');
         if (bang == -1) return null;  // no ! no jar!
 
         if (pathname.startsWith("jar:")) {
             if (pathname.startsWith("file:", 4)) {
-                pathname = pathname.substring(9); bang -= 9; // 4 + 5
+                pathname = pathname.substring(9);
+                bang -= 9; // 4 + 5
+            } else {
+                pathname = pathname.substring(4);
+                bang -= 4;
             }
-            else {
-                pathname = pathname.substring(4); bang -= 4;
-            }
-        }
-        else if (pathname.startsWith("file:")) {
-            pathname = pathname.substring(5); bang -= 5;
+        } else if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5);
+            bang -= 5;
         }
 
         String jarPath = pathname.substring(0, bang);
         String entryPath = pathname.substring(bang + 1);
         // normalize path -- issue #2017
-        if (StringSupport.startsWith(entryPath, '/', '/')) entryPath = entryPath.substring(1);
+        if (StringSupport.startsWith(entryPath, '/', '/')) entryPath = entryPath.substring(2);
 
-        // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jarPath, entryPath, false);
-
-        if (resource == null && StringSupport.startsWith(entryPath, '/')) {
-            resource = createJarResource(jarPath, entryPath.substring(1), true);
-        }
-
-        return resource;
+        return createJarResource(jarPath, entryPath, false);
     }
 
     private static JarResource createJarResource(String jarPath, String entryPath, boolean rootSlashPrefix) {

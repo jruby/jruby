@@ -88,7 +88,7 @@ public class VariableTableManager {
     /** a lazy accessor for object group */
     private final VariableAccessorField objectGroupVariableAccessorField = new VariableAccessorField("objectspace_group");
 
-    public static final Boolean GRAALVM_NATIVE = Options.GRAALVM_NATIVE_COMPILE.load();
+    public static final Boolean GRAALVM_NATIVE = Ruby.GRAALVM;
 
     interface ConcurrentVariableAccessor {
         void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value);

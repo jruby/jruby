@@ -767,7 +767,7 @@ public final class ThreadContext {
 
     public static final StackWalker WALKER8 = new StackWalker8();
     public static final StackWalker WALKER =
-            Options.GRAALVM_NATIVE_COMPILE.load() ? WALKER8 : StackWalker.getInstance();
+            Ruby.GRAALVM ? WALKER8 : StackWalker.getInstance();
 
     /**
      * Create an Array with backtrace information for Kernel#caller

@@ -266,7 +266,7 @@ public class JRubyLibrary implements Library {
         // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
         final Ruby runtime = context.runtime;
 
-        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+        if (Ruby.GRAALVM) {
             throw runtime.newNotImplementedError("bytecode compilation is not supported on GraalVM native");
         }
 

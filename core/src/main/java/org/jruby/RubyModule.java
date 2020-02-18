@@ -324,7 +324,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected final MethodHandle newIdTest() {
-        if (!Options.GRAALVM_NATIVE_COMPILE.load()) {
+        if (!Ruby.GRAALVM) {
             return Binder.from(boolean.class, ThreadContext.class, IRubyObject.class)
                     .insert(2, id)
                     .invoke(testModuleMatch);
@@ -2067,7 +2067,7 @@ public class RubyModule extends RubyObject {
      * Determine if a new child of the given class can have its variables reified.
      */
     private boolean isReifiable(Ruby runtime, RubyClass superClass) {
-        if (Options.GRAALVM_NATIVE_COMPILE.load()) return false;
+        if (Ruby.GRAALVM) return false;
 
         if (superClass == runtime.getObject()) return true;
 

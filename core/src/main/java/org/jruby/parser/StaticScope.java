@@ -188,7 +188,7 @@ public class StaticScope implements Serializable {
     }
 
     public DynamicScope construct(DynamicScope parent) {
-        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+        if (Ruby.GRAALVM) {
             return new ManyVarsDynamicScope(this, parent);
         }
 
