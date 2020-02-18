@@ -21,7 +21,7 @@ default_gems = [
     ['ipaddr', '1.2.0'],
     ['jar-dependencies', '${jar-dependencies.version}'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.10.3'],
+    ['jruby-openssl', '0.10.4'],
     ['json', '${json.version}'],
     ['psych', '3.1.0'],
     ['rake-ant', '1.0.4'],
