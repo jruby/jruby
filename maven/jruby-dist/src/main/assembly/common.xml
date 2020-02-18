@@ -57,6 +57,8 @@
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>
         <include>tool/nailgun/**/*.c</include>
+        <include>bin/.dev_mode.java_opts</include>
+        <include>bin/.jruby.*</include>
       </includes>
       <excludes>
         <exclude>test/**/*</exclude>
