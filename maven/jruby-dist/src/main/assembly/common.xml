@@ -64,9 +64,9 @@
         <exclude>test/**/*</exclude>
         <exclude>test/JRUBY-6606/**/*</exclude>
         <exclude>**/*.ac</exclude>
-        <exclude>**/.*</exclude>
         <exclude>**/target/**/*</exclude>
         <exclude>**/style_checks.xml</exclude>
+        <exclude>.git</exclude>
       </excludes>
     </fileSet>
   </fileSets>
