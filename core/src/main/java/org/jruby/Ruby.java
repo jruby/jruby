@@ -1149,27 +1149,26 @@ public final class Ruby implements Constantizable {
      * @return The result of executing the script
      */
     public IRubyObject runNormally(Node scriptNode, boolean wrap) {
-        ScriptAndCode scriptAndCode = null;
-        boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
-        if (compile || config.isShowBytecode()) {
-            scriptAndCode = precompileCLI((RootNode) scriptNode);
-        }
-
-        if (scriptAndCode != null) {
-            if (config.isShowBytecode()) {
-                TraceClassVisitor tracer = new TraceClassVisitor(new PrintWriter(System.err));
-                ClassReader reader = new ClassReader(scriptAndCode.bytecode());
-                reader.accept(tracer, 0);
-                return getNil();
+        if (!GRAALVM) {
+            ScriptAndCode scriptAndCode = null;
+            boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
+            if (compile || config.isShowBytecode()) {
+                scriptAndCode = precompileCLI((RootNode) scriptNode);
             }
 
-            return runScript(scriptAndCode.script(), wrap);
-        } else {
-            // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
-//            failForcedCompile(scriptNode);
+            if (scriptAndCode != null) {
+                if (config.isShowBytecode()) {
+                    TraceClassVisitor tracer = new TraceClassVisitor(new PrintWriter(System.err));
+                    ClassReader reader = new ClassReader(scriptAndCode.bytecode());
+                    reader.accept(tracer, 0);
+                    return getNil();
+                }
 
-            return runInterpreter(scriptNode);
+                return runScript(scriptAndCode.script(), wrap);
+            }
         }
+
+        return runInterpreter(scriptNode);
     }
 
     /**
