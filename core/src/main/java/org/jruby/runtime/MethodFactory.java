@@ -29,6 +29,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -60,7 +61,7 @@ public abstract class MethodFactory {
      */
     public static MethodFactory createFactory(ClassLoader classLoader) {
         // otherwise, generate invokers at runtime
-        if (Options.INVOKEDYNAMIC_HANDLES.load()) {
+        if (!Ruby.GRAALVM && Options.INVOKEDYNAMIC_HANDLES.load()) {
             return new InvokeDynamicMethodFactory(classLoader);
         } else {
             return new InvocationMethodFactory(classLoader);
