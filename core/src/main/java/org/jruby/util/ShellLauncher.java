@@ -234,32 +234,12 @@ public class ShellLauncher {
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
             RubyHash hash = null;
-            if (!clearEnv) {
+            if (clearEnv) {
+                hash = RubyHash.newHash(runtime);
+            } else {
                 hash = (RubyHash) runtime.getObject().getConstant("ENV").dup();
             }
-            String[] ret;
 
-            if (mergeEnv != null) {
-                ret = new String[hash.size() + mergeEnv.size()];
-            } else {
-                ret = new String[hash.size()];
-            }
-
-            int i = 0;
-            if (hash != null) {
-                for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
-                    // if the key is nil, raise TypeError
-                    if (e.getKey() == null) {
-                        throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
-                    }
-                    // ignore if the value is nil
-                    if (e.getValue() == null) {
-                        continue;
-                    }
-                    ret[i] = e.getKey() + '=' + e.getValue();
-                    i++;
-                }
-            }
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
                     for (Map.Entry e : (Set<Map.Entry>)mergeEnv) {
@@ -269,10 +249,10 @@ public class ShellLauncher {
                         }
                         // ignore if the value is nil
                         if (e.getValue() == null) {
+                            hash.remove(e.getKey().toString());
                             continue;
                         }
-                        ret[i] = e.getKey().toString() + '=' + e.getValue();
-                        i++;
+                        hash.put(e.getKey().toString(), e.getValue().toString());
                     }
                 } else if (mergeEnv instanceof RubyArray) {
                     for (int j = 0; j < mergeEnv.size(); j++) {
@@ -287,12 +267,28 @@ public class ShellLauncher {
                         }
                         // ignore if the value is nil
                         if (e.eltOk(1) == null) {
+                            hash.remove(e.eltOk(0).toString());
                             continue;
                         }
-                        ret[i] = e.eltOk(0).toString() + '=' + e.eltOk(1).toString();
-                        i++;
+                        hash.put(e.eltOk(0).toString(), e.eltOk(1).toString());
                     }
                 }
+            }
+
+            String[] ret = new String[hash.size()];
+
+            int i = 0;
+            for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
+                // if the key is nil, raise TypeError
+                if (e.getKey() == null) {
+                    throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
+                }
+                // ignore if the value is nil
+                if (e.getValue() == null) {
+                    continue;
+                }
+                ret[i] = e.getKey() + '=' + e.getValue();
+                i++;
             }
 
             return arrayOfLength(ret, i);
@@ -1345,7 +1341,8 @@ public class ShellLauncher {
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
-        File pwd = new File(runtime.getCurrentDirectory());
+        String virtualCWD = runtime.getCurrentDirectory();
+        File pwd = new File(virtualCWD);
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
 
         try {
@@ -1366,13 +1363,16 @@ public class ShellLauncher {
                     cfg.verifyExecutableForDirect();
                 }
                 String[] args = cfg.getExecArgs();
-                // only if we inside a jar and spawning org.jruby.Main we
-                // change to the current directory inside the jar
-                if (runtime.getCurrentDirectory().startsWith("uri:classloader:") &&
-                        args[args.length - 1].contains("org.jruby.Main")) {
+                if (virtualCWD.startsWith("uri:classloader:")) {
+                    // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
-                    args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                            "org.jruby.Main -C " + runtime.getCurrentDirectory());
+
+                    // only if we inside a jar and spawning org.jruby.Main we
+                    // change to the current directory inside the jar
+                    if (args[args.length - 1].contains("org.jruby.Main")) {
+                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
+                                "org.jruby.Main -C " + virtualCWD);
+                    }
                 }
                 aProcess = buildProcess(runtime, args, getCurrentEnv(runtime), pwd);
             }

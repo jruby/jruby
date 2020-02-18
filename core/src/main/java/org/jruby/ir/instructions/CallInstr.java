@@ -55,8 +55,15 @@ public class CallInstr extends CallBase implements ResultInstr {
                 return new ZeroOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
             } else if (args.length == 1) {
                 if (hasClosure) return new OneOperandArgBlockCallInstr(scope, callType, result, name, receiver, args, closure, isPotentiallyRefined);
-                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
-                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                if (!isPotentiallyRefined) {
+                    // These instructions use primitive call paths that are not implemented for RefinedCallSite.
+                    if (isAllFixnums(args)) {
+                        return new OneFixnumArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                    }
+                    if (isAllFloats(args)) {
+                        return new OneFloatArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
+                    }
+                }
 
                 return new OneOperandArgNoBlockCallInstr(scope, callType, result, name, receiver, args, isPotentiallyRefined);
             } else if (args.length == 2 && !hasClosure) {

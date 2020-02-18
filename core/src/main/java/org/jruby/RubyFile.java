@@ -96,8 +96,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), FILE_ALLOCATOR);
 
-        runtime.setFile(fileClass);
-
         fileClass.defineAnnotatedMethods(RubyFile.class);
 
         fileClass.setClassIndex(ClassIndex.FILE);
@@ -227,6 +225,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             fileClass.searchMethod("readlink").setNotImplemented(true);
 
             fileClass.searchMethod("mkfifo").setNotImplemented(true);
+        }
+
+        if (!Platform.IS_BSD) {
+            // lchmod appears to be mostly a BSD-ism, not supported on Linux.
+            // See https://github.com/jruby/jruby/issues/5547
+            fileClass.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
         }
 
         return fileClass;
@@ -480,7 +484,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         if (fptr.posix.ftruncate(fptr.fd(), pos) < 0) {
-            throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
+            throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
         }
 
         return RubyFixnum.zero(runtime);
@@ -488,17 +492,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
+        return inspect(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
         final String path = openFile.getPath();
-        ByteList str = new ByteList(path.length() + 8);
+        ByteList str = new ByteList((path == null ? 4 : path.length()) + 8);
 
         str.append('#').append('<');
-        str.append(((RubyString) getMetaClass().to_s()).getByteList());
-        str.append(':').append( RubyEncoding.encodeUTF8(path) );
+        str.append(getMetaClass().getRealClass().to_s().getByteList());
+        str.append(':').append(path == null ? RubyNil.nilBytes : RubyEncoding.encodeUTF8(path));
         if (!openFile.isOpen()) {
             str.append(' ').append('(');
             str.append('c').append('l').append('o').append('s').append('e').append('d');
@@ -928,7 +932,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean braces_match = false;
         boolean extglob = (flags & FNM_EXTGLOB) != 0;
 
-        ByteList pattern = args[0].convertToString().getByteList();
+        ByteList pattern = StringSupport.checkEmbeddedNulls(runtime, args[0].convertToString()).getByteList();
         ByteList path = StringSupport.checkEmbeddedNulls(runtime, get_path(context, args[1])).getByteList();
 
         if(extglob) {

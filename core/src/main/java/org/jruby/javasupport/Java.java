@@ -34,7 +34,9 @@
 
 package org.jruby.javasupport;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -51,6 +53,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
@@ -114,6 +117,8 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
         org.jruby.javasupport.ext.JavaIo.define(runtime);
         org.jruby.javasupport.ext.JavaNet.define(runtime);
+        org.jruby.javasupport.ext.JavaMath.define(runtime);
+        org.jruby.javasupport.ext.JavaTime.define(runtime);
 
         // load Ruby parts of the 'java' library
         runtime.getLoadService().load("jruby/java.rb", false);
@@ -774,7 +779,7 @@ public class Java implements Library {
                 // no containing class for a $ class; treat it as internal and don't define a constant
                 return;
             }
-            parentModule = getProxyClass(runtime, JavaClass.get(runtime, clazz));
+            parentModule = getProxyClass(runtime, JavaClass.get(runtime, declaringClass));
             className = clazz.getSimpleName();
         }
         else {
@@ -917,6 +922,7 @@ public class Java implements Library {
             }
             catch (RuntimeException e) {
                 if ( e instanceof RaiseException ) throw e;
+                if (runtime.isDebug()) e.printStackTrace();
                 throw runtime.newNameError("missing class or uppercase package name (`" + fullName + "'), caused by " + e.getMessage(), fullName);
             }
         }
@@ -1180,6 +1186,8 @@ public class Java implements Library {
         if ( name.length() == 0 ) throw runtime.newArgumentError("empty class name");
 
         Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
+
+        if (enclosing == null) return null;
 
         final String fullName = enclosing.getName() + '$' + name;
 
@@ -1638,9 +1646,15 @@ public class Java implements Library {
     }
 
     /**
-     * @see JavaUtil#CAN_SET_ACCESSIBLE
+     * Try to set the given member to be accessible, considering open modules and avoiding the actual setAccessible
+     * call when it would produce a JPMS warning. All classes on Java 8 are considered open, allowing setAccessible
+     * to proceed.
+     *
+     * The open check is based on this class, Java.java, which will be in whatever core or dist JRuby module you are
+     * using.
      */
-    @SuppressWarnings("unused") private static final byte HIDDEN_STATIC_FIELD = 72;
-    public static final String HIDDEN_STATIC_FIELD_NAME = "HIDDEN_STATIC_FIELD";
+    public static <T extends AccessibleObject & Member> boolean trySetAccessible(T member) {
+        return Modules.trySetAccessible(member, Java.class);
+    }
 
 }

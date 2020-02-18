@@ -12,3 +12,4 @@ fails:Socket::BasicSocket#recv_nonblock using IPv6 receives data after it's read
 fails:Socket::BasicSocket#recv_nonblock using IPv6 allows an output buffer as third argument
 fails:Socket::BasicSocket#recv_nonblock using IPv6 does not block if there's no data available
 fails:Socket::BasicSocket#recv_nonblock using IPv6 using an unbound socket raises an exception extending IO::WaitReadable
+fails:Socket::BasicSocket#recv_nonblock using IPv4 returns :wait_readable with exception: false

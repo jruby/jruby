@@ -89,10 +89,4 @@ public class MethodBlockBody extends ContextAwareBlockBody {
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return argsDesc;
     }
-
-    @Override
-    public void setEvalType(EvalType evalType) {
-        // nop
-    }
-
 }

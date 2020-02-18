@@ -85,6 +85,9 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (!explicitCallProtocolSupported(scope)) return null;
 
+        scope.getFlags().remove(IRFlags.FLAGS_COMPUTED);
+        scope.computeScopeFlags();
+
         CFG cfg = scope.getCFG();
 
         // For now, we always require frame for closures

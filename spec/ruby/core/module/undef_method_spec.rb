@@ -41,8 +41,8 @@ describe "Module#undef_method" do
     x = klass.new
     klass.send(:undef_method, :method_to_undef, :another_method_to_undef)
 
-    lambda { x.method_to_undef }.should raise_error(NoMethodError)
-    lambda { x.another_method_to_undef }.should raise_error(NoMethodError)
+    -> { x.method_to_undef }.should raise_error(NoMethodError)
+    -> { x.another_method_to_undef }.should raise_error(NoMethodError)
   end
 
   it "does not undef any instance methods when argument not given" do
@@ -56,8 +56,37 @@ describe "Module#undef_method" do
     @module.send(:undef_method, :method_to_undef).should equal(@module)
   end
 
-  it "raises a NameError when passed a missing name" do
-    lambda { @module.send :undef_method, :not_exist }.should raise_error(NameError) { |e|
+  it "raises a NameError when passed a missing name for a module" do
+    -> { @module.send :undef_method, :not_exist }.should raise_error(NameError, /undefined method `not_exist' for module `#{@module}'/) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
+  end
+
+  it "raises a NameError when passed a missing name for a class" do
+    klass = Class.new
+    -> { klass.send :undef_method, :not_exist }.should raise_error(NameError, /undefined method `not_exist' for class `#{klass}'/) { |e|
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
+  end
+
+  it "raises a NameError when passed a missing name for a singleton class" do
+    klass = Class.new
+    obj = klass.new
+    sclass = obj.singleton_class
+
+    -> { sclass.send :undef_method, :not_exist }.should raise_error(NameError, /undefined method `not_exist' for class `#{sclass}'/) { |e|
+      e.message.should include('`#<Class:#<#<Class:')
+
+      # a NameError and not a NoMethodError
+      e.class.should == NameError
+    }
+  end
+
+  it "raises a NameError when passed a missing name for a metaclass" do
+    klass = String.singleton_class
+    -> { klass.send :undef_method, :not_exist }.should raise_error(NameError, /undefined method `not_exist' for class `String'/) { |e|
       # a NameError and not a NoMethodError
       e.class.should == NameError
     }
@@ -69,15 +98,15 @@ describe "Module#undef_method" do
     end
 
     it "raises a #{frozen_error_class} when passed a name" do
-      lambda { @frozen.send :undef_method, :method_to_undef }.should raise_error(frozen_error_class)
+      -> { @frozen.send :undef_method, :method_to_undef }.should raise_error(frozen_error_class)
     end
 
     it "raises a #{frozen_error_class} when passed a missing name" do
-      lambda { @frozen.send :undef_method, :not_exist }.should raise_error(frozen_error_class)
+      -> { @frozen.send :undef_method, :not_exist }.should raise_error(frozen_error_class)
     end
 
     it "raises a TypeError when passed a not name" do
-      lambda { @frozen.send :undef_method, Object.new }.should raise_error(TypeError)
+      -> { @frozen.send :undef_method, Object.new }.should raise_error(TypeError)
     end
 
     it "does not raise exceptions when no arguments given" do
@@ -98,7 +127,7 @@ describe "Module#undef_method with symbol" do
 
     klass.send :undef_method, :method_to_undef
 
-    lambda { x.method_to_undef }.should raise_error(NoMethodError)
+    -> { x.method_to_undef }.should raise_error(NoMethodError)
   end
 
   it "removes a method defined in a super class" do
@@ -108,7 +137,7 @@ describe "Module#undef_method with symbol" do
 
     child_class.send :undef_method, :method_to_undef
 
-    lambda { child.method_to_undef }.should raise_error(NoMethodError)
+    -> { child.method_to_undef }.should raise_error(NoMethodError)
   end
 
   it "does not remove a method defined in a super class when removed from a subclass" do
@@ -134,7 +163,7 @@ describe "Module#undef_method with string" do
 
     klass.send :undef_method, 'another_method_to_undef'
 
-    lambda { x.another_method_to_undef }.should raise_error(NoMethodError)
+    -> { x.another_method_to_undef }.should raise_error(NoMethodError)
   end
 
   it "removes a method defined in a super class" do
@@ -144,7 +173,7 @@ describe "Module#undef_method with string" do
 
     child_class.send :undef_method, 'another_method_to_undef'
 
-    lambda { child.another_method_to_undef }.should raise_error(NoMethodError)
+    -> { child.another_method_to_undef }.should raise_error(NoMethodError)
   end
 
   it "does not remove a method defined in a super class when removed from a subclass" do

@@ -20,13 +20,13 @@ describe "File.birthtime" do
     end
 
     it "raises an Errno::ENOENT exception if the file is not found" do
-      lambda { File.birthtime('bogus') }.should raise_error(Errno::ENOENT)
+      -> { File.birthtime('bogus') }.should raise_error(Errno::ENOENT)
     end
   end
 
   platform_is :openbsd do
     it "raises an NotImplementedError" do
-      lambda { File.birthtime(@file) }.should raise_error(NotImplementedError)
+      -> { File.birthtime(@file) }.should raise_error(NotImplementedError)
     end
   end
 
@@ -50,9 +50,11 @@ describe "File#birthtime" do
     end
   end
 
-  platform_is :linux, :openbsd do
+  platform_is :openbsd do
     it "raises an NotImplementedError" do
-      lambda { @file.birthtime }.should raise_error(NotImplementedError)
+      -> { @file.birthtime }.should raise_error(NotImplementedError)
     end
   end
+
+  # TODO: depends on Linux kernel version
 end

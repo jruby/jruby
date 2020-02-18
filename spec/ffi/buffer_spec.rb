@@ -138,6 +138,14 @@ describe "Buffer#put_ulong_long" do
 end
 
 describe "Reading/Writing binary strings" do
+  it "Buffer#write_bytes and read_bytes" do
+    str = "hello\0world"
+    buf = FFI::Buffer.new 11
+    buf.write_bytes(str)
+    s2 = buf.read_bytes(11)
+    expect(s2).to eq(str)
+  end
+
   it "Buffer#put_bytes" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
@@ -165,19 +173,19 @@ describe "Reading/Writing binary strings" do
   it "Buffer#put_bytes with index > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, 12); }.to raise_error
+    expect { buf.put_bytes(0, str, 12); }.to raise_error(IndexError)
   end
 
   it "Buffer#put_bytes with length > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, 0, 12); }.to raise_error
+    expect { buf.put_bytes(0, str, 0, 12); }.to raise_error(RangeError)
   end
 
   it "Buffer#put_bytes with negative index" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, -1, 12); }.to raise_error
+    expect { buf.put_bytes(0, str, -1, 12); }.to raise_error(RangeError)
   end
 
   it "Buffer#write_bytes" do
@@ -207,19 +215,19 @@ describe "Reading/Writing binary strings" do
   it "Buffer#write_bytes with index > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.write_bytes(str, 12) }.to raise_error
+    expect { buf.write_bytes(str, 12) }.to raise_error(IndexError)
   end
 
   it "Buffer#put_bytes with length > str.length" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.put_bytes(0, str, 0, 12) }.to raise_error
+    expect { buf.put_bytes(0, str, 0, 12) }.to raise_error(RangeError)
   end
 
   it "Buffer#write_bytes with negative index" do
     str = "hello\0world"
     buf = FFI::Buffer.new 1024
-    expect { buf.write_bytes(str, -1, 12) }.to raise_error
+    expect { buf.write_bytes(str, -1, 12) }.to raise_error(RangeError)
   end
 end
 

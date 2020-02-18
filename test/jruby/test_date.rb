@@ -920,6 +920,24 @@ class TestDate < Test::Unit::TestCase
     assert_equal(time.to_date, Marshal.load(dump))
   end
 
+  def test_bignum_jd_fraction
+    dt = DateTime.jd Rational("106143484200006057997/43200000000000")
+    assert_equal(2015, dt.year)
+    assert_equal(1, dt.month)
+    assert_equal(2, dt.day)
+    assert_equal('#<DateTime: 2015-01-02T02:20:00+00:00 ((2457025j,8400s,12115994n),+0s,2299161j)>', dt.inspect)
+
+    dt = DateTime.jd Rational("296143484258716057997185/43200000000000001")
+    assert_equal(14056, dt.year)
+    assert_equal(9, dt.month)
+    assert_equal(21, dt.day)
+    assert_equal(05, dt.hour)
+    assert_equal(55, dt.min)
+    assert_equal(17, dt.sec)
+    # NOTE: due rounding JRuby ends up with a different fraction :
+    #assert_equal(0.4, dt.sec_fraction.to_f.round(1))
+  end
+
   module ActiveSupport
 
     module_function

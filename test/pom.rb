@@ -8,7 +8,7 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:0.2.0'
+  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
 
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
@@ -61,7 +61,7 @@ project 'JRuby Integration Tests' do
       'includeRubygemsInTestResources' => 'false' }
 
     if version =~ /-SNAPSHOT/
-      options[ 'jrubyVersion' ] = '9.1.8.0'
+      options[ 'jrubyVersion' ] = '9.2.7.0'
     else
       options[ 'libDirectory' ] = '${jruby.home}/lib'
       options[ 'jrubyJvmArgs' ] = '-Djruby.home=${jruby.home}'

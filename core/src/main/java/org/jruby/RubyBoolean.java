@@ -53,7 +53,7 @@ import org.jruby.util.ByteList;
 public class RubyBoolean extends RubyObject implements Constantizable {
 
     private final int hashCode;
-    private final Object constant;
+    private final transient Object constant;
 
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
@@ -103,7 +103,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFalseClass(falseClass);
+
         falseClass.setClassIndex(ClassIndex.FALSE);
         falseClass.setReifiedClass(RubyBoolean.class);
         
@@ -117,7 +117,7 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     
     public static RubyClass createTrueClass(Ruby runtime) {
         RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setTrueClass(trueClass);
+
         trueClass.setClassIndex(ClassIndex.TRUE);
         trueClass.setReifiedClass(RubyBoolean.class);
         
@@ -133,34 +133,37 @@ public class RubyBoolean extends RubyObject implements Constantizable {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
 
+    public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
+    }
+
     static final ByteList FALSE_BYTES = new ByteList(new byte[] { 'f','a','l','s','e' }, USASCIIEncoding.INSTANCE);
 
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
-            super(runtime,
-                    false); // Don't put in object space
+            super(runtime, false);
 
             flags = FALSE_F | FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
-        public static IRubyObject false_and(IRubyObject f, IRubyObject oth) {
-            return f;
+        public static IRubyObject false_and(IRubyObject fals, IRubyObject oth) {
+            return fals;
         }
 
         @JRubyMethod(name = "|")
-        public static IRubyObject false_or(IRubyObject f, IRubyObject oth) {
-            return oth.isTrue() ? f.getRuntime().getTrue() : f;
+        public static IRubyObject false_or(ThreadContext context, IRubyObject fals, IRubyObject oth) {
+            return oth.isTrue() ? context.tru : fals;
         }
 
         @JRubyMethod(name = "^")
-        public static IRubyObject false_xor(IRubyObject f, IRubyObject oth) {
-            return oth.isTrue() ? f.getRuntime().getTrue() : f;
+        public static IRubyObject false_xor(ThreadContext context, IRubyObject fals, IRubyObject oth) {
+            return oth.isTrue() ? context.tru : fals;
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString false_to_s(IRubyObject f) {
-            return RubyString.newStringShared(f.getRuntime(), FALSE_BYTES);
+        public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
+            return RubyString.newStringShared(context.runtime, FALSE_BYTES);
         }
 
         @Override
@@ -176,30 +179,29 @@ public class RubyBoolean extends RubyObject implements Constantizable {
 
     public static class True extends RubyBoolean {
         True(Ruby runtime) {
-            super(runtime,
-                    true); // Don't put in object space
+            super(runtime, true);
 
             flags |= FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
-        public static IRubyObject true_and(IRubyObject t, IRubyObject oth) {
-            return oth.isTrue() ? t : t.getRuntime().getFalse();
+        public static IRubyObject true_and(ThreadContext context, IRubyObject tru, IRubyObject oth) {
+            return oth.isTrue() ? tru : context.fals;
         }
 
         @JRubyMethod(name = "|")
-        public static IRubyObject true_or(IRubyObject t, IRubyObject oth) {
-            return t;
+        public static IRubyObject true_or(IRubyObject tru, IRubyObject oth) {
+            return tru;
         }
 
         @JRubyMethod(name = "^")
-        public static IRubyObject true_xor(IRubyObject t, IRubyObject oth) {
-            return oth.isTrue() ? t.getRuntime().getFalse() : t;
+        public static IRubyObject true_xor(ThreadContext context, IRubyObject tru, IRubyObject oth) {
+            return oth.isTrue() ? context.fals : tru;
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")
-        public static RubyString true_to_s(IRubyObject t) {
-            return RubyString.newStringShared(t.getRuntime(), TRUE_BYTES);
+        public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
+            return RubyString.newStringShared(context.runtime, TRUE_BYTES);
         }
 
         @Override
@@ -224,9 +226,9 @@ public class RubyBoolean extends RubyObject implements Constantizable {
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(getRuntime(), 20);
+            return RubyFixnum.newFixnum(metaClass.runtime, 20);
         } else {
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(metaClass.runtime);
         }
     }
 

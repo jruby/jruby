@@ -106,7 +106,7 @@ public class BuildDynRegExpInstr extends NOperandResultBaseInstr {
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
         if (reCache.rubyRegexp == null || !options.isOnce() || context.runtime.getKCode() != reCache.rubyRegexp.getKCode()) {
             RubyString[] pieces  = retrievePieces(context, self, currScope, currDynScope, temp);
-            RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+            RubyString   pattern = RubyRegexp.preprocessDRegexp(context, options, pieces);
             RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
             re.setLiteral();
             reCache.updateCache(options.isOnce(), re);

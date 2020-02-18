@@ -37,6 +37,7 @@
 package org.jruby.runtime;
 
 import com.headius.backport9.stack.StackWalker;
+import com.headius.backport9.stack.impl.StackWalker8;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -52,6 +53,7 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.JIT;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.backtrace.BacktraceData;
@@ -326,6 +328,13 @@ public final class ThreadContext {
         }
     }
 
+    @JIT
+    public DynamicScope pushNewScope(StaticScope staticScope) {
+        DynamicScope scope = staticScope.construct(null);
+        pushScope(scope);
+        return scope;
+    }
+
     public void popScope() {
         scopeStack[scopeIndex--] = null;
     }
@@ -457,6 +466,16 @@ public final class ThreadContext {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
         stack[index].updateFrame(clazz, self, name, block);
+        if (index + 1 == stack.length) {
+            expandFrameStack();
+        }
+    }
+
+    private void pushCallFrame(RubyModule clazz, String name,
+                               IRubyObject self, Visibility visibility, Block block) {
+        int index = ++this.frameIndex;
+        Frame[] stack = frameStack;
+        stack[index].updateFrame(clazz, self, name, visibility, block);
         if (index + 1 == stack.length) {
             expandFrameStack();
         }
@@ -638,16 +657,16 @@ public final class ThreadContext {
     }
 
     /**
-     * Check if a static scope is present on the call stack.
+     * Check if a scope is present on the call stack.
      * This is the IR equivalent of isJumpTargetAlive
      *
-     * @param scope the static scope to look for
+     * @param scope the scope to look for
      * @return true if it exists. otherwise false.
      **/
-    public boolean scopeExistsOnCallStack(StaticScope scope) {
+    public boolean scopeExistsOnCallStack(DynamicScope scope) {
         DynamicScope[] stack = scopeStack;
         for (int i = scopeIndex; i >= 0; i--) {
-            if (stack[i].staticScope == scope) return true;
+            if (stack[i] == scope) return true;
         }
         return false;
     }
@@ -719,7 +738,7 @@ public final class ThreadContext {
     }
 
     public void trace(RubyEvent event, String name, RubyModule implClass) {
-        trace(event, name, implClass, backtrace[backtraceIndex].filename, backtrace[backtraceIndex].line);
+        trace(event, name, implClass, backtrace[backtraceIndex].filename, backtrace[backtraceIndex].line + 1);
     }
 
     public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
@@ -746,11 +765,8 @@ public final class ThreadContext {
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
 
-    private static final StackWalker WALKER = StackWalker.getInstance();
-
-    public IRubyObject createCallerBacktrace(int level, Integer length) {
-        return WALKER.walk(stream -> createCallerBacktrace(level, length, stream));
-    }
+    public static final StackWalker WALKER = StackWalker.getInstance();
+    public static final StackWalker WALKER8 = new StackWalker8();
 
     /**
      * Create an Array with backtrace information for Kernel#caller
@@ -777,10 +793,6 @@ public final class ThreadContext {
         RubyArray backTrace = RubyArray.newArrayMayCopy(runtime, traceArray);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
         return backTrace;
-    }
-
-    public IRubyObject createCallerLocations(int level, Integer length) {
-        return WALKER.walk(stream -> createCallerLocations(level, length, stream));
     }
 
     /**
@@ -854,11 +866,6 @@ public final class ThreadContext {
     public void setEventHooksEnabled(boolean flag) {
         eventHooksEnabled = flag;
     }
-
-    @Deprecated
-//    public BacktraceElement[] createBacktrace2(int level, boolean nativeException) {
-//        return getBacktrace();
-//    }
 
     /**
      * Create a snapshot Array with current backtrace information.
@@ -942,6 +949,10 @@ public final class ThreadContext {
         pushCallFrame(clazz, name, self, block);
     }
 
+    public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Visibility visiblity, Block block) {
+        pushCallFrame(clazz, name, self, visiblity, block);
+    }
+
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self) {
         pushCallFrame(clazz, name, self, Block.NULL_BLOCK);
     }
@@ -994,7 +1005,7 @@ public final class ThreadContext {
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
 
-        getCurrentScope().getStaticScope().setModule(objectClass);
+        getCurrentStaticScope().setModule(objectClass);
     }
 
     public void preNodeEval(IRubyObject self) {
@@ -1040,6 +1051,11 @@ public final class ThreadContext {
 
     public Frame preYieldNoScope(Binding binding) {
         return pushFrameForBlock(binding);
+    }
+
+    @JIT
+    public Frame preYieldNoScope(Block block) {
+        return pushFrameForBlock(block.getBinding());
     }
 
     public void preEvalScriptlet(DynamicScope scope) {
@@ -1218,7 +1234,18 @@ public final class ThreadContext {
     }
 
     public void setExceptionRequiresBacktrace(boolean exceptionRequiresBacktrace) {
+        if (runtime.isDebug()) return; // leave true default
         this.exceptionRequiresBacktrace = exceptionRequiresBacktrace;
+    }
+
+    @JIT
+    public void exceptionBacktraceOn() {
+        setExceptionRequiresBacktrace(true);
+    }
+
+    @JIT
+    public void exceptionBacktraceOff() {
+        setExceptionRequiresBacktrace(false);
     }
 
     private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;

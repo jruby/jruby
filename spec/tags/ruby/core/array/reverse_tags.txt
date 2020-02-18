@@ -1,1 +1,0 @@
-fails:Array#reverse does not return subclass instance on Array subclasses

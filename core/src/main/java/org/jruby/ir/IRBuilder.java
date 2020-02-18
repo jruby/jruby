@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
+import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
@@ -83,7 +84,6 @@ import static org.jruby.ir.operands.ScopeModule.*;
 // this is not a big deal.  Think this through!
 
 public class IRBuilder {
-    static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
@@ -301,13 +301,23 @@ public class IRBuilder {
     protected List<Instr> instructions;
     protected List<Object> argumentDescriptions;
     protected boolean needsCodeCoverage;
+    private boolean executesOnce = true;
+
+    // Current index to put next BEGIN blocks and other things at the front of this scope.
+    // Note: in the case of multiple BEGINs this index slides forward so they maintain proper
+    // execution order
+    protected int afterPrologueIndex = 0;
+    private TemporaryVariable yieldClosureVariable = null;
+    private Variable currentModuleVariable = null;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
         this.scope = scope;
         this.parent = parent;
-        instructions = new ArrayList<>(50);
+        this.instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
+
+        if (parent != null) executesOnce = parent.executesOnce;
     }
 
     private boolean needsCodeCoverage() {
@@ -326,9 +336,9 @@ public class IRBuilder {
             needsLineNumInfo = false;
             addInstr(manager.newLineNumber(_lastProcessedLineNum));
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                addInstr(new TraceInstr(RubyEvent.LINE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
                 if (needsCodeCoverage()) {
-                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum));
+                    addInstr(new TraceInstr(RubyEvent.COVERAGE, methodNameFor(), getFileName(), _lastProcessedLineNum + 1));
                 }
             }
         }
@@ -336,8 +346,6 @@ public class IRBuilder {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
-            if (instr instanceof ThreadPollInstr) scope.threadPollInstrsCount++;
-
             instr.computeScopeFlags(scope);
 
             if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, instructions.size());
@@ -360,16 +368,6 @@ public class IRBuilder {
         } else {
             ensureBodyBuildStack.peek().addInstrAtBeginning(instr);
         }
-    }
-
-    public IRBuilder getNearestFlipVariableScopeBuilder() {
-        IRBuilder current = this;
-
-        while (current != null && !this.scope.isFlipScope()) {
-            current = current.parent;
-        }
-
-        return current;
     }
 
     // Emit cloned ensure bodies by walking up the ensure block stack.
@@ -521,18 +519,25 @@ public class IRBuilder {
     public Operand build(Variable result, Node node) {
         if (node == null) return null;
 
-        if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
+        boolean savedExecuteOnce = executesOnce;
+        try {
+            if (executesOnce) executesOnce = node.executesOnce();
 
-        Operand operand = buildOperand(result, node);
+            if (hasListener()) manager.getIRScopeListener().startBuildOperand(node, scope);
 
-        if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
+            Operand operand = buildOperand(result, node);
 
-        return operand;
+            if (hasListener()) manager.getIRScopeListener().endBuildOperand(node, scope, operand);
+
+            return operand;
+        } finally {
+            executesOnce = savedExecuteOnce;
+        }
     }
 
     private InterpreterContext buildLambdaInner(LambdaNode node) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
 
         receiveBlockArgs(node);
 
@@ -554,7 +559,7 @@ public class IRBuilder {
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
-        addInstr(new BuildLambdaInstr(lambda, lambdaBody, scope.getFile(), node.getLine()));
+        addInstr(new BuildLambdaInstr(lambda, lambdaBody));
         return lambda;
     }
 
@@ -963,7 +968,7 @@ public class IRBuilder {
                     // We are not in a closure or a loop => bad break instr!
                     throwSyntaxError(breakNode, "Can't escape from eval with redo");
                 } else {
-                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getName()));
+                    addInstr(new BreakInstr(build(breakNode.getValueNode()), returnScope.getId()));
                 }
             } else {
                 // We are not in a closure or a loop => bad break instr!
@@ -1386,17 +1391,20 @@ public class IRBuilder {
      * Build a new class and add it to the current scope (s).
      */
     public Operand buildClass(ClassNode classNode) {
+        boolean executesOnce = this.executesOnce;
         Node superNode = classNode.getSuperNode();
         Colon3Node cpath = classNode.getCPath();
         Operand superClass = (superNode == null) ? null : build(superNode);
-        RubySymbol className = cpath.getName();
+        ByteList className = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
-        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope());
-        Variable classVar = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
 
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), classVar, NullBlock.INSTANCE));
+        //System.out.println("MODULE IS SINGLE USE:"  + className +  ", " +  scope.getFile() + ":" + classNode.getEndLine());
+
+        IRClassBody body = new IRClassBody(manager, scope, className, classNode.getLine(), classNode.getScope(), executesOnce);
+        Variable bodyResult = addResultInstr(new DefineClassInstr(createTemporaryVariable(), body, container, superClass));
+
         newIRBuilder(manager, body).buildModuleOrClassBody(classNode.getBodyNode(), classNode.getLine(), classNode.getEndLine());
-        return processBodyResult;
+        return bodyResult;
     }
 
     // class Foo; class << self; end; end
@@ -1405,11 +1413,11 @@ public class IRBuilder {
     public Operand buildSClass(SClassNode sclassNode) {
         Operand receiver = build(sclassNode.getReceiverNode());
         // FIXME: metaclass name should be a bytelist
-        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName(), sclassNode.getLine(), sclassNode.getScope());
+        IRModuleBody body = new IRMetaClassBody(manager, scope, manager.getMetaClassName().getBytes(), sclassNode.getLine(), sclassNode.getScope());
         Variable sClassVar = addResultInstr(new DefineMetaClassInstr(createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, scope.getYieldClosureVariable()));
+        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), sClassVar, getYieldClosureVariable()));
         newIRBuilder(manager, body).buildModuleOrClassBody(sclassNode.getBodyNode(), sclassNode.getLine(), sclassNode.getEndLine());
         return processBodyResult;
     }
@@ -1473,7 +1481,7 @@ public class IRBuilder {
             return ScopeModule.ModuleFor(n);
         } else {
             return addResultInstr(new GetClassVarContainerModuleInstr(createTemporaryVariable(),
-                    scope.getCurrentScopeVariable(), declContext ? null : buildSelf()));
+                    CurrentScope.INSTANCE, declContext ? null : buildSelf()));
         }
     }
 
@@ -1483,12 +1491,7 @@ public class IRBuilder {
 
     private Operand findContainerModule() {
         int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return (nearestModuleBodyDepth == -1) ? scope.getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
-    }
-
-    private Operand startingSearchScope() {
-        int nearestModuleBodyDepth = scope.getNearestModuleReferencingScopeDepth();
-        return nearestModuleBodyDepth == -1 ? scope.getCurrentScopeVariable() : CurrentScope.INSTANCE;
+        return (nearestModuleBodyDepth == -1) ? getCurrentModuleVariable() : ScopeModule.ModuleFor(nearestModuleBodyDepth);
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
@@ -1534,7 +1537,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(RubySymbol name) {
-        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, startingSearchScope(), false));
+        return addResultInstr(new SearchConstInstr(createTemporaryVariable(), name, CurrentScope.INSTANCE, false));
     }
 
     public Operand buildColon2(final Colon2Node colon2) {
@@ -1680,7 +1683,7 @@ public class IRBuilder {
                             createTemporaryVariable(),
                             IS_DEFINED_NTH_REF,
                             new Operand[] {
-                                    new Fixnum(((NthRefNode) node).getMatchNumber()),
+                                    manager.newFixnum(((NthRefNode) node).getMatchNumber()),
                                     new FrozenString(DefinedMessage.GLOBAL_VARIABLE.getText())
                             }
                     )
@@ -1740,7 +1743,7 @@ public class IRBuilder {
                     )
             );
         case YIELDNODE:
-            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), scope.getYieldClosureVariable()), DefinedMessage.YIELD.getText());
+            return buildDefinitionCheck(new BlockGivenInstr(createTemporaryVariable(), getYieldClosureVariable()), DefinedMessage.YIELD.getText());
         case ZSUPERNODE:
             return addResultInstr(
                     new RuntimeHelperCall(
@@ -1757,7 +1760,7 @@ public class IRBuilder {
             Label doneLabel = getNewLabel();
             Variable tmpVar  = createTemporaryVariable();
             RubySymbol constName = ((ConstNode) node).getName();
-            addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
+            addInstr(new LexicalSearchConstInstr(tmpVar, CurrentScope.INSTANCE, constName));
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName)); // SSS FIXME: should this be the current-module var or something else?
             addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
@@ -2046,8 +2049,8 @@ public class IRBuilder {
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
-            addInstr(manager.newLineNumber(scope.getLine()));
-            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine()));
+            addInstr(manager.newLineNumber(scope.getLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLine() + 1));
         }
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -2057,8 +2060,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(new CopyInstr(getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode());
@@ -2067,8 +2069,8 @@ public class IRBuilder {
         Operand rv = build(defNode.getBodyNode());
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new LineNumberInstr(defNode.getEndLine()));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine()));
+            addInstr(new LineNumberInstr(defNode.getEndLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), defNode.getEndLine() + 1));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));
@@ -2095,7 +2097,7 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
-        return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getLine(),
+        return new IRMethod(manager, scope, defNode, defNode.getName().getBytes(), isInstanceMethod, defNode.getLine(),
                 defNode.getScope(), needsCodeCoverage());
     }
 
@@ -2279,9 +2281,9 @@ public class IRBuilder {
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
         if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
-            addInstr(new LoadImplicitClosureInstr(scope.getYieldClosureVariable()));
+            addInstr(new LoadImplicitClosureInstr(getYieldClosureVariable()));
         } else {
-            addInstr(new LoadFrameClosureInstr(scope.getYieldClosureVariable()));
+            addInstr(new LoadFrameClosureInstr(getYieldClosureVariable()));
         }
     }
 
@@ -2598,7 +2600,7 @@ public class IRBuilder {
         return buildEnsureInternal(ensureNode.getBodyNode(), ensureNode.getEnsureNode());
     }
 
-    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensurerNode) {
+    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensureNode) {
         // Save $!
         final Variable savedGlobalException = createTemporaryVariable();
         addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
@@ -2611,18 +2613,18 @@ public class IRBuilder {
         // Push a new ensure block node onto the stack of ensure bodies being built
         // The body's instructions are stashed and emitted later.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope,
-            (ensureBodyNode instanceof RescueNode) ? (RescueNode)ensureBodyNode : null,
+            (ensureBodyNode instanceof RescueNode) ? (RescueNode) ensureBodyNode : null,
             getCurrentLoop(),
             activeRescuers.peek());
 
         // Record $! save var if we had a non-empty rescue node.
         // $! will be restored from it where required.
-        if (ensureBodyNode != null && ensureBodyNode instanceof RescueNode) {
+        if (ensureBodyNode instanceof RescueNode) {
             ebi.savedGlobalException = savedGlobalException;
         }
 
         ensureBodyBuildStack.push(ebi);
-        Operand ensureRetVal = ensurerNode == null ? manager.getNil() : build(ensurerNode);
+        Operand ensureRetVal = ensureNode == null ? manager.getNil() : build(ensureNode);
         ensureBodyBuildStack.pop();
 
         // ------------ Build the protected region ------------
@@ -2643,7 +2645,7 @@ public class IRBuilder {
 
         // Is this a begin..(rescue..)?ensure..end node that actually computes a value?
         // (vs. returning from protected body)
-        boolean isEnsureExpr = ensurerNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
+        boolean isEnsureExpr = ensureNode != null && rv != U_NIL && !(ensureBodyNode instanceof RescueNode);
 
         // Clone the ensure body and jump to the end
         if (isEnsureExpr) {
@@ -2663,7 +2665,7 @@ public class IRBuilder {
         addInstr(new ReceiveJRubyExceptionInstr(exc));
 
         // Now emit the ensure body's stashed instructions
-        if (ensurerNode != null) {
+        if (ensureNode != null) {
             ebi.emitBody(this);
         }
 
@@ -2765,107 +2767,17 @@ public class IRBuilder {
     }
 
     public Operand buildFixnum(FixnumNode node) {
-        return new Fixnum(node.getValue());
+        return manager.newFixnum(node.getValue());
     }
 
     public Operand buildFlip(FlipNode flipNode) {
-        /* ----------------------------------------------------------------------
-         * Consider a simple 2-state (s1, s2) FSM with the following transitions:
-         *
-         *     new_state(s1, F) = s1
-         *     new_state(s1, T) = s2
-         *     new_state(s2, F) = s2
-         *     new_state(s2, T) = s1
-         *
-         * Here is the pseudo-code for evaluating the flip-node.
-         * Let 'v' holds the value of the current state.
-         *
-         *    1. if (v == 's1') f1 = eval_condition(s1-condition); v = new_state(v, f1); ret = f1
-         *    2. if (v == 's2') f2 = eval_condition(s2-condition); v = new_state(v, f2); ret = true
-         *    3. return ret
-         *
-         * For exclusive flip conditions, line 2 changes to:
-         *    2. if (!f1 && (v == 's2')) f2 = eval_condition(s2-condition); v = new_state(v, f2)
-         *
-         * In IR code below, we are representing the two states as 1 and 2.  Any
-         * two values are good enough (even true and false), but 1 and 2 is simple
-         * enough and also makes the IR output readable
-         * ---------------------------------------------------------------------- */
+        Ruby runtime = scope.getManager().getRuntime();
+        Operand exceptionClass = searchModuleForConst(new ObjectClass(), runtime.newSymbol("NotImplementedError"));
+        Operand exception = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), runtime.newSymbol("new"), exceptionClass, new Operand[]{new StringLiteral("flip-flop is no longer supported in JRuby")}, null));
 
-        Fixnum s1 = new Fixnum((long)1);
-        Fixnum s2 = new Fixnum((long)2);
+        addInstr(new ThrowExceptionInstr(exception));
 
-        // Create a variable to hold the flip state
-        IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
-
-        // Flip is completely broken atm and it was semi-broken in its last incarnation.
-        // Method and closures (or evals) are not built at the same time and if -X-C or JIT or AOT
-        // and jit.threshold=0 then the non-closure where we want to store the hidden flip variable
-        // is unable to get more instrs added to it (not quite true for -X-C but definitely true
-        // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
-        if (nearestNonClosureBuilder == null) {
-            Variable excType = createTemporaryVariable();
-            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(),
-                    manager.runtime.newSymbol(CommonByteLists.NOT_IMPLEMENTED_ERROR)));
-            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), manager.runtime.newSymbol(CommonByteLists.NEW),
-                    excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
-            addInstr(new ThrowExceptionInstr(exc));
-            return buildNil();
-        }
-        Variable flipState = nearestNonClosureBuilder.scope.getNewFlipStateVariable();
-        nearestNonClosureBuilder.initFlipStateVariable(flipState, s1);
-        if (scope instanceof IRClosure) {
-            // Clone the flip variable to be usable at the proper-depth.
-            int n = 0;
-            IRScope x = scope;
-            while (!x.isFlipScope()) {
-                n++;
-                x = x.getLexicalParent();
-            }
-            if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
-        }
-
-        // Variables and labels needed for the code
-        Variable returnVal = createTemporaryVariable();
-        Label    s2Label   = getNewLabel();
-        Label    doneLabel = getNewLabel();
-
-        // Init
-        addInstr(new CopyInstr(returnVal, manager.getFalse()));
-
-        // Are we in state 1?
-        addInstr(BNEInstr.create(s2Label, flipState, s1));
-
-        // ----- Code for when we are in state 1 -----
-        Operand s1Val = build(flipNode.getBeginNode());
-        addInstr(BNEInstr.create(s2Label, s1Val, manager.getTrue()));
-
-        // s1 condition is true => set returnVal to true & move to state 2
-        addInstr(new CopyInstr(returnVal, manager.getTrue()));
-        addInstr(new CopyInstr(flipState, s2));
-
-        // Check for state 2
-        addInstr(new LabelInstr(s2Label));
-
-        // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
-        if (flipNode.isExclusive()) addInstr(createBranch(returnVal, manager.getTrue(), doneLabel));
-
-        // Are we in state 2?
-        addInstr(BNEInstr.create(doneLabel, flipState, s2));
-
-        // ----- Code for when we are in state 2 -----
-        Operand s2Val = build(flipNode.getEndNode());
-        addInstr(new CopyInstr(returnVal, manager.getTrue()));
-        addInstr(BNEInstr.create(doneLabel, s2Val, manager.getTrue()));
-
-        // s2 condition is true => move to state 1
-        addInstr(new CopyInstr(flipState, s1));
-
-        // Done testing for s1's and s2's conditions.
-        // returnVal will have the result of the flip condition
-        addInstr(new LabelInstr(doneLabel));
-
-        return returnVal;
+        return manager.getNil(); // not-reached
     }
 
     public Operand buildFloat(FloatNode node) {
@@ -2878,29 +2790,11 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, NO_ARGS,
+        CallInstr callInstr = new CallInstr(scope, CallType.NORMAL, result, manager.runtime.newSymbol(CommonByteLists.EACH), receiver, EMPTY_OPERANDS,
                 forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
-    }
-
-    private InterpreterContext buildForIterInner(ForNode forNode) {
-        prepareImplicitState();                                    // recv_self, add frame block, etc)
-
-        Node varNode = forNode.getVarNode();
-        if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode);
-
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // Start label -- used by redo!
-
-        // Build closure body and return the result of the closure
-        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode());
-        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
-            addInstr(new ReturnInstr(closureRetVal));
-        }
-
-        return scope.allocateInterpreterContext(instructions);
     }
 
     public Operand buildForIter(final ForNode forNode) {
@@ -2908,7 +2802,7 @@ public class IRBuilder {
         IRClosure closure = new IRFor(manager, scope, forNode.getLine(), forNode.getScope(), Signature.from(forNode));
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, closure).buildForIterInner(forNode);
+        newIRBuilder(manager, closure).buildIterInner(forNode);
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -3042,29 +2936,39 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildIterInner(IterNode iterNode) {
+        boolean forNode = iterNode instanceof ForNode;
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getName(), getFileName(), scope.getLine() + 1));
+        }
 
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
+        if (!forNode) addCurrentModule();                                // %current_scope/%current_module
+        receiveBlockArgs(iterNode);
+        // for adds these after processing binding block args because and operations at that point happen relative
+        // to the previous scope.
+        if (forNode) addCurrentModule();                                // %current_scope/%current_module
+
+        // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
+        afterPrologueIndex = instructions.size() - 1;
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode());
-        if (closureRetVal != U_NIL) { // can be U_NIL if the node is an if node with returns in both branches.
-            addInstr(new ReturnInstr(closureRetVal));
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getName(), getFileName(), iterNode.getEndLine() + 1));
         }
 
-        // Always add break/return handling even though this
-        // is only required for lambdas, but we don't know at this time,
-        // if this is a lambda or not.
-        //
-        // SSS FIXME: At a later time, see if we can optimize this and
-        // do this on demand.
-        handleBreakAndReturnsInLambdas();
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
+
+        // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
+        // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
+        if (!forNode) handleBreakAndReturnsInLambdas();
 
         return scope.allocateInterpreterContext(instructions);
     }
+
     public Operand buildIter(final IterNode iterNode) {
         IRClosure closure = new IRClosure(manager, scope, iterNode.getLine(), iterNode.getScope(), Signature.from(iterNode), needsCodeCoverage);
 
@@ -3184,15 +3088,18 @@ public class IRBuilder {
     }
 
     public Operand buildModule(ModuleNode moduleNode) {
+        boolean executesOnce = this.executesOnce;
         Colon3Node cpath = moduleNode.getCPath();
-        RubySymbol moduleName = cpath.getName();
+        ByteList moduleName = cpath.getName().getBytes();
         Operand container = getContainerFromCPath(cpath);
-        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope());
-        Variable moduleVar = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
 
-        Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
+        //System.out.println("MODULE IS " +  (executesOnce ? "" : "NOT") + " SINGLE USE:"  + moduleName +  ", " +  scope.getFile() + ":" + moduleNode.getEndLine());
+
+        IRModuleBody body = new IRModuleBody(manager, scope, moduleName, moduleNode.getLine(), moduleNode.getScope(), executesOnce);
+        Variable bodyResult = addResultInstr(new DefineModuleInstr(createTemporaryVariable(), body, container));
+
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getLine(), moduleNode.getEndLine());
-        return processBodyResult;
+        return bodyResult;
     }
 
     public Operand buildNext(final NextNode nextNode) {
@@ -3252,7 +3159,7 @@ public class IRBuilder {
             addInstr(new BNilInstr(lazyLabel, v1));
         }
 
-        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, callType, readerValue, opAsgnNode.getVariableSymbolName(), v1, EMPTY_OPERANDS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -3482,14 +3389,19 @@ public class IRBuilder {
 
     private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         build(body);
 
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(new Nil()));
 
         return scope.allocateInterpreterContext(instructions);
+    }
+
+    private List<Instr> buildPreExeInner(Node body) {
+        build(body);
+
+        return instructions;
     }
 
     public Operand buildPostExe(PostExeNode postExeNode) {
@@ -3511,13 +3423,14 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode) {
-        IRScope topLevel = scope.getRootLexicalScope();
-        IRClosure beginClosure = new IRFor(manager, scope, preExeNode.getLine(), topLevel.getStaticScope(),
-                Signature.from(preExeNode), IRFor._BEGIN_);
-        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
+        IRBuilder builder = newIRBuilder(manager, scope);
 
-        topLevel.recordBeginBlock(beginClosure);  // Record the begin block at IR build time
+        List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
+
+        instructions.addAll(afterPrologueIndex, beginInstrs);
+
+        afterPrologueIndex += beginInstrs.size();
+
         return manager.getNil();
     }
 
@@ -3545,7 +3458,9 @@ public class IRBuilder {
                     throwSyntaxError(redoNode, "Can't escape from eval with redo");
                 } else {
                     addInstr(new ThreadPollInstr(true));
-                    addInstr(new JumpInstr(((IRClosure) scope).startLabel));
+                    Label startLabel = new Label(scope.getId() + "_START", 0);
+                    instructions.add(afterPrologueIndex, new LabelInstr(startLabel));
+                    addInstr(new JumpInstr(startLabel));
                 }
             } else {
                 throwSyntaxError(redoNode, "Invalid redo");
@@ -3564,6 +3479,11 @@ public class IRBuilder {
         return buildEnsureInternal(node, null);
     }
 
+    /**
+     * Global names and aliases that reference the exception in flight
+     */
+    private static final List<String> EXCEPTION_GLOBALS = Arrays.asList("$!", "$ERROR_INFO", "$@", "$ERROR_POSITION");
+
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
@@ -3577,7 +3497,8 @@ public class IRBuilder {
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().idString().equals("$!")) return false;
+        if (body instanceof GlobalVarNode
+                && EXCEPTION_GLOBALS.contains(((GlobalVarNode) body).getName().idString())) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
@@ -3684,8 +3605,7 @@ public class IRBuilder {
         Label caughtLabel = getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-                Node [] exceptionNodes = ((ListNode) exceptionList).children();
-                Operand[] exceptionTypes = new Operand[exceptionNodes.length];
+                Node[] exceptionNodes = ((ListNode) exceptionList).children();
                 for (int i = 0; i < exceptionNodes.length; i++) {
                     outputExceptionCheck(build(exceptionNodes[i]), exc, caughtLabel);
                 }
@@ -3773,22 +3693,28 @@ public class IRBuilder {
                 // 3. migrated closure (LJE) [dynamic]
                 // 4. eval/for (return) [static]
                 boolean definedWithinMethod = scope.getNearestMethod() != null;
-                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor))
+                if (!(scope instanceof IREvalScript) && !(scope instanceof IRFor)) {
                     addInstr(new CheckForLJEInstr(definedWithinMethod));
-                addInstr(new NonlocalReturnInstr(retVal,
-                        definedWithinMethod ? scope.getNearestMethod().getName() : manager.runtime.newSymbol("--none--")));
+                }
+                // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
+                if (!activeRescueBlockStack.empty()) {
+                    RescueBlockInfo rbi = activeRescueBlockStack.peek();
+                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                }
+
+                addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
             }
         } else if (scope.isModuleBody()) {
             IRMethod sm = scope.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getName()));
+            if (sm != null) addInstr(new NonlocalReturnInstr(retVal, sm.getId()));
         } else {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine()));
+                addInstr(new TraceInstr(RubyEvent.RETURN, getName(), getFileName(), returnNode.getLine() + 1));
             }
 
             addInstr(new ReturnInstr(retVal));
@@ -3801,11 +3727,14 @@ public class IRBuilder {
     }
 
     public InterpreterContext buildEvalRoot(RootNode rootNode) {
+        executesOnce = false;
         needsCodeCoverage = false;  // Assuming there is no path into build eval root without actually being an eval.
         addInstr(manager.newLineNumber(scope.getLine()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
+
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
@@ -3814,23 +3743,22 @@ public class IRBuilder {
     }
 
     public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
-        // FIXME: This filename should switch to ByteList
         String file = rootNode.getFile();
-        if (file == null) file = "(anon)";
-        IRScriptBody script = new IRScriptBody(manager, manager.runtime.newSymbol(file), rootNode.getStaticScope());
+        IRScriptBody script = new IRScriptBody(manager, file == null ? "(anon)" : file, rootNode.getStaticScope());
 
         return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
 
-    private void addCurrentScopeAndModule() {
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.INSTANCE)); // %current_scope
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
+    private void addCurrentModule() {
+        addInstr(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
     private InterpreterContext buildRootInner(RootNode rootNode) {
         needsCodeCoverage = rootNode.needsCoverage();
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
+
+        afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
@@ -3871,9 +3799,9 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(scope, ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new InstanceSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(scope, ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -3891,12 +3819,12 @@ public class IRBuilder {
 
         Operand[] args = setupCallArgs(superNode.getArgsNode());
         Operand block = setupCallClosure(superNode.getIterNode());
-        if (block == null) block = scope.getYieldClosureVariable();
+        if (block == null) block = getYieldClosureVariable();
         return buildSuperInstr(block, args);
     }
 
     private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
+        return addResultInstr(new UnresolvedSuperInstr(scope, createTemporaryVariable(), buildSelf(), EMPTY_OPERANDS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -3986,7 +3914,7 @@ public class IRBuilder {
     public Operand buildVCall(Variable result, VCallNode node) {
         if (result == null) result = createTemporaryVariable();
 
-        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), NO_ARGS, null));
+        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, result, node.getName(), buildSelf(), EMPTY_OPERANDS, null));
     }
 
     public Operand buildWhile(final WhileNode whileNode) {
@@ -4011,11 +3939,9 @@ public class IRBuilder {
         }
 
         Variable ret = result == null ? createTemporaryVariable() : result;
-        if (argNode instanceof ArrayNode && unwrap) {
-            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), buildArray((ArrayNode)argNode, true), unwrap));
-        } else {
-            addInstr(new YieldInstr(ret, scope.getYieldClosureVariable(), build(argNode), unwrap));
-        }
+        Operand value = argNode instanceof ArrayNode && unwrap ?  buildArray((ArrayNode)argNode, true) : build(argNode);
+        addInstr(new YieldInstr(ret, getYieldClosureVariable(), value, unwrap));
+
         return ret;
     }
 
@@ -4063,7 +3989,7 @@ public class IRBuilder {
                     // Generate the next set of instructions
                     if (next != null) addInstr(new LabelInstr(next));
                     next = getNewLabel();
-                    addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
+                    addInstr(BNEInstr.create(next, manager.newFixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
                     addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
                     addInstr(new JumpInstr(allDoneLabel));
@@ -4098,7 +4024,7 @@ public class IRBuilder {
         if (scope.isModuleBody()) return buildSuperInScriptBody();
 
         Operand block = setupCallClosure(zsuperNode.getIterNode());
-        if (block == null) block = scope.getYieldClosureVariable();
+        if (block == null) block = getYieldClosureVariable();
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
@@ -4128,21 +4054,17 @@ public class IRBuilder {
     }
 
     private InterpreterContext buildModuleOrClassBody(Node bodyNode, int startLine, int endLine) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine));
-        }
+        addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), startLine + 1));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
-        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addCurrentModule();                                // %current_scope/%current_module
 
         Operand bodyReturnValue = build(bodyNode);
 
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
-            // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
-            addInstr(manager.newLineNumber(endLine));
-            addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine));
-        }
+        // This is only added when tracing is enabled because an 'end' will normally have no other instrs which can
+        // raise after this point.  When we add trace we need to add one so backtrace generated shows the 'end' line.
+        addInstr(manager.newLineNumber(endLine));
+        addInstr(new TraceInstr(RubyEvent.END, null, getFileName(), endLine + 1));
 
         addInstr(new ReturnInstr(bodyReturnValue));
 
@@ -4177,11 +4099,6 @@ public class IRBuilder {
 
     private String getFileName() {
         return scope.getFile();
-    }
-
-    public void initFlipStateVariable(Variable v, Operand initState) {
-        addInstrAtBeginning(new CopyInstr(v, initState));
-
     }
 
     private RubySymbol symbol(String id) {
@@ -4245,30 +4162,21 @@ public class IRBuilder {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
+    // FIXME: Add this to clone on branch instrs so if something changes (like an inline) it will replace with opted branch/jump/nop.
     public static Instr createBranch(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof Boolean) {
             Boolean lhs = (Boolean) v2;
 
             if (lhs.isTrue()) {
-                if (v1 instanceof Boolean) {
-                    if (((Boolean) v1).isTrue()) { // true == true -> just jump
-                        return new JumpInstr(jmpTarget);
-                    } else {                       // false == true (this will never jump)
-                        return NopInstr.NOP;
-                    }
-                } else {
-                    return new BTrueInstr(jmpTarget, v1);
-                }
+                if (v1.isTruthyImmediate()) return new JumpInstr(jmpTarget);
+                if (v1.isFalseyImmediate()) return NopInstr.NOP;
+
+                return new BTrueInstr(jmpTarget, v1);
             } else if (lhs.isFalse()) {
-                if (v1 instanceof Boolean) {
-                    if (((Boolean) v1).isFalse()) { // false == false -> just jump
-                        return new JumpInstr(jmpTarget);
-                    } else {                        // true == false (this will never jump)
-                        return NopInstr.NOP;
-                    }
-                } else {
-                    return new BFalseInstr(jmpTarget, v1);
-                }
+                if (v1.isTruthyImmediate()) return NopInstr.NOP;
+                if (v1.isFalseyImmediate()) return new JumpInstr(jmpTarget);
+
+                return new BFalseInstr(jmpTarget, v1);
             }
         } else if (v2 instanceof Nil) {
             if (v1 instanceof Nil) { // nil == nil -> just jump
@@ -4286,5 +4194,22 @@ public class IRBuilder {
         }
 
         throw new RuntimeException("BUG: no BEQ");
+    }
+
+    /**
+     * Get the variable for accessing the "yieldable" closure in this scope.
+     */
+    public TemporaryVariable getYieldClosureVariable() {
+        if (yieldClosureVariable == null) {
+            return yieldClosureVariable = createTemporaryVariable();
+        }
+
+        return yieldClosureVariable;
+    }
+
+    public Variable getCurrentModuleVariable() {
+        if (currentModuleVariable == null) currentModuleVariable = scope.createCurrentModuleVariable();
+
+        return currentModuleVariable;
     }
 }

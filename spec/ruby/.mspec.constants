@@ -28,7 +28,6 @@ CSAutoloadC
 CSAutoloadD
 CSV
 ChainedNextTest
-Channel
 ChildClass
 ClassIdUnderAutoload
 ClassSpecDefineClass
@@ -56,6 +55,7 @@ DefSpecsLambdaVisibility
 DefineMethodByProcClass
 DefineMethodSpecClass
 DefineSingletonMethodSpecClass
+Delegator
 DescArray
 DescObjectTest
 Digest
@@ -78,7 +78,7 @@ Find
 Forwardable
 GetoptLong
 HMACConstants
-HashStringsASCII8BIT
+HashStringsBinary
 HashStringsUSASCII
 HashStringsUTF8
 IPAddr
@@ -88,7 +88,6 @@ IncludeSpecsClass
 IncludeSpecsMiddle
 IncludeSpecsTop
 IncludesMath
-InvalidTostrTest
 JSON
 KSAutoloadA
 KSAutoloadB
@@ -150,6 +149,7 @@ Readline
 ReceiverClass
 RegexpSpecsSubclass
 RegexpSpecsSubclassTwo
+Reline
 RescueInClassExample
 Resolv
 SHA1Constants
@@ -163,6 +163,7 @@ SecondClass
 SecureRandom
 Set
 Shellwords
+SimpleDelegator
 SingleForwardable
 Singleton
 Socket
@@ -173,10 +174,12 @@ SpecificExampleException
 Specs
 StrChild
 StrangeEach
+StringIO
 StringRefinement
 StringScanner
 StringSubclass
 StructClasses
+Syck
 Syslog
 TCPServer
 TCPSocket
@@ -188,6 +191,7 @@ TimeoutError
 UDPSocket
 UNIXServer
 UNIXSocket
+URI
 UnaryMinusTest
 UnicodeNormalize
 UnloadableDumpableDir
@@ -205,7 +209,6 @@ UserObject
 UserPreviouslyDefinedWithInitializedIvar
 UserRegexp
 UserString
-ValidTostrTest
 Vector
 WEBrick
 WIN32OLE

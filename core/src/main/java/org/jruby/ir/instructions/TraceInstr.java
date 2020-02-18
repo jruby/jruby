@@ -67,7 +67,7 @@ public class TraceInstr extends NoOperandInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getEvent());
-        e.encode(getName());
+        e.encode(name);
         e.encode(getFilename());
         e.encode(getLinenumber());
     }

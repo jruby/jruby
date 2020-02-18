@@ -39,8 +39,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * Captures END statements (END {...})
  */
 public class PostExeNode extends IterNode {
-    public PostExeNode(ISourcePosition position, Node body) {
-        super(position, new ArgsNode(position, null, null, null, null, null, null, null), body, null);
+    public PostExeNode(ISourcePosition position, Node body, int endLine) {
+        super(position, new ArgsNode(position, null, null, null, null, null, null, null), body, null, endLine);
     }
 
     public NodeType getNodeType() {

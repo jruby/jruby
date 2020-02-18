@@ -4,12 +4,14 @@ require_relative 'fixtures/classes'
 
 ruby_version_is '2.5' do
   describe "String#undump" do
-    it "taints the result if self is tainted" do
-      '"foo"'.taint.undump.tainted?.should == true
-    end
+    ruby_version_is ''...'2.7' do
+      it "taints the result if self is tainted" do
+        '"foo"'.taint.undump.tainted?.should == true
+      end
 
-    it "untrusts the result if self is untrusted" do
-      '"foo"'.untrust.undump.untrusted?.should == true
+      it "untrusts the result if self is untrusted" do
+        '"foo"'.untrust.undump.untrusted?.should == true
+      end
     end
 
     it "does not take into account if a string is frozen" do
@@ -36,7 +38,7 @@ ruby_version_is '2.5' do
       ].should be_computed_by(:undump)
     end
 
-    it "returns a string with unescaped sequencies \" and \\" do
+    it "returns a string with unescaped sequences \" and \\" do
       [ ['"\\""' , "\""],
         ['"\\\\"', "\\"]
       ].should be_computed_by(:undump)
@@ -430,7 +432,7 @@ ruby_version_is '2.5' do
       end
 
       it "raises RuntimeError if there is malformed dump of non ASCII-compatible string" do
-        -> { '"".force_encoding("ASCII-8BIT"'.undump }.should raise_error(RuntimeError, /invalid dumped string/)
+        -> { '"".force_encoding("BINARY"'.undump }.should raise_error(RuntimeError, /invalid dumped string/)
         -> { '"".force_encoding("Unknown")'.undump }.should raise_error(RuntimeError, /dumped string has unknown encoding name/)
         -> { '"".force_encoding()'.undump }.should raise_error(RuntimeError, /invalid dumped string/)
       end

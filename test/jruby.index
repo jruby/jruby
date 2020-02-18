@@ -47,13 +47,12 @@ jruby/test_load
 jruby/test_load_gem_extensions
 jruby/test_method
 jruby/test_method_cache
-jruby/test_method_override_and_caching
+jruby/test_method_missing
 jruby/test_java_accessible_object
 jruby/test_java_extension
 jruby/test_jruby_internals
-jruby/test_marshal_with_instance_variables
+jruby/test_marshal
 jruby/test_marshal_gemspec
-jruby/test_method_missing
 jruby/test_name_error
 jruby/test_pack
 jruby/test_primitive_to_java
@@ -69,9 +68,8 @@ jruby/test_respond_to
 jruby/test_set
 jruby/test_socket
 jruby/test_sprintf
+jruby/test_string
 jruby/test_string_java_bytes
-jruby/test_string_printf
-jruby/test_string_to_number
 jruby/test_super_call_site_caching
 jruby/test_symbol
 jruby/test_system
@@ -97,7 +95,8 @@ jruby/test_uri_classloader
 jruby/test_rexml_document
 jruby/test_missing_jruby_home
 jruby/test_ast_inspector
-jruby/test_jarred_gems
+# Disabled temporarily, see jruby/jruby#6060
+#jruby/test_jarred_gems
 jruby/test_dir_with_plusses
 jruby/test_jar
 jruby/test_require

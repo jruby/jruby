@@ -195,6 +195,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
+    public boolean isRefined() {
+        return delegate.isRefined();
+    }
+
+    @Override
     public abstract DynamicMethod dup();
 
     @Override

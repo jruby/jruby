@@ -27,12 +27,4 @@ public class ConstantField {
             }
         }
     }
-
-    private static final int CONSTANT = Modifier.FINAL | Modifier.PUBLIC | Modifier.STATIC;
-
-    static boolean isConstant(final Field field) {
-        return (field.getModifiers() & CONSTANT) == CONSTANT &&
-            Character.isUpperCase( field.getName().charAt(0) );
-    }
-
 }

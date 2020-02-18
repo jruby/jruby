@@ -8,27 +8,33 @@ describe "A Java Throwable" do
     expect {trace = ex.backtrace}.not_to raise_error
     expect(trace).to eq(ex.stack_trace.map(&:to_s))
   end
-  
+
   it "implements backtrace= as a no-op" do
     ex = java.lang.IllegalStateException.new
     backtrace = ex.backtrace
     ex.set_backtrace ['blah']
     expect(ex.backtrace).to eq backtrace
   end
-  
+
   it "implements to_s as message" do
     ex = java.lang.Exception.new
     expect(ex.to_s).to eq ''
     expect(ex.to_s).to eq ex.message
-    
+
     ex = java.lang.RuntimeException.new('hello')
     expect(ex.to_s).to eq 'hello'
     expect(ex.to_s).to eq ex.message
   end
-  
+
   it "implements inspect as toString" do
     ex = java.lang.Exception.new('hello')
     expect(ex.inspect).to eq "java.lang.Exception: hello"
+  end
+
+  it "implements full_message" do
+    ex = java.lang.Exception.new('hello')
+    expect(ex.full_message).to match /hello \(Java::JavaLang::Exception\)/
+    expect(ex.full_message(:highlight => true, :order => :top)).to match /hello \(Java::JavaLang::Exception\)/
   end
 
   it "can be rescued by rescue Exception" do
@@ -38,7 +44,7 @@ describe "A Java Throwable" do
       expect(e).to eq(ex)
     end
   end
-  
+
   it "can be rescued by rescue java.lang.Throwable" do
     begin
       raise ex = java.lang.Exception.new
@@ -46,7 +52,7 @@ describe "A Java Throwable" do
       expect(e).to eq(ex)
     end
   end
-  
+
   it "can be rescued by rescue Object" do
     begin
       raise ex = java.lang.Exception.new

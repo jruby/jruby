@@ -145,7 +145,7 @@ public class AliasMethod extends DynamicMethod {
     }
 
     public String getOldName() {
-        return name;
+        return entry.method.getName();
     }
     
     @Override

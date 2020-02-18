@@ -13,8 +13,10 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+
 import org.jruby.Ruby;
 import org.jruby.compiler.JITCompilerMBean;
+import org.jruby.javasupport.Java;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -54,6 +56,11 @@ public class BeanManagerImpl implements BeanManager {
         if (managementEnabled) register(base + "service=Runtime", runtime);
     }
 
+    @Override
+    public void register(InlineStats inlineStats) {
+        if (managementEnabled) register(base + "service=InlineStats", inlineStats);
+    }
+
     public void unregisterCompiler() {
         if (managementEnabled) unregister(base + "service=JITCompiler");
     }
@@ -70,11 +77,16 @@ public class BeanManagerImpl implements BeanManager {
         if (managementEnabled) unregister(base + "service=Runtime");
     }
 
+    @Override
+    public void unregisterInlineStats() {
+        if (managementEnabled) unregister(base + "service=InlineStats");
+    }
+
     public boolean tryShutdownAgent() {
         try {
             Class agent = Class.forName("sun.management.Agent");
             Method shutdown = agent.getDeclaredMethod("stopRemoteManagementAgent");
-            shutdown.setAccessible(true);
+            Java.trySetAccessible(shutdown);
             shutdown.invoke(null);
             return true;
         } catch (Exception e) {
@@ -86,6 +98,7 @@ public class BeanManagerImpl implements BeanManager {
         try {
             Class agent = Class.forName("sun.management.Agent");
             Method start = agent.getMethod("startAgent");
+            Java.trySetAccessible(start);
             start.invoke(null);
             return true;
         } catch (Exception e) {

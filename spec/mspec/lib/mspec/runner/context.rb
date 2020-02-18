@@ -12,7 +12,7 @@
 class ContextState
   attr_reader :state, :parent, :parents, :children, :examples, :to_s
 
-  def initialize(mod, options=nil)
+  def initialize(mod, options = nil)
     @to_s = mod.to_s
     if options.is_a? Hash
       @options = options
@@ -28,6 +28,7 @@ class ContextState
     @pre      = {}
     @post     = {}
     @examples = []
+    @state    = nil
     @parent   = nil
     @parents  = [self]
     @children = []
@@ -127,6 +128,7 @@ class ContextState
   # Creates an ExampleState instance for the block and stores it
   # in a list of examples to evaluate unless the example is filtered.
   def it(desc, &block)
+    raise "nested #it" if @state
     example = ExampleState.new(self, desc, block)
     MSpec.actions :add, example
     return if MSpec.guarded?
@@ -174,7 +176,7 @@ class ContextState
   # so that exceptions are handled and tallied. Returns true and does
   # NOT evaluate any blocks if +check+ is true and
   # <tt>MSpec.mode?(:pretend)</tt> is true.
-  def protect(what, blocks, check=true)
+  def protect(what, blocks, check = true)
     return true if check and MSpec.mode? :pretend
     Array(blocks).all? { |block| MSpec.protect what, &block }
   end
@@ -214,7 +216,7 @@ class ContextState
               if example
                 passed = protect nil, example
                 MSpec.actions :example, state, example
-                protect nil, @expectation_missing unless MSpec.expectation? or !passed
+                protect nil, @expectation_missing if !MSpec.expectation? and passed
               end
             end
             protect "after :each", post(:each)

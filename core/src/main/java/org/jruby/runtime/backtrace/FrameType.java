@@ -5,6 +5,8 @@ import java.util.HashSet;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
+import org.jruby.ir.instructions.DefineClassInstr;
+import org.jruby.ir.instructions.DefineModuleInstr;
 import org.jruby.ir.interpreter.Interpreter;
 
 public enum FrameType {
@@ -17,6 +19,9 @@ public enum FrameType {
         INTERPRETED_CLASSES.add(MixedModeIRMethod.class.getName());
         INTERPRETED_CLASSES.add(InterpretedIRMethod.class.getName());
         INTERPRETED_CLASSES.add(InterpretedIRBodyMethod.class.getName());
+        INTERPRETED_CLASSES.add(InterpretedIRBodyMethod.class.getName());
+        INTERPRETED_CLASSES.add(DefineClassInstr.class.getName());
+        INTERPRETED_CLASSES.add(DefineModuleInstr.class.getName());
     }
 
     public static boolean isInterpreterFrame(final String className, final String methodName) {

@@ -127,7 +127,7 @@ public class Argv extends AbstractVariable {
         else if ( javaObject instanceof String[] ) {
             for ( String str : (String[]) javaObject ) argv.add(str);
         }
-        this.irubyObject = argv; fromRuby = true;
+        this.rubyObject = argv; fromRuby = true;
 
         RubyModule rubyModule = getRubyClass(runtime);
         // SSS FIXME: With rubyclass stack gone, this needs a replacement
@@ -179,7 +179,7 @@ public class Argv extends AbstractVariable {
     // ARGV appears to require special treatment, leaving javaType intact
     protected void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
-        this.irubyObject = rubyObject;
+        this.rubyObject = rubyObject;
     }
 
     /**
@@ -198,9 +198,9 @@ public class Argv extends AbstractVariable {
     @Override
     @SuppressWarnings("unchecked")
     public Object getJavaObject() {
-        if ( irubyObject == null || ! fromRuby ) return javaObject;
+        if ( rubyObject == null || ! fromRuby ) return javaObject;
 
-        final RubyArray ary = (RubyArray) irubyObject;
+        final RubyArray ary = (RubyArray) rubyObject;
         if (javaType == null) { // firstly retrieved from Ruby
             return javaObject = new ArrayList<String>(ary);
         }

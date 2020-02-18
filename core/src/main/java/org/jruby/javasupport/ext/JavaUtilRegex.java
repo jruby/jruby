@@ -74,14 +74,14 @@ public abstract class JavaUtilRegex {
 
         @JRubyMethod(name = "===", required = 1)
         public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject str) {
-            return context.runtime.newBoolean( matcher(self, str).find() );
+            return RubyBoolean.newBoolean(context,  matcher(self, str).find() );
         }
 
         @JRubyMethod(name = "casefold?")
         public static IRubyObject casefold_p(final ThreadContext context, final IRubyObject self) {
             final java.util.regex.Pattern regex = unwrapJavaObject(self);
             boolean i = ( regex.flags() & java.util.regex.Pattern.CASE_INSENSITIVE ) != 0;
-            return context.runtime.newBoolean(i);
+            return RubyBoolean.newBoolean(context, i);
         }
 
         private static java.util.regex.Matcher matcher(final IRubyObject self, final IRubyObject str) {

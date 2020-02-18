@@ -73,6 +73,14 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return false;
     }
 
+    /**
+     * On an exception occurring in this block which BB should we go to?
+     * @return BB of exception handling or null if none.
+     */
+    public BasicBlock exceptionBB() {
+        return cfg.getRescuerBBFor(this);
+    }
+
     public boolean isEntryBB() {
         return cfg.getEntryBB() == this;
     }

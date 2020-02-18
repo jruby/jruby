@@ -47,4 +47,9 @@ public class Float extends ImmutableLiteral {
     public double getValue() {
         return value;
     }
+
+    @Override
+    public boolean isTruthyImmediate() {
+        return true;
+    }
 }

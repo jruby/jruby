@@ -71,11 +71,11 @@ describe "Time.at" do
 
   describe "passed non-Time, non-Numeric" do
     it "raises a TypeError with a String argument" do
-      lambda { Time.at("0") }.should raise_error(TypeError)
+      -> { Time.at("0") }.should raise_error(TypeError)
     end
 
     it "raises a TypeError with a nil argument" do
-      lambda { Time.at(nil) }.should raise_error(TypeError)
+      -> { Time.at(nil) }.should raise_error(TypeError)
     end
 
     describe "with an argument that responds to #to_int" do
@@ -127,66 +127,66 @@ describe "Time.at" do
 
   describe "passed [Integer, nil]" do
     it "raises a TypeError" do
-      lambda { Time.at(0, nil) }.should raise_error(TypeError)
+      -> { Time.at(0, nil) }.should raise_error(TypeError)
     end
   end
 
   describe "passed [Integer, String]" do
     it "raises a TypeError" do
-      lambda { Time.at(0, "0") }.should raise_error(TypeError)
+      -> { Time.at(0, "0") }.should raise_error(TypeError)
     end
   end
 
   describe "passed [Time, Integer]" do
     # #8173
     it "raises a TypeError" do
-      lambda { Time.at(Time.now, 500000) }.should raise_error(TypeError)
+      -> { Time.at(Time.now, 500000) }.should raise_error(TypeError)
     end
   end
 
   ruby_version_is "2.5" do
     describe "passed [Time, Numeric, format]" do
       context ":nanosecond format" do
-        it "traits second argument as nanoseconds" do
+        it "treats second argument as nanoseconds" do
           Time.at(0, 123456789, :nanosecond).nsec.should == 123456789
         end
       end
 
       context ":nsec format" do
-        it "traits second argument as nanoseconds" do
+        it "treats second argument as nanoseconds" do
           Time.at(0, 123456789, :nsec).nsec.should == 123456789
         end
       end
 
       context ":microsecond format" do
-        it "traits second argument as microseconds" do
+        it "treats second argument as microseconds" do
           Time.at(0, 123456, :microsecond).nsec.should == 123456000
         end
       end
 
       context ":usec format" do
-        it "traits second argument as microseconds" do
+        it "treats second argument as microseconds" do
           Time.at(0, 123456, :usec).nsec.should == 123456000
         end
       end
 
       context ":millisecond format" do
-        it "traits second argument as milliseconds" do
+        it "treats second argument as milliseconds" do
           Time.at(0, 123, :millisecond).nsec.should == 123000000
         end
       end
 
       context "not supported format" do
         it "raises ArgumentError" do
-          ->() { Time.at(0, 123456, 2) }.should raise_error(ArgumentError)
-          ->() { Time.at(0, 123456, nil) }.should raise_error(ArgumentError)
-          ->() { Time.at(0, 123456, :invalid) }.should raise_error(ArgumentError)
+          -> { Time.at(0, 123456, 2) }.should raise_error(ArgumentError)
+          -> { Time.at(0, 123456, nil) }.should raise_error(ArgumentError)
+          -> { Time.at(0, 123456, :invalid) }.should raise_error(ArgumentError)
         end
 
         it "does not try to convert format to Symbol with #to_sym" do
           format = "usec"
           format.should_not_receive(:to_sym)
-          -> () { Time.at(0, 123456, format) }.should raise_error(ArgumentError)
+          -> { Time.at(0, 123456, format) }.should raise_error(ArgumentError)
         end
       end
 
@@ -235,14 +235,14 @@ describe "Time.at" do
       end
 
       it "could be a timezone object" do
-        zone = TimeSpecs::TimezoneWithName.new(name: "Asia/Colombo", offset: (5*3600+30*60))
+        zone = TimeSpecs::TimezoneWithName.new(name: "Asia/Colombo")
         time = Time.at(@epoch_time, in: zone)
 
         time.utc_offset.should == 5*3600+30*60
         time.zone.should == zone
         time.to_i.should == @epoch_time
 
-        zone = TimeSpecs::TimezoneWithName.new(name: "PST", offset: (-9*60*60))
+        zone = TimeSpecs::TimezoneWithName.new(name: "PST")
         time = Time.at(@epoch_time, in: zone)
 
         time.utc_offset.should == -9*60*60

@@ -530,7 +530,7 @@ public class RubyMath {
         } else if (y <= 1) {
             result = value * (1 + chebylevSerie(2 * value * value - 1, ERFC_COEF));
         } else if (y < 6.013687357) {
-            result = sign(1 - erfc(context, recv, RubyFloat.newFloat(context.runtime,y)).getDoubleValue(), value);
+            result = sign(1 - erfc(context, recv, RubyFloat.newFloat(context.runtime, y)).value, value);
         } else if (Double.isNaN(y)) {
             result = Double.NaN;
         } else {
@@ -701,7 +701,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "gamma", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat gamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(context.runtime, x).getDoubleValue();
+        double value = RubyKernel.new_float(context.runtime, x).value;
         double result = nemes_gamma(value);
         /* note nemes_gamma can return Double.POSITIVE_INFINITY or Double.NEGATIVE_INFINITY
          * when value is an integer less than 1.
@@ -740,7 +740,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "lgamma", required = 1, module = true, visibility = Visibility.PRIVATE)
     public static RubyArray lgamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(context.runtime, x).getDoubleValue();
+        double value = RubyKernel.new_float(context.runtime, x).value;
         // JRUBY-4653: Could this error checking done more elegantly?
         if (value < 0 && Double.isInfinite(value)) throw context.runtime.newMathDomainError("lgamma");
 

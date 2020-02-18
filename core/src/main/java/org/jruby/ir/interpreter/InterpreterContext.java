@@ -3,7 +3,7 @@ package org.jruby.ir.interpreter;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Stack;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRFlags;
@@ -20,7 +20,13 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
-    protected int temporaryVariablecount;
+
+    private final static Instr[] NO_INSTRUCTIONS = new Instr[0];
+
+    private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
+    private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
+
+    protected int temporaryVariableCount;
 
     // startup interp will mark this at construction and not change but full interpreter will write it
     // much later after running compiler passes.  JIT will not use this field at all.
@@ -39,28 +45,10 @@ public class InterpreterContext {
     private boolean receivesKeywordArguments;
     private boolean metaClassBodyScope;
 
-    private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
-    private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
-
-    public InterpreterEngine getEngine() {
-        if (engine == null) {
-            try {
-                List<Instr> instrs = instructionsCallback.call();
-                instructions = instrs != null ? prepareBuildInstructions(instrs) : null;
-            } catch (Exception e) {
-                Helpers.throwException(e);
-            }
-            // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
-            // For impl testing - engine = determineInterpreterEngine(scope);
-            setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
-        }
-        return engine;
-    }
-
     private InterpreterEngine engine;
-    public final Callable<List<Instr>> instructionsCallback;
+    public final Supplier<List<Instr>> instructionsCallback;
 
-    private IRScope scope;
+    private final IRScope scope;
 
     public InterpreterContext(IRScope scope, List<Instr> instructions) {
         this.scope = scope;
@@ -70,19 +58,41 @@ public class InterpreterContext {
         setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
-        this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+        setInstructions(instructions);
         this.instructionsCallback = null; // engine != null
     }
 
-    public InterpreterContext(IRScope scope, Callable<List<Instr>> instructions) throws Exception {
+    public InterpreterContext(IRScope scope, Supplier<List<Instr>> instructions) {
         this.scope = scope;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.instructionsCallback = instructions;
     }
 
+    public InterpreterEngine getEngine() {
+        if (engine == null) {
+            setInstructions(instructionsCallback.get());
+            scope.computeScopeFlags();
+
+            // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
+            // For impl testing - engine = determineInterpreterEngine(scope);
+            setEngine(instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER);
+        }
+        return engine;
+    }
+
+    public Instr[] getInstructions() {
+        if (instructions == null) getEngine();
+
+        return instructions == null ? NO_INSTRUCTIONS : instructions;
+    }
+
+    private void setInstructions(final List<Instr> instructions) {
+        this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+    }
+
     private void retrieveFlags() {
-        this.temporaryVariablecount = scope.getTemporaryVariablesCount();
+        this.temporaryVariableCount = scope.getTemporaryVariablesCount();
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         // FIXME: Centralize this out of InterpreterContext
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
@@ -148,7 +158,7 @@ public class InterpreterContext {
     }
 
     public Object[] allocateTemporaryVariables() {
-        return temporaryVariablecount > 0 ? new Object[temporaryVariablecount] : null;
+        return temporaryVariableCount > 0 ? new Object[temporaryVariableCount] : null;
     }
 
     public boolean[] allocateTemporaryBooleanVariables() {
@@ -172,14 +182,7 @@ public class InterpreterContext {
     }
 
     public RubySymbol getName() {
-        return scope.getName();
-    }
-
-    public Instr[] getInstructions() {
-        if (instructions == null) {
-            getEngine();
-        }
-        return instructions;
+        return scope.getManager().getRuntime().newSymbol(scope.getId());
     }
 
     public void computeScopeFlagsFromInstructions() {
@@ -200,22 +203,32 @@ public class InterpreterContext {
     }
 
     public boolean hasExplicitCallProtocol() {
+        if (instructions == null) getEngine();
+
         return hasExplicitCallProtocol;
     }
 
     public boolean pushNewDynScope() {
+        if (instructions == null) getEngine();
+
         return pushNewDynScope;
     }
 
     public boolean reuseParentDynScope() {
+        if (instructions == null) getEngine();
+
         return reuseParentDynScope;
     }
 
     public boolean popDynScope() {
+        if (instructions == null) getEngine();
+
         return popDynScope;
     }
 
     public boolean receivesKeywordArguments() {
+        if (instructions == null) getEngine();
+
         return receivesKeywordArguments;
     }
 
@@ -226,7 +239,7 @@ public class InterpreterContext {
         buf.append(getFileName()).append(':').append(scope.getLine());
         if (getName() != null) buf.append(' ').append(getName()).append("\n");
 
-        if (instructions == null) {
+        if (getInstructions() == null) {
             buf.append("  No Instructions.  Full Build before linearizeInstr?");
         } else {
             buf.append(toStringInstrs()).append("\n");

@@ -2,71 +2,59 @@ package org.jruby.ast.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.ir.IRScope;
+import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 
 public class SexpMaker {
-    private static final AtomicLong JITTED_METHOD_NUMBER = new AtomicLong();
-    private interface Builder {
-        Builder append(String str);
-        Builder append(char ch);
-        Builder append(int i);
-        Builder append(Object o);
-        Builder append(boolean b);
-        Builder append(long l);
-        Builder append(double d);
-    }
 
-    private static class DigestBuilder implements Builder {
-        MessageDigest d;
+    private static class DigestBuilder {
+        final MessageDigest digest;
 
         DigestBuilder(MessageDigest digest) {
-            this.d = digest;
+            this.digest = digest;
         }
 
-        @Override
-        public Builder append(Object o) {
+        public DigestBuilder append(Object o) {
             append(o.toString());
             return this;
         }
 
-        @Override
-        public Builder append(String str) {
-            d.update(str.getBytes());
+        public DigestBuilder append(ByteList str) {
+            digest.update(str.unsafeBytes(), str.getBegin(), str.getRealSize());
             return this;
         }
 
-        @Override
-        public Builder append(boolean b) {
+        public DigestBuilder append(String str) {
+            digest.update(str.getBytes());
+            return this;
+        }
+
+        public DigestBuilder append(boolean b) {
             append((byte) (b ? 1 : 0));
             return this;
         }
 
-        @Override
-        public Builder append(char ch) {
-            d.update((byte)(ch >> 8));
-            d.update((byte)(ch));
+        public DigestBuilder append(char ch) {
+            digest.update((byte)(ch >> 8));
+            digest.update((byte)(ch));
             return this;
         }
 
-        @Override
-        public Builder append(int i) {
+        public DigestBuilder append(int i) {
             append((char) (i >> 16));
             append((char) i);
             return this;
         }
 
-        @Override
-        public Builder append(long l) {
+        public DigestBuilder append(long l) {
             append((int) (l >> 32));
             append((int) l);
             return this;
         }
 
-        @Override
-        public Builder append(double d) {
+        public DigestBuilder append(double d) {
             append(Double.doubleToLongBits(d));
             return this;
         }
@@ -80,14 +68,10 @@ public class SexpMaker {
             throw new RuntimeException(nsae);
         }
 
-        DigestBuilder db = new DigestBuilder(sha1);
+        DigestBuilder builder = new DigestBuilder(sha1);
+        builder.append(scope.getId()).append('\n').append(scope.getScopeId());
 
-        db.append(scope.getId());
-        db.append('\n');
-        // CON FIXME: We need a better way to uniquely identify this...right?
-        db.append(JITTED_METHOD_NUMBER.getAndIncrement());
-
-        byte[] digest = db.d.digest();
+        byte[] digest = builder.digest.digest();
 
         return new String(ConvertBytes.twosComplementToHexBytes(digest, false));
     }

@@ -2,6 +2,15 @@ require_relative '../../spec_helper'
 require 'thread'
 
 describe "ConditionVariable#wait" do
+  it "calls #sleep on the given object" do
+    o = Object.new
+    o.should_receive(:sleep).with(1234)
+
+    cv = ConditionVariable.new
+
+    cv.wait(o, 1234)
+  end
+
   it "returns self" do
     m = Mutex.new
     cv = ConditionVariable.new
@@ -21,6 +30,50 @@ describe "ConditionVariable#wait" do
 
     m.synchronize { cv.signal }
     th.join
+  end
+
+  it "can be interrupted by Thread#run" do
+    m = Mutex.new
+    cv = ConditionVariable.new
+    in_synchronize = false
+
+    th = Thread.new do
+      m.synchronize do
+        in_synchronize = true
+        cv.wait(m)
+      end
+      :success
+    end
+
+    # wait for m to acquire the mutex
+    Thread.pass until in_synchronize
+    # wait until th is sleeping (ie waiting)
+    Thread.pass while th.status and th.status != "sleep"
+
+    th.run
+    th.value.should == :success
+  end
+
+  it "can be interrupted by Thread#wakeup" do
+    m = Mutex.new
+    cv = ConditionVariable.new
+    in_synchronize = false
+
+    th = Thread.new do
+      m.synchronize do
+        in_synchronize = true
+        cv.wait(m)
+      end
+      :success
+    end
+
+    # wait for m to acquire the mutex
+    Thread.pass until in_synchronize
+    # wait until th is sleeping (ie waiting)
+    Thread.pass while th.status and th.status != "sleep"
+
+    th.wakeup
+    th.value.should == :success
   end
 
   it "reacquires the lock even if the thread is killed" do

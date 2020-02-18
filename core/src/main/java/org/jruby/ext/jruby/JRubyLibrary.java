@@ -86,12 +86,12 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableGems());
+            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableGems());
         }
 
         @JRubyMethod(name = "did_you_mean_disabled?")
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
-            return context.runtime.newBoolean(context.runtime.getInstanceConfig().isDisableDidYouMean());
+            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
@@ -116,7 +116,7 @@ public class JRubyLibrary implements Library {
 
     @JRubyMethod(module = true)
     public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
-        return Java.wrapJavaObject(context.runtime, context.runtime); // context.nil.getRuntime()
+        return Java.wrapJavaObject(context.runtime, context.runtime);
     }
 
     /**
@@ -281,7 +281,7 @@ public class JRubyLibrary implements Library {
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
         return CompiledScript.newInstance(context, new IRubyObject[] {
                 filename,
-                scope.getName(),
+                runtime.newSymbol(scope.getId()),
                 content,
                 Java.getInstance(runtime, bytes)
         }, Block.NULL_BLOCK);

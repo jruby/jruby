@@ -120,7 +120,6 @@ public enum Operation {
     /** constant operations */
     LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
-    CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
     SEARCH_MODULE_FOR_CONST(OpFlags.f_can_raise_exception),
 

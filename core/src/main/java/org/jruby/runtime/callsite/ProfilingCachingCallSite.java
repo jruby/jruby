@@ -3,6 +3,7 @@ package org.jruby.runtime.callsite;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -33,8 +34,8 @@ public class ProfilingCachingCallSite extends CachingCallSite {
     private final IRScope hostScope;
     private final long callSiteId;
 
-    public ProfilingCachingCallSite(String methodName, IRScope scope, long callSiteId) {
-        super(methodName, CallType.NORMAL);
+    public ProfilingCachingCallSite(CallType callType, String methodName, IRScope scope, long callSiteId) {
+        super(methodName, callType);
 
         this.hostScope = scope;
         this.callSiteId = callSiteId;
@@ -66,13 +67,14 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
             if (IRManager.IR_INLINER_VERBOSE) LOG.info("PROFILE: " + hostScope + " -> " + scopeToInline + " - " + totalMonomorphicCalls);
 
+            RubyModule metaClass = self.getMetaClass();
             AbstractIRMethod hostMethod = (AbstractIRMethod) hostScope.compilable;
             if (hostMethod instanceof InterpretedIRMethod) {
-                hostScope.inlineMethod(scopeToInline, callSiteId, cache.token, false);
+                hostScope.inlineMethod(scopeToInline, metaClass, callSiteId, cache.token, false);
             } else if (hostMethod instanceof MixedModeIRMethod) {
-                hostScope.inlineMethodJIT(scopeToInline, callSiteId, cache.token, false);
+                hostScope.inlineMethodJIT(scopeToInline, metaClass, callSiteId, cache.token, false);
             } else {
-                hostScope.inlineMethodCompiled(scopeToInline, callSiteId, cache.token, false);
+                hostScope.inlineMethodCompiled(scopeToInline, metaClass, callSiteId, cache.token, false);
             }
         }
     }

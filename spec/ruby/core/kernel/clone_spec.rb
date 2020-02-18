@@ -37,14 +37,12 @@ describe "Kernel#clone" do
     o3.frozen?.should == true
   end
 
-  ruby_version_is '2.4' do
-    it 'takes an option to copy freeze state or not' do
-      @obj.clone(freeze: true).frozen?.should == false
-      @obj.clone(freeze: false).frozen?.should == false
-      @obj.freeze
-      @obj.clone(freeze: true).frozen?.should == true
-      @obj.clone(freeze: false).frozen?.should == false
-    end
+  it 'takes an option to copy freeze state or not' do
+    @obj.clone(freeze: true).frozen?.should == false
+    @obj.clone(freeze: false).frozen?.should == false
+    @obj.freeze
+    @obj.clone(freeze: true).frozen?.should == true
+    @obj.clone(freeze: false).frozen?.should == false
   end
 
   it "copies instance variables" do
@@ -110,9 +108,15 @@ describe "Kernel#clone" do
     cloned.bar.should == ['a']
   end
 
-  it 'copies frozen? and tainted?' do
-    o = ''.taint.freeze.clone
+  it 'copies frozen?' do
+    o = ''.freeze.clone
     o.frozen?.should be_true
-    o.tainted?.should be_true
+  end
+
+  ruby_version_is ''...'2.7' do
+    it 'copies tainted?' do
+      o = ''.taint.clone
+      o.tainted?.should be_true
+    end
   end
 end

@@ -42,13 +42,26 @@ describe "CApiGCSpecs" do
   end
 
   describe "rb_gc" do
-
     it "increases gc count" do
       gc_count = GC.count
       @f.rb_gc
       GC.count.should > gc_count
     end
-
   end
 
+  describe "rb_gc_adjust_memory_usage" do
+    # Just check that it does not throw, as it seems hard to observe any effect
+    it "adjusts the amount of registered external memory" do
+      -> {
+        @f.rb_gc_adjust_memory_usage(8)
+        @f.rb_gc_adjust_memory_usage(-8)
+      }.should_not raise_error
+    end
+  end
+
+  describe "rb_gc_register_mark_object" do
+    it "can be called with an object" do
+      @f.rb_gc_register_mark_object(Object.new).should be_nil
+    end
+  end
 end

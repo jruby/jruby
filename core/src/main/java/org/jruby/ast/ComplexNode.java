@@ -30,7 +30,7 @@ public class ComplexNode extends NumericNode implements SideEffectFree {
 
     @Override
     public List<Node> childNodes() {
-        return EMPTY_LIST;
+        return Node.createList(y);
     }
 
     @Override

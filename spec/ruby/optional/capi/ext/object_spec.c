@@ -327,6 +327,16 @@ static VALUE object_spec_rb_ivar_defined(VALUE self, VALUE obj, VALUE sym_name) 
   return rb_ivar_defined(obj, SYM2ID(sym_name));
 }
 
+static VALUE object_spec_rb_copy_generic_ivar(VALUE self, VALUE clone, VALUE obj) {
+  rb_copy_generic_ivar(clone, obj);
+  return self;
+}
+
+static VALUE object_spec_rb_free_generic_ivar(VALUE self, VALUE obj) {
+  rb_free_generic_ivar(obj);
+  return self;
+}
+
 static VALUE object_spec_rb_equal(VALUE self, VALUE a, VALUE b) {
   return rb_equal(a, b);
 }
@@ -335,6 +345,40 @@ static VALUE object_spec_rb_class_inherited_p(VALUE self, VALUE mod, VALUE arg) 
   return rb_class_inherited_p(mod, arg);
 }
 
+static VALUE speced_allocator(VALUE klass) {
+  VALUE flags = 0;
+  VALUE instance;
+  if (rb_class_inherited_p(klass, rb_cString)) {
+    flags = T_STRING;
+  } else if (rb_class_inherited_p(klass, rb_cArray)) {
+    flags = T_ARRAY;
+  } else {
+    flags = T_OBJECT;
+  }
+  instance = rb_newobj_of(klass, flags);
+  rb_iv_set(instance, "@from_custom_allocator", Qtrue);
+  return instance;
+}
+
+static VALUE define_alloc_func(VALUE self, VALUE klass) {
+  rb_define_alloc_func(klass, speced_allocator);
+  return Qnil;
+}
+
+static VALUE undef_alloc_func(VALUE self, VALUE klass) {
+  rb_undef_alloc_func(klass);
+  return Qnil;
+}
+
+static VALUE speced_allocator_p(VALUE self, VALUE klass) {
+  rb_alloc_func_t allocator = rb_get_alloc_func(klass);
+  return (allocator == speced_allocator) ? Qtrue : Qfalse;
+}
+
+static VALUE custom_alloc_func_p(VALUE self, VALUE klass) {
+  rb_alloc_func_t allocator = rb_get_alloc_func(klass);
+  return allocator ? Qtrue : Qfalse;
+}
 
 void Init_object_spec(void) {
   VALUE cls = rb_define_class("CApiObjectSpecs", rb_cObject);
@@ -400,6 +444,12 @@ void Init_object_spec(void) {
   rb_define_method(cls, "rb_ivar_get", object_spec_rb_ivar_get, 2);
   rb_define_method(cls, "rb_ivar_set", object_spec_rb_ivar_set, 3);
   rb_define_method(cls, "rb_ivar_defined", object_spec_rb_ivar_defined, 2);
+  rb_define_method(cls, "rb_copy_generic_ivar", object_spec_rb_copy_generic_ivar, 2);
+  rb_define_method(cls, "rb_free_generic_ivar", object_spec_rb_free_generic_ivar, 1);
+  rb_define_method(cls, "rb_define_alloc_func", define_alloc_func, 1);
+  rb_define_method(cls, "rb_undef_alloc_func", undef_alloc_func, 1);
+  rb_define_method(cls, "speced_allocator?", speced_allocator_p, 1);
+  rb_define_method(cls, "custom_alloc_func?", custom_alloc_func_p, 1);
 }
 
 #ifdef __cplusplus

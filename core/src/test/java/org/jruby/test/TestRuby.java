@@ -169,7 +169,7 @@ public class TestRuby extends TestRubyBase {
         RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
         exception.set_backtrace(backtrace);
         ruby.printError(exception);
-        assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", err.toString());
+        assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", CRLFToNL(err.toString()));
     }
     
     public void testPrintErrorShouldOnlyPrintErrorMessageWhenBacktraceIsNil() {

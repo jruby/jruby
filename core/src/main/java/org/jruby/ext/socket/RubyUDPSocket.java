@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -38,7 +39,6 @@ import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
 import java.net.ProtocolFamily;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.MulticastSocket;
 import java.net.StandardProtocolFamily;
@@ -48,6 +48,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
@@ -56,6 +57,7 @@ import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -72,8 +74,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Sockaddr;
 
-import static com.headius.backport9.buffer.Buffers.flipBuffer;
-
+import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
 /**
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
@@ -273,8 +274,12 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     public static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context, IRubyObject[] args) {
         int argc = args.length;
+        boolean exception = true;
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
-        if (opts != context.nil) argc--;
+        if (opts != context.nil) {
+            argc--;
+            exception = extractExceptionOnlyArg(context, (RubyHash) opts);
+        }
 
         IRubyObject length, flags, str;
         length = flags = str = context.nil;
@@ -285,7 +290,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             case 1: length = args[0];
         }
 
-        return recvfrom_nonblock(socket, context, length, flags, str, extractExceptionArg(context, opts));
+        return recvfrom_nonblock(socket, context, length, flags, str, exception);
     }
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
@@ -408,7 +413,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                     port = (int) _port.convertToInteger().getLongValue();
                 }
 
-                addrs = SocketUtils.getRubyInetAddresses(nameStr.getByteList());
+                addrs = SocketUtils.getRubyInetAddresses(nameStr.toString());
             }
 
             RubyString data = _mesg.convertToString();
@@ -609,27 +614,21 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     private static IRubyObject doReceiveMulticast(RubyBasicSocket socket, final Ruby runtime, final boolean non_block,
         int length, ReceiveTuple tuple) throws IOException {
-        ByteBuffer recv = ByteBuffer.wrap(new byte[length]);
-        SocketAddress address;
+        DatagramPacket recv = new DatagramPacket(new byte[length], length);
 
-        DatagramChannel channel = socket.multicastStateManager.getMulticastSocket().getChannel();
+        try {
+            socket.multicastStateManager.getMulticastSocket().receive(recv);
+        } catch (IllegalBlockingModeException e) {
+            if (non_block) return null; // :wait_readable or raise WaitReadable
 
-        address = channel.receive(recv);
-
-        if (address == null) {
-            if ( non_block ) return null; // :wait_readable or raise WaitReadable
             throw runtime.newErrnoEAGAINReadableError("multicast UDP does not support nonblocking");
         }
 
-        InetSocketAddress sender = (InetSocketAddress) address;
+        InetSocketAddress sender = (InetSocketAddress) recv.getSocketAddress();
 
-        // see JRUBY-4678
-        if (sender == null) {
-            throw runtime.newErrnoECONNRESETError();
-        }
+        if (sender == null) throw runtime.newErrnoECONNRESETError();         // see JRUBY-4678
 
-        flipBuffer(recv);
-        RubyString result = runtime.newString(new ByteList(recv.array(), recv.position(), recv.limit(), false));
+        RubyString result = runtime.newString(new ByteList(recv.getData(), recv.getOffset(), recv.getLength(), false));
 
         if (tuple != null) {
             tuple.result = result;

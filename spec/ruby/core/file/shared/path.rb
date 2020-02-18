@@ -44,12 +44,10 @@ describe :file_path, shared: true do
     end
   end
 
-  with_feature :encoding do
-    it "preserves the encoding of the path" do
-      path = @path.force_encoding("euc-jp")
-      @file = File.new path
-      @file.send(@method).encoding.should == Encoding.find("euc-jp")
-    end
+  it "preserves the encoding of the path" do
+    path = @path.force_encoding("euc-jp")
+    @file = File.new path
+    @file.send(@method).encoding.should == Encoding.find("euc-jp")
   end
 
   ruby_version_is "2.5" do
@@ -70,8 +68,7 @@ describe :file_path, shared: true do
               -> { f.send(@method) }.should raise_error(IOError)
             end
           rescue Errno::EOPNOTSUPP, Errno::EINVAL, Errno::EISDIR
-            # EOPNOTSUPP: no support from the filesystem
-            1.should == 1
+            skip "no support from the filesystem"
           end
         end
       end

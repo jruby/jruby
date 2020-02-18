@@ -76,12 +76,17 @@ public class InvocationLinker {
                     .fold(Binder
                             .from(nativeTarget.type().changeReturnType(void.class))
                             .permute(0)
-                            .invokeStaticQuiet(lookup(), ThreadContext.class, "callThreadPoll"))
+                            .invoke(CALL_THREAD_POLL_HANDLE))
                     .invoke(nativeTarget);
         }
 
         return nativeTarget;
     }
+
+    private static final MethodHandle CALL_THREAD_POLL_HANDLE =
+            Binder
+                    .from(void.class, ThreadContext.class)
+                    .invokeStaticQuiet(lookup(), ThreadContext.class, "callThreadPoll");
 
     public static MethodHandle wrapWithFrameOnly(Signature signature, RubyModule implClass, String name, MethodHandle nativeTarget) {
         MethodHandle framePre = getFrameOnlyPre(signature, CallConfiguration.FrameFullScopeNone, implClass, name);
@@ -104,7 +109,7 @@ public class InvocationLinker {
                 .fold(Binder
                         .from(nativeTarget.type().changeReturnType(void.class))
                         .permute(0)
-                        .invokeStaticQuiet(lookup(), ThreadContext.class, "callThreadPoll"))
+                        .invoke(CALL_THREAD_POLL_HANDLE))
                 .invoke(nativeTarget);
 
         return nativeTarget;

@@ -10,7 +10,7 @@ project 'JRuby Core' do
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
 
-              'tzdata.version' => '2013d',
+              'tzdata.version' => '2019c',
               'tzdata.scope' => 'provided',
 
               'maven.build.timestamp.format' => 'yyyy-MM-dd',
@@ -41,16 +41,16 @@ project 'JRuby Core' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.1.6', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.19', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.20', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.0.49', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.9.12', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.1.9'
+  jar 'com.github.jnr:jnr-enxio:0.25', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.27', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.0.54', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.9.15', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.1.12'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.26'
-  jar 'org.jruby.jcodings:jcodings:1.0.43'
+  jar 'org.jruby.joni:joni:2.1.30'
+  jar 'org.jruby.jcodings:jcodings:1.0.46'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.11'
@@ -73,8 +73,9 @@ project 'JRuby Core' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:modulator:1.1'
-  jar 'com.headius:backport9:1.1'
+  jar 'com.headius:backport9:1.3'
+
+  jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
 
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -150,6 +151,16 @@ project 'JRuby Core' do
                                       xml( '<classpath/>' ),
                                       'org.jruby.anno.InvokerGenerator',
                                       '${anno.sources}/annotated_classes.txt',
+                                      '${project.build.outputDirectory}' ],
+                     'executable' =>  'java',
+                     'classpathScope' =>  'compile' )
+
+      execute_goals( 'exec',
+                     :id => 'scope-generator',
+                     'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
+                                      '-classpath',
+                                      xml( '<classpath/>' ),
+                                      'org.jruby.runtime.scope.DynamicScopeGenerator',
                                       '${project.build.outputDirectory}' ],
                      'executable' =>  'java',
                      'classpathScope' =>  'compile' )
@@ -246,33 +257,41 @@ project 'JRuby Core' do
       includes 'META-INF/**/*'
     end
 
-    resource do
-      directory '${project.basedir}/src/main/resources'
-      includes '${Constants.java}'
-      target_path '${project.build.sourceDirectory}'
-      filtering 'true'
-    end
-
-    resource do
-      directory '${project.basedir}/..'
-      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
-      target_path '${project.build.outputDirectory}/META-INF/'
-    end
   end
 
+  plugin :resources do
+    execute_goals('copy-resources', phase: :initialize,
+                  outputDirectory: '${basedir}',
+                  resources: [
+                    {
+                      directory: 'src/main/resources',
+                      includes: '${Constants.java}',
+                      target_path: '${project.build.sourceDirectory}',
+                      filtering: 'true'
+                    },
+                    {
+                      directory: '..',
+                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ],
+                      target_path: '${project.build.sourceDirectory}/META-INF/'
+                    }
+                  ])
+  end
 
   plugin :shade do
     execute_goals( 'shade',
-                   :id => 'create lib/jruby.jar',
-                   :phase => 'package',
+                   id: 'create lib/jruby.jar',
+                   phase: 'package',
+                   artifactSet: {
+                       excludes: 'javax.annotation:javax.annotation-api'
+                   },
                    relocations: [
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                    ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main',
-                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   'createSourcesJar' => '${create.sources.jar}'
+                   outputFile: '${jruby.basedir}/lib/jruby.jar',
+                   transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         mainClass: 'org.jruby.Main',
+                                         manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
+                   createSourcesJar: '${create.sources.jar}',
     )
   end
 
@@ -283,21 +302,27 @@ project 'JRuby Core' do
       # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
       plugin :shade do
         execute_goals( 'shade',
-                       :id => 'shade the asm classes',
-                       :phase => 'package',
-                       'artifactSet' => {
+                       id: 'shade dependencies into jar',
+                       phase: 'package',
+                       artifactSet: {
                          # IMPORTANT these needs to match exclusions in
                          # maven/jruby-complete/pom.rb
-                         'includes' => [ 'com.github.jnr:jnr-ffi',
-                                         'me.qmx.jitescript:jitescript',
-                                         'org.ow2.asm:*' ]
+                         includes: [ 'com.github.jnr:jnr-ffi',
+                                     'me.qmx.jitescript:jitescript',
+                                     'org.ow2.asm:*'
+                         ],
+                         excludes: 'javax.annotation:javax.annotation-api'
                        },
                        relocations: [
                            {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                            {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
                        ],
-                       filters:
-                           {filter: {artifact: 'com.headius:invokebinder', excludes: {exclude: '**/module-info.class'}}}
+                       transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main',
+                                         'manifestEntries' => {'Automatic-Module-Name' => 'org.jruby.core'}}],
+                       filters: [
+                           {artifact: 'com.headius:invokebinder', excludes: '**/module-info.class'}
+                       ]
         )
       end
     end
@@ -409,16 +434,8 @@ project 'JRuby Core' do
 
     plugin :source do
       execute_goals( 'jar-no-fork',
-                     :id => 'pack core sources',
-                     :phase => 'prepare-package' ) # Needs to run before the shade plugin
+                     id: 'pack core sources',
+                     phase: 'prepare-package') # Needs to run before the shade plugin
     end
-  end
-
-  profile 'java9' do
-    activation do
-      jdk '[9,)'
-    end
-
-    jar 'javax.annotation:javax.annotation-api:1.3.1', scope: 'compile'
   end
 end

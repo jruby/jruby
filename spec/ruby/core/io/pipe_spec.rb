@@ -50,7 +50,7 @@ describe "IO.pipe" do
 
     it "closes both IO objects when the block raises" do
       r = w = nil
-      lambda do
+      -> do
         IO.pipe do |_r, _w|
           r = _r
           w = _w
@@ -179,7 +179,7 @@ describe "IO.pipe" do
   it "calls #to_hash to convert an options argument" do
     options = mock("io pipe encoding options")
     options.should_receive(:to_hash).and_return({ invalid: :replace })
-    IO.pipe("UTF-8", "ISO-8859-1", options) { |r, w| }
+    IO.pipe("UTF-8", "ISO-8859-1", **options) { |r, w| }
   end
 
   it "calls #to_str to convert the first argument to a String" do

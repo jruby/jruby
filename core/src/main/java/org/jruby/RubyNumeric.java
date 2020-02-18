@@ -49,7 +49,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
@@ -81,7 +80,6 @@ public class RubyNumeric extends RubyObject {
 
     public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
-        runtime.setNumeric(numeric);
 
         numeric.setClassIndex(ClassIndex.NUMERIC);
         numeric.setReifiedClass(RubyNumeric.class);
@@ -174,35 +172,31 @@ public class RubyNumeric extends RubyObject {
         long num = num2long(arg);
 
         checkInt(arg, num);
-        return (int)num;
+        return (int) num;
     }
 
     /** check_int
      *
      */
-    public static int checkInt(final Ruby runtime, long num){
-        if (num < Integer.MIN_VALUE) {
-            tooSmall(runtime, num);
-        } else if (num > Integer.MAX_VALUE) {
-            tooBig(runtime, num);
+    public static int checkInt(final Ruby runtime, long num) {
+        if (((int) num) != num) {
+            checkIntFail(runtime, num);
         }
         return (int) num;
     }
 
-    public static void checkInt(IRubyObject arg, long num){
-        if (num < Integer.MIN_VALUE) {
-            tooSmall(arg.getRuntime(), num);
-        } else if (num > Integer.MAX_VALUE) {
-            tooBig(arg.getRuntime(), num);
+    public static void checkInt(IRubyObject arg, long num) {
+        if (((int) num) != num) {
+            checkIntFail(arg.getRuntime(), num);
         }
     }
 
-    private static void tooSmall(Ruby runtime, long num) {
-        throw runtime.newRangeError("integer " + num + " too small to convert to `int'");
-    }
-
-    private static void tooBig(Ruby runtime, long num) {
-        throw runtime.newRangeError("integer " + num + " too big to convert to `int'");
+    private static void checkIntFail(Ruby runtime, long num) {
+        if (num < Integer.MIN_VALUE) {
+            throw runtime.newRangeError("integer " + num + " too small to convert to `int'");
+        } else {
+            throw runtime.newRangeError("integer " + num + " too big to convert to `int'");
+        }
     }
 
     /**
@@ -222,7 +216,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static long num2long(IRubyObject arg) {
-        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).getLongValue() : other2long(arg);
+        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).value : other2long(arg);
     }
 
     private static long other2long(IRubyObject arg) throws RaiseException {
@@ -235,7 +229,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static long float2long(RubyFloat flt) {
-        double aFloat = flt.getDoubleValue();
+        final double aFloat = flt.value;
         if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
         }
@@ -282,9 +276,9 @@ public class RubyNumeric extends RubyObject {
     public static double num2dbl(ThreadContext context, IRubyObject arg) {
         switch (((RubyBasicObject) arg).getNativeClassIndex()) {
             case FLOAT:
-                return ((RubyFloat) arg).getDoubleValue();
+                return ((RubyFloat) arg).value;
             case FIXNUM:
-                if (context.sites.Fixnum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyFixnum) arg).getDoubleValue();
+                if (context.sites.Fixnum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyFixnum) arg).value;
                 break;
             case BIGNUM:
                 if (context.sites.Bignum.to_f.isBuiltin(getMetaClass(arg))) return ((RubyBignum) arg).getDoubleValue();
@@ -299,7 +293,7 @@ public class RubyNumeric extends RubyObject {
                 throw context.runtime.newTypeError(str(context.runtime, "can't convert ", arg.inspect(), " into Float"));
         }
         IRubyObject val = TypeConverter.convertToType(arg, context.runtime.getFloat(), "to_f");
-        return ((RubyFloat) val).getDoubleValue();
+        return ((RubyFloat) val).value;
     }
 
     /** rb_dbl_cmp (numeric.c)
@@ -311,7 +305,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static long fix2long(IRubyObject arg) {
-        return ((RubyFixnum) arg).getLongValue();
+        return ((RubyFixnum) arg).value;
     }
 
     public static int fix2int(IRubyObject arg) {
@@ -321,7 +315,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public static int fix2int(RubyFixnum arg) {
-        long num = arg.getLongValue();
+        long num = arg.value;
         checkInt(arg, num);
         return (int) num;
     }
@@ -518,8 +512,12 @@ public class RubyNumeric extends RubyObject {
      *
      */
     protected final void coerceFailed(ThreadContext context, IRubyObject other) {
-        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s",
-                (other.isSpecialConst() ? other.inspect() : other.getMetaClass().getName()), getMetaClass()));
+        if (other.isSpecialConst() || other instanceof RubyFloat) {
+            other = other.inspect();
+        } else {
+            other = other.getMetaClass().name(context);
+        }
+        throw context.runtime.newTypeError(String.format("%s can't be coerced into %s", other, getMetaClass()));
     }
 
     /** rb_num_coerce_bin
@@ -665,7 +663,8 @@ public class RubyNumeric extends RubyObject {
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject arg) {
-        throw getRuntime().newTypeError(str(getRuntime(), "can't copy ", types(getRuntime(), getType())));
+        final Ruby runtime = metaClass.runtime;
+        throw runtime.newTypeError(str(runtime, "can't copy ", types(runtime, getType())));
     }
 
     /** num_coerce
@@ -673,8 +672,8 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
-        final Ruby runtime = getRuntime();
-        if (getMetaClass() == other.getMetaClass()) return runtime.newArray(other, this);
+        final Ruby runtime = metaClass.runtime;
+        if (metaClass == other.getMetaClass()) return runtime.newArray(other, this);
 
         IRubyObject cdr = RubyKernel.new_float(runtime, this);
         IRubyObject car = RubyKernel.new_float(runtime, other);
@@ -719,9 +718,9 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(IRubyObject other) {
         if (this == other) { // won't hurt fixnums
-            return RubyFixnum.zero(getRuntime());
+            return RubyFixnum.zero(metaClass.runtime);
         }
-        return getRuntime().getNil();
+        return metaClass.runtime.getNil();
     }
 
     /** num_eql
@@ -796,6 +795,10 @@ public class RubyNumeric extends RubyObject {
         return sites(context).op_minus.call(context, this, this, product);
     }
 
+    IRubyObject modulo(ThreadContext context, long other) {
+        return modulo(context, RubyFixnum.newFixnum(context.runtime, other));
+    }
+
     /** num_remainder
      *
      */
@@ -867,7 +870,7 @@ public class RubyNumeric extends RubyObject {
     */
     @JRubyMethod(name = "real?")
     public IRubyObject real_p(ThreadContext context) {
-        return context.runtime.newBoolean(isReal());
+        return RubyBoolean.newBoolean(context, isReal());
     }
 
     public boolean isReal() { return true; } // only RubyComplex isn't real
@@ -882,7 +885,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "integer?")
     public IRubyObject integer_p() {
-        return getRuntime().getFalse();
+        return metaClass.runtime.getFalse();
     }
 
     /** num_zero_p
@@ -895,7 +898,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public boolean isZero() {
-        return zero_p(getRuntime().getCurrentContext()).isTrue();
+        return zero_p(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
     /** num_nonzero_p
@@ -950,7 +953,7 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(optional = 2)
     public IRubyObject step(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(context, this, args));
+            return enumeratorizeWithSize(context, this, "step", args, stepSizeFn(this, args));
         }
 
         IRubyObject[] newArgs = new IRubyObject[2];
@@ -983,11 +986,11 @@ public class RubyNumeric extends RubyObject {
         }
         if (!hash.isNil()) {
             IRubyObject[] values = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, STEP_KEYS);
-            if (values[0] != UNDEF) {
+            if (values[0] != null) {
                 if (argc > 0) throw runtime.newArgumentError("to is given twice");
                 newArgs[0] = to = values[0];
             }
-            if (values[1] != UNDEF) {
+            if (values[1] != null) {
                 if (argc > 1) throw runtime.newArgumentError("step is given twice");
                 newArgs[1] = step = values[1];
             }
@@ -1012,21 +1015,14 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, Ruby runtime, IRubyObject num) {
-        CachingCallSite cmp = sites(context).op_lt;
-        RubyFixnum zero = RubyFixnum.zero(runtime);
-        IRubyObject r;
-
-        if (num instanceof RubyFixnum) {
-            if (cmp.retrieveCache(runtime.getInteger()).method.isBuiltin()) {
-                return ((RubyFixnum) num).getLongValue() < 0;
-            }
-        } else if (num instanceof RubyBignum) {
-            if (cmp.retrieveCache(runtime.getInteger()).method.isBuiltin()) {
-                return ((RubyBignum) num).isNegative(context).isTrue();
+        if (num instanceof RubyInteger) {
+            if (context.sites.Integer.op_lt.isBuiltin(runtime.getInteger())) {
+                return ((RubyInteger) num).isNegative();
             }
         }
 
-        r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
+        RubyFixnum zero = RubyFixnum.zero(runtime);
+        IRubyObject r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
         if (r == null) {
             ((RubyNumeric) num).coerceFailed(context, zero);
         }
@@ -1041,7 +1037,7 @@ public class RubyNumeric extends RubyObject {
         if (step.op_equal(context, RubyFixnum.zero(runtime)).isTrue()) {
             inf = true;
         } else if (to instanceof RubyFloat) {
-            double f = ((RubyFloat) to).getDoubleValue();
+            double f = ((RubyFloat) to).value;
             inf = Double.isInfinite(f) && (f <= -0.0 ? desc : !desc);
         } else {
             inf = false;
@@ -1064,8 +1060,8 @@ public class RubyNumeric extends RubyObject {
     }
 
     private static void fixnumStep(ThreadContext context, Ruby runtime, RubyFixnum from, IRubyObject to, RubyFixnum step, boolean inf, boolean desc, Block block) {
-        long i = from.getLongValue();
-        long diff = step.getLongValue();
+        long i = from.value;
+        long diff = step.value;
 
         if (inf) {
             for (;; i += diff) {
@@ -1106,11 +1102,11 @@ public class RubyNumeric extends RubyObject {
 
         if (Double.isInfinite(unit)) {
             /* if unit is infinity, i*unit+beg is NaN */
-            if (n != 0) block.yield(context, from);
+            if (n != 0) block.yield(context, RubyFloat.newFloat(runtime, beg));
         } else if (unit == 0) {
-            IRubyObject val = from;
+            RubyFloat value = RubyFloat.newFloat(runtime, beg);
             for (;;) {
-                block.yield(context, val);
+                block.yield(context, value);
             }
         } else {
             for (i=0; i<n; i++) {
@@ -1144,13 +1140,13 @@ public class RubyNumeric extends RubyObject {
         if (from instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             long delta, diff;
 
-            diff = ((RubyFixnum) step).getLongValue();
+            diff = ((RubyFixnum) step).value;
             if (diff == 0) {
                 return RubyFloat.newFloat(runtime, Double.POSITIVE_INFINITY);
             }
             // overflow checking
-            long toLong = ((RubyFixnum) to).getLongValue();
-            long fromLong = ((RubyFixnum) from).getLongValue();
+            long toLong = ((RubyFixnum) to).value;
+            long fromLong = ((RubyFixnum) from).value;
             delta = toLong - fromLong;
             if (!Helpers.subtractionOverflowed(toLong, fromLong, delta)) {
                 if (diff < 0) {
@@ -1175,7 +1171,7 @@ public class RubyNumeric extends RubyObject {
             }
             // fall through to duck-typed logic
         } else if (from instanceof RubyFloat || to instanceof RubyFloat || step instanceof RubyFloat) {
-            double n = floatStepSize(from.convertToFloat().getDoubleValue(), to.convertToFloat().getDoubleValue(), step.convertToFloat().getDoubleValue(), excl);
+            double n = floatStepSize(from.convertToFloat().value, to.convertToFloat().value, step.convertToFloat().value, excl);
 
             if (Double.isInfinite(n)) {
                 return runtime.newFloat(n);
@@ -1215,15 +1211,12 @@ public class RubyNumeric extends RubyObject {
         return (RubyNumeric) result;
     }
 
-    private SizeFn stepSizeFn(final ThreadContext context, final IRubyObject from, final IRubyObject[] args) {
-        return new SizeFn() {
-            // MRI: num_step_size
-            @Override
-            public IRubyObject size(IRubyObject[] args) {
-                IRubyObject[] newArgs = new IRubyObject[2];
-                scanStepArgs(context, args, newArgs);
-                return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
-            }
+    private SizeFn stepSizeFn(final IRubyObject from, final IRubyObject[] args) {
+        // MRI: num_step_size
+        return (context, args1) -> {
+            IRubyObject[] newArgs = new IRubyObject[2];
+            scanStepArgs(context, args1, newArgs);
+            return intervalStepSize(context, from, newArgs[0], newArgs[1], false);
         };
     }
 
@@ -1298,7 +1291,7 @@ public class RubyNumeric extends RubyObject {
     }
 
     public RubyRational convertToRational() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+        final ThreadContext context = metaClass.runtime.getCurrentContext();
         return RubyRational.newRationalRaw(context.runtime, numerator(context), denominator(context));
     }
 
@@ -1339,11 +1332,9 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"arg", "angle", "phase"})
     public IRubyObject arg(ThreadContext context) {
-        double value = this.getDoubleValue();
-        if (Double.isNaN(value)) {
-            return this;
-        }
-        if (f_negative_p(context, this) || (value == 0.0 && 1/value == Double.NEGATIVE_INFINITY)) {
+        final double value = getDoubleValue();
+        if (Double.isNaN(value)) return this;
+        if (f_negative_p(context, this) || (value == 0.0 && 1 / value == Double.NEGATIVE_INFINITY)) {
             // negative or -0.0
             return context.runtime.getMath().getConstant("PI");
         }
@@ -1427,11 +1418,11 @@ public class RubyNumeric extends RubyObject {
     }
 
     public boolean isNegative() {
-        return isNegative(getRuntime().getCurrentContext()).isTrue();
+        return isNegative(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
     public boolean isPositive() {
-        return isPositive(getRuntime().getCurrentContext()).isTrue();
+        return isPositive(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
@@ -1455,7 +1446,7 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated
     public final IRubyObject rbClone(IRubyObject[] args) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         switch (args.length) {
             case 0: return rbClone(context);
             case 1: return rbClone(context, args[0]);
@@ -1475,8 +1466,8 @@ public class RubyNumeric extends RubyObject {
             throw context.runtime.newArgumentError("wrong number of arguments (given 1, expected 0)");
         }
 
-        IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) arg, "freeze");
-        if (!rets[0].isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
+        IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) arg, "freeze");
+        if (ret != null && !ret.isTrue()) throw context.runtime.newArgumentError("can't unfreeze " + getType());
 
         return this;
     }

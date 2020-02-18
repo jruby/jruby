@@ -32,6 +32,7 @@
 package org.jruby;
 
 import org.jruby.javasupport.JavaClass;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -91,7 +92,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.*;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
-import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
@@ -479,12 +479,16 @@ public class RubyClass extends RubyModule {
         return target.makeMetaClass(this);
     }
 
-    public boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
+    static boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return !method.isCallableFrom(caller, callType) && !name.equals("method_missing");
     }
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -495,8 +499,13 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject[] args, Block block) {
+        return finvokeWithRefinements(context, self, null, name, args, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                                              IRubyObject[] args, Block block) {
         assert args != null;
-        CacheEntry entry = searchWithCache(name);
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -507,7 +516,12 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, arg, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                               IRubyObject arg, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -518,7 +532,12 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg0, IRubyObject arg1, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, arg0, arg1, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                               IRubyObject arg0, IRubyObject arg1, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -529,7 +548,12 @@ public class RubyClass extends RubyModule {
 
     public IRubyObject finvoke(ThreadContext context, IRubyObject self, String name,
                                IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        CacheEntry entry = searchWithCache(name);
+        return finvokeWithRefinements(context, self, null, name, arg0, arg1, arg2, block);
+    }
+
+    public IRubyObject finvokeWithRefinements(ThreadContext context, IRubyObject self, StaticScope staticScope, String name,
+                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        CacheEntry entry = searchWithRefinements(name, staticScope);
         DynamicMethod method = entry.method;
 
         if (shouldCallMethodMissing(method)) {
@@ -692,7 +716,7 @@ public class RubyClass extends RubyModule {
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
-        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
+        if (!me.isUndefined() && !me.isBuiltin()) {
             int arityValue = me.getArity().getValue();
 
             if (arityValue > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arityValue + ")");
@@ -709,14 +733,14 @@ public class RubyClass extends RubyModule {
     }
 
     // MRI: check_funcall_callable
-    public static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
+    static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return rbMethodCallStatus(context, method, callType, self);
     }
 
     // MRI: rb_method_call_status
     // FIXME: Partial impl because we don't have these "NOEX" flags
-    public static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
-        return method != null && !method.isUndefined() && method.isCallableFrom(self, callType);
+    private static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
+        return !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
     // MRI: check_funcall_missing
@@ -726,7 +750,7 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = klass.searchWithCache("respond_to_missing?");
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
+        if (!me.isUndefined() && !me.isBuiltin()) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
                 ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
@@ -755,7 +779,7 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = respondToMissingSite.retrieveCache(klass);
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if ( me != null && ! me.isUndefined() && ! me.isBuiltin() ) {
+        if (!me.isUndefined() && !me.isBuiltin()) {
             IRubyObject ret;
             if (me.getArity().getValue() == 1) {
                 ret = me.call(context, self, entry.sourceModule, "respond_to_missing?", runtime.newSymbol(method));
@@ -830,7 +854,7 @@ public class RubyClass extends RubyModule {
                 classStream.write(classBytes);
             }
             catch (IOException io) {
-                getRuntime().getWarnings().warn("unable to dump class file: " + io.getMessage());
+                runtime.getWarnings().warn("unable to dump class file: " + io.getMessage());
             }
             finally {
                 if (classStream != null) {
@@ -860,15 +884,15 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private boolean shouldCallMethodMissing(DynamicMethod method) {
+    private static boolean shouldCallMethodMissing(DynamicMethod method) {
         return method.isUndefined();
     }
-    private boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
+    private static boolean shouldCallMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
         return method.isUndefined() || notVisibleAndNotMethodMissing(method, name, caller, callType);
     }
 
     public IRubyObject invokeInherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-        CacheEntry entry = getMetaClass().searchWithCache("inherited");
+        CacheEntry entry = metaClass.searchWithCache("inherited");
         DynamicMethod method = entry.method;
 
         if (method.isUndefined()) {
@@ -1125,7 +1149,7 @@ public class RubyClass extends RubyModule {
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
 
-        if (getRuntime().getNil() != null) {
+        if (runtime.getNil() != null) {
             superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
         }
     }
@@ -1140,7 +1164,7 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().getMetaClass()) return context.nil;
+            if (metaClass == runtime.getBasicObject().metaClass) return context.nil;
             throw runtime.newTypeError("uninitialized class");
         }
 
@@ -1816,7 +1840,7 @@ public class RubyClass extends RubyModule {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
-            final ThreadContext context = getRuntime().getCurrentContext();
+            final ThreadContext context = runtime.getCurrentContext();
             IRubyObject javaClass = JavaClass.java_class(context, this);
             if ( ! javaClass.isNil() ) return javaClass.toJava(target);
 

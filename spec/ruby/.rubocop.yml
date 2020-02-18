@@ -10,7 +10,7 @@ AllCops:
 Layout/TrailingWhitespace:
   Enabled: true
 
-Layout/TrailingBlankLines:
+Layout/TrailingEmptyLines:
   Enabled: true
   Exclude:
     - library/coverage/fixtures/some_class.rb
@@ -34,10 +34,10 @@ Lint/InterpolationCheck:
 Lint/LiteralAsCondition:
   Enabled: false
 
-Lint/UnneededRequireStatement:
+Lint/RedundantRequireStatement:
   Enabled: false
 
-Lint/UnneededSplatExpansion:
+Lint/RedundantSplatExpansion:
   Enabled: false
 
 Lint/UnifiedInteger:
@@ -77,6 +77,13 @@ Lint/NestedMethodDefinition:
     - language/def_spec.rb
     - language/fixtures/def.rb
 
+Lint/ShadowingOuterLocalVariable:
+  Exclude:
+    - 'core/binding/local_variables_spec.rb'
+    - 'core/kernel/local_variables_spec.rb'
+    - 'language/block_spec.rb'
+    - 'language/proc_spec.rb'
+
 Lint/UnreachableCode:
   Exclude:
     - 'core/enumerator/lazy/fixtures/classes.rb'
@@ -96,3 +103,23 @@ Lint/UnreachableCode:
 Lint/UriRegexp:
   Exclude:
     - 'library/uri/regexp_spec.rb'
+
+Lint/Debugger:
+  Exclude:
+    - 'core/binding/fixtures/irb.rb'
+
+Style/Lambda:
+  Enabled: true
+  EnforcedStyle: literal
+  Exclude:
+    - 'language/lambda_spec.rb'
+    - 'language/proc_spec.rb'
+    - 'language/numbered_parameters_spec.rb'
+    - 'core/kernel/lambda_spec.rb'
+
+Style/EmptyLambdaParameter:
+  Enabled: true
+
+Style/StabbyLambdaParentheses:
+  Enabled: true
+  EnforcedStyle: require_no_parentheses

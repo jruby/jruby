@@ -58,7 +58,6 @@ public class RubyGC {
 
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
-        runtime.setGC(result);
         
         result.defineAnnotatedMethods(RubyGC.class);
         
@@ -95,7 +94,7 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newBoolean(stress);
+        return RubyBoolean.newBoolean(context, stress);
     }
 
     @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)

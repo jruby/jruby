@@ -34,15 +34,13 @@ package org.jruby.ast.util;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 
 /**
  *
@@ -69,7 +67,7 @@ public final class ArgsUtil {
     }
     
     public static RubyArray convertToRubyArrayWithCoerce(Ruby runtime, IRubyObject value) {
-        if (value instanceof RubyArray) return ((RubyArray)value);
+        if (value instanceof RubyArray) return (RubyArray) value;
         
         IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), "to_ary", false);
 
@@ -79,14 +77,14 @@ public final class ArgsUtil {
         
         // must be array by now, or error
         if (!(newValue instanceof RubyArray)) {
-            throw runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
+            throw runtime.newTypeError(newValue.getMetaClass() + "#to_ary should return Array");
         }
         
-        return (RubyArray)newValue;
+        return (RubyArray) newValue;
     }
     
     public static int arrayLength(IRubyObject node) {
-        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
+        return node instanceof RubyArray ? ((RubyArray) node).getLength() : 0;
     }
     
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject... args) {
@@ -101,6 +99,9 @@ public final class ArgsUtil {
         return TypeConverter.checkHashType(runtime, arg);
     }
 
+    private static final IRubyObject[] NULL_1 = new IRubyObject[] { null };
+    private static final IRubyObject[] NULL_2 = new IRubyObject[] { null, null };
+
     /**
      * Check that the given kwargs hash doesn't contain any keys other than those which are given as valid.
      * @param context The context to execute in
@@ -108,24 +109,32 @@ public final class ArgsUtil {
      * @param validKeys A list of valid kwargs keys.
      * @return an array of objects corresponding to the given keys.
      */
-    public static IRubyObject[] extractKeywordArgs(ThreadContext context, RubyHash options, String... validKeys) {
+    public static IRubyObject[] extractKeywordArgs(ThreadContext context, final RubyHash options, String... validKeys) {
+        if (options.isEmpty()) {
+            switch (validKeys.length) {
+                case 1 : return NULL_1;
+                case 2 : return NULL_2;
+                default: return new IRubyObject[validKeys.length];
+            }
+        }
+
         IRubyObject[] ret = new IRubyObject[validKeys.length];
 
-        HashSet<RubySymbol> validKeySet = new HashSet<>(ret.length);
+        HashMap<RubySymbol, ?> validKeySet = new HashMap<>(ret.length);
 
         // Build the return values
         for (int i=0; i<validKeys.length; i++) {
             final String key = validKeys[i];
             RubySymbol keySym = context.runtime.newSymbol(key);
             IRubyObject val = options.fastARef(keySym);
-            ret[i] = val != null ? val : RubyBasicObject.UNDEF;
-            validKeySet.add(keySym);
+            ret[i] = val; // null if key missing
+            validKeySet.put(keySym, null);
         }
 
         // Check for any unknown keys
         options.visitAll(context, new RubyHash.Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                if (!validKeySet.contains(key)) {
+                if (!validKeySet.containsKey(key)) {
                     throw context.runtime.newArgumentError("unknown keyword: " + key);
                 }
             }
@@ -134,19 +143,58 @@ public final class ArgsUtil {
         return ret;
     }
 
+    // not used
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
         IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, args);
         if (options instanceof RubyHash) {
-            return extractKeywordArgs(context, (RubyHash)options, validKeys);
-        } else {
-            return null;
+            return extractKeywordArgs(context, (RubyHash) options, validKeys);
         }
+        return null;
     }
 
-    public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, RubyHash opts) {
+    /**
+     * Same as {@link #extractKeywordArgs(ThreadContext, RubyHash, String...)}.
+     * @param context
+     * @param options
+     * @param validKey the keyword to extract
+     * @return null if key not within options, otherwise <code>options[:keyword]</code>
+     */
+    public static IRubyObject extractKeywordArg(ThreadContext context, final RubyHash options, String validKey) {
+        if (options.isEmpty()) return null;
+
+        IRubyObject ret = options.fastARef(context.runtime.newSymbol(validKey));
+
+        if (ret == null || options.size() > 1) { // other (unknown) keys in options
+            options.visitAll(context, new RubyHash.Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    throw context.runtime.newArgumentError("unknown keyword: " + key);
+                }
+            }, null);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Semi-deprecated, kept for compatibility.
+     * Compared to {@link #extractKeywordArg(ThreadContext, RubyHash, String)} does not validate options!
+     * @param context
+     * @param keyword
+     * @param opts
+     * @return nil if key not within options (no way to distinguish a key: nil and missing key)
+     */
+    public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, final RubyHash opts) {
         return opts.op_aref(context, context.runtime.newSymbol(keyword));
     }
 
+    /**
+     * Semi-deprecated, kept for compatibility.
+     * Compared to {@link #extractKeywordArg(ThreadContext, RubyHash, String)} does not validate options!
+     * @param context
+     * @param keyword
+     * @param arg
+     * @return nil if key not within options (no way to distinguish a key: nil and missing key)
+     */
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject arg) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
 
@@ -155,6 +203,14 @@ public final class ArgsUtil {
         return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
+    /**
+     * Semi-deprecated, kept for compatibility.
+     * Compared to {@link #extractKeywordArg(ThreadContext, RubyHash, String)} does not validate options!
+     * @param context
+     * @param keyword
+     * @param args
+     * @return nil if key not within options (no way to distinguish a key: nil and missing key)
+     */
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject... args) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
 
@@ -163,8 +219,4 @@ public final class ArgsUtil {
         return extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
-    public static IRubyObject extractArg(int index, IRubyObject _default, IRubyObject... args) {
-        if (index < args.length) return args[index];
-        return _default;
-    }
 }

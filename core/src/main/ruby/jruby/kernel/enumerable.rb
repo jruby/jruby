@@ -107,27 +107,11 @@ module Enumerable
   private :__slicey_chunky
 
   def lazy
-    klass = Enumerator::Lazy::LAZY_WITH_NO_BLOCK # Note: class_variable_get is private in 1.8
-    Enumerator::Lazy.new(klass.new(self, :each, []))
+    Enumerator::Lazy.send :__from, self, :each, []
   end
 
-  def uniq
-    values = []
-    hash = {}
-    if block_given?
-      each_entry do |obj|
-        ret = yield(*obj)
-        next if hash.key? ret
-        hash[ret] = obj
-        values << obj
-      end
-    else
-      each_entry do |obj|
-        next if hash.key? obj
-        hash[obj] = obj unless hash.key? obj
-        values << obj
-      end
-    end
-    values
+  def enumerator_size
+    respond_to?(:size) ? size : nil
   end
+  private :enumerator_size
 end

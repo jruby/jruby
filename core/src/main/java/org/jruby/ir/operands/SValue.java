@@ -1,9 +1,9 @@
 package org.jruby.ir.operands;
 
-import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -77,7 +77,7 @@ public class SValue extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         Object val = array.retrieve(context, self, currScope, currDynScope, temp);
 
-        return (val instanceof RubyArray) ? val : context.nil;
+        return IRRuntimeHelpers.svalue(context, val);
     }
 
     @Override

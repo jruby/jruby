@@ -38,11 +38,49 @@ ruby_version_is "2.6" do
         (f << g).lambda?.should == false
       end
 
+      ruby_version_is(''...'2.8') do
+        it "is a Proc when other is lambda" do
+          f = proc { |x| x * x }
+          g = -> x { x + x }
+
+          (f << g).is_a?(Proc).should == true
+          (f << g).lambda?.should == false
+        end
+
+        it "is a lambda when self is lambda" do
+          f = -> x { x * x }
+          g = proc { |x| x + x }
+
+          (f << g).is_a?(Proc).should == true
+          (f << g).lambda?.should == true
+        end
+      end
+
+      ruby_version_is('2.8') do
+        it "is a lambda when parameter is lambda" do
+          f = -> x { x * x }
+          g = proc { |x| x + x }
+          lambda_proc = -> x { x }
+
+          (f << g).is_a?(Proc).should == true
+          (f << g).lambda?.should == false
+          (f << lambda_proc).lambda?.should == true
+        end
+      end
+
       it "may accept multiple arguments" do
         inc = proc { |n| n + 1 }
         mul = proc { |n, m| n * m }
 
         (inc << mul).call(2, 3).should == 7
+      end
+
+      it "passes blocks to the second proc" do
+        ScratchPad.record []
+        one = proc { |&arg| arg.call :one if arg }
+        two = proc { |&arg| arg.call :two if arg }
+        (one << two).call { |x| ScratchPad << x }
+        ScratchPad.recorded.should == [:two]
       end
     end
   end
@@ -83,11 +121,35 @@ ruby_version_is "2.6" do
         (f >> g).lambda?.should == false
       end
 
+      it "is a Proc when other is lambda" do
+        f = proc { |x| x * x }
+        g = -> x { x + x }
+
+        (f >> g).is_a?(Proc).should == true
+        (f >> g).lambda?.should == false
+      end
+
+      it "is a lambda when self is lambda" do
+        f = -> x { x * x }
+        g = proc { |x| x + x }
+
+        (f >> g).is_a?(Proc).should == true
+        (f >> g).lambda?.should == true
+      end
+
       it "may accept multiple arguments" do
         inc = proc { |n| n + 1 }
         mul = proc { |n, m| n * m }
 
         (mul >> inc).call(2, 3).should == 7
+      end
+
+      it "passes blocks to the first proc" do
+        ScratchPad.record []
+        one = proc { |&arg| arg.call :one if arg }
+        two = proc { |&arg| arg.call :two if arg }
+        (one >> two).call { |x| ScratchPad << x }
+        ScratchPad.recorded.should == [:one]
       end
     end
   end

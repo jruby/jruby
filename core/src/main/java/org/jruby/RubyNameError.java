@@ -252,7 +252,7 @@ public class RubyNameError extends RubyStandardError {
 
     @JRubyMethod(name = "private_call?")
     public IRubyObject private_call_p(ThreadContext context) {
-        return context.runtime.newBoolean(isPrivateCall());
+        return RubyBoolean.newBoolean(context, isPrivateCall());
     }
 
     @Override

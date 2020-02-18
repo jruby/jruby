@@ -23,7 +23,7 @@ program, or many other possibilities.
 We're a welcoming community - you can talk to us on [#jruby on Freenode](http://richard.esplins.org/siwi/2011/07/08/getting-started-freenode-irc/).
 There are core team members in the EU and US time zones.
 
-Visit the [JRuby website](http://jruby.org) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)
+Visit the [JRuby website](https://www.jruby.org/) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)
 for more information.
 
 ## Getting JRuby
@@ -59,7 +59,13 @@ For [`rvm`](https://rvm.io) you can simply do:
 $ rvm install jruby
 ```
 
-You can also [download packages from the JRuby website](http://jruby.org/download) that
+Using [`Homebrew`](https://brew.sh/) works too:
+
+```
+$ brew install jruby
+```
+
+You can also [download packages from the JRuby website](https://www.jruby.org/download) that
 you can unpack and run in place.
 
 ## Building JRuby

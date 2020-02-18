@@ -755,9 +755,33 @@ class TestRubyOptimization < Test::Unit::TestCase
     assert_equal(:ok, x.bug(:ok))
   end
 
+  def test_jump_elimination_with_optimized_out_block_2
+    x = Object.new
+    def x.bug
+      a = "aaa"
+      ok = :NG
+      if a == "bbb" || a == "ccc" then
+        a = a
+      else
+        ok = :ok
+      end
+      ok
+    end
+    assert_equal(:ok, x.bug)
+  end
+
   def test_peephole_jump_after_newarray
     i = 0
     %w(1) || 2 while (i += 1) < 100
     assert_equal(100, i)
+  end
+
+  def test_optimized_empty_ensure
+    assert_separately([], "#{<<~"begin;"}\n#{<<~'end;'}", timeout: 10)
+    begin;
+      assert_raise(RuntimeError) {
+        begin raise ensure nil if nil end
+      }
+    end;
   end
 end

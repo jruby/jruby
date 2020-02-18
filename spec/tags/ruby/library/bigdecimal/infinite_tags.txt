@@ -1,1 +1,0 @@
-fails:BigDecimal#infinite? returns not true otherwise
