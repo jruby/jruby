@@ -310,7 +310,6 @@ public class IRBuilder {
     protected int afterPrologueIndex = 0;
     private TemporaryVariable yieldClosureVariable = null;
     private Variable currentModuleVariable = null;
-    private Variable currentScopeVariable;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -3430,8 +3429,6 @@ public class IRBuilder {
     public Operand buildPreExe(PreExeNode preExeNode) {
         IRBuilder builder = newIRBuilder(manager, scope);
 
-        builder.currentScopeVariable = currentScopeVariable;  // If already made then we use it in temporary builder
-
         List<Instr> beginInstrs = builder.buildPreExeInner(preExeNode.getBodyNode());
 
         instructions.addAll(afterPrologueIndex, beginInstrs);
@@ -3486,6 +3483,11 @@ public class IRBuilder {
         return buildEnsureInternal(node, null);
     }
 
+    /**
+     * Global names and aliases that reference the exception in flight
+     */
+    private static final List<String> EXCEPTION_GLOBALS = Arrays.asList("$!", "$ERROR_INFO", "$@", "$ERROR_POSITION");
+
     private boolean canBacktraceBeRemoved(RescueNode rescueNode) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || !(rescueNode instanceof RescueModNode) &&
                 rescueNode.getElseNode() != null) return false;
@@ -3499,7 +3501,8 @@ public class IRBuilder {
 
         // This optimization omits backtrace info for the exception getting rescued so we cannot
         // optimize the exception variable.
-        if (body instanceof GlobalVarNode && ((GlobalVarNode) body).getName().idString().equals("$!")) return false;
+        if (body instanceof GlobalVarNode
+                && EXCEPTION_GLOBALS.contains(((GlobalVarNode) body).getName().idString())) return false;
 
         // FIXME: This MIGHT be able to expand to more complicated expressions like Hash or Array if they
         // contain only SideEffectFree nodes.  Constructing a literal out of these should be safe from
@@ -4213,5 +4216,4 @@ public class IRBuilder {
 
         return currentModuleVariable;
     }
-
 }

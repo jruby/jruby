@@ -24,8 +24,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
@@ -39,14 +45,14 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
  */
 public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
+    private final Map<IRScope, Integer> scopePoolOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final OutputStream stream;
     private final IRWriterAnalyzer analyzer;
-    private int startInstructionOffset;  // This is only used for debugging output of to figure out length of encoded instructions.
+    private Map<RubySymbol, Integer> constantMap = new HashMap();
 
     int headersOffset = -1;
-    int poolOffset = -1;
 
     public IRWriterStream(OutputStream stream) {
         this.stream = stream;
@@ -163,6 +169,18 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(RubySymbol symbol) {
+        Integer constantIndex = constantMap.get(symbol);
+
+        if (constantIndex != null) {
+            encode(constantIndex.intValue());
+        } else {
+            int index = constantMap.size();
+            constantMap.put(symbol, index);
+            encode(index);
+        }
+    }
+
+    public void encodeRaw(RubySymbol symbol) {
         if (symbol == null) {
             encode(NULL_STRING);
         } else {
@@ -261,16 +279,16 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         int offset = getScopeInstructionOffset(scope);
         if (IRWriter.shouldLog(this)) System.out.println("endEncodingScopeHeader: instructions offset: " + offset);
         encode(offset); // Write out offset to where this scopes instrs are
+        encode(scopePoolOffsets.get(scope));
     }
 
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
+        constantMap.clear();
         addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
         int instruction_count = scope.getInterpreterContext().getInstructions().length;
 
         if (IRWriter.shouldLog(this)) {
-            startInstructionOffset = offset();
-            System.out.println("startEncodingScopeInstrs: start offset = " + startInstructionOffset);
             System.out.println("startEncodingScopeInstrs: instrs to encode = " + instruction_count);
         }
 
@@ -281,7 +299,15 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     public void endEncodingScopeInstrs(IRScope scope) {
         if (IRWriter.shouldLog(this)) {
             System.out.println("endEncodingScopeInstrs: end offset = " + offset());
-            System.out.println("endEncodingScopeInstrs: instruction length = " + (offset() - startInstructionOffset) + " bytes");
+        }
+        scopePoolOffsets.put(scope, offset());
+
+        List<Entry<RubySymbol, Integer> > list = new LinkedList(constantMap.entrySet());
+        Collections.sort(list, Comparator.comparing(Entry::getValue));
+
+        encode(list.size());    // How many entries are within pool
+        for (Entry<RubySymbol, Integer> entry: list) {
+            encodeRaw(entry.getKey());
         }
     }
 
@@ -309,7 +335,6 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
         try {
             stream.write(ByteBuffer.allocate(4).putInt(VERSION).array());
             stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
-            stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             flipBuffer(buf);
             stream.write(buf.array(), buf.position(), buf.limit());
             stream.close();

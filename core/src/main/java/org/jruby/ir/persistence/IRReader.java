@@ -9,23 +9,14 @@ package org.jruby.ir.persistence;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubySymbol;
 import org.jruby.ir.*;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
 
 import org.jruby.util.ByteList;
-import org.jruby.util.KeyValuePair;
 
 /**
  *
@@ -41,43 +32,28 @@ public class IRReader implements IRPersistenceValues {
                     version + ", version expected: " + VERSION);
         }
         int headersOffset = file.decodeIntRaw();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("load: header offset = " + headersOffset);
-        int poolOffset = file.decodeIntRaw();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("load: pool offset = " + poolOffset);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("header_offset = " + headersOffset);
 
         file.seek(headersOffset);
         int scopesToRead  = file.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("load: scopes to read = " + scopesToRead);
 
-        KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
+        IRScope firstScope = null;
         for (int i = 0; i < scopesToRead; i++) {
-            scopes[i] = decodeScopeHeader(manager, file);
+            IRScope scope = decodeScopeHeader(manager, file);
+            if (firstScope == null) firstScope = scope;
+            int instructionsOffset = file.decodeInt();
+            int poolOffset = file.decodeInt();
+
+            scope.allocateInterpreterContext(() -> file.decodeInstructionsAt(scope, poolOffset, instructionsOffset));
         }
 
-        // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
-        for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            final IRScope scope = pair.getKey();
-            final int instructionsOffset = pair.getValue();
-
-            scope.allocateInterpreterContext(new Callable<List<Instr>>() {
-                public List<Instr> call() {
-                    return file.decodeInstructionsAt(scope, instructionsOffset);
-                }
-            });
-        }
-
-        // Run through all scopes again and ensure they've calculated flags.
-        // This also forces lazy instrs from above to eagerly decode.
-        for (KeyValuePair<IRScope, Integer> pair: scopes) {
-            final IRScope scope = pair.getKey();
-            scope.computeScopeFlags();
-        }
-
-        return scopes[0].getKey(); // topmost scope;
+        return firstScope; // topmost scope;
     }
 
-    private static KeyValuePair<IRScope, Integer> decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
+    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader");
+
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: type       = " + type);
         int line = decoder.decodeInt();
@@ -114,7 +90,6 @@ public class IRReader implements IRPersistenceValues {
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: name = " + name);
             parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: parent = " + parent);
-
         }
 
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
@@ -130,33 +105,9 @@ public class IRReader implements IRPersistenceValues {
         scope.setTemporaryVariableCount(tempVarsCount);
         scope.setNextLabelIndex(nextLabelInt);
 
-        // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
-        // But because of this we have to push decoding lvars to the end of the scope info.
-        scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
-
         decoder.addScope(scope);
 
-        int instructionsOffset = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeHeader: instr offset: " + instructionsOffset);
-
-        return new KeyValuePair<>(scope, instructionsOffset);
-    }
-
-    private static Map<RubySymbol, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
-        int size = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeLocalVariables: vars to read = " + size);
-        Map<RubySymbol, LocalVariable> localVariables = new HashMap(size);
-        for (int i = 0; i < size; i++) {
-            RubySymbol name = decoder.decodeSymbol();
-            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeScopeLocalVariables: name = " + name);
-            int offset = decoder.decodeInt();
-
-            localVariables.put(name, scope instanceof IRClosure ?
-                    // SSS FIXME: do we need to read back locallyDefined boolean?
-                    new ClosureLocalVariable(name, 0, offset) : new LocalVariable(name, 0, offset));
-        }
-
-        return localVariables;
+        return scope;
     }
 
     private static StaticScope decodeStaticScope(IRReaderDecoder decoder, StaticScope parentScope) {

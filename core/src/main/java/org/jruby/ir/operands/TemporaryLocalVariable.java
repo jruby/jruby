@@ -88,7 +88,6 @@ public class TemporaryLocalVariable extends TemporaryVariable {
         switch(type) {
             case CLOSURE: return TemporaryClosureVariable.decode(d);
             case CURRENT_MODULE: return TemporaryCurrentModuleVariable.decode(d);
-            case CURRENT_SCOPE: return TemporaryCurrentScopeVariable.decode(d);
             case FLOAT: return TemporaryFloatVariable.decode(d);
             case FIXNUM: return TemporaryFixnumVariable.decode(d);
             case BOOLEAN: return TemporaryBooleanVariable.decode(d);

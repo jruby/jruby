@@ -1,19 +1,13 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubySymbol;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.ByteList;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Write IR data out to persistent store.  IRReader is capable of re-reading this
@@ -84,31 +78,18 @@ public class IRWriter {
             if (shouldLog(file)) System.out.println("persistScopeHeader: file = " + scope.getFile());
             file.encode(scope.getFile());
         } else {
+
             if (shouldLog(file)) System.out.println("persistScopeHeader: id   = " + scope.getId());
-            file.encode(scope.getName().getBytes());
+            file.encodeRaw(scope.getName());
             if (shouldLog(file)) System.out.println("persistScopeHeader(encode parent)");
             file.encode(scope.getLexicalParent());
         }
 
         persistStaticScope(file, scope.getStaticScope());
-        persistLocalVariables(scope, file);
         file.endEncodingScopeHeader(scope);
     }
 
-    // FIXME: I hacked around our lvar types for now but this hsould be done in a less ad-hoc fashion.
-    private static void persistLocalVariables(IRScope scope, IRWriterEncoder file) {
-        Map<RubySymbol, LocalVariable> localVariables = scope.getLocalVariables();
-        if (shouldLog(file)) System.out.println("persistLocalVariables: size = " + localVariables.size());
-        file.encode(localVariables.size());
-        for (RubySymbol name: localVariables.keySet()) {
-            int offset = localVariables.get(name).getOffset();
-            if (shouldLog(file)) System.out.println("persistLocalVariables:     name(offset) = " + name + "(" + offset + ")");
-            file.encode(name);
-            file.encode(offset); // No need to write depth..it is zero.
-        }
-    }
-
-    // {type,[variables],first_keyword_index,signature}
+    // {type,[variables],signature}
     private static void persistStaticScope(IRWriterEncoder file, StaticScope staticScope) {
         if (shouldLog(file)) System.out.println("persistStaticScope");
         file.encode(staticScope.getType());

@@ -96,6 +96,9 @@ matrix:
       services:
         - postgresql
 
+    - name: concurrent ruby
+      script: tool/concurrent-ruby-travis.sh
+
     - name: JRuby tests jit
       script:
         - mvn clean package -Pbootstrap

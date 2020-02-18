@@ -19,8 +19,8 @@ module Gem
 
   def self.platform_defaults
     return {
-        'install' => '--no-rdoc --no-ri --env-shebang',
-        'update' => '--no-rdoc --no-ri --env-shebang'
+        'install' => '--env-shebang',
+        'update' => '--env-shebang'
     }
   end
 

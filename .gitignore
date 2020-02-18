@@ -46,6 +46,7 @@ glob_test
 jruby-complete.jar
 jruby-findbugs.html
 latest_source_cache
+core/src/main/java/META-INF/
 lib/jni
 lib/jruby*.jar
 lib/native

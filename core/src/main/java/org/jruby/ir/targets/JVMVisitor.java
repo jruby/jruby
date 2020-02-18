@@ -178,6 +178,11 @@ public class JVMVisitor extends IRVisitor {
 
         jvm.pushmethod(name, scope, scopeField, signature, specificArity);
 
+        if (scope.needsBinding() || !scope.hasExplicitCallProtocol()) {
+            // declare dynamic scope local only if we'll need it
+            jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
+        }
+
         if (!scope.hasExplicitCallProtocol()) {
             // No call protocol, dynscope has been prepared for us
             jvmMethod().loadContext();

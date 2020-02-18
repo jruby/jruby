@@ -62,6 +62,11 @@ public class IRWriterAnalyzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encodeRaw(RubySymbol value) {
+
+    }
+
+    @Override
     public void encode(String value) {
     }
 
