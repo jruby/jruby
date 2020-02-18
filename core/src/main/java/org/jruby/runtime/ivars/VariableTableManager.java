@@ -88,6 +88,17 @@ public class VariableTableManager {
     /** a lazy accessor for object group */
     private final VariableAccessorField objectGroupVariableAccessorField = new VariableAccessorField("objectspace_group");
 
+    public static final Boolean GRAALVM_NATIVE = Options.GRAALVM_NATIVE_COMPILE.load();
+
+    interface ConcurrentVariableAccessor {
+        void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value);
+    }
+
+    private static final ConcurrentVariableAccessor CONCURRENT_ACCESSOR =
+            (GRAALVM_NATIVE || UnsafeHolder.U == null) ?
+                    SynchronizedVariableAccessor::setVariable :
+                    StampedVariableAccessor::setVariable;
+
     /**
      * Construct a new VariableTable Manager for the given "real" class.
      *
@@ -145,11 +156,7 @@ public class VariableTableManager {
      * @param value the value
      */
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        CONCURRENT_ACCESSOR.setVariable(self, realClass, index, value);
     }
 
     /**
@@ -161,11 +168,7 @@ public class VariableTableManager {
      * @param value the value of the variable
      */
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        CONCURRENT_ACCESSOR.setVariable(self, realClass, index, value);
     }
 
     /**
@@ -371,8 +374,7 @@ public class VariableTableManager {
 
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
-            if(UnsafeHolder.U == null)
-            {
+            if(GRAALVM_NATIVE || UnsafeHolder.U == null) {
                 synchronized (self) {
                     self.varTable = makeSyncedTable(self.varTable, otherVars, idIndex);
                 }
@@ -551,7 +553,10 @@ public class VariableTableManager {
         final int newIndex = myVariableNames.length;
 
         VariableAccessor newVariableAccessor;
-        if (Options.VOLATILE_VARIABLES.load()) {
+
+        if (GRAALVM_NATIVE) {
+            newVariableAccessor = new StampedVariableAccessor(realClass, name, newIndex, id);
+        } else if (Options.VOLATILE_VARIABLES.load()) {
             if (UnsafeHolder.U == null) {
                 newVariableAccessor = new SynchronizedVariableAccessor(realClass, name, newIndex, id);
             } else {
