@@ -67,7 +67,7 @@ project 'JRuby Lib Setup' do
 
   # for testing out jruby-ossl before final release :
   # repository :id => 'gem-snaphots', :url => 'https://oss.sonatype.org/content/repositories/snapshots'
-  repository :id => 'gem-staging', :url => 'http://oss.sonatype.org/content/repositories/staging'
+  # repository :id => 'gem-staging', :url => 'http://oss.sonatype.org/content/repositories/staging'
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
