@@ -1654,6 +1654,11 @@ public class Java implements Library {
      * using.
      */
     public static <T extends AccessibleObject & Member> boolean trySetAccessible(T member) {
+        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+            member.setAccessible(true);
+            return true;
+        }
+
         return Modules.trySetAccessible(member, Java.class);
     }
 
