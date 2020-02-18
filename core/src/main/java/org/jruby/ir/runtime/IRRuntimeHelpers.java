@@ -1527,7 +1527,8 @@ public class IRRuntimeHelpers {
         method.captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+        if (Options.GRAALVM_NATIVE_COMPILE.load()
+                || context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
         } else {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
@@ -1585,7 +1586,8 @@ public class IRRuntimeHelpers {
         method.captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+        if (Options.GRAALVM_NATIVE_COMPILE.load()
+                || runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
         } else {
             newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
