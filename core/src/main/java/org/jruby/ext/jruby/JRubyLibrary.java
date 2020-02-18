@@ -49,6 +49,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 import java.io.ByteArrayInputStream;
 
@@ -264,6 +265,10 @@ public class JRubyLibrary implements Library {
     public static IRubyObject compile(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
         final Ruby runtime = context.runtime;
+
+        if (Options.GRAALVM_NATIVE_COMPILE.load()) {
+            throw runtime.newNotImplementedError("bytecode compilation is not supported on GraalVM native");
+        }
 
         final RubyString content = args[0].convertToString();
         args[0] = content;
