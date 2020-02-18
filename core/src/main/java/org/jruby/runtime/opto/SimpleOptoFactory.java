@@ -34,11 +34,12 @@ import org.jruby.util.cli.Options;
 
 import java.lang.invoke.MethodHandles;
 
-/**
- * A set of factory methods to construct optimizing utilities for compilation,
- * cache invalidation, and so on.
- */
-public interface OptoFactory {
+public class SimpleOptoFactory implements OptoFactory {
+    private final Ruby runtime;
+
+    public SimpleOptoFactory(Ruby runtime) {
+        this.runtime = runtime;
+    }
 
     /**
      * Create a new "constant" representation for this object, conforming to the given concrete type. This is currently
@@ -46,11 +47,21 @@ public interface OptoFactory {
      * @param type the class to which the constant should conform
      * @return a "constant" representation of this object appropriate to the current JVM and runtime modes
      */
-    Object newConstantWrapper(Class type, Object object);
+    @Override
+    public final Object newConstantWrapper(Class type, Object object) {
+        return object;
+    }
 
-    Invalidator newConstantInvalidator();
+    @Override
+    public Invalidator newConstantInvalidator() {
+        return new SimpleInvalidator();
+    }
 
-    Invalidator newGlobalInvalidator(int maxFailures);
+    public Invalidator newGlobalInvalidator(int maxFailures) {
+        return new SimpleInvalidator();
+    }
 
-    Invalidator newMethodInvalidator(RubyModule module);
+    public Invalidator newMethodInvalidator(RubyModule module) {
+        return new SimpleInvalidator();
+    }
 }

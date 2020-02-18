@@ -62,7 +62,6 @@ import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHelper;
 import org.jruby.util.PerlHash;
@@ -436,7 +435,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public Object constant() {
         return constant == null ?
-                constant = OptoFactory.newConstantWrapper(IRubyObject.class, this) :
+                constant = getRuntime().getOptoFactory().newConstantWrapper(IRubyObject.class, this) :
                 constant;
     }
 

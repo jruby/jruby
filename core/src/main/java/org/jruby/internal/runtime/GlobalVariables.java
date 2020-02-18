@@ -60,7 +60,7 @@ public class GlobalVariables {
         assert accessor != null;
         assert name.startsWith("$");
 
-        globalVariables.put(name, new GlobalVariable(accessor, scope));
+        globalVariables.put(name, new GlobalVariable(runtime, accessor, scope));
     }
 
     public void defineReadonly(String name, IAccessor accessor, GlobalVariable.Scope scope) {
@@ -68,7 +68,7 @@ public class GlobalVariables {
         assert accessor != null;
         assert name.startsWith("$");
 
-        globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(name, accessor), scope));
+        globalVariables.put(name, new GlobalVariable(runtime, new ReadonlyAccessor(name, accessor), scope));
     }
 
     public boolean isDefined(String name) {

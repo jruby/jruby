@@ -51,7 +51,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
@@ -102,7 +101,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         this.isDummy = isDummy;
         this.encoding = encoding;
 
-        this.constant = OptoFactory.newConstantWrapper(RubyEncoding.class, this);
+        this.constant = runtime.getOptoFactory().newConstantWrapper(RubyEncoding.class, this);
     }
 
     /**

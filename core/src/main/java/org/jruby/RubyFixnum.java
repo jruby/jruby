@@ -50,7 +50,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
@@ -131,11 +130,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         final long value = this.value;
 
         if (value < CACHE_OFFSET && value >= -CACHE_OFFSET) {
-            Object[] fixnumConstants = metaClass.runtime.fixnumConstants;
+            Ruby runtime = metaClass.runtime;
+
+            Object[] fixnumConstants = runtime.fixnumConstants;
             constant = fixnumConstants[(int) value + CACHE_OFFSET];
 
             if (constant == null) {
-                constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
+                constant = runtime.getOptoFactory().newConstantWrapper(IRubyObject.class, this);
                 fixnumConstants[(int) value + CACHE_OFFSET] = constant;
             }
         }

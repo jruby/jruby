@@ -41,7 +41,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
 /**
@@ -66,7 +65,7 @@ public class RubyNil extends RubyObject implements Constantizable {
             this.hashCode = System.identityHashCode(this);
         }
 
-        constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
+        constant = runtime.getOptoFactory().newConstantWrapper(IRubyObject.class, this);
     }
     
     public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
