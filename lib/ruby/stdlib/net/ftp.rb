@@ -230,10 +230,12 @@ module Net
         if defined?(VerifyCallbackProc)
           @ssl_context.verify_callback = VerifyCallbackProc
         end
-        @ssl_context.session_cache_mode =
-          OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT |
-          OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
-        @ssl_context.session_new_cb = proc {|sock, sess| @ssl_session = sess }
+        # NOTE: session_cache_mode = has no effect on (current) JRuby-OpenSSL
+        # @ssl_context.session_cache_mode =
+        #   OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT |
+        #   OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
+        # SSLSocket#session= does nothing with JRuby-OpenSSL
+        # @ssl_context.session_new_cb = proc {|sock, sess| @ssl_session = sess }
         @ssl_session = nil
         if options[:private_data_connection].nil?
           @private_data_connection = true

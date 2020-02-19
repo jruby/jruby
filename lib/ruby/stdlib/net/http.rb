@@ -984,10 +984,12 @@ module Net   #:nodoc:
         end
         @ssl_context = OpenSSL::SSL::SSLContext.new
         @ssl_context.set_params(ssl_parameters)
-        @ssl_context.session_cache_mode =
-          OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT |
-          OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
-        @ssl_context.session_new_cb = proc {|sock, sess| @ssl_session = sess }
+        # NOTE: session_cache_mode = has no effect on (current) JRuby-OpenSSL
+        # @ssl_context.session_cache_mode =
+        #   OpenSSL::SSL::SSLContext::SESSION_CACHE_CLIENT |
+        #   OpenSSL::SSL::SSLContext::SESSION_CACHE_NO_INTERNAL_STORE
+        # SSLSocket#session= does nothing with JRuby-OpenSSL
+        # @ssl_context.session_new_cb = proc {|sock, sess| @ssl_session = sess }
         D "starting SSL for #{conn_address}:#{conn_port}..."
         s = OpenSSL::SSL::SSLSocket.new(s, @ssl_context)
         s.sync_close = true
