@@ -225,7 +225,7 @@ Cleaning the build may be necessary after switching to a different
 version of JRuby (for example, after switching git branches) to ensure
 that everything is rebuilt properly.
 
-NOTE: ```mvn clean``` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
+NOTE: `mvn clean` just cleans the **jruby-core** artifact and the **./lib/jruby.jar**!
 
 Clean everything:
 
