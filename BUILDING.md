@@ -23,7 +23,7 @@ command to execute is:
 ./mvnw
 ```
 
-This will run the default "install" goal (```mvn install```) and will do all of the following:
+This will run the default "install" goal (`mvn install`) and will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line

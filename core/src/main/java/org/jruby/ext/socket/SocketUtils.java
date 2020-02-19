@@ -152,12 +152,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            InetAddress addr = getRubyInetAddresses(hostname.convertToString().getByteList())[0];
+            InetAddress addr = getRubyInetAddress(hostname.convertToString().toString());
             IRubyObject ret0, ret1, ret2, ret3;
 
             ret0 = runtime.newString(addr.getCanonicalHostName());
             ret1 = runtime.newArray();
-            ret2 = runtime.newFixnum(2); // AF_INET
+            ret2 = runtime.newFixnum(AF_INET);
             ret3 = runtime.newString(new ByteList(addr.getAddress()));
             return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
 
@@ -440,20 +440,40 @@ public class SocketUtils {
         }
     }
 
+    @Deprecated
     public static InetAddress[] getRubyInetAddresses(ByteList address) throws UnknownHostException {
         // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
         // FIXME: Need to properly decode this string (see Helpers.decodeByteList)
         String addressString = Helpers.byteListToString(address);
-
-        if (addressString.equals(BROADCAST)) {
-            return new InetAddress[] {InetAddress.getByAddress(INADDR_BROADCAST)};
-
-        } else if (addressString.equals(ANY)) {
-            return new InetAddress[] {InetAddress.getByAddress(INADDR_ANY)};
-
+        return getRubyInetAddresses(addressString);
+    }
+    
+    public static InetAddress[] getRubyInetAddresses(String addressString) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(addressString);
+        if (specialAddress != null) {
+            return new InetAddress[] {specialAddress};
         } else {
             return InetAddress.getAllByName(addressString);
+        }
+    }
+    
+    public static InetAddress getRubyInetAddress(String addressString) throws UnknownHostException {
+        InetAddress specialAddress = specialAddress(addressString);
+        if (specialAddress != null) {
+            return specialAddress;
+        } else {
+            return InetAddress.getByName(addressString);
 
+        }
+    }
+    
+    private static InetAddress specialAddress(String addressString) throws UnknownHostException {
+        if (addressString.equals(BROADCAST)) {
+            return InetAddress.getByAddress(INADDR_BROADCAST);
+        } else if (addressString.equals(ANY)) {
+            return InetAddress.getByAddress(INADDR_ANY);
+        } else {
+            return null;
         }
     }
 

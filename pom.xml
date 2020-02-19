@@ -113,7 +113,7 @@ DO NOT MODIFIY - GENERATED CODE
     <its.j2ee>j2ee*/pom.xml</its.j2ee>
     <its.osgi>osgi*/pom.xml</its.osgi>
     <jar-dependencies.version>0.4.0</jar-dependencies.version>
-    <jffi.version>1.2.22</jffi.version>
+    <jffi.version>1.2.23</jffi.version>
     <joda.time.version>2.10.5</joda.time.version>
     <jruby-launcher.version>1.1.6</jruby-launcher.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>

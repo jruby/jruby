@@ -793,13 +793,6 @@ public abstract class IRScope implements ParseResult {
         return TemporaryCurrentModuleVariable.ModuleVariableFor(temporaryVariableIndex);
     }
 
-    public Variable createCurrentScopeVariable() {
-        // SSS: Used in only 1 case in generated IR:
-        // -> searching a constant in the lexical scope hierarchy
-        temporaryVariableIndex++;
-        return TemporaryCurrentScopeVariable.ScopeVariableFor(temporaryVariableIndex);
-    }
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
@@ -813,14 +806,6 @@ public abstract class IRScope implements ParseResult {
      */
     public Set<LocalVariable> getUsedLocalVariables() {
         return getFullInterpreterContext().getUsedLocalVariables();
-    }
-
-    /**
-     * Set the local variables for this scope. This should only be used by persistence layer.
-     */
-    // FIXME: Consider making constructor for persistence to pass in all of this stuff
-    public void setLocalVariables(Map<RubySymbol, LocalVariable> variables) {
-        this.localVars = variables;
     }
 
     public void setNextLabelIndex(int index) {

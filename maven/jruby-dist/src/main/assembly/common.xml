@@ -57,14 +57,16 @@
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>
         <include>tool/nailgun/**/*.c</include>
+        <include>bin/.dev_mode.java_opts</include>
+        <include>bin/.jruby.*</include>
       </includes>
       <excludes>
         <exclude>test/**/*</exclude>
         <exclude>test/JRUBY-6606/**/*</exclude>
         <exclude>**/*.ac</exclude>
-        <exclude>**/.*</exclude>
         <exclude>**/target/**/*</exclude>
         <exclude>**/style_checks.xml</exclude>
+        <exclude>.git</exclude>
       </excludes>
     </fileSet>
   </fileSets>

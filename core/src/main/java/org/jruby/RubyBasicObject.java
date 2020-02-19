@@ -31,7 +31,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.runtime.CallSite;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -77,7 +77,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.unsafe.UnsafeHolder;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -1718,27 +1717,35 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
-        return getMetaClass().finvoke(context, this, name, block);
+        StaticScope staticScope = context.getCurrentStaticScope();
+
+        return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
-        return getMetaClass().finvoke(context, this, name, arg1, block);
+        StaticScope staticScope = context.getCurrentStaticScope();
+
+        return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, block);
     }
     @JRubyMethod(name = "__send__", omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         String name = RubySymbol.objectToSymbolString(arg0);
 
-        return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
+        StaticScope staticScope = context.getCurrentStaticScope();
+
+        return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
     @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         String name = RubySymbol.objectToSymbolString(args[0]);
 
+        StaticScope staticScope = context.getCurrentStaticScope();
+
         final int length = args.length - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
-        return getMetaClass().finvoke(context, this, name, args, block);
+        return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, args, block);
     }
 
     /**

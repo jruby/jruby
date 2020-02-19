@@ -6,7 +6,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 describe "FFI::Platform::LIBSUFFIX" do
-  case OS
+  case TestLibrary::OS
   when "linux"
     it "returns 'so'" do
       expect(FFI::Platform::LIBSUFFIX).to eq('so')
@@ -23,7 +23,7 @@ describe "FFI::Platform::LIBSUFFIX" do
 end
 
 describe "FFI::Platform::IS_WINDOWS" do
-  case OS
+  case TestLibrary::OS
   when "linux"
     it "returns false" do
       expect(FFI::Platform::IS_WINDOWS).to be false
@@ -41,12 +41,12 @@ end
 
 describe "FFI::Platform::ARCH" do
   it "returns the architecture type" do
-    expect(FFI::Platform::ARCH).to eq(CPU)
+    expect(FFI::Platform::ARCH).to eq(TestLibrary::CPU)
   end
 end
 
 describe "FFI::Platform::OS" do
-  case OS
+  case TestLibrary::OS
   when "linux"
     it "returns 'linux' as a string" do
       expect(FFI::Platform::OS).to eq('linux')
@@ -63,7 +63,7 @@ describe "FFI::Platform::OS" do
 end
 
 describe "FFI::Platform.windows?" do
-  case OS
+  case TestLibrary::OS
   when "linux"
     it "returns false" do
       expect(FFI::Platform.windows?).to be false
@@ -80,7 +80,7 @@ describe "FFI::Platform.windows?" do
 end
 
 describe "FFI::Platform.mac?" do
-  case OS
+  case TestLibrary::OS
   when "linux"
     it "returns false" do
       expect(FFI::Platform.mac?).to be false
@@ -97,7 +97,7 @@ describe "FFI::Platform.mac?" do
 end
 
 describe "FFI::Platform.unix?" do
-  case OS
+  case TestLibrary::OS
   when "linux"
     it "returns true" do
       expect(FFI::Platform.unix?).to be true

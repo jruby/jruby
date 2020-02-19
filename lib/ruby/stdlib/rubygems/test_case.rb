@@ -115,6 +115,8 @@ class Gem::TestCase < (defined?(Minitest::Test) ? Minitest::Test : MiniTest::Uni
 
   attr_accessor :uri # :nodoc:
 
+  TEST_PATH = ENV.fetch('RUBYGEMS_TEST_PATH', File.expand_path('../../../test/rubygems', __FILE__))
+
   def assert_activate(expected, *specs)
     specs.each do |spec|
       case spec
@@ -136,6 +138,12 @@ class Gem::TestCase < (defined?(Minitest::Test) ? Minitest::Test : MiniTest::Uni
   def assert_path_exists(path, msg = nil)
     msg = message(msg) { "Expected path '#{path}' to exist" }
     assert File.exist?(path), msg
+  end
+
+  def assert_directory_exists(path, msg = nil)
+    msg = message(msg) { "Expected path '#{path}' to be a directory" }
+    assert_path_exists path
+    assert File.directory?(path), msg
   end
 
   ##
@@ -254,6 +262,8 @@ class Gem::TestCase < (defined?(Minitest::Test) ? Minitest::Test : MiniTest::Uni
     @orig_gem_env_requirements = ENV.to_hash
 
     ENV['GEM_VENDOR'] = nil
+    ENV['GEMRC'] = nil
+    ENV['SOURCE_DATE_EPOCH'] = nil
 
     @current_dir = Dir.pwd
     @fetcher     = nil
@@ -743,11 +753,16 @@ class Gem::TestCase < (defined?(Minitest::Test) ? Minitest::Test : MiniTest::Uni
   # Removes all installed gems from +@gemhome+.
 
   def util_clear_gems
-    FileUtils.rm_rf File.join(@gemhome, "gems") # TODO: use Gem::Dirs
+    FileUtils.rm_rf File.join(@gemhome, "gems")
     FileUtils.mkdir File.join(@gemhome, "gems")
     FileUtils.rm_rf File.join(@gemhome, "specifications")
     FileUtils.mkdir File.join(@gemhome, "specifications")
     Gem::Specification.reset
+  end
+
+  def util_clear_default_gems
+    FileUtils.rm_rf @default_spec_dir
+    FileUtils.mkdir @default_spec_dir
   end
 
   ##
@@ -923,9 +938,6 @@ class Gem::TestCase < (defined?(Minitest::Test) ? Minitest::Test : MiniTest::Uni
   # location are returned.
 
   def util_gem(name, version, deps = nil, &block)
-    # TODO: deprecate
-    raise "deps or block, not both" if deps and block
-
     if deps
       block = proc do |s|
         # Since Hash#each is unordered in 1.8, sort
@@ -1055,6 +1067,8 @@ Also, a list:
 
     Gem.instance_variable_set :@platforms, nil
     Gem::Platform.instance_variable_set :@local, nil
+
+    yield if block_given?
 
     platform
   end
@@ -1352,9 +1366,8 @@ Also, a list:
   end
 
   @@ruby = rubybin
-  gempath = File.expand_path('../../../test/rubygems', __FILE__)
-  @@good_rake = "#{rubybin} #{escape_path(gempath, 'good_rake.rb')}"
-  @@bad_rake = "#{rubybin} #{escape_path(gempath, 'bad_rake.rb')}"
+  @@good_rake = "#{rubybin} #{escape_path(TEST_PATH, 'good_rake.rb')}"
+  @@bad_rake = "#{rubybin} #{escape_path(TEST_PATH, 'bad_rake.rb')}"
 
   ##
   # Construct a new Gem::Dependency.
@@ -1542,14 +1555,12 @@ Also, a list:
 
   def self.cert_path(cert_name)
     if 32 == (Time.at(2**32) rescue 32)
-      cert_file =
-        File.expand_path "../../../test/rubygems/#{cert_name}_cert_32.pem",
-                         __FILE__
+      cert_file = "#{TEST_PATH}/#{cert_name}_cert_32.pem"
 
       return cert_file if File.exist? cert_file
     end
 
-    File.expand_path "../../../test/rubygems/#{cert_name}_cert.pem", __FILE__
+    "#{TEST_PATH}/#{cert_name}_cert.pem"
   end
 
   ##
@@ -1567,7 +1578,7 @@ Also, a list:
   # Returns the path to the key named +key_name+ from <tt>test/rubygems</tt>
 
   def self.key_path(key_name)
-    File.expand_path "../../../test/rubygems/#{key_name}_key.pem", __FILE__
+    "#{TEST_PATH}/#{key_name}_key.pem"
   end
 
   # :stopdoc:

@@ -6,6 +6,10 @@ require 'rubygems/remote_fetcher'
 
 module Gem::GemcutterUtilities
 
+  ERROR_CODE = 1
+
+  include Gem::Text
+
   # TODO: move to Gem::Command
   OptionParser.accept Symbol do |value|
     value.to_sym
@@ -38,7 +42,9 @@ module Gem::GemcutterUtilities
   # The API key from the command options or from the user's configuration.
 
   def api_key
-    if options[:key]
+    if ENV["GEM_HOST_API_KEY"]
+      ENV["GEM_HOST_API_KEY"]
+    elsif options[:key]
       verify_api_key options[:key]
     elsif Gem.configuration.api_keys.key?(host)
       Gem.configuration.api_keys[host]
@@ -76,7 +82,7 @@ module Gem::GemcutterUtilities
     self.host = host if host
     unless self.host
       alert_error "You must specify a gem server"
-      terminate_interaction 1 # TODO: question this
+      terminate_interaction(ERROR_CODE)
     end
 
     if allowed_push_host
@@ -85,7 +91,7 @@ module Gem::GemcutterUtilities
 
       unless (host_uri.scheme == allowed_host_uri.scheme) && (host_uri.host == allowed_host_uri.host)
         alert_error "#{self.host.inspect} is not allowed by the gemspec, which only allows #{allowed_push_host.inspect}"
-        terminate_interaction 1
+        terminate_interaction(ERROR_CODE)
       end
     end
 
@@ -145,7 +151,7 @@ module Gem::GemcutterUtilities
       Gem.configuration.api_keys[key]
     else
       alert_error "No such API key. Please add it to your configuration (done automatically on initial `gem push`)."
-      terminate_interaction 1 # TODO: question this
+      terminate_interaction(ERROR_CODE)
     end
   end
 
@@ -168,8 +174,8 @@ module Gem::GemcutterUtilities
       message = response.body
       message = "#{error_prefix}: #{message}" if error_prefix
 
-      say message
-      terminate_interaction 1 # TODO: question this
+      say clean_text(message)
+      terminate_interaction(ERROR_CODE)
     end
   end
 

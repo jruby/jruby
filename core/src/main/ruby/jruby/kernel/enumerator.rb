@@ -115,10 +115,14 @@ class Enumerator
 
   class Lazy < Enumerator
 
-    def initialize(obj, size = nil)
-      _block_error(:new) unless block_given?
+    def initialize(obj, size = nil, &block)
+      _block_error(:new) unless block
       @receiver = obj
-      super(size) do |yielder, *args|
+      super(size, &self.class.make_proc(obj, &block))
+    end
+
+    def self.make_proc(obj)
+      proc do |yielder, *args|
         catch yielder do
           obj.each(*args) do |*x|
             yield yielder, *x

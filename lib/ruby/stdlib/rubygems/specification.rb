@@ -18,7 +18,7 @@ require 'rubygems/util/list'
 require 'stringio'
 
 ##
-# The Specification class contains the information for a Gem.  Typically
+# The Specification class contains the information for a gem.  Typically
 # defined in a .gemspec file or a Rakefile, and looks like this:
 #
 #   Gem::Specification.new do |s|
@@ -364,8 +364,7 @@ class Gem::Specification < Gem::BasicSpecification
 
   ##
   # The metadata holds extra data for this gem that may be useful to other
-  # consumers and is settable by gem authors without requiring an update to
-  # the rubygems software.
+  # consumers and is settable by gem authors.
   #
   # Metadata items have the following restrictions:
   #
@@ -656,8 +655,8 @@ class Gem::Specification < Gem::BasicSpecification
   #  # This gem will work with 1.8.6 or greater...
   #  spec.required_ruby_version = '>= 1.8.6'
   #
-  #  # Only with ruby 2.0.x
-  #  spec.required_ruby_version = '~> 2.0'
+  #  # Only with final releases of major version 2 where minor version is at least 3
+  #  spec.required_ruby_version = '~> 2.3'
   #
   #  # Only prereleases or final releases after 2.6.0.preview2
   #  spec.required_ruby_version = '> 2.6.0.preview2'
@@ -745,9 +744,6 @@ class Gem::Specification < Gem::BasicSpecification
   def self._all # :nodoc:
     unless defined?(@@all) && @@all
       @@all = stubs.map(&:to_spec)
-      if @@all.any?(&:nil?) # TODO: remove once we're happy
-        raise "pid: #{$$} nil spec! included in #{stubs.inspect}"
-      end
 
       # After a reset, make sure already loaded specs
       # are still marked as activated.
@@ -940,7 +936,6 @@ class Gem::Specification < Gem::BasicSpecification
   # -- wilsonb
 
   def self.all=(specs)
-    raise "nil spec!" if specs.any?(&:nil?) # TODO: remove once we're happy
     @@stubs_by_name = specs.group_by(&:name)
     @@all = @@stubs = specs
   end
@@ -1311,6 +1306,8 @@ class Gem::Specification < Gem::BasicSpecification
   # Load custom marshal format, re-initializing defaults as needed
 
   def self._load(str)
+    Gem.load_yaml
+
     array = Marshal.load str
 
     spec = Gem::Specification.new
@@ -2287,7 +2284,6 @@ class Gem::Specification < Gem::BasicSpecification
 
     e = Gem::LoadError.new msg
     e.name = self.name
-    # TODO: e.requirement = dep.requirement
 
     raise e
   end
@@ -2590,6 +2586,8 @@ class Gem::Specification < Gem::BasicSpecification
   end
 
   def to_yaml(opts = {}) # :nodoc:
+    Gem.load_yaml
+
     # Because the user can switch the YAML engine behind our
     # back, we have to check again here to make sure that our
     # psych code was properly loaded, and load it if not.
