@@ -172,12 +172,11 @@ class Resolv
   # Resolv::Hosts is a hostname resolver that uses the system hosts file.
 
   class Hosts
-    if WINDOWS
+    begin
+      raise LoadError unless WINDOWS
       require 'win32/resolv'
       DefaultFileName = Win32::Resolv.get_hosts_path || IO::NULL
     rescue LoadError
-      DefaultFileName = Win32::Resolv.get_hosts_path
-    else
       DefaultFileName = '/etc/hosts'
     end
 
