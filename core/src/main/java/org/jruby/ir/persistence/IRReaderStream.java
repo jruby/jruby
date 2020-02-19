@@ -8,6 +8,9 @@ package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRManager;
@@ -90,8 +93,18 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public Encoding decodeEncoding() {
-        byte[] encodingName = decodeByteArray();
-        return EncodingDB.getEncodings().get(encodingName).getEncoding();
+        int size = decodeInt();
+
+        if (size == USASCII) {
+            return USASCIIEncoding.INSTANCE;
+        } else if (size == UTF8) {
+            return UTF8Encoding.INSTANCE;
+        } else {
+            // FIXME: Since we are looking up on byte[] we can avoid alloc by keeping temp array around (this is very uncommon though)
+            byte[] encodingName = new byte[size];
+            buf.get(encodingName);
+            return EncodingDB.getEncodings().get(encodingName).getEncoding();
+        }
     }
 
     @Override
@@ -125,7 +138,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         Encoding encoding = decodeEncoding();
 
-        return currentScope.getManager().getRuntime().newSymbol(new ByteList(bytes, encoding, false));
+        return manager.getRuntime().newSymbol(new ByteList(bytes, encoding, false));
     }
 
     @Override

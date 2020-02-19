@@ -20,10 +20,10 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     private final boolean needsDynamicScope;
     private final MethodHandle variable;
 
-    public CompiledIRNoProtocolMethod(MethodHandle handle, IRScope scope, RubyModule implementationClass) {
-        super(scope, Visibility.PUBLIC, implementationClass);
+    public CompiledIRNoProtocolMethod(MethodHandle handle, StaticScope scope, String file, int line, RubyModule implementationClass, boolean needsDynamicScope) {
+        super(scope, file, line, Visibility.PUBLIC, implementationClass);
 
-        this.needsDynamicScope = !scope.getExecutionContext().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
+        this.needsDynamicScope = needsDynamicScope;
         this.variable = handle;
     }
 
@@ -89,7 +89,7 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     @Override
     public InterpreterContext ensureInstrsReady() {
         // AbstractIRMethod.getMethodData() calls this and we want IC since we have not eliminated any get/put fields.
-        return method.getInterpreterContext();
+        return getIRScope().getInterpreterContext();
     }
 
     @Override

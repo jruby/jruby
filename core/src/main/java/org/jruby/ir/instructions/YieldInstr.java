@@ -79,7 +79,8 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
             if (unwrapArray && yieldOp instanceof Array && ((Array)yieldOp).size() > 1) {
                 // Special case this path!
                 // Don't build a RubyArray.
-                return blk.yieldValues(context, ((Array)yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp));
+                IRubyObject[] args = ((Array) yieldOp).retrieveArrayElts(context, self, currScope, currDynScope, temp);
+                return IRRuntimeHelpers.yieldValues(context, blk, args);
             } else {
                 IRubyObject yieldVal = (IRubyObject) yieldOp.retrieve(context, self, currScope, currDynScope, temp);
                 return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);

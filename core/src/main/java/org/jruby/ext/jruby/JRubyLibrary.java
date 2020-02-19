@@ -254,9 +254,9 @@ public class JRubyLibrary implements Library {
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
         RootNode node = (RootNode) parseImpl(context, args, block);
         IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
-        manager.setDryRun(true);
         IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, node).getScope();
         scope.setScriptDynamicScope(node.getScope());
+        scope.getStaticScope().setIRScope(scope);
         return scope;
     }
 
@@ -271,7 +271,7 @@ public class JRubyLibrary implements Library {
 
         IRScriptBody scope = compileIR(context, args, block);
 
-        JVMVisitor visitor = new JVMVisitor(runtime);
+        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
         byte[] bytes = visitor.compileToBytecode(scope, methodContext);
 

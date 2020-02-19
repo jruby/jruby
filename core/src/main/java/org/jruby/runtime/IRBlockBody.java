@@ -1,27 +1,33 @@
 package org.jruby.runtime;
 
-import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected final String fileName;
     protected final int lineNumber;
-    protected final IRClosure closure;
 
+    // For interpreter IR
     public IRBlockBody(IRScope closure, Signature signature) {
         // ThreadLocal not set by default to avoid having many thread-local values initialized
         // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
         // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
-        super(closure.getStaticScope(), signature);
-        this.closure = (IRClosure) closure;
-        this.fileName = closure.getFile();
-        this.lineNumber = closure.getLine();
+        this(closure.getStaticScope(), closure.getFile(), closure.getLine(), signature);
+    }
+
+    // For Compiled.
+    public IRBlockBody(StaticScope scope, String file, int line, Signature signature) {
+        // ThreadLocal not set by default to avoid having many thread-local values initialized
+        // servers such as Tomcat tend to do thread-local checks when un-deploying apps,
+        // for JRuby leads to 100s of SEVERE warnings for a mid-size (booted) Rails app
+        super(scope, signature);
+        this.fileName = file;
+        this.lineNumber = line;
     }
 
     @Override
@@ -188,7 +194,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     public IRClosure getScope() {
-        return closure;
+        return (IRClosure) scope.getIRScope();
     }
 
     @Override

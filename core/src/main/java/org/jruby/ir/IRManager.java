@@ -83,9 +83,6 @@ public class IRManager {
     private final RubyInstanceConfig config;
     public final Ruby runtime;
 
-    // If true then code will not execute (see ir/ast tool)
-    private boolean dryRun = false;
-
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
         this.config = config;
@@ -100,14 +97,6 @@ public class IRManager {
 
     public Ruby getRuntime() {
         return runtime;
-    }
-
-    public boolean isDryRun() {
-        return dryRun;
-    }
-
-    public void setDryRun(boolean value) {
-        this.dryRun = value;
     }
 
     public Nil getNil() {

@@ -153,14 +153,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                 setResult(temp, currDynScope, gfi.getResult(), result);
                 break;
             }
-            case SEARCH_CONST: {
-                SearchConstInstr sci = (SearchConstInstr)instr;
-                ConstantCache cache = sci.getConstantCache();
-                Object result = !ConstantCache.isCached(cache) ?
-                    sci.cache(context, currScope, currDynScope, self, temp) : cache.value;
-                setResult(temp, currDynScope, sci.getResult(), result);
-                break;
-            }
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),

@@ -147,7 +147,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
                                           String file, int lineNumber, String name, Block blockArg, EvalType evalType) {
-        StaticScope ss = evalScope.getStaticScope();
         InterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType);
 
         evalScope.setEvalType(evalType);
@@ -175,6 +174,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Ruby runtime = context.runtime;
 
         DynamicScope evalScope = binding.getEvalScope(runtime);
+        evalScope.getStaticScope().setFile(binding.getFile());
         evalScope.getStaticScope().determineModule(); // FIXME: It would be nice to just set this or remove it from staticScope altogether
 
         Frame lastFrame = context.preEvalWithBinding(binding);
@@ -197,7 +197,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
 
         // enable refinements if incoming scope already has an overlay active
-        if (staticScope.getOverlayModuleForRead() != null || staticScope.getIRScope().maybeUsingRefinements()) {
+        if (staticScope.getOverlayModuleForRead() != null || containingIRScope.maybeUsingRefinements()) {
             script.setIsMaybeUsingRefinements();
         }
 

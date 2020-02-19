@@ -11,6 +11,7 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.ir.targets.simple.ConstantLookupSite;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -26,7 +27,7 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
     private final boolean noPrivateConsts;
 
     // Constant caching
-    private volatile transient ConstantCache cache;
+    private final ConstantLookupSite site;
 
     public SearchConstInstr(Variable result, RubySymbol constantName, Operand startingScope, boolean noPrivateConsts) {
         super(Operation.SEARCH_CONST, result, startingScope);
@@ -35,6 +36,7 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
 
         this.constantName = constantName;
         this.noPrivateConsts = noPrivateConsts;
+        this.site = new ConstantLookupSite(constantName);
     }
 
 
@@ -76,44 +78,10 @@ public class SearchConstInstr extends OneOperandResultBaseInstr implements Fixed
         return new String[] {"name: " + getName(), "no_priv: " + noPrivateConsts};
     }
 
-    public ConstantCache getConstantCache() {
-        return cache;
-    }
-
-    public Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        // Lexical lookup
-        Ruby runtime = context.getRuntime();
-        RubyModule object = runtime.getObject();
-        String id = getId();
-        StaticScope staticScope = (StaticScope) getStartingScope().retrieve(context, self, currScope, currDynScope, temp);
-        Object constant = (staticScope == null) ? object.getConstant(id) : staticScope.getConstantInner(id);
-
-        // Inheritance lookup
-        RubyModule module = null;
-        if (constant == null) {
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(id, false) : module.getConstantNoConstMissing(id);
-        }
-
-        // Call const_missing or cache
-        if (constant == null) {
-            constant = module.callMethod(context, "const_missing", runtime.fastNewSymbol(id));
-        } else {
-            // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(id);
-            cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator);
-        }
-
-        return constant;
-    }
-
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        ConstantCache cache = this.cache;
-        if (!ConstantCache.isCached(cache)) return cache(context, currScope, currDynScope, self, temp);
-
-        return cache.value;
+        StaticScope staticScope = (StaticScope) getStartingScope().retrieve(context, self, currScope, currDynScope, temp);
+        return site.searchConst(context, staticScope, noPrivateConsts);
     }
 
     @Override

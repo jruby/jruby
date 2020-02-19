@@ -54,8 +54,8 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     protected void printMethodIR() {
-        ByteArrayOutputStream baos = IRDumper.printIR(method, false);
-        LOG.info("Printing simple IR for " + method.getId() + ":\n" + new String(baos.toByteArray()));
+        ByteArrayOutputStream baos = IRDumper.printIR(getIRScope(), false);
+        LOG.info("Printing simple IR for " + getIRScope().getId() + ":\n" + new String(baos.toByteArray()));
     }
 
     @Override
@@ -241,9 +241,9 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         // FIXME: This is only printing out CFG once.  If we keep applying more passes then we
         // will want to print out after those new passes.
         ensureInstrsReady();
-        LOG.info("Executing '" + method.getId() + "'");
+        LOG.info("Executing '" + getIRScope().getId() + "'");
         if (!displayedCFG) {
-            LOG.info(method.debugOutput());
+            LOG.info(getIRScope().debugOutput());
             displayedCFG = true;
         }
     }

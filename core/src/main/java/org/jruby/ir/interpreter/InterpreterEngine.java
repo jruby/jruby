@@ -473,18 +473,6 @@ public class InterpreterEngine {
                 break;
             }
 
-            case SEARCH_CONST: {
-                SearchConstInstr sci = (SearchConstInstr)instr;
-                ConstantCache cache = sci.getConstantCache();
-                if (!ConstantCache.isCached(cache)) {
-                    result = sci.cache(context, currScope, currDynScope, self, temp);
-                } else {
-                    result = cache.value;
-                }
-                setResult(temp, currDynScope, sci.getResult(), result);
-                break;
-            }
-
             case RUNTIME_HELPER: {
                 RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
                 setResult(temp, currDynScope, rhc.getResult(),
