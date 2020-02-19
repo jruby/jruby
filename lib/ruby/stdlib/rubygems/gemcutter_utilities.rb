@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'rubygems/remote_fetcher'
+require 'rubygems/text'
 
 ##
 # Utility methods for using the RubyGems API.
@@ -168,7 +169,7 @@ module Gem::GemcutterUtilities
       if block_given?
         yield response
       else
-        say response.body
+        say clean_text(response.body)
       end
     else
       message = response.body
