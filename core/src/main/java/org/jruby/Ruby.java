@@ -247,7 +247,7 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.JIT_LOADING_DEBUG) LOG.setDebugEnable(true);
     }
 
-    private static final boolean GRAALVM = Options.GRAALVM_NATIVE_COMPILE.load();
+    public static final boolean GRAALVM = Options.GRAALVM_NATIVE_COMPILE.load();
 
     /**
      * Create and initialize a new JRuby runtime. The properties of the
