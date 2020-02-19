@@ -1717,16 +1717,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     static RubyString expandPathInternal(ThreadContext context, RubyString path, RubyString wd, boolean expandUser, boolean canonicalize) {
+        Ruby runtime = context.runtime;
+
         String relativePath = path.getUnicodeValue();
         Encoding[] enc = {path.getEncoding()};
         String cwd = wd == null ? null : wd.toString();
-        String expanded =  expandPath(context, relativePath, enc, cwd, expandUser, canonicalize);
+        String expanded =  expandPath(context, relativePath, cwd, expandUser, canonicalize);
 
-        return RubyString.newString(context.runtime, expanded, enc[0]);
+        Encoding fsenc = runtime.getEncodingService().getFileSystemEncoding();
 
+        return RubyString.newString(runtime, expanded, fsenc);
     }
 
-    public static String expandPath(ThreadContext context, String relativePath, Encoding[] enc, String cwd, boolean expandUser, boolean canonicalize) {
+    public static String expandPath(ThreadContext context, String relativePath, String cwd, boolean expandUser, boolean canonicalize) {
         Ruby runtime = context.runtime;
 
         // Encoding logic lives in MRI's rb_file_expand_path_internal and should roughly equate to the following:
@@ -1739,12 +1742,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         //
         // See dac9850 and jruby/jruby#3849.
 
-        // for special paths like ~
-        Encoding fsenc = runtime.getEncodingService().getFileSystemEncoding();
-
         // Special /dev/null of windows
         if (Platform.IS_WINDOWS && ("NUL:".equalsIgnoreCase(relativePath) || "NUL".equalsIgnoreCase(relativePath))) {
-            enc[0] = fsenc;
             return concat("//./", relativePath.substring(0, 3));
         }
 
@@ -1819,7 +1818,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // Handle ~user paths
         if (expandUser && startsWith(relativePath, '~')) {
-            enc[0] = fsenc;
             relativePath = expandUserPath(context, relativePath, true);
         }
 
@@ -1836,7 +1834,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // If there's a second argument, it's the path to which the first argument is relative.
         if (cwd != null) {
-            enc[0] = fsenc;
             if (!cwd.startsWith("uri:")) {
                 // Handle ~user paths.
                 if (expandUser) {

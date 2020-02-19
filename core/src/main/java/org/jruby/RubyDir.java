@@ -240,13 +240,11 @@ public class RubyDir extends RubyObject implements Closeable {
                 String[] keys = flags != null ? BASE_FLAGS : BASE;
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
                 if (rets[0] == null || rets[0].isNil()) return "";
-                RubyString path = RubyFile.get_path(context, rets[0]);
-                Encoding[] enc = {path.getEncoding()};
-                String base = path.getUnicodeValue();
+                String base = RubyFile.get_path(context, rets[0]).getUnicodeValue();
 
                 // Deep down in glob things are unhappy if base is not absolute.
                 if (!base.isEmpty()) {
-                    base = RubyFile.expandPath(context, base, enc, runtime.getCurrentDirectory(), true, false);
+                    base = RubyFile.expandPath(context, base, runtime.getCurrentDirectory(), true, false);
                 }
 
                 if (flags != null) flags[0] = rets[1] == null ? 0 : RubyNumeric.num2int(rets[1]);
