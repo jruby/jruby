@@ -95,8 +95,7 @@ jruby/test_uri_classloader
 jruby/test_rexml_document
 jruby/test_missing_jruby_home
 jruby/test_ast_inspector
-# Disabled temporarily, see jruby/jruby#6060
-#jruby/test_jarred_gems
+jruby/test_jarred_gems
 jruby/test_dir_with_plusses
 jruby/test_jar
 jruby/test_require

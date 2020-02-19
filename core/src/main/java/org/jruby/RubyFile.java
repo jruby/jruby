@@ -1717,9 +1717,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     static RubyString expandPathInternal(ThreadContext context, RubyString path, RubyString wd, boolean expandUser, boolean canonicalize) {
-        Ruby runtime = context.runtime;
-
         String relativePath = path.getUnicodeValue();
+        Encoding[] enc = {path.getEncoding()};
+        String cwd = wd == null ? null : wd.toString();
+        String expanded =  expandPath(context, relativePath, enc, cwd, expandUser, canonicalize);
+
+        return RubyString.newString(context.runtime, expanded, enc[0]);
+
+    }
+
+    public static String expandPath(ThreadContext context, String relativePath, Encoding[] enc, String cwd, boolean expandUser, boolean canonicalize) {
+        Ruby runtime = context.runtime;
 
         // Encoding logic lives in MRI's rb_file_expand_path_internal and should roughly equate to the following:
         // * Paths expanded from the system, like ~ expanding to the user's home dir, should be filesystem-encoded.
@@ -1731,13 +1739,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         //
         // See dac9850 and jruby/jruby#3849.
 
-        Encoding enc = path.getEncoding();
         // for special paths like ~
         Encoding fsenc = runtime.getEncodingService().getFileSystemEncoding();
 
         // Special /dev/null of windows
         if (Platform.IS_WINDOWS && ("NUL:".equalsIgnoreCase(relativePath) || "NUL".equalsIgnoreCase(relativePath))) {
-            return RubyString.newString(runtime, concat("//./", relativePath.substring(0, 3)), fsenc);
+            enc[0] = fsenc;
+            return concat("//./", relativePath.substring(0, 3));
         }
 
         // treat uri-like and jar-like path as absolute
@@ -1804,21 +1812,21 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 }
             }
 
-            return concatStrings(runtime, preFix, extra, relativePath, enc);
+            return concatStrings(preFix, extra, relativePath);
         }
 
         String[] uriParts = splitURI(relativePath);
 
         // Handle ~user paths
         if (expandUser && startsWith(relativePath, '~')) {
-            enc = fsenc;
+            enc[0] = fsenc;
             relativePath = expandUserPath(context, relativePath, true);
         }
 
         if (uriParts != null) {
             //If the path was an absolute classpath path, return it as-is.
             if (uriParts[0].equals("classpath:")) {
-                return concatStrings(runtime, preFix, relativePath, postFix, enc);
+                return concatStrings(preFix, relativePath, postFix);
             }
             relativePath = uriParts[1];
         }
@@ -1826,11 +1834,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // Now that we're not treating it as a URI, we need to honor the canonicalize flag.
         // Do not insert early returns below.
 
-        String cwd;
         // If there's a second argument, it's the path to which the first argument is relative.
-        if (wd != null) {
-            cwd = wd.toString();
-            enc = fsenc;
+        if (cwd != null) {
+            enc[0] = fsenc;
             if (!cwd.startsWith("uri:")) {
                 // Handle ~user paths.
                 if (expandUser) {
@@ -1938,7 +1944,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         if (postFix.contains("..")) postFix = adjustPostFixDotDot(postFix);
 
-        return concatStrings(runtime, preFix, realPath, postFix, enc);
+        return concatStrings(preFix, realPath, postFix);
     }
 
     private static String canonicalNormalized(CharSequence realPath) {
@@ -1961,10 +1967,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return postFix;
     }
 
-    private static RubyString concatStrings(final Ruby runtime, String s1, CharSequence s2, String s3, Encoding enc) {
-        StringBuilder str =
-                new StringBuilder(s1.length() + s2.length() + s3.length()).append(s1).append(s2).append(s3);
-        return new RubyString(runtime, runtime.getString(), str, enc);
+    private static String concatStrings(String s1, CharSequence s2, String s3) {
+        return new StringBuilder(s1.length() + s2.length() + s3.length()).append(s1).append(s2).append(s3).toString();
     }
 
     private static String canonicalizePath(String path) {
