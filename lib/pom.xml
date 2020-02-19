@@ -47,7 +47,20 @@ DO NOT MODIFIY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>csv</artifactId>
-      <version>3.0.4</version>
+      <version>3.0.9</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>e2mmap</artifactId>
+      <version>0.1.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -72,8 +85,34 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>ipaddr</artifactId>
+      <artifactId>forwardable</artifactId>
       <version>1.2.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>ipaddr</artifactId>
+      <version>1.2.2</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>irb</artifactId>
+      <version>1.0.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -137,6 +176,71 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>logger</artifactId>
+      <version>1.3.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>matrix</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>mutex_m</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>ostruct</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>prime</artifactId>
+      <version>0.0.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
       <version>3.1.0</version>
       <type>gem</type>
@@ -176,8 +280,86 @@ DO NOT MODIFIY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>rexml</artifactId>
+      <version>3.1.9</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rss</artifactId>
+      <version>0.2.7</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>scanf</artifactId>
       <version>1.0.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>shell</artifactId>
+      <version>0.7</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>sync</artifactId>
+      <version>0.5.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>thwait</artifactId>
+      <version>0.1.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>tracer</artifactId>
+      <version>0.0.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -314,15 +496,24 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/cmath*1.0.0.gem</include>
           <include>gems/cmath*1.0.0/**</include>
           <include>specifications/cmath*1.0.0.gemspec</include>
-          <include>cache/csv*3.0.4.gem</include>
-          <include>gems/csv*3.0.4/**</include>
-          <include>specifications/csv*3.0.4.gemspec</include>
+          <include>cache/csv*3.0.9.gem</include>
+          <include>gems/csv*3.0.9/**</include>
+          <include>specifications/csv*3.0.9.gemspec</include>
+          <include>cache/e2mmap*0.1.0.gem</include>
+          <include>gems/e2mmap*0.1.0/**</include>
+          <include>specifications/e2mmap*0.1.0.gemspec</include>
           <include>cache/fileutils*1.1.0.gem</include>
           <include>gems/fileutils*1.1.0/**</include>
           <include>specifications/fileutils*1.1.0.gemspec</include>
-          <include>cache/ipaddr*1.2.0.gem</include>
-          <include>gems/ipaddr*1.2.0/**</include>
-          <include>specifications/ipaddr*1.2.0.gemspec</include>
+          <include>cache/forwardable*1.2.0.gem</include>
+          <include>gems/forwardable*1.2.0/**</include>
+          <include>specifications/forwardable*1.2.0.gemspec</include>
+          <include>cache/ipaddr*1.2.2.gem</include>
+          <include>gems/ipaddr*1.2.2/**</include>
+          <include>specifications/ipaddr*1.2.2.gemspec</include>
+          <include>cache/irb*1.0.0.gem</include>
+          <include>gems/irb*1.0.0/**</include>
+          <include>specifications/irb*1.0.0.gemspec</include>
           <include>cache/jar-dependencies*${jar-dependencies.version}.gem</include>
           <include>gems/jar-dependencies*${jar-dependencies.version}/**</include>
           <include>specifications/jar-dependencies*${jar-dependencies.version}.gemspec</include>
@@ -335,6 +526,21 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/json*${json.version}.gem</include>
           <include>gems/json*${json.version}/**</include>
           <include>specifications/json*${json.version}.gemspec</include>
+          <include>cache/logger*1.3.0.gem</include>
+          <include>gems/logger*1.3.0/**</include>
+          <include>specifications/logger*1.3.0.gemspec</include>
+          <include>cache/matrix*0.1.0.gem</include>
+          <include>gems/matrix*0.1.0/**</include>
+          <include>specifications/matrix*0.1.0.gemspec</include>
+          <include>cache/mutex_m*0.1.0.gem</include>
+          <include>gems/mutex_m*0.1.0/**</include>
+          <include>specifications/mutex_m*0.1.0.gemspec</include>
+          <include>cache/ostruct*0.1.0.gem</include>
+          <include>gems/ostruct*0.1.0/**</include>
+          <include>specifications/ostruct*0.1.0.gemspec</include>
+          <include>cache/prime*0.0.1.gem</include>
+          <include>gems/prime*0.0.1/**</include>
+          <include>specifications/prime*0.0.1.gemspec</include>
           <include>cache/psych*3.1.0.gem</include>
           <include>gems/psych*3.1.0/**</include>
           <include>specifications/psych*3.1.0.gemspec</include>
@@ -344,9 +550,27 @@ DO NOT MODIFIY - GENERATED CODE
           <include>cache/rdoc*${rdoc.version}.gem</include>
           <include>gems/rdoc*${rdoc.version}/**</include>
           <include>specifications/rdoc*${rdoc.version}.gemspec</include>
+          <include>cache/rexml*3.1.9.gem</include>
+          <include>gems/rexml*3.1.9/**</include>
+          <include>specifications/rexml*3.1.9.gemspec</include>
+          <include>cache/rss*0.2.7.gem</include>
+          <include>gems/rss*0.2.7/**</include>
+          <include>specifications/rss*0.2.7.gemspec</include>
           <include>cache/scanf*1.0.0.gem</include>
           <include>gems/scanf*1.0.0/**</include>
           <include>specifications/scanf*1.0.0.gemspec</include>
+          <include>cache/shell*0.7.gem</include>
+          <include>gems/shell*0.7/**</include>
+          <include>specifications/shell*0.7.gemspec</include>
+          <include>cache/sync*0.5.0.gem</include>
+          <include>gems/sync*0.5.0/**</include>
+          <include>specifications/sync*0.5.0.gemspec</include>
+          <include>cache/thwait*0.1.0.gem</include>
+          <include>gems/thwait*0.1.0/**</include>
+          <include>specifications/thwait*0.1.0.gemspec</include>
+          <include>cache/tracer*0.0.1.gem</include>
+          <include>gems/tracer*0.0.1/**</include>
+          <include>specifications/tracer*0.0.1.gemspec</include>
           <include>cache/webrick*1.4.2.gem</include>
           <include>gems/webrick*1.4.2/**</include>
           <include>specifications/webrick*1.4.2.gemspec</include>

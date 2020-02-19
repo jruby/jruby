@@ -82,6 +82,19 @@ lib/ruby/stdlib/psych*
 lib/ruby/stdlib/scanf.rb
 lib/ruby/stdlib/webrick*
 lib/ruby/stdlib/**/maven-metadata-local.xml
+lib/ruby/stdlib/e2mmap*
+lib/ruby/stdlib/forwardable*
+lib/ruby/stdlib/irb*
+lib/ruby/stdlib/logger.rb
+lib/ruby/stdlib/matrix.rb
+lib/ruby/stdlib/mutex_m.rb
+lib/ruby/stdlib/ostruct.rb
+lib/ruby/stdlib/rexml*
+lib/ruby/stdlib/rss*
+lib/ruby/stdlib/shell*
+lib/ruby/stdlib/sync.rb
+lib/ruby/stdlib/thwait*
+lib/ruby/stdlib/tracer*
 release.properties
 share
 spaces test
