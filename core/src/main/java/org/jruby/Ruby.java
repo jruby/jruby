@@ -1204,11 +1204,6 @@ public final class Ruby implements Constantizable {
                 }
 
                 return runScript(scriptAndCode.script(), self, wrap);
-            } else {
-                // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
-//                failForcedCompile(scriptNode);
-
-                return runScript(scriptAndCode.script(), wrap);
             }
         }
 
